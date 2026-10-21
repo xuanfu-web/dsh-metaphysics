@@ -1,0 +1,4 @@
+- insert:
+    - id: metaphysics
+      name: dsh-metaphysics
+      config: {}
