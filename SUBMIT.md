@@ -16,8 +16,8 @@
 （**文件名与 url 必须与仓库完全一致**）。
 
 ```yaml
-url: https://github.com/xuanfu/dsh-metaphysics
-name: xuanfu/dsh-metaphysics
+url: https://github.com/xuanfu-web/dsh-metaphysics
+name: xuanfu-web/dsh-metaphysics
 category: ui
 description:
   en: 'Divination panel and agent tool: BaZi with 42 shensha plus pattern, useful-god and luck scoring; Zi Wei Dou Shu with 34 patterns, da-xian and annual mutagen; LiuYao and Tarot, all computed locally.'
@@ -33,16 +33,16 @@ description:
 
 ```bash
 # 1) 建公开仓库并推送（本目录已 git init 并提交）
-git remote add origin https://github.com/xuanfu/dsh-metaphysics.git
+git remote add origin https://github.com/xuanfu-web/dsh-metaphysics.git
 git push -u origin main
 
 # 2) 先 fork https://github.com/awesome-dsh-plugin/awesome-dsh-plugin
-#    （fork 后地址为 https://github.com/xuanfu/awesome-dsh-plugin），再加一个 yml 提 PR
-git clone https://github.com/xuanfu/awesome-dsh-plugin.git
+#    （fork 后地址为 https://github.com/xuanfu-web/awesome-dsh-plugin），再加一个 yml 提 PR
+git clone https://github.com/xuanfu-web/awesome-dsh-plugin.git
 cd awesome-dsh-plugin
-# 把本目录 submit/xuanfu__dsh-metaphysics.yml 原样放到 data/plugins/xuanfu__dsh-metaphysics.yml
+# 把本目录 submit/xuanfu-web__dsh-metaphysics.yml 原样放到 data/plugins/xuanfu-web__dsh-metaphysics.yml
 git checkout -b add-dsh-metaphysics
-git add data/plugins/xuanfu__dsh-metaphysics.yml
+git add data/plugins/xuanfu-web__dsh-metaphysics.yml
 git commit -m "Add dsh-metaphysics"
 git push origin add-dsh-metaphysics
 # 然后在 GitHub 上对着 awesome-dsh-plugin:main 开 PR
