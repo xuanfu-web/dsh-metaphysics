@@ -11,6 +11,8 @@ import {
   ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE,
   LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER,
 } from './interpret-data.js';
+// 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
+import { MUTAGEN } from './ziwei.js';
 
 // ── 固定五维度 ────────────────────────────────────────────
 export const DIMENSIONS = [
@@ -265,6 +267,63 @@ function zwSha(p) {
   return (p?.stars || []).filter((s) => s.type === '煞星').map((s) => s.name);
 }
 
+// 四化的固定读法顺序：禄 → 权 → 科 → 忌
+const SIHUA_ORDER = ['禄', '权', '科', '忌'];
+
+/**
+ * 取本盘的生年四化（年干四化）落宫清单，按 禄权科忌 排序。
+ * 落宫以盘面上真正标出的 mutagen 为准；若该星在这张盘里没有落点（辅星偶有此情况），
+ * palace 返回 null —— 交给文案如实写成「未上盘」，绝不补一个宫位上去。
+ * @param {object} r 紫微排盘结果
+ * @returns {Array<{star: string, type: string, palace: string|null}>} 生年四化清单
+ */
+function zwNatalSihua(r) {
+  const palaces = Array.isArray(r?.palaces) ? r.palaces : [];
+
+  // 星名 → {type, palace}：一宫可能同时坐两颗化星（如迁移宫天机化禄 + 太阴化忌），按星名去重
+  const placed = new Map();
+  for (const p of palaces) {
+    for (const s of (p.stars || [])) {
+      if (!s || !s.mutagen || placed.has(s.name)) continue;
+      placed.set(s.name, { type: s.mutagen, palace: p.palace || null });
+    }
+  }
+
+  // 年干四化表：用来补齐「盘上没有落点」的那几颗，以及保证输出顺序
+  const ganzhi = pick(r, 'yearGanzhi', '');
+  const yearStem = typeof ganzhi === 'string' ? ganzhi.slice(0, 1) : '';
+  const table = MUTAGEN[yearStem] || {};
+  const starOfType = {};
+  for (const [star, type] of Object.entries(table)) starOfType[type] = star;
+
+  const out = [];
+  for (const type of SIHUA_ORDER) {
+    // 年干表查不到时退回到盘面自身标注的那一颗
+    let star = starOfType[type] || '';
+    if (!star) {
+      for (const [name, info] of placed) {
+        if (info.type === type) { star = name; break; }
+      }
+    }
+    if (!star) continue;
+    const hit = placed.get(star);
+    out.push({ star, type, palace: hit ? hit.palace : null });
+  }
+  return out;
+}
+
+/**
+ * 把四化清单拼成一句人话。palace 为 null 时写「未上盘」。
+ * @param {Array<{star: string, type: string, palace: string|null}>} list 四化清单
+ * @returns {string} 如「天机化禄于迁移、天梁化权于夫妻、紫微化科于疾厄、太阴化忌于迁移」
+ */
+function zwSihuaText(list) {
+  if (!Array.isArray(list) || !list.length) return '';
+  return list
+    .map((m) => (m.palace ? `${m.star}化${m.type}于${m.palace}` : `${m.star}化${m.type}（未上盘）`))
+    .join('、');
+}
+
 function ziweiInterpret(r) {
   const soul = zwPalace(r, '命宫') || (r.palaces || [])[0];
   const career = zwPalace(r, '官禄');
@@ -300,14 +359,21 @@ function ziweiInterpret(r) {
   const patText = patterns.length
     ? patterns.slice(0, 3).map((p) => `${p.name}（${p.tone === 'good' ? '偏吉' : p.tone === 'bad' ? '需留意' : '中性'}：${p.evidence}）`).join('；')
     : '本盘未触发常见格局条目';
-  const lnMutagen = Array.isArray(r.liunian?.[0]?.mutagen) ? r.liunian[0].mutagen.slice(0, 2).join('、') : '';
+  // 流年四化：四项全列，不要截断 —— 少了化科/化忌会让用户以为盘子算漏了
+  const lnMutagen = Array.isArray(r.liunian?.[0]?.mutagen) ? r.liunian[0].mutagen.slice(0, 4).join('、') : '';
+  // 生年四化：这才是用户最想看到的部分——自己盘上的化科落在哪颗星、哪个宫
+  const natalSihua = zwNatalSihua(r);
+  const natalSihuaText = zwSihuaText(natalSihua);
 
   const dimensions = [
     {
       key: 'overall', label: '整体运势',
       text: `${soulFrom}，性格底色上${S.trait}。本盘${patText}。` +
         `当前大限走在${daxianPalace ? `${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）` : '当前阶段'}，` +
-        `${lnMutagen ? `流年四化为${lnMutagen}，本年的变化感主要落在这几颗星上` : '流年四化信号不明显'}。`,
+        `${lnMutagen ? `流年四化为${lnMutagen}，本年的变化感主要落在这几颗星上` : '流年四化信号不明显'}。` +
+        (natalSihuaText
+          ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
+          : ''),
       advice: `这一阶段的主题更接近「${daxianPalace ? daxianPalace.palace : '命宫'}」代表的事——把它当作今年的主线，其余事围绕它安排；${S.trait}是你的优势，也是需要留意别用过头的地方。`,
     },
     {
@@ -341,6 +407,20 @@ function ziweiInterpret(r) {
     { key: 'palaces', label: '关键宫位', text: `命宫${soulStar}　官禄${careerStar || '无正曜'}　财帛${wealthStar || '无正曜'}　夫妻${spouseStar || '无正曜'}　疾厄${healthStar || '无正曜'}` },
     { key: 'patterns', label: '格局', text: patText },
   ];
+  if (natalSihua.length) {
+    const ke = natalSihua.find((m) => m.type === '科') || null;
+    // 宫位名本身可能已带「宫」（如命宫），拼的时候别叠出「命宫宫」
+    const palaceWord = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+    const kePart = ke
+      ? `其中化科是${ke.star}${ke.palace ? `落在${palaceWord(ke.palace)}` : '未上盘'}，`
+      : '';
+    sections.push({
+      key: 'sihua', label: '生年四化',
+      text: `你出生年的天干定下四颗化星，落在：${natalSihuaText}。` +
+        `读法上，化禄的宫位做起来比较顺手、也容易有人帮忙；化权的宫位偏向由你拿主意、但也更容易用力过猛；化科的宫位自带一层体面与贵人缘，遇到事多半能体面收场；化忌的宫位是你容易在意、也容易反复的地方。` +
+        `${kePart}这几处只是长期倾向，落到具体某一年还要配上流年四化一起看，不必把它当成结论。`,
+    });
+  }
 
   return {
     lead: `紫微斗数看的是你与环境的互动方式。下面按五个维度拆开，讲的是性格与处境的倾向，具体怎么选仍然在你。`,
