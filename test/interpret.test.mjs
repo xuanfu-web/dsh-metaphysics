@@ -1,5 +1,5 @@
 // 解析与详解模块的测试：结构完整性 + 文案口径 + 多组输入不崩
-import { compute } from '../engine/index.js';
+import { compute, renderText } from '../engine/index.js';
 import { interpret, DIMENSIONS, MODULE_TYPE } from '../engine/interpret.js';
 import { HEX64, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE } from '../engine/interpret-data.js';
 
@@ -115,6 +115,23 @@ for (const [name, args] of Object.entries(CASES)) {
   ok(!!r.interpret && r.interpret.dimensions.length === 5, 'compute({withInterpret:true}) 会附加解析');
   const r2 = compute({ ...CASES.bazi });
   ok(!r2.interpret, '默认不附加解析（避免输出过长）');
+}
+
+// ── 5b. 工具层打通：所问之事 / 方向 / 文本输出 ─────────────
+{
+  const ask = { question: '今年适合换工作吗', direction: 'career' };
+  const r = compute({ ...CASES.bazi, withInterpret: true, ...ask });
+  ok(r.interpret.ask.question === ask.question, '解析回显所问之事');
+  ok(r.interpret.ask.directionLabel === '事业', '解析回显询问方向', r.interpret.ask.directionLabel);
+  ok(r.interpret.dimensions[0].key === 'career', '聚焦维度被提到第一位', r.interpret.dimensions[0].key);
+  const text = renderText(r);
+  ok(text.includes('解析与详解'), 'renderText 带上解析标题');
+  ok(text.includes(ask.question), 'renderText 带上所问之事');
+  ok(text.includes('以上解析'), 'renderText 带上免责声明');
+  ok(!renderText(compute({ ...CASES.bazi })).includes('解析与详解'), '未要求解析时文本不膨胀');
+  let msg = '';
+  try { compute({ system: 'qimen', datetime: '1990-05-12T14:30' }); } catch (e) { msg = String(e.message); }
+  ok(/meihua/.test(msg) && /daliuren/.test(msg) && /ziwei/.test(msg), '未知体系报错列出全部六种体系', msg);
 }
 ok(interpret(null) === null, 'interpret(null) 返回 null');
 ok(interpret({}) === null, 'interpret({}) 返回 null');

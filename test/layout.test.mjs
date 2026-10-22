@@ -40,7 +40,8 @@ const bodies = {};
 for (const k of ['ben', 'da', 'ln']) {
   const i = out.indexOf(`pp-body ${k}`);
   const seg = out.slice(i, out.indexOf('pp-body', i + 10) > 0 ? out.indexOf('pp-body', i + 10) : out.length);
-  bodies[k] = (seg.match(/class="pn">([^<]+)</g) || []).join(',');
+  // 0.13.2 起叶子类名统一加语义前缀：.pn → .ft-pn，正则跟着走（旧选择器会让三视图都取到空串而假失败）
+  bodies[k] = (seg.match(/class="ft-pn">([^<]+)</g) || []).join(',');
 }
 ok('本命与流年宫名排布不同', bodies.ben !== bodies.ln || bodies.ben !== bodies.da);
 

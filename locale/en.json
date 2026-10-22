@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Metaphysics Charts",
-    "description": "Four Pillars (BaZi), Zi Wei Dou Shu (14 major stars, auxiliary and malefic stars, four 12-god cycles, decade/year limits, pattern detection) and LiuYao hexagram casting. Computed locally and exposed as an agent tool."
+    "description": "Six systems in one plugin: BaZi (hidden stems, ten gods, 12 stages, 42 shensha, strength, pattern and useful-god, luck scoring), Zi Wei Dou Shu (49 stars with brightness, four 12-god cycles, 34 patterns, decade and annual/monthly/daily/hourly mutagen), LiuYao, MeiHua YiShu, Da Liu Ren and Tarot, plus an ask-driven interpretation layer. Computed locally and exposed as an agent tool with a Web panel."
   }
 }

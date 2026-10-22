@@ -9,9 +9,10 @@ export const inject = ['tools'];
 const TOOL_NAME = 'metaphysics_chart';
 
 const DESCRIPTION = [
-  '排中国传统命理盘与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）或塔罗抽牌（tarot）。',
-  '当用户明确要求“排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗”时调用。',
-  'bazi 与 ziwei 需要公历出生时间；liuyao 可给定六爻值或随机起卦；tarot 可指定张数与问题。',
+  '排中国传统命理盘与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）或塔罗抽牌（tarot）。',
+  '当用户明确要求“排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势”时调用。',
+  'bazi 与 ziwei 需要公历出生时间；liuyao 可给定六爻值或随机起卦；meihua 可按时间或数字起卦；tarot 可指定张数与问题。',
+  '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
 
@@ -61,7 +62,23 @@ export function apply(ctx) {
           description:
             '六爻，自下而上六个值：6 老阴(动)、7 少阳、8 少阴、9 老阳(动)。省略则随机摇卦。',
         },
-        question: { type: 'string', description: '所问之事，六爻、塔罗与梅花时可选。' },
+        question: {
+          type: 'string',
+          description: '所问之事。六爻、塔罗、梅花会直接用于取象；配合 withInterpret 时也会写进解析的引语。',
+        },
+        direction: {
+          type: 'string',
+          enum: ['general', 'wealth', 'career', 'love', 'health', 'study', 'travel'],
+          description: '询问方向（仅配合 withInterpret 生效）：general 综合、wealth 财运、career 事业、love 感情、health 健康、study 学业、travel 出行。默认 general。',
+        },
+        withInterpret: {
+          type: 'boolean',
+          description: '是否附带「解析与详解」（五个维度 + 用神/格局等分节 + 免责声明）；默认 false，避免默认输出过长。',
+        },
+        asOf: {
+          type: 'string',
+          description: '紫微流月/流日/流时的基准时刻，形如 2026-10-22T16:00；省略则按调用时的本机当前时刻。要复现某一时刻的推演结果时请显式给出。',
+        },
         mode: {
           type: 'string',
           enum: ['time', 'number'],

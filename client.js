@@ -5026,9 +5026,27 @@ function jsonSafe(value) {
  */
 function compute(args = {}) {
   const r = jsonSafe(computeRaw(args));
-  // 显式要求时才附加解析模块，避免默认输出过长
-  if (args.withInterpret) r.interpret = interpret(r);
+  // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
+  if (args.withInterpret) {
+    r.interpret = interpret(r, {
+      question: typeof args.question === 'string' ? args.question : '',
+      direction: typeof args.direction === 'string' ? args.direction : 'general',
+    });
+  }
   return r;
+}
+
+/** 解析与详解的紧凑文本（给模型看，不塞整块 JSON） */
+function interpretText(i) {
+  if (!i) return '';
+  const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
+  if (i.lead) out.push(i.lead);
+  for (const d of i.dimensions || []) {
+    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}`);
+  }
+  for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  if (i.disclaimer) out.push(i.disclaimer);
+  return out.join('\n');
 }
 
 function computeRaw(args) {
@@ -5094,12 +5112,15 @@ function computeRaw(args) {
     const result = buildLiuyao({ lines, question: args.question, dayGanZhi });
     return { ...result, summary: liuyaoText(result) };
   }
-  throw new Error(`未知体系「${system}」，可选：bazi（四柱八字）、liuyao（六爻）。紫微斗数尚未接入。`);
+  throw new Error(`未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、tarot（塔罗）。`);
 }
 
-/** 给模型的紧凑文本（去掉大字段，保留摘要） */
+/** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 function renderText(result) {
-  return result.summary ?? JSON.stringify(result, null, 2);
+  const base = result.summary ?? JSON.stringify(result, null, 2);
+  if (!result.interpret) return base;
+  const extra = interpretText(result.interpret);
+  return extra ? `${base}\n\n${extra}` : base;
 }
 
 /** 对外暴露：地址解析（异步，含联网） */
@@ -5107,7 +5128,7 @@ function renderText(result) {
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, interpretText, renderText };
 })();
 
     const Engine = __mods.index;
