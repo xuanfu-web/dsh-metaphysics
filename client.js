@@ -5116,24 +5116,26 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 (function () {
   const CSS = `
 .pp{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
-  --line:#c8c1b2;--dimline:#b9b2a4;
+  --line:#c8c1b2;--dimline:#b9b2a4;--hair:#efe9dc;
   --bg:#fffdf8;--card:#fffefb;--band:#f7f3ea;--hover:#f7f2e5;--hover2:#f2ece0;
   --tri:#f9f3e6;--soul:#fdf3f1;--sel:#fff5f2;--link:#fbeee9;
   --red:#b3261e;--red-rgb:179,38,30;--lu:#1f6f3f;--lu-rgb:31,111,63;
   --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
+  --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83;
   border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
   container-type:inline-size}
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
   .pp{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
-    --line:#514a3e;--dimline:#5f5849;
+    --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
     --bg:#15140f;--card:#1e1c16;--band:#262218;--hover:#2a251b;--hover2:#312c21;
     --tri:#231f16;--soul:#2e1e1a;--sel:#3a231d;--link:#2e211b;
     --red:#f08569;--red-rgb:240,133,105;--lu:#74c795;--lu-rgb:116,199,149;
     --quan:#e2a95c;--quan-rgb:226,169,92;--ke:#86bcea;--ke-rgb:134,188,234;--ji:#f08569;
-    --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273}
+    --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
+    --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0}
 }
 .pp *{box-sizing:border-box}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(150px,auto));gap:0}
@@ -5190,11 +5192,23 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .pp-flow .fl .p em.same{font-style:normal;color:var(--faint);font-size:11.5px;margin-left:5px}
 .pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:var(--label);font-weight:700;margin-bottom:2px}
 .pp-tl{font-size:12.5px;color:var(--muted);line-height:1.75}
-.pp-bz{width:100%;border-collapse:collapse;font-size:13.5px;font-family:system-ui,sans-serif}
-.pp-bz th,.pp-bz td{border:1px solid var(--line);padding:8px 10px;text-align:center}
-.pp-bz th{color:var(--red);font-weight:600;font-size:12.5px}
-.pp-bz td.big{font-size:24px;font-weight:700}
-.pp-bz td.lbl{color:var(--muted);font-size:12.5px;width:60px}
+/* 四柱表：按命书版式排 —— 左侧一列窄行名，年/月/日/时四柱固定并排在右，
+   不打竖线、只用极淡横线分隔。四柱必须始终并排：2×2 折行后就没法一眼横扫四柱对照了。 */
+.pp-bz{width:100%;max-width:860px;margin:0 auto;border-collapse:collapse;font-size:13px;font-family:system-ui,sans-serif;table-layout:fixed}
+.pp-bz th,.pp-bz td{padding:5px 2px;text-align:center;vertical-align:middle;border:none}
+.pp-bz th{border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;font-size:12.5px;letter-spacing:.06em}
+.pp-bz th.hdr-day{color:var(--red)}
+.pp-bz tr+tr td{border-top:1px solid var(--hair)}
+.pp-bz th:first-child,.pp-bz td.lbl{width:46px}
+.pp-bz td.lbl{text-align:left;padding-left:3px;color:var(--muted);font-size:11.5px;line-height:1.4;white-space:nowrap}
+.pp-bz .big{font-size:26px;font-weight:600;line-height:1.2}
+.pp-bz .cg{display:block;font-style:normal;font-size:11.5px;line-height:1.55}
+.pp-bz td.wxs{text-align:center;font-size:12px;line-height:1.9}
+.pp-bz td.wxs i{display:inline-block;font-style:normal;margin:0 9px;white-space:nowrap}
+.pp-bz td.wxs i b{font-weight:600}
+.pp-bz td.wxs i em{font-style:normal;margin-left:1px;font-size:11px;color:var(--muted)}
+/* 十神按五类分组着色（比劫/食伤/财/官杀/印），低饱和，不抢干支五行的主色 */
+.tg-bi{color:var(--tg-bi)}.tg-shi{color:var(--tg-shi)}.tg-cai{color:var(--tg-cai)}.tg-guan{color:var(--tg-guan)}.tg-yin{color:var(--tg-yin)}
 .wx-wood{color:var(--lu)}.wx-fire{color:var(--red)}.wx-earth{color:var(--quan)}.wx-metal{color:var(--wx-metal)}.wx-water{color:var(--ke)}
 .zhuri{color:var(--red);font-weight:700}
 .pp-rel{margin-top:10px;font-size:13px;line-height:1.9}
@@ -5251,6 +5265,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .pp-detail .empty{color:var(--faint);font-size:12.5px}
 .pp-detail .hint{color:var(--faint);font-size:11.5px;margin-top:6px}
 .pp-ss{display:flex;flex-wrap:wrap;gap:0 7px;font-size:12.5px;line-height:1.6}
+.pp-bz .pp-ss{flex-direction:column;align-items:center;gap:0;font-size:11.5px;line-height:1.5}
 .pp-ss .s{white-space:nowrap;cursor:help}
 .pp-ss .s.good{color:var(--lu)}
 .pp-ss .s.bad{color:var(--ji)}
@@ -5443,15 +5458,18 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   /* 流月/流日/流时：窄屏一行放不下「命宫+四化」，四化另起一行 */
   .pp-flow .fl{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
   .pp-flow .fl .m{grid-column:1/-1}
-  /* 八字：隐藏表头，行标签整行 + 四柱 2×2，每格角标柱名 */
-  .pp-bz{border-collapse:separate;border-spacing:0}
-  .pp-bz thead{display:none}
-  .pp-bz,.pp-bz tbody{display:block}
-  .pp-bz tr{display:grid;grid-template-columns:repeat(2,1fr);margin-top:-1px}
-  .pp-bz td{margin:0 0 0 -1px}
-  .pp-bz td.lbl{grid-column:1/-1;width:auto;margin:0;background:var(--card);color:var(--ink);font-weight:600}
-  .pp-bz td[data-c]::before{content:attr(data-c);display:block;font-size:12px;color:var(--muted);letter-spacing:.12em;margin-bottom:2px}
-  .pp-bz td.big{font-size:26px}
+  /* 八字：四柱保持四列并排（参考命书版式），只收紧字号与行距，不折行 */
+  .pp-bz{font-size:11.5px}
+  .pp-bz th,.pp-bz td{padding:4px 1px}
+  .pp-bz th:first-child,.pp-bz td.lbl{width:38px}
+  .pp-bz td.lbl{font-size:10.5px}
+  .pp-bz .big{font-size:23px}
+  .pp-bz .cg{font-size:10px;line-height:1.45}
+  .pp-bz .pp-ss{font-size:10px;line-height:1.4}
+  .pp-bz td.wxs{font-size:11px;line-height:1.8}
+  .pp-bz td.wxs i{margin:0 5px}
+  .pp-bz td.wxs i em{font-size:10px}
+  .pp-bz th{font-size:11.5px}
   /* 六爻：列宽收紧，爻线自适应拉长 */
   .hy-wrap{gap:14px}
   .hy-box{min-width:0;width:100%}
@@ -5516,14 +5534,17 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-detail .st .br{font-size:11px}
   .pp-flow .fl{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
   .pp-flow .fl .m{grid-column:1/-1}
-  .pp-bz{border-collapse:separate;border-spacing:0}
-  .pp-bz thead{display:none}
-  .pp-bz,.pp-bz tbody{display:block}
-  .pp-bz tr{display:grid;grid-template-columns:repeat(2,1fr);margin-top:-1px}
-  .pp-bz td{margin:0 0 0 -1px}
-  .pp-bz td.lbl{grid-column:1/-1;width:auto;margin:0;background:var(--card);color:var(--ink);font-weight:600}
-  .pp-bz td[data-c]::before{content:attr(data-c);display:block;font-size:12px;color:var(--muted);letter-spacing:.12em;margin-bottom:2px}
-  .pp-bz td.big{font-size:26px}
+  .pp-bz{font-size:11.5px}
+  .pp-bz th,.pp-bz td{padding:4px 1px}
+  .pp-bz th:first-child,.pp-bz td.lbl{width:38px}
+  .pp-bz td.lbl{font-size:10.5px}
+  .pp-bz .big{font-size:23px}
+  .pp-bz .cg{font-size:10px;line-height:1.45}
+  .pp-bz .pp-ss{font-size:10px;line-height:1.4}
+  .pp-bz td.wxs{font-size:11px;line-height:1.8}
+  .pp-bz td.wxs i{margin:0 5px}
+  .pp-bz td.wxs i em{font-size:10px}
+  .pp-bz th{font-size:11.5px}
   .hy-wrap{gap:14px}
   .hy-box{min-width:0;width:100%}
   .hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
@@ -6049,18 +6070,45 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']];
     const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
     const ELC = { 木: 'wood', 火: 'fire', 土: 'earth', 金: 'metal', 水: 'water' };
+    // 十神按五类分组上色：比劫 / 食伤 / 财 / 官杀 / 印。低饱和，避免抢干支五行主色
+    const TG = {
+      比肩: 'tg-bi', 劫财: 'tg-bi',
+      食神: 'tg-shi', 伤官: 'tg-shi',
+      偏财: 'tg-cai', 正财: 'tg-cai',
+      七杀: 'tg-guan', 正官: 'tg-guan',
+      偏印: 'tg-yin', 正印: 'tg-yin',
+    };
+    const tg = (name) => `<span class="tg ${TG[name] || ''}">${name}</span>`;
     const el = (e) => `<span class="wx-${ELC[e] || 'earth'}">${e}</span>`;
     // 神煞：悬停显示「类别·查法来源查目标｜查法口诀」
     const ssTag = (x) => `<span class="s ${x.luck || 'neutral'}" title="${esc(`${x.cat} · ${x.via}查${x.target} ｜ ${x.rule}`)}">${x.name}</span>`;
     // data-c：竖屏 2×2 重排时每格左上角标注柱名（桌面端不显示）
     const line = (label, fn) => `<tr><td class="lbl">${label}</td>${cols.map(([k]) => `<td data-c="${SHORT[k]}">${fn(r.pillars[k], k)}</td>`).join('')}</tr>`;
-    const head = `<thead><tr><th></th>${cols.map(([, n]) => `<th>${n}</th>`).join('')}</tr></thead>`;
+    const head = `<thead><tr><th></th>${cols.map(([k, n]) => `<th${k === 'day' ? ' class="hdr-day"' : ''}>${n}</th>`).join('')}</tr></thead>`;
+    // 五行旺相休囚死：以月令当令五行为基准，沿生克关系把其余四行推出来
+    const SEASON_EL = { 寅: '木', 卯: '木', 巳: '火', 午: '火', 申: '金', 酉: '金', 亥: '水', 子: '水', 辰: '土', 戌: '土', 丑: '土', 未: '土' };
+    const GEN = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+    const OVR = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+    const seasonEl = SEASON_EL[r.pillars.month.branch] || '土';
+    const WX_ALL = ['木', '火', '土', '金', '水'];
+    const stateOf = (e) => (e === seasonEl ? '旺'
+      : GEN[seasonEl] === e ? '相'
+        : GEN[e] === seasonEl ? '休'
+          : OVR[e] === seasonEl ? '囚' : '死');
+    const wxRow = `<tr><td class="lbl">五行</td><td class="wxs" colspan="4">${
+      ['旺', '相', '休', '囚', '死'].map((st) => {
+        const e = WX_ALL.find((x) => stateOf(x) === st) || seasonEl;
+        return `<i><b class="wx-${ELC[e]}">${e}</b><em>${st}</em></i>`;
+      }).join('')}</td></tr>`;
     const rows = [
-      line('十神', (p, k) => `<span class="${k === 'day' ? 'zhuri' : 'pp-dim'}">${k === 'day' ? (r.input.gender === 'male' ? '元男' : '元女') : (p.stemTenGod || '—')}</span>`),
+      line('十神', (p, k) => (k === 'day'
+        ? `<span class="zhuri">${r.input.gender === 'male' ? '元男' : '元女'}</span>`
+        : (p.stemTenGod ? tg(p.stemTenGod) : '<span class="pp-dim">—</span>'))),
       line('天干', (p) => `<span class="big ${'wx-' + ELC[p.stemElement]}">${p.stem}</span>`),
       line('地支', (p) => `<span class="big ${'wx-' + ELC[p.branchElement]}">${p.branch}</span>`),
-      line('藏干', (p) => p.hidden.map((x) => `<span class="wx-${ELC[x.element]}">${x.stem}${x.element}</span>`).join(' ')),
-      line('支神', (p) => p.hidden.map((x) => `<span class="pp-dim">${x.tenGod}</span>`).join('<br>')),
+      // 藏干按「干·五行」一行一个，跟着五行上色
+      line('藏干', (p) => p.hidden.map((x) => `<i class="cg wx-${ELC[x.element]}">${x.stem}·${x.element}</i>`).join('')),
+      line('支神', (p) => p.hidden.map((x) => tg(x.tenGod)).join('<br>')),
       line('纳音', (p) => p.nayin),
       line('空亡', (p) => `<span class="pp-dim">${p.kongwang.join('')}</span>`),
       line('地势', (p) => p.dishi),
@@ -6068,6 +6116,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       line('神煞', (p) => (p.shenshaDetail && p.shenshaDetail.length
         ? `<span class="pp-ss">${p.shenshaDetail.map(ssTag).join('')}</span>`
         : '<span class="pp-dim">—</span>')),
+      wxRow,
     ].join('');
     const wx = Object.entries(r.wuxing).map(([k, v]) => `<span class="pp-chip wx-${ELC[k]}">${k} ${v}</span>`).join('');
 
