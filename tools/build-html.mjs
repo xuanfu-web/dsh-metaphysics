@@ -58,7 +58,7 @@ header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16p
 .chip.dim{opacity:.6}
 .note{margin-top:10px;font-size:13px;color:var(--dim)}
 .err{margin-top:18px;padding:12px 16px;border-radius:10px;background:rgba(224,102,95,.12);color:var(--bad);font-size:14px}
-/* 注：盘面样式（紫微宫格 .pp-grid / 八字 .pp-bz / 六爻 .hy-row / 梅花 .hexbox / 六壬 .dl-pan2 / 塔罗 .tt-grid）
+/* 注：盘面样式（紫微宫格 .pp-grid / 八字 .pp-bz / 六爻 .mp-hy-row / 梅花 .mp-hexbox / 六壬 .mp-dl-pan2 / 塔罗 .mp-tt-grid）
    全部由 src/panel-kit.js 的 PP.CSS 提供，本文件只保留页面框架样式，不再重复定义旧版盘面类 */
 h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -119,17 +119,17 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .brand{font-size:15pt}
   .brand small{display:block}
   #out{margin:0}
-  .pp,#out .it{break-inside:avoid;page-break-inside:avoid}
+  .pp,#out .mp-it{break-inside:avoid;page-break-inside:avoid}
   .pp{box-shadow:none;border-color:#999}
   .pp-detail{break-inside:avoid}
   .pp-cell{cursor:auto}
   /* 详解块折叠着打印 → 纸面上只剩一个标题栏。打印时强制展开，并藏掉「点击收起」提示 */
-  .it.folded .it-wrap{display:block!important}
-  .it.folded .it-arrow{transform:none}
-  .it-hint{display:none}
+  .mp-it.folded .mp-it-wrap{display:block!important}
+  .mp-it.folded .mp-it-arrow{transform:none}
+  .mp-it-hint{display:none}
   /* 彩色底块（四化块、身宫描边、三方四正底、选中宫底）都要印出来，
      只给 .pp-m 会让其余浅色底在纸上整片消失，色弱读者失去唯一线索 */
-  .pp,.it,.pp *,.it *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pp,.mp-it,.pp *,.mp-it *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   a[href]::after{content:""}
 }
 `;

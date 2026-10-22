@@ -5115,7 +5115,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.it{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#efe9dc;
   --bg:#fffdf8;--card:#fffefb;--band:#f7f3ea;--hover:#f7f2e5;--hover2:#f2ece0;
   --tri:#f9f3e6;--soul:#fdf3f1;--sel:#fff5f2;--link:#fbeee9;
@@ -5123,14 +5123,14 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
   --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83}
-/* 变量与 .it 共享 —— 「解析与详解」是 .pp 的兄弟节点、不在 .pp 内部，
+/* 变量与 .mp-it 共享 —— 「解析与详解」是 .pp 的兄弟节点、不在 .pp 内部，
    变量只挂在 .pp 上时它拿不到 --card/--muted/--red，头部底色会变透明、边框会退回黑色。 */
 .pp{border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
   container-type:inline-size}
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.it{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
     --bg:#15140f;--card:#1e1c16;--band:#262218;--hover:#2a251b;--hover2:#312c21;
     --tri:#231f16;--soul:#2e1e1a;--sel:#3a231d;--link:#2e211b;
@@ -5214,7 +5214,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 /* 十神按五类分组着色（比劫/食伤/财/官杀/印），低饱和，不抢干支五行的主色 */
 .tg-bi{color:var(--tg-bi)}.tg-shi{color:var(--tg-shi)}.tg-cai{color:var(--tg-cai)}.tg-guan{color:var(--tg-guan)}.tg-yin{color:var(--tg-yin)}
 .wx-wood{color:var(--lu)}.wx-fire{color:var(--red)}.wx-earth{color:var(--quan)}.wx-metal{color:var(--wx-metal)}.wx-water{color:var(--ke)}
-.zhuri{color:var(--red);font-weight:700}
+.bz-zhuri{color:var(--red);font-weight:700}
 .pp-rel{margin-top:10px;font-size:13px;line-height:1.9}
 .pp-rel b{color:var(--muted);font-weight:400;margin-right:10px}
 .pp-str{margin-top:10px;font-size:13px;line-height:1.8}
@@ -5287,148 +5287,148 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .pp-ssi em{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 
 /* —— 爻线：真线，阳为整条、阴为断开、动爻描红 —— */
-.hex{display:flex;gap:16%;height:11px;width:104px;flex:0 0 auto;color:var(--ink);align-items:stretch}
-.hex i{flex:1;background:currentColor;border-radius:1.5px}
-.hex.yin{gap:18%}
-.hex.on{color:var(--red)}
-.hex.dim{color:var(--dimline)}
-.hex.sm{width:74px;height:9px}
-.hex.md{width:88px;height:10px}
+.mp-hex{display:flex;gap:16%;height:11px;width:104px;flex:0 0 auto;color:var(--ink);align-items:stretch}
+.mp-hex i{flex:1;background:currentColor;border-radius:1.5px}
+.mp-hex.yin{gap:18%}
+.mp-hex.on{color:var(--red)}
+.mp-hex.dim{color:var(--dimline)}
+.mp-hex.sm{width:74px;height:9px}
+.mp-hex.md{width:88px;height:10px}
 
 /* —— 六爻 —— */
-.hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
-.hy-box{border:1px solid var(--line);background:var(--card);padding:12px 16px 14px;min-width:250px}
-.hy-h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;font-family:system-ui,sans-serif}
-.hy-h b{color:var(--red);font-size:14px}
-.hy-h span{color:var(--muted);font-size:12px}
-.hy{display:flex;flex-direction:column;gap:6px}
-.hy-row{display:grid;grid-template-columns:18px 30px 112px 60px 54px 40px;gap:8px;align-items:center;font-size:13px;font-family:system-ui,sans-serif;padding:1px 0}
-.hy-sy{color:var(--red);font-size:12px;font-weight:700}
-.hy-nm{color:var(--muted);font-size:12px}
-.hy-gz{letter-spacing:.04em}
-.hy-lq{color:var(--ink2)}
-.hy-ls{color:var(--muted);font-size:12px}
-.hy-dn{color:var(--red);font-size:12px;font-family:system-ui,sans-serif}
-.hy-void{color:var(--faint)}
-.hy-row.plain{grid-template-columns:34px 112px;gap:9px;padding:0}
-.mh-mini{display:flex;flex-direction:column;gap:4px}
+.mp-hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.mp-hy-box{border:1px solid var(--line);background:var(--card);padding:12px 16px 14px;min-width:250px}
+.mp-hy-h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;font-family:system-ui,sans-serif}
+.mp-hy-h b{color:var(--red);font-size:14px}
+.mp-hy-h span{color:var(--muted);font-size:12px}
+.mp-hy{display:flex;flex-direction:column;gap:6px}
+.mp-hy-row{display:grid;grid-template-columns:18px 30px 112px 60px 54px 40px;gap:8px;align-items:center;font-size:13px;font-family:system-ui,sans-serif;padding:1px 0}
+.mp-hy-sy{color:var(--red);font-size:12px;font-weight:700}
+.mp-hy-nm{color:var(--muted);font-size:12px}
+.mp-hy-gz{letter-spacing:.04em}
+.mp-hy-lq{color:var(--ink2)}
+.mp-hy-ls{color:var(--muted);font-size:12px}
+.mp-hy-dn{color:var(--red);font-size:12px;font-family:system-ui,sans-serif}
+.mp-hy-void{color:var(--faint)}
+.mp-hy-row.plain{grid-template-columns:34px 112px;gap:9px;padding:0}
+.mp-mh-mini{display:flex;flex-direction:column;gap:4px}
 
 /* —— 梅花 —— */
-.mh{padding:16px}
-.mh-head{font-size:13px;color:var(--muted);margin-bottom:12px}
-.mh-main{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
-.hexbox{border:1px solid var(--line);background:var(--card);padding:12px 15px 13px}
-.hexbox.mini{min-width:118px}
-.hexbox .h{display:flex;justify-content:space-between;gap:10px;font-size:12px;letter-spacing:.14em;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:5px}
-.hexbox .n{font-size:17px;font-weight:700;color:var(--red);margin-bottom:8px;letter-spacing:.04em}
-.hexbox.mini .n{font-size:15px;margin-bottom:6px}
-.hexbox .s{font-size:12px;color:var(--muted);margin-top:8px;font-family:system-ui,sans-serif}
-.trib{display:flex;flex-direction:column;gap:4px}
-.trib+.trib{margin-top:8px;padding-top:8px;border-top:1px dotted var(--line)}
-.trib-h{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:3px}
-.tri-tag{font-size:12px;padding:0 4px;border:1px solid var(--line);color:var(--muted);font-family:system-ui,sans-serif}
-.tri-tag.ti{color:var(--red);border-color:rgba(var(--red-rgb),.45);font-weight:700}
-.tri-tag.yong{color:var(--ke);border-color:rgba(var(--ke-rgb),.45)}
-.mh-rel{margin-top:12px;font-size:13.5px;font-family:system-ui,sans-serif;line-height:1.8}
-.mh-rel b{color:var(--muted);font-weight:400;margin-right:8px}
-.mh-rel .lv{font-weight:700}
-.mh-rel .lv.good{color:var(--lu)}
-.mh-rel .lv.bad{color:var(--ji)}
-.mh-rel .lv.flat{color:var(--quan)}
+.mp-mh{padding:16px}
+.mp-mh-head{font-size:13px;color:var(--muted);margin-bottom:12px}
+.mp-mh-main{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.mp-hexbox{border:1px solid var(--line);background:var(--card);padding:12px 15px 13px}
+.mp-hexbox.mini{min-width:118px}
+.mp-hexbox .h{display:flex;justify-content:space-between;gap:10px;font-size:12px;letter-spacing:.14em;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:5px}
+.mp-hexbox .n{font-size:17px;font-weight:700;color:var(--red);margin-bottom:8px;letter-spacing:.04em}
+.mp-hexbox.mini .n{font-size:15px;margin-bottom:6px}
+.mp-hexbox .s{font-size:12px;color:var(--muted);margin-top:8px;font-family:system-ui,sans-serif}
+.mp-trib{display:flex;flex-direction:column;gap:4px}
+.mp-trib+.mp-trib{margin-top:8px;padding-top:8px;border-top:1px dotted var(--line)}
+.mp-trib-h{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:3px}
+.mp-tritag{font-size:12px;padding:0 4px;border:1px solid var(--line);color:var(--muted);font-family:system-ui,sans-serif}
+.mp-tritag.ti{color:var(--red);border-color:rgba(var(--red-rgb),.45);font-weight:700}
+.mp-tritag.yong{color:var(--ke);border-color:rgba(var(--ke-rgb),.45)}
+.mp-mh-rel{margin-top:12px;font-size:13.5px;font-family:system-ui,sans-serif;line-height:1.8}
+.mp-mh-rel b{color:var(--muted);font-weight:400;margin-right:8px}
+.mp-mh-rel .lv{font-weight:700}
+.mp-mh-rel .lv.good{color:var(--lu)}
+.mp-mh-rel .lv.bad{color:var(--ji)}
+.mp-mh-rel .lv.flat{color:var(--quan)}
 
 /* —— 大六壬 —— */
-.dl{padding:16px}
-.dl-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.7}
-.dl-sc{display:flex;align-items:stretch;margin:0 0 12px;flex-wrap:wrap}
-.dl-sc-c{border:1px solid var(--line);background:var(--card);padding:10px 18px;min-width:110px;text-align:center}
-.dl-sc-c+.dl-sc-c{border-left:none}
-.dl-sc-c.ge{border-left:1px solid var(--line);background:var(--band)}
-.dl-sc-k{font-size:12px;letter-spacing:.16em;color:var(--muted);font-family:system-ui,sans-serif}
-.dl-sc-z{font-size:24px;font-weight:700;color:var(--red);line-height:1.2}
-.dl-sc-j{font-size:12px}
-.dl-sc-l{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
-.dl-sc-gn{font-size:16px;font-weight:700;margin-top:1px}
-.dl-sk{display:flex;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
-.dl-sk-c{border:1px solid var(--line);background:var(--card);padding:8px 14px 9px;text-align:center;min-width:82px}
-.dl-sk-c+.dl-sk-c{border-left:none}
-.dl-sk-k{font-size:12px;color:var(--muted);letter-spacing:.1em;font-family:system-ui,sans-serif}
-.dl-sk-s{font-size:17px;font-weight:700;color:var(--red);line-height:1.3}
-.dl-sk-x{font-size:14.5px;color:var(--muted);line-height:1.3}
-.dl-sk-r{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
-.dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(84px,auto));border:1px solid var(--line);background:var(--bg)}
-.dl-pc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 9px;display:flex;flex-direction:column;gap:0}
-.dl-pc .tz{font-size:21px;font-weight:700;color:var(--red);line-height:1.2}
-.dl-pc .dz{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
-.dl-pc .jz{font-size:12px;color:var(--quan);margin-top:auto;font-family:system-ui,sans-serif}
-.dl-c{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;background:var(--bg)}
-.dl-c .t1{font-size:16px;font-weight:700;letter-spacing:.06em}
-.dl-c .t2{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
-.dl-c .t3{font-size:12.5px;letter-spacing:.2em;margin-top:3px}
-.dl-legend{display:flex;gap:12px;justify-content:center;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
+.mp-dl{padding:16px}
+.mp-dl-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.7}
+.mp-dl-sc{display:flex;align-items:stretch;margin:0 0 12px;flex-wrap:wrap}
+.mp-dl-sc-c{border:1px solid var(--line);background:var(--card);padding:10px 18px;min-width:110px;text-align:center}
+.mp-dl-sc-c+.mp-dl-sc-c{border-left:none}
+.mp-dl-sc-c.ge{border-left:1px solid var(--line);background:var(--band)}
+.mp-dl-sc-k{font-size:12px;letter-spacing:.16em;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-dl-sc-z{font-size:24px;font-weight:700;color:var(--red);line-height:1.2}
+.mp-dl-sc-j{font-size:12px}
+.mp-dl-sc-l{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-dl-sc-gn{font-size:16px;font-weight:700;margin-top:1px}
+.mp-dl-sk{display:flex;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.mp-dl-sk-c{border:1px solid var(--line);background:var(--card);padding:8px 14px 9px;text-align:center;min-width:82px}
+.mp-dl-sk-c+.mp-dl-sk-c{border-left:none}
+.mp-dl-sk-k{font-size:12px;color:var(--muted);letter-spacing:.1em;font-family:system-ui,sans-serif}
+.mp-dl-sk-s{font-size:17px;font-weight:700;color:var(--red);line-height:1.3}
+.mp-dl-sk-x{font-size:14.5px;color:var(--muted);line-height:1.3}
+.mp-dl-sk-r{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(84px,auto));border:1px solid var(--line);background:var(--bg)}
+.mp-dl-pc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 9px;display:flex;flex-direction:column;gap:0}
+.mp-dl-pc .tz{font-size:21px;font-weight:700;color:var(--red);line-height:1.2}
+.mp-dl-pc .dz{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-dl-pc .jz{font-size:12px;color:var(--quan);margin-top:auto;font-family:system-ui,sans-serif}
+.mp-dl-c{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;background:var(--bg)}
+.mp-dl-c .t1{font-size:16px;font-weight:700;letter-spacing:.06em}
+.mp-dl-c .t2{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-dl-c .t3{font-size:12.5px;letter-spacing:.2em;margin-top:3px}
+.mp-dl-legend{display:flex;gap:12px;justify-content:center;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
 
 /* —— 塔罗 —— */
-.tt{padding:16px}
-.tt-head{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
-.tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
-.tt-card{border:1px solid var(--line);background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:7px;min-height:168px}
-.tt-card.rev{background:var(--band);border-style:dashed}
-.tt-pos{font-size:12px;color:var(--muted);letter-spacing:.14em}
-.tt-name{font-size:19px;font-weight:700;color:var(--red);letter-spacing:.04em}
-.tt-ori{font-size:12px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
-.tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:13px;line-height:1.7}
-.tt-kw span{border-bottom:1px dotted var(--line)}
-.tt-el{margin-top:auto;font-size:12px;color:var(--muted)}
-.tt-core{font-size:12.5px;color:var(--ink2);line-height:1.7;border-left:2px solid var(--line);padding-left:8px}
-.tt-no{font-size:12px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
-.tt-tip{margin-top:12px;font-size:12px;color:var(--muted)}
-.tt-q{font-size:13px;margin-bottom:6px}
-.tt-q b{color:var(--muted);font-weight:400;margin-right:8px}
-.tt-read{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
-.tt-rt{font-size:12px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
-.tt-read p{margin:0 0 5px;font-size:13px;line-height:1.85}
-.tt-note{margin-top:12px}
-.tt-ta{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
-.tt-ta:focus{border-color:var(--red)}
+.mp-tt{padding:16px}
+.mp-tt-head{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
+.mp-tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
+.mp-tt-card{border:1px solid var(--line);background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:7px;min-height:168px}
+.mp-tt-card.rev{background:var(--band);border-style:dashed}
+.mp-tt-pos{font-size:12px;color:var(--muted);letter-spacing:.14em}
+.mp-tt-name{font-size:19px;font-weight:700;color:var(--red);letter-spacing:.04em}
+.mp-tt-ori{font-size:12px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
+.mp-tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:13px;line-height:1.7}
+.mp-tt-kw span{border-bottom:1px dotted var(--line)}
+.mp-tt-el{margin-top:auto;font-size:12px;color:var(--muted)}
+.mp-tt-core{font-size:12.5px;color:var(--ink2);line-height:1.7;border-left:2px solid var(--line);padding-left:8px}
+.mp-tt-no{font-size:12px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
+.mp-tt-tip{margin-top:12px;font-size:12px;color:var(--muted)}
+.mp-tt-q{font-size:13px;margin-bottom:6px}
+.mp-tt-q b{color:var(--muted);font-weight:400;margin-right:8px}
+.mp-tt-read{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.mp-tt-rt{font-size:12px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
+.mp-tt-read p{margin:0 0 5px;font-size:13px;line-height:1.85}
+.mp-tt-note{margin-top:12px}
+.mp-tt-ta{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
+.mp-tt-ta:focus{border-color:var(--red)}
 
 /* —— 解析与详解 —— */
-/* 变量由上面的 .pp,.it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
+/* 变量由上面的 .pp,.mp-it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
    自引用会让变量变成 guaranteed-invalid，反而把继承值也挡掉了（--card 因此彻底失效）。 */
-.it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+.mp-it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
-.it *{box-sizing:border-box}
+.mp-it *{box-sizing:border-box}
 /* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
-.it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
-.it-head:hover{background:var(--band)}
-.it-arrow{flex:none;font-size:12px;line-height:1;color:var(--red);transition:transform .16s ease}
-.it.folded .it-arrow{transform:rotate(-90deg)}
-.it.folded .it-wrap{display:none}
-.it-hint{margin-left:auto;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
-.it-title{font-size:15px;font-weight:700;letter-spacing:.08em;color:var(--red)}
-.it-tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+.mp-it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
+.mp-it-head:hover{background:var(--band)}
+.mp-it-arrow{flex:none;font-size:12px;line-height:1;color:var(--red);transition:transform .16s ease}
+.mp-it.folded .mp-it-arrow{transform:rotate(-90deg)}
+.mp-it.folded .mp-it-wrap{display:none}
+.mp-it-hint{margin-left:auto;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-it-title{font-size:15px;font-weight:700;letter-spacing:.08em;color:var(--red)}
+.mp-it-tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 /* 所问之事 + 询问方向的回显，放在引语上方，先让用户确认问的是什么 */
-.it-ask{padding:10px 16px;background:var(--band);border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:var(--ink2);font-family:system-ui,sans-serif}
-.it-ask .q{font-weight:600;color:var(--ink)}
-.it-ask .sep{color:var(--dimline);margin:0 7px}
-.it-ask .d{color:var(--lu)}
-.it-ask .none{color:var(--muted);font-weight:400}
+.mp-it-ask{padding:10px 16px;background:var(--band);border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:var(--ink2);font-family:system-ui,sans-serif}
+.mp-it-ask .q{font-weight:600;color:var(--ink)}
+.mp-it-ask .sep{color:var(--dimline);margin:0 7px}
+.mp-it-ask .d{color:var(--lu)}
+.mp-it-ask .none{color:var(--muted);font-weight:400}
 /* 按询问方向提到最前的那一条 */
-.it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
-.it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
-.it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
-.it-body{padding:2px 16px 12px}
-.it-dim{padding:12px 0;border-bottom:1px dashed var(--line)}
-.it-dim:last-of-type{border-bottom:none}
-.it-dh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:var(--on-accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
-.it-dlabel{font-size:14.5px;font-weight:700;letter-spacing:.04em}
-.it-dtext{font-size:13px;line-height:1.9;text-align:justify}
-.it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
-.it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
-.it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
-.it-sec{margin-bottom:11px}
-.it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
-.it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
-.it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+.mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
+.mp-it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
+.mp-it-body{padding:2px 16px 12px}
+.mp-it-dim{padding:12px 0;border-bottom:1px dashed var(--line)}
+.mp-it-dim:last-of-type{border-bottom:none}
+.mp-it-dh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mp-it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:var(--on-accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
+.mp-it-dlabel{font-size:14.5px;font-weight:700;letter-spacing:.04em}
+.mp-it-dtext{font-size:13px;line-height:1.9;text-align:justify}
+.mp-it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
+.mp-it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
+.mp-it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
+.mp-it-sec{margin-bottom:11px}
+.mp-it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
+.mp-it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+.mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 /* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
 @media (max-width:640px){
@@ -5477,34 +5477,34 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-bz td.wxs i em{font-size:10px}
   .pp-bz th{font-size:11.5px}
   /* 六爻：列宽收紧，爻线自适应拉长 */
-  .hy-wrap{gap:14px}
-  .hy-box{min-width:0;width:100%}
-  .hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
-  .hy-row.plain{grid-template-columns:32px minmax(72px,1fr)}
-  .hex{width:auto;min-width:64px;height:12px}
-  .hex.sm{min-width:56px;height:10px}
-  .hex.md{min-width:60px;height:11px}
+  .mp-hy-wrap{gap:14px}
+  .mp-hy-box{min-width:0;width:100%}
+  .mp-hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
+  .mp-hy-row.plain{grid-template-columns:32px minmax(72px,1fr)}
+  .mp-hex{width:auto;min-width:64px;height:12px}
+  .mp-hex.sm{min-width:56px;height:10px}
+  .mp-hex.md{min-width:60px;height:11px}
   /* 梅花 */
-  .mh{padding:10px}
-  .mh-main{gap:12px}
-  .hexbox.mini{min-width:100px}
+  .mp-mh{padding:10px}
+  .mp-mh-main{gap:12px}
+  .mp-hexbox.mini{min-width:100px}
   /* 大六壬：天地盘改 3 列卡片流，总览置顶 */
-  .dl{padding:10px}
-  .dl-sc-c{min-width:88px;padding:8px 12px}
-  .dl-sk-c{min-width:70px;padding:6px 8px 7px}
-  .dl-pan2{grid-template-columns:repeat(3,1fr);grid-template-rows:none}
-  .dl-pc{grid-row:auto!important;grid-column:auto!important;min-height:76px}
-  .dl-c{grid-row:auto!important;grid-column:1/-1!important;order:-1}
+  .mp-dl{padding:10px}
+  .mp-dl-sc-c{min-width:88px;padding:8px 12px}
+  .mp-dl-sk-c{min-width:70px;padding:6px 8px 7px}
+  .mp-dl-pan2{grid-template-columns:repeat(3,1fr);grid-template-rows:none}
+  .mp-dl-pc{grid-row:auto!important;grid-column:auto!important;min-height:76px}
+  .mp-dl-c{grid-row:auto!important;grid-column:1/-1!important;order:-1}
   /* 塔罗 */
-  .tt{padding:10px}
-  .tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .mp-tt{padding:10px}
+  .mp-tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
   /* 解析与详解：收窄内边距、行距放宽便于竖屏阅读 */
-  .it-head,.it-lead,.it-body,.it-secs,.it-dis,.it-ask{padding-left:11px;padding-right:11px}
-  .it-head{min-height:46px}
-  .it-hint{margin-left:0;flex-basis:100%}
-  .it-dlabel{font-size:15px}
-  .it-dtext,.it-stext,.it-adv{font-size:13.5px;line-height:1.95}
-  .it-adv{padding:9px 10px}
+  .mp-it-head,.mp-it-lead,.mp-it-body,.mp-it-secs,.mp-it-dis,.mp-it-ask{padding-left:11px;padding-right:11px}
+  .mp-it-head{min-height:46px}
+  .mp-it-hint{margin-left:0;flex-basis:100%}
+  .mp-it-dlabel{font-size:15px}
+  .mp-it-dtext,.mp-it-stext,.mp-it-adv{font-size:13.5px;line-height:1.95}
+  .mp-it-adv{padding:9px 10px}
 }
 /* —— 以下 @container 版本与上方 @media 同规则 ——
    媒体查询按「视口宽度」判断，dsh 桌面侧栏是「容器窄但视口宽」（如侧栏 420px、窗口 1400px），
@@ -5551,30 +5551,30 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-bz td.wxs i{margin:0 5px}
   .pp-bz td.wxs i em{font-size:10px}
   .pp-bz th{font-size:11.5px}
-  .hy-wrap{gap:14px}
-  .hy-box{min-width:0;width:100%}
-  .hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
-  .hy-row.plain{grid-template-columns:32px minmax(72px,1fr)}
-  .hex{width:auto;min-width:64px;height:12px}
-  .hex.sm{min-width:56px;height:10px}
-  .hex.md{min-width:60px;height:11px}
-  .mh{padding:10px}
-  .mh-main{gap:12px}
-  .hexbox.mini{min-width:100px}
-  .dl{padding:10px}
-  .dl-sc-c{min-width:88px;padding:8px 12px}
-  .dl-sk-c{min-width:70px;padding:6px 8px 7px}
-  .dl-pan2{grid-template-columns:repeat(3,1fr);grid-template-rows:none}
-  .dl-pc{grid-row:auto!important;grid-column:auto!important;min-height:76px}
-  .dl-c{grid-row:auto!important;grid-column:1/-1!important;order:-1}
-  .tt{padding:10px}
-  .tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  .it-head,.it-lead,.it-body,.it-secs,.it-dis,.it-ask{padding-left:11px;padding-right:11px}
-  .it-head{min-height:46px}
-  .it-hint{margin-left:0;flex-basis:100%}
-  .it-dlabel{font-size:15px}
-  .it-dtext,.it-stext,.it-adv{font-size:13.5px;line-height:1.95}
-  .it-adv{padding:9px 10px}
+  .mp-hy-wrap{gap:14px}
+  .mp-hy-box{min-width:0;width:100%}
+  .mp-hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
+  .mp-hy-row.plain{grid-template-columns:32px minmax(72px,1fr)}
+  .mp-hex{width:auto;min-width:64px;height:12px}
+  .mp-hex.sm{min-width:56px;height:10px}
+  .mp-hex.md{min-width:60px;height:11px}
+  .mp-mh{padding:10px}
+  .mp-mh-main{gap:12px}
+  .mp-hexbox.mini{min-width:100px}
+  .mp-dl{padding:10px}
+  .mp-dl-sc-c{min-width:88px;padding:8px 12px}
+  .mp-dl-sk-c{min-width:70px;padding:6px 8px 7px}
+  .mp-dl-pan2{grid-template-columns:repeat(3,1fr);grid-template-rows:none}
+  .mp-dl-pc{grid-row:auto!important;grid-column:auto!important;min-height:76px}
+  .mp-dl-c{grid-row:auto!important;grid-column:1/-1!important;order:-1}
+  .mp-tt{padding:10px}
+  .mp-tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .mp-it-head,.mp-it-lead,.mp-it-body,.mp-it-secs,.mp-it-dis,.mp-it-ask{padding-left:11px;padding-right:11px}
+  .mp-it-head{min-height:46px}
+  .mp-it-hint{margin-left:0;flex-basis:100%}
+  .mp-it-dlabel{font-size:15px}
+  .mp-it-dtext,.mp-it-stext,.mp-it-adv{font-size:13.5px;line-height:1.95}
+  .mp-it-adv{padding:9px 10px}
 }
 @media (max-width:430px){
   /* 窄屏手机：紫微仍保持 4×4 宫盘（相对位置不可丢），进一步收紧宫内字号与间距 */
@@ -5584,13 +5584,13 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-foot .pn{font-size:10px}
   .pp-center .t1{font-size:11px}
   .pp-center .t2,.pp-center .t4{font-size:8.5px}
-  .dl-sc-c{min-width:80px}
-  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .hy 内容区只有 232px，
+  .mp-dl-sc-c{min-width:80px}
+  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .mp-hy 内容区只有 232px，
      会溢出 28px。这里把六列压到 206px、间隙让到 4px（合计 226px），
-     同时把 .hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
-  .hy-box{padding:10px 10px 12px}
-  .hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
-  .hy-row.plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
+     同时把 .mp-hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
+  .mp-hy-box{padding:10px 10px 12px}
+  .mp-hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
+  .mp-hy-row.plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
 /* 容器查询版：极窄侧栏 / 小屏手机（与上方 @media 同规则） */
 @container (max-width:430px){
@@ -5600,13 +5600,13 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-foot .pn{font-size:10px}
   .pp-center .t1{font-size:11px}
   .pp-center .t2,.pp-center .t4{font-size:8.5px}
-  .dl-sc-c{min-width:80px}
-  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .hy 内容区只有 232px，
+  .mp-dl-sc-c{min-width:80px}
+  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .mp-hy 内容区只有 232px，
      会溢出 28px。这里把六列压到 206px、间隙让到 4px（合计 226px），
-     同时把 .hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
-  .hy-box{padding:10px 10px 12px}
-  .hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
-  .hy-row.plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
+     同时把 .mp-hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
+  .mp-hy-box{padding:10px 10px 12px}
+  .mp-hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
+  .mp-hy-row.plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
 `;
   const pp = (window.__PP = window.__PP || {});
@@ -5632,7 +5632,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   /** 单爻线：阳一整条，阴两段；动爻描红 */
-  const hexBar = (yang, moving, size) => `<span class="hex${yang ? '' : ' yin'}${moving ? ' on' : ''}${size ? ' ' + size : ''}">${yang ? '<i></i>' : '<i></i><i></i>'}</span>`;
+  const hexBar = (yang, moving, size) => `<span class="mp-hex${yang ? '' : ' yin'}${moving ? ' on' : ''}${size ? ' ' + size : ''}">${yang ? '<i></i>' : '<i></i><i></i>'}</span>`;
 
   function starsHTML(stars) {
     if (!stars || !stars.length) return '';
@@ -5911,40 +5911,40 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const o = opt || {};
     const sorted = lines.slice().sort((a, b) => b.position - a.position);
     if (o.plain) {
-      return sorted.map((l) => `<div class="hy-row plain">
-        <span class="hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
+      return sorted.map((l) => `<div class="mp-hy-row plain">
+        <span class="mp-hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
         ${hexBar(l.yinYang === '阳', l.moving)}
       </div>`).join('');
     }
     return sorted.map((l) => {
       const yang = l.yinYang === '阳';
       const sh = o.shiYing
-        ? (l.position === o.shi ? '<span class="hy-sy">世</span>' : l.position === o.ying ? '<span class="hy-sy">应</span>' : '<span></span>')
+        ? (l.position === o.shi ? '<span class="mp-hy-sy">世</span>' : l.position === o.ying ? '<span class="mp-hy-sy">应</span>' : '<span></span>')
         : '<span></span>';
-      return `<div class="hy-row">
+      return `<div class="mp-hy-row">
         ${sh}
-        <span class="hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
+        <span class="mp-hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
         ${hexBar(yang, l.moving)}
-        <span class="hy-gz">${esc(l.ganzhi || '')}</span>
-        <span class="hy-lq">${esc(l.liuqin || '')}</span>
-        <span class="hy-ls">${esc(l.liushen || '')}</span>
+        <span class="mp-hy-gz">${esc(l.ganzhi || '')}</span>
+        <span class="mp-hy-lq">${esc(l.liuqin || '')}</span>
+        <span class="mp-hy-ls">${esc(l.liushen || '')}</span>
       </div>`;
     }).join('');
   }
 
   pp.liuyaoHTML = function (r) {
-    const box = (title, sub, hex, lines) => `<div class="hy-box">
-      <div class="hy-h"><b>${title}</b><span>${sub}</span></div>
-      <div class="hy">${hexRows(lines, { shiYing: true, shi: hex.shi, ying: hex.ying })}</div>
+    const box = (title, sub, hex, lines) => `<div class="mp-hy-box">
+      <div class="mp-hy-h"><b>${title}</b><span>${sub}</span></div>
+      <div class="mp-hy">${hexRows(lines, { shiYing: true, shi: hex.shi, ying: hex.ying })}</div>
     </div>`;
     const ben = box(`本卦 ${r.ben.name}`, `${r.ben.palace} · ${r.ben.palaceElement}`, r.ben, r.ben.lines);
     const bian = r.bian
       ? box(`变卦 ${r.bian.name}`, `${r.bian.palace} · ${r.bian.palaceElement}`, r.bian, r.bian.lines)
-      : `<div class="hy-box"><div class="hy-h"><b>六爻安静</b><span>无动爻，不取变卦</span></div>
+      : `<div class="mp-hy-box"><div class="mp-hy-h"><b>六爻安静</b><span>无动爻，不取变卦</span></div>
           <div class="pp-dim" style="font-size:12px;line-height:1.9">断卦以本卦卦辞与世应生克为主。</div></div>`;
     return `<div class="pp" style="padding:14px">
-      <div class="mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
-      <div class="hy-wrap">${ben}${bian}</div>
+      <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
+      <div class="mp-hy-wrap">${ben}${bian}</div>
     </div>`;
   };
 
@@ -5953,10 +5953,10 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const mini = (title, name, upper, lower, note) => {
       const bits = [...(TRI_BITS[lower] || [0, 0, 0]), ...(TRI_BITS[upper] || [0, 0, 0])];
       const rows = bits.slice().reverse().map((b) => hexBar(!!b, false, 'sm')).join('');
-      return `<div class="hexbox mini">
+      return `<div class="mp-hexbox mini">
         <div class="h">${title}</div>
         <div class="n">${name}</div>
-        <div class="mh-mini">${rows}</div>
+        <div class="mp-mh-mini">${rows}</div>
         <div class="s">${note || `上${upper} 下${lower}`}</div>
       </div>`;
     };
@@ -5965,11 +5965,11 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const upperLines = benBits.slice(0, 3);
     const lowerLines = benBits.slice(3);
     const movingInUpper = r.moving >= 4;
-    const trib = (label, tri, lines, isBody) => `<div class="trib">
-      <div class="trib-h">${label} ${tri}${TRI_EL(tri)}<span class="tri-tag ${isBody ? 'ti' : 'yong'}">${isBody ? '体' : '用'}</span></div>
-      <div class="hy" style="gap:5px">${hexRows(lines, { plain: true })}</div>
+    const trib = (label, tri, lines, isBody) => `<div class="mp-trib">
+      <div class="mp-trib-h">${label} ${tri}${TRI_EL(tri)}<span class="mp-tritag ${isBody ? 'ti' : 'yong'}">${isBody ? '体' : '用'}</span></div>
+      <div class="mp-hy" style="gap:5px">${hexRows(lines, { plain: true })}</div>
     </div>`;
-    const mainBox = `<div class="hexbox">
+    const mainBox = `<div class="mp-hexbox">
       <div class="h"><span>本卦</span><span>动 ${r.movingName}</span></div>
       <div class="n">${r.ben.name}</div>
       ${trib('上卦', r.ben.upper, upperLines, !movingInUpper)}
@@ -5979,15 +5979,15 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
     const lv = r.bodyUse.level;
     const lvCls = lv.includes('凶') ? 'bad' : lv.includes('吉') ? 'good' : 'flat';
-    const useLine = `<div class="mh-rel">
+    const useLine = `<div class="mp-mh-rel">
       <div><b>体</b>${r.bodyUse.body.trigram}（${r.bodyUse.body.element}）　<b>用</b>${r.bodyUse.use.trigram}（${r.bodyUse.use.element}）</div>
       <div><span class="lv ${lvCls}">${lv}</span>　${r.bodyUse.relation}</div>
     </div>`;
 
     const cuoTri = TRI_OF(r.cuo.name) || ['', ''];
     const zongTri = TRI_OF(r.zong.name) || ['', ''];
-    return `<div class="pp mh">
-      <div class="mh-main">
+    return `<div class="pp mp-mh">
+      <div class="mp-mh-main">
         ${mainBox}
         ${mini('互卦', r.hu.name, r.hu.upper, r.hu.lower, '中藏之象')}
         ${mini('变卦', r.bian.name, r.bian.upper, r.bian.lower, `动 ${r.movingName} 后`)}
@@ -6023,67 +6023,67 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
   pp.daliurenHTML = function (r) {
     const sc = r.sanChuan;
-    const cbox = (c, k) => `<div class="dl-sc-c">
-      <div class="dl-sc-k">${k}</div>
-      <div class="dl-sc-z">${c.zhi}</div>
-      <div class="dl-sc-j">${c.jiangFull || c.jiang}</div>
-      <div class="dl-sc-l">${c.liuQin}${c.xunKong ? ' · 空' : ''}</div>
+    const cbox = (c, k) => `<div class="mp-dl-sc-c">
+      <div class="mp-dl-sc-k">${k}</div>
+      <div class="mp-dl-sc-z">${c.zhi}</div>
+      <div class="mp-dl-sc-j">${c.jiangFull || c.jiang}</div>
+      <div class="mp-dl-sc-l">${c.liuQin}${c.xunKong ? ' · 空' : ''}</div>
     </div>`;
-    const ge = `<div class="dl-sc-c ge">
-      <div class="dl-sc-k">格局</div>
-      <div class="dl-sc-gn">${r.geJu.name}</div>
-      <div class="dl-sc-l">${r.geJu.detail}</div>
+    const ge = `<div class="mp-dl-sc-c ge">
+      <div class="mp-dl-sc-k">格局</div>
+      <div class="mp-dl-sc-gn">${r.geJu.name}</div>
+      <div class="mp-dl-sc-l">${r.geJu.detail}</div>
     </div>`;
-    const keCells = r.siKe.slice().map((x) => `<div class="dl-sk-c">
-      <div class="dl-sk-k">${['一课', '二课', '三课', '四课'][x.position - 1] || x.position + '课'}</div>
-      <div class="dl-sk-s">${x.shang}</div>
-      <div class="dl-sk-x">${x.xia}</div>
-      <div class="dl-sk-r">${x.relation} · ${x.jiangFull || x.jiang}</div>
+    const keCells = r.siKe.slice().map((x) => `<div class="mp-dl-sk-c">
+      <div class="mp-dl-sk-k">${['一课', '二课', '三课', '四课'][x.position - 1] || x.position + '课'}</div>
+      <div class="mp-dl-sk-s">${x.shang}</div>
+      <div class="mp-dl-sk-x">${x.xia}</div>
+      <div class="mp-dl-sk-r">${x.relation} · ${x.jiangFull || x.jiang}</div>
     </div>`).join('');
     const cells = r.pan.map((p) => {
       const pos = POS[p.di] || [1, 1];
-      return `<div class="dl-pc" style="grid-row:${pos[0]};grid-column:${pos[1]}">
+      return `<div class="mp-dl-pc" style="grid-row:${pos[0]};grid-column:${pos[1]}">
         <div class="tz">${p.tian}</div>
         <div class="dz">地盘 ${p.di}</div>
         <div class="jz">${p.jiangFull}</div>
       </div>`;
     }).join('');
-    const center = `<div class="dl-c">
+    const center = `<div class="mp-dl-c">
       <div class="t1">${r.dayGanZhi}日　${r.hourZhi}时</div>
       <div class="t2">${r.dayNight}贵 · 月将 ${r.yueJiang.name}${r.yueJiang.zhi} · 贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
       <div class="t3">${sc.chu.zhi} → ${sc.zhong.zhi} → ${sc.mo.zhi}</div>
       <div class="t2">节气 ${r.jieqi.name}${r.jieqi.time ? ' ' + r.jieqi.time : ''}</div>
     </div>`;
-    return `<div class="pp dl">
-      <div class="dl-head">日 ${r.dayGanZhi}　时 ${r.hourZhi}（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
-      <div class="dl-sc">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}${ge}</div>
-      <div class="dl-sk">${keCells}</div>
-      <div class="dl-pan2">${cells}${center}</div>
-      <div class="dl-legend"><span>大字＝天盘支</span><span>小字＝地盘（固定十二支）</span><span>右下＝天将</span></div>
+    return `<div class="pp mp-dl">
+      <div class="mp-dl-head">日 ${r.dayGanZhi}　时 ${r.hourZhi}（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
+      <div class="mp-dl-sc">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}${ge}</div>
+      <div class="mp-dl-sk">${keCells}</div>
+      <div class="mp-dl-pan2">${cells}${center}</div>
+      <div class="mp-dl-legend"><span>大字＝天盘支</span><span>小字＝地盘（固定十二支）</span><span>右下＝天将</span></div>
     </div>`;
   };
 
   pp.tarotHTML = function (r) {
     const cards = r.cards.map((c) => `
-      <div class="tt-card ${c.upright ? 'up' : 'rev'}">
-        <div class="tt-pos" title="${esc(c.positionHint || '')}">${c.position}</div>
-        <div class="tt-name">${c.name}${c.number ? `<span class="tt-no">${c.number}</span>` : ''}</div>
-        <div class="tt-ori">${c.orientation}</div>
-        ${c.core ? `<div class="tt-core">${c.core}</div>` : ''}
-        <div class="tt-kw">${c.keywords.map((k) => `<span>${k}</span>`).join('')}</div>
-        <div class="tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}</div>
+      <div class="mp-tt-card ${c.upright ? 'up' : 'rev'}">
+        <div class="mp-tt-pos" title="${esc(c.positionHint || '')}">${c.position}</div>
+        <div class="mp-tt-name">${c.name}${c.number ? `<span class="mp-tt-no">${c.number}</span>` : ''}</div>
+        <div class="mp-tt-ori">${c.orientation}</div>
+        ${c.core ? `<div class="mp-tt-core">${c.core}</div>` : ''}
+        <div class="mp-tt-kw">${c.keywords.map((k) => `<span>${k}</span>`).join('')}</div>
+        <div class="mp-tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}</div>
       </div>`).join('');
     const reading = (r.reading || []).map((p) => `<p>${p}</p>`).join('');
-    return `<div class="pp tt">
-      <div class="tt-q"><b>所问</b>${r.question ? r.question : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>'}</div>
-      <div class="tt-head">${r.spread}${r.castAt ? `　·　抽牌于 ${r.castAt}` : ''}</div>
-      <div class="tt-grid">${cards}</div>
-      <div class="tt-read"><div class="tt-rt">牌面解读</div>${reading}</div>
-      <div class="tt-note"><div class="tt-rt">你的记录</div>
-        <textarea class="tt-ta" rows="4" placeholder="写下判断或对照后的想法……（仅本页可见，不保存）"></textarea>
+    return `<div class="pp mp-tt">
+      <div class="mp-tt-q"><b>所问</b>${r.question ? r.question : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>'}</div>
+      <div class="mp-tt-head">${r.spread}${r.castAt ? `　·　抽牌于 ${r.castAt}` : ''}</div>
+      <div class="mp-tt-grid">${cards}</div>
+      <div class="mp-tt-read"><div class="mp-tt-rt">牌面解读</div>${reading}</div>
+      <div class="mp-tt-note"><div class="mp-tt-rt">你的记录</div>
+        <textarea class="mp-tt-ta" rows="4" placeholder="写下判断或对照后的想法……（仅本页可见，不保存）"></textarea>
       </div>
-      ${r.systemNote ? `<div class="tt-tip">${r.systemNote}</div>` : ''}
-      <div class="tt-tip">塔罗用于自我觉察与娱乐，不作确定性预言。</div>
+      ${r.systemNote ? `<div class="mp-tt-tip">${r.systemNote}</div>` : ''}
+      <div class="mp-tt-tip">塔罗用于自我觉察与娱乐，不作确定性预言。</div>
     </div>`;
   };
 
@@ -6123,7 +6123,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       }).join('')}</td></tr>`;
     const rows = [
       line('十神', (p, k) => (k === 'day'
-        ? `<span class="zhuri">${r.input.gender === 'male' ? '元男' : '元女'}</span>`
+        ? `<span class="bz-zhuri">${r.input.gender === 'male' ? '元男' : '元女'}</span>`
         : (p.stemTenGod ? tg(p.stemTenGod) : '<span class="pp-dim">—</span>'))),
       line('天干', (p) => `<span class="big ${'wx-' + ELC[p.stemElement]}">${p.stem}</span>`),
       line('地支', (p) => `<span class="big ${'wx-' + ELC[p.branchElement]}">${p.branch}</span>`),
@@ -6196,15 +6196,15 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   pp.interpretHTML = function (it, opt) {
     if (!it || !it.dimensions || !it.dimensions.length) return '';
     const folded = !!(opt && opt.folded);
-    const dims = it.dimensions.map((d, i) => `<div class="it-dim${d.focused ? ' focus' : ''}">
-      <div class="it-dh"><span class="it-dno">${i + 1}</span><span class="it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="it-focus">最贴近你的问题</span>' : ''}</div>
-      <div class="it-dtext">${esc(d.text)}</div>
-      ${d.advice ? `<div class="it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
+    const dims = it.dimensions.map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
+      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
+      <div class="mp-it-dtext">${esc(d.text)}</div>
+      ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
     const secs = (it.sections && it.sections.length)
-      ? `<div class="it-secs">${it.sections.map((s) => `<div class="it-sec">
-        <div class="it-sh">${esc(s.label)}</div>
-        <div class="it-stext">${esc(s.text)}</div>
+      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec">
+        <div class="mp-it-sh">${esc(s.label)}</div>
+        <div class="mp-it-stext">${esc(s.text)}</div>
       </div>`).join('')}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
@@ -6212,20 +6212,20 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const ask = it.ask;
     // 只有真的填了问题、或选了非「综合」方向时才回显；命盘类不问事，不显示这一行
     const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
-      ? `<div class="it-ask"><span class="q">问题：${ask.question ? esc(ask.question) : '<span class="none">（未填写）</span>'}</span><span class="sep">｜</span><span class="d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
+      ? `<div class="mp-it-ask"><span class="q">问题：${ask.question ? esc(ask.question) : '<span class="none">（未填写）</span>'}</span><span class="sep">｜</span><span class="d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
       : '';
-    return `<div class="it${folded ? ' folded' : ''}">
-      <button type="button" class="it-head" aria-expanded="${folded ? 'false' : 'true'}">
-        <span class="it-arrow" aria-hidden="true">▾</span>
-        <span class="it-title">解析与详解</span>${tags.map((t) => `<span class="it-tag">${esc(t)}</span>`).join('')}
-        <span class="it-hint">${folded ? '点击展开' : '点击收起'}</span>
+    return `<div class="mp-it${folded ? ' folded' : ''}">
+      <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
+        <span class="mp-it-arrow" aria-hidden="true">▾</span>
+        <span class="mp-it-title">解析与详解</span>${tags.map((t) => `<span class="mp-it-tag">${esc(t)}</span>`).join('')}
+        <span class="mp-it-hint">${folded ? '点击展开' : '点击收起'}</span>
       </button>
-      <div class="it-wrap">
+      <div class="mp-it-wrap">
         ${askLine}
-        ${it.lead ? `<div class="it-lead">${esc(it.lead)}</div>` : ''}
-        <div class="it-body">${dims}</div>
+        ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
+        <div class="mp-it-body">${dims}</div>
         ${secs}
-        <div class="it-dis">${esc(it.disclaimer)}</div>
+        <div class="mp-it-dis">${esc(it.disclaimer)}</div>
       </div>
     </div>`;
   };
@@ -6458,14 +6458,14 @@ function App() {
 
   /** 解析模块折叠：标题栏整栏可点（内容由 innerHTML 渲染，用委托处理） */
   const onFoldClick = (e) => {
-    const head = e.target && e.target.closest ? e.target.closest('.it-head') : null;
+    const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
     if (!head) return;
-    const box = head.closest('.it');
+    const box = head.closest('.mp-it');
     if (!box) return;
     const folded = !box.classList.contains('folded');
     box.classList.toggle('folded', folded);
     head.setAttribute('aria-expanded', folded ? 'false' : 'true');
-    const hint = head.querySelector('.it-hint');
+    const hint = head.querySelector('.mp-it-hint');
     if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
     setFoldPref(folded);
   };

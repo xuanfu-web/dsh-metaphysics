@@ -220,14 +220,14 @@ function App() {
 
   /** 解析模块折叠：标题栏整栏可点（内容由 innerHTML 渲染，用委托处理） */
   const onFoldClick = (e) => {
-    const head = e.target && e.target.closest ? e.target.closest('.it-head') : null;
+    const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
     if (!head) return;
-    const box = head.closest('.it');
+    const box = head.closest('.mp-it');
     if (!box) return;
     const folded = !box.classList.contains('folded');
     box.classList.toggle('folded', folded);
     head.setAttribute('aria-expanded', folded ? 'false' : 'true');
-    const hint = head.querySelector('.it-hint');
+    const hint = head.querySelector('.mp-it-hint');
     if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
     setFoldPref(folded);
   };

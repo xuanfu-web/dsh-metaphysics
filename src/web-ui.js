@@ -294,14 +294,14 @@
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
       onExportClick(e);
-      const head = e.target && e.target.closest ? e.target.closest('.it-head') : null;
+      const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
       if (!head) return;
-      const box = head.closest('.it');
+      const box = head.closest('.mp-it');
       if (!box) return;
       const folded = !box.classList.contains('folded');
       box.classList.toggle('folded', folded);
       head.setAttribute('aria-expanded', folded ? 'false' : 'true');
-      const hint = head.querySelector('.it-hint');
+      const hint = head.querySelector('.mp-it-hint');
       if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
       foldPref = folded;
     });

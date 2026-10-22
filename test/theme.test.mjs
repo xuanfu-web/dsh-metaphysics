@@ -13,7 +13,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
 // ── 一、盘面颜色全部走变量（深色才能只改变量就换肤）─────────────
 {
   // 变量定义本身允许写死颜色（浅色一套、深色一套），其余地方一律走 var()
-  const declStart = KIT.indexOf('.pp,.it{--ink:');
+  const declStart = KIT.indexOf('.pp,.mp-it{--ink:');
   const declEnd = KIT.indexOf('container-type:inline-size');
   ok(declStart >= 0 && declEnd > declStart, '找到 .pp 变量声明块');
   const decl = KIT.slice(declStart, declEnd);
@@ -29,13 +29,13 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   // 回归：.pp-body 是视图容器（static + display:none），曾残留一条 ::after 的「身」角标规则，
   // position:absolute 会相对文档原点定位 → 每次排盘都在页面左上角飘出一个孤立的「身」方块。
   ok(!/\.pp-body::after/.test(KIT), '.pp-body 不得带 ::after（会飘出孤立「身」角标）');
-  // 回归：.it（解析与详解）是 .pp 的兄弟节点，变量必须与 .pp 共享；
+  // 回归：.mp-it（解析与详解）是 .pp 的兄弟节点，变量必须与 .pp 共享；
   // 且不能用 --x:var(--x) 自引用（会让变量 invalid，连继承值也挡掉，--card 因此失效）。
-  ok(/\.pp,\.it\{--ink:/.test(KIT), '.it 与 .pp 共享同一份调色板变量');
-  const itBlock = (KIT.match(/\.it\{[^}]*\}/) || [''])[0];
+  ok(/\.pp,\.mp-it\{--ink:/.test(KIT), '.mp-it 与 .pp 共享同一份调色板变量');
+  const itBlock = (KIT.match(/\.mp-it\{[^}]*\}/) || [''])[0];
   ok(!/--([a-z0-9-]+)\s*:\s*var\(--\)/.test(itBlock),
-    '.it 内不得写 --x:var(--x) 自引用（无效声明会挡掉继承值）');
-  ok(/--card:#[0-9a-f]{6}/.test(decl), '--card 在共享变量块里已定义（.it-head 底色依赖它）');
+    '.mp-it 内不得写 --x:var(--x) 自引用（无效声明会挡掉继承值）');
+  ok(/--card:#[0-9a-f]{6}/.test(decl), '--card 在共享变量块里已定义（.mp-it-head 底色依赖它）');
 
   // 关键处的替换抽查
   ok(/\.pp-tri\{background:var\(--tri\)\}/.test(KIT), '三方四正底色走 --tri');
@@ -51,7 +51,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(/@media screen and \(prefers-color-scheme:dark\)/.test(KIT), '深色主题用 @media screen 限定（打印不受影响）');
   const darkBlock = KIT.slice(KIT.indexOf('@media screen and (prefers-color-scheme:dark)'));
   const seg = darkBlock.slice(0, darkBlock.indexOf('.pp *{box-sizing'));
-  ok(/\.pp,?\.it\{--ink:/.test(seg) || /\.pp\{--ink:/.test(seg), '深色块内重定义 .pp/.it 变量');
+  ok(/\.pp,?\.mp-it\{--ink:/.test(seg) || /\.pp\{--ink:/.test(seg), '深色块内重定义 .pp/.mp-it 变量');
   eq(/\{background:var\(--bg\)\}/.test(seg), false, '深色块内不重复写元素样式（只改变量）');
   // 深色下主色要比浅色亮（否则小字在深底上读不出来）
   const lum = (hex) => {
@@ -59,7 +59,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
     return ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114;
   };
   const pick = (text) => (text.match(/--ink:(#[0-9a-f]{6})/) || [])[1];
-  const lightInk = pick(KIT.slice(KIT.indexOf('.pp,.it{--ink:'), KIT.indexOf('container-type:inline-size')));
+  const lightInk = pick(KIT.slice(KIT.indexOf('.pp,.mp-it{--ink:'), KIT.indexOf('container-type:inline-size')));
   const darkInk = pick(seg);
   ok(lum(darkInk) > 200, `深色文字足够亮（${darkInk} 亮度 ${Math.round(lum(darkInk))}）`);
   ok(lum(lightInk) < 60, `浅色文字足够深（${lightInk} 亮度 ${Math.round(lum(lightInk))}）`);
@@ -82,7 +82,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(printAt > 0, '存在 @media print 块');
   const printBlock = HTML.slice(printAt, HTML.indexOf('`;', printAt));
   ok(/\.tabs,\.bar,\.tip,\.go,\.now,\.no-print,\.exp\{display:none!important\}/.test(printBlock), '打印时隐藏输入区/tab/导出按钮');
-  ok(/\.pp,#out \.it\{break-inside:avoid/.test(printBlock), '盘面与解读不被撕页');
+  ok(/\.pp,#out \.mp-it\{break-inside:avoid/.test(printBlock), '盘面与解读不被撕页');
   ok(/@page\{size:A4 portrait/.test(printBlock), '打印纸张默认 A4 纵向');
   ok(/print-color-adjust:exact/.test(printBlock), '打印保留四化色块颜色');
   // 按钮只在有结果时出现

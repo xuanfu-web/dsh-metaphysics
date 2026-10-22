@@ -89,9 +89,9 @@ const it6 = interpret(r6, { question: QUESTION, direction: 'career' });
 
 const openHTML = PP.interpretHTML(it6, { folded: false });
 const foldHTML = PP.interpretHTML(it6, { folded: true });
-ok(/<button type="button" class="it-head"/.test(openHTML), '标题栏是按钮（整栏可点）');
+ok(/<button type="button" class="mp-it-head"/.test(openHTML), '标题栏是按钮（整栏可点）');
 ok(openHTML.includes('aria-expanded="true"') && foldHTML.includes('aria-expanded="false"'), '折叠状态写进 aria-expanded');
-ok(openHTML.includes('class="it"') && foldHTML.includes('class="it folded"'), '收起时根节点带 folded 类');
+ok(openHTML.includes('class="mp-it"') && foldHTML.includes('class="mp-it folded"'), '收起时根节点带 folded 类');
 ok(openHTML.includes('点击收起') && foldHTML.includes('点击展开'), '提示文字随状态切换');
 ok(foldHTML.includes('it-arrow') && openHTML.includes('it-arrow'), '标题栏有箭头图标');
 ok(openHTML.includes('it-ask') && openHTML.includes('问题：') && openHTML.includes('询问方向：事业'), '回显行含问题与方向');
