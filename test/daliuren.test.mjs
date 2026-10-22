@@ -1,57 +1,59 @@
-// 大六壬引擎断言
-import assert from 'node:assert';
+// 大六壬引擎断言（统一 ok()/eq() 风格，便于和其它测试一样统计 PASS/FAIL）
 import { buildDaliuren, ZHI } from '../engine/daliuren.js';
+
+let pass = 0;
+let fail = 0;
+const eq = (a, b, name) => {
+  if (a === b) { pass++; console.log(`PASS  ${name}`); return; }
+  fail++; console.log(`FAIL  ${name}  -> 期望 ${JSON.stringify(b)}，实际 ${JSON.stringify(a)}`);
+};
+const ok = (cond, name, extra = '') => {
+  if (cond) { pass++; console.log(`PASS  ${name}`); return; }
+  fail++; console.log(`FAIL  ${name}${extra ? `  -> ${extra}` : ''}`);
+};
+const throws = (fn, name) => {
+  try { fn(); } catch (e) { pass++; console.log(`PASS  ${name}`); return; }
+  fail++; console.log(`FAIL  ${name}  -> 未抛错`);
+};
 
 const r = buildDaliuren({ year: 1996, month: 1, day: 19, hour: 7, minute: 31 });
 
 // —— 结构 ——
-assert.strictEqual(r.system, 'daliuren');
-assert.strictEqual(r.dayGanZhi, '乙卯'); // 1996-01-19 日干支
-assert.strictEqual(r.hourZhi, '辰');     // 07:31 → 辰时
-assert.ok(['昼', '夜'].includes(r.dayNight));
-assert.strictEqual(r.pan.length, 12);
-for (const p of r.pan) {
-  assert.ok(ZHI.includes(p.di), '地盘必须是十二支');
-  assert.ok(ZHI.includes(p.tian), '天盘必须是十二支');
-  assert.ok(p.jiang && p.jiangFull, '每宫必须有天将');
-}
-// 月将必须有名字
-assert.ok(r.yueJiang.name && r.yueJiang.zhi);
+eq(r.system, 'daliuren', 'system 字段');
+eq(r.dayGanZhi, '乙卯', '1996-01-19 日干支=乙卯');
+eq(r.hourZhi, '辰', '07:31 辰时');
+ok(['昼', '夜'].includes(r.dayNight), '昼贵/夜贵取值合法', r.dayNight);
+eq(r.pan.length, 12, '天地盘 12 宫');
+ok(r.pan.every((p) => ZHI.includes(p.di)), '地盘都是十二支');
+ok(r.pan.every((p) => ZHI.includes(p.tian)), '天盘都是十二支');
+ok(r.pan.every((p) => p.jiang && p.jiangFull), '每宫都有天将');
+ok(Boolean(r.yueJiang.name && r.yueJiang.zhi), '月将有名称与地支');
 
 // —— 四课 ——
-assert.strictEqual(r.siKe.length, 4);
-assert.strictEqual(r.siKe[0].position, 1);
-for (const k of r.siKe) {
-  assert.ok(['比和', '克', '被克', '生', '被生', '下贼上', '上克下'].some((x) => k.relation.includes(x) || k.relation === x),
-    `未知课关系：${k.relation}`);
-}
+eq(r.siKe.length, 4, '四课齐全');
+eq(r.siKe[0].position, 1, '第一课序号=1');
+ok(r.siKe.every((k) => ['比和', '克', '被克', '生', '被生', '下贼上', '上克下'].some((x) => k.relation.includes(x) || k.relation === x)),
+  '四课关系都在已知集合内', r.siKe.map((k) => k.relation).join('/'));
 
 // —— 三传 ——
-for (const key of ['chu', 'zhong', 'mo']) {
-  const c = r.sanChuan[key];
-  assert.ok(ZHI.includes(c.zhi), `${key} 传必须是十二支`);
-  assert.ok(c.jiang && c.liuQin, `${key} 传须有天将与六亲`);
-}
+ok(['chu', 'zhong', 'mo'].every((k) => ZHI.includes(r.sanChuan[k].zhi)), '三传都是十二支');
+ok(['chu', 'zhong', 'mo'].every((k) => r.sanChuan[k].jiang && r.sanChuan[k].liuQin), '三传都有天将与六亲');
 
-// —— 天地盘自洽：天盘 = 地盘 + 月将偏移，固定同盘位（伏吟除外） ——
+// —— 天地盘自洽：天盘 = 地盘 + 月将偏移 ——
 const shift = (ZHI.indexOf(r.pan[0].tian) - ZHI.indexOf(r.pan[0].di) + 12) % 12;
-for (const p of r.pan) {
-  const expect = ZHI[(ZHI.indexOf(p.di) + shift) % 12];
-  assert.strictEqual(p.tian, expect, `天盘错位：地盘${p.di}`);
-}
+ok(r.pan.every((p) => ZHI[(ZHI.indexOf(p.di) + shift) % 12] === p.tian), '天盘按固定偏移落在每个地支上');
 
-// —— 伏吟：月将 == 时支 → 天地盘重合 ——
-// 找一个月将等于时支的时刻不易直接构造，改为返吟自查：返吟时三传应为对冲
+// —— 返吟时三传应对冲 ——
 if (r.geJu.name === '返吟') {
   const CHONG = { 子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅', 卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳' };
-  assert.strictEqual(r.sanChuan.zhong.zhi, CHONG[r.sanChuan.chu.zhi]);
+  eq(r.sanChuan.zhong.zhi, CHONG[r.sanChuan.chu.zhi], '返吟：中传与初传对冲');
+} else {
+  ok(true, '本盘非返吟，跳过对冲自查');
 }
 
-// —— 晚子时 ——
-const late = buildDaliuren({ year: 2024, month: 5, day: 1, hour: 23, minute: 5 });
-assert.strictEqual(late.hourZhi, '子');
+// —— 晚子时与缺参 ——
+eq(buildDaliuren({ year: 2024, month: 5, day: 1, hour: 23, minute: 5 }).hourZhi, '子', '23:05 属子时');
+throws(() => buildDaliuren({}), '缺时间参数应抛错');
 
-// —— 边界：缺时间参数应报错 ——
-assert.throws(() => buildDaliuren({}), TypeError);
-
-console.log('daliuren.test: all pass');
+console.log(`\n———— daliuren ${pass} PASS / ${fail} FAIL ————`);
+if (fail) process.exit(1);

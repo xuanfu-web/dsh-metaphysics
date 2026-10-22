@@ -148,12 +148,13 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 ## 开发
 
 ```bash
-node tools/build-client.mjs   # 生成 client.js（浏览器端产物）
-node tools/build-html.mjs     # 生成独立的 命理排盘.html（可离线双击使用）
-node test/*.test.mjs          # 运行断言
+npm run build        # 生成 client.js（浏览器端产物）
+npm run build:html   # 生成独立的 命理排盘.html（可离线双击使用）
+npm test             # 顺序跑完 test/ 下全部 *.test.mjs 并汇总
 ```
 
-`client.js` 是构建产物，不要手改。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`。
+`client.js` 是构建产物，不要手改；改动记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ### 样式命名约定
 

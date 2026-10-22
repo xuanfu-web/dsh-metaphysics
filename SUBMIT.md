@@ -59,7 +59,16 @@ PR 合并后站点与 dsh-market 会自动重建，通常一天内可见。
 npm publish --access public
 ```
 
-## 四、本地同步（已完成）
+## 四、提交状态（2026-10-22）
+
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/8517 （`open`，单文件 `data/plugins/xuanfu-web__dsh-metaphysics.yml`）
+- **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
+- **卡点（本机）**：
+  1. 用于建仓/推送的临时令牌已按约删除（API 401）
+  2. 本机到 `github.com:443` 的 git 连接间歇失败（`Could not connect to server`），`api.github.com` 正常
+- **待办**：本地 `main` 比 `origin/main` 多 16 个提交（0.5.0 → 0.13.4），推送后市场侧安装到的才是新版；条目描述已在 PR 分支更新
+
+## 五、本地同步（已完成）
 
 桌面 profile 以软链方式引用本目录，源码改动即时生效：
 
