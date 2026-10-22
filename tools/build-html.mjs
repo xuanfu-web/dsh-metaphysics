@@ -13,6 +13,13 @@ const DIR_OPTIONS = DIRECTIONS
 
 export const CSS = `
 :root{--bg:#f4f1ea;--panel:#fffdf8;--panel2:#f7f3ea;--line:#cfc7b6;--ink:#1b1b1b;--dim:#6f6a60;--gold:#b3261e;--good:#1f6f3f;--bad:#b3261e;--warn:#8a5a00}
+/* 深色：跟随系统。只换变量，元素规则一条不改。@media screen 限定 → 打印永远浅色 */
+@media screen and (prefers-color-scheme:dark){
+  :root{--bg:#12110d;--panel:#1b1913;--panel2:#221f18;--line:#3c372e;--ink:#e7e2d6;--dim:#9b9488;--gold:#e2755f;--good:#67b98a;--bad:#e2755f;--warn:#d9a052}
+  /* 深色下强调色是浅色，这些实心底上的文字得反过来 */
+  .tab.on,.seg button.on,.go{color:#14130f}
+  .err{background:rgba(226,117,95,.14)}
+}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
@@ -63,6 +70,11 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 /* 结果头部的「起卦时刻」一行 */
 .cast-at{margin:0 0 14px;font-size:13.5px;color:var(--dim);line-height:1.7}
 .cast-at b{color:var(--ink);font-weight:600;letter-spacing:.02em}
+/* 结果区下方：导出/打印 */
+.exp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
+.exp button{padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer}
+.exp button:hover{background:var(--panel2);border-color:var(--gold)}
+.exp .hint{font-size:13px;color:var(--dim)}
 .now{padding:10px 13px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:15px;cursor:pointer}
 .now:hover{background:var(--panel2)}
 /* —— 竖屏（≤640px）：整页不横向滚动，输入区整行堆叠，盘面交给 panel-kit 的同名媒体查询 —— */
@@ -72,7 +84,7 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   header{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:12px}
   header>*{min-width:0}
   .brand{font-size:19px}
-  .tabs{margin-left:0;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;max-width:100%}
+  .tabs{margin-left:0;padding-bottom:4px;max-width:100%}
   .tab{flex:0 0 auto;padding:11px 17px;font-size:14px;min-height:44px}
   .bar{flex-direction:column;align-items:stretch;gap:14px;padding:14px}
   .grp{flex-direction:column;align-items:stretch;gap:14px}
@@ -89,6 +101,31 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .tip{font-size:13px}
   .tip .auto-note{font-size:13px}
   .cast-at{font-size:13px}
+  /* 六个 tab 在 390px 下横向排不下，改成 3 列两行铺满：
+     原来靠 overflow-x 横滑，最后一个「塔罗」永远卡在右缘只露半个字 */
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible;width:100%}
+  .tab{width:auto;min-width:0;padding:11px 6px;text-align:center}
+}
+
+/* —— 打印 / 存为 PDF ——
+   只留抬头与结果，输入区、tab、按钮全部不打印；
+   盘面每一块都别被撕成两页 */
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  body{background:#fff;padding:0;font-size:12pt}
+  .wrap{max-width:none;padding:0}
+  .tabs,.bar,.tip,.go,.now,.no-print,.exp{display:none!important}
+  header{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #bbb}
+  .brand{font-size:15pt}
+  .brand small{display:block}
+  #out{margin:0}
+  .pp,#out .it{break-inside:avoid;page-break-inside:avoid}
+  .pp{box-shadow:none;border-color:#999}
+  .pp-detail{break-inside:avoid}
+  .pp-cell{cursor:auto}
+  /* 彩色四化块在黑白打印机上会糊成黑块，加描边让字还看得见 */
+  .pp-m{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  a[href]::after{content:""}
 }
 `;
 

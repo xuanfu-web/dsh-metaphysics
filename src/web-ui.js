@@ -125,7 +125,24 @@
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
     } catch (e) { it = null; }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
-      + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() });
+      + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
+      + exportBar();
+  }
+
+  // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
+  // 打印样式在 build-html.mjs 的 @media print 里（隐藏输入区与按钮，只留抬头与结果）。
+  function exportBar() {
+    return `<div class="exp no-print">
+      <button type="button" data-act="pdf">存为 PDF</button>
+      <button type="button" data-act="print">打印</button>
+      <span class="hint">在打印对话框里选「另存为 PDF」，纸张 A4 纵向</span>
+    </div>`;
+  }
+
+  function onExportClick(e) {
+    const b = e.target && e.target.closest ? e.target.closest('.exp [data-act]') : null;
+    if (!b) return;
+    window.print();
   }
 
   async function run() {
@@ -276,6 +293,7 @@
     el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      onExportClick(e);
       const head = e.target && e.target.closest ? e.target.closest('.it-head') : null;
       if (!head) return;
       const box = head.closest('.it');

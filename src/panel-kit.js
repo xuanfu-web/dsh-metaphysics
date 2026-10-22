@@ -1,9 +1,26 @@
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--card:#fffefb;--red:#b3261e;--lu:#1f6f3f;--quan:#8a5a00;--ke:#1f4e79;--ji:#b3261e;
+.pp{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+  --line:#c8c1b2;--dimline:#b9b2a4;
+  --bg:#fffdf8;--card:#fffefb;--band:#f7f3ea;--hover:#f7f2e5;--hover2:#f2ece0;
+  --tri:#f9f3e6;--soul:#fdf3f1;--sel:#fff5f2;--link:#fbeee9;
+  --red:#b3261e;--red-rgb:179,38,30;--lu:#1f6f3f;--lu-rgb:31,111,63;
+  --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
+  --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
   border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
   container-type:inline-size}
+/* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
+   打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
+@media screen and (prefers-color-scheme:dark){
+  .pp{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+    --line:#514a3e;--dimline:#5f5849;
+    --bg:#15140f;--card:#1e1c16;--band:#262218;--hover:#2a251b;--hover2:#312c21;
+    --tri:#231f16;--soul:#2e1e1a;--sel:#3a231d;--link:#2e211b;
+    --red:#f08569;--red-rgb:240,133,105;--lu:#74c795;--lu-rgb:116,199,149;
+    --quan:#e2a95c;--quan-rgb:226,169,92;--ke:#86bcea;--ke-rgb:134,188,234;--ji:#f08569;
+    --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273}
+}
 .pp *{box-sizing:border-box}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(150px,auto));gap:0}
 .pp-cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 8px;display:flex;flex-direction:column;position:relative;min-height:150px;background:var(--bg)}
@@ -20,40 +37,40 @@
 .pp-st.good{color:var(--lu)}
 .pp-st.bad{color:var(--ji)}
 .pp-st.aux{color:var(--muted)}
-.pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:#fff;margin-left:1px;vertical-align:1px}
+.pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:var(--on-accent);margin-left:1px;vertical-align:1px}
 .pp-m.lu{background:var(--lu)}.pp-m.quan{background:var(--quan)}.pp-m.ke{background:var(--ke)}.pp-m.ji{background:var(--ji)}
 /* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
    避免与四化的实心彩色方块抢层次 */
 .pp-b{font-style:normal;font-size:11.5px;margin-left:4px;color:var(--muted);letter-spacing:0;opacity:.9}
-.pp-b.good{color:#4c7a5c}
+.pp-b.good{color:var(--br-good)}
 .pp-b.mid{color:var(--muted)}
-.pp-b.bad{color:#9c5b56}
+.pp-b.bad{color:var(--br-bad)}
 .pp-ages{margin-top:2px;font-size:12px;color:var(--muted);letter-spacing:.02em}
 .pp-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:4px;font-size:12px;color:var(--muted)}
 .pp-foot .l{display:flex;flex-direction:column;gap:0;line-height:1.5}
 .pp-foot .l .dx{color:var(--ink)}
 .pp-foot .r{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.5}
 .pp-foot .pn{color:var(--red);font-size:14px;font-weight:700}
-.pp-soul{box-shadow:inset 0 0 0 2px rgba(179,38,30,.35)}
-.pp-body::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:#fff;background:var(--muted);padding:0 3px;border-radius:2px}
+.pp-soul{box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.35)}
+.pp-body::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:var(--on-accent);background:var(--muted);padding:0 3px;border-radius:2px}
 /* 注意：身宫格用 .pp-shen，不能叫 .pp-body —— .pp-body 是视图容器的类（display:none），
    两者同名会让身宫那一格整格消失（0.9.0 之前一直如此，12 宫少 1 宫） */
-.pp-shen::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:#fff;background:var(--muted);padding:0 3px;border-radius:2px;z-index:1}
+.pp-shen::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:var(--on-accent);background:var(--muted);padding:0 3px;border-radius:2px;z-index:1}
 .pp-legend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px}
 .pp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-family:system-ui,sans-serif}
 .pp-chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--line);color:var(--muted);background:var(--bg)}
 .pp-chip.ok{color:var(--lu);border-color:var(--lu)}
 .pp-chip.warn{color:var(--quan);border-color:var(--quan)}
 .pp-sec{margin-top:10px}
-.pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:#8a8378;font-weight:700;margin-bottom:2px}
+.pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:var(--label);font-weight:700;margin-bottom:2px}
 .pp-tl{font-size:12.5px;color:var(--muted);line-height:1.75}
 .pp-bz{width:100%;border-collapse:collapse;font-size:13.5px;font-family:system-ui,sans-serif}
 .pp-bz th,.pp-bz td{border:1px solid var(--line);padding:8px 10px;text-align:center}
 .pp-bz th{color:var(--red);font-weight:600;font-size:12.5px}
 .pp-bz td.big{font-size:24px;font-weight:700}
 .pp-bz td.lbl{color:var(--muted);font-size:12.5px;width:60px}
-.wx-wood{color:#1f6f3f}.wx-fire{color:#b3261e}.wx-earth{color:#8a5a00}.wx-metal{color:#8a6b1f}.wx-water{color:#1f4e79}
-.zhuri{color:#b3261e;font-weight:700}
+.wx-wood{color:var(--lu)}.wx-fire{color:var(--red)}.wx-earth{color:var(--quan)}.wx-metal{color:var(--wx-metal)}.wx-water{color:var(--ke)}
+.zhuri{color:var(--red);font-weight:700}
 .pp-rel{margin-top:10px;font-size:13px;line-height:1.9}
 .pp-rel b{color:var(--muted);font-weight:400;margin-right:10px}
 .pp-str{margin-top:10px;font-size:13px;line-height:1.8}
@@ -65,23 +82,23 @@
 /* min-height:44px —— 视图切换是本盘唯一的主要控件，触摸目标必须够。
    原先 6px 上下内边距只有 31px 高，手机上是实打实的误触来源 */
 .pp-modes label{min-height:44px;display:inline-flex;align-items:center;padding:3px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
-.pp-modes label:hover{background:#f2ece0}
-.pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:#a9a296}
+.pp-modes label:hover{background:var(--hover2)}
+.pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--faint)}
 .pp-body{display:none}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
-#ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:#fff}
-.pp-tri{background:#f9f3e6}
-.pp-soul{background:#fdf3f1}
+#ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
+.pp-tri{background:var(--tri)}
+.pp-soul{background:var(--soul)}
 .pp-zh{margin-left:4px;white-space:nowrap}
 
 /* —— 宫位点击展开详情 + 三方四正联动 ——
    宫格信息密度太高（尤其竖屏 10px），宫内必然有挤掉的东西。
    点开后把该宫的完整星曜、四化、十二神、三方四正摊平看。 */
 .pp-cell{cursor:pointer;transition:background .14s ease,box-shadow .14s ease;outline:none}
-.pp-cell:hover{background:#f7f2e5}
-.pp-cell.pp-sel{background:#fff5f2;box-shadow:inset 0 0 0 2px rgba(179,38,30,.5)}
+.pp-cell:hover{background:var(--hover)}
+.pp-cell.pp-sel{background:var(--sel);box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.5)}
 /* 选中宫的财帛/官禄/迁移三宫：能一眼看出命宫牵着哪几宫 */
-.pp-cell.pp-link{background:#fbeee9;box-shadow:inset 0 0 0 1.5px rgba(179,38,30,.22)}
+.pp-cell.pp-link{background:var(--link);box-shadow:inset 0 0 0 1.5px rgba(var(--red-rgb),.22)}
 .pp-detail{display:none;border-top:1px solid var(--line);background:var(--card);padding:11px 14px 13px;font-family:system-ui,sans-serif}
 .pp-detail.open{display:block}
 .pp-detail .dh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;padding-bottom:6px;margin-bottom:7px;border-bottom:1px dashed var(--line)}
@@ -91,7 +108,7 @@
 .pp-detail .dh .x:hover{color:var(--red)}
 /* 用 grid 而不是 flex：flex 下长值会把整块挤到下一行，标签与内容错行 */
 .pp-detail .dr{font-size:13px;line-height:1.85;display:grid;grid-template-columns:62px minmax(0,1fr);align-items:baseline;gap:0 8px}
-.pp-detail .dr .k{color:#8a8378;font-size:12px;letter-spacing:.06em}
+.pp-detail .dr .k{color:var(--label);font-size:12px;letter-spacing:.06em}
 .pp-detail .dr .v{min-width:0}
 .pp-detail .st{white-space:nowrap;margin-right:7px;display:inline-block}
 .pp-detail .st.main{font-weight:700}
@@ -99,14 +116,14 @@
 .pp-detail .st.bad{color:var(--ji)}
 .pp-detail .st.aux{color:var(--muted)}
 .pp-detail .st .br{font-style:normal;font-size:11.5px;color:var(--muted);margin-left:3px}
-.pp-detail .st .br.good{color:#4c7a5c}
-.pp-detail .st .br.bad{color:#9c5b56}
+.pp-detail .st .br.good{color:var(--br-good)}
+.pp-detail .st .br.bad{color:var(--br-bad)}
 .pp-detail .tri{color:var(--muted)}
 .pp-detail .tri b{color:var(--ink);font-weight:600;margin-left:4px}
 .pp-detail .tri em{font-style:normal;color:var(--muted);font-size:12px;margin-left:5px}
 .pp-detail .tri em::before{content:"·";margin-right:3px}
-.pp-detail .empty{color:#a9a296;font-size:12.5px}
-.pp-detail .hint{color:#a9a296;font-size:11.5px;margin-top:6px}
+.pp-detail .empty{color:var(--faint);font-size:12.5px}
+.pp-detail .hint{color:var(--faint);font-size:11.5px;margin-top:6px}
 .pp-ss{display:flex;flex-wrap:wrap;gap:0 7px;font-size:12.5px;line-height:1.6}
 .pp-ss .s{white-space:nowrap;cursor:help}
 .pp-ss .s.good{color:var(--lu)}
@@ -119,9 +136,9 @@
 .pp-ssg .gt{flex:0 0 40px;color:var(--muted);font-size:12px;letter-spacing:.08em}
 .pp-ssg .gi{display:flex;flex-wrap:wrap;gap:3px 6px}
 .pp-ssi{white-space:nowrap;border:1px solid var(--line);padding:0 5px;cursor:help}
-.pp-ssi.good{color:var(--lu);border-color:rgba(31,111,63,.35)}
-.pp-ssi.bad{color:var(--ji);border-color:rgba(179,38,30,.3)}
-.pp-ssi.neutral{color:var(--quan);border-color:rgba(138,90,0,.3)}
+.pp-ssi.good{color:var(--lu);border-color:rgba(var(--lu-rgb),.35)}
+.pp-ssi.bad{color:var(--ji);border-color:rgba(var(--red-rgb),.3)}
+.pp-ssi.neutral{color:var(--quan);border-color:rgba(var(--quan-rgb),.3)}
 .pp-ssi em{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 
 /* —— 爻线：真线，阳为整条、阴为断开、动爻描红 —— */
@@ -129,7 +146,7 @@
 .hex i{flex:1;background:currentColor;border-radius:1.5px}
 .hex.yin{gap:18%}
 .hex.on{color:var(--red)}
-.hex.dim{color:#b9b2a4}
+.hex.dim{color:var(--dimline)}
 .hex.sm{width:74px;height:9px}
 .hex.md{width:88px;height:10px}
 
@@ -146,7 +163,7 @@
 .hy-gz{letter-spacing:.04em}
 .hy-ls{color:var(--muted);font-size:12px}
 .hy-dn{color:var(--red);font-size:12px;font-family:system-ui,sans-serif}
-.hy-void{color:#a9a296}
+.hy-void{color:var(--faint)}
 .hy-row.plain{grid-template-columns:34px 112px;gap:9px;padding:0}
 .mh-mini{display:flex;flex-direction:column;gap:4px}
 
@@ -164,8 +181,8 @@
 .trib+.trib{margin-top:8px;padding-top:8px;border-top:1px dotted var(--line)}
 .trib-h{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:3px}
 .tri-tag{font-size:12px;padding:0 4px;border:1px solid var(--line);color:var(--muted);font-family:system-ui,sans-serif}
-.tri-tag.ti{color:var(--red);border-color:rgba(179,38,30,.45);font-weight:700}
-.tri-tag.yong{color:var(--ke);border-color:rgba(31,78,121,.45)}
+.tri-tag.ti{color:var(--red);border-color:rgba(var(--red-rgb),.45);font-weight:700}
+.tri-tag.yong{color:var(--ke);border-color:rgba(var(--ke-rgb),.45)}
 .mh-rel{margin-top:12px;font-size:13.5px;font-family:system-ui,sans-serif;line-height:1.8}
 .mh-rel b{color:var(--muted);font-weight:400;margin-right:8px}
 .mh-rel .lv{font-weight:700}
@@ -179,7 +196,7 @@
 .dl-sc{display:flex;align-items:stretch;margin:0 0 12px;flex-wrap:wrap}
 .dl-sc-c{border:1px solid var(--line);background:var(--card);padding:10px 18px;min-width:110px;text-align:center}
 .dl-sc-c+.dl-sc-c{border-left:none}
-.dl-sc-c.ge{border-left:1px solid var(--line);background:#fbf6ec}
+.dl-sc-c.ge{border-left:1px solid var(--line);background:var(--band)}
 .dl-sc-k{font-size:12px;letter-spacing:.16em;color:var(--muted);font-family:system-ui,sans-serif}
 .dl-sc-z{font-size:24px;font-weight:700;color:var(--red);line-height:1.2}
 .dl-sc-j{font-size:12px}
@@ -197,7 +214,7 @@
 .dl-pc .tz{font-size:21px;font-weight:700;color:var(--red);line-height:1.2}
 .dl-pc .dz{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .dl-pc .jz{font-size:12px;color:var(--quan);margin-top:auto;font-family:system-ui,sans-serif}
-.dl-c{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;background:#fffdf8}
+.dl-c{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;background:var(--bg)}
 .dl-c .t1{font-size:16px;font-weight:700;letter-spacing:.06em}
 .dl-c .t2{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .dl-c .t3{font-size:12.5px;letter-spacing:.2em;margin-top:3px}
@@ -207,15 +224,15 @@
 .tt{padding:16px}
 .tt-head{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
 .tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
-.tt-card{border:1px solid var(--line);background:#fffefb;padding:13px 14px;display:flex;flex-direction:column;gap:7px;min-height:168px}
-.tt-card.rev{background:#fbf7f4;border-style:dashed}
+.tt-card{border:1px solid var(--line);background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:7px;min-height:168px}
+.tt-card.rev{background:var(--band);border-style:dashed}
 .tt-pos{font-size:12px;color:var(--muted);letter-spacing:.14em}
 .tt-name{font-size:19px;font-weight:700;color:var(--red);letter-spacing:.04em}
 .tt-ori{font-size:12px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
 .tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:13px;line-height:1.7}
 .tt-kw span{border-bottom:1px dotted var(--line)}
 .tt-el{margin-top:auto;font-size:12px;color:var(--muted)}
-.tt-core{font-size:12.5px;color:#4a453d;line-height:1.7;border-left:2px solid var(--line);padding-left:8px}
+.tt-core{font-size:12.5px;color:var(--ink2);line-height:1.7;border-left:2px solid var(--line);padding-left:8px}
 .tt-no{font-size:12px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
 .tt-tip{margin-top:12px;font-size:12px;color:var(--muted)}
 .tt-q{font-size:13px;margin-bottom:6px}
@@ -224,17 +241,17 @@
 .tt-rt{font-size:12px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
 .tt-read p{margin:0 0 5px;font-size:13px;line-height:1.85}
 .tt-note{margin-top:12px}
-.tt-ta{width:100%;border:1px solid var(--line);background:#fffefb;color:var(--ink);padding:8px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
+.tt-ta{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
 .tt-ta:focus{border-color:var(--red)}
 
 /* —— 解析与详解 —— */
-.it{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--card:#fffefb;--red:#b3261e;
+.it{--ink:var(--ink);--muted:var(--muted);--line:var(--line);--bg:var(--bg);--card:var(--card);--red:var(--red);
   margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .it *{box-sizing:border-box}
 /* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
 .it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
-.it-head:hover{background:#fbf7ef}
+.it-head:hover{background:var(--band)}
 .it-arrow{flex:none;font-size:12px;line-height:1;color:var(--red);transition:transform .16s ease}
 .it.folded .it-arrow{transform:rotate(-90deg)}
 .it.folded .it-wrap{display:none}
@@ -242,29 +259,29 @@
 .it-title{font-size:15px;font-weight:700;letter-spacing:.08em;color:var(--red)}
 .it-tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 /* 所问之事 + 询问方向的回显，放在引语上方，先让用户确认问的是什么 */
-.it-ask{padding:10px 16px;background:#f7f3ea;border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:#3f3a33;font-family:system-ui,sans-serif}
-.it-ask .q{font-weight:600;color:#1b1b1b}
-.it-ask .sep{color:#b9b2a4;margin:0 7px}
-.it-ask .d{color:#1f6f3f}
+.it-ask{padding:10px 16px;background:var(--band);border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:var(--ink2);font-family:system-ui,sans-serif}
+.it-ask .q{font-weight:600;color:var(--ink)}
+.it-ask .sep{color:var(--dimline);margin:0 7px}
+.it-ask .d{color:var(--lu)}
 .it-ask .none{color:var(--muted);font-weight:400}
 /* 按询问方向提到最前的那一条 */
-.it-focus{margin-left:6px;font-size:12px;color:#1f6f3f;border:1px solid rgba(31,111,63,.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
-.it-dim.focus{background:linear-gradient(90deg,rgba(31,111,63,.06),transparent 60%);border-left:2px solid #1f6f3f;padding-left:10px}
-.it-lead{padding:11px 16px;font-size:13px;color:#4a453d;border-bottom:1px dashed var(--line)}
+.it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+.it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
+.it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
 .it-body{padding:2px 16px 12px}
 .it-dim{padding:12px 0;border-bottom:1px dashed var(--line)}
 .it-dim:last-of-type{border-bottom:none}
 .it-dh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
+.it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:var(--on-accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
 .it-dlabel{font-size:14.5px;font-weight:700;letter-spacing:.04em}
 .it-dtext{font-size:13px;line-height:1.9;text-align:justify}
-.it-adv{margin-top:8px;padding:9px 12px;background:#f7f3ea;border-left:2px solid var(--red);font-size:13px;line-height:1.85}
+.it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
 .it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
 .it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
 .it-sec{margin-bottom:11px}
-.it-sh{font-size:13px;font-weight:700;color:#1f6f3f;letter-spacing:.06em;margin-bottom:4px}
-.it-stext{font-size:13px;line-height:1.9;color:#3f3a33;text-align:justify}
-.it-dis{padding:11px 16px;border-top:1px solid var(--line);background:#f7f3ea;font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
+.it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
+.it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+.it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 /* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
 @media (max-width:640px){
@@ -945,7 +962,7 @@
       ${sect('大运', `<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln) : ''}
       ${ssx}
-      <div style="margin-top:8px;font-size:12px;color:#6f6a60">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运</div>
     </div>`;
   };
 
