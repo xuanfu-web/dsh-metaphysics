@@ -2,6 +2,12 @@
 
 版本按「一组可感知的改动」发，README 与市场条目描述随能力同步。
 
+## 0.13.6
+
+- 修 `npm run release` 的发布后核对：npm 的发布是异步的（PUT 返回 202，registry 生效实测要 1–4 分钟），脚本原来 30 秒就判定失败
+  - 改为对 tarball 轮询 HEAD，最多等 6 分钟；超时只提示「已提交，稍后自查」而不报错
+  - 顺手核对 `dist-tags`，`latest` 不指向新版本时给出 `npm dist-tag add` 的建议
+
 ## 0.13.5
 
 - 新增 `npm run release`（`tools/release.mjs`）：一条命令走完「测试 → 构建 → 校验产物 → 发 npm」，token 只从环境变量 `NPM_TOKEN` 读，临时 `.npmrc` 用后即删
