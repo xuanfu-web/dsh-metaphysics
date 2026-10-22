@@ -62,6 +62,18 @@
 .pp-chip.ok{color:var(--lu);border-color:var(--lu)}
 .pp-chip.warn{color:var(--quan);border-color:var(--quan)}
 .pp-sec{margin-top:10px}
+/* 流月/流日/流时：一层层往外推的三级时间盘 */
+.pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif}
+.pp-flow .fl{display:grid;grid-template-columns:66px auto minmax(0,1fr);gap:0 10px;align-items:baseline;padding:6px 11px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.6}
+.pp-flow .fl:first-child{border-top:none;background:var(--band);font-size:12px;color:var(--muted)}
+.pp-flow .fl b{color:var(--red);font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.pp-flow .fl .p{color:var(--ink)}
+.pp-flow .fl .p .k{white-space:nowrap}
+.pp-flow .fl .m{color:var(--muted);min-width:0}
+.pp-flow .fl .m i{font-style:normal;margin-right:6px;white-space:nowrap}
+.pp-flow .fl .m i em{font-style:normal;color:var(--faint);margin-left:2px}
+.pp-flow .fl .m i.dim{color:var(--faint)}
+.pp-flow .fl .p em.same{font-style:normal;color:var(--faint);font-size:11.5px;margin-left:5px}
 .pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:var(--label);font-weight:700;margin-bottom:2px}
 .pp-tl{font-size:12.5px;color:var(--muted);line-height:1.75}
 .pp-bz{width:100%;border-collapse:collapse;font-size:13.5px;font-family:system-ui,sans-serif}
@@ -314,6 +326,9 @@
   .pp-detail .dr{grid-template-columns:54px minmax(0,1fr)}
   .pp-detail .dr .k{font-size:11.5px}
   .pp-detail .st .br{font-size:11px}
+  /* 流月/流日/流时：窄屏一行放不下「命宫+四化」，四化另起一行 */
+  .pp-flow .fl{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
+  .pp-flow .fl .m{grid-column:1/-1}
   /* 八字：隐藏表头，行标签整行 + 四柱 2×2，每格角标柱名 */
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
@@ -385,6 +400,8 @@
   .pp-detail .dr{grid-template-columns:54px minmax(0,1fr)}
   .pp-detail .dr .k{font-size:11.5px}
   .pp-detail .st .br{font-size:11px}
+  .pp-flow .fl{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
+  .pp-flow .fl .m{grid-column:1/-1}
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
   .pp-bz,.pp-bz tbody{display:block}
@@ -575,6 +592,25 @@
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
 
+    // 流月/流日/流时：流年只能看到「今年」，要落到「这个月这段时间」得再往下一层
+    const fl = r.flow;
+    const flowHTML = fl ? (() => {
+      const muts = (p) => (p.mutagenHits || []).length
+        ? p.mutagenHits.map((m) => `<i>${m.star}化${m.type}<em>→${m.palace || '未上盘'}</em></i>`).join('')
+        : '<i class="dim">宫干无四化</i>';
+      const row = (label, p, note) =>
+        `<div class="fl"><b>${label}</b><span class="p"><span class="k">${p.ganzhi || '—'}　落${p.palace || '未上盘'}（${p.branch}）</span>${note ? `<em class="same">${note}</em>` : ''}</span><span class="m">${muts(p)}</span></div>`;
+      // 日数走满 12 宫就回到同宫，不说明会被当成算错
+      const sameAsMonth = fl.day.branch === fl.month.branch;
+      const sameNote = sameAsMonth ? '（日数走满一圈，故同宫）' : '';
+      return `<div class="pp-flow">
+        <div class="fl"><b>基准</b><span class="p">${fl.asOf.solar}</span><span class="m">农历 ${fl.asOf.lunar}　流年 ${fl.asOf.yearGanzhi}（斗君 ${fl.year.doujun}）</span></div>
+        ${row(`流月 ${fl.month.index} 月`, fl.month)}
+        ${row(`流日 ${fl.day.index} 日`, fl.day, sameNote)}
+        ${row(`流时 ${BR[fl.hour.hourIndex]}时`, fl.hour)}
+      </div>`;
+    })() : '';
+
     pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
     return `<div class="pp">
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
@@ -587,7 +623,7 @@
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${chips}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${pats}${dxs}${lnHit}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────

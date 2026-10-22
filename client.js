@@ -2567,6 +2567,8 @@ function buildZiwei(input) {
   chart.patterns = detectPatterns(chart);
   chart.daxianList = daxianList(chart);
   enrichLiunian(chart);
+  // 流月/流日/流时：默认按本机当前时刻，可用 asOf 指定（如 "2026-10-22T16:00"）
+  chart.flow = flowOf(chart, input.asOf);
   chart.patternSummary = {
     count: chart.patterns.length,
     good: chart.patterns.filter((p) => p.tone === 'good').map((p) => p.name),
@@ -2778,7 +2780,94 @@ function enrichLiunian(chart) {
   return chart.liunian;
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, enrichLiunian };
+// ── 流月 / 流日 / 流时 ──────────────────────────────────────
+// 一级一级往下推：流年斗君起正月 → 顺数至该农历月；流月命宫起初一 → 顺数至该农历日；
+// 流日命宫起子时 → 顺数至该时辰。四化一律取落点宫的原局宫干。
+// 这条链是紫微看「这个月/这一天/这个时辰」的标准入口，缺了它就只能看到流年。
+
+function asOfParts(v) {
+  if (!v) return null;
+  if (typeof v === 'object') return v;
+  const m = String(v).match(/(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2}))?/);
+  if (!m) return null;
+  return {
+    year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
+    hour: m[4] === undefined ? 12 : Number(m[4]),
+    minute: m[5] === undefined ? 0 : Number(m[5]),
+  };
+}
+
+function flowOf(chart, asOf) {
+  const now = new Date();
+  const a = asOfParts(asOf) || {};
+  const Y = a.year || now.getFullYear();
+  const M = a.month || now.getMonth() + 1;
+  const D = a.day || now.getDate();
+  const H = a.hour === undefined ? now.getHours() : a.hour;
+  const MI = a.minute === undefined ? now.getMinutes() : a.minute;
+
+  const lr = solarToLunar(Y, M, D);
+  const leapAsNext = Boolean(chart.input && chart.input.leapAsNext);
+  const natalMonth = chart.lunar.isLeap && leapAsNext ? (chart.lunar.month % 12) + 1 : chart.lunar.month;
+  const natalHB = BRANCHES.indexOf(chart.hourBranch);
+  const hbNow = hourBranchIndex(H, MI);
+
+  const gz = ganzhiName((((lr.lunarYear - 4) % 60) + 60) % 60);
+  const yB = BRANCHES.indexOf(gz.branch);
+  const doujun = fix(yB - (natalMonth - 1) + natalHB);
+  const mIdx = fix(doujun + (lr.month - 1));
+  const dIdx = fix(mIdx + (lr.day - 1));
+  const hIdx = fix(dIdx + hbNow);
+
+  const point = (idx) => {
+    const br = BRANCHES[idx];
+    const p = chart.palaces.find((x) => x.branch === br);
+    const stem = p ? p.stem : null;
+    const mutagenHits = stem
+      ? Object.entries(MUTAGEN[stem] ?? {}).map(([star, type]) => {
+        const b = starBranchOf(chart, star);
+        return {
+          star,
+          type,
+          branch: b >= 0 ? BRANCHES[b] : null,
+          palace: b >= 0 ? chart.palaces.find((x) => x.branch === BRANCHES[b])?.palace ?? null : null,
+        };
+      })
+      : [];
+    const tri = [idx, fix(idx + 4), fix(idx + 8), fix(idx + 6)];
+    const sanfang = tri.map((x) => chart.palaces.find((q) => q.branch === BRANCHES[x])?.palace ?? null);
+    const sanfangMainStars = [...new Set(tri.flatMap((x) => {
+      const q = chart.palaces.find((z) => z.branch === BRANCHES[x]);
+      return (q?.stars ?? []).filter((s) => s.type === '主星').map((s) => s.name);
+    }))];
+    return {
+      branch: br,
+      palace: p ? p.palace : null,
+      stem,
+      ganzhi: p ? p.ganzhi : null,
+      mutagenHits,
+      sanfang,
+      sanfangMainStars,
+    };
+  };
+
+  const two = (n) => String(n).padStart(2, '0');
+  return {
+    asOf: {
+      solar: `${Y}-${two(M)}-${two(D)} ${two(H)}:${two(MI)}`,
+      lunar: `${lr.lunarYear}年${lr.isLeap ? '闰' : ''}${lr.month}月${lr.day}日${BRANCHES[hbNow]}时`,
+      yearGanzhi: gz.name,
+      hourBranch: BRANCHES[hbNow],
+    },
+    year: { ...point(yB), doujun: BRANCHES[doujun] },
+    month: { index: lr.month, ...point(mIdx) },
+    day: { index: lr.day, ...point(dIdx) },
+    hour: { hourIndex: hbNow, ...point(hIdx) },
+    rules: '流月命宫自流年斗君（该年支起正月逆数至生月，再起子时顺数至生时）起正月，顺行至该农历月；流日自流月命宫起初一，顺行至该农历日；流时自流日命宫起子时，顺行至该时辰；四化取落点宫的原局宫干',
+  };
+}
+
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, enrichLiunian, flowOf };
 })();
 
 __mods.tarot = (function () {
@@ -4268,6 +4357,7 @@ function ziweiInterpret(r) {
       text: `${soulFrom}，性格底色上${S.trait}。本盘${patText}。` +
         `当前大限走在${daxianPalace ? `${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）` : '当前阶段'}，` +
         `${lnMutagen ? `流年四化为${lnMutagen}，本年的变化感主要落在这几颗星上` : '流年四化信号不明显'}。` +
+        (r.flow ? `再往下一层，当前流月命宫是${r.flow.month.ganzhi}，落在原局${r.flow.month.palace || '未上盘'}，本月的变化更容易在这一宫代表的事情上显出来。` : '') +
         (natalSihuaText
           ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
           : ''),
@@ -4316,6 +4406,23 @@ function ziweiInterpret(r) {
       text: `你出生年的天干定下四颗化星，落在：${natalSihuaText}。` +
         `读法上，化禄的宫位做起来比较顺手、也容易有人帮忙；化权的宫位偏向由你拿主意、但也更容易用力过猛；化科的宫位自带一层体面与贵人缘，遇到事多半能体面收场；化忌的宫位是你容易在意、也容易反复的地方。` +
         `${kePart}这几处只是长期倾向，落到具体某一年还要配上流年四化一起看，不必把它当成结论。`,
+    });
+  }
+
+  // 流月/流日/流时：流年只回答「今年」，再往下才是「这个月」「这两天」
+  if (r.flow) {
+    const f = r.flow;
+    const at = (p) => `${p.ganzhi || '—'}${p.palace ? `落${p.palace}` : ''}`;
+    const hits = (p) => (p.mutagenHits || []).map((m) => `${m.star}化${m.type}${m.palace ? `→${m.palace}` : ''}`).join('、');
+    sections.push({
+      key: 'flow',
+      label: '流月 · 流日 · 流时',
+      text: `以 ${f.asOf.solar}（农历 ${f.asOf.lunar}，流年 ${f.asOf.yearGanzhi}，斗君 ${f.year.doujun}）为准往下推：` +
+        `流月命宫 ${at(f.month)}，四化 ${hits(f.month) || '不明显'}；` +
+        `流日命宫 ${at(f.day)}，四化 ${hits(f.day) || '不明显'}；` +
+        `流时命宫 ${at(f.hour)}，四化 ${hits(f.hour) || '不明显'}。` +
+        `这三层的读法不一样：流月管的是一整个月的节奏，适合拿来做「这个月该推进还是该收」的判断；` +
+        `流日和流时颗粒度太细，更容易被临时因素打断，看它们不如说是在看「今明两天的情绪底色」，不必逐条对号入座。`,
     });
   }
 
@@ -4734,7 +4841,7 @@ __mods.index = (function () {
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 const { buildBazi } = __mods.bazi;
 const { buildLiuyao, tossLines } = __mods.liuyao;
-const { buildZiwei, BRIGHTNESS } = __mods.ziwei;
+const { buildZiwei, BRIGHTNESS, flowOf } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
 const { buildDaliuren } = __mods.daliuren;
@@ -4949,6 +5056,8 @@ function computeRaw(args) {
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       trueSolar: args.trueSolar,
+      // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
+      asOf: args.asOf,
     });
     return { ...result, summary: ziweiText(result) };
   }
@@ -4998,7 +5107,7 @@ function renderText(result) {
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
 })();
 
     const Engine = __mods.index;
@@ -5067,6 +5176,18 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
 .pp-chip.ok{color:var(--lu);border-color:var(--lu)}
 .pp-chip.warn{color:var(--quan);border-color:var(--quan)}
 .pp-sec{margin-top:10px}
+/* 流月/流日/流时：一层层往外推的三级时间盘 */
+.pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif}
+.pp-flow .fl{display:grid;grid-template-columns:66px auto minmax(0,1fr);gap:0 10px;align-items:baseline;padding:6px 11px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.6}
+.pp-flow .fl:first-child{border-top:none;background:var(--band);font-size:12px;color:var(--muted)}
+.pp-flow .fl b{color:var(--red);font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.pp-flow .fl .p{color:var(--ink)}
+.pp-flow .fl .p .k{white-space:nowrap}
+.pp-flow .fl .m{color:var(--muted);min-width:0}
+.pp-flow .fl .m i{font-style:normal;margin-right:6px;white-space:nowrap}
+.pp-flow .fl .m i em{font-style:normal;color:var(--faint);margin-left:2px}
+.pp-flow .fl .m i.dim{color:var(--faint)}
+.pp-flow .fl .p em.same{font-style:normal;color:var(--faint);font-size:11.5px;margin-left:5px}
 .pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:var(--label);font-weight:700;margin-bottom:2px}
 .pp-tl{font-size:12.5px;color:var(--muted);line-height:1.75}
 .pp-bz{width:100%;border-collapse:collapse;font-size:13.5px;font-family:system-ui,sans-serif}
@@ -5319,6 +5440,9 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
   .pp-detail .dr{grid-template-columns:54px minmax(0,1fr)}
   .pp-detail .dr .k{font-size:11.5px}
   .pp-detail .st .br{font-size:11px}
+  /* 流月/流日/流时：窄屏一行放不下「命宫+四化」，四化另起一行 */
+  .pp-flow .fl{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
+  .pp-flow .fl .m{grid-column:1/-1}
   /* 八字：隐藏表头，行标签整行 + 四柱 2×2，每格角标柱名 */
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
@@ -5390,6 +5514,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
   .pp-detail .dr{grid-template-columns:54px minmax(0,1fr)}
   .pp-detail .dr .k{font-size:11.5px}
   .pp-detail .st .br{font-size:11px}
+  .pp-flow .fl{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
+  .pp-flow .fl .m{grid-column:1/-1}
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
   .pp-bz,.pp-bz tbody{display:block}
@@ -5580,6 +5706,25 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
 
+    // 流月/流日/流时：流年只能看到「今年」，要落到「这个月这段时间」得再往下一层
+    const fl = r.flow;
+    const flowHTML = fl ? (() => {
+      const muts = (p) => (p.mutagenHits || []).length
+        ? p.mutagenHits.map((m) => `<i>${m.star}化${m.type}<em>→${m.palace || '未上盘'}</em></i>`).join('')
+        : '<i class="dim">宫干无四化</i>';
+      const row = (label, p, note) =>
+        `<div class="fl"><b>${label}</b><span class="p"><span class="k">${p.ganzhi || '—'}　落${p.palace || '未上盘'}（${p.branch}）</span>${note ? `<em class="same">${note}</em>` : ''}</span><span class="m">${muts(p)}</span></div>`;
+      // 日数走满 12 宫就回到同宫，不说明会被当成算错
+      const sameAsMonth = fl.day.branch === fl.month.branch;
+      const sameNote = sameAsMonth ? '（日数走满一圈，故同宫）' : '';
+      return `<div class="pp-flow">
+        <div class="fl"><b>基准</b><span class="p">${fl.asOf.solar}</span><span class="m">农历 ${fl.asOf.lunar}　流年 ${fl.asOf.yearGanzhi}（斗君 ${fl.year.doujun}）</span></div>
+        ${row(`流月 ${fl.month.index} 月`, fl.month)}
+        ${row(`流日 ${fl.day.index} 日`, fl.day, sameNote)}
+        ${row(`流时 ${BR[fl.hour.hourIndex]}时`, fl.hour)}
+      </div>`;
+    })() : '';
+
     pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
     return `<div class="pp">
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
@@ -5592,7 +5737,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${chips}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${pats}${dxs}${lnHit}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────

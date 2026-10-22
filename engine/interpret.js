@@ -371,6 +371,7 @@ function ziweiInterpret(r) {
       text: `${soulFrom}，性格底色上${S.trait}。本盘${patText}。` +
         `当前大限走在${daxianPalace ? `${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）` : '当前阶段'}，` +
         `${lnMutagen ? `流年四化为${lnMutagen}，本年的变化感主要落在这几颗星上` : '流年四化信号不明显'}。` +
+        (r.flow ? `再往下一层，当前流月命宫是${r.flow.month.ganzhi}，落在原局${r.flow.month.palace || '未上盘'}，本月的变化更容易在这一宫代表的事情上显出来。` : '') +
         (natalSihuaText
           ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
           : ''),
@@ -419,6 +420,23 @@ function ziweiInterpret(r) {
       text: `你出生年的天干定下四颗化星，落在：${natalSihuaText}。` +
         `读法上，化禄的宫位做起来比较顺手、也容易有人帮忙；化权的宫位偏向由你拿主意、但也更容易用力过猛；化科的宫位自带一层体面与贵人缘，遇到事多半能体面收场；化忌的宫位是你容易在意、也容易反复的地方。` +
         `${kePart}这几处只是长期倾向，落到具体某一年还要配上流年四化一起看，不必把它当成结论。`,
+    });
+  }
+
+  // 流月/流日/流时：流年只回答「今年」，再往下才是「这个月」「这两天」
+  if (r.flow) {
+    const f = r.flow;
+    const at = (p) => `${p.ganzhi || '—'}${p.palace ? `落${p.palace}` : ''}`;
+    const hits = (p) => (p.mutagenHits || []).map((m) => `${m.star}化${m.type}${m.palace ? `→${m.palace}` : ''}`).join('、');
+    sections.push({
+      key: 'flow',
+      label: '流月 · 流日 · 流时',
+      text: `以 ${f.asOf.solar}（农历 ${f.asOf.lunar}，流年 ${f.asOf.yearGanzhi}，斗君 ${f.year.doujun}）为准往下推：` +
+        `流月命宫 ${at(f.month)}，四化 ${hits(f.month) || '不明显'}；` +
+        `流日命宫 ${at(f.day)}，四化 ${hits(f.day) || '不明显'}；` +
+        `流时命宫 ${at(f.hour)}，四化 ${hits(f.hour) || '不明显'}。` +
+        `这三层的读法不一样：流月管的是一整个月的节奏，适合拿来做「这个月该推进还是该收」的判断；` +
+        `流日和流时颗粒度太细，更容易被临时因素打断，看它们不如说是在看「今明两天的情绪底色」，不必逐条对号入座。`,
     });
   }
 

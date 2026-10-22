@@ -1,7 +1,7 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
 import { buildLiuyao, tossLines } from './liuyao.js';
-import { buildZiwei, BRIGHTNESS } from './ziwei.js';
+import { buildZiwei, BRIGHTNESS, flowOf } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
@@ -9,7 +9,7 @@ import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 
-export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS };
+export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -216,6 +216,8 @@ function computeRaw(args) {
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       trueSolar: args.trueSolar,
+      // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
+      asOf: args.asOf,
     });
     return { ...result, summary: ziweiText(result) };
   }

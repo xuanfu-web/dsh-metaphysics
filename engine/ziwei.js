@@ -527,6 +527,8 @@ export function buildZiwei(input) {
   chart.patterns = detectPatterns(chart);
   chart.daxianList = daxianList(chart);
   enrichLiunian(chart);
+  // 流月/流日/流时：默认按本机当前时刻，可用 asOf 指定（如 "2026-10-22T16:00"）
+  chart.flow = flowOf(chart, input.asOf);
   chart.patternSummary = {
     count: chart.patterns.length,
     good: chart.patterns.filter((p) => p.tone === 'good').map((p) => p.name),
@@ -736,4 +738,91 @@ export function enrichLiunian(chart) {
     }))];
   }
   return chart.liunian;
+}
+
+// ── 流月 / 流日 / 流时 ──────────────────────────────────────
+// 一级一级往下推：流年斗君起正月 → 顺数至该农历月；流月命宫起初一 → 顺数至该农历日；
+// 流日命宫起子时 → 顺数至该时辰。四化一律取落点宫的原局宫干。
+// 这条链是紫微看「这个月/这一天/这个时辰」的标准入口，缺了它就只能看到流年。
+
+function asOfParts(v) {
+  if (!v) return null;
+  if (typeof v === 'object') return v;
+  const m = String(v).match(/(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2}))?/);
+  if (!m) return null;
+  return {
+    year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
+    hour: m[4] === undefined ? 12 : Number(m[4]),
+    minute: m[5] === undefined ? 0 : Number(m[5]),
+  };
+}
+
+export function flowOf(chart, asOf) {
+  const now = new Date();
+  const a = asOfParts(asOf) || {};
+  const Y = a.year || now.getFullYear();
+  const M = a.month || now.getMonth() + 1;
+  const D = a.day || now.getDate();
+  const H = a.hour === undefined ? now.getHours() : a.hour;
+  const MI = a.minute === undefined ? now.getMinutes() : a.minute;
+
+  const lr = solarToLunar(Y, M, D);
+  const leapAsNext = Boolean(chart.input && chart.input.leapAsNext);
+  const natalMonth = chart.lunar.isLeap && leapAsNext ? (chart.lunar.month % 12) + 1 : chart.lunar.month;
+  const natalHB = BRANCHES.indexOf(chart.hourBranch);
+  const hbNow = hourBranchIndex(H, MI);
+
+  const gz = ganzhiName((((lr.lunarYear - 4) % 60) + 60) % 60);
+  const yB = BRANCHES.indexOf(gz.branch);
+  const doujun = fix(yB - (natalMonth - 1) + natalHB);
+  const mIdx = fix(doujun + (lr.month - 1));
+  const dIdx = fix(mIdx + (lr.day - 1));
+  const hIdx = fix(dIdx + hbNow);
+
+  const point = (idx) => {
+    const br = BRANCHES[idx];
+    const p = chart.palaces.find((x) => x.branch === br);
+    const stem = p ? p.stem : null;
+    const mutagenHits = stem
+      ? Object.entries(MUTAGEN[stem] ?? {}).map(([star, type]) => {
+        const b = starBranchOf(chart, star);
+        return {
+          star,
+          type,
+          branch: b >= 0 ? BRANCHES[b] : null,
+          palace: b >= 0 ? chart.palaces.find((x) => x.branch === BRANCHES[b])?.palace ?? null : null,
+        };
+      })
+      : [];
+    const tri = [idx, fix(idx + 4), fix(idx + 8), fix(idx + 6)];
+    const sanfang = tri.map((x) => chart.palaces.find((q) => q.branch === BRANCHES[x])?.palace ?? null);
+    const sanfangMainStars = [...new Set(tri.flatMap((x) => {
+      const q = chart.palaces.find((z) => z.branch === BRANCHES[x]);
+      return (q?.stars ?? []).filter((s) => s.type === '主星').map((s) => s.name);
+    }))];
+    return {
+      branch: br,
+      palace: p ? p.palace : null,
+      stem,
+      ganzhi: p ? p.ganzhi : null,
+      mutagenHits,
+      sanfang,
+      sanfangMainStars,
+    };
+  };
+
+  const two = (n) => String(n).padStart(2, '0');
+  return {
+    asOf: {
+      solar: `${Y}-${two(M)}-${two(D)} ${two(H)}:${two(MI)}`,
+      lunar: `${lr.lunarYear}年${lr.isLeap ? '闰' : ''}${lr.month}月${lr.day}日${BRANCHES[hbNow]}时`,
+      yearGanzhi: gz.name,
+      hourBranch: BRANCHES[hbNow],
+    },
+    year: { ...point(yB), doujun: BRANCHES[doujun] },
+    month: { index: lr.month, ...point(mIdx) },
+    day: { index: lr.day, ...point(dIdx) },
+    hour: { hourIndex: hbNow, ...point(hIdx) },
+    rules: '流月命宫自流年斗君（该年支起正月逆数至生月，再起子时顺数至生时）起正月，顺行至该农历月；流日自流月命宫起初一，顺行至该农历日；流时自流日命宫起子时，顺行至该时辰；四化取落点宫的原局宫干',
+  };
 }
