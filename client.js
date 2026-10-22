@@ -5115,20 +5115,22 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.it{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#efe9dc;
   --bg:#fffdf8;--card:#fffefb;--band:#f7f3ea;--hover:#f7f2e5;--hover2:#f2ece0;
   --tri:#f9f3e6;--soul:#fdf3f1;--sel:#fff5f2;--link:#fbeee9;
   --red:#b3261e;--red-rgb:179,38,30;--lu:#1f6f3f;--lu-rgb:31,111,63;
   --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
-  --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83;
-  border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
+  --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83}
+/* 变量与 .it 共享 —— 「解析与详解」是 .pp 的兄弟节点、不在 .pp 内部，
+   变量只挂在 .pp 上时它拿不到 --card/--muted/--red，头部底色会变透明、边框会退回黑色。 */
+.pp{border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
   container-type:inline-size}
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.it{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
     --bg:#15140f;--card:#1e1c16;--band:#262218;--hover:#2a251b;--hover2:#312c21;
     --tri:#231f16;--soul:#2e1e1a;--sel:#3a231d;--link:#2e211b;
@@ -5168,9 +5170,11 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .pp-foot .r{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.5}
 .pp-foot .pn{color:var(--red);font-size:14px;font-weight:700}
 .pp-soul{box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.35)}
-.pp-body::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:var(--on-accent);background:var(--muted);padding:0 3px;border-radius:2px}
 /* 注意：身宫格用 .pp-shen，不能叫 .pp-body —— .pp-body 是视图容器的类（display:none），
-   两者同名会让身宫那一格整格消失（0.9.0 之前一直如此，12 宫少 1 宫） */
+   两者同名会让身宫那一格整格消失（0.9.0 之前一直如此，12 宫少 1 宫）。
+   下面这条 .pp-body 的「身」角标是从那次改名里漏下来的残骸：
+   .pp-body 是 static 定位的整块视图容器，::after 却是 absolute，
+   结果每次排盘都会在文档左上角飘出一个孤立的灰色「身」方块。已删除。 */
 .pp-shen::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:var(--on-accent);background:var(--muted);padding:0 3px;border-radius:2px;z-index:1}
 .pp-legend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px}
 .pp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-family:system-ui,sans-serif}
@@ -5302,6 +5306,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .hy-sy{color:var(--red);font-size:12px;font-weight:700}
 .hy-nm{color:var(--muted);font-size:12px}
 .hy-gz{letter-spacing:.04em}
+.hy-lq{color:var(--ink2)}
 .hy-ls{color:var(--muted);font-size:12px}
 .hy-dn{color:var(--red);font-size:12px;font-family:system-ui,sans-serif}
 .hy-void{color:var(--faint)}
@@ -5386,8 +5391,9 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .tt-ta:focus{border-color:var(--red)}
 
 /* —— 解析与详解 —— */
-.it{--ink:var(--ink);--muted:var(--muted);--line:var(--line);--bg:var(--bg);--card:var(--card);--red:var(--red);
-  margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+/* 变量由上面的 .pp,.it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
+   自引用会让变量变成 guaranteed-invalid，反而把继承值也挡掉了（--card 因此彻底失效）。 */
+.it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .it *{box-sizing:border-box}
 /* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
@@ -5579,6 +5585,12 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-center .t1{font-size:11px}
   .pp-center .t2,.pp-center .t4{font-size:8.5px}
   .dl-sc-c{min-width:80px}
+  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .hy 内容区只有 232px，
+     会溢出 28px。这里把六列压到 206px、间隙让到 4px（合计 226px），
+     同时把 .hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
+  .hy-box{padding:10px 10px 12px}
+  .hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
+  .hy-row.plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
 /* 容器查询版：极窄侧栏 / 小屏手机（与上方 @media 同规则） */
 @container (max-width:430px){
@@ -5589,6 +5601,12 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .pp-center .t1{font-size:11px}
   .pp-center .t2,.pp-center .t4{font-size:8.5px}
   .dl-sc-c{min-width:80px}
+  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .hy 内容区只有 232px，
+     会溢出 28px。这里把六列压到 206px、间隙让到 4px（合计 226px），
+     同时把 .hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
+  .hy-box{padding:10px 10px 12px}
+  .hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
+  .hy-row.plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
 `;
   const pp = (window.__PP = window.__PP || {});
@@ -5651,7 +5669,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const pname = NAMES[fx(soulIdx - b)];
     const zh = (p.selfHua && p.selfHua.length)
       ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')}</span>` : '';
-    return `<div class="${cls.join(' ')}" data-pi="${b}" data-view="${view}" role="button" tabindex="0" style="grid-row:${pos[0]};grid-column:${pos[1]}">
+    return `<div class="${cls.join(' ')}" data-pi="${b}" data-view="${view}" role="button" tabindex="0" aria-expanded="false" style="grid-row:${pos[0]};grid-column:${pos[1]}">
       <div class="pp-stars">${starsHTML(p.stars)}${zh}</div>
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
       <div class="pp-foot">
@@ -5828,6 +5846,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       c.classList.remove('pp-sel');
       c.classList.remove('pp-link');
     });
+    // 状态同步：aria-expanded 只对当前展开的那一宫为 true
+    body.querySelectorAll('.pp-cell[aria-expanded="true"]').forEach((c) => c.setAttribute('aria-expanded', 'false'));
   }
 
   // 全局委托：面板与独立页都不需要额外初始化，panel-kit 一加载就生效
@@ -5855,6 +5875,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         if (ci === fx(pi + 4) || ci === fx(pi + 8) || ci === fx(pi + 6)) c.classList.add('pp-link');
       });
       cell.classList.add('pp-sel');
+      cell.setAttribute('aria-expanded', 'true');
       detail.innerHTML = palaceDetailHTML(pi, soulIdx);
       detail.classList.add('open');
     };

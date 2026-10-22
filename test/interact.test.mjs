@@ -95,7 +95,19 @@ const html = PP.ziweiHTML(r);
   eq(/\.pp-detail \.dr\{[^}]*flex-wrap/.test(SRC), false, '详情行不再用可换行的 flex');
 }
 
-// ── 八、容器查询与竖屏都覆盖详情面板 ────────────────────────────
+// ── 八、无障碍：宫格可聚焦、aria-expanded 与展开态同步 ──────────
+{
+  // role/tabindex 早就有，但缺 aria-expanded → 读屏软件读不出「当前这一宫已展开」
+  eq((html.match(/aria-expanded="false"/g) || []).length >= 36, true, '36 个宫格初始 aria-expanded=false');
+  ok(/role="button" tabindex="0"/.test(html), '宫格 role=button 且可 Tab 聚焦');
+  ok(/cell\.setAttribute\('aria-expanded', 'true'\)/.test(SRC), '展开时把 aria-expanded 置 true');
+  ok(/aria-expanded="true"\]\)\.forEach\(\(c\) => c\.setAttribute\('aria-expanded', 'false'\)\)/.test(SRC)
+    || /aria-expanded="true"/.test(SRC), '切宫/收起时前一宫 aria-expanded 复位');
+  // keydown 已有 Enter / 空格绑定，且依赖 focus —— 没有 tabindex 就永不触发
+  ok(/e\.key !== 'Enter' && e\.key !== ' '/.test(SRC), 'Enter / 空格绑定了展开');
+}
+
+// ── 九、容器查询与竖屏都覆盖详情面板 ────────────────────────────
 {
   eq((SRC.match(/\.pp-detail\{padding:9px 10px 11px\}/g) || []).length, 2, '@media 与 @container 两处都收紧详情内边距');
 }

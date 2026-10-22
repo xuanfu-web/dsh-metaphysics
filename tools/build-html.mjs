@@ -123,8 +123,13 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .pp{box-shadow:none;border-color:#999}
   .pp-detail{break-inside:avoid}
   .pp-cell{cursor:auto}
-  /* 彩色四化块在黑白打印机上会糊成黑块，加描边让字还看得见 */
-  .pp-m{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  /* 详解块折叠着打印 → 纸面上只剩一个标题栏。打印时强制展开，并藏掉「点击收起」提示 */
+  .it.folded .it-wrap{display:block!important}
+  .it.folded .it-arrow{transform:none}
+  .it-hint{display:none}
+  /* 彩色底块（四化块、身宫描边、三方四正底、选中宫底）都要印出来，
+     只给 .pp-m 会让其余浅色底在纸上整片消失，色弱读者失去唯一线索 */
+  .pp,.it,.pp *,.it *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   a[href]::after{content:""}
 }
 `;
