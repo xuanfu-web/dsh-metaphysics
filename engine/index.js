@@ -1,7 +1,7 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
 import { buildLiuyao, tossLines } from './liuyao.js';
-import { buildZiwei } from './ziwei.js';
+import { buildZiwei, BRIGHTNESS } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
@@ -9,7 +9,7 @@ import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 
-export { interpret, DIRECTIONS, DIRECTION_DEFAULT };
+export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS };
 
 const pad = (n) => String(n).padStart(2, '0');
 

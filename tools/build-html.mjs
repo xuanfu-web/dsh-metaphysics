@@ -154,6 +154,14 @@ function page() {
       <label class="field">询问方向
         <select id="direction">${DIR_OPTIONS}</select>
       </label>
+      <!-- 塔罗牌阵张数：仅塔罗 tab 显示（1/3/5 由引擎 TAROT SPREADS 支持） -->
+      <label class="field" id="for-count" style="display:none">牌阵
+        <select id="tcount">
+          <option value="1">1 张（当下指引）</option>
+          <option value="3" selected>3 张（过去·现在·未来）</option>
+          <option value="5">5 张（现状·阻碍·建议·结果·潜在）</option>
+        </select>
+      </label>
     </div>
     <button id="now" class="now" title="换成此刻并立即起卦">此刻</button>
     <button id="go" class="go">排盘</button>

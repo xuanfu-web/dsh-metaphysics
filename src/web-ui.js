@@ -167,7 +167,7 @@
         if (el('changing').value !== '') args.changing = Number(el('changing').value);
       }
     }
-    if (tab === 'tarot') args.count = 3;
+    if (tab === 'tarot') args.count = Number(el('tcount') ? el('tcount').value : 3) || 3;
     // 问题与卦象一起交给解读：解读按它展开，并在开头回显供你确认
     if (needAsk(tab)) args.question = el('question').value.trim();
     try {
@@ -224,6 +224,8 @@
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
     el('for-ask').style.display = needAsk(tab) ? '' : 'none';
+    const fc = el('for-count');
+    if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
     el('now').style.display = tab === 'tarot' ? 'none' : '';
     el('lbl-date').textContent = birth ? '出生日期（公历）' : '起卦日期（公历）';
     el('lbl-time').textContent = birth ? '出生时刻' : '起卦时刻';
@@ -266,6 +268,9 @@
     el('go').addEventListener('click', run);
     el('now').addEventListener('click', runNow);
     el('gender').addEventListener('change', run);
+    // 换牌阵张数要重新抽牌（1/3/5 张是不同牌阵，不是同一组牌换个显示）
+    const tc = el('tcount');
+    if (tc) tc.addEventListener('change', run);
     // 改问题或方向：只重出解读，不重摇一卦
     el('question').addEventListener('change', () => { if (needAsk(tab)) paint(); });
     el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });

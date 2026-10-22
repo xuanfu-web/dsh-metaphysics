@@ -2085,6 +2085,29 @@ const TIANFU_GROUP = [
   { offset: 6, name: '七杀' }, { offset: 10, name: '破军' },
 ];
 
+/**
+ * 十四主星庙旺得利平不陷（地支序：子丑寅卯辰巳午未申酉戌亥）
+ * 采用通行表（《紫微斗数全书》系）。各家流派在少数宫位有出入（尤其太阳、太阴的庙旺界限），
+ * 此处只标注十四主星——辅星亮度各派差异更大，不作硬标。
+ * 等级从吉到凶：庙 > 旺 > 得 > 利 > 平 > 不 > 陷
+ */
+const BRIGHTNESS = {
+  紫微: ['平', '庙', '庙', '旺', '得', '旺', '庙', '庙', '旺', '平', '得', '旺'],
+  天机: ['庙', '陷', '得', '旺', '利', '平', '庙', '陷', '得', '旺', '利', '平'],
+  太阳: ['陷', '陷', '旺', '庙', '旺', '旺', '庙', '得', '得', '平', '陷', '陷'],
+  武曲: ['旺', '庙', '得', '利', '庙', '平', '旺', '庙', '得', '利', '庙', '平'],
+  天同: ['旺', '陷', '利', '庙', '平', '庙', '陷', '陷', '旺', '平', '平', '庙'],
+  廉贞: ['平', '利', '庙', '平', '利', '陷', '平', '利', '庙', '平', '利', '陷'],
+  天府: ['庙', '庙', '庙', '得', '庙', '得', '旺', '庙', '得', '旺', '庙', '得'],
+  太阴: ['庙', '庙', '陷', '陷', '陷', '陷', '陷', '陷', '利', '旺', '旺', '庙'],
+  贪狼: ['旺', '庙', '平', '利', '庙', '陷', '旺', '庙', '平', '利', '庙', '陷'],
+  巨门: ['旺', '旺', '庙', '庙', '陷', '旺', '旺', '旺', '庙', '庙', '陷', '旺'],
+  天相: ['庙', '庙', '庙', '陷', '得', '得', '庙', '庙', '庙', '陷', '得', '得'],
+  天梁: ['庙', '旺', '庙', '庙', '庙', '陷', '庙', '旺', '庙', '庙', '庙', '陷'],
+  七杀: ['旺', '庙', '庙', '陷', '庙', '平', '旺', '庙', '庙', '陷', '庙', '平'],
+  破军: ['庙', '旺', '得', '陷', '旺', '平', '庙', '旺', '得', '陷', '旺', '平'],
+};
+
 const MUTAGEN = {
   甲: { 廉贞: '禄', 破军: '权', 武曲: '科', 太阳: '忌' },
   乙: { 天机: '禄', 天梁: '权', 紫微: '科', 太阴: '忌' },
@@ -2267,7 +2290,16 @@ function buildZiwei(input) {
 
   // 星曜落宫
   const starsByBranch = Array.from({ length: 12 }, () => []);
-  const put = (branch, name, type) => starsByBranch[fix(branch)].push({ name, type });
+  // 安星：主星顺带记下所在宫的庙旺得利平不陷（BRIGHTNESS 以地支序索引，与 fix(branch) 一致）
+  const put = (branch, name, type) => {
+    const idx = fix(branch);
+    const star = { name, type };
+    if (type === '主星' && BRIGHTNESS[name]) {
+      const b = BRIGHTNESS[name][idx];
+      if (b) star.brightness = b;
+    }
+    starsByBranch[idx].push(star);
+  };
 
   for (const s of ZIWEI_GROUP) put(ziwei + s.offset, s.name, '主星');
   for (const s of TIANFU_GROUP) put(tianfu + s.offset, s.name, '主星');
@@ -2746,7 +2778,7 @@ function enrichLiunian(chart) {
   return chart.liunian;
 }
 
-return { PALACE_NAMES, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, enrichLiunian };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, enrichLiunian };
 })();
 
 __mods.tarot = (function () {
@@ -4702,7 +4734,7 @@ __mods.index = (function () {
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 const { buildBazi } = __mods.bazi;
 const { buildLiuyao, tossLines } = __mods.liuyao;
-const { buildZiwei } = __mods.ziwei;
+const { buildZiwei, BRIGHTNESS } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
 const { buildDaliuren } = __mods.daliuren;
@@ -4966,7 +4998,7 @@ function renderText(result) {
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
 })();
 
     const Engine = __mods.index;
@@ -4995,6 +5027,12 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
 .pp-st.aux{color:var(--muted)}
 .pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:#fff;margin-left:1px;vertical-align:1px}
 .pp-m.lu{background:var(--lu)}.pp-m.quan{background:var(--quan)}.pp-m.ke{background:var(--ke)}.pp-m.ji{background:var(--ji)}
+/* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
+   避免与四化的实心彩色方块抢层次 */
+.pp-b{font-style:normal;font-size:11.5px;margin-left:4px;color:var(--muted);letter-spacing:0;opacity:.9}
+.pp-b.good{color:#4c7a5c}
+.pp-b.mid{color:var(--muted)}
+.pp-b.bad{color:#9c5b56}
 .pp-ages{margin-top:2px;font-size:12px;color:var(--muted);letter-spacing:.02em}
 .pp-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:4px;font-size:12px;color:var(--muted)}
 .pp-foot .l{display:flex;flex-direction:column;gap:0;line-height:1.5}
@@ -5213,6 +5251,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
   .pp-st.main{font-size:11px}
   .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9.5px}
   .pp-m{font-size:8.5px;padding:0 1px;vertical-align:0}
+  .pp-b{font-size:10px;margin-left:3px;opacity:.9}
   .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
   .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
   .pp-foot .pn{font-size:11px}
@@ -5276,6 +5315,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
   .pp-st.main{font-size:11px}
   .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9.5px}
   .pp-m{font-size:8.5px;padding:0 1px;vertical-align:0}
+  .pp-b{font-size:10px;margin-left:3px;opacity:.9}
   .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
   .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
   .pp-foot .pn{font-size:11px}
@@ -5338,6 +5378,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
 
   const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'aux' };
   const MUT = { 禄: 'lu', 权: 'quan', 科: 'ke', 忌: 'ji' };
+  // 庙旺得利平不陷 → 三档视觉权重：吉（庙旺）/ 中（得利平）/ 忌（不陷）
+  const BR_CLASS = { 庙: 'good', 旺: 'good', 得: 'mid', 利: 'mid', 平: 'mid', 不: 'bad', 陷: 'bad' };
   const POS = {
     巳: [1, 1], 午: [1, 2], 未: [1, 3], 申: [1, 4],
     辰: [2, 1], 酉: [2, 4], 卯: [3, 1], 戌: [3, 4],
@@ -5361,7 +5403,10 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
     return stars.map((s) => {
       const cls = TYPE_CLASS[s.type] || 'aux';
       const m = s.mutagen ? `<i class="pp-m ${MUT[s.mutagen]}">${s.mutagen}</i>` : '';
-      return `<span class="pp-st ${cls}">${s.name}${m}</span>`;
+      const b = s.brightness ? `<em class="pp-b ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
+      // 顺序：星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
+      // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
+      return `<span class="pp-st ${cls}">${s.name}${b}${m}</span>`;
     }).join('');
   }
 
