@@ -100,7 +100,7 @@ const base = { system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', ad
   ok(html.includes('流日'), '含「流日」行');
   ok(html.includes('流时'), '含「流时」行');
   ok(html.includes('斗君'), '基准行标出斗君');
-  eq((html.match(/class="fl"/g) || []).length, 4, '基准 + 流月/流日/流时 共 4 行');
+  eq((html.match(/class="flow-row"/g) || []).length, 4, '基准 + 流月/流日/流时 共 4 行');
   // 没有 flow 时不能崩
   const bare = PP.ziweiHTML({ ...r, flow: null });
   ok(bare.includes('pp'), 'flow 缺失时仍能渲染');

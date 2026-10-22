@@ -85,14 +85,14 @@ const html = PP.ziweiHTML(r);
 // ── 六、触摸目标：视图切换 ≥44px ────────────────────────────────
 {
   ok(/\.pp-modes label\{[^}]*min-height:44px/.test(SRC), '本命/大限/流年 切换目标高度 ≥44px');
-  ok(/\.pp-detail \.dh \.x\{[^}]*min-height:44px/.test(SRC), '详情收起按钮高度 ≥44px');
-  ok(/\.pp-detail \.dh \.x\{[^}]*min-width:48px/.test(SRC), '详情收起按钮宽度 ≥44px');
+  ok(/\.pp-detail \.dt-dh \.dt-x\{[^}]*min-height:44px/.test(SRC), '详情收起按钮高度 ≥44px');
+  ok(/\.pp-detail \.dt-dh \.dt-x\{[^}]*min-width:48px/.test(SRC), '详情收起按钮宽度 ≥44px');
 }
 
 // ── 七、详情排版用 grid（flex 会让长值整块换行、标签与内容错行）──
 {
-  ok(/\.pp-detail \.dr\{[^}]*display:grid/.test(SRC), '详情行用 grid 对齐标签与内容');
-  eq(/\.pp-detail \.dr\{[^}]*flex-wrap/.test(SRC), false, '详情行不再用可换行的 flex');
+  ok(/\.pp-detail \.dt-dr\{[^}]*display:grid/.test(SRC), '详情行用 grid 对齐标签与内容');
+  eq(/\.pp-detail \.dt-dr\{[^}]*flex-wrap/.test(SRC), false, '详情行不再用可换行的 flex');
 }
 
 // ── 八、无障碍：宫格可聚焦、aria-expanded 与展开态同步 ──────────

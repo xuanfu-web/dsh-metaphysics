@@ -41,7 +41,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(/\.pp-tri\{background:var\(--tri\)\}/.test(KIT), '三方四正底色走 --tri');
   ok(/\.pp-cell:hover\{background:var\(--hover\)\}/.test(KIT), '宫格 hover 走 --hover');
   ok(/\.pp-cell\.pp-sel\{background:var\(--sel\)/.test(KIT), '选中宫底色走 --sel');
-  ok(/\.pp-detail \.dr \.k\{color:var\(--label\)/.test(KIT), '详情标签走 --label');
+  ok(/\.pp-detail \.dt-dr \.dt-k\{color:var\(--label\)/.test(KIT), '详情标签走 --label');
   eq(/rgba\(179,38,30/.test(KIT), false, '不再有硬编码的红色 rgba');
   ok(/rgba\(var\(--red-rgb\),/.test(KIT), '半透明红色改走 --red-rgb');
 }

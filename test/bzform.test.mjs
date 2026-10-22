@@ -25,7 +25,7 @@ const html = PP.baziHTML(r);
   ok(/<table class="pp-bz">/.test(html), '八字用 pp-bz 表格渲染');
   ok(/table-layout:fixed/.test(SRC), '固定表格布局，四列等分不被内容撑歪');
   ok(/\.pp-bz\{width:100%;max-width:860px;margin:0 auto/.test(SRC), '桌面端限制最大宽度并居中');
-  ok(/\.pp-bz th:first-child,\.pp-bz td\.lbl\{width:46px\}/.test(SRC), '行名列固定 46px 窄列');
+  ok(/\.pp-bz th:first-child,\.pp-bz td\.bz-lbl\{width:46px\}/.test(SRC), '行名列固定 46px 窄列');
   // 表头四柱
   const ths = html.match(/<th[^>]*>([^<]*)<\/th>/g) || [];
   eq(ths.length, 5, '表头 = 1 个空角 + 4 个柱名');
@@ -41,11 +41,11 @@ const html = PP.baziHTML(r);
 
 // ── 三、天干地支大字：选择器必须真的命中 ───────────────────────
 {
-  ok(/class="big wx-wood"|class="big wx-fire"|class="big wx-earth"|class="big wx-metal"|class="big wx-water"/.test(html),
+  ok(/class="bz-big wx-wood"|class="bz-big wx-fire"|class="bz-big wx-earth"|class="bz-big wx-metal"|class="bz-big wx-water"/.test(html),
     '天干/地支用 .big 包住并带五行色类');
-  ok(/\.pp-bz \.big\{font-size:26px/.test(SRC), '大字样式挂在后代 .big 上');
-  ok(!/\.pp-bz td\.big/.test(SRC), '不得写 td.big（class 在 span 上，td.big 永不命中）');
-  eq((html.match(/<span class="big /g) || []).length, 8, '4 柱 × 天干地支 = 8 个大字');
+  ok(/\.pp-bz \.bz-big\{font-size:26px/.test(SRC), '大字样式挂在后代 .big 上');
+  ok(!/\.pp-bz td\.big/.test(SRC), '不得写 td.bz-big（class 在 span 上，td.bz-big 永不命中）');
+  eq((html.match(/<span class="bz-big /g) || []).length, 8, '4 柱 × 天干地支 = 8 个大字');
 }
 
 // ── 四、十神按五类分组、颜色全部走变量 ─────────────────────────
@@ -62,22 +62,22 @@ const html = PP.baziHTML(r);
 
 // ── 五、藏干逐行列出并跟五行色 ─────────────────────────────────
 {
-  ok(/\.pp-bz \.cg\{display:block;font-style:normal/.test(SRC), '藏干每条独立成行');
-  ok(/<i class="cg wx-/.test(html), '藏干带五行色类');
-  const cg = (html.match(/<i class="cg wx-\w+">([^<]+)<\/i>/g) || []).length;
+  ok(/\.pp-bz \.bz-cg\{display:block;font-style:normal/.test(SRC), '藏干每条独立成行');
+  ok(/<i class="bz-cg wx-/.test(html), '藏干带五行色类');
+  const cg = (html.match(/<i class="bz-cg wx-\w+">([^<]+)<\/i>/g) || []).length;
   ok(cg >= 4 && cg <= 16, `藏干条数落在合理区间（实际 ${cg}）`);
 }
 
 // ── 六、五行旺相休囚死：以月令推五态 ───────────────────────────
 function wxCells(h) {
-  const m = h.match(/<td class="wxs" colspan="4">([\s\S]*?)<\/td>/);
+  const m = h.match(/<td class="bz-wxs" colspan="4">([\s\S]*?)<\/td>/);
   if (!m) return null;
   return [...m[1].matchAll(/<b class="wx-\w+">(.)<\/b><em>(.)<\/em>/g)].map((x) => ({ el: x[1], st: x[2] }));
 }
 {
   const cells = wxCells(html);
   ok(!!cells, '表格末行有「五行」一格（colspan=4，横跨四柱）');
-  ok(/<td class="lbl">五行<\/td>/.test(html), '五行行左侧有行名');
+  ok(/<td class="bz-lbl">五行<\/td>/.test(html), '五行行左侧有行名');
   eq((cells || []).length, 5, '五态各一项');
   eq((cells || []).map((c) => c.st).join(''), '旺相休囚死', '顺序为 旺 → 相 → 休 → 囚 → 死');
   eq(new Set((cells || []).map((c) => c.el)).size, 5, '五行互不重复');
@@ -111,8 +111,8 @@ function wxCells(h) {
 
 // ── 八、窄屏：一处也不能 2×2 折行 ──────────────────────────────
 {
-  eq((SRC.match(/\.pp-bz \.big\{font-size:23px\}/g) || []).length, 2, '@media 与 @container 两处都收紧大字');
-  eq((SRC.match(/\.pp-bz td\.wxs\{font-size:11px/g) || []).length, 2, '五行行也有两处窄屏覆盖');
+  eq((SRC.match(/\.pp-bz \.bz-big\{font-size:23px\}/g) || []).length, 2, '@media 与 @container 两处都收紧大字');
+  eq((SRC.match(/\.pp-bz td\.bz-wxs\{font-size:11px/g) || []).length, 2, '五行行也有两处窄屏覆盖');
   ok(!/\.pp-bz tbody\{display:(grid|flex)/.test(SRC), 'tbody 不得改成网格（会破坏四柱并列）');
 }
 
