@@ -5,9 +5,12 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
-const ORDER = ['calendar', 'lunar', 'geo', 'shensha', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'index'];
+const ORDER = ['calendar', 'lunar', 'geo', 'shensha', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'interpret-data', 'interpret', 'index'];
 
 export const MODULE_ORDER = ORDER;
+
+/** 模块名可能带连字符，作为对象 key 时要加引号 */
+const modRef = (dep) => (/^[A-Za-z0-9_$]+$/.test(dep) ? `__mods.${dep}` : `__mods['${dep}']`);
 
 export function buildModule(name) {
   const file = path.join(root, 'engine', `${name}.js`);
@@ -15,9 +18,11 @@ export function buildModule(name) {
   const exported = new Set();
 
   code = code.replace(
-    /^import\s*\{([\s\S]*?)\}\s*from\s*'\.\/([a-z]+)\.js';?/gm,
-    (_m, names, dep) => `const { ${names.split(',').map((s) => s.trim()).filter(Boolean).join(', ')} } = __mods.${dep};`,
+    /^import\s*\{([\s\S]*?)\}\s*from\s*'\.\/([a-z-]+)\.js';?/gm,
+    (_m, names, dep) => `const { ${names.split(',').map((s) => s.trim()).filter(Boolean).join(', ')} } = ${modRef(dep)};`,
   );
+  // 打包进 IIFE 后 export default 不合法，直接去掉（调用方统一用命名导出）
+  code = code.replace(/^export\s+default\s+.*;?\s*$/gm, '');
   code = code.replace(/^export\s*\{([\s\S]*?)\};?/gm, (_m, names) => {
     for (const n of names.split(',').map((s) => s.trim()).filter(Boolean)) exported.add(n);
     return '';
@@ -27,7 +32,7 @@ export function buildModule(name) {
     return `${isAsync ? 'async ' : ''}${kind} ${id}`;
   });
 
-  return `__mods.${name} = (function () {\n${code}\nreturn { ${[...exported].join(', ')} };\n})();\n`;
+  return `${modRef(name)} = (function () {\n${code}\nreturn { ${[...exported].join(', ')} };\n})();\n`;
 }
 
 /** 生成完整 client.js 源码；tail 默认取 src/app.js */

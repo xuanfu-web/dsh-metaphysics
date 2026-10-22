@@ -53,12 +53,14 @@
     }
     try {
       const r = window.Engine.compute(args);
-      el('out').innerHTML = tab === 'ziwei' ? window.__PP.ziweiHTML(r)
+      const it = window.Engine.interpret ? window.Engine.interpret(r) : (r.interpret || null);
+      const html = tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? window.__PP.baziHTML(r)
           : tab === 'meihua' ? window.__PP.meihuaHTML(r)
             : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
               : tab === 'tarot' ? window.__PP.tarotHTML(r)
                 : window.__PP.liuyaoHTML(r);
+      el('out').innerHTML = window.__PP.resultWithInterpret(html, it);
     } catch (e) {
       el('out').innerHTML = `<div class="err">${(e && e.message) || e}</div>`;
     }
@@ -82,7 +84,7 @@
     el('for-tarot').style.display = tab === 'tarot' ? '' : 'none';
     el('for-date').style.display = tab === 'tarot' ? 'none' : '';
     el('for-time').style.display = tab === 'tarot' ? 'none' : '';
-    el('for-now').style.display = tab === 'tarot' ? 'none' : '';
+    el('now').style.display = tab === 'tarot' ? 'none' : '';
     el('lbl-date').textContent = birth ? '出生日期（公历）' : '起卦日期（公历）';
     el('lbl-time').textContent = birth ? '出生时刻' : '起卦时刻';
     el('go').textContent = tab === 'tarot' ? '抽牌' : birth ? '排盘' : '起卦';
@@ -93,7 +95,8 @@
   function syncMhMode() {
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mhMode));
     el('mh-num').style.display = (tab === 'meihua' && mhMode === 'number') ? '' : 'none';
-    el('mh-time').style.display = (tab === 'meihua' && mhMode === 'time') ? '' : 'none';
+    const mhTime = el('mh-time');
+    if (mhTime) mhTime.style.display = (tab === 'meihua' && mhMode === 'time') ? '' : 'none';
   }
 
   window.addEventListener('DOMContentLoaded', () => {

@@ -1,21 +1,21 @@
 // Client 半：命理排盘面板。由 build-client.mjs 注入 React / h / Engine / __PP。
 const PP = window.__PP;
 const CSS = `
-.mp-wrap{height:100%;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:13px}
+.mp-wrap{height:100%;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px}
 .mp-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
 .mp-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.mp-tab{padding:6px 16px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13px;transition:background .12s,color .12s}
+.mp-tab{padding:7px 17px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:14px;transition:background .12s,color .12s}
 .mp-tab:hover{background:var(--dsw-alias-bg-layer-2)}
 .mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:#fff}
-.mp-field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dsw-alias-label-secondary)}
-.mp-input{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;min-width:132px}
+.mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary)}
+.mp-input{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;min-width:132px}
 .mp-input:focus{border-color:var(--dsw-alias-brand-primary)}
-.mp-btn{padding:7px 18px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:13px}
+.mp-btn{padding:8px 20px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px}
 .mp-btn.ghost{background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
 .mp-seg{display:inline-flex;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden}
-.mp-seg button{padding:5px 12px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer}
+.mp-seg button{padding:6px 13px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:13px;cursor:pointer}
 .mp-seg button.on{background:var(--dsw-alias-brand-primary);color:#fff}
-.mp-hint{font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
+.mp-hint{font-size:12.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
 .mp-card{margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1)}
 .mp-flat{margin-top:16px;padding:0;border:none;background:transparent;border-radius:0}
 .mp-dim{color:var(--dsw-alias-label-secondary)}
@@ -116,7 +116,8 @@ function App() {
         }
       }
       const r = Engine.compute(args);
-      setResult({ kind: k, r });
+      const it = Engine.interpret ? Engine.interpret(r) : null;
+      setResult({ kind: k, r, it });
       setError('');
       setCopied('');
     } catch (e) {
@@ -210,12 +211,15 @@ function App() {
       key: 'card',
       className: 'mp-card mp-flat',
       dangerouslySetInnerHTML: {
-        __html: result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-          : result.kind === 'bazi' ? PP.baziHTML(result.r)
-            : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
-              : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
-                : result.kind === 'tarot' ? PP.tarotHTML(result.r)
-                  : PP.liuyaoHTML(result.r),
+        __html: PP.resultWithInterpret(
+          result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
+            : result.kind === 'bazi' ? PP.baziHTML(result.r)
+              : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
+                : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
+                  : result.kind === 'tarot' ? PP.tarotHTML(result.r)
+                    : PP.liuyaoHTML(result.r),
+          result.it,
+        ),
       },
     }) : null,
 

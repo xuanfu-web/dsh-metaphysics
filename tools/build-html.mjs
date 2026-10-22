@@ -9,79 +9,67 @@ const root = path.resolve(import.meta.dirname, '..');
 export const CSS = `
 :root{--bg:#f4f1ea;--panel:#fffdf8;--panel2:#f7f3ea;--line:#cfc7b6;--ink:#1b1b1b;--dim:#6f6a60;--gold:#b3261e;--good:#1f6f3f;--bad:#b3261e;--warn:#8a5a00}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
 .wrap{max-width:1180px;margin:0 auto;padding:22px 26px 60px}
 header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px}
-.brand{font-size:19px;font-weight:700;letter-spacing:.12em;color:var(--gold)}
-.brand small{display:block;font-size:11px;letter-spacing:.02em;color:var(--dim);font-weight:400;margin-top:2px}
-.tabs{display:flex;gap:6px;margin-left:auto}
-.tab{padding:6px 18px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:13px;font-family:inherit}
+.brand{font-size:21px;font-weight:700;letter-spacing:.12em;color:var(--gold)}
+.brand small{display:block;font-size:12.5px;letter-spacing:.02em;color:var(--dim);font-weight:400;margin-top:2px}
+.tabs{display:flex;gap:8px;margin-left:auto}
+.tab{padding:8px 20px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:14.5px;font-family:inherit;white-space:nowrap}
 .tab:hover{background:var(--panel2)}
 .tab.on{background:var(--gold);border-color:transparent;color:#fff;font-weight:600}
-.bar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px}
-.grp{display:flex;gap:14px;align-items:flex-end}
-.field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dim)}
-.field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;min-width:140px}
+.bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px}
+.grp{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--dim)}
+/* 固定宽度而非 min-width：输入控件的默认固有宽度（20 字符）会把 1180px 下的单行输入区挤到换行 */
+.field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;outline:none;width:150px}
+#addr{width:178px}
+#mh-num input{width:124px}
+#changing{width:132px}
 .field input:focus,.field select:focus{border-color:var(--gold)}
-.field.check{flex-direction:row;align-items:center;gap:6px;padding-bottom:7px}
-.field.check input{min-width:0;width:16px;height:16px;accent-color:var(--gold);padding:0}
-.go{margin-left:auto;padding:8px 22px;border-radius:4px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px}
+.field.check{flex-direction:row;align-items:center;gap:8px;padding-bottom:8px}
+.field.check input{min-width:0;width:18px;height:18px;accent-color:var(--gold);padding:0}
+.go{margin-left:auto;padding:10px 22px;border-radius:6px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px}
 .go:hover{filter:brightness(1.08)}
-.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-.chip{font-size:12px;padding:4px 10px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{font-size:13px;padding:4px 10px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
 .chip.ok{color:var(--good);border-color:rgba(95,191,139,.35)}
 .chip.warn{color:var(--warn);border-color:rgba(216,161,60,.35)}
 .chip.dim{opacity:.6}
-.note{margin-top:10px;font-size:12px;color:var(--dim)}
-.err{margin-top:18px;padding:12px 16px;border-radius:10px;background:rgba(224,102,95,.12);color:var(--bad)}
-h3{margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--gold)}
-.zv{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(124px,auto));gap:7px}
-.zc{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:8px 9px;display:flex;flex-direction:column;gap:5px}
-.zc.soul{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(201,162,90,.5)}
-.zc.center{grid-column:2/4;grid-row:2/4;justify-content:center;gap:7px;background:var(--panel2);border-color:rgba(201,162,90,.4);padding:16px 18px}
-.zc.center .cl{font-size:15px;font-weight:600;color:var(--gold)}
-.ph{display:flex;justify-content:space-between;align-items:baseline;font-size:12px}
-.pname{font-weight:600}
-.pbr{color:var(--dim);font-size:11px}
-.tag{display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;background:var(--gold);color:#1a1400;font-size:10px;font-weight:700}
-.tag.body{background:var(--dim);color:#12141a}
-.stars{display:flex;flex-wrap:wrap;gap:2px 6px;font-size:11.5px;line-height:1.5}
-.st.main{color:var(--ink);font-weight:600}
-.st.good{color:var(--good)}
-.st.bad{color:var(--bad)}
-.st.aux{color:var(--dim)}
-.st i{font-style:normal;font-size:9.5px;margin-left:1px;padding:0 2px;border-radius:3px}
-.m-lu{background:rgba(95,191,139,.2);color:var(--good)}
-.m-quan{background:rgba(201,162,90,.2);color:var(--gold)}
-.m-ke{background:rgba(216,161,60,.2);color:var(--warn)}
-.m-ji{background:rgba(224,102,95,.2);color:var(--bad)}
-.foot{margin-top:auto;font-size:10.5px;color:var(--dim)}
-.ss{font-size:10.5px;line-height:1.5;color:var(--dim);opacity:.85;margin-top:2px}
-.bz{display:grid;grid-template-columns:56px repeat(4,1fr);gap:8px 12px;align-items:center;margin-top:6px}
-.bz .lbl{font-size:12px;color:var(--dim)}
-.bz .cell{font-size:12.5px}
-.bz .cell.head{color:var(--gold);font-size:12px;font-weight:600}
-.bz .big{font-size:23px;font-weight:600}
-.bz .small{font-size:11.5px;line-height:1.7}
-.dim{color:var(--dim)}
-.ly{display:flex;flex-direction:column;gap:5px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
-.ly-row{display:flex;align-items:center;gap:10px}
-.ly-name{width:34px;color:var(--dim);font-size:11.5px}
-.ly-bar{width:76px;letter-spacing:1px}
-.ly-bar.yang{color:var(--ink)}
-.ly-bar.yin{color:var(--dim)}
-.ly-bar.moving{color:var(--warn)}
-.ly-gz{width:60px}
-.ly-lq{width:54px}
-.ly-ls{width:44px;font-size:11.5px}
-.ly-mv{color:var(--warn);font-size:11px}
-.mark{display:inline-block;width:18px}
+.note{margin-top:10px;font-size:13px;color:var(--dim)}
+.err{margin-top:18px;padding:12px 16px;border-radius:10px;background:rgba(224,102,95,.12);color:var(--bad);font-size:14px}
+/* 注：盘面样式（紫微宫格 .pp-grid / 八字 .pp-bz / 六爻 .hy-row / 梅花 .hexbox / 六壬 .dl-pan2 / 塔罗 .tt-grid）
+   全部由 src/panel-kit.js 的 PP.CSS 提供，本文件只保留页面框架样式，不再重复定义旧版盘面类 */
+h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{padding:6px 13px;background:transparent;border:none;color:var(--dim);font-size:12px;font-family:inherit;cursor:pointer}
+.seg button{padding:7px 14px;background:transparent;border:none;color:var(--dim);font-size:13.5px;font-family:inherit;cursor:pointer}
 .seg button.on{background:var(--gold);color:#fff;font-weight:600}
-.tip{margin:-6px 0 16px;font-size:12px;color:var(--dim);line-height:1.8}
-.now{padding:8px 14px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:13px;cursor:pointer}
+.tip{margin:-6px 0 16px;font-size:13.5px;color:var(--dim);line-height:1.8}
+.now{padding:10px 13px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:15px;cursor:pointer}
 .now:hover{background:var(--panel2)}
+/* —— 竖屏（≤640px）：整页不横向滚动，输入区整行堆叠，盘面交给 panel-kit 的同名媒体查询 —— */
+@media (max-width:640px){
+  body{font-size:15.5px}
+  .wrap{padding:14px 12px 48px}
+  header{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:12px}
+  header>*{min-width:0}
+  .brand{font-size:19px}
+  .tabs{margin-left:0;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;max-width:100%}
+  .tab{flex:0 0 auto;padding:11px 17px;font-size:14px;min-height:44px}
+  .bar{flex-direction:column;align-items:stretch;gap:14px;padding:14px}
+  .grp{flex-direction:column;align-items:stretch;gap:14px}
+  .field{width:100%}
+  .field input,.field select,#addr,#changing{width:100%;min-width:0;padding:11px 12px;font-size:16px;min-height:44px}
+  .field.check{padding-bottom:0}
+  #mh-num{flex-wrap:wrap}
+  #mh-num input{flex:1 1 30%;width:auto}
+  .seg{display:flex;width:100%}
+  .seg button{flex:1;padding:12px 8px;min-height:44px}
+  .go{margin-left:0;width:100%;padding:13px;font-size:16px;min-height:48px;border-radius:8px}
+  .now{width:100%;padding:12px;font-size:15px;min-height:46px;border-radius:8px}
+  .tip{font-size:13px}
+}
 `;
 
 function page() {
@@ -92,7 +80,7 @@ function page() {
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>命理排盘</title>
 <style>${CSS}</style>
 </head>

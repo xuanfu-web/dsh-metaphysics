@@ -7,6 +7,9 @@ import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
+import { interpret } from './interpret.js';
+
+export { interpret };
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -182,7 +185,10 @@ function jsonSafe(value) {
  * @param {string} [args.datetime]
  */
 export function compute(args = {}) {
-  return jsonSafe(computeRaw(args));
+  const r = jsonSafe(computeRaw(args));
+  // 显式要求时才附加解析模块，避免默认输出过长
+  if (args.withInterpret) r.interpret = interpret(r);
+  return r;
 }
 
 function computeRaw(args) {
