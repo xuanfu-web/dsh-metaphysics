@@ -151,10 +151,22 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 npm run build        # 生成 client.js（浏览器端产物）
 npm run build:html   # 生成独立的 命理排盘.html（可离线双击使用）
 npm test             # 顺序跑完 test/ 下全部 *.test.mjs 并汇总
+npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token 从 NPM_TOKEN 读）
 ```
 
-也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`、`node tools/release.mjs`。
 `client.js` 是构建产物，不要手改；改动记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+### 发版
+
+```bash
+# 先在 npm 生成 Granular Token：Read and write + 勾 Bypass 2FA
+NPM_TOKEN=npm_xxx npm run release              # 正式发布（会先跑测试与构建校验）
+NPM_TOKEN=npm_xxx npm run release -- --dry-run # 只校验不发布
+NPM_CLI=/path/to/npm-cli.js NPM_TOKEN=... npm run release   # 本机没有 npm CLI 时
+```
+
+脚本会拦下：工作区不干净、`client.js` 未随源码重建、registry 上已有同版本；发布后自动核对新版本与 `dist-tags`，并提示补 `git tag`。
 
 ### 样式命名约定
 

@@ -2,6 +2,12 @@
 
 版本按「一组可感知的改动」发，README 与市场条目描述随能力同步。
 
+## 0.13.5
+
+- 新增 `npm run release`（`tools/release.mjs`）：一条命令走完「测试 → 构建 → 校验产物 → 发 npm」，token 只从环境变量 `NPM_TOKEN` 读，临时 `.npmrc` 用后即删
+  - 发布前会拦下三种情况：git 工作区不干净、`client.js` 与源码不同步、registry 上已有同版本
+  - `-- --dry-run` 只跑到校验；本机没装 npm CLI 时用 `NPM_CLI=/path/to/npm-cli.js` 指定
+
 ## 0.13.4
 
 - 新增 `npm run build` / `npm run build:html` / `npm test`：`tools/test-all.mjs` 顺序跑完 20 个测试文件并汇总退出码，省掉手敲一长串 `node test/*.mjs`
