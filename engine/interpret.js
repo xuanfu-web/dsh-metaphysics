@@ -146,7 +146,7 @@ function baziInterpret(r) {
     {
       key: 'overall', label: '整体运势',
       text: `你的日主是${dm.stem}（五行属${dm.element}），命局身${level}（${pick(st, 'score', '')} 分）。` +
-        `用神取向偏${join(favor)}、忌${join(avoid)}，可以理解为：往${join(favor)}的方向走，你会更省力。${pick(ys, 'detail', '').split('。')[0]}。` +
+        `用神取向偏${join(favor)}，忌${join(avoid)}——往${join(favor)}的方向走会更省力${ys.tiaohou && ys.tiaohou.note ? `，调候上还${ys.tiaohou.note}` : ''}。` +
         `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}同样是${lnTier}的档位。`,
       advice: `${TIER_TEXT[curTier] || TIER_TEXT.平}。${TIER_ADVICE[lnTier] || TIER_ADVICE.平}；把大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
     },
