@@ -225,11 +225,23 @@
   .pp-modes{flex-wrap:wrap}
   .pp-modes label{padding:6px 16px}
   .pp-soon{margin-left:0;padding:6px 10px;width:100%;border-top:1px solid var(--line)}
-  /* 紫微：十二宫改 2 列卡片流，总览置顶 */
-  .pp-grid{grid-template-columns:repeat(2,1fr);grid-template-rows:none;gap:6px;padding:8px}
-  .pp-cell{grid-row:auto!important;grid-column:auto!important;min-height:0;border:1px solid var(--line)!important;border-radius:8px}
-  .pp-center{grid-row:auto!important;grid-column:1/-1!important;order:-1;border:1px solid var(--line)!important;border-radius:8px}
-  .pp-stars{justify-content:flex-start}
+  /* 紫微：竖屏保持 4×4 宫盘（宫位相对位置是三合/对宫的核心，不可丢），宫内改竖向紧凑排版 */
+  .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0}
+  .pp-cell{min-height:0;padding:3px 2px 4px;border-radius:0}
+  .pp-center{grid-column:2/4;grid-row:2/4;order:0;border-radius:0;padding:5px 3px;gap:2px}
+  .pp-center .t1{font-size:12px;margin-bottom:2px;letter-spacing:.02em}
+  .pp-center .t2{font-size:9px;line-height:1.4}
+  .pp-center .t3{font-size:10.5px;letter-spacing:.16em;margin:2px 0}
+  .pp-center .t4{font-size:9px;line-height:1.45}
+  .pp-center .pp-legend{font-size:8.5px;gap:4px;margin-top:3px;flex-wrap:wrap;line-height:1.4}
+  /* 星曜竖排堆叠：主星在上粗体，辅星小字，四化彩色标 */
+  .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;font-size:11px;line-height:1.4;min-height:0}
+  .pp-st.main{font-size:11px}
+  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9.5px}
+  .pp-m{font-size:8.5px;padding:0 1px;vertical-align:0}
+  .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
+  .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
+  .pp-foot .pn{font-size:11px}
   /* 八字：隐藏表头，行标签整行 + 四柱 2×2，每格角标柱名 */
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
@@ -270,8 +282,13 @@
   .it-adv{padding:9px 10px}
 }
 @media (max-width:430px){
-  /* 窄屏手机：紫微单列，保证宫名/干支/星曜完整可读 */
-  .pp-grid{grid-template-columns:1fr}
+  /* 窄屏手机：紫微仍保持 4×4 宫盘（相对位置不可丢），进一步收紧宫内字号与间距 */
+  .pp-cell{padding:2px 1px 3px}
+  .pp-st.main{font-size:10px}
+  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9px}
+  .pp-foot .pn{font-size:10px}
+  .pp-center .t1{font-size:11px}
+  .pp-center .t2,.pp-center .t4{font-size:8.5px}
   .dl-sc-c{min-width:80px}
 }
 `;
