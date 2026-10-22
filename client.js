@@ -3897,6 +3897,55 @@ const SYSTEM_LABEL = {
   meihua: '梅花易数', daliuren: '大六壬', tarot: '塔罗',
 };
 
+// ── 询问方向 ────────────────────────────────────────────
+// 问事（六爻 / 梅花 / 大六壬 / 塔罗）时可选的方向。
+// dim 指向五维度里最贴近的一条，会把该维度提到最前并在开头点明问题与方向，避免泛泛而谈。
+const DIRECTIONS = [
+  { key: 'general', label: '综合', dim: null, focus: '' },
+  { key: 'wealth', label: '财运', dim: 'work', focus: '钱财进出的落点主要看「工作与职业选择」与「事业发展」这两条。' },
+  { key: 'career', label: '事业', dim: 'career', focus: '事业发展这条与你的问题最直接。' },
+  { key: 'love', label: '感情', dim: 'love', focus: '感情这条与你的问题最直接。' },
+  { key: 'health', label: '健康', dim: 'health', focus: '健康这条与你的问题最直接；下面只作提醒，不作任何诊断。' },
+  { key: 'study', label: '学业', dim: 'career', focus: '学业与考试更贴近「事业发展」这条，讲的是长期积累与阶段进展。' },
+  { key: 'travel', label: '出行', dim: 'overall', focus: '出行与迁动更贴近「整体运势」这条，看的是当下这一段的大环境。' },
+];
+
+const DIRECTION_DEFAULT = 'general';
+const dirOf = (key) => DIRECTIONS.find((d) => d.key === key) || DIRECTIONS[0];
+
+/** 归一化「所问之事 + 询问方向」，给出结构与回显串 */
+function askOf(opts) {
+  const o = isObj(opts) ? opts : {};
+  const question = typeof o.question === 'string' ? o.question.trim().slice(0, 200) : '';
+  const d = dirOf(o.direction);
+  return {
+    question,
+    direction: d.key,
+    directionLabel: d.label,
+    echo: `问题：${question || '（未填写）'} ｜ 询问方向：${d.label}`,
+  };
+}
+
+/** 把问题与方向写进解析：聚焦维度提前 + 点明方向 + 引语回显 */
+function applyAsk(dims, ask, lead) {
+  const list = Array.isArray(dims) ? dims.slice() : [];
+  const d = dirOf(ask && ask.direction);
+  if (d.dim) {
+    const i = list.findIndex((x) => x && x.key === d.dim);
+    if (i > 0) { const hit = list[i]; list.splice(i, 1); list.unshift(hit); }
+    if (list[0] && list[0].key === d.dim) {
+      const head = ask.question
+        ? `就你所问的「${ask.question}」来看（${d.label}方向）——${d.focus}`
+        : `按${d.label}这个方向看——${d.focus}`;
+      list[0] = Object.assign({}, list[0], { text: `${head}${list[0].text}`, focused: true });
+    }
+  }
+  let l = lead || '';
+  if (ask.question) l = `你问的是「${ask.question}」${d.key === 'general' ? '。' : `，方向是${d.label}。`}${l}`;
+  else if (d.key !== 'general') l = `方向是${d.label}。${l}`;
+  return { dims: list, lead: l };
+}
+
 // 大运/流年档位 → 走势描述（非绝对判断）
 const TIER_TEXT = {
   大吉: '外部环境对你比较配合，属于可以主动争取的阶段',
@@ -4526,9 +4575,11 @@ const BUILDERS = {
 /**
  * 生成解析与详解
  * @param {object} r compute() 的返回值
+ * @param {object} [opts] 可选：{ question 所问之事, direction 询问方向 key }
+ *                 传了就把最贴近的维度提前、在该维度点明问题与方向，并给出回显串
  * @returns {object|null} 结构化解析对象
  */
-function interpret(r) {
+function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const fn = BUILDERS[r.system];
   if (!fn) return null;
@@ -4546,22 +4597,25 @@ function interpret(r) {
       sections: [],
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
+      ask: askOf(opts),
     };
   }
+  const tuned = applyAsk(body.dimensions || [], askOf(opts), body.lead || '');
   return {
     moduleType: MODULE_TYPE[r.system] || 'natal',
     system: r.system,
     systemLabel: SYSTEM_LABEL[r.system] || r.system,
     title: '解析与详解',
-    lead: body.lead || '',
-    dimensions: body.dimensions || [],
+    lead: tuned.lead,
+    dimensions: tuned.dims,
     sections: body.sections || [],
     disclaimer: DISCLAIMER,
+    ask: askOf(opts),
   };
 }
 
 
-return { DIMENSIONS, MODULE_TYPE, SYSTEM_LABEL, hexInfo, interpret };
+return { DIMENSIONS, MODULE_TYPE, SYSTEM_LABEL, DIRECTIONS, DIRECTION_DEFAULT, dirOf, hexInfo, interpret };
 })();
 
 __mods.index = (function () {
@@ -4574,7 +4628,7 @@ const { buildMeihua } = __mods.meihua;
 const { buildDaliuren } = __mods.daliuren;
 const { geocodeAddress, resolveAddress } = __mods.geo;
 const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
-const { interpret } = __mods.interpret;
+const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
 
 
 
@@ -4832,7 +4886,7 @@ function renderText(result) {
 
 
 
-return { interpret, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, renderText };
 })();
 
     const Engine = __mods.index;
@@ -5025,9 +5079,24 @@ return { interpret, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, toss
   margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .it *{box-sizing:border-box}
-.it-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+/* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
+.it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
+.it-head:hover{background:#fbf7ef}
+.it-arrow{flex:none;font-size:12px;line-height:1;color:var(--red);transition:transform .16s ease}
+.it.folded .it-arrow{transform:rotate(-90deg)}
+.it.folded .it-wrap{display:none}
+.it-hint{margin-left:auto;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .it-title{font-size:15px;font-weight:700;letter-spacing:.08em;color:var(--red)}
 .it-tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+/* 所问之事 + 询问方向的回显，放在引语上方，先让用户确认问的是什么 */
+.it-ask{padding:10px 16px;background:#f7f3ea;border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:#3f3a33;font-family:system-ui,sans-serif}
+.it-ask .q{font-weight:600;color:#1b1b1b}
+.it-ask .sep{color:#b9b2a4;margin:0 7px}
+.it-ask .d{color:#1f6f3f}
+.it-ask .none{color:var(--muted);font-weight:400}
+/* 按询问方向提到最前的那一条 */
+.it-focus{margin-left:6px;font-size:12px;color:#1f6f3f;border:1px solid rgba(31,111,63,.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+.it-dim.focus{background:linear-gradient(90deg,rgba(31,111,63,.06),transparent 60%);border-left:2px solid #1f6f3f;padding-left:10px}
 .it-lead{padding:11px 16px;font-size:13px;color:#4a453d;border-bottom:1px dashed var(--line)}
 .it-body{padding:2px 16px 12px}
 .it-dim{padding:12px 0;border-bottom:1px dashed var(--line)}
@@ -5086,7 +5155,9 @@ return { interpret, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, toss
   .tt{padding:10px}
   .tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
   /* 解析与详解：收窄内边距、行距放宽便于竖屏阅读 */
-  .it-head,.it-lead,.it-body,.it-secs,.it-dis{padding-left:11px;padding-right:11px}
+  .it-head,.it-lead,.it-body,.it-secs,.it-dis,.it-ask{padding-left:11px;padding-right:11px}
+  .it-head{min-height:46px}
+  .it-hint{margin-left:0;flex-basis:100%}
   .it-dlabel{font-size:15px}
   .it-dtext,.it-stext,.it-adv{font-size:13.5px;line-height:1.95}
   .it-adv{padding:9px 10px}
@@ -5497,10 +5568,15 @@ return { interpret, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, toss
   // ── 解析与详解：把 interpret() 的结构化结果渲染成卡片 ──
   const MT_LABEL = { natal: '命盘解析', divination: '卦象解析', card: '牌阵解析' };
 
-  pp.interpretHTML = function (it) {
+  /**
+   * @param {object} it interpret() 的结果
+   * @param {object} [opt] { folded 是否收起 } —— 桌面默认展开、竖屏默认收起由调用方按视口决定
+   */
+  pp.interpretHTML = function (it, opt) {
     if (!it || !it.dimensions || !it.dimensions.length) return '';
-    const dims = it.dimensions.map((d, i) => `<div class="it-dim">
-      <div class="it-dh"><span class="it-dno">${i + 1}</span><span class="it-dlabel">${esc(d.label)}</span></div>
+    const folded = !!(opt && opt.folded);
+    const dims = it.dimensions.map((d, i) => `<div class="it-dim${d.focused ? ' focus' : ''}">
+      <div class="it-dh"><span class="it-dno">${i + 1}</span><span class="it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="it-focus">最贴近你的问题</span>' : ''}</div>
       <div class="it-dtext">${esc(d.text)}</div>
       ${d.advice ? `<div class="it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
@@ -5511,18 +5587,31 @@ return { interpret, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, toss
       </div>`).join('')}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
-    return `<div class="it">
-      <div class="it-head"><span class="it-title">解析与详解</span>${tags.map((t) => `<span class="it-tag">${esc(t)}</span>`).join('')}</div>
-      ${it.lead ? `<div class="it-lead">${esc(it.lead)}</div>` : ''}
-      <div class="it-body">${dims}</div>
-      ${secs}
-      <div class="it-dis">${esc(it.disclaimer)}</div>
+    // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
+    const ask = it.ask;
+    // 只有真的填了问题、或选了非「综合」方向时才回显；命盘类不问事，不显示这一行
+    const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
+      ? `<div class="it-ask"><span class="q">问题：${ask.question ? esc(ask.question) : '<span class="none">（未填写）</span>'}</span><span class="sep">｜</span><span class="d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
+      : '';
+    return `<div class="it${folded ? ' folded' : ''}">
+      <button type="button" class="it-head" aria-expanded="${folded ? 'false' : 'true'}">
+        <span class="it-arrow" aria-hidden="true">▾</span>
+        <span class="it-title">解析与详解</span>${tags.map((t) => `<span class="it-tag">${esc(t)}</span>`).join('')}
+        <span class="it-hint">${folded ? '点击展开' : '点击收起'}</span>
+      </button>
+      <div class="it-wrap">
+        ${askLine}
+        ${it.lead ? `<div class="it-lead">${esc(it.lead)}</div>` : ''}
+        <div class="it-body">${dims}</div>
+        ${secs}
+        <div class="it-dis">${esc(it.disclaimer)}</div>
+      </div>
     </div>`;
   };
 
-  /** 结果 + 解析一并渲染 */
-  pp.resultWithInterpret = function (html, it) {
-    return (html || '') + pp.interpretHTML(it);
+  /** 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态） */
+  pp.resultWithInterpret = function (html, it, opt) {
+    return (html || '') + pp.interpretHTML(it, opt);
   };
 })();
 
@@ -5538,6 +5627,12 @@ const CSS = `
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary)}
 .mp-input{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;min-width:132px}
 .mp-input:focus{border-color:var(--dsw-alias-brand-primary)}
+/* 所问之事：多行文本，视觉与其他输入框一致 */
+.mp-textarea{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:180px;resize:vertical;line-height:1.5;font-family:inherit}
+.mp-textarea:focus{border-color:var(--dsw-alias-brand-primary)}
+.mp-textarea.invalid{border-color:var(--dsw-alias-state-error-primary)}
+.mp-ask{flex:1 1 240px;min-width:0}
+.mp-dir{min-width:104px}
 .mp-btn{padding:8px 20px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px}
 .mp-btn.ghost{background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
 .mp-seg{display:inline-flex;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden}
@@ -5549,6 +5644,11 @@ const CSS = `
 .mp-dim{color:var(--dsw-alias-label-secondary)}
 .mp-err{margin-top:16px;padding:10px 14px;border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 14%,transparent);color:var(--dsw-alias-state-error-primary)}
 .mp-bar{display:flex;gap:8px;align-items:center;margin-top:14px}
+/* 起卦类 tab 的「已自动取当前时刻」提示（.mp-hint 的补充行，不额外占横向空间） */
+.mp-auto{margin:-8px 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
+/* 结果头部的「起卦时刻」一行 */
+.mp-cast{margin:0 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
+.mp-cast b{color:var(--dsw-alias-label-primary);font-weight:600}
 `;
 
 const { useState, useEffect } = React;
@@ -5584,6 +5684,22 @@ function nowParts() {
   return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
 }
 
+// ── 时间语义分类 ────────────────────────────────────────────────
+// birth：八字 / 紫微 —— 要的是「出生时间」，必然是过去，用示例默认，不取当前时刻
+// cast ：六爻 / 梅花 / 大六壬 —— 要的是「起卦时刻」，占的就是当下，自动取本机当前时刻
+// none ：塔罗 —— 不看时间，日期时间字段整个隐藏
+const TIME_KIND = {
+  ziwei: 'birth', bazi: 'birth',
+  liuyao: 'cast', meihua: 'cast', daliuren: 'cast',
+  tarot: 'none',
+};
+const SAMPLE = { date: '1990-05-12', time: '14:30' };
+const kindOf = (t) => TIME_KIND[t] || 'none';
+
+// 问事的体系（六爻 / 梅花 / 六壬 / 塔罗）必须填「所问之事」；命盘类不问事
+const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
+const needAsk = (t) => !!NEED_ASK[t];
+
 function App() {
   const [tab, setTab] = useState('ziwei');
   const [date, setDate] = useState('1990-05-12');
@@ -5597,17 +5713,30 @@ function App() {
   const [error, setError] = useState('');
   const [count, setCount] = useState('3');
   const [question, setQuestion] = useState('');
+  const [direction, setDirection] = useState('general');
+  // 解析模块较长：窄屏默认收起、宽屏默认展开；用户手动切过就以他的选择为准
+  const [foldPref, setFoldPref] = useState(null);
+  // 「所问之事」未填就起卦时，输入框转红提示
+  const [askInvalid, setAskInvalid] = useState(false);
   const [mhMode, setMhMode] = useState('time');
   const [upper, setUpper] = useState('');
   const [lower, setLower] = useState('');
   const [changing, setChanging] = useState('');
   const [copied, setCopied] = useState('');
+  // 用户手动改过的日期/时刻，按语义分类分别记忆；null = 没改过，跟随自动值。
+  // 分两类记的原因：出生时间与起卦时刻语义不同，跨类别时上一次的输入已无意义，
+  // 所以从「八字」切到「六爻」会自动换成当前时刻，而切回「八字」仍是你填的出生时间。
+  const [manual, setManual] = useState({ birth: null, cast: null });
 
   const meta = TABS.find((t) => t.k === tab) || TABS[0];
   const isBirth = tab === 'bazi' || tab === 'ziwei';
+  const timeKind = kindOf(tab);
+  const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
+  const showDT = tab !== 'tarot' && usesTimeInput;
 
-  const run = async (kind, override) => {
+  const run = async (kind, override, modeOverride) => {
     const k = kind || tab;
+    const mh = modeOverride || mhMode;
     const dt = override ? override : { date, time };
     try {
       const datetime = `${dt.date}T${dt.time}`;
@@ -5629,23 +5758,35 @@ function App() {
       if (k === 'liuyao') {
         const parsed = lines.split(/[^0-9]+/).filter(Boolean).map(Number);
         if (parsed.length === 6) args.lines = parsed;
-        args.question = '手动起卦';
       }
-      if (k === 'tarot') {
-        args.count = Number(count);
-        if (question.trim()) args.question = question.trim();
+      if (k === 'tarot') args.count = Number(count);
+      // 所问之事必填：问事的体系不给一份没有落点的解读
+      if (needAsk(k)) {
+        if (!question.trim()) {
+          setError('请先填写「所问之事」——一句话即可，例如：今年是否适合换工作？');
+          setAskInvalid(true);
+          setResult(null);
+          return;
+        }
+        setAskInvalid(false);
+        args.question = question.trim();
       }
       if (k === 'meihua') {
-        args.mode = mhMode;
-        if (mhMode === 'number') {
+        args.mode = mh;
+        if (mh === 'number') {
           args.upper = Number(upper);
           args.lower = Number(lower);
           if (changing !== '') args.changing = Number(changing);
         }
       }
       const r = Engine.compute(args);
-      const it = Engine.interpret ? Engine.interpret(r) : null;
-      setResult({ kind: k, r, it });
+      // 问题与方向一并与卦象交给解读：解读按它展开，并在开头回显供确认
+      const it = Engine.interpret
+        ? Engine.interpret(r, needAsk(k) ? { question: question.trim(), direction } : undefined)
+        : null;
+      // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
+      const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
+      setResult({ kind: k, r, it, at: dt, timed });
       setError('');
       setCopied('');
     } catch (e) {
@@ -5654,11 +5795,72 @@ function App() {
     }
   };
 
+  /** 切 tab：起卦类自动取当前时刻、命盘类回到示例默认；用户在这类下改过则保留他的值 */
+  const switchTo = (next) => {
+    const k = kindOf(next);
+    setTab(next);
+    setError('');
+    if (k === 'none') { run(next); return; } // 塔罗不看时间，直接抽牌（与 web-ui 一致）
+    const v = manual[k] || (k === 'cast' ? nowParts() : { date: SAMPLE.date, time: SAMPLE.time });
+    setDate(v.date);
+    setTime(v.time);
+    run(next, v);
+  };
+
+  /** 手动改日期/时刻：记进当前语义分类，之后切同类 tab 会保留 */
+  const editDate = (value) => {
+    setDate(value);
+    if (timeKind !== 'none') setManual((m) => Object.assign({}, m, { [timeKind]: { date: value, time } }));
+  };
+  const editTime = (value) => {
+    setTime(value);
+    if (timeKind !== 'none') setManual((m) => Object.assign({}, m, { [timeKind]: { date, time: value } }));
+  };
+
   const runNow = () => {
     const t = nowParts();
     setDate(t.date);
     setTime(t.time);
+    // 「此刻」是明确的「回到自动」：清掉该类下的手动值，以后切 tab 仍会跟随当前时刻
+    if (timeKind !== 'none') setManual((m) => Object.assign({}, m, { [timeKind]: null }));
     run(tab, t);
+  };
+
+  /** 切起卦方式（时间/数字）：立刻重起一卦，避免结果头部留着上一模式的「起卦时刻」 */
+  const switchMode = (m) => {
+    setMhMode(m);
+    run(tab, { date, time }, m);
+  };
+
+  const isNarrow = () => !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+  const defaultFolded = () => (foldPref === null ? isNarrow() : foldPref);
+
+  /** 解析模块折叠：标题栏整栏可点（内容由 innerHTML 渲染，用委托处理） */
+  const onFoldClick = (e) => {
+    const head = e.target && e.target.closest ? e.target.closest('.it-head') : null;
+    if (!head) return;
+    const box = head.closest('.it');
+    if (!box) return;
+    const folded = !box.classList.contains('folded');
+    box.classList.toggle('folded', folded);
+    head.setAttribute('aria-expanded', folded ? 'false' : 'true');
+    const hint = head.querySelector('.it-hint');
+    if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
+    setFoldPref(folded);
+  };
+
+  /** 改问题或方向：拿缓存的卦象重出解读，不重摇一卦 */
+  const refreshInterpret = (dir, q) => {
+    if (!result || !needAsk(tab)) return;
+    const ask = { question: (q === undefined ? question : q).trim(), direction: dir === undefined ? direction : dir };
+    const it = Engine.interpret ? Engine.interpret(result.r, ask) : null;
+    setResult(Object.assign({}, result, { it }));
+  };
+
+  /** 结果头部的一行「起卦时刻」，只在真正用到时间的起卦 tab 显示 */
+  const castAtHTML = (res) => {
+    if (!res || !res.timed || !res.at) return '';
+    return `<div class="mp-cast">起卦时刻：<b>${res.at.date} ${res.at.time}</b>　（来自你的本机时间，点「此刻」可重新取当下）</div>`;
   };
 
   const copyResult = () => {
@@ -5678,14 +5880,14 @@ function App() {
       h('button', {
         key: t.k,
         className: 'mp-tab' + (tab === t.k ? ' on' : ''),
-        onClick: () => { setTab(t.k); setError(''); },
+        onClick: () => switchTo(t.k),
       }, t.label))),
 
     h('div', { key: 'head', className: 'mp-head' },
-      tab !== 'tarot' ? field(isBirth ? '出生日期（公历）' : '起卦日期（公历）',
-        h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => setDate(e.target.value) })) : null,
-      tab !== 'tarot' ? field(isBirth ? '出生时刻' : '起卦时刻',
-        h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => setTime(e.target.value) })) : null,
+      showDT ? field(isBirth ? '出生日期（公历）' : '起卦日期（公历）',
+        h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
+      showDT ? field(isBirth ? '出生时刻' : '起卦时刻',
+        h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => editTime(e.target.value) })) : null,
       isBirth ? field('性别', h('select', {
         className: 'mp-input', value: gender, onChange: (e) => setGender(e.target.value),
       }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
@@ -5702,8 +5904,8 @@ function App() {
         onChange: (e) => setLines(e.target.value),
       })) : null,
       tab === 'meihua' ? field('起卦方式', h('div', { className: 'mp-seg' },
-        h('button', { className: mhMode === 'time' ? 'on' : '', onClick: () => setMhMode('time') }, '时间起卦'),
-        h('button', { className: mhMode === 'number' ? 'on' : '', onClick: () => setMhMode('number') }, '数字起卦'))) : null,
+        h('button', { className: mhMode === 'time' ? 'on' : '', onClick: () => switchMode('time') }, '时间起卦'),
+        h('button', { className: mhMode === 'number' ? 'on' : '', onClick: () => switchMode('number') }, '数字起卦'))) : null,
       (tab === 'meihua' && mhMode === 'number') ? field('第一个数', h('input', {
         className: 'mp-input', style: { minWidth: 88 }, value: upper, placeholder: '如 17',
         onChange: (e) => setUpper(e.target.value),
@@ -5716,11 +5918,18 @@ function App() {
         className: 'mp-input', style: { minWidth: 88 }, value: changing, placeholder: '1-6',
         onChange: (e) => setChanging(e.target.value),
       })) : null,
-      tab === 'tarot' ? field('提问（可空）', h('input', {
-        className: 'mp-input', style: { minWidth: 260 }, value: question,
-        placeholder: '例如：这份工作要不要接？',
-        onChange: (e) => setQuestion(e.target.value),
+      // 所问之事 + 询问方向：问事的体系共用，问题必填，两者都会交给下方解读
+      needAsk(tab) ? field('所问之事（必填）', h('textarea', {
+        className: 'mp-textarea' + (askInvalid ? ' invalid' : ''),
+        rows: 2, value: question,
+        placeholder: '用一句话描述所问之事，例如：今年是否适合换工作？',
+        onChange: (e) => { setQuestion(e.target.value); setAskInvalid(false); },
+        onBlur: (e) => refreshInterpret(undefined, e.target.value),
       })) : null,
+      needAsk(tab) ? field('询问方向', h('select', {
+        className: 'mp-input mp-dir', value: direction,
+        onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
+      }, (Engine.DIRECTIONS || []).map((d) => h('option', { key: d.key, value: d.key }, d.label)))) : null,
       tab === 'tarot' ? field('张数', h('select', {
         className: 'mp-input', value: count, onChange: (e) => setCount(e.target.value),
       }, h('option', { value: '1' }, '1 张 · 指引'), h('option', { value: '3' }, '3 张 · 过去现在未来'), h('option', { value: '5' }, '5 张 · 十字牌阵'))) : null,
@@ -5733,13 +5942,20 @@ function App() {
 
     h('div', { key: 'hint', className: 'mp-hint' }, meta.hint),
 
+    (timeKind === 'cast' && usesTimeInput) ? h('div', { key: 'auto', className: 'mp-auto' },
+      // 文案分清「自动取的」和「你手动填的」，免得明明改过还说自动取
+      manual.cast
+        ? `起卦时刻现在用的是你手动填的（${time}）；点「此刻」可回到自动取当下。`
+        : `起卦时刻已自动取你的本机时间（${time}）；想用别的时刻可以直接改，或点「此刻」重新取当下。`) : null,
+
     error ? h('div', { key: 'err', className: 'mp-err' }, error) : null,
 
     result ? h('div', {
       key: 'card',
       className: 'mp-card mp-flat',
+      onClick: onFoldClick,
       dangerouslySetInnerHTML: {
-        __html: PP.resultWithInterpret(
+        __html: castAtHTML(result) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
             : result.kind === 'bazi' ? PP.baziHTML(result.r)
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
@@ -5747,6 +5963,7 @@ function App() {
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : PP.liuyaoHTML(result.r),
           result.it,
+          { folded: defaultFolded() },
         ),
       },
     }) : null,

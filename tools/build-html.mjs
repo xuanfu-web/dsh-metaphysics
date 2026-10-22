@@ -3,8 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { buildModule, MODULE_ORDER } from './build-client.mjs';
+// 询问方向的选项直接取自引擎，避免界面与解析层两处维护
+import { DIRECTIONS, DIRECTION_DEFAULT } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
+const DIR_OPTIONS = DIRECTIONS
+  .map((d) => `<option value="${d.key}"${d.key === DIRECTION_DEFAULT ? ' selected' : ''}>${d.label}</option>`)
+  .join('');
 
 export const CSS = `
 :root{--bg:#f4f1ea;--panel:#fffdf8;--panel2:#f7f3ea;--line:#cfc7b6;--ink:#1b1b1b;--dim:#6f6a60;--gold:#b3261e;--good:#1f6f3f;--bad:#b3261e;--warn:#8a5a00}
@@ -27,8 +32,15 @@ header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16p
 #addr{width:178px}
 #mh-num input{width:124px}
 #changing{width:132px}
-.field input:focus,.field select:focus{border-color:var(--gold)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
 .field.check{flex-direction:row;align-items:center;gap:8px;padding-bottom:8px}
+/* 所问之事：多行文本，样式与输入框一致；整组可伸缩，空间不足时自动换行独占一行 */
+.field textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;line-height:1.5;outline:none;width:100%;min-width:0;resize:vertical}
+#for-ask{flex:1 1 240px;min-width:0}
+#ask-wrap{flex:1 1 auto;min-width:0}
+#direction{flex:none;width:104px}
+/* 必填未填：边框转红，提示复用 .err 的口径 */
+.field.invalid textarea{border-color:var(--bad);background:rgba(224,102,95,.06)}
 .field.check input{min-width:0;width:18px;height:18px;accent-color:var(--gold);padding:0}
 .go{margin-left:auto;padding:10px 22px;border-radius:6px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px}
 .go:hover{filter:brightness(1.08)}
@@ -46,6 +58,11 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .seg button{padding:7px 14px;background:transparent;border:none;color:var(--dim);font-size:13.5px;font-family:inherit;cursor:pointer}
 .seg button.on{background:var(--gold);color:#fff;font-weight:600}
 .tip{margin:-6px 0 16px;font-size:13.5px;color:var(--dim);line-height:1.8}
+/* 起卦类 tab 的「已自动取当前时刻」提示：与 .tip 同一行块，独立成行，不占横向空间 */
+.tip .auto-note{margin-top:4px;font-size:13.5px;color:var(--good);line-height:1.7}
+/* 结果头部的「起卦时刻」一行 */
+.cast-at{margin:0 0 14px;font-size:13.5px;color:var(--dim);line-height:1.7}
+.cast-at b{color:var(--ink);font-weight:600;letter-spacing:.02em}
 .now{padding:10px 13px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:15px;cursor:pointer}
 .now:hover{background:var(--panel2)}
 /* —— 竖屏（≤640px）：整页不横向滚动，输入区整行堆叠，盘面交给 panel-kit 的同名媒体查询 —— */
@@ -60,7 +77,8 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .bar{flex-direction:column;align-items:stretch;gap:14px;padding:14px}
   .grp{flex-direction:column;align-items:stretch;gap:14px}
   .field{width:100%}
-  .field input,.field select,#addr,#changing{width:100%;min-width:0;padding:11px 12px;font-size:16px;min-height:44px}
+  .field input,.field select,.field textarea,#addr,#changing,#direction{width:100%;min-width:0;padding:11px 12px;font-size:16px;min-height:44px}
+  #for-ask{flex-direction:column;align-items:stretch}
   .field.check{padding-bottom:0}
   #mh-num{flex-wrap:wrap}
   #mh-num input{flex:1 1 30%;width:auto}
@@ -69,6 +87,8 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .go{margin-left:0;width:100%;padding:13px;font-size:16px;min-height:48px;border-radius:8px}
   .now{width:100%;padding:12px;font-size:15px;min-height:46px;border-radius:8px}
   .tip{font-size:13px}
+  .tip .auto-note{font-size:13px}
+  .cast-at{font-size:13px}
 }
 `;
 
@@ -99,6 +119,8 @@ function page() {
   </header>
 
   <div class="bar">
+    <!-- 初始值是「命盘类（紫微/八字）」的示例默认：出生时间必然是过去，不取当前时刻。
+         切到六爻/梅花/六壬等起卦类 tab 时，web-ui.js 会自动把这两个框换成你的本机当前时刻。 -->
     <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="date" value="1990-05-12"></label>
     <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
     <label class="field" id="for-gender">性别
@@ -123,7 +145,16 @@ function page() {
         <input id="changing" placeholder="动爻 1-6（可空）" style="min-width:120px">
       </label>
     </div>
-    <label class="field" id="for-tarot" style="display:none">提问<input id="question" placeholder="例如：这份工作要不要接？"></label>
+    <!-- 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系共用。
+         问题必填，会与卦象一起交给下方解读，解读按这个方向展开。-->
+    <div class="grp" id="for-ask" style="display:none">
+      <label class="field" id="ask-wrap">所问之事（必填）
+        <textarea id="question" rows="2" placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"></textarea>
+      </label>
+      <label class="field">询问方向
+        <select id="direction">${DIR_OPTIONS}</select>
+      </label>
+    </div>
     <button id="now" class="now" title="换成此刻并立即起卦">此刻</button>
     <button id="go" class="go">排盘</button>
   </div>

@@ -186,9 +186,24 @@
   margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .it *{box-sizing:border-box}
-.it-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+/* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
+.it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
+.it-head:hover{background:#fbf7ef}
+.it-arrow{flex:none;font-size:12px;line-height:1;color:var(--red);transition:transform .16s ease}
+.it.folded .it-arrow{transform:rotate(-90deg)}
+.it.folded .it-wrap{display:none}
+.it-hint{margin-left:auto;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .it-title{font-size:15px;font-weight:700;letter-spacing:.08em;color:var(--red)}
 .it-tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+/* 所问之事 + 询问方向的回显，放在引语上方，先让用户确认问的是什么 */
+.it-ask{padding:10px 16px;background:#f7f3ea;border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:#3f3a33;font-family:system-ui,sans-serif}
+.it-ask .q{font-weight:600;color:#1b1b1b}
+.it-ask .sep{color:#b9b2a4;margin:0 7px}
+.it-ask .d{color:#1f6f3f}
+.it-ask .none{color:var(--muted);font-weight:400}
+/* 按询问方向提到最前的那一条 */
+.it-focus{margin-left:6px;font-size:12px;color:#1f6f3f;border:1px solid rgba(31,111,63,.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
+.it-dim.focus{background:linear-gradient(90deg,rgba(31,111,63,.06),transparent 60%);border-left:2px solid #1f6f3f;padding-left:10px}
 .it-lead{padding:11px 16px;font-size:13px;color:#4a453d;border-bottom:1px dashed var(--line)}
 .it-body{padding:2px 16px 12px}
 .it-dim{padding:12px 0;border-bottom:1px dashed var(--line)}
@@ -247,7 +262,9 @@
   .tt{padding:10px}
   .tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
   /* 解析与详解：收窄内边距、行距放宽便于竖屏阅读 */
-  .it-head,.it-lead,.it-body,.it-secs,.it-dis{padding-left:11px;padding-right:11px}
+  .it-head,.it-lead,.it-body,.it-secs,.it-dis,.it-ask{padding-left:11px;padding-right:11px}
+  .it-head{min-height:46px}
+  .it-hint{margin-left:0;flex-basis:100%}
   .it-dlabel{font-size:15px}
   .it-dtext,.it-stext,.it-adv{font-size:13.5px;line-height:1.95}
   .it-adv{padding:9px 10px}
@@ -658,10 +675,15 @@
   // ── 解析与详解：把 interpret() 的结构化结果渲染成卡片 ──
   const MT_LABEL = { natal: '命盘解析', divination: '卦象解析', card: '牌阵解析' };
 
-  pp.interpretHTML = function (it) {
+  /**
+   * @param {object} it interpret() 的结果
+   * @param {object} [opt] { folded 是否收起 } —— 桌面默认展开、竖屏默认收起由调用方按视口决定
+   */
+  pp.interpretHTML = function (it, opt) {
     if (!it || !it.dimensions || !it.dimensions.length) return '';
-    const dims = it.dimensions.map((d, i) => `<div class="it-dim">
-      <div class="it-dh"><span class="it-dno">${i + 1}</span><span class="it-dlabel">${esc(d.label)}</span></div>
+    const folded = !!(opt && opt.folded);
+    const dims = it.dimensions.map((d, i) => `<div class="it-dim${d.focused ? ' focus' : ''}">
+      <div class="it-dh"><span class="it-dno">${i + 1}</span><span class="it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="it-focus">最贴近你的问题</span>' : ''}</div>
       <div class="it-dtext">${esc(d.text)}</div>
       ${d.advice ? `<div class="it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
@@ -672,17 +694,30 @@
       </div>`).join('')}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
-    return `<div class="it">
-      <div class="it-head"><span class="it-title">解析与详解</span>${tags.map((t) => `<span class="it-tag">${esc(t)}</span>`).join('')}</div>
-      ${it.lead ? `<div class="it-lead">${esc(it.lead)}</div>` : ''}
-      <div class="it-body">${dims}</div>
-      ${secs}
-      <div class="it-dis">${esc(it.disclaimer)}</div>
+    // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
+    const ask = it.ask;
+    // 只有真的填了问题、或选了非「综合」方向时才回显；命盘类不问事，不显示这一行
+    const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
+      ? `<div class="it-ask"><span class="q">问题：${ask.question ? esc(ask.question) : '<span class="none">（未填写）</span>'}</span><span class="sep">｜</span><span class="d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
+      : '';
+    return `<div class="it${folded ? ' folded' : ''}">
+      <button type="button" class="it-head" aria-expanded="${folded ? 'false' : 'true'}">
+        <span class="it-arrow" aria-hidden="true">▾</span>
+        <span class="it-title">解析与详解</span>${tags.map((t) => `<span class="it-tag">${esc(t)}</span>`).join('')}
+        <span class="it-hint">${folded ? '点击展开' : '点击收起'}</span>
+      </button>
+      <div class="it-wrap">
+        ${askLine}
+        ${it.lead ? `<div class="it-lead">${esc(it.lead)}</div>` : ''}
+        <div class="it-body">${dims}</div>
+        ${secs}
+        <div class="it-dis">${esc(it.disclaimer)}</div>
+      </div>
     </div>`;
   };
 
-  /** 结果 + 解析一并渲染 */
-  pp.resultWithInterpret = function (html, it) {
-    return (html || '') + pp.interpretHTML(it);
+  /** 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态） */
+  pp.resultWithInterpret = function (html, it, opt) {
+    return (html || '') + pp.interpretHTML(it, opt);
   };
 })();

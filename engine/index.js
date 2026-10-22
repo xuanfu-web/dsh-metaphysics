@@ -7,9 +7,9 @@ import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
-import { interpret } from './interpret.js';
+import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 
-export { interpret };
+export { interpret, DIRECTIONS, DIRECTION_DEFAULT };
 
 const pad = (n) => String(n).padStart(2, '0');
 

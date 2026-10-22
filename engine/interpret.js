@@ -32,6 +32,55 @@ export const SYSTEM_LABEL = {
   meihua: '梅花易数', daliuren: '大六壬', tarot: '塔罗',
 };
 
+// ── 询问方向 ────────────────────────────────────────────
+// 问事（六爻 / 梅花 / 大六壬 / 塔罗）时可选的方向。
+// dim 指向五维度里最贴近的一条，会把该维度提到最前并在开头点明问题与方向，避免泛泛而谈。
+export const DIRECTIONS = [
+  { key: 'general', label: '综合', dim: null, focus: '' },
+  { key: 'wealth', label: '财运', dim: 'work', focus: '钱财进出的落点主要看「工作与职业选择」与「事业发展」这两条。' },
+  { key: 'career', label: '事业', dim: 'career', focus: '事业发展这条与你的问题最直接。' },
+  { key: 'love', label: '感情', dim: 'love', focus: '感情这条与你的问题最直接。' },
+  { key: 'health', label: '健康', dim: 'health', focus: '健康这条与你的问题最直接；下面只作提醒，不作任何诊断。' },
+  { key: 'study', label: '学业', dim: 'career', focus: '学业与考试更贴近「事业发展」这条，讲的是长期积累与阶段进展。' },
+  { key: 'travel', label: '出行', dim: 'overall', focus: '出行与迁动更贴近「整体运势」这条，看的是当下这一段的大环境。' },
+];
+
+export const DIRECTION_DEFAULT = 'general';
+export const dirOf = (key) => DIRECTIONS.find((d) => d.key === key) || DIRECTIONS[0];
+
+/** 归一化「所问之事 + 询问方向」，给出结构与回显串 */
+function askOf(opts) {
+  const o = isObj(opts) ? opts : {};
+  const question = typeof o.question === 'string' ? o.question.trim().slice(0, 200) : '';
+  const d = dirOf(o.direction);
+  return {
+    question,
+    direction: d.key,
+    directionLabel: d.label,
+    echo: `问题：${question || '（未填写）'} ｜ 询问方向：${d.label}`,
+  };
+}
+
+/** 把问题与方向写进解析：聚焦维度提前 + 点明方向 + 引语回显 */
+function applyAsk(dims, ask, lead) {
+  const list = Array.isArray(dims) ? dims.slice() : [];
+  const d = dirOf(ask && ask.direction);
+  if (d.dim) {
+    const i = list.findIndex((x) => x && x.key === d.dim);
+    if (i > 0) { const hit = list[i]; list.splice(i, 1); list.unshift(hit); }
+    if (list[0] && list[0].key === d.dim) {
+      const head = ask.question
+        ? `就你所问的「${ask.question}」来看（${d.label}方向）——${d.focus}`
+        : `按${d.label}这个方向看——${d.focus}`;
+      list[0] = Object.assign({}, list[0], { text: `${head}${list[0].text}`, focused: true });
+    }
+  }
+  let l = lead || '';
+  if (ask.question) l = `你问的是「${ask.question}」${d.key === 'general' ? '。' : `，方向是${d.label}。`}${l}`;
+  else if (d.key !== 'general') l = `方向是${d.label}。${l}`;
+  return { dims: list, lead: l };
+}
+
 // 大运/流年档位 → 走势描述（非绝对判断）
 const TIER_TEXT = {
   大吉: '外部环境对你比较配合，属于可以主动争取的阶段',
@@ -661,9 +710,11 @@ const BUILDERS = {
 /**
  * 生成解析与详解
  * @param {object} r compute() 的返回值
+ * @param {object} [opts] 可选：{ question 所问之事, direction 询问方向 key }
+ *                 传了就把最贴近的维度提前、在该维度点明问题与方向，并给出回显串
  * @returns {object|null} 结构化解析对象
  */
-export function interpret(r) {
+export function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const fn = BUILDERS[r.system];
   if (!fn) return null;
@@ -681,17 +732,20 @@ export function interpret(r) {
       sections: [],
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
+      ask: askOf(opts),
     };
   }
+  const tuned = applyAsk(body.dimensions || [], askOf(opts), body.lead || '');
   return {
     moduleType: MODULE_TYPE[r.system] || 'natal',
     system: r.system,
     systemLabel: SYSTEM_LABEL[r.system] || r.system,
     title: '解析与详解',
-    lead: body.lead || '',
-    dimensions: body.dimensions || [],
+    lead: tuned.lead,
+    dimensions: tuned.dims,
     sections: body.sections || [],
     disclaimer: DISCLAIMER,
+    ask: askOf(opts),
   };
 }
 
