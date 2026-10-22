@@ -5041,6 +5041,9 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
 .pp-foot .pn{color:var(--red);font-size:14px;font-weight:700}
 .pp-soul{box-shadow:inset 0 0 0 2px rgba(179,38,30,.35)}
 .pp-body::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:#fff;background:var(--muted);padding:0 3px;border-radius:2px}
+/* 注意：身宫格用 .pp-shen，不能叫 .pp-body —— .pp-body 是视图容器的类（display:none），
+   两者同名会让身宫那一格整格消失（0.9.0 之前一直如此，12 宫少 1 宫） */
+.pp-shen::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:#fff;background:var(--muted);padding:0 3px;border-radius:2px;z-index:1}
 .pp-legend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px}
 .pp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-family:system-ui,sans-serif}
 .pp-chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--line);color:var(--muted);background:var(--bg)}
@@ -5064,15 +5067,51 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
 .pp-dim{color:var(--muted)}
 .pp-r{display:none}
 .pp-modes{display:flex;align-items:center;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif}
-.pp-modes label{padding:6px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
+/* min-height:44px —— 视图切换是本盘唯一的主要控件，触摸目标必须够。
+   原先 6px 上下内边距只有 31px 高，手机上是实打实的误触来源 */
+.pp-modes label{min-height:44px;display:inline-flex;align-items:center;padding:3px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
 .pp-modes label:hover{background:#f2ece0}
 .pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:#a9a296}
 .pp-body{display:none}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:#fff}
-.pp-tri{background:#fbf8f1}
+.pp-tri{background:#f9f3e6}
 .pp-soul{background:#fdf3f1}
 .pp-zh{margin-left:4px;white-space:nowrap}
+
+/* —— 宫位点击展开详情 + 三方四正联动 ——
+   宫格信息密度太高（尤其竖屏 10px），宫内必然有挤掉的东西。
+   点开后把该宫的完整星曜、四化、十二神、三方四正摊平看。 */
+.pp-cell{cursor:pointer;transition:background .14s ease,box-shadow .14s ease;outline:none}
+.pp-cell:hover{background:#f7f2e5}
+.pp-cell.pp-sel{background:#fff5f2;box-shadow:inset 0 0 0 2px rgba(179,38,30,.5)}
+/* 选中宫的财帛/官禄/迁移三宫：能一眼看出命宫牵着哪几宫 */
+.pp-cell.pp-link{background:#fbeee9;box-shadow:inset 0 0 0 1.5px rgba(179,38,30,.22)}
+.pp-detail{display:none;border-top:1px solid var(--line);background:var(--card);padding:11px 14px 13px;font-family:system-ui,sans-serif}
+.pp-detail.open{display:block}
+.pp-detail .dh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;padding-bottom:6px;margin-bottom:7px;border-bottom:1px dashed var(--line)}
+.pp-detail .dh b{font-size:15.5px;color:var(--red);letter-spacing:.04em}
+.pp-detail .dh span{font-size:12.5px;color:var(--muted)}
+.pp-detail .dh .x{margin-left:auto;font-size:12.5px;color:var(--muted);border:none;background:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;min-height:44px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;cursor:pointer;user-select:none}
+.pp-detail .dh .x:hover{color:var(--red)}
+/* 用 grid 而不是 flex：flex 下长值会把整块挤到下一行，标签与内容错行 */
+.pp-detail .dr{font-size:13px;line-height:1.85;display:grid;grid-template-columns:62px minmax(0,1fr);align-items:baseline;gap:0 8px}
+.pp-detail .dr .k{color:#8a8378;font-size:12px;letter-spacing:.06em}
+.pp-detail .dr .v{min-width:0}
+.pp-detail .st{white-space:nowrap;margin-right:7px;display:inline-block}
+.pp-detail .st.main{font-weight:700}
+.pp-detail .st.good{color:var(--lu)}
+.pp-detail .st.bad{color:var(--ji)}
+.pp-detail .st.aux{color:var(--muted)}
+.pp-detail .st .br{font-style:normal;font-size:11.5px;color:var(--muted);margin-left:3px}
+.pp-detail .st .br.good{color:#4c7a5c}
+.pp-detail .st .br.bad{color:#9c5b56}
+.pp-detail .tri{color:var(--muted)}
+.pp-detail .tri b{color:var(--ink);font-weight:600;margin-left:4px}
+.pp-detail .tri em{font-style:normal;color:var(--muted);font-size:12px;margin-left:5px}
+.pp-detail .tri em::before{content:"·";margin-right:3px}
+.pp-detail .empty{color:#a9a296;font-size:12.5px}
+.pp-detail .hint{color:#a9a296;font-size:11.5px;margin-top:6px}
 .pp-ss{display:flex;flex-wrap:wrap;gap:0 7px;font-size:12.5px;line-height:1.6}
 .pp-ss .s{white-space:nowrap;cursor:help}
 .pp-ss .s.good{color:var(--lu)}
@@ -5255,6 +5294,14 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
   .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
   .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
   .pp-foot .pn{font-size:11px}
+  /* 详情面板：竖屏下要接得住 4×4 网格之外的全部信息 */
+  .pp-detail{padding:9px 10px 11px}
+  .pp-detail .dh b{font-size:14.5px}
+  .pp-detail .dh span{font-size:11.5px}
+  .pp-detail .dr{font-size:13px;line-height:1.9}
+  .pp-detail .dr{grid-template-columns:54px minmax(0,1fr)}
+  .pp-detail .dr .k{font-size:11.5px}
+  .pp-detail .st .br{font-size:11px}
   /* 八字：隐藏表头，行标签整行 + 四柱 2×2，每格角标柱名 */
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
@@ -5319,6 +5366,13 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
   .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
   .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
   .pp-foot .pn{font-size:11px}
+  .pp-detail{padding:9px 10px 11px}
+  .pp-detail .dh b{font-size:14.5px}
+  .pp-detail .dh span{font-size:11.5px}
+  .pp-detail .dr{font-size:13px;line-height:1.9}
+  .pp-detail .dr{grid-template-columns:54px minmax(0,1fr)}
+  .pp-detail .dr .k{font-size:11.5px}
+  .pp-detail .st .br{font-size:11px}
   .pp-bz{border-collapse:separate;border-spacing:0}
   .pp-bz thead{display:none}
   .pp-bz,.pp-bz tbody{display:block}
@@ -5421,19 +5475,19 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
   const fx = (n) => ((n % 12) + 12) % 12;
   const isTrine = (b, m) => b !== m && [fx(m + 4), fx(m + 8), fx(m + 6)].includes(b);
 
-  function cellHTML(p, soulIdx) {
+  function cellHTML(p, soulIdx, view) {
     const pos = POS[p.branch] || [1, 1];
     const b = BR.indexOf(p.branch);
     const cls = ['pp-cell'];
     if (b === soulIdx) cls.push('pp-soul');
     else if (isTrine(b, soulIdx)) cls.push('pp-tri');
-    if (p.isBody) cls.push('pp-body');
+    if (p.isBody) cls.push('pp-shen');
     if (pos[0] === 4) cls.push('pp-lastrow');
     const ss = p.shensha || {};
     const pname = NAMES[fx(soulIdx - b)];
     const zh = (p.selfHua && p.selfHua.length)
       ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')}</span>` : '';
-    return `<div class="${cls.join(' ')}" style="grid-row:${pos[0]};grid-column:${pos[1]}">
+    return `<div class="${cls.join(' ')}" data-pi="${b}" data-view="${view}" role="button" tabindex="0" style="grid-row:${pos[0]};grid-column:${pos[1]}">
       <div class="pp-stars">${starsHTML(p.stars)}${zh}</div>
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
       <div class="pp-foot">
@@ -5472,7 +5526,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
     const dxIdx = BR.indexOf(dxPalace.branch);
     const lnIdx = ln ? BR.indexOf(ln.lifePalace.branch) : soulIdx;
 
-    const grid = (m) => r.palaces.map((p) => cellHTML(p, m)).join('');
+    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'
         ? `<div class="t1">大限 ${dxPalace.ganzhi}　${dxPalace.daxian.start}-${dxPalace.daxian.end}岁</div>`
@@ -5492,7 +5546,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
       </div>`;
     };
 
-    const body = (id, m, kind) => `<div class="pp-body ${id}"><div class="pp-grid">${grid(m)}${center(m, kind)}</div></div>`;
+    const body = (id, m, kind) => `<div class="pp-body ${id}" data-view="${kind}" data-soul="${m}"><div class="pp-grid">${grid(m, kind)}${center(m, kind)}</div><div class="pp-detail"></div></div>`;
 
     const cq = r.changqu;
     const chips = cq ? `<div class="pp-chips">
@@ -5509,19 +5563,144 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, geocodeAddress, r
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
 
+    pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
     return `<div class="pp">
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
       <input type="radio" name="ppm" id="ppm-da" class="pp-r">
       <input type="radio" name="ppm" id="ppm-ln" class="pp-r">
       <div class="pp-modes">
         <label for="ppm-ben">本命</label><label for="ppm-da">大限</label><label for="ppm-ln">流年</label>
-        <span class="pp-soon">流月 · 流日 · 流时（未实现）</span>
+        <span class="pp-soon">点任一宫位看详情</span>
       </div>
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
     </div>${chips}${pats}${dxs}${lnHit}`;
   };
+
+  // ── 宫位详情 ────────────────────────────────────────────────
+  // 4×4 宫盘必然挤（竖屏主星才 10px），宫内放不下完整星曜、四化、十二神。
+  // 点开某宫后把这些摊平，并把它的三方四正一起标出来。
+  function starLine(list) {
+    if (!list.length) return '<span class="empty">无</span>';
+    return list.map((s) => {
+      const cls = TYPE_CLASS[s.type] || 'aux';
+      const br = s.brightness ? `<em class="br ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
+      const mu = s.mutagen ? `<i class="pp-m ${MUT[s.mutagen]}">${s.mutagen}</i>` : '';
+      return `<span class="st ${cls}">${s.name}${br}${mu}</span>`;
+    }).join('');
+  }
+
+  function palaceDetailHTML(pi, soulIdx) {
+    const r = pp._zw;
+    if (!r) return '';
+    const at = (idx) => r.palaces.find((p) => BR.indexOf(p.branch) === idx);
+    const p = at(pi) || r.palaces.find((x) => BR.indexOf(x.branch) === pi);
+    if (!p) return '';
+    const b = BR.indexOf(p.branch);
+    const nm = NAMES[fx(soulIdx - b)];
+    const ss = p.shensha || {};
+    const mains = p.stars.filter((s) => s.type === '主星');
+    const auxes = p.stars.filter((s) => s.type === '吉星' || s.type === '辅星');
+    const bads = p.stars.filter((s) => s.type === '煞星');
+    const misc = p.stars.filter((s) => !['主星', '吉星', '辅星', '煞星'].includes(s.type));
+    const selfHua = (p.selfHua || []).length
+      ? p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')
+      : '<span class="empty">无</span>';
+    // 三方四正：三合（+4/+8）与对宫（+6）
+    const tri = [fx(b + 4), fx(b + 8), fx(b + 6)].map((idx) => {
+      const q = at(idx);
+      const qn = NAMES[fx(soulIdx - idx)];
+      const qm = q ? q.stars.filter((s) => s.type === '主星').map((s) => s.name).join('、') : '';
+      const tag = idx === fx(b + 6) ? '对宫' : '三合';
+      return `<span class="st">${qn}[${BR[idx]}]<b>${qm || '无主星'}</b><em>${tag}</em></span>`;
+    }).join('');
+    const at6 = at(fx(b + 6));
+    const borrowStars = at6 ? at6.stars.filter((s) => s.type === '主星') : [];
+    // 空宫借对宫主星安星，是紫微实务里的固定做法，空着不写等于漏了半宫信息
+    const mainRow = mains.length
+      ? starLine(mains)
+      : `<span class="empty">无主星</span><span class="tri">　借对宫 <b>${borrowStars.length ? borrowStars.map((s) => s.name).join('、') : '亦无主星'}</b></span>`;
+    const row = (k, v) => `<div class="dr"><span class="k">${k}</span><div class="v">${v}</div></div>`;
+
+    return `<div class="dh">
+        <b>${nm}</b><span>${p.branch}宫 · ${p.ganzhi}</span>
+        <span>大限 ${p.daxian.start}-${p.daxian.end}</span>
+        <span>小限起 ${p.xiaoxian.age} 岁</span>
+        ${p.isBody ? '<span>· 身宫</span>' : ''}
+        <span class="x" data-pp-close="1">收起</span>
+      </div>
+      ${row('主星', mainRow)}
+      ${row('吉辅', starLine(auxes))}
+      ${bads.length ? row('煞星', starLine(bads)) : ''}
+      ${misc.length ? row('杂曜', starLine(misc)) : ''}
+      ${row('宫干四化', selfHua)}
+      ${row('十二神', `<span class="tri">长生 ${ss.changsheng || '—'}　博士 ${ss.boshi || '—'}　将前 ${ss.jiangqian || '—'}　岁前 ${ss.suiqi || '—'}</span>`)}
+      ${row('三方四正', `<span class="tri">${tri}</span>`)}
+      <div class="hint">三方四正在盘上已同步标出（浅红描边）。再点一次本宫可收起。</div>`;
+  }
+
+  function clearMarks(body) {
+    body.querySelectorAll('.pp-cell.pp-sel,.pp-cell.pp-link').forEach((c) => {
+      c.classList.remove('pp-sel');
+      c.classList.remove('pp-link');
+    });
+  }
+
+  // 全局委托：面板与独立页都不需要额外初始化，panel-kit 一加载就生效
+  function bindZiwei() {
+    if (bindZiwei.done || typeof document === 'undefined' || !document.addEventListener) return;
+    bindZiwei.done = true;
+    const toggle = (cell) => {
+      const body = cell.closest('.pp-body');
+      if (!body) return;
+      const detail = body.querySelector('.pp-detail');
+      if (!detail) return;
+      // 再点同一宫 → 收起
+      if (cell.classList.contains('pp-sel')) {
+        clearMarks(body);
+        detail.classList.remove('open');
+        detail.innerHTML = '';
+        return;
+      }
+      clearMarks(body);
+      const pi = Number(cell.dataset.pi);
+      const soulIdx = Number(body.dataset.soul);
+      const sel = body.querySelectorAll('.pp-cell');
+      sel.forEach((c) => {
+        const ci = Number(c.dataset.pi);
+        if (ci === fx(pi + 4) || ci === fx(pi + 8) || ci === fx(pi + 6)) c.classList.add('pp-link');
+      });
+      cell.classList.add('pp-sel');
+      detail.innerHTML = palaceDetailHTML(pi, soulIdx);
+      detail.classList.add('open');
+    };
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t && t.closest && t.closest('[data-pp-close]')) {
+        const body = t.closest('.pp-body');
+        if (body) {
+          clearMarks(body);
+          const d = body.querySelector('.pp-detail');
+          if (d) { d.classList.remove('open'); d.innerHTML = ''; }
+          return;
+        }
+      }
+      const cell = t && t.closest ? t.closest('.pp-cell[data-pi]') : null;
+      if (cell) toggle(cell);
+    });
+    // 键盘可达：Enter / 空格等同于点击
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const cell = e.target && e.target.closest ? e.target.closest('.pp-cell[data-pi]') : null;
+      if (!cell) return;
+      e.preventDefault();
+      toggle(cell);
+    });
+  }
+  pp.bindZiwei = bindZiwei;
+  pp._palaceDetailHTML = palaceDetailHTML; // 供测试直接调
+  bindZiwei();
 
   /** 六爻 / 梅花的卦体：上爻在最上 */
   function hexRows(lines, opt) {
