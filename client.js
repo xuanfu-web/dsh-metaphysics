@@ -4975,7 +4975,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
 (function () {
   const CSS = `
 .pp{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--card:#fffefb;--red:#b3261e;--lu:#1f6f3f;--quan:#8a5a00;--ke:#1f4e79;--ji:#b3261e;
-  border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55}
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
+  container-type:inline-size}
 .pp *{box-sizing:border-box}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(150px,auto));gap:0}
 .pp-cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 8px;display:flex;flex-direction:column;position:relative;min-height:150px;background:var(--bg)}
@@ -5254,8 +5255,75 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, geocodeAddress, resolveAddres
   .it-dtext,.it-stext,.it-adv{font-size:13.5px;line-height:1.95}
   .it-adv{padding:9px 10px}
 }
+/* —— 以下 @container 版本与上方 @media 同规则 ——
+   媒体查询按「视口宽度」判断，dsh 桌面侧栏是「容器窄但视口宽」（如侧栏 420px、窗口 1400px），
+   @media 不会触发，盘面会用桌面排版挤成一团。.pp 已声明 container-type:inline-size，
+   这里改按容器宽度判断，侧栏、独立页、手机三处排版一致。 */
+@container (max-width:640px){
+  .pp-modes{flex-wrap:wrap}
+  .pp-modes label{padding:6px 16px}
+  .pp-soon{margin-left:0;padding:6px 10px;width:100%;border-top:1px solid var(--line)}
+  /* 紫微：保持 4×4 宫盘（宫位相对位置是三合/对宫的核心，不可丢），宫内竖向紧凑排版 */
+  .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0}
+  .pp-cell{min-height:0;padding:3px 2px 4px;border-radius:0}
+  .pp-center{grid-column:2/4;grid-row:2/4;order:0;border-radius:0;padding:5px 3px;gap:2px}
+  .pp-center .t1{font-size:12px;margin-bottom:2px;letter-spacing:.02em}
+  .pp-center .t2{font-size:9px;line-height:1.4}
+  .pp-center .t3{font-size:10.5px;letter-spacing:.16em;margin:2px 0}
+  .pp-center .t4{font-size:9px;line-height:1.45}
+  .pp-center .pp-legend{font-size:8.5px;gap:4px;margin-top:3px;flex-wrap:wrap;line-height:1.4}
+  .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;font-size:11px;line-height:1.4;min-height:0}
+  .pp-st.main{font-size:11px}
+  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9.5px}
+  .pp-m{font-size:8.5px;padding:0 1px;vertical-align:0}
+  .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
+  .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
+  .pp-foot .pn{font-size:11px}
+  .pp-bz{border-collapse:separate;border-spacing:0}
+  .pp-bz thead{display:none}
+  .pp-bz,.pp-bz tbody{display:block}
+  .pp-bz tr{display:grid;grid-template-columns:repeat(2,1fr);margin-top:-1px}
+  .pp-bz td{margin:0 0 0 -1px}
+  .pp-bz td.lbl{grid-column:1/-1;width:auto;margin:0;background:var(--card);color:var(--ink);font-weight:600}
+  .pp-bz td[data-c]::before{content:attr(data-c);display:block;font-size:12px;color:var(--muted);letter-spacing:.12em;margin-bottom:2px}
+  .pp-bz td.big{font-size:26px}
+  .hy-wrap{gap:14px}
+  .hy-box{min-width:0;width:100%}
+  .hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
+  .hy-row.plain{grid-template-columns:32px minmax(72px,1fr)}
+  .hex{width:auto;min-width:64px;height:12px}
+  .hex.sm{min-width:56px;height:10px}
+  .hex.md{min-width:60px;height:11px}
+  .mh{padding:10px}
+  .mh-main{gap:12px}
+  .hexbox.mini{min-width:100px}
+  .dl{padding:10px}
+  .dl-sc-c{min-width:88px;padding:8px 12px}
+  .dl-sk-c{min-width:70px;padding:6px 8px 7px}
+  .dl-pan2{grid-template-columns:repeat(3,1fr);grid-template-rows:none}
+  .dl-pc{grid-row:auto!important;grid-column:auto!important;min-height:76px}
+  .dl-c{grid-row:auto!important;grid-column:1/-1!important;order:-1}
+  .tt{padding:10px}
+  .tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .it-head,.it-lead,.it-body,.it-secs,.it-dis,.it-ask{padding-left:11px;padding-right:11px}
+  .it-head{min-height:46px}
+  .it-hint{margin-left:0;flex-basis:100%}
+  .it-dlabel{font-size:15px}
+  .it-dtext,.it-stext,.it-adv{font-size:13.5px;line-height:1.95}
+  .it-adv{padding:9px 10px}
+}
 @media (max-width:430px){
   /* 窄屏手机：紫微仍保持 4×4 宫盘（相对位置不可丢），进一步收紧宫内字号与间距 */
+  .pp-cell{padding:2px 1px 3px}
+  .pp-st.main{font-size:10px}
+  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9px}
+  .pp-foot .pn{font-size:10px}
+  .pp-center .t1{font-size:11px}
+  .pp-center .t2,.pp-center .t4{font-size:8.5px}
+  .dl-sc-c{min-width:80px}
+}
+/* 容器查询版：极窄侧栏 / 小屏手机（与上方 @media 同规则） */
+@container (max-width:430px){
   .pp-cell{padding:2px 1px 3px}
   .pp-st.main{font-size:10px}
   .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9px}
