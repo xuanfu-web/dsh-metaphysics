@@ -3872,10 +3872,10 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
 
     const Engine = __mods.index;
     window.Engine = Engine;
-// 共用渲染层：紫微/八字/六爻 -> HTML 字符串。面板与独立页面共用同一份。
+// 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--red:#b3261e;--lu:#1f6f3f;--quan:#8a5a00;--ke:#1f4e79;--ji:#b3261e;
+.pp{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--card:#fffefb;--red:#b3261e;--lu:#1f6f3f;--quan:#8a5a00;--ke:#1f4e79;--ji:#b3261e;
   border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:11px;line-height:1.5}
 .pp *{box-sizing:border-box}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(142px,auto));gap:0}
@@ -3923,74 +3923,7 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
 .pp-str{margin-top:10px;font-size:11.5px;line-height:1.8}
 .pp-str b{color:var(--red);font-size:13px;margin:0 4px}
 .pp-drel{font-style:normal;color:var(--red);font-size:10px}
-.tt{padding:14px}
-.tt-head{font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
-.tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
-.tt-card{border:1px solid var(--line);background:#fffefb;padding:11px 12px;display:flex;flex-direction:column;gap:7px;min-height:158px}
-.tt-card.rev{background:#fbf7f4;border-style:dashed}
-.tt-pos{font-size:10px;color:var(--muted);letter-spacing:.14em}
-.tt-name{font-size:17px;font-weight:700;color:var(--red);letter-spacing:.04em}
-.tt-ori{font-size:10px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
-.tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;line-height:1.7}
-.tt-kw span{border-bottom:1px dotted var(--line)}
-.tt-el{margin-top:auto;font-size:10px;color:var(--muted)}
-.tt-core{font-size:11px;color:#4a453d;line-height:1.7;border-left:2px solid var(--line);padding-left:7px}
-.tt-no{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
-.tt-tip{margin-top:12px;font-size:10.5px;color:var(--muted)}
-.tt-q{font-size:11.5px;margin-bottom:6px}
-.tt-q b{color:var(--muted);font-weight:400;margin-right:8px}
-.tt-read{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
-.tt-rt{font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
-.tt-read p{margin:0 0 5px;font-size:11.5px;line-height:1.85}
-.tt-note{margin-top:12px}
-.tt-ta{width:100%;border:1px solid var(--line);background:#fffefb;color:var(--ink);padding:8px;font-size:11.5px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
-.tt-ta:focus{border-color:var(--red)}
-.mh{padding:14px}
-.mh-head{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-.mh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.mh-box{border:1px solid var(--line);background:#fffefb;padding:9px 11px}
-.mh-t{font-size:10px;letter-spacing:.14em;color:var(--muted)}
-.mh-n{font-size:16px;font-weight:700;color:var(--red);margin:2px 0 3px}
-.mh-s{font-size:10.5px;color:var(--muted)}
-.mh-body{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap}
-.mh-lines{display:flex;flex-direction:column;gap:2px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
-.mh-line{display:flex;align-items:center;gap:8px}
-.mh-ln{width:32px;color:var(--muted);font-size:10.5px;font-family:system-ui,sans-serif}
-.mh-line .yang{color:var(--ink)}
-.mh-line .yin{color:var(--muted)}
-.mh-line .mv{color:var(--red)}
-.mh-mv{font-style:normal;color:var(--red);font-size:10px}
-.mh-use{display:flex;flex-direction:column;gap:5px;font-size:12px;line-height:1.7}
-.mh-use b{color:var(--muted);font-weight:400;margin-right:8px}
-.mh-rel{margin-top:4px;font-weight:600}
-.mh-rel.good{color:var(--lu)}
-.mh-rel.bad{color:var(--ji)}
-.dl{padding:14px}
-.dl-head{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-.dl-chuans{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.dl-chuan,.dl-geju{border:1px solid var(--line);background:#fffefb;padding:8px 12px;min-width:92px;text-align:center}
-.dl-k{font-size:10px;letter-spacing:.12em;color:var(--muted)}
-.dl-z{font-size:20px;font-weight:700;color:var(--red);line-height:1.3}
-.dl-j{font-size:11px}
-.dl-l{font-size:10.5px;color:var(--muted)}
-.dl-geju .dl-gn{font-size:15px;font-weight:700;margin-top:2px}
-.dl-geju .dl-gd{font-size:10.5px;color:var(--muted)}
-.dl-kes{display:flex;flex-direction:column;gap:4px;font-size:12px;margin-bottom:12px}
-.dl-ke{display:flex;gap:8px;align-items:baseline}
-.dl-ke b{color:var(--red);font-size:13px}
-.dl-jp{color:var(--muted);font-size:11px}
-.dl-pan{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
-.dl-cell{border:1px solid var(--line);background:#fffefb;text-align:center;padding:4px 0}
-.dl-t{font-size:15px;font-weight:700;color:var(--ink)}
-.dl-d{font-size:10px;color:var(--muted)}
-.dl-g{font-size:9.5px;color:var(--muted)}
-.pp-ly{font-family:ui-monospace,Consolas,monospace;font-size:12px;width:100%}
-.pp-ly .row{display:flex;gap:8px;align-items:center;padding:1px 0}
-.pp-ly .nm{width:30px;color:var(--muted);font-size:10px}
-.pp-ly .bar{width:64px;letter-spacing:1px}
-.pp-ly .bar.yin{color:var(--muted)}
-.pp-ly .bar.mv{color:var(--red)}
-.pp-ly .mark{width:14px;color:var(--red);font-size:10px}
+.pp-dim{color:var(--muted)}
 .pp-r{display:none}
 .pp-modes{display:flex;align-items:center;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif}
 .pp-modes label{padding:4px 18px;font-size:11px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
@@ -4018,6 +3951,109 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
 .pp-ssi.bad{color:var(--ji);border-color:rgba(179,38,30,.3)}
 .pp-ssi.neutral{color:var(--quan);border-color:rgba(138,90,0,.3)}
 .pp-ssi em{font-style:normal;font-size:9.5px;color:var(--muted);margin-left:2px}
+
+/* —— 爻线：真线，阳为整条、阴为断开、动爻描红 —— */
+.hex{display:flex;gap:16%;height:10px;width:104px;flex:0 0 auto;color:var(--ink);align-items:stretch}
+.hex i{flex:1;background:currentColor;border-radius:1.5px}
+.hex.yin{gap:18%}
+.hex.on{color:var(--red)}
+.hex.dim{color:#b9b2a4}
+.hex.sm{width:74px;height:8px}
+.hex.md{width:88px;height:9px}
+
+/* —— 六爻 —— */
+.hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.hy-box{border:1px solid var(--line);background:var(--card);padding:10px 14px 12px;min-width:250px}
+.hy-h{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;font-family:system-ui,sans-serif}
+.hy-h b{color:var(--red);font-size:12.5px}
+.hy-h span{color:var(--muted);font-size:10.5px}
+.hy{display:flex;flex-direction:column;gap:5px}
+.hy-row{display:grid;grid-template-columns:16px 28px 104px 56px 50px 36px;gap:8px;align-items:center;font-size:11.5px;font-family:system-ui,sans-serif;padding:1px 0}
+.hy-sy{color:var(--red);font-size:10px;font-weight:700}
+.hy-nm{color:var(--muted);font-size:10px}
+.hy-gz{letter-spacing:.04em}
+.hy-ls{color:var(--muted);font-size:10.5px}
+.hy-dn{color:var(--red);font-size:10px;font-family:system-ui,sans-serif}
+.hy-void{color:#a9a296}
+.hy-row.plain{grid-template-columns:32px 104px;gap:9px;padding:0}
+.mh-mini{display:flex;flex-direction:column;gap:4px}
+
+/* —— 梅花 —— */
+.mh{padding:14px}
+.mh-head{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.mh-main{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.hexbox{border:1px solid var(--line);background:var(--card);padding:10px 13px 11px}
+.hexbox.mini{min-width:112px}
+.hexbox .h{display:flex;justify-content:space-between;gap:10px;font-size:9.5px;letter-spacing:.14em;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:5px}
+.hexbox .n{font-size:14px;font-weight:700;color:var(--red);margin-bottom:7px;letter-spacing:.04em}
+.hexbox.mini .n{font-size:12.5px;margin-bottom:6px}
+.hexbox .s{font-size:10px;color:var(--muted);margin-top:7px;font-family:system-ui,sans-serif}
+.trib{display:flex;flex-direction:column;gap:4px}
+.trib+.trib{margin-top:7px;padding-top:7px;border-top:1px dotted var(--line)}
+.trib-h{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:3px}
+.tri-tag{font-size:9.5px;padding:0 4px;border:1px solid var(--line);color:var(--muted);font-family:system-ui,sans-serif}
+.tri-tag.ti{color:var(--red);border-color:rgba(179,38,30,.45);font-weight:700}
+.tri-tag.yong{color:var(--ke);border-color:rgba(31,78,121,.45)}
+.mh-rel{margin-top:12px;font-size:12px;font-family:system-ui,sans-serif;line-height:1.8}
+.mh-rel b{color:var(--muted);font-weight:400;margin-right:8px}
+.mh-rel .lv{font-weight:700}
+.mh-rel .lv.good{color:var(--lu)}
+.mh-rel .lv.bad{color:var(--ji)}
+.mh-rel .lv.flat{color:var(--quan)}
+
+/* —— 大六壬 —— */
+.dl{padding:14px}
+.dl-head{font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.7}
+.dl-sc{display:flex;align-items:stretch;margin:0 0 12px;flex-wrap:wrap}
+.dl-sc-c{border:1px solid var(--line);background:var(--card);padding:8px 16px;min-width:100px;text-align:center}
+.dl-sc-c+.dl-sc-c{border-left:none}
+.dl-sc-c.ge{border-left:1px solid var(--line);background:#fbf6ec}
+.dl-sc-k{font-size:9.5px;letter-spacing:.16em;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-sc-z{font-size:21px;font-weight:700;color:var(--red);line-height:1.2}
+.dl-sc-j{font-size:10.5px}
+.dl-sc-l{font-size:9.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-sc-gn{font-size:14px;font-weight:700;margin-top:1px}
+.dl-sk{display:flex;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.dl-sk-c{border:1px solid var(--line);background:var(--card);padding:6px 12px 7px;text-align:center;min-width:74px}
+.dl-sk-c+.dl-sk-c{border-left:none}
+.dl-sk-k{font-size:9.5px;color:var(--muted);letter-spacing:.1em;font-family:system-ui,sans-serif}
+.dl-sk-s{font-size:15px;font-weight:700;color:var(--red);line-height:1.3}
+.dl-sk-x{font-size:13px;color:var(--muted);line-height:1.3}
+.dl-sk-r{font-size:9px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(72px,auto));border:1px solid var(--line);background:var(--bg)}
+.dl-pc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 7px;display:flex;flex-direction:column;gap:0}
+.dl-pc .tz{font-size:18px;font-weight:700;color:var(--red);line-height:1.15}
+.dl-pc .dz{font-size:9.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-pc .jz{font-size:10px;color:var(--quan);margin-top:auto;font-family:system-ui,sans-serif}
+.dl-c{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;background:#fffdf8}
+.dl-c .t1{font-size:14px;font-weight:700;letter-spacing:.06em}
+.dl-c .t2{font-size:10.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-c .t3{font-size:11px;letter-spacing:.2em;margin-top:3px}
+.dl-legend{display:flex;gap:12px;justify-content:center;font-size:9.5px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
+
+/* —— 塔罗 —— */
+.tt{padding:14px}
+.tt-head{font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
+.tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
+.tt-card{border:1px solid var(--line);background:#fffefb;padding:11px 12px;display:flex;flex-direction:column;gap:7px;min-height:158px}
+.tt-card.rev{background:#fbf7f4;border-style:dashed}
+.tt-pos{font-size:10px;color:var(--muted);letter-spacing:.14em}
+.tt-name{font-size:17px;font-weight:700;color:var(--red);letter-spacing:.04em}
+.tt-ori{font-size:10px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
+.tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;line-height:1.7}
+.tt-kw span{border-bottom:1px dotted var(--line)}
+.tt-el{margin-top:auto;font-size:10px;color:var(--muted)}
+.tt-core{font-size:11px;color:#4a453d;line-height:1.7;border-left:2px solid var(--line);padding-left:7px}
+.tt-no{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
+.tt-tip{margin-top:12px;font-size:10.5px;color:var(--muted)}
+.tt-q{font-size:11.5px;margin-bottom:6px}
+.tt-q b{color:var(--muted);font-weight:400;margin-right:8px}
+.tt-read{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.tt-rt{font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
+.tt-read p{margin:0 0 5px;font-size:11.5px;line-height:1.85}
+.tt-note{margin-top:12px}
+.tt-ta{width:100%;border:1px solid var(--line);background:#fffefb;color:var(--ink);padding:8px;font-size:11.5px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
+.tt-ta:focus{border-color:var(--red)}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
@@ -4029,6 +4065,18 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
     辰: [2, 1], 酉: [2, 4], 卯: [3, 1], 戌: [3, 4],
     寅: [4, 1], 丑: [4, 2], 子: [4, 3], 亥: [4, 4],
   };
+
+  // 先天八卦：爻自下而上，1 阳 0 阴
+  const TRI_BITS = {
+    乾: [1, 1, 1], 兑: [1, 1, 0], 离: [1, 0, 1], 震: [1, 0, 0],
+    巽: [0, 1, 1], 坎: [0, 1, 0], 艮: [0, 0, 1], 坤: [0, 0, 0],
+  };
+  const POS_NAME = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /** 单爻线：阳一整条，阴两段；动爻描红 */
+  const hexBar = (yang, moving, size) => `<span class="hex${yang ? '' : ' yin'}${moving ? ' on' : ''}${size ? ' ' + size : ''}">${yang ? '<i></i>' : '<i></i><i></i>'}</span>`;
 
   function starsHTML(stars) {
     if (!stars || !stars.length) return '';
@@ -4117,7 +4165,7 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
         <div class="t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
         <div class="t4">子年斗君 ${r.doujun ? r.doujun.zinian : '—'}　流年斗君 ${ln && ln.doujun ? ln.doujun : '—'}</div>
         <div class="t4">紫微 ${r.ziwei}　天府 ${r.tianfu}　${kind === 'da' ? '大限命宫 ' + BR[dxIdx] : kind === 'ln' ? '流年命宫 ' + BR[lnIdx] : '本命命宫 ' + r.soul.branch}</div>
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span></div>
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -4132,9 +4180,9 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
       <span class="pp-chip ${cq.absorb.label === '杂' ? 'warn' : 'ok'}">吸收·${cq.absorb.label}</span>
     </div>` : '';
     const pats = (r.patterns || []).length
-      ? `<div class="pp-chips">${r.patterns.map((p) => `<span class="pp-chip ${p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${String(p.evidence || '').replace(/"/g, '&quot;')}">${p.name}</span>`).join('')}</div>` : '';
+      ? `<div class="pp-chips">${r.patterns.map((p) => `<span class="pp-chip ${p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${esc(p.evidence || '')}">${p.name}</span>`).join('')}</div>` : '';
     const dxs = (r.daxianList || []).length
-      ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${String(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
+      ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
 
@@ -4152,46 +4200,167 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
     </div>${chips}${pats}${dxs}${lnHit}`;
   };
 
-  pp.meihuaHTML = function (r) {
-    const line = (l) => `<div class="mh-line"><span class="mh-ln">${l.name}</span><span class="${l.yinYang === '阳' ? 'yang' : 'yin'}${l.moving ? ' mv' : ''}">${l.yinYang === '阳' ? '━━━━━' : '━━  ━━'}</span>${l.moving ? '<i class="mh-mv">动</i>' : ''}</div>`;
-    const box = (title, name, sub) => `<div class="mh-box"><div class="mh-t">${title}</div><div class="mh-n">${name}</div><div class="mh-s">${sub}</div></div>`;
-    return `<div class="pp mh">
-      <div class="mh-head">${r.source}</div>
-      <div class="mh-grid">
-        ${box('本卦', r.ben.name, `上${r.ben.upper} 下${r.ben.lower}`)}
-        ${box('互卦', r.hu.name, `上${r.hu.upper} 下${r.hu.lower}`)}
-        ${box('变卦', r.bian.name, r.movingName)}
-        ${box('错卦', r.cuo.name, '六爻全变')}
-        ${box('综卦', r.zong.name, '上下颠倒')}
-      </div>
-      <div class="mh-body">
-        <div class="mh-lines">${r.lines.slice().reverse().map(line).join('')}</div>
-        <div class="mh-use">
-          <div><b>体</b>${r.bodyUse.body.trigram}（${r.bodyUse.body.element}）</div>
-          <div><b>用</b>${r.bodyUse.use.trigram}（${r.bodyUse.use.element}）</div>
-          <div class="mh-rel ${r.bodyUse.level === '凶' ? 'bad' : r.bodyUse.level.includes('吉') ? 'good' : ''}">${r.bodyUse.level}　${r.bodyUse.relation}</div>
-        </div>
-      </div>
+  /** 六爻 / 梅花的卦体：上爻在最上 */
+  function hexRows(lines, opt) {
+    const o = opt || {};
+    const sorted = lines.slice().sort((a, b) => b.position - a.position);
+    if (o.plain) {
+      return sorted.map((l) => `<div class="hy-row plain">
+        <span class="hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
+        ${hexBar(l.yinYang === '阳', l.moving)}
+      </div>`).join('');
+    }
+    return sorted.map((l) => {
+      const yang = l.yinYang === '阳';
+      const sh = o.shiYing
+        ? (l.position === o.shi ? '<span class="hy-sy">世</span>' : l.position === o.ying ? '<span class="hy-sy">应</span>' : '<span></span>')
+        : '<span></span>';
+      return `<div class="hy-row">
+        ${sh}
+        <span class="hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
+        ${hexBar(yang, l.moving)}
+        <span class="hy-gz">${esc(l.ganzhi || '')}</span>
+        <span class="hy-lq">${esc(l.liuqin || '')}</span>
+        <span class="hy-ls">${esc(l.liushen || '')}</span>
+      </div>`;
+    }).join('');
+  }
+
+  pp.liuyaoHTML = function (r) {
+    const box = (title, sub, hex, lines) => `<div class="hy-box">
+      <div class="hy-h"><b>${title}</b><span>${sub}</span></div>
+      <div class="hy">${hexRows(lines, { shiYing: true, shi: hex.shi, ying: hex.ying })}</div>
+    </div>`;
+    const ben = box(`本卦 ${r.ben.name}`, `${r.ben.palace} · ${r.ben.palaceElement}`, r.ben, r.ben.lines);
+    const bian = r.bian
+      ? box(`变卦 ${r.bian.name}`, `${r.bian.palace} · ${r.bian.palaceElement}`, r.bian, r.bian.lines)
+      : `<div class="hy-box"><div class="hy-h"><b>六爻安静</b><span>无动爻，不取变卦</span></div>
+          <div class="pp-dim" style="font-size:11px;line-height:1.9">断卦以本卦卦辞与世应生克为主。</div></div>`;
+    return `<div class="pp" style="padding:14px">
+      <div class="mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
+      <div class="hy-wrap">${ben}${bian}</div>
     </div>`;
   };
 
+  pp.meihuaHTML = function (r) {
+    // 三爻成卦：由上下卦名反推爻线
+    const mini = (title, name, upper, lower, note) => {
+      const bits = [...(TRI_BITS[lower] || [0, 0, 0]), ...(TRI_BITS[upper] || [0, 0, 0])];
+      const rows = bits.slice().reverse().map((b) => hexBar(!!b, false, 'sm')).join('');
+      return `<div class="hexbox mini">
+        <div class="h">${title}</div>
+        <div class="n">${name}</div>
+        <div class="mh-mini">${rows}</div>
+        <div class="s">${note || `上${upper} 下${lower}`}</div>
+      </div>`;
+    };
+    // 本卦：分上下卦，标体用
+    const benBits = r.lines.slice().sort((a, b) => b.position - a.position);
+    const upperLines = benBits.slice(0, 3);
+    const lowerLines = benBits.slice(3);
+    const movingInUpper = r.moving >= 4;
+    const trib = (label, tri, lines, isBody) => `<div class="trib">
+      <div class="trib-h">${label} ${tri}${TRI_EL(tri)}<span class="tri-tag ${isBody ? 'ti' : 'yong'}">${isBody ? '体' : '用'}</span></div>
+      <div class="hy" style="gap:5px">${hexRows(lines, { plain: true })}</div>
+    </div>`;
+    const mainBox = `<div class="hexbox">
+      <div class="h"><span>本卦</span><span>动 ${r.movingName}</span></div>
+      <div class="n">${r.ben.name}</div>
+      ${trib('上卦', r.ben.upper, upperLines, !movingInUpper)}
+      ${trib('下卦', r.ben.lower, lowerLines, movingInUpper)}
+      <div class="s">${r.source}</div>
+    </div>`;
+
+    const lv = r.bodyUse.level;
+    const lvCls = lv.includes('凶') ? 'bad' : lv.includes('吉') ? 'good' : 'flat';
+    const useLine = `<div class="mh-rel">
+      <div><b>体</b>${r.bodyUse.body.trigram}（${r.bodyUse.body.element}）　<b>用</b>${r.bodyUse.use.trigram}（${r.bodyUse.use.element}）</div>
+      <div><span class="lv ${lvCls}">${lv}</span>　${r.bodyUse.relation}</div>
+    </div>`;
+
+    const cuoTri = TRI_OF(r.cuo.name) || ['', ''];
+    const zongTri = TRI_OF(r.zong.name) || ['', ''];
+    return `<div class="pp mh">
+      <div class="mh-main">
+        ${mainBox}
+        ${mini('互卦', r.hu.name, r.hu.upper, r.hu.lower, '中藏之象')}
+        ${mini('变卦', r.bian.name, r.bian.upper, r.bian.lower, `动 ${r.movingName} 后`)}
+        ${mini('错卦', r.cuo.name, cuoTri[1], cuoTri[0], '六爻全变')}
+        ${mini('综卦', r.zong.name, zongTri[1], zongTri[0], '上下颠倒')}
+      </div>
+      ${useLine}
+    </div>`;
+  };
+
+  // 由卦名查上下卦（六十四卦全表，用于错卦/综卦）
+  const HEX_TABLE = {
+    乾为天: ['乾', '乾'], 天风姤: ['乾', '巽'], 天山遁: ['乾', '艮'], 天地否: ['乾', '坤'],
+    风地观: ['巽', '坤'], 山地剥: ['艮', '坤'], 火地晋: ['离', '坤'], 火天大有: ['离', '乾'],
+    坎为水: ['坎', '坎'], 水泽节: ['坎', '兑'], 水雷屯: ['坎', '震'], 水火既济: ['坎', '离'],
+    泽火革: ['兑', '离'], 雷火丰: ['震', '离'], 地火明夷: ['坤', '离'], 地水师: ['坤', '坎'],
+    艮为山: ['艮', '艮'], 山火贲: ['艮', '离'], 山天大畜: ['艮', '乾'], 山泽损: ['艮', '兑'],
+    火泽睽: ['离', '兑'], 天泽履: ['乾', '兑'], 风泽中孚: ['巽', '兑'], 风山渐: ['巽', '艮'],
+    震为雷: ['震', '震'], 雷地豫: ['震', '坤'], 雷水解: ['震', '坎'], 雷风恒: ['震', '巽'],
+    地风升: ['坤', '巽'], 水风井: ['坎', '巽'], 泽风大过: ['兑', '巽'], 泽雷随: ['兑', '震'],
+    巽为风: ['巽', '巽'], 风天小畜: ['巽', '乾'], 风火家人: ['巽', '离'], 风雷益: ['巽', '震'],
+    天雷无妄: ['乾', '震'], 火雷噬嗑: ['离', '震'], 山雷颐: ['艮', '震'], 山风蛊: ['艮', '巽'],
+    离为火: ['离', '离'], 火山旅: ['离', '艮'], 火风鼎: ['离', '巽'], 火水未济: ['离', '坎'],
+    山水蒙: ['艮', '坎'], 风水涣: ['巽', '坎'], 天水讼: ['乾', '坎'], 天火同人: ['乾', '离'],
+    坤为地: ['坤', '坤'], 地雷复: ['坤', '震'], 地泽临: ['坤', '兑'], 地天泰: ['坤', '乾'],
+    雷天大壮: ['震', '乾'], 泽天夬: ['兑', '乾'], 水天需: ['坎', '乾'], 水地比: ['坎', '坤'],
+    兑为泽: ['兑', '兑'], 泽水困: ['兑', '坎'], 泽地萃: ['兑', '坤'], 泽山咸: ['兑', '艮'],
+    水山蹇: ['坎', '艮'], 地山谦: ['坤', '艮'], 雷山小过: ['震', '艮'], 雷泽归妹: ['震', '兑'],
+  };
+  const TRI_ELEM = { 乾: '金', 兑: '金', 离: '火', 震: '木', 巽: '木', 坎: '水', 艮: '土', 坤: '土' };
+  const TRI_EL = (t) => (TRI_ELEM[t] ? ` ${TRI_ELEM[t]}` : '');
+  const TRI_OF = (name) => HEX_TABLE[name] || null; // [下卦, 上卦]
+
   pp.daliurenHTML = function (r) {
     const sc = r.sanChuan;
-    const cbox = (c, k) => `<div class="dl-chuan"><div class="dl-k">${k}</div><div class="dl-z">${c.zhi}</div><div class="dl-j">${c.jiangFull || c.jiang}</div><div class="dl-l">${c.liuQin}${c.xunKong ? ' · 空' : ''}</div></div>`;
-    const ke = r.siKe.map((x) => `<div class="dl-ke"><span class="dl-k">${x.position}课</span><b>${x.shang}</b>上<b>${x.xia}</b>下<span class="pp-dim">${x.relation}</span><span class="dl-jp">${x.jiangFull || x.jiang}</span></div>`).join('');
-    const pan = r.pan.map((p) => `<div class="dl-cell"><div class="dl-t">${p.tian}</div><div class="dl-d">${p.di}</div><div class="dl-g">${p.jiangFull}</div></div>`).join('');
+    const cbox = (c, k) => `<div class="dl-sc-c">
+      <div class="dl-sc-k">${k}</div>
+      <div class="dl-sc-z">${c.zhi}</div>
+      <div class="dl-sc-j">${c.jiangFull || c.jiang}</div>
+      <div class="dl-sc-l">${c.liuQin}${c.xunKong ? ' · 空' : ''}</div>
+    </div>`;
+    const ge = `<div class="dl-sc-c ge">
+      <div class="dl-sc-k">格局</div>
+      <div class="dl-sc-gn">${r.geJu.name}</div>
+      <div class="dl-sc-l">${r.geJu.detail}</div>
+    </div>`;
+    const keCells = r.siKe.slice().map((x) => `<div class="dl-sk-c">
+      <div class="dl-sk-k">${['一课', '二课', '三课', '四课'][x.position - 1] || x.position + '课'}</div>
+      <div class="dl-sk-s">${x.shang}</div>
+      <div class="dl-sk-x">${x.xia}</div>
+      <div class="dl-sk-r">${x.relation} · ${x.jiangFull || x.jiang}</div>
+    </div>`).join('');
+    const cells = r.pan.map((p) => {
+      const pos = POS[p.di] || [1, 1];
+      return `<div class="dl-pc" style="grid-row:${pos[0]};grid-column:${pos[1]}">
+        <div class="tz">${p.tian}</div>
+        <div class="dz">地盘 ${p.di}</div>
+        <div class="jz">${p.jiangFull}</div>
+      </div>`;
+    }).join('');
+    const center = `<div class="dl-c">
+      <div class="t1">${r.dayGanZhi}日　${r.hourZhi}时</div>
+      <div class="t2">${r.dayNight}贵 · 月将 ${r.yueJiang.name}${r.yueJiang.zhi} · 贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
+      <div class="t3">${sc.chu.zhi} → ${sc.zhong.zhi} → ${sc.mo.zhi}</div>
+      <div class="t2">节气 ${r.jieqi.name}${r.jieqi.time ? ' ' + r.jieqi.time : ''}</div>
+    </div>`;
     return `<div class="pp dl">
-      <div class="dl-head">${r.dayGanZhi}日　${r.hourZhi}时（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
-      <div class="dl-chuans">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}<div class="dl-geju"><div class="dl-k">格局</div><div class="dl-gn">${r.geJu.name}</div><div class="dl-gd">${r.geJu.detail}</div></div></div>
-      <div class="dl-kes">${ke}</div>
-      <div class="dl-pan">${pan}</div>
+      <div class="dl-head">日 ${r.dayGanZhi}　时 ${r.hourZhi}（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
+      <div class="dl-sc">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}${ge}</div>
+      <div class="dl-sk">${keCells}</div>
+      <div class="dl-pan2">${cells}${center}</div>
+      <div class="dl-legend"><span>大字＝天盘支</span><span>小字＝地盘（固定十二支）</span><span>右下＝天将</span></div>
     </div>`;
   };
 
   pp.tarotHTML = function (r) {
     const cards = r.cards.map((c) => `
       <div class="tt-card ${c.upright ? 'up' : 'rev'}">
-        <div class="tt-pos" title="${String(c.positionHint || '').replace(/"/g, '&quot;')}">${c.position}</div>
+        <div class="tt-pos" title="${esc(c.positionHint || '')}">${c.position}</div>
         <div class="tt-name">${c.name}${c.number ? `<span class="tt-no">${c.number}</span>` : ''}</div>
         <div class="tt-ori">${c.orientation}</div>
         ${c.core ? `<div class="tt-core">${c.core}</div>` : ''}
@@ -4217,7 +4386,6 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
     const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
     const ELC = { 木: 'wood', 火: 'fire', 土: 'earth', 金: 'metal', 水: 'water' };
     const el = (e) => `<span class="wx-${ELC[e] || 'earth'}">${e}</span>`;
-    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     // 神煞：悬停显示「类别·查法来源查目标｜查法口诀」
     const ssTag = (x) => `<span class="s ${x.luck || 'neutral'}" title="${esc(`${x.cat} · ${x.via}查${x.target} ｜ ${x.rule}`)}">${x.name}</span>`;
     const line = (label, fn) => `<tr><td class="lbl">${label}</td>${cols.map(([k]) => `<td>${fn(r.pillars[k], k)}</td>`).join('')}</tr>`;
@@ -4282,29 +4450,14 @@ return { geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, pars
       <div style="margin-top:8px;font-size:11px;color:#6f6a60">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运</div>
     </div>`;
   };
-
-  pp.liuyaoHTML = function (r) {
-    const line = (hex) => hex.lines.slice().reverse().map((l) => {
-      const mk = l.position === hex.shi ? '世' : l.position === hex.ying ? '应' : '';
-      const bar = l.yinYang === '阳' ? '━━━━━' : '━━  ━━';
-      const cls = ['bar', l.yinYang === '阳' ? 'yang' : 'yin', l.moving ? 'mv' : ''].join(' ');
-      return `<div class="row"><span class="mark">${mk}</span><span class="nm">${l.name}</span><span class="${cls}">${bar}</span><span>${l.ganzhi}</span><span>${l.liuqin}</span><span class="pp-dim">${l.liushen}</span>${l.moving ? '<span class="mark">动</span>' : ''}</div>`;
-    }).join('');
-    const bian = r.bian ? `<div style="margin-top:10px;font-size:11px;color:#b3261e">变卦 ${r.bian.name}</div><div class="pp-ly">${line(r.bian)}</div>` : '';
-    return `<div class="pp" style="padding:12px">
-      <div style="font-size:11px;color:#6f6a60;margin-bottom:6px">起卦 ${r.cast.notation.join('、')}　日辰 ${r.dayGanZhi.name}</div>
-      <div style="font-size:12px;font-weight:700;color:#b3261e">本卦 ${r.ben.name}（${r.ben.palace}·${r.ben.palaceElement}）</div>
-      <div class="pp-ly">${line(r.ben)}</div>${bian}
-    </div>`;
-  };
 })();
 
 // Client 半：命理排盘面板。由 build-client.mjs 注入 React / h / Engine / __PP。
 const PP = window.__PP;
 const CSS = `
 .mp-wrap{height:100%;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:13px}
-.mp-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
-.mp-tabs{display:flex;gap:6px;margin-bottom:16px}
+.mp-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.mp-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
 .mp-tab{padding:6px 16px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13px;transition:background .12s,color .12s}
 .mp-tab:hover{background:var(--dsw-alias-bg-layer-2)}
 .mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:#fff}
@@ -4313,49 +4466,18 @@ const CSS = `
 .mp-input:focus{border-color:var(--dsw-alias-brand-primary)}
 .mp-btn{padding:7px 18px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:13px}
 .mp-btn.ghost{background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
+.mp-seg{display:inline-flex;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden}
+.mp-seg button{padding:5px 12px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer}
+.mp-seg button.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-hint{font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
 .mp-card{margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1)}
 .mp-flat{margin-top:16px;padding:0;border:none;background:transparent;border-radius:0}
 .mp-dim{color:var(--dsw-alias-label-secondary)}
 .mp-err{margin-top:16px;padding:10px 14px;border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 14%,transparent);color:var(--dsw-alias-state-error-primary)}
-.mp-bz{display:grid;grid-template-columns:56px repeat(4,1fr);gap:6px 10px;align-items:center}
-.mp-bz .lbl{font-size:12px;color:var(--dsw-alias-label-secondary)}
-.mp-bz .big{font-size:22px;font-weight:600;line-height:1.3}
-.mp-bz .cell{font-size:12px;line-height:1.5}
-.mp-zv{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(96px,auto));gap:6px}
-.mp-zc{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2);padding:7px 8px;display:flex;flex-direction:column;gap:3px;min-height:96px}
-.mp-zc.soul{border-color:var(--dsw-alias-brand-primary);box-shadow:inset 0 0 0 1px var(--dsw-alias-brand-primary)}
-.mp-zc .ph{display:flex;justify-content:space-between;font-size:12px;font-weight:600}
-.mp-zc .stars{font-size:11px;line-height:1.65;display:flex;flex-wrap:wrap;gap:0 5px}
-.mp-zc .foot{font-size:10px;color:var(--dsw-alias-label-secondary);margin-top:auto}
-.mp-center{grid-column:2/4;grid-row:2/4;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;justify-content:center;background:var(--dsw-alias-bg-base)}
-.mp-tag{font-size:11px;padding:1px 6px;border-radius:5px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary)}
-.mp-ly{display:flex;flex-direction:column;gap:4px;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.7}
-.mp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.mp-chip{font-size:12px;padding:3px 9px;border-radius:7px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1)}
+.mp-bar{display:flex;gap:8px;align-items:center;margin-top:14px}
 `;
 
 const { useState, useEffect } = React;
-
-const BRANCH_POS = {
-  巳: [1, 1], 午: [1, 2], 未: [1, 3], 申: [1, 4],
-  辰: [2, 1], 酉: [2, 4],
-  卯: [3, 1], 戌: [3, 4],
-  寅: [4, 1], 丑: [4, 2], 子: [4, 3], 亥: [4, 4],
-};
-
-const MUT_COLOR = {
-  禄: 'var(--dsw-alias-state-success-primary)',
-  权: 'var(--dsw-alias-brand-primary)',
-  科: 'var(--dsw-alias-state-warn-primary)',
-  忌: 'var(--dsw-alias-state-error-primary)',
-};
-
-function starColor(type) {
-  if (type === '煞星') return 'var(--dsw-alias-state-error-primary)';
-  if (type === '吉星') return 'var(--dsw-alias-state-success-primary)';
-  if (type === '主星') return 'var(--dsw-alias-label-primary)';
-  return 'var(--dsw-alias-label-secondary)';
-}
 
 function PanelIcon(props) {
   const size = props && props.size ? props.size : 20;
@@ -4371,115 +4493,24 @@ function PanelIcon(props) {
   h('circle', { cx: 12, cy: 16, r: 1.1, fill: 'currentColor', stroke: 'none' }));
 }
 
-function BaziView({ r }) {
-  const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']];
-  const rows = [];
-  const push = (label, render) => {
-    rows.push(h('div', { key: label, className: 'lbl' }, label));
-    for (const [k] of cols) rows.push(h('div', { key: label + k, className: 'cell' }, render(r.pillars[k])));
-  };
-  push('十神', (p) => p.stemTenGod || '—');
-  push('天干', (p) => h('span', { className: 'big' }, p.stem));
-  push('地支', (p) => h('span', { className: 'big' }, p.branch));
-  push('藏干', (p) => p.hidden.map((x) => `${x.stem}·${x.tenGod}`).join(' '));
-  push('纳音', (p) => p.nayin);
+// 每个体系对「时间」的语义不同：八字/紫微要出生时间，其余三类只要起卦时刻
+const TABS = [
+  { k: 'ziwei', label: '紫微', timeLabel: '出生时刻', hint: '紫微斗数需要出生日期、时刻与性别；出生地只影响真太阳时修正。' },
+  { k: 'bazi', label: '八字', timeLabel: '出生时刻', hint: '四柱八字按节气与真太阳时定时柱，出生地越准，时柱越稳。' },
+  { k: 'liuyao', label: '六爻', timeLabel: '起卦时刻', hint: '六爻不需要出生时间：只用起卦当下的日辰定六神、月建定旺衰，卦由摇出。' },
+  { k: 'meihua', label: '梅花', timeLabel: '起卦时刻', hint: '梅花用起卦时刻的年月日时数成卦，也可直接给两个数字起卦；与出生时间无关。' },
+  { k: 'daliuren', label: '六壬', timeLabel: '起卦时刻', hint: '大六壬用起卦时刻的日干支、时支与月将起天地盘；同样与出生时间无关。' },
+  { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
+];
 
-  const wuxing = Object.entries(r.wuxing).map(([k, v]) =>
-    h('div', { key: k, className: 'mp-chip' }, `${k} ${v}`));
+function pad(n) { return String(n).padStart(2, '0'); }
 
-  return h('div', null,
-    h('div', { className: 'mp-chips', style: { marginTop: 0, marginBottom: 12 } },
-      h('span', { className: 'mp-chip' }, `日主 ${r.dayMaster.stem}${r.dayMaster.element}（${r.dayMaster.yinYang}）`),
-      h('span', { className: 'mp-chip' }, `空亡 ${r.kongwang.join('')}`),
-      h('span', { className: 'mp-chip' }, `五行局 无`)),
-    h('div', { className: 'mp-bz' }, rows),
-    h('div', { className: 'mp-chips' }, wuxing),
-    h('div', { className: 'mp-dim', style: { marginTop: 12, fontSize: 12 } },
-      `真太阳时 ${r.solarTime.trueSolarText}　${r.solarTime.note}`),
-    h('div', { className: 'mp-dim', style: { marginTop: 4, fontSize: 12 } },
-      `上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`),
-    h('div', { style: { marginTop: 14, fontWeight: 600 } }, `${r.dayun.rule}　${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运`),
-    h('div', { className: 'mp-chips' }, r.dayun.list.map((d) =>
-      h('span', { key: d.step, className: 'mp-chip' }, `${d.startAge} ${d.ganzhi} ${d.stemTenGod}`))));
-}
-
-function ZiweiView({ r }) {
-  const cells = [];
-  for (const p of r.palaces) {
-    const pos = BRANCH_POS[p.branch] || [1, 1];
-    const starNodes = [];
-    for (const s of p.stars) {
-      starNodes.push(h('span', { key: s.name, style: { color: starColor(s.type) } }, s.name));
-      if (s.mutagen) {
-        starNodes.push(h('span', { key: s.name + 'm', style: { color: MUT_COLOR[s.mutagen], fontSize: 10 } }, s.mutagen));
-      }
-    }
-    cells.push(h('div', {
-      key: p.branch,
-      className: 'mp-zc' + (p.isSoul ? ' soul' : ''),
-      style: { gridRow: pos[0], gridColumn: pos[1] },
-    },
-    h('div', { className: 'ph' },
-      h('span', null, p.palace, p.isSoul ? ' 命' : '', p.isBody ? ' 身' : ''),
-      h('span', { className: 'mp-dim', style: { fontWeight: 400 } }, p.branch + p.ganzhi)),
-    h('div', { className: 'stars' }, starNodes.length ? starNodes : [h('span', { key: 'x', className: 'mp-dim' }, '—')]),
-    h('div', { className: 'foot' },
-      `大限 ${p.daxian.start}-${p.daxian.end} · 小限 ${p.xiaoxian.age}`)));
-  }
-
-  const center = h('div', { key: 'center', className: 'mp-center' },
-    h('div', { style: { fontSize: 15, fontWeight: 600 } }, `${r.lunar.year}年${r.lunar.isLeap ? '闰' : ''}${r.lunar.month}月${r.lunar.day}日 · ${r.hourBranch}时`),
-    h('div', { className: 'mp-dim' }, `${r.yearGanzhi}年　命宫 ${r.soul.branch}　身宫 ${r.body.branch}`),
-    h('div', { className: 'mp-dim' }, `${r.bureau.name}　紫微 ${r.ziwei}　天府 ${r.tianfu}`),
-    h('div', { className: 'mp-dim' }, `命主 ${r.lifeMaster}　身主 ${r.bodyMaster}`),
-    h('div', { className: 'mp-dim' }, `${r.daxian.rule}，${r.daxian.startAge}岁起`));
-
-  const patterns = (r.patterns || []).map((p) => h('span', { key: p.name, className: 'mp-chip' }, `${p.name}`));
-
-  const cq = r.changqu;
-  const cqChips = cq ? h('div', { className: 'mp-chips' },
-    h('span', { key: 'wc', className: 'mp-chip' }, `文昌 ${cq.wenchang.branch}（${cq.wenchang.palace}${cq.wenchang.mutagen ? '·化' + cq.wenchang.mutagen : ''}）`),
-    h('span', { key: 'wq', className: 'mp-chip' }, `文曲 ${cq.wenqu.branch}（${cq.wenqu.palace}${cq.wenqu.mutagen ? '·化' + cq.wenqu.mutagen : ''}）`),
-    h('span', { key: 'rel', className: 'mp-chip' }, cq.relation),
-    h('span', { key: 'sf', className: 'mp-chip' }, `入命三方 ${cq.inSoulSanfang ? '是' : '否'}`),
-    h('span', {
-      key: 'tone',
-      className: 'mp-chip',
-      style: { color: cq.absorb.label === '杂' ? 'var(--dsw-alias-state-warn-primary)' : 'var(--dsw-alias-state-success-primary)' },
-    }, `吸收·${cq.absorb.label}`)) : null;
-
-  return h('div', null,
-    h('div', { className: 'mp-zv' }, [...cells, center]),
-    cqChips,
-    h('div', { className: 'mp-chips' }, patterns.length ? patterns : [h('span', { key: 'n', className: 'mp-dim' }, '无明显格局')]));
-}
-
-function LiuyaoView({ r }) {
-  const line = (l) => h('div', { key: l.position, style: { display: 'flex', gap: 10, alignItems: 'center' } },
-    h('span', { className: 'mp-dim', style: { width: 34 } }, l.name),
-    h('span', { style: { width: 26, color: l.moving ? 'var(--dsw-alias-state-warn-primary)' : 'inherit' } },
-      l.position === r.ben.shi ? '世' : l.position === r.ben.ying ? '应' : ''),
-    h('span', { style: { fontFamily: 'monospace', width: 52, color: l.yinYang === '阳' ? 'var(--dsw-alias-label-primary)' : 'var(--dsw-alias-label-secondary)' } }, l.symbol),
-    h('span', { style: { width: 62 } }, l.ganzhi),
-    h('span', { style: { width: 56 } }, l.liuqin),
-    h('span', { className: 'mp-dim', style: { width: 42 } }, l.liushen),
-    l.moving ? h('span', { style: { color: 'var(--dsw-alias-state-warn-primary)', fontSize: 11 } }, '动') : null);
-
-  const bian = r.bian ? h('div', { style: { marginTop: 14 } },
-    h('div', { style: { fontWeight: 600, marginBottom: 6 } }, `变卦 ${r.bian.name}（${r.bian.palace}·${r.bian.palaceElement}）`),
-    h('div', { className: 'mp-ly' }, r.bian.lines.slice().reverse().map(line))) : h('div', { className: 'mp-dim', style: { marginTop: 10 } }, '六爻安静，无变卦');
-
-  return h('div', null,
-    h('div', { className: 'mp-dim', style: { marginBottom: 10 } },
-      `起卦：${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}`),
-    h('div', { style: { fontWeight: 600, marginBottom: 6 } }, `本卦 ${r.ben.name}（${r.ben.palace}·${r.ben.palaceElement}）`),
-    h('div', { className: 'mp-ly' }, r.ben.lines.slice().reverse().map(line)),
-    bian);
+function nowParts() {
+  const d = new Date();
+  return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
 }
 
 function App() {
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
   const [tab, setTab] = useState('ziwei');
   const [date, setDate] = useState('1990-05-12');
   const [time, setTime] = useState('14:30');
@@ -4492,13 +4523,24 @@ function App() {
   const [error, setError] = useState('');
   const [count, setCount] = useState('3');
   const [question, setQuestion] = useState('');
+  const [mhMode, setMhMode] = useState('time');
+  const [upper, setUpper] = useState('');
+  const [lower, setLower] = useState('');
+  const [changing, setChanging] = useState('');
+  const [copied, setCopied] = useState('');
 
-  const run = async (kind) => {
+  const meta = TABS.find((t) => t.k === tab) || TABS[0];
+  const isBirth = tab === 'bazi' || tab === 'ziwei';
+
+  const run = async (kind, override) => {
+    const k = kind || tab;
+    const dt = override ? override : { date, time };
     try {
-      const datetime = `${date}T${time}`;
-      const args = kind === 'tarot' ? { system: kind } : { system: kind, datetime };
-      if (kind !== 'liuyao' && kind !== 'tarot') args.gender = gender;
-      if (kind === 'bazi' || kind === 'ziwei') {
+      const datetime = `${dt.date}T${dt.time}`;
+      const args = { system: k };
+      if (k !== 'tarot') args.datetime = datetime;
+      if (k === 'bazi' || k === 'ziwei') {
+        args.gender = gender;
         args.trueSolar = trueSolar;
         if (address.trim()) {
           args.address = address.trim();
@@ -4510,55 +4552,94 @@ function App() {
           }
         }
       }
-      if (kind === 'liuyao') {
+      if (k === 'liuyao') {
         const parsed = lines.split(/[^0-9]+/).filter(Boolean).map(Number);
         if (parsed.length === 6) args.lines = parsed;
         args.question = '手动起卦';
       }
-      if (kind === 'tarot') {
+      if (k === 'tarot') {
         args.count = Number(count);
         if (question.trim()) args.question = question.trim();
       }
-      if (kind === 'meihua') args.mode = 'time';
+      if (k === 'meihua') {
+        args.mode = mhMode;
+        if (mhMode === 'number') {
+          args.upper = Number(upper);
+          args.lower = Number(lower);
+          if (changing !== '') args.changing = Number(changing);
+        }
+      }
       const r = Engine.compute(args);
-      setResult({ kind, r });
+      setResult({ kind: k, r });
       setError('');
+      setCopied('');
     } catch (e) {
       setError(e && e.message ? e.message : String(e));
       setResult(null);
     }
   };
 
+  const runNow = () => {
+    const t = nowParts();
+    setDate(t.date);
+    setTime(t.time);
+    run(tab, t);
+  };
+
+  const copyResult = () => {
+    try {
+      const text = result && result.r && result.r.summary ? result.r.summary : '';
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => setCopied('已复制'), () => setCopied('复制失败'));
+    } catch (e) { setCopied('复制失败'); }
+  };
+
   const field = (label, node) => h('label', { className: 'mp-field' }, label, node);
-  const tabs = [['ziwei', '紫微'], ['bazi', '八字'], ['liuyao', '六爻'], ['meihua', '梅花'], ['daliuren', '六壬'], ['tarot', '塔罗']];
 
   useEffect(() => { run('ziwei'); }, []);
 
   const children = [
-    h('div', { key: 'tabs', className: 'mp-tabs' }, tabs.map(([k, label]) =>
+    h('div', { key: 'tabs', className: 'mp-tabs' }, TABS.map((t) =>
       h('button', {
-        key: k,
-        className: 'mp-tab' + (tab === k ? ' on' : ''),
-        onClick: () => { setTab(k); setError(''); },
-      }, label))),
+        key: t.k,
+        className: 'mp-tab' + (tab === t.k ? ' on' : ''),
+        onClick: () => { setTab(t.k); setError(''); },
+      }, t.label))),
 
     h('div', { key: 'head', className: 'mp-head' },
-      tab !== 'tarot' ? field('公历日期', h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => setDate(e.target.value) })) : null,
-      tab !== 'tarot' ? field('时间', h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => setTime(e.target.value) })) : null,
-      tab !== 'liuyao' && tab !== 'tarot' ? field('性别', h('select', {
+      tab !== 'tarot' ? field(isBirth ? '出生日期（公历）' : '起卦日期（公历）',
+        h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => setDate(e.target.value) })) : null,
+      tab !== 'tarot' ? field(isBirth ? '出生时刻' : '起卦时刻',
+        h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => setTime(e.target.value) })) : null,
+      isBirth ? field('性别', h('select', {
         className: 'mp-input', value: gender, onChange: (e) => setGender(e.target.value),
       }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
-      (tab === 'bazi' || tab === 'ziwei') ? field('出生地（省/市即可）', h('input', {
+      isBirth ? field('出生地（省/市即可）', h('input', {
         className: 'mp-input', style: { minWidth: 200 }, placeholder: '如 河北石家庄 / 成都', value: address,
         onChange: (e) => setAddress(e.target.value),
       })) : null,
-      (tab === 'bazi' || tab === 'ziwei') ? h('label', { key: 'ts', className: 'mp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 6 } },
+      isBirth ? h('label', { key: 'ts', className: 'mp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 6 } },
         h('input', { type: 'checkbox', checked: trueSolar, onChange: (e) => setTrueSolar(e.target.checked) }), '真太阳时') : null,
-      (tab === 'bazi' || tab === 'ziwei') ? h('label', { key: 'og', className: 'mp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 6 }, title: '开启后会请求 OpenStreetMap，把区县/村落到更精确的坐标' },
+      isBirth ? h('label', { key: 'og', className: 'mp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 6 }, title: '开启后会请求 OpenStreetMap，把区县/村落到更精确的坐标' },
         h('input', { type: 'checkbox', checked: onlineGeo, onChange: (e) => setOnlineGeo(e.target.checked) }), '联网精确到区县') : null,
       tab === 'liuyao' ? field('六爻（可空，空则随机）', h('input', {
         className: 'mp-input', placeholder: '9 7 8 8 7 6', value: lines,
         onChange: (e) => setLines(e.target.value),
+      })) : null,
+      tab === 'meihua' ? field('起卦方式', h('div', { className: 'mp-seg' },
+        h('button', { className: mhMode === 'time' ? 'on' : '', onClick: () => setMhMode('time') }, '时间起卦'),
+        h('button', { className: mhMode === 'number' ? 'on' : '', onClick: () => setMhMode('number') }, '数字起卦'))) : null,
+      (tab === 'meihua' && mhMode === 'number') ? field('第一个数', h('input', {
+        className: 'mp-input', style: { minWidth: 88 }, value: upper, placeholder: '如 17',
+        onChange: (e) => setUpper(e.target.value),
+      })) : null,
+      (tab === 'meihua' && mhMode === 'number') ? field('第二个数', h('input', {
+        className: 'mp-input', style: { minWidth: 88 }, value: lower, placeholder: '如 29',
+        onChange: (e) => setLower(e.target.value),
+      })) : null,
+      (tab === 'meihua' && mhMode === 'number') ? field('动爻（可空）', h('input', {
+        className: 'mp-input', style: { minWidth: 88 }, value: changing, placeholder: '1-6',
+        onChange: (e) => setChanging(e.target.value),
       })) : null,
       tab === 'tarot' ? field('提问（可空）', h('input', {
         className: 'mp-input', style: { minWidth: 260 }, value: question,
@@ -4568,8 +4649,14 @@ function App() {
       tab === 'tarot' ? field('张数', h('select', {
         className: 'mp-input', value: count, onChange: (e) => setCount(e.target.value),
       }, h('option', { value: '1' }, '1 张 · 指引'), h('option', { value: '3' }, '3 张 · 过去现在未来'), h('option', { value: '5' }, '5 张 · 十字牌阵'))) : null,
+      tab !== 'tarot' ? h('button', {
+        key: 'now', className: 'mp-btn ghost', style: { padding: '7px 14px' }, title: '把时间换成此刻并立即起卦',
+        onClick: runNow,
+      }, '此刻') : null,
       h('button', { key: 'go', className: 'mp-btn', onClick: () => run(tab) },
-        tab === 'liuyao' || tab === 'meihua' ? '起卦' : tab === 'tarot' ? '抽牌' : '排盘')),
+        tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : '起卦')),
+
+    h('div', { key: 'hint', className: 'mp-hint' }, meta.hint),
 
     error ? h('div', { key: 'err', className: 'mp-err' }, error) : null,
 
@@ -4586,7 +4673,11 @@ function App() {
       },
     }) : null,
 
-    (!result && !error) ? h('div', { key: 'hint', className: 'mp-dim', style: { marginTop: 24, fontSize: 12 } },
+    result ? h('div', { key: 'bar', className: 'mp-bar' },
+      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: copyResult },
+        copied || '复制文字结果')) : null,
+
+    (!result && !error) ? h('div', { key: 'ph', className: 'mp-dim', style: { marginTop: 24, fontSize: 12 } },
       '选择体系后点「排盘」。所有计算在本机完成，不上传任何数据。') : null,
   ];
 

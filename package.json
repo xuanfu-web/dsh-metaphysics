@@ -1,8 +1,8 @@
 {
   "name": "dsh-metaphysics",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
-  "description": "命理排盘 for DeepSeek Harness: BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年四化), LiuYao and Tarot — as an agent tool plus a Web panel.",
+  "description": "命理排盘 for DeepSeek Harness: BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年四化), LiuYao with real line rendering, MeiHua YiShu, Da Liu Ren (heaven-earth plate, four lessons, three transmissions) and Tarot — as an agent tool plus a Web panel.",
   "keywords": [
     "dsh-plugin",
     "dsh-bundle",
@@ -22,7 +22,11 @@
     "神煞",
     "紫微斗数",
     "六爻",
-    "塔罗"
+    "塔罗",
+    "meihua-yishu",
+    "da-liu-ren",
+    "大六壬",
+    "梅花易数"
   ],
   "license": "MIT",
   "author": "",
@@ -47,7 +51,9 @@
     "LICENSE"
   ],
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
     "client": {
       "platform": "web",
       "immediately": true,

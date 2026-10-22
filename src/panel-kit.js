@@ -1,7 +1,7 @@
-// 共用渲染层：紫微/八字/六爻 -> HTML 字符串。面板与独立页面共用同一份。
+// 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--red:#b3261e;--lu:#1f6f3f;--quan:#8a5a00;--ke:#1f4e79;--ji:#b3261e;
+.pp{--ink:#1b1b1b;--muted:#6f6a60;--line:#c8c1b2;--bg:#fffdf8;--card:#fffefb;--red:#b3261e;--lu:#1f6f3f;--quan:#8a5a00;--ke:#1f4e79;--ji:#b3261e;
   border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:11px;line-height:1.5}
 .pp *{box-sizing:border-box}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(142px,auto));gap:0}
@@ -49,74 +49,7 @@
 .pp-str{margin-top:10px;font-size:11.5px;line-height:1.8}
 .pp-str b{color:var(--red);font-size:13px;margin:0 4px}
 .pp-drel{font-style:normal;color:var(--red);font-size:10px}
-.tt{padding:14px}
-.tt-head{font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
-.tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
-.tt-card{border:1px solid var(--line);background:#fffefb;padding:11px 12px;display:flex;flex-direction:column;gap:7px;min-height:158px}
-.tt-card.rev{background:#fbf7f4;border-style:dashed}
-.tt-pos{font-size:10px;color:var(--muted);letter-spacing:.14em}
-.tt-name{font-size:17px;font-weight:700;color:var(--red);letter-spacing:.04em}
-.tt-ori{font-size:10px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
-.tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;line-height:1.7}
-.tt-kw span{border-bottom:1px dotted var(--line)}
-.tt-el{margin-top:auto;font-size:10px;color:var(--muted)}
-.tt-core{font-size:11px;color:#4a453d;line-height:1.7;border-left:2px solid var(--line);padding-left:7px}
-.tt-no{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
-.tt-tip{margin-top:12px;font-size:10.5px;color:var(--muted)}
-.tt-q{font-size:11.5px;margin-bottom:6px}
-.tt-q b{color:var(--muted);font-weight:400;margin-right:8px}
-.tt-read{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
-.tt-rt{font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
-.tt-read p{margin:0 0 5px;font-size:11.5px;line-height:1.85}
-.tt-note{margin-top:12px}
-.tt-ta{width:100%;border:1px solid var(--line);background:#fffefb;color:var(--ink);padding:8px;font-size:11.5px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
-.tt-ta:focus{border-color:var(--red)}
-.mh{padding:14px}
-.mh-head{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-.mh-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.mh-box{border:1px solid var(--line);background:#fffefb;padding:9px 11px}
-.mh-t{font-size:10px;letter-spacing:.14em;color:var(--muted)}
-.mh-n{font-size:16px;font-weight:700;color:var(--red);margin:2px 0 3px}
-.mh-s{font-size:10.5px;color:var(--muted)}
-.mh-body{display:flex;gap:24px;margin-top:14px;flex-wrap:wrap}
-.mh-lines{display:flex;flex-direction:column;gap:2px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
-.mh-line{display:flex;align-items:center;gap:8px}
-.mh-ln{width:32px;color:var(--muted);font-size:10.5px;font-family:system-ui,sans-serif}
-.mh-line .yang{color:var(--ink)}
-.mh-line .yin{color:var(--muted)}
-.mh-line .mv{color:var(--red)}
-.mh-mv{font-style:normal;color:var(--red);font-size:10px}
-.mh-use{display:flex;flex-direction:column;gap:5px;font-size:12px;line-height:1.7}
-.mh-use b{color:var(--muted);font-weight:400;margin-right:8px}
-.mh-rel{margin-top:4px;font-weight:600}
-.mh-rel.good{color:var(--lu)}
-.mh-rel.bad{color:var(--ji)}
-.dl{padding:14px}
-.dl-head{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-.dl-chuans{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.dl-chuan,.dl-geju{border:1px solid var(--line);background:#fffefb;padding:8px 12px;min-width:92px;text-align:center}
-.dl-k{font-size:10px;letter-spacing:.12em;color:var(--muted)}
-.dl-z{font-size:20px;font-weight:700;color:var(--red);line-height:1.3}
-.dl-j{font-size:11px}
-.dl-l{font-size:10.5px;color:var(--muted)}
-.dl-geju .dl-gn{font-size:15px;font-weight:700;margin-top:2px}
-.dl-geju .dl-gd{font-size:10.5px;color:var(--muted)}
-.dl-kes{display:flex;flex-direction:column;gap:4px;font-size:12px;margin-bottom:12px}
-.dl-ke{display:flex;gap:8px;align-items:baseline}
-.dl-ke b{color:var(--red);font-size:13px}
-.dl-jp{color:var(--muted);font-size:11px}
-.dl-pan{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
-.dl-cell{border:1px solid var(--line);background:#fffefb;text-align:center;padding:4px 0}
-.dl-t{font-size:15px;font-weight:700;color:var(--ink)}
-.dl-d{font-size:10px;color:var(--muted)}
-.dl-g{font-size:9.5px;color:var(--muted)}
-.pp-ly{font-family:ui-monospace,Consolas,monospace;font-size:12px;width:100%}
-.pp-ly .row{display:flex;gap:8px;align-items:center;padding:1px 0}
-.pp-ly .nm{width:30px;color:var(--muted);font-size:10px}
-.pp-ly .bar{width:64px;letter-spacing:1px}
-.pp-ly .bar.yin{color:var(--muted)}
-.pp-ly .bar.mv{color:var(--red)}
-.pp-ly .mark{width:14px;color:var(--red);font-size:10px}
+.pp-dim{color:var(--muted)}
 .pp-r{display:none}
 .pp-modes{display:flex;align-items:center;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif}
 .pp-modes label{padding:4px 18px;font-size:11px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
@@ -144,6 +77,109 @@
 .pp-ssi.bad{color:var(--ji);border-color:rgba(179,38,30,.3)}
 .pp-ssi.neutral{color:var(--quan);border-color:rgba(138,90,0,.3)}
 .pp-ssi em{font-style:normal;font-size:9.5px;color:var(--muted);margin-left:2px}
+
+/* —— 爻线：真线，阳为整条、阴为断开、动爻描红 —— */
+.hex{display:flex;gap:16%;height:10px;width:104px;flex:0 0 auto;color:var(--ink);align-items:stretch}
+.hex i{flex:1;background:currentColor;border-radius:1.5px}
+.hex.yin{gap:18%}
+.hex.on{color:var(--red)}
+.hex.dim{color:#b9b2a4}
+.hex.sm{width:74px;height:8px}
+.hex.md{width:88px;height:9px}
+
+/* —— 六爻 —— */
+.hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.hy-box{border:1px solid var(--line);background:var(--card);padding:10px 14px 12px;min-width:250px}
+.hy-h{display:flex;align-items:baseline;gap:8px;margin-bottom:9px;font-family:system-ui,sans-serif}
+.hy-h b{color:var(--red);font-size:12.5px}
+.hy-h span{color:var(--muted);font-size:10.5px}
+.hy{display:flex;flex-direction:column;gap:5px}
+.hy-row{display:grid;grid-template-columns:16px 28px 104px 56px 50px 36px;gap:8px;align-items:center;font-size:11.5px;font-family:system-ui,sans-serif;padding:1px 0}
+.hy-sy{color:var(--red);font-size:10px;font-weight:700}
+.hy-nm{color:var(--muted);font-size:10px}
+.hy-gz{letter-spacing:.04em}
+.hy-ls{color:var(--muted);font-size:10.5px}
+.hy-dn{color:var(--red);font-size:10px;font-family:system-ui,sans-serif}
+.hy-void{color:#a9a296}
+.hy-row.plain{grid-template-columns:32px 104px;gap:9px;padding:0}
+.mh-mini{display:flex;flex-direction:column;gap:4px}
+
+/* —— 梅花 —— */
+.mh{padding:14px}
+.mh-head{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.mh-main{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.hexbox{border:1px solid var(--line);background:var(--card);padding:10px 13px 11px}
+.hexbox.mini{min-width:112px}
+.hexbox .h{display:flex;justify-content:space-between;gap:10px;font-size:9.5px;letter-spacing:.14em;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:5px}
+.hexbox .n{font-size:14px;font-weight:700;color:var(--red);margin-bottom:7px;letter-spacing:.04em}
+.hexbox.mini .n{font-size:12.5px;margin-bottom:6px}
+.hexbox .s{font-size:10px;color:var(--muted);margin-top:7px;font-family:system-ui,sans-serif}
+.trib{display:flex;flex-direction:column;gap:4px}
+.trib+.trib{margin-top:7px;padding-top:7px;border-top:1px dotted var(--line)}
+.trib-h{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:3px}
+.tri-tag{font-size:9.5px;padding:0 4px;border:1px solid var(--line);color:var(--muted);font-family:system-ui,sans-serif}
+.tri-tag.ti{color:var(--red);border-color:rgba(179,38,30,.45);font-weight:700}
+.tri-tag.yong{color:var(--ke);border-color:rgba(31,78,121,.45)}
+.mh-rel{margin-top:12px;font-size:12px;font-family:system-ui,sans-serif;line-height:1.8}
+.mh-rel b{color:var(--muted);font-weight:400;margin-right:8px}
+.mh-rel .lv{font-weight:700}
+.mh-rel .lv.good{color:var(--lu)}
+.mh-rel .lv.bad{color:var(--ji)}
+.mh-rel .lv.flat{color:var(--quan)}
+
+/* —— 大六壬 —— */
+.dl{padding:14px}
+.dl-head{font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.7}
+.dl-sc{display:flex;align-items:stretch;margin:0 0 12px;flex-wrap:wrap}
+.dl-sc-c{border:1px solid var(--line);background:var(--card);padding:8px 16px;min-width:100px;text-align:center}
+.dl-sc-c+.dl-sc-c{border-left:none}
+.dl-sc-c.ge{border-left:1px solid var(--line);background:#fbf6ec}
+.dl-sc-k{font-size:9.5px;letter-spacing:.16em;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-sc-z{font-size:21px;font-weight:700;color:var(--red);line-height:1.2}
+.dl-sc-j{font-size:10.5px}
+.dl-sc-l{font-size:9.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-sc-gn{font-size:14px;font-weight:700;margin-top:1px}
+.dl-sk{display:flex;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.dl-sk-c{border:1px solid var(--line);background:var(--card);padding:6px 12px 7px;text-align:center;min-width:74px}
+.dl-sk-c+.dl-sk-c{border-left:none}
+.dl-sk-k{font-size:9.5px;color:var(--muted);letter-spacing:.1em;font-family:system-ui,sans-serif}
+.dl-sk-s{font-size:15px;font-weight:700;color:var(--red);line-height:1.3}
+.dl-sk-x{font-size:13px;color:var(--muted);line-height:1.3}
+.dl-sk-r{font-size:9px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(72px,auto));border:1px solid var(--line);background:var(--bg)}
+.dl-pc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 7px;display:flex;flex-direction:column;gap:0}
+.dl-pc .tz{font-size:18px;font-weight:700;color:var(--red);line-height:1.15}
+.dl-pc .dz{font-size:9.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-pc .jz{font-size:10px;color:var(--quan);margin-top:auto;font-family:system-ui,sans-serif}
+.dl-c{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;text-align:center;background:#fffdf8}
+.dl-c .t1{font-size:14px;font-weight:700;letter-spacing:.06em}
+.dl-c .t2{font-size:10.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.dl-c .t3{font-size:11px;letter-spacing:.2em;margin-top:3px}
+.dl-legend{display:flex;gap:12px;justify-content:center;font-size:9.5px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
+
+/* —— 塔罗 —— */
+.tt{padding:14px}
+.tt-head{font-size:11px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
+.tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px}
+.tt-card{border:1px solid var(--line);background:#fffefb;padding:11px 12px;display:flex;flex-direction:column;gap:7px;min-height:158px}
+.tt-card.rev{background:#fbf7f4;border-style:dashed}
+.tt-pos{font-size:10px;color:var(--muted);letter-spacing:.14em}
+.tt-name{font-size:17px;font-weight:700;color:var(--red);letter-spacing:.04em}
+.tt-ori{font-size:10px;padding:1px 7px;border:1px solid var(--line);align-self:flex-start;color:var(--muted)}
+.tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11.5px;line-height:1.7}
+.tt-kw span{border-bottom:1px dotted var(--line)}
+.tt-el{margin-top:auto;font-size:10px;color:var(--muted)}
+.tt-core{font-size:11px;color:#4a453d;line-height:1.7;border-left:2px solid var(--line);padding-left:7px}
+.tt-no{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
+.tt-tip{margin-top:12px;font-size:10.5px;color:var(--muted)}
+.tt-q{font-size:11.5px;margin-bottom:6px}
+.tt-q b{color:var(--muted);font-weight:400;margin-right:8px}
+.tt-read{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.tt-rt{font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
+.tt-read p{margin:0 0 5px;font-size:11.5px;line-height:1.85}
+.tt-note{margin-top:12px}
+.tt-ta{width:100%;border:1px solid var(--line);background:#fffefb;color:var(--ink);padding:8px;font-size:11.5px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
+.tt-ta:focus{border-color:var(--red)}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
@@ -155,6 +191,18 @@
     辰: [2, 1], 酉: [2, 4], 卯: [3, 1], 戌: [3, 4],
     寅: [4, 1], 丑: [4, 2], 子: [4, 3], 亥: [4, 4],
   };
+
+  // 先天八卦：爻自下而上，1 阳 0 阴
+  const TRI_BITS = {
+    乾: [1, 1, 1], 兑: [1, 1, 0], 离: [1, 0, 1], 震: [1, 0, 0],
+    巽: [0, 1, 1], 坎: [0, 1, 0], 艮: [0, 0, 1], 坤: [0, 0, 0],
+  };
+  const POS_NAME = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /** 单爻线：阳一整条，阴两段；动爻描红 */
+  const hexBar = (yang, moving, size) => `<span class="hex${yang ? '' : ' yin'}${moving ? ' on' : ''}${size ? ' ' + size : ''}">${yang ? '<i></i>' : '<i></i><i></i>'}</span>`;
 
   function starsHTML(stars) {
     if (!stars || !stars.length) return '';
@@ -243,7 +291,7 @@
         <div class="t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
         <div class="t4">子年斗君 ${r.doujun ? r.doujun.zinian : '—'}　流年斗君 ${ln && ln.doujun ? ln.doujun : '—'}</div>
         <div class="t4">紫微 ${r.ziwei}　天府 ${r.tianfu}　${kind === 'da' ? '大限命宫 ' + BR[dxIdx] : kind === 'ln' ? '流年命宫 ' + BR[lnIdx] : '本命命宫 ' + r.soul.branch}</div>
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span></div>
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -258,9 +306,9 @@
       <span class="pp-chip ${cq.absorb.label === '杂' ? 'warn' : 'ok'}">吸收·${cq.absorb.label}</span>
     </div>` : '';
     const pats = (r.patterns || []).length
-      ? `<div class="pp-chips">${r.patterns.map((p) => `<span class="pp-chip ${p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${String(p.evidence || '').replace(/"/g, '&quot;')}">${p.name}</span>`).join('')}</div>` : '';
+      ? `<div class="pp-chips">${r.patterns.map((p) => `<span class="pp-chip ${p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${esc(p.evidence || '')}">${p.name}</span>`).join('')}</div>` : '';
     const dxs = (r.daxianList || []).length
-      ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${String(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
+      ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
 
@@ -278,46 +326,167 @@
     </div>${chips}${pats}${dxs}${lnHit}`;
   };
 
-  pp.meihuaHTML = function (r) {
-    const line = (l) => `<div class="mh-line"><span class="mh-ln">${l.name}</span><span class="${l.yinYang === '阳' ? 'yang' : 'yin'}${l.moving ? ' mv' : ''}">${l.yinYang === '阳' ? '━━━━━' : '━━  ━━'}</span>${l.moving ? '<i class="mh-mv">动</i>' : ''}</div>`;
-    const box = (title, name, sub) => `<div class="mh-box"><div class="mh-t">${title}</div><div class="mh-n">${name}</div><div class="mh-s">${sub}</div></div>`;
-    return `<div class="pp mh">
-      <div class="mh-head">${r.source}</div>
-      <div class="mh-grid">
-        ${box('本卦', r.ben.name, `上${r.ben.upper} 下${r.ben.lower}`)}
-        ${box('互卦', r.hu.name, `上${r.hu.upper} 下${r.hu.lower}`)}
-        ${box('变卦', r.bian.name, r.movingName)}
-        ${box('错卦', r.cuo.name, '六爻全变')}
-        ${box('综卦', r.zong.name, '上下颠倒')}
-      </div>
-      <div class="mh-body">
-        <div class="mh-lines">${r.lines.slice().reverse().map(line).join('')}</div>
-        <div class="mh-use">
-          <div><b>体</b>${r.bodyUse.body.trigram}（${r.bodyUse.body.element}）</div>
-          <div><b>用</b>${r.bodyUse.use.trigram}（${r.bodyUse.use.element}）</div>
-          <div class="mh-rel ${r.bodyUse.level === '凶' ? 'bad' : r.bodyUse.level.includes('吉') ? 'good' : ''}">${r.bodyUse.level}　${r.bodyUse.relation}</div>
-        </div>
-      </div>
+  /** 六爻 / 梅花的卦体：上爻在最上 */
+  function hexRows(lines, opt) {
+    const o = opt || {};
+    const sorted = lines.slice().sort((a, b) => b.position - a.position);
+    if (o.plain) {
+      return sorted.map((l) => `<div class="hy-row plain">
+        <span class="hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
+        ${hexBar(l.yinYang === '阳', l.moving)}
+      </div>`).join('');
+    }
+    return sorted.map((l) => {
+      const yang = l.yinYang === '阳';
+      const sh = o.shiYing
+        ? (l.position === o.shi ? '<span class="hy-sy">世</span>' : l.position === o.ying ? '<span class="hy-sy">应</span>' : '<span></span>')
+        : '<span></span>';
+      return `<div class="hy-row">
+        ${sh}
+        <span class="hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
+        ${hexBar(yang, l.moving)}
+        <span class="hy-gz">${esc(l.ganzhi || '')}</span>
+        <span class="hy-lq">${esc(l.liuqin || '')}</span>
+        <span class="hy-ls">${esc(l.liushen || '')}</span>
+      </div>`;
+    }).join('');
+  }
+
+  pp.liuyaoHTML = function (r) {
+    const box = (title, sub, hex, lines) => `<div class="hy-box">
+      <div class="hy-h"><b>${title}</b><span>${sub}</span></div>
+      <div class="hy">${hexRows(lines, { shiYing: true, shi: hex.shi, ying: hex.ying })}</div>
+    </div>`;
+    const ben = box(`本卦 ${r.ben.name}`, `${r.ben.palace} · ${r.ben.palaceElement}`, r.ben, r.ben.lines);
+    const bian = r.bian
+      ? box(`变卦 ${r.bian.name}`, `${r.bian.palace} · ${r.bian.palaceElement}`, r.bian, r.bian.lines)
+      : `<div class="hy-box"><div class="hy-h"><b>六爻安静</b><span>无动爻，不取变卦</span></div>
+          <div class="pp-dim" style="font-size:11px;line-height:1.9">断卦以本卦卦辞与世应生克为主。</div></div>`;
+    return `<div class="pp" style="padding:14px">
+      <div class="mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
+      <div class="hy-wrap">${ben}${bian}</div>
     </div>`;
   };
 
+  pp.meihuaHTML = function (r) {
+    // 三爻成卦：由上下卦名反推爻线
+    const mini = (title, name, upper, lower, note) => {
+      const bits = [...(TRI_BITS[lower] || [0, 0, 0]), ...(TRI_BITS[upper] || [0, 0, 0])];
+      const rows = bits.slice().reverse().map((b) => hexBar(!!b, false, 'sm')).join('');
+      return `<div class="hexbox mini">
+        <div class="h">${title}</div>
+        <div class="n">${name}</div>
+        <div class="mh-mini">${rows}</div>
+        <div class="s">${note || `上${upper} 下${lower}`}</div>
+      </div>`;
+    };
+    // 本卦：分上下卦，标体用
+    const benBits = r.lines.slice().sort((a, b) => b.position - a.position);
+    const upperLines = benBits.slice(0, 3);
+    const lowerLines = benBits.slice(3);
+    const movingInUpper = r.moving >= 4;
+    const trib = (label, tri, lines, isBody) => `<div class="trib">
+      <div class="trib-h">${label} ${tri}${TRI_EL(tri)}<span class="tri-tag ${isBody ? 'ti' : 'yong'}">${isBody ? '体' : '用'}</span></div>
+      <div class="hy" style="gap:5px">${hexRows(lines, { plain: true })}</div>
+    </div>`;
+    const mainBox = `<div class="hexbox">
+      <div class="h"><span>本卦</span><span>动 ${r.movingName}</span></div>
+      <div class="n">${r.ben.name}</div>
+      ${trib('上卦', r.ben.upper, upperLines, !movingInUpper)}
+      ${trib('下卦', r.ben.lower, lowerLines, movingInUpper)}
+      <div class="s">${r.source}</div>
+    </div>`;
+
+    const lv = r.bodyUse.level;
+    const lvCls = lv.includes('凶') ? 'bad' : lv.includes('吉') ? 'good' : 'flat';
+    const useLine = `<div class="mh-rel">
+      <div><b>体</b>${r.bodyUse.body.trigram}（${r.bodyUse.body.element}）　<b>用</b>${r.bodyUse.use.trigram}（${r.bodyUse.use.element}）</div>
+      <div><span class="lv ${lvCls}">${lv}</span>　${r.bodyUse.relation}</div>
+    </div>`;
+
+    const cuoTri = TRI_OF(r.cuo.name) || ['', ''];
+    const zongTri = TRI_OF(r.zong.name) || ['', ''];
+    return `<div class="pp mh">
+      <div class="mh-main">
+        ${mainBox}
+        ${mini('互卦', r.hu.name, r.hu.upper, r.hu.lower, '中藏之象')}
+        ${mini('变卦', r.bian.name, r.bian.upper, r.bian.lower, `动 ${r.movingName} 后`)}
+        ${mini('错卦', r.cuo.name, cuoTri[1], cuoTri[0], '六爻全变')}
+        ${mini('综卦', r.zong.name, zongTri[1], zongTri[0], '上下颠倒')}
+      </div>
+      ${useLine}
+    </div>`;
+  };
+
+  // 由卦名查上下卦（六十四卦全表，用于错卦/综卦）
+  const HEX_TABLE = {
+    乾为天: ['乾', '乾'], 天风姤: ['乾', '巽'], 天山遁: ['乾', '艮'], 天地否: ['乾', '坤'],
+    风地观: ['巽', '坤'], 山地剥: ['艮', '坤'], 火地晋: ['离', '坤'], 火天大有: ['离', '乾'],
+    坎为水: ['坎', '坎'], 水泽节: ['坎', '兑'], 水雷屯: ['坎', '震'], 水火既济: ['坎', '离'],
+    泽火革: ['兑', '离'], 雷火丰: ['震', '离'], 地火明夷: ['坤', '离'], 地水师: ['坤', '坎'],
+    艮为山: ['艮', '艮'], 山火贲: ['艮', '离'], 山天大畜: ['艮', '乾'], 山泽损: ['艮', '兑'],
+    火泽睽: ['离', '兑'], 天泽履: ['乾', '兑'], 风泽中孚: ['巽', '兑'], 风山渐: ['巽', '艮'],
+    震为雷: ['震', '震'], 雷地豫: ['震', '坤'], 雷水解: ['震', '坎'], 雷风恒: ['震', '巽'],
+    地风升: ['坤', '巽'], 水风井: ['坎', '巽'], 泽风大过: ['兑', '巽'], 泽雷随: ['兑', '震'],
+    巽为风: ['巽', '巽'], 风天小畜: ['巽', '乾'], 风火家人: ['巽', '离'], 风雷益: ['巽', '震'],
+    天雷无妄: ['乾', '震'], 火雷噬嗑: ['离', '震'], 山雷颐: ['艮', '震'], 山风蛊: ['艮', '巽'],
+    离为火: ['离', '离'], 火山旅: ['离', '艮'], 火风鼎: ['离', '巽'], 火水未济: ['离', '坎'],
+    山水蒙: ['艮', '坎'], 风水涣: ['巽', '坎'], 天水讼: ['乾', '坎'], 天火同人: ['乾', '离'],
+    坤为地: ['坤', '坤'], 地雷复: ['坤', '震'], 地泽临: ['坤', '兑'], 地天泰: ['坤', '乾'],
+    雷天大壮: ['震', '乾'], 泽天夬: ['兑', '乾'], 水天需: ['坎', '乾'], 水地比: ['坎', '坤'],
+    兑为泽: ['兑', '兑'], 泽水困: ['兑', '坎'], 泽地萃: ['兑', '坤'], 泽山咸: ['兑', '艮'],
+    水山蹇: ['坎', '艮'], 地山谦: ['坤', '艮'], 雷山小过: ['震', '艮'], 雷泽归妹: ['震', '兑'],
+  };
+  const TRI_ELEM = { 乾: '金', 兑: '金', 离: '火', 震: '木', 巽: '木', 坎: '水', 艮: '土', 坤: '土' };
+  const TRI_EL = (t) => (TRI_ELEM[t] ? ` ${TRI_ELEM[t]}` : '');
+  const TRI_OF = (name) => HEX_TABLE[name] || null; // [下卦, 上卦]
+
   pp.daliurenHTML = function (r) {
     const sc = r.sanChuan;
-    const cbox = (c, k) => `<div class="dl-chuan"><div class="dl-k">${k}</div><div class="dl-z">${c.zhi}</div><div class="dl-j">${c.jiangFull || c.jiang}</div><div class="dl-l">${c.liuQin}${c.xunKong ? ' · 空' : ''}</div></div>`;
-    const ke = r.siKe.map((x) => `<div class="dl-ke"><span class="dl-k">${x.position}课</span><b>${x.shang}</b>上<b>${x.xia}</b>下<span class="pp-dim">${x.relation}</span><span class="dl-jp">${x.jiangFull || x.jiang}</span></div>`).join('');
-    const pan = r.pan.map((p) => `<div class="dl-cell"><div class="dl-t">${p.tian}</div><div class="dl-d">${p.di}</div><div class="dl-g">${p.jiangFull}</div></div>`).join('');
+    const cbox = (c, k) => `<div class="dl-sc-c">
+      <div class="dl-sc-k">${k}</div>
+      <div class="dl-sc-z">${c.zhi}</div>
+      <div class="dl-sc-j">${c.jiangFull || c.jiang}</div>
+      <div class="dl-sc-l">${c.liuQin}${c.xunKong ? ' · 空' : ''}</div>
+    </div>`;
+    const ge = `<div class="dl-sc-c ge">
+      <div class="dl-sc-k">格局</div>
+      <div class="dl-sc-gn">${r.geJu.name}</div>
+      <div class="dl-sc-l">${r.geJu.detail}</div>
+    </div>`;
+    const keCells = r.siKe.slice().map((x) => `<div class="dl-sk-c">
+      <div class="dl-sk-k">${['一课', '二课', '三课', '四课'][x.position - 1] || x.position + '课'}</div>
+      <div class="dl-sk-s">${x.shang}</div>
+      <div class="dl-sk-x">${x.xia}</div>
+      <div class="dl-sk-r">${x.relation} · ${x.jiangFull || x.jiang}</div>
+    </div>`).join('');
+    const cells = r.pan.map((p) => {
+      const pos = POS[p.di] || [1, 1];
+      return `<div class="dl-pc" style="grid-row:${pos[0]};grid-column:${pos[1]}">
+        <div class="tz">${p.tian}</div>
+        <div class="dz">地盘 ${p.di}</div>
+        <div class="jz">${p.jiangFull}</div>
+      </div>`;
+    }).join('');
+    const center = `<div class="dl-c">
+      <div class="t1">${r.dayGanZhi}日　${r.hourZhi}时</div>
+      <div class="t2">${r.dayNight}贵 · 月将 ${r.yueJiang.name}${r.yueJiang.zhi} · 贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
+      <div class="t3">${sc.chu.zhi} → ${sc.zhong.zhi} → ${sc.mo.zhi}</div>
+      <div class="t2">节气 ${r.jieqi.name}${r.jieqi.time ? ' ' + r.jieqi.time : ''}</div>
+    </div>`;
     return `<div class="pp dl">
-      <div class="dl-head">${r.dayGanZhi}日　${r.hourZhi}时（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
-      <div class="dl-chuans">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}<div class="dl-geju"><div class="dl-k">格局</div><div class="dl-gn">${r.geJu.name}</div><div class="dl-gd">${r.geJu.detail}</div></div></div>
-      <div class="dl-kes">${ke}</div>
-      <div class="dl-pan">${pan}</div>
+      <div class="dl-head">日 ${r.dayGanZhi}　时 ${r.hourZhi}（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
+      <div class="dl-sc">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}${ge}</div>
+      <div class="dl-sk">${keCells}</div>
+      <div class="dl-pan2">${cells}${center}</div>
+      <div class="dl-legend"><span>大字＝天盘支</span><span>小字＝地盘（固定十二支）</span><span>右下＝天将</span></div>
     </div>`;
   };
 
   pp.tarotHTML = function (r) {
     const cards = r.cards.map((c) => `
       <div class="tt-card ${c.upright ? 'up' : 'rev'}">
-        <div class="tt-pos" title="${String(c.positionHint || '').replace(/"/g, '&quot;')}">${c.position}</div>
+        <div class="tt-pos" title="${esc(c.positionHint || '')}">${c.position}</div>
         <div class="tt-name">${c.name}${c.number ? `<span class="tt-no">${c.number}</span>` : ''}</div>
         <div class="tt-ori">${c.orientation}</div>
         ${c.core ? `<div class="tt-core">${c.core}</div>` : ''}
@@ -343,7 +512,6 @@
     const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
     const ELC = { 木: 'wood', 火: 'fire', 土: 'earth', 金: 'metal', 水: 'water' };
     const el = (e) => `<span class="wx-${ELC[e] || 'earth'}">${e}</span>`;
-    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     // 神煞：悬停显示「类别·查法来源查目标｜查法口诀」
     const ssTag = (x) => `<span class="s ${x.luck || 'neutral'}" title="${esc(`${x.cat} · ${x.via}查${x.target} ｜ ${x.rule}`)}">${x.name}</span>`;
     const line = (label, fn) => `<tr><td class="lbl">${label}</td>${cols.map(([k]) => `<td>${fn(r.pillars[k], k)}</td>`).join('')}</tr>`;
@@ -406,21 +574,6 @@
       ${ln ? sect('流年', ln) : ''}
       ${ssx}
       <div style="margin-top:8px;font-size:11px;color:#6f6a60">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运</div>
-    </div>`;
-  };
-
-  pp.liuyaoHTML = function (r) {
-    const line = (hex) => hex.lines.slice().reverse().map((l) => {
-      const mk = l.position === hex.shi ? '世' : l.position === hex.ying ? '应' : '';
-      const bar = l.yinYang === '阳' ? '━━━━━' : '━━  ━━';
-      const cls = ['bar', l.yinYang === '阳' ? 'yang' : 'yin', l.moving ? 'mv' : ''].join(' ');
-      return `<div class="row"><span class="mark">${mk}</span><span class="nm">${l.name}</span><span class="${cls}">${bar}</span><span>${l.ganzhi}</span><span>${l.liuqin}</span><span class="pp-dim">${l.liushen}</span>${l.moving ? '<span class="mark">动</span>' : ''}</div>`;
-    }).join('');
-    const bian = r.bian ? `<div style="margin-top:10px;font-size:11px;color:#b3261e">变卦 ${r.bian.name}</div><div class="pp-ly">${line(r.bian)}</div>` : '';
-    return `<div class="pp" style="padding:12px">
-      <div style="font-size:11px;color:#6f6a60;margin-bottom:6px">起卦 ${r.cast.notation.join('、')}　日辰 ${r.dayGanZhi.name}</div>
-      <div style="font-size:12px;font-weight:700;color:#b3261e">本卦 ${r.ben.name}（${r.ben.palace}·${r.ben.palaceElement}）</div>
-      <div class="pp-ly">${line(r.ben)}</div>${bian}
     </div>`;
   };
 })();

@@ -76,6 +76,12 @@ h3{margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--gold)}
 .ly-ls{width:44px;font-size:11.5px}
 .ly-mv{color:var(--warn);font-size:11px}
 .mark{display:inline-block;width:18px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{padding:6px 13px;background:transparent;border:none;color:var(--dim);font-size:12px;font-family:inherit;cursor:pointer}
+.seg button.on{background:var(--gold);color:#fff;font-weight:600}
+.tip{margin:-6px 0 16px;font-size:12px;color:var(--dim);line-height:1.8}
+.now{padding:8px 14px;border-radius:4px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:13px;cursor:pointer}
+.now:hover{background:var(--panel2)}
 `;
 
 function page() {
@@ -93,7 +99,7 @@ function page() {
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">命理排盘<small>八字 · 紫微 · 六爻 · 梅花 · 塔罗　全部在本机计算</small></div>
+    <div class="brand">命理排盘<small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 塔罗　全部在本机计算</small></div>
     <div class="tabs">
       <button class="tab" data-tab="ziwei">紫微</button>
       <button class="tab" data-tab="bazi">八字</button>
@@ -105,8 +111,8 @@ function page() {
   </header>
 
   <div class="bar">
-    <label class="field" id="for-date">公历日期<input id="date" type="date" value="1990-05-12"></label>
-    <label class="field" id="for-time">时间<input id="time" type="time" value="14:30"></label>
+    <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="date" value="1990-05-12"></label>
+    <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
     <label class="field" id="for-gender">性别
       <select id="gender"><option value="female">女</option><option value="male">男</option></select>
     </label>
@@ -116,9 +122,25 @@ function page() {
       <label class="field check" title="开启后会请求 OpenStreetMap"><input id="online" type="checkbox"> 联网精确到区县</label>
     </div>
     <label class="field" id="for-liuyao" style="display:none">六爻<input id="lines" placeholder="9 7 8 8 7 6，空则随机"></label>
+    <div class="grp" id="for-meihua" style="display:none">
+      <div class="field">起卦方式
+        <div class="seg">
+          <button data-mode="time" class="on">时间起卦</button>
+          <button data-mode="number">数字起卦</button>
+        </div>
+      </div>
+      <label class="field" id="mh-num" style="display:none;flex-direction:row;gap:8px">
+        <input id="upper" placeholder="第一个数" style="min-width:96px">
+        <input id="lower" placeholder="第二个数" style="min-width:96px">
+        <input id="changing" placeholder="动爻 1-6（可空）" style="min-width:120px">
+      </label>
+    </div>
     <label class="field" id="for-tarot" style="display:none">提问<input id="question" placeholder="例如：这份工作要不要接？"></label>
+    <button id="now" class="now" title="换成此刻并立即起卦">此刻</button>
     <button id="go" class="go">排盘</button>
   </div>
+
+  <div class="tip" id="tip"></div>
 
   <main id="out"></main>
 </div>
