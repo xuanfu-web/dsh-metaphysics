@@ -1,85 +1,83 @@
 {
-    "name":  "dsh-metaphysics",
-    "version":  "0.14.3",
-    "type":  "module",
-    "description":  "命理排盘 for DeepSeek Harness: eight systems — BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年/流月/流日/流时四化), LiuYao with real line rendering, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia (chaibu / chaoshen / zhirun), compatibility charts (BaZi + Zi Wei) and Tarot; Ask（所问之事 + 询问方向）driven interpretation, plus a plain-language 解析与详解 module. Reproducible via seed/asOf. All computed locally, networking off by default — as an agent tool plus a Web panel.",
-    "keywords":  [
-                     "dsh-plugin",
-                     "dsh-bundle",
-                     "dsh-market",
-                     "metaphysics",
-                     "bazi",
-                     "four-pillars",
-                     "ziwei",
-                     "ziwei-doushu",
-                     "liuyao",
-                     "tarot",
-                     "divination",
-                     "命理",
-                     "命理排盘",
-                     "八字",
-                     "四柱",
-                     "神煞",
-                     "紫微斗数",
-                     "六爻",
-                     "塔罗",
-                     "meihua-yishu",
-                     "da-liu-ren",
-                     "大六壬",
-                     "梅花易数"
-                 ],
-    "license":  "MIT",
-    "author":  "xuanfu-web",
-    "repository":  {
-                       "type":  "git",
-                       "url":  "git+https://github.com/xuanfu-web/dsh-metaphysics.git"
-                   },
-    "homepage":  "https://github.com/xuanfu-web/dsh-metaphysics#readme",
-    "bugs":  {
-                 "url":  "https://github.com/xuanfu-web/dsh-metaphysics/issues"
-             },
-    "engines":  {
-                    "node":  "\u003e=18",
-                    "dsh":  "\u003e=0.2.0"
-                },
-    "scripts":  {
-                    "build":  "node tools/build-client.mjs",
-                    "build:html":  "node tools/build-html.mjs",
-                    "test":  "node tools/test-all.mjs",
-                    "test:ci":  "node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs && node tools/check-html-sinks.mjs && node tools/check-patterns.mjs",
-                    "test:baseline":  "node tools/check-assertions.mjs --update",
-                    "check:html":  "node tools/check-html-sinks.mjs",
-                    "check:patterns":  "node tools/check-patterns.mjs",
-                    "release":  "node tools/release.mjs"
-                },
-    "exports":  {
-                    ".":  "./index.js",
-                    "./client":  "./client.js",
-                    "./package.json":  "./package.json",
-                    "./locale/*.json":  "./locale/*.json",
-                    "./icon":  "./icon.svg"
-                },
-    "files":  [
-                  "index.js",
-                  "client.js",
-                  "engine",
-                  "cordis.patch.yml",
-                  "locale/*.json",
-                  "icon.svg",
-                  "README.md",
-                  "CHANGELOG.md",
-                  "LICENSE"
-              ],
-    "dsh":  {
-                "bundle":  {
-                               "patch":  "./cordis.patch.yml"
-                           },
-                "client":  {
-                               "platform":  "web",
-                               "immediately":  true,
-                               "inject":  [
-
-                                          ]
-                           }
-            }
+  "name": "dsh-metaphysics",
+  "version": "0.15.0",
+  "type": "module",
+  "description": "命理排盘 for DeepSeek Harness: eight systems — BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年/流月/流日/流时四化), LiuYao with real line rendering, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia (chaibu / chaoshen / zhirun), compatibility charts (BaZi + Zi Wei) and Tarot; Ask（所问之事 + 询问方向）driven interpretation, plus a plain-language 解析与详解 module. Reproducible via seed/asOf. All computed locally, networking off by default — as an agent tool plus a Web panel.",
+  "keywords": [
+    "dsh-plugin",
+    "dsh-bundle",
+    "dsh-market",
+    "metaphysics",
+    "bazi",
+    "four-pillars",
+    "ziwei",
+    "ziwei-doushu",
+    "liuyao",
+    "tarot",
+    "divination",
+    "命理",
+    "命理排盘",
+    "八字",
+    "四柱",
+    "神煞",
+    "紫微斗数",
+    "六爻",
+    "塔罗",
+    "meihua-yishu",
+    "da-liu-ren",
+    "大六壬",
+    "梅花易数"
+  ],
+  "license": "MIT",
+  "author": "xuanfu-web",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xuanfu-web/dsh-metaphysics.git"
+  },
+  "homepage": "https://github.com/xuanfu-web/dsh-metaphysics#readme",
+  "bugs": {
+    "url": "https://github.com/xuanfu-web/dsh-metaphysics/issues"
+  },
+  "engines": {
+    "node": ">=18",
+    "dsh": ">=0.2.0"
+  },
+  "scripts": {
+    "build": "node tools/build-client.mjs",
+    "build:html": "node tools/build-html.mjs",
+    "test": "node tools/test-all.mjs",
+    "test:ci": "node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs && node tools/check-html-sinks.mjs && node tools/check-patterns.mjs",
+    "test:baseline": "node tools/check-assertions.mjs --update",
+    "check:html": "node tools/check-html-sinks.mjs",
+    "check:patterns": "node tools/check-patterns.mjs",
+    "release": "node tools/release.mjs"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "engine",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    }
+  }
 }

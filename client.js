@@ -746,7 +746,7 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-const USER_AGENT = 'dsh-metaphysics/0.14.3 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.15.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
