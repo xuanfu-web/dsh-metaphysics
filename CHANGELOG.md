@@ -18,6 +18,10 @@
 - **缓存层统一（P0）**：新增 `engine/lru.js`（上限 + TTL + 命中率），节气瞬时/单年/三年窗口/
   地址四处缓存改为同一工厂；`DSH_METRICS=1` 时 `renderText` 打印各缓存命中率
   （实测紫微盘 `termInstant` 命中 75%）
+- **规则表单一真源（P0 收尾）**：`engine/nayin.js`（六十甲子纳音，bazi/ziwei 共用）、
+  `engine/sanhe.js`（三合四局 + 单支归属，bazi/hepan/daliuren 共用）；纳甲本就在 `liuyao.js` 一份
+  - `test/tables.test.mjs`：纳音 60 项与八字导出逐项一致、三合同局判定与五行等价、
+    乾为天纳甲起例，并用静态检查防止有人再把表复制回各模块
 
 ## 0.14.3（已发布）
 

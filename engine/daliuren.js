@@ -3,6 +3,7 @@
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
 import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } from './calendar.js';
 import { assertCivil } from './validate.js';
+import { SANHE_ELEMENT } from './sanhe.js';
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -61,7 +62,6 @@ const DAY_NIGHT_MAP = {
 // ── 神煞（只收各派无争议、六壬断课常用的几项） ──
 const RI_LU = { 甲: '寅', 乙: '卯', 丙: '巳', 丁: '午', 戊: '巳', 己: '午', 庚: '申', 辛: '酉', 壬: '亥', 癸: '子' };
 const YANG_REN = { 甲: '卯', 乙: '辰', 丙: '午', 丁: '未', 戊: '午', 己: '未', 庚: '酉', 辛: '戌', 壬: '子', 癸: '丑' };
-const SAN_HE = { 申: '水', 子: '水', 辰: '水', 寅: '火', 午: '火', 戌: '火', 巳: '金', 酉: '金', 丑: '金', 亥: '木', 卯: '木', 未: '木' };
 const SAN_HE_SHEN = {
   水: { 驿马: '寅', 桃花: '酉', 华盖: '辰', 劫煞: '巳', 亡神: '亥' },
   火: { 驿马: '申', 桃花: '卯', 华盖: '戌', 劫煞: '亥', 亡神: '巳' },
@@ -79,7 +79,7 @@ export function calcShensha(dayGz) {
   };
   if (RI_LU[gan]) push('日禄', RI_LU[gan], '日干临官之位');
   if (YANG_REN[gan]) push('羊刃', YANG_REN[gan], '日干帝旺之位');
-  const trio = SAN_HE_SHEN[SAN_HE[zhi]];
+  const trio = SAN_HE_SHEN[SANHE_ELEMENT[zhi]];
   if (trio) {
     push('驿马', trio.驿马, '日支三合冲位，主迁动');
     push('桃花', trio.桃花, '咸池，主情缘');

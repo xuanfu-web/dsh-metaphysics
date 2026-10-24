@@ -126,6 +126,48 @@ function createLru({ max = 64, ttlMs = 0, name = 'lru', now = () => Date.now() }
 return { createLru };
 })();
 
+__mods.nayin = (function () {
+
+const NAYIN_NAMES = [
+  '海中金', '炉中火', '大林木', '路旁土', '剑锋金',
+  '山头火', '涧下水', '城头土', '白蜡金', '杨柳木',
+  '泉中水', '屋上土', '霹雳火', '松柏木', '长流水',
+  '沙中金', '山下火', '平地木', '壁上土', '金箔金',
+  '覆灯火', '天河水', '大驿土', '钗钏金', '桑柘木',
+  '大溪水', '沙中土', '天上火', '石榴木', '大海水',
+];
+
+function nayinOf(ganzhiIdx) {
+  const i = ((Number(ganzhiIdx) % 60) + 60) % 60;
+  const name = NAYIN_NAMES[Math.floor(i / 2)];
+  return { name, element: name[2] };
+}
+
+return { NAYIN_NAMES, nayinOf };
+})();
+
+__mods.sanhe = (function () {
+
+const SANHE_GROUPS = [
+  { branches: ['申', '子', '辰'], element: '水' },
+  { branches: ['亥', '卯', '未'], element: '木' },
+  { branches: ['寅', '午', '戌'], element: '火' },
+  { branches: ['巳', '酉', '丑'], element: '金' },
+];
+
+const SANHE = Object.fromEntries(SANHE_GROUPS.map((g) => [g.branches.join(''), g.element]));
+
+const SANHE_ELEMENT = Object.fromEntries(
+  SANHE_GROUPS.flatMap((g) => g.branches.map((b) => [b, g.element])),
+);
+
+function sanheGroupOf(branch) {
+  return SANHE_GROUPS.find((g) => g.branches.includes(branch)) || null;
+}
+
+return { SANHE_GROUPS, SANHE, SANHE_ELEMENT, sanheGroupOf };
+})();
+
 __mods['vsop-earth'] = (function () {
 const L0 = [
   [1.75347045673,0,0],[0.03341656453,4.66925680415,6283.0758499914],[0.00034894275,4.62610242189,12566.1516999828],[0.00003417572,2.82886579754,3.523118349],
@@ -1490,6 +1532,8 @@ const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, part
 const { resolveAddress } = __mods.geo;
 const { computeBaziShensha } = __mods.shensha;
 const { assertCivil } = __mods.validate;
+const { nayinOf } = __mods.nayin;
+const { SANHE } = __mods.sanhe;
 const { analyzeBaziFrame, scoreLuck } = __mods.geju;
 
 const HIDDEN_STEMS = {
@@ -1528,7 +1572,6 @@ const ROOT_HIDDEN_WEIGHT = [1.2, 0.6, 0.3];
 const STEM_HE = { 甲己: '土', 乙庚: '金', 丙辛: '水', 丁壬: '木', 戊癸: '火' };
 const STEM_CHONG_PAIRS = ['甲庚', '乙辛', '丙壬', '丁癸'];
 const BRANCH_HE = { 子丑: '土', 寅亥: '木', 卯戌: '火', 辰酉: '金', 巳申: '水', 午未: '土' };
-const SANHE = { 申子辰: '水', 亥卯未: '木', 寅午戌: '火', 巳酉丑: '金' };
 const SANHUI = { 寅卯辰: '木', 巳午未: '火', 申酉戌: '金', 亥子丑: '水' };
 const BRANCH_CHONG = ['子午', '丑未', '寅申', '卯酉', '辰戌', '巳亥'];
 const BRANCH_HAI = ['子未', '丑午', '寅巳', '卯辰', '申亥', '酉戌'];
@@ -1630,17 +1673,8 @@ function tenGod(dayStem, otherStem) {
   return '?';
 }
 
-const NAYIN_NAMES = [
-  '海中金', '炉中火', '大林木', '路旁土', '剑锋金',
-  '山头火', '涧下水', '城头土', '白蜡金', '杨柳木',
-  '泉中水', '屋上土', '霹雳火', '松柏木', '长流水',
-  '沙中金', '山下火', '平地木', '壁上土', '金箔金',
-  '覆灯火', '天河水', '大驿土', '钗钏金', '桑柘木',
-  '大溪水', '沙中土', '天上火', '石榴木', '大海水',
-];
-
 function nayin(ganzhiIdx) {
-  return NAYIN_NAMES[Math.floor((((ganzhiIdx % 60) + 60) % 60) / 2)];
+  return nayinOf(ganzhiIdx).name;
 }
 
 const JIE_TO_MONTH_BRANCH = { 0: 1, 2: 2, 4: 3, 6: 4, 8: 5, 10: 6, 12: 7, 14: 8, 16: 9, 18: 10, 20: 11, 22: 0 };
@@ -2183,6 +2217,7 @@ const { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, form
 const { solarToLunar } = __mods.lunar;
 const { applyTrueSolar } = __mods.bazi;
 const { assertCivil } = __mods.validate;
+const { nayinOf } = __mods.nayin;
 const { resolveAddress } = __mods.geo;
 
 const fix = (i) => ((i % 12) + 12) % 12;
@@ -2200,18 +2235,8 @@ const BUREAU = {
   火: { name: '火六局', number: 6 },
 };
 
-const NAYIN_NAMES = [
-  '海中金', '炉中火', '大林木', '路旁土', '剑锋金',
-  '山头火', '涧下水', '城头土', '白蜡金', '杨柳木',
-  '泉中水', '屋上土', '霹雳火', '松柏木', '长流水',
-  '沙中金', '山下火', '平地木', '壁上土', '金箔金',
-  '覆灯火', '天河水', '大驿土', '钗钏金', '桑柘木',
-  '大溪水', '沙中土', '天上火', '石榴木', '大海水',
-];
-
 function nayinElement(ganzhiIdx) {
-  const name = NAYIN_NAMES[Math.floor((((ganzhiIdx % 60) + 60) % 60) / 2)];
-  return { name, element: name[2] };
+  return nayinOf(ganzhiIdx);
 }
 
 const ZIWEI_GROUP = [
@@ -3442,6 +3467,7 @@ return { TRI_NAME, TRI_ELEMENT, TRI_BITS, buildMeihua };
 __mods.daliuren = (function () {
 const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } = __mods.calendar;
 const { assertCivil } = __mods.validate;
+const { SANHE_ELEMENT } = __mods.sanhe;
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -3499,7 +3525,6 @@ const DAY_NIGHT_MAP = {
 
 const RI_LU = { 甲: '寅', 乙: '卯', 丙: '巳', 丁: '午', 戊: '巳', 己: '午', 庚: '申', 辛: '酉', 壬: '亥', 癸: '子' };
 const YANG_REN = { 甲: '卯', 乙: '辰', 丙: '午', 丁: '未', 戊: '午', 己: '未', 庚: '酉', 辛: '戌', 壬: '子', 癸: '丑' };
-const SAN_HE = { 申: '水', 子: '水', 辰: '水', 寅: '火', 午: '火', 戌: '火', 巳: '金', 酉: '金', 丑: '金', 亥: '木', 卯: '木', 未: '木' };
 const SAN_HE_SHEN = {
   水: { 驿马: '寅', 桃花: '酉', 华盖: '辰', 劫煞: '巳', 亡神: '亥' },
   火: { 驿马: '申', 桃花: '卯', 华盖: '戌', 劫煞: '亥', 亡神: '巳' },
@@ -3516,7 +3541,7 @@ function calcShensha(dayGz) {
   };
   if (RI_LU[gan]) push('日禄', RI_LU[gan], '日干临官之位');
   if (YANG_REN[gan]) push('羊刃', YANG_REN[gan], '日干帝旺之位');
-  const trio = SAN_HE_SHEN[SAN_HE[zhi]];
+  const trio = SAN_HE_SHEN[SANHE_ELEMENT[zhi]];
   if (trio) {
     push('驿马', trio.驿马, '日支三合冲位，主迁动');
     push('桃花', trio.桃花, '咸池，主情缘');
@@ -3770,6 +3795,7 @@ __mods.hepan = (function () {
 const { buildBazi } = __mods.bazi;
 const { STEMS, BRANCHES } = __mods.calendar;
 const { assertCivil } = __mods.validate;
+const { SANHE_GROUPS } = __mods.sanhe;
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -3780,7 +3806,6 @@ const LIU_HE = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], 
 const CHONG = [['子', '午'], ['丑', '未'], ['寅', '申'], ['卯', '酉'], ['辰', '戌'], ['巳', '亥']];
 const HAI = [['子', '未'], ['丑', '午'], ['寅', '巳'], ['卯', '辰'], ['申', '亥'], ['酉', '戌']];
 const PO = [['子', '酉'], ['卯', '午'], ['辰', '丑'], ['未', '戌'], ['寅', '亥'], ['巳', '申']];
-const SAN_HE = [['申', '子', '辰'], ['寅', '午', '戌'], ['巳', '酉', '丑'], ['亥', '卯', '未']];
 const XING = [['寅', '巳', '申'], ['丑', '戌', '未'], ['子', '卯']];
 
 const pairIn = (list, a, b) => list.some((g) => g.includes(a) && g.includes(b) && a !== b);
@@ -3788,8 +3813,8 @@ const pairIn = (list, a, b) => list.some((g) => g.includes(a) && g.includes(b) &
 function zhiRelation(a, b) {
   if (a === b) return { name: '同支', score: 0, text: '日支相同，性情相近，容易互相理解，也容易同时卡在同一处' };
   if (pairIn(LIU_HE, a, b)) return { name: '六合', score: 20, text: '日支六合，相处自然、彼此补位' };
-  for (const g of SAN_HE) {
-    if (g.includes(a) && g.includes(b)) return { name: '半合', score: 14, text: '日支同属三合局，易有共同语言' };
+  if (SANHE_GROUPS.some((g) => g.branches.includes(a) && g.branches.includes(b))) {
+    return { name: '半合', score: 14, text: '日支同属三合局，易有共同语言' };
   }
   if (pairIn(CHONG, a, b)) return { name: '相冲', score: -15, text: '日支相冲，节奏与需求容易错位，需要刻意协调' };
   if (pairIn(XING, a, b)) {

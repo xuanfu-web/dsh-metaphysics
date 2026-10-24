@@ -7,6 +7,8 @@ import {
 import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
 import { assertCivil } from './validate.js';
+import { nayinOf } from './nayin.js';
+import { SANHE } from './sanhe.js';
 import { analyzeBaziFrame, scoreLuck } from './geju.js';
 
 // 地支藏干（本气 / 中气 / 余气）
@@ -49,7 +51,6 @@ const ROOT_HIDDEN_WEIGHT = [1.2, 0.6, 0.3];
 const STEM_HE = { 甲己: '土', 乙庚: '金', 丙辛: '水', 丁壬: '木', 戊癸: '火' };
 const STEM_CHONG_PAIRS = ['甲庚', '乙辛', '丙壬', '丁癸'];
 const BRANCH_HE = { 子丑: '土', 寅亥: '木', 卯戌: '火', 辰酉: '金', 巳申: '水', 午未: '土' };
-const SANHE = { 申子辰: '水', 亥卯未: '木', 寅午戌: '火', 巳酉丑: '金' };
 const SANHUI = { 寅卯辰: '木', 巳午未: '火', 申酉戌: '金', 亥子丑: '水' };
 const BRANCH_CHONG = ['子午', '丑未', '寅申', '卯酉', '辰戌', '巳亥'];
 const BRANCH_HAI = ['子未', '丑午', '寅巳', '卯辰', '申亥', '酉戌'];
@@ -157,18 +158,8 @@ export function tenGod(dayStem, otherStem) {
   return '?';
 }
 
-// 六十甲子纳音（每两个干支一名）
-const NAYIN_NAMES = [
-  '海中金', '炉中火', '大林木', '路旁土', '剑锋金',
-  '山头火', '涧下水', '城头土', '白蜡金', '杨柳木',
-  '泉中水', '屋上土', '霹雳火', '松柏木', '长流水',
-  '沙中金', '山下火', '平地木', '壁上土', '金箔金',
-  '覆灯火', '天河水', '大驿土', '钗钏金', '桑柘木',
-  '大溪水', '沙中土', '天上火', '石榴木', '大海水',
-];
-
 export function nayin(ganzhiIdx) {
-  return NAYIN_NAMES[Math.floor((((ganzhiIdx % 60) + 60) % 60) / 2)];
+  return nayinOf(ganzhiIdx).name;
 }
 
 const JIE_TO_MONTH_BRANCH = { 0: 1, 2: 2, 4: 3, 6: 4, 8: 5, 10: 6, 12: 7, 14: 8, 16: 9, 18: 10, 20: 11, 22: 0 };

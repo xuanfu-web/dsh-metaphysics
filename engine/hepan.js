@@ -4,6 +4,7 @@
 import { buildBazi } from './bazi.js';
 import { STEMS, BRANCHES } from './calendar.js';
 import { assertCivil } from './validate.js';
+import { SANHE_GROUPS } from './sanhe.js';
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -15,7 +16,6 @@ const LIU_HE = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], 
 const CHONG = [['子', '午'], ['丑', '未'], ['寅', '申'], ['卯', '酉'], ['辰', '戌'], ['巳', '亥']];
 const HAI = [['子', '未'], ['丑', '午'], ['寅', '巳'], ['卯', '辰'], ['申', '亥'], ['酉', '戌']];
 const PO = [['子', '酉'], ['卯', '午'], ['辰', '丑'], ['未', '戌'], ['寅', '亥'], ['巳', '申']];
-const SAN_HE = [['申', '子', '辰'], ['寅', '午', '戌'], ['巳', '酉', '丑'], ['亥', '卯', '未']];
 const XING = [['寅', '巳', '申'], ['丑', '戌', '未'], ['子', '卯']];
 
 const pairIn = (list, a, b) => list.some((g) => g.includes(a) && g.includes(b) && a !== b);
@@ -23,8 +23,8 @@ const pairIn = (list, a, b) => list.some((g) => g.includes(a) && g.includes(b) &
 function zhiRelation(a, b) {
   if (a === b) return { name: '同支', score: 0, text: '日支相同，性情相近，容易互相理解，也容易同时卡在同一处' };
   if (pairIn(LIU_HE, a, b)) return { name: '六合', score: 20, text: '日支六合，相处自然、彼此补位' };
-  for (const g of SAN_HE) {
-    if (g.includes(a) && g.includes(b)) return { name: '半合', score: 14, text: '日支同属三合局，易有共同语言' };
+  if (SANHE_GROUPS.some((g) => g.branches.includes(a) && g.branches.includes(b))) {
+    return { name: '半合', score: 14, text: '日支同属三合局，易有共同语言' };
   }
   if (pairIn(CHONG, a, b)) return { name: '相冲', score: -15, text: '日支相冲，节奏与需求容易错位，需要刻意协调' };
   if (pairIn(XING, a, b)) {
