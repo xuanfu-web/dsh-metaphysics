@@ -30,7 +30,7 @@ try {
 }
 
 // ---- 3. 逐模块编译：定位到引擎模块 ----
-const modStart = /^__mods\.(?:([A-Za-z0-9_$-]+)|'([^']+)') = \(function \(\) \{$/gm;
+const modStart = /^__mods(?:\.([A-Za-z0-9_$-]+)|\['([^'\]]+)'\]) = \(function \(\) \{$/gm;
 const starts = [];
 let m;
 while ((m = modStart.exec(raw)) !== null) starts.push({ name: m[1] ?? m[2], index: m.index });
@@ -70,7 +70,7 @@ try {
 }
 
 // ---- 4. 结构断言 ----
-const openCount = (raw.match(/^__mods\.[^\n]+ = \(function \(\) \{$/gm) || []).length;
+const openCount = (raw.match(/^__mods(?:\.|\[')[^\n]+ = \(function \(\) \{$/gm) || []).length;
 const closeCount = (raw.match(/^\}\)\(\);$/gm) || []).length;
 if (closeCount < openCount) problems.push(`IIFE 收口不足：开 ${openCount} / 闭 ${closeCount}`);
 if (raw.includes('\u2028') || raw.includes('\u2029')) problems.push('产物含不可见行分隔符 U+2028/U+2029（Chromium 视为换行，会截断字符串）');
