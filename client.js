@@ -4800,10 +4800,10 @@ function baziInterpret(r) {
   const dimensions = [
     {
       key: 'overall', label: '整体运势',
-      text: `你的日主是${dm.stem}（五行属${dm.element}），命局身${level}（${pick(st, 'score', '')} 分）。` +
-        `用神取向偏${join(favor)}，忌${join(avoid)}——往${join(favor)}的方向走会更省力${ys.tiaohou && ys.tiaohou.note ? `，调候上还${ys.tiaohou.note}` : ''}。` +
-        `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}同样是${lnTier}的档位。`,
-      advice: `${TIER_TEXT[curTier] || TIER_TEXT.平}。${TIER_ADVICE[lnTier] || TIER_ADVICE.平}；把大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
+      text: `你的日主是${dm.stem}（五行属${dm.element}），命局${level}（${pick(st, 'score', '')} 分）。` +
+        `用神取向偏${join(favor)}，忌${join(avoid)}——往${join(favor)}的方向走会更省力${ys.tiaohou && ys.tiaohou.note ? `；调候上${ys.tiaohou.note}` : ''}。` +
+        `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}为${lnTier}。`,
+      advice: `大运看：${TIER_TEXT[curTier] || TIER_TEXT.平}；流年看：${TIER_ADVICE[lnTier] || TIER_ADVICE.平}。大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
     },
     {
       key: 'work', label: '工作与职业选择',
@@ -4841,7 +4841,7 @@ function baziInterpret(r) {
     {
       key: 'yongshen', label: '用神与忌神',
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
-        `${pick(ys, 'detail', '')}${ys.tiaohou ? `调候上${ys.tiaohou.note}。` : ''}`,
+        `${pick(ys, 'detail', '')}`,
     },
     {
       key: 'geju', label: '格局依据',
@@ -5771,8 +5771,24 @@ function computeRaw(args = {}) {
     const pa = parseDateTime(args.datetime);
     const pb = parseDateTime(partner.datetime);
     const chart = args.chart === 'ziwei' ? 'ziwei' : 'bazi';
-    const sideA = { ...pa, gender: requireGender(args.gender, '你（主方）'), trueSolar: args.trueSolar };
-    const sideB = { ...pb, gender: requireGender(partner.gender, '对方'), trueSolar: partner.trueSolar };
+    const sideA = {
+      ...pa,
+      gender: requireGender(args.gender, '你（主方）'),
+      trueSolar: args.trueSolar,
+      lateZi: args.lateZi,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+    };
+    const sideB = {
+      ...pb,
+      gender: requireGender(partner.gender, '对方'),
+      trueSolar: partner.trueSolar,
+      lateZi: partner.lateZi,
+      address: typeof partner.address === 'string' ? partner.address : undefined,
+      longitude: typeof partner.longitude === 'number' ? partner.longitude : undefined,
+      geo: partner.geo && typeof partner.geo === 'object' ? partner.geo : undefined,
+    };
     const result = chart === 'ziwei' ? buildZiweiHepan({ a: sideA, b: sideB }) : buildHepan({ a: sideA, b: sideB });
     return { ...result, summary: hepanText(result) };
   }

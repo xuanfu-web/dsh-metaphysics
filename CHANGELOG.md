@@ -15,7 +15,11 @@
   - `bazi / ziwei / hepan` 的 gender 改为必填（缺省按男命排会让大运/大限方向整个反掉）
   - 六爻爻数 ≠ 6 时报错（不再悄悄换成随机卦）；塔罗张数非 1/3/5 时报错；`asOf` 非法时报错（不再静默用「此刻」）
   - 工具层 `execute()` 统一包上 `[错误码]` 前缀，内部异常不再以堆栈式文案直出
-- 测试新增 `test/args.test.mjs`（40 条）、`test/security.test.mjs`（10 条），全量 29 个文件 823 条 PASS
+- **合盘口径与单盘对齐**：合盘现在把 `address / longitude / trueSolar / lateZi` 分别透传给双方（工具层也会为 `partner.address` 解析经度）。此前合盘完全忽略地址，同一次出生在单盘是 丁丑 日、在合盘里却是 戊寅 日
+  - 新增 `test/hepan.test.mjs`：断言「合盘里的你 == 单盘的你」，八字与紫微两条链路都覆盖
+- **解析文案修复**：`命局身身强`（level 已含「身」）、`调候上还初夏`（硬拼连接词）、同一段两次「调候上…」、大运与流年档位并成一句导致建议前后矛盾
+  - 新增 `test/interpret-copy.test.mjs`：对 8 个体系的实际输出做病句/重复/未定义值扫描
+- 测试新增 `test/args.test.mjs`（40 条）、`test/security.test.mjs`（10 条）、`test/hepan.test.mjs`（7 条）、`test/interpret-copy.test.mjs`（63 条），全量 31 个文件 893 条 PASS
 - CI 增加「断言数不低于基线」与「测试自检」两步
 
 ## 0.14.0 —— 奇门、合盘与节气精度（此前只存在于工作树，本版一并落库）

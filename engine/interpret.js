@@ -1,4 +1,4 @@
-﻿// 解析与详解模块
+// 解析与详解模块
 // 输入：任一体系的排盘结果（compute 的返回值）
 // 输出：结构化解析对象 —— { moduleType, system, title, lead, dimensions[], sections[], disclaimer }
 //   moduleType：natal（命盘） / divination（卦象） / card（牌阵）
@@ -239,10 +239,12 @@ function baziInterpret(r) {
   const dimensions = [
     {
       key: 'overall', label: '整体运势',
-      text: `你的日主是${dm.stem}（五行属${dm.element}），命局身${level}（${pick(st, 'score', '')} 分）。` +
-        `用神取向偏${join(favor)}，忌${join(avoid)}——往${join(favor)}的方向走会更省力${ys.tiaohou && ys.tiaohou.note ? `，调候上还${ys.tiaohou.note}` : ''}。` +
-        `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}同样是${lnTier}的档位。`,
-      advice: `${TIER_TEXT[curTier] || TIER_TEXT.平}。${TIER_ADVICE[lnTier] || TIER_ADVICE.平}；把大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
+      // level 本身已是「身强/偏强/中和/偏弱/身弱」，这里不能再拼一个「身」
+      text: `你的日主是${dm.stem}（五行属${dm.element}），命局${level}（${pick(st, 'score', '')} 分）。` +
+        `用神取向偏${join(favor)}，忌${join(avoid)}——往${join(favor)}的方向走会更省力${ys.tiaohou && ys.tiaohou.note ? `；调候上${ys.tiaohou.note}` : ''}。` +
+        `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}为${lnTier}。`,
+      // 大运与流年各自给建议，不再把两个档位的文案并成一句（曾出现「起伏不大」后面接「留出缓冲」）
+      advice: `大运看：${TIER_TEXT[curTier] || TIER_TEXT.平}；流年看：${TIER_ADVICE[lnTier] || TIER_ADVICE.平}。大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
     },
     {
       key: 'work', label: '工作与职业选择',
@@ -279,8 +281,9 @@ function baziInterpret(r) {
     ...(cross.length ? [{ key: 'cross', label: '交叉判断', text: cross.join('　') }] : []),
     {
       key: 'yongshen', label: '用神与忌神',
+      // detail 里通常已含调候说明，这里不再补一句，避免同一段出现两次「调候上…」
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
-        `${pick(ys, 'detail', '')}${ys.tiaohou ? `调候上${ys.tiaohou.note}。` : ''}`,
+        `${pick(ys, 'detail', '')}`,
     },
     {
       key: 'geju', label: '格局依据',

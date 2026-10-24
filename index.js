@@ -27,19 +27,26 @@ export function apply(ctx) {
   async function run(args) {
     if (!args || typeof args !== 'object' || Array.isArray(args)) throw bad('参数必须是对象');
     const next = { ...args };
-    // 地址 -> 经度：先查内置表，地址更细或未命中时联网（Nominatim）
-    if ((next.system === 'bazi' || next.system === 'ziwei')
-      && typeof next.address === 'string' && next.address.trim()
-      && typeof next.longitude !== 'number') {
+    // 地址 -> 经度：先查内置表，地址更细或未命中时联网（Nominatim）。真太阳时决定时柱/日柱，合盘两侧都要算
+    const resolveGeo = async (person) => {
+      if (typeof person.address !== 'string' || !person.address.trim()) return;
+      if (typeof person.longitude === 'number') return;
       try {
-        const geo = await geocodeAddress(next.address, { online: true });
+        const geo = await geocodeAddress(person.address, { online: true });
         if (geo && typeof geo.lon === 'number') {
-          next.longitude = geo.lon;
-          next.geo = geo;
+          person.longitude = geo.lon;
+          person.geo = geo;
         }
       } catch (e) {
         // 联网失败不影响排盘，退回内置表
       }
+    };
+    if (next.system === 'bazi' || next.system === 'ziwei' || next.system === 'hepan') {
+      await resolveGeo(next);
+    }
+    if (next.system === 'hepan' && next.partner && typeof next.partner === 'object') {
+      next.partner = { ...next.partner }; // 不改调用方传进来的对象
+      await resolveGeo(next.partner);
     }
     return compute(next);
   }
@@ -63,7 +70,7 @@ export function apply(ctx) {
         gender: {
           type: 'string',
           enum: ['male', 'female'],
-          description: '性别，决定大运与大限顺逆。bazi / ziwei 必填。',
+          description: '性别，决定大运与大限顺逆。bazi / ziwei / hepan 必填，不能用默认值代替。',
         },
         address: {
           type: 'string',
@@ -118,13 +125,14 @@ export function apply(ctx) {
         },
         partner: {
           type: 'object',
-          description: '合盘时的对方信息：datetime 必填，gender/address/trueSolar 可选。仅 hepan 使用。',
+          description: '合盘时的对方信息：datetime 与 gender 必填，address 可选（与主方一样按出生地修正真太阳时）。仅 hepan 使用。',
           properties: {
             datetime: { type: 'string', description: '对方公历本地时间，如 1998-05-20T10:30' },
-            gender: { type: 'string', enum: ['male', 'female'], description: '对方性别' },
+            gender: { type: 'string', enum: ['male', 'female'], description: '对方性别（决定对方大运/大限顺逆）' },
             address: { type: 'string', description: '对方出生地（省/市即可）' },
             trueSolar: { type: 'boolean', description: '对方是否启用真太阳时' },
           },
+          required: ['datetime', 'gender'],
         },
         mode: {
           type: 'string',

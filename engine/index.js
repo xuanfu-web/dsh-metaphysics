@@ -388,8 +388,24 @@ function computeRaw(args = {}) {
     const pb = parseDateTime(partner.datetime);
     const chart = args.chart === 'ziwei' ? 'ziwei' : 'bazi';
     // 性别决定双方大运/大限顺逆，两边都不能用默认值
-    const sideA = { ...pa, gender: requireGender(args.gender, '你（主方）'), trueSolar: args.trueSolar };
-    const sideB = { ...pb, gender: requireGender(partner.gender, '对方'), trueSolar: partner.trueSolar };
+    const sideA = {
+      ...pa,
+      gender: requireGender(args.gender, '你（主方）'),
+      trueSolar: args.trueSolar,
+      lateZi: args.lateZi,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+    };
+    const sideB = {
+      ...pb,
+      gender: requireGender(partner.gender, '对方'),
+      trueSolar: partner.trueSolar,
+      lateZi: partner.lateZi,
+      address: typeof partner.address === 'string' ? partner.address : undefined,
+      longitude: typeof partner.longitude === 'number' ? partner.longitude : undefined,
+      geo: partner.geo && typeof partner.geo === 'object' ? partner.geo : undefined,
+    };
     const result = chart === 'ziwei' ? buildZiweiHepan({ a: sideA, b: sideB }) : buildHepan({ a: sideA, b: sideB });
     return { ...result, summary: hepanText(result) };
   }
