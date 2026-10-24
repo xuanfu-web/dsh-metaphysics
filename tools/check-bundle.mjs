@@ -30,7 +30,7 @@ try {
 }
 
 // ---- 3. 逐模块编译：定位到引擎模块 ----
-const modStart = /^__mods\.(?:([A-Za-z0-9_$]+)|'([^']+)') = \(function \(\) \{$/gm;
+const modStart = /^__mods\.(?:([A-Za-z0-9_$-]+)|'([^']+)') = \(function \(\) \{$/gm;
 const starts = [];
 let m;
 while ((m = modStart.exec(raw)) !== null) starts.push({ name: m[1] ?? m[2], index: m.index });
