@@ -4,7 +4,7 @@
 // 期望值来自 test/fixtures/classics.json，由 tools/gen-classics-fixture.mjs 按典籍条目录入，
 // 每条都带出处；不是从引擎输出反推的。
 import fs from 'node:fs';
-import { hexagramFromBits } from '../engine/liuyao.js';
+import { hexagramFromBits, buildLiuyao } from '../engine/liuyao.js';
 import { buildDaliuren, GAN_JI_GONG } from '../engine/daliuren.js';
 import { buildZiwei } from '../engine/ziwei.js';
 import { compute } from '../engine/index.js';
@@ -93,6 +93,45 @@ const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉
   const expect = FIX.bajua.find((b) => b.name === r.ben.name);
   ok('端到端·乾为天属乾宫世六', r.ben.palace === expect.palace && r.ben.shi === expect.shi && r.ben.ying === expect.ying,
     `${r.ben.palace} 世${r.ben.shi} 应${r.ben.ying}`);
+}
+
+// ── ⑦ 卦例：《增删卜易》里明确写出的「本卦 → 变卦」对 ────────
+// 期望值只取原文写明的卦名对；动爻位置原文（PDF）不可靠，不录。
+// 验的是：引擎能否用 64 卦表如实还原这一对（名字、翻爻方向、变卦生成）。
+{
+  const ALL = [];
+  for (let b = 0; b < 64; b++) {
+    const bits = Array.from({ length: 6 }, (_, i) => (b >> i) & 1);
+    ALL.push({ name: hexagramFromBits(bits).name, bits });
+  }
+  const variants = FIX.meta.variants || {};
+  const resolve = (raw) => {
+    let name = String(raw);
+    for (const [k, v] of Object.entries(variants)) name = name.split(k).join(v);
+    const exact = ALL.find((x) => x.name === name);
+    if (exact) return exact;
+    // 原文常只写卦名（如「艮」「困」「明夷」），按唯一包含匹配补全
+    for (const test of [(x) => x.name.endsWith(name), (x) => x.name.includes(name)]) {
+      const cands = ALL.filter(test);
+      if (cands.length === 1) return cands[0];
+    }
+    return null;
+  };
+
+  const misses = [];
+  for (const ex of FIX.liuyaoExamples || []) {
+    const A = resolve(ex.ben);
+    const B = resolve(ex.bian);
+    if (!A || !B) { misses.push(`${ex.chapter}「${ex.ben}→${ex.bian}」名字无法唯一解析`); continue; }
+    const moving = A.bits.map((bit, i) => (bit !== B.bits[i] ? i : -1)).filter((i) => i >= 0);
+    if (!moving.length) { misses.push(`${ex.chapter} 本卦与变卦相同`); continue; }
+    // 按动爻构造六爻值：阳动 9、阴动 6，静爻 7/8
+    const lines = A.bits.map((bit, i) => (moving.includes(i) ? (bit ? 9 : 6) : (bit ? 7 : 8)));
+    const r = buildLiuyao({ lines });
+    if (r.ben.name !== A.name) misses.push(`${ex.chapter} 本卦 ${r.ben.name} ≠ ${A.name}`);
+    else if (!r.bian || r.bian.name !== B.name) misses.push(`${ex.chapter} 变卦 ${r.bian && r.bian.name} ≠ ${B.name}`);
+  }
+  ok(`卦例本变卦对（${(FIX.liuyaoExamples || []).length} 例）`, misses.length === 0, misses.slice(0, 3).join('｜'));
 }
 
 function parse(text) {

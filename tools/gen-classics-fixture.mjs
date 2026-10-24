@@ -69,9 +69,26 @@ const yueJiangSamples = [
   { zhongqi: '大寒', date: '2027-01-25T12:00' },
 ];
 
+// ── 《增删卜易》卦例（原文取自 luckclub.cn 古籍典藏电子本，PDF 有文字层）────────
+// 每条记「月建 + 日干支 + 本卦 → 变卦」；卦名按原文用字保留（遯/遁 为异体），
+// 动爻不录：原文卦象图在 PDF 中被压成一行，位置不可靠，硬录等于造数据。
+// 对拍点：引擎能否用 64 卦表把「本卦 → 变卦」这一对如实还原（名字与翻爻）。
+const liuyaoExamples = [
+  { chapter: '元神忌神衰旺章第十', month: '酉', day: '辛亥', ben: '兑为泽', bian: '雷水解', quote: '酉月辛亥日占求财，得兑为泽变雷水解卦' },
+  { chapter: '元神忌神衰旺章第十', month: '巳', day: '乙未', ben: '泽风大过', bian: '火风鼎', quote: '巳月乙未日自占病，得泽风大过变火风鼎卦' },
+  { chapter: '月将章第十六', month: '午', day: '丁未', ben: '困', bian: '雷风恒', quote: '午月丁未日占弟被讼吉凶，得困卦变雷风恒卦' },
+  { chapter: '月将章第十六', month: '寅', day: '丁酉', ben: '艮', bian: '明夷', quote: '寅月丁酉日占开铺面，得艮卦变明夷卦' },
+  { chapter: '日辰章第十七', month: '申', day: '戊午', ben: '天山遯', bian: '天风姤', quote: '申月戊午日占病，得天山遯变天风姤卦' },
+  { chapter: '独发章第三十一', month: '午', day: '甲申', ben: '天火同人', bian: '泽火革', quote: '午月甲申日防涨水冲去麦子，占何日晴，得天火同人变泽火革卦' },
+  { chapter: '星煞章第三十三', month: '辰', day: '戊子', ben: '水地比', bian: '泽山咸', quote: '辰月戊子日占小舟过开恐盘阻，得水地比变泽山咸卦' },
+  { chapter: '星煞章第三十三', month: '亥', day: '甲辰', ben: '火天大有', bian: '大畜', quote: '亥月甲辰日又占，又得火天大有变大畜卦' },
+  { chapter: '用神元神忌神仇神章第九', month: '辰', day: '癸巳', ben: '坎为水', bian: '风水涣', quote: '辰月癸巳日，得坎为水变风水涣卦' },
+];
+
 // ── 紫微斗数安星要诀（《紫微斗数全书》通行本）──────────────
 // 五行局由命宫纳音五行定：水二局、木三局、金四局、土五局、火六局
 const wuxingJu = { 水: { name: '水二局', number: 2 }, 木: { name: '木三局', number: 3 }, 金: { name: '金四局', number: 4 }, 土: { name: '土五局', number: 5 }, 火: { name: '火六局', number: 6 } };
+
 
 // 紫微与天府以寅申为轴镜像：天府 = 4 - 紫微（子=0 … 亥=11，模 12）
 const tianfuFromZiwei = { rule: 'tianfuIndex = (4 - ziweiIndex + 12) % 12', basis: '紫微天府对照（寅申同宫，其余相照）' };
@@ -84,9 +101,13 @@ const fixture = {
       bajua: '《京氏易传》八宫卦序；世应交位为通行定例（八纯上爻、一至五世依次、游魂四爻、归魂三爻）',
       liuren: '《大六壬指南》日干寄宫、中气换将（雨水登明亥将起，逐中气一将）',
       ziwei: '《紫微斗数全书》安星要诀：纳音定五行局、紫微天府以寅申为轴相照',
+      liuyaoExamples: '《增删卜易》卦例（luckclub.cn 古籍典藏电子本，PDF 有文字层）；原文用字保留（遯/遁 异体），动爻不录——原书卦象图在 PDF 里压成一行，位置不可靠',
+      boshizhengzong: '《卜筮正宗》（复城道长精校）为扫描版、无文字层，暂未引用',
     },
+    variants: { 遯: '遁' },
   },
   bajua,
+  liuyaoExamples,
   liuren: { ganJiGong, yueJiangByZhongQi, yueJiangSamples },
   ziwei: { wuxingJu, tianfuFromZiwei },
 };

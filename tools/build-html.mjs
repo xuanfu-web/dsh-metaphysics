@@ -1,4 +1,4 @@
-﻿// 生成可双击打开的单文件 HTML（引擎 + 界面全部内联，无需服务器）
+// 生成可双击打开的单文件 HTML（引擎 + 界面全部内联，无需服务器）
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -135,6 +135,7 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 function page() {
   const modules = MODULE_ORDER.map(buildModule).join('\n');
   const ui = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
+  const core = fs.readFileSync(path.join(root, 'src', 'core.js'), 'utf8');
   const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
   return `<!doctype html>
 <html lang="zh-CN">
@@ -215,6 +216,9 @@ function page() {
 const __mods = {};
 ${modules}
 window.Engine = __mods.index;
+</script>
+<script>
+${core}
 </script>
 <script>
 ${kit}

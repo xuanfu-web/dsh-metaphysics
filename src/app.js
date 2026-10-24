@@ -151,8 +151,9 @@ const SAMPLE = { date: '1990-05-12', time: '14:30' };
 const kindOf = (t) => TIME_KIND[t] || 'none';
 
 // 问事的体系（六爻 / 梅花 / 六壬 / 塔罗）必须填「所问之事」；命盘类不问事
-const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
-const needAsk = (t) => !!NEED_ASK[t];
+// 表单规则与独立页共用一份（src/core.js，由构建注入 window.__MPCore）
+const Core = window.__MPCore || {};
+const needAsk = Core.needAsk || ((t) => false);
 
 function App() {
   const [tab, setTab] = useState('ziwei');
@@ -219,15 +220,9 @@ function App() {
         }
       }
       if (k === 'liuyao') {
-        const parsed = lines.split(/[^0-9]+/).filter(Boolean).map(Number);
-        const bad = parsed.filter((n) => ![6, 7, 8, 9].includes(n));
-        if (parsed.length === 6 && bad.length === 0) {
-          args.lines = parsed;
-        } else if (lines.trim()) {
-          setNotice(parsed.length !== 6
-            ? `爻值需要正好 6 个数字（当前 ${parsed.length} 个），本次按随机摇卦。`
-            : `爻值只能是 6/7/8/9（收到 ${bad.join('/')}），本次按随机摇卦。`);
-        }
+        const parsed = Core.parseLines(lines);
+        if (parsed.lines) args.lines = parsed.lines;
+        else if (parsed.warning) setNotice(parsed.warning);
       }
       if (k === 'tarot') args.count = Number(count);
       if (k === 'hepan') {

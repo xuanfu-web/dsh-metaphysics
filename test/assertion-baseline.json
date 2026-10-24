@@ -1,13 +1,13 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 1029,
+  "total": 1053,
   "files": {
     "args.test.mjs": {
       "pass": 40,
       "fail": 0
     },
     "ask.test.mjs": {
-      "pass": 90,
+      "pass": 92,
       "fail": 0
     },
     "baseline.test.mjs": {
@@ -31,11 +31,15 @@
       "fail": 0
     },
     "classics.test.mjs": {
-      "pass": 6,
+      "pass": 7,
       "fail": 0
     },
     "client-bundle.test.mjs": {
       "pass": 9,
+      "fail": 0
+    },
+    "core.test.mjs": {
+      "pass": 21,
       "fail": 0
     },
     "daliuren.test.mjs": {

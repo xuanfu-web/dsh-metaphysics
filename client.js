@@ -6104,6 +6104,34 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const Engine = __mods.index;
     window.Engine = Engine;
 (function () {
+  const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
+  const needAsk = (kind) => !!NEED_ASK[kind];
+
+  function parseLines(text) {
+    const raw = String(text == null ? '' : text).trim();
+    if (!raw) return { lines: null, warning: '' };
+    const v = raw.split(/[^0-9]+/).filter(Boolean).map(Number);
+    const bad = v.filter((n) => ![6, 7, 8, 9].includes(n));
+    if (v.length === 6 && bad.length === 0) return { lines: v, warning: '' };
+    return {
+      lines: null,
+      warning: v.length !== 6
+        ? `爻值需要正好 6 个数字（当前 ${v.length} 个），本次按随机摇卦。`
+        : `爻值只能是 6/7/8/9（收到 ${bad.join('/')}），本次按随机摇卦。`,
+    };
+  }
+
+  function toNumber(text) {
+    const raw = String(text == null ? '' : text).trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber };
+})();
+
+(function () {
   const CSS = `
 .pp,.mp-it{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#efe9dc;
@@ -7445,8 +7473,8 @@ const TIME_KIND = {
 const SAMPLE = { date: '1990-05-12', time: '14:30' };
 const kindOf = (t) => TIME_KIND[t] || 'none';
 
-const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
-const needAsk = (t) => !!NEED_ASK[t];
+const Core = window.__MPCore || {};
+const needAsk = Core.needAsk || ((t) => false);
 
 function App() {
   const [tab, setTab] = useState('ziwei');
@@ -7507,15 +7535,9 @@ function App() {
         }
       }
       if (k === 'liuyao') {
-        const parsed = lines.split(/[^0-9]+/).filter(Boolean).map(Number);
-        const bad = parsed.filter((n) => ![6, 7, 8, 9].includes(n));
-        if (parsed.length === 6 && bad.length === 0) {
-          args.lines = parsed;
-        } else if (lines.trim()) {
-          setNotice(parsed.length !== 6
-            ? `爻值需要正好 6 个数字（当前 ${parsed.length} 个），本次按随机摇卦。`
-            : `爻值只能是 6/7/8/9（收到 ${bad.join('/')}），本次按随机摇卦。`);
-        }
+        const parsed = Core.parseLines(lines);
+        if (parsed.lines) args.lines = parsed.lines;
+        else if (parsed.warning) setNotice(parsed.warning);
       }
       if (k === 'tarot') args.count = Number(count);
       if (k === 'hepan') {

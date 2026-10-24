@@ -41,8 +41,9 @@
   };
 
   // 问事的体系必须写清「所问之事」，解读才有落点；命盘类（八字/紫微）不问事，不显示这两项
-  const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
-  const needAsk = (t) => !!NEED_ASK[t];
+  // 表单规则与宿主面板共用一份（src/core.js，由构建注入 window.__MPCore）
+  const Core = window.__MPCore || {};
+  const needAsk = Core.needAsk || (() => false);
   const ASK_PLACEHOLDER = '用一句话描述所问之事，例如：今年是否适合换工作？';
 
   /** 本次要交给解读的「问题 + 方向」；命盘类不传 */
@@ -174,14 +175,9 @@
       }
     }
     if (tab === 'liuyao') {
-      const v = el('lines').value.split(/[^0-9]+/).filter(Boolean).map(Number);
-      const bad = v.filter((n) => ![6, 7, 8, 9].includes(n));
-      if (v.length === 6 && bad.length === 0) args.lines = v;
-      else if (el('lines').value.trim()) {
-        lineWarn = v.length !== 6
-          ? `爻值需要正好 6 个数字（当前 ${v.length} 个），本次按随机摇卦。`
-          : `爻值只能是 6/7/8/9（收到 ${bad.join('/')}），本次按随机摇卦。`;
-      }
+      const parsed = Core.parseLines(el('lines').value);
+      if (parsed.lines) args.lines = parsed.lines;
+      else if (parsed.warning) lineWarn = parsed.warning;
     }
     if (tab === 'meihua') {
       args.mode = mhMode;
