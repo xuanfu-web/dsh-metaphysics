@@ -2,5 +2,5 @@ url: https://github.com/xuanfu-web/dsh-metaphysics
 name: xuanfu-web/dsh-metaphysics
 category: ui
 description:
-  en: 'Divination panel and agent tool: BaZi with 42 shensha plus pattern, useful-god and luck scoring; Zi Wei Dou Shu with star brightness, 34 patterns, decade and annual/monthly/daily/hourly mutagen; LiuYao, MeiHua, Da Liu Ren and Tarot, plus ask-driven interpretation, all computed locally.'
-  zh: '命理排盘：八字 42 神煞并给出格局、用神与大运流年吉凶评分；紫微斗数 34 格局、主星庙旺、大限与流年流月流日流时四化；另有六爻、梅花易数、大六壬与塔罗，并可按所问之事生成解析，全部本地计算。'
+  en: 'Divination panel and agent tool with eight systems: BaZi (42 shensha, pattern/useful-god, luck scoring), Zi Wei Dou Shu (star brightness, 34 patterns, decade and annual/monthly/daily/hourly mutagen), LiuYao, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia (three ju-selection schools), compatibility charts (BaZi and Zi Wei) and Tarot, plus ask-driven interpretation. All computed locally; networking is off by default.'
+  zh: '命理排盘：八套体系一站排盘——八字（42 神煞、格局用神、大运流年吉凶评分）、紫微斗数（主星庙旺、34 格局、大限与流年流月流日流时四化）、六爻、梅花易数、大六壬、奇门遁甲（拆补/超神接气/置闰三派取局）、合盘（八字与紫微）与塔罗，并可按所问之事生成解析；纯本地计算，默认不联网。'

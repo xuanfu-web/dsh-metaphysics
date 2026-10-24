@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Metaphysics Charts",
-    "description": "Six systems in one plugin: BaZi (hidden stems, ten gods, 12 stages, 42 shensha, strength, pattern and useful-god, luck scoring), Zi Wei Dou Shu (49 stars with brightness, four 12-god cycles, 34 patterns, decade and annual/monthly/daily/hourly mutagen), LiuYao, MeiHua YiShu, Da Liu Ren and Tarot, plus an ask-driven interpretation layer. Computed locally and exposed as an agent tool with a Web panel."
+    "description": "Eight systems in one plugin: BaZi (hidden stems, ten gods, 12 stages, 42 shensha, strength, pattern and useful-god, luck scoring), Zi Wei Dou Shu (49 stars with brightness, four 12-god cycles, 34 patterns, decade and annual/monthly/daily/hourly mutagen), LiuYao, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia (three ju-selection schools), compatibility charts (BaZi and Zi Wei), and Tarot, plus an ask-driven interpretation layer. Computed locally with networking off by default, exposed as an agent tool with a Web panel."
   }
 }
