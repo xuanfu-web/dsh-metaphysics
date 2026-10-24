@@ -17,6 +17,33 @@ const DESCRIPTION = [
 ].join('');
 
 export function apply(ctx) {
+  const bad = (message) => {
+    const e = new Error(message);
+    e.code = 'E_INPUT';
+    return e;
+  };
+
+  /** 工具主体的实际流程：参数整形 → 地址联网 → 排盘 */
+  async function run(args) {
+    if (!args || typeof args !== 'object' || Array.isArray(args)) throw bad('参数必须是对象');
+    const next = { ...args };
+    // 地址 -> 经度：先查内置表，地址更细或未命中时联网（Nominatim）
+    if ((next.system === 'bazi' || next.system === 'ziwei')
+      && typeof next.address === 'string' && next.address.trim()
+      && typeof next.longitude !== 'number') {
+      try {
+        const geo = await geocodeAddress(next.address, { online: true });
+        if (geo && typeof geo.lon === 'number') {
+          next.longitude = geo.lon;
+          next.geo = geo;
+        }
+      } catch (e) {
+        // 联网失败不影响排盘，退回内置表
+      }
+    }
+    return compute(next);
+  }
+
   const definition = {
     name: TOOL_NAME,
     description: DESCRIPTION,
@@ -25,8 +52,8 @@ export function apply(ctx) {
       properties: {
         system: {
           type: 'string',
-          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren'],
-          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬。',
+          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen'],
+          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）。',
         },
         datetime: {
           type: 'string',
@@ -79,6 +106,26 @@ export function apply(ctx) {
           type: 'string',
           description: '紫微流月/流日/流时的基准时刻，形如 2026-10-22T16:00；省略则按调用时的本机当前时刻。要复现某一时刻的推演结果时请显式给出。',
         },
+        juMethod: {
+          type: 'string',
+          enum: ['chaibu', 'chaoshen', 'zhirun'],
+          description: '奇门取局流派：chaibu 拆补（默认）、chaoshen 超神接气、zhirun 置闰。仅 qimen 使用。',
+        },
+        lateZiHourMode: {
+          type: 'string',
+          enum: ['same-day', 'next-day'],
+          description: '奇门晚子时（23:00–24:00）归当日还是次日，默认 same-day。仅 qimen 使用。',
+        },
+        partner: {
+          type: 'object',
+          description: '合盘时的对方信息：datetime 必填，gender/address/trueSolar 可选。仅 hepan 使用。',
+          properties: {
+            datetime: { type: 'string', description: '对方公历本地时间，如 1998-05-20T10:30' },
+            gender: { type: 'string', enum: ['male', 'female'], description: '对方性别' },
+            address: { type: 'string', description: '对方出生地（省/市即可）' },
+            trueSolar: { type: 'boolean', description: '对方是否启用真太阳时' },
+          },
+        },
         mode: {
           type: 'string',
           enum: ['time', 'number'],
@@ -104,25 +151,20 @@ export function apply(ctx) {
       render: (_args, value) => [{ type: 'text', text: renderText(value) }],
     },
     async execute(args) {
-      if (!args || typeof args !== 'object') throw new Error('参数必须是对象');
-      const next = { ...args };
-      // 地址 -> 经度：先查内置表，地址更细或未命中时联网（Nominatim）
-      if ((next.system === 'bazi' || next.system === 'ziwei')
-        && typeof next.address === 'string' && next.address.trim()
-        && typeof next.longitude !== 'number') {
-        try {
-          const geo = await geocodeAddress(next.address, { online: true });
-          if (geo && typeof geo.lon === 'number') {
-            next.longitude = geo.lon;
-            next.geo = geo;
-          }
-        } catch (e) {
-          // 联网失败不影响排盘，退回内置表
-        }
+      try {
+        // 必须 await：直接 `return run(args)` 会让异步拒绝绕过下面的 catch
+        return await run(args);
+      } catch (e) {
+        // 统一错误面：带错误码的入参错误直接透传文案，内部异常也带上码，避免堆栈式消息直出给模型
+        const code = (e && e.code) || 'E_INTERNAL';
+        const message = (e && e.message) || String(e);
+        throw new Error(`[${code}] ${message}`);
       }
-      return compute(next);
     },
   };
 
   ctx.effect(() => ctx.tools.register(definition));
 }
+
+
+

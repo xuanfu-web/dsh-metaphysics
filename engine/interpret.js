@@ -1,4 +1,4 @@
-// 解析与详解模块
+﻿// 解析与详解模块
 // 输入：任一体系的排盘结果（compute 的返回值）
 // 输出：结构化解析对象 —— { moduleType, system, title, lead, dimensions[], sections[], disclaimer }
 //   moduleType：natal（命盘） / divination（卦象） / card（牌阵）
@@ -191,6 +191,49 @@ function baziInterpret(r) {
 
   // 未来三步大运
   const idx = cur ? list.indexOf(cur) : -1;
+
+  // ── 交叉判断：把两三个维度叠起来看，单看任一维度都会得出相反的结论 ──
+  const cross = [];
+  const GAN_WX = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
+  const ganWx = (gz) => GAN_WX[String(gz || '')[0]] || '';
+  const ZHI_WX = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
+  // ① 用神 × 当前大运：这十年是「顺着走」还是「顶着走」
+  if (cur) {
+    const dw = ganWx(cur.ganzhi);
+    if (dw) {
+      if (favor.includes(dw)) cross.push(`当前大运 ${cur.ganzhi} 走${dw}，正是喜用，这十年推事情比平时省力；${topName ? `可把力气放在${topName}对应的事上` : '适合把长期计划铺开'}。`);
+      else if (avoid.includes(dw)) cross.push(`当前大运 ${cur.ganzhi} 走${dw}，落在忌神上，这十年更适合守成、补短板，不宜大杠杆扩张。`);
+      else cross.push(`当前大运 ${cur.ganzhi} 走${dw}，既非喜用也非忌神，属于平运，结果更多取决于你在这段里做了什么。`);
+    }
+  }
+  // ② 五行缺失 × 喜忌：缺的正好是忌神，反而是好事
+  if (missing.length) {
+    const good = missing.filter((m) => avoid.includes(m));
+    const bad = missing.filter((m) => favor.includes(m));
+    if (good.length) cross.push(`命局缺 ${good.join('、')}，而它正是你的忌神——缺得刚好，不必刻意去补。`);
+    if (bad.length) cross.push(`命局缺 ${bad.join('、')}，这恰是喜用，是这盘的短板：靠环境、行业与身边人来补，比自己硬扛有效。`);
+  }
+  // ③ 十神权重 × 格局：主格与最重十神一致＝专注，冲突＝拉扯
+  if (topName && primary) {
+    const godOfPattern = godFromPattern(primary);
+    if (godOfPattern && topName && godOfPattern === topName) cross.push(`格局 ${primary} 与最重的${topName}一致，说明你的能量集中在同一条线上，长处突出、短板也集中。`);
+    else if (godOfPattern) cross.push(`格局 ${primary}（偏${godOfPattern}）与最重的${topName}不在一条线上，内在会有两股力气拉扯：一边是格局给你的路，一边是你本能投入最多的事。`);
+  }
+  // ④ 神煞 × 十神：羊刃与七杀并见，是压力型结构
+  const hasRen = Array.isArray(r.shensha) && r.shensha.some((g) => (g.items || []).some((i) => i.name === '羊刃'));
+  if (hasRen && Number(groups['官杀'] || 0) >= 1) {
+    cross.push('命见羊刃且官杀有力，属压力驱动型：遇强则强，但需要出口，长期憋着容易内耗；运动或竞技类爱好比"忍"更有用。');
+  }
+  // ⑤ 夫妻宫 × 配偶星：日支与财/官是否同气
+  if (r.pillars?.day) {
+    const isM = r.input?.gender === 'male';
+    const spouseGod = isM ? '财' : '官杀';
+    const spVal = Number(groups[spouseGod] || 0);
+    const zhiWx = ZHI_WX[r.pillars.day.branch] || '';
+    if (spVal >= 2 && zhiWx && favor.includes(zhiWx)) cross.push(`配偶星（${spouseGod}）不弱，且日支 ${r.pillars.day.branch} 属喜用，感情中有实际助益，不只看感觉。`);
+    else if (spVal === 0) cross.push(`命局不见${spouseGod}，感情多靠自己主动创造场景；日支 ${r.pillars.day.branch} 更像"对方的样子"而不是"缘分的强度"。`);
+  }
+
   const ahead = idx >= 0 ? list.slice(idx + 1, idx + 4) : list.slice(0, 3);
 
   const dimensions = [
@@ -233,6 +276,7 @@ function baziInterpret(r) {
   ];
 
   const sections = [
+    ...(cross.length ? [{ key: 'cross', label: '交叉判断', text: cross.join('　') }] : []),
     {
       key: 'yongshen', label: '用神与忌神',
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
@@ -647,7 +691,7 @@ function daliurenInterpret(r) {
     },
     {
       key: 'geju', label: '课体与四课',
-      text: `本课为${pick(gj, 'name', '未定')}${gj.detail ? `（${gj.detail}）` : ''}。${ke.length ? `四课：${ke.map((k, i) => `${i + 1}课 ${k.top || ''}上${k.bottom || ''}下`).join('　')}` : ''}`,
+      text: `本课为${pick(gj, 'name', '未定')}${gj.detail ? `（${gj.detail}）` : ''}。${ke.length ? `四课：${ke.map((k, i) => `${i + 1}课 ${k.shang || ''}上${k.xia || ''}下`).join('　')}` : ''}`,
     },
   ];
 
@@ -812,8 +856,11 @@ const BUILDERS = {
  *                 传了就把最贴近的维度提前、在该维度点明问题与方向，并给出回显串
  * @returns {object|null} 结构化解析对象
  */
+import { interpretQimen } from './qimen-interpret.js';
+
 export function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
+  if (r.system === 'qimen') return interpretQimen(r, opts);
   const fn = BUILDERS[r.system];
   if (!fn) return null;
   let body;
@@ -848,3 +895,5 @@ export function interpret(r, opts) {
 }
 
 export default interpret;
+
+

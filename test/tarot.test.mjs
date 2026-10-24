@@ -1,10 +1,6 @@
 import { MAJOR, SUITS, MINOR, ROMAN, SPREADS, tarotDeck, drawTarot, tarotReading } from '../engine/tarot.js';
 
-let fails = 0;
-const ok = (label, cond, extra = '') => {
-  if (!cond) fails++;
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
-};
+import { ok, counts as stats } from './_harness.mjs';
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const KW = (s) => String(s || '').split(/\s+/).filter(Boolean);
 
@@ -153,4 +149,5 @@ ok('ROMAN 22 项且首尾正确', ROMAN.length === 22 && ROMAN[0] === '0' && ROM
 ok('SUITS 每项为 4 元组', SUITS.every((s) => Array.isArray(s) && s.length === 4));
 ok('MINOR 四个花色各 14 项', SUITS.every(([s]) => Array.isArray(MINOR[s]) && MINOR[s].length === 14));
 
-console.log(fails === 0 ? '\n全部 PASS（FAIL 数 0）' : `\nFAIL 数：${fails}`);
+const { fail: failCount } = stats();
+console.log(failCount === 0 ? '\n全部 PASS（FAIL 数 0）' : `\nFAIL 数：${failCount}`);

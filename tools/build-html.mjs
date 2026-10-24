@@ -1,4 +1,4 @@
-// 生成可双击打开的单文件 HTML（引擎 + 界面全部内联，无需服务器）
+﻿// 生成可双击打开的单文件 HTML（引擎 + 界面全部内联，无需服务器）
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -31,8 +31,8 @@ header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16p
 .tab{padding:8px 20px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:14.5px;font-family:inherit;white-space:nowrap}
 .tab:hover{background:var(--panel2)}
 .tab.on{background:var(--gold);border-color:transparent;color:#fff;font-weight:600}
-.bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px}
-.grp{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:start;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px}
+.grp{display:contents}
 .field{display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--dim)}
 /* 固定宽度而非 min-width：输入控件的默认固有宽度（20 字符）会把 1180px 下的单行输入区挤到换行 */
 .field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;outline:none;width:150px}
@@ -49,7 +49,7 @@ header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16p
 /* 必填未填：边框转红，提示复用 .err 的口径 */
 .field.invalid textarea{border-color:var(--bad);background:rgba(224,102,95,.06)}
 .field.check input{min-width:0;width:18px;height:18px;accent-color:var(--gold);padding:0}
-.go{margin-left:auto;padding:10px 22px;border-radius:6px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px}
+.go{margin-left:0;grid-column:4;justify-self:end;align-self:end;padding:10px 22px;border-radius:6px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px}
 .go:hover{filter:brightness(1.08)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{font-size:13px;padding:4px 10px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
@@ -75,8 +75,7 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .exp button{padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer}
 .exp button:hover{background:var(--panel2);border-color:var(--gold)}
 .exp .hint{font-size:13px;color:var(--dim)}
-.now{padding:10px 13px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--dim);font-family:inherit;font-size:15px;cursor:pointer}
-.now:hover{background:var(--panel2)}
+
 /* —— 竖屏（≤640px）：整页不横向滚动，输入区整行堆叠，盘面交给 panel-kit 的同名媒体查询 —— */
 @media (max-width:640px){
   body{font-size:15.5px}
@@ -86,8 +85,8 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .brand{font-size:19px}
   .tabs{margin-left:0;padding-bottom:4px;max-width:100%}
   .tab{flex:0 0 auto;padding:11px 17px;font-size:14px;min-height:44px}
-  .bar{flex-direction:column;align-items:stretch;gap:14px;padding:14px}
-  .grp{flex-direction:column;align-items:stretch;gap:14px}
+  .bar{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}
+    .field{min-width:0}
   .field{width:100%}
   .field input,.field select,.field textarea,#addr,#changing,#direction{width:100%;min-width:0;padding:11px 12px;font-size:16px;min-height:44px}
   #for-ask{flex-direction:column;align-items:stretch}
@@ -97,7 +96,6 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .seg{display:flex;width:100%}
   .seg button{flex:1;padding:12px 8px;min-height:44px}
   .go{margin-left:0;width:100%;padding:13px;font-size:16px;min-height:48px;border-radius:8px}
-  .now{width:100%;padding:12px;font-size:15px;min-height:46px;border-radius:8px}
   .tip{font-size:13px}
   .tip .auto-note{font-size:13px}
   .cast-at{font-size:13px}
@@ -114,7 +112,7 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   @page{size:A4 portrait;margin:12mm}
   body{background:#fff;padding:0;font-size:12pt}
   .wrap{max-width:none;padding:0}
-  .tabs,.bar,.tip,.go,.now,.no-print,.exp{display:none!important}
+  .tabs,.bar,.tip,.go,.no-print,.exp{display:none!important}
   header{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #bbb}
   .brand{font-size:15pt}
   .brand small{display:block}
@@ -205,7 +203,6 @@ function page() {
         </select>
       </label>
     </div>
-    <button id="now" class="now" title="换成此刻并立即起卦">此刻</button>
     <button id="go" class="go">排盘</button>
   </div>
 
@@ -235,3 +232,7 @@ const out = page();
 const target = path.resolve(root, '..', '命理排盘.html');
 fs.writeFileSync(target, out, 'utf8');
 console.log(`written: ${target}  (${(out.length / 1024).toFixed(1)} KB)`);
+
+
+
+

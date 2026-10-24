@@ -1,8 +1,7 @@
 import { buildZiwei, ziweiTianfuIndex, hourBranchIndex } from '../engine/ziwei.js';
 import { solarToLunar } from '../engine/lunar.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 // 1) 时辰序
 ok('00:30 = 子时', hourBranchIndex(0, 30) === 0);

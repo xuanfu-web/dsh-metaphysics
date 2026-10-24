@@ -1,37 +1,107 @@
+﻿// ── 历史记录（localStorage，只存参数，最多 20 条） ──
+const HIST_KEY = 'dsh-metaphysics/history-v1';
+function loadHistory() {
+  try {
+    const raw = window.localStorage && window.localStorage.getItem(HIST_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.slice(0, 20) : [];
+  } catch (e) { return []; }
+}
+function saveHistory(list) {
+  try {
+    if (window.localStorage) window.localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 20)));
+  } catch (e) { /* 隐私模式或配额满：静默降级，不影响排盘 */ }
+}
+const sameEntry = (a, b) =>
+  a.kind === b.kind && a.date === b.date && a.time === b.time && a.gender === b.gender
+  && a.address === b.address && a.lines === b.lines && a.question === b.question
+  && a.mhMode === b.mhMode && a.upper === b.upper && a.lower === b.lower;
+
+/** 历史条目的显示文案：一屏能看出是哪个盘 */
+function HISTORY_LABEL(kind, r) {
+  if (kind === 'bazi') return Object.values(r.pillars || {}).map((p) => p.ganzhi).join(' ');
+  if (kind === 'ziwei') return `${r.soul ? r.soul.branch : ''}宫 ${r.bureau ? r.bureau.name : ''} ${r.lunar ? r.lunar.year + '年' : ''}`.trim();
+  if (kind === 'liuyao') return r.ben && r.ben.name ? r.ben.name : '';
+  if (kind === 'meihua') return r.ben && r.ben.name ? `${r.ben.name} 动${r.moving}` : '';
+  if (kind === 'daliuren') return `${r.dayGanZhi || ''} ${r.geJu ? r.geJu.name : ''}`;
+  return '';
+}
 // Client 半：命理排盘面板。由 build-client.mjs 注入 React / h / Engine / __PP。
 const PP = window.__PP;
 const CSS = `
 .mp-wrap{height:100%;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px}
-.mp-head{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
-.mp-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.mp-tab{padding:7px 17px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:14px;transition:background .12s,color .12s}
-.mp-tab:hover{background:var(--dsw-alias-bg-layer-2)}
-.mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:#fff}
-.mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary)}
-.mp-input{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;min-width:132px}
+/* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
+.mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
+/* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
+.mp-panel{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:14px;padding:16px 18px 14px;margin-bottom:14px}
+.mp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:end}
+.mp-lbl{display:block;height:18px;line-height:18px;font-size:12.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-checks{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px;font-size:12.5px;color:var(--dsw-alias-label-secondary)}
+.mp-checks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.mp-askblock{margin-top:14px;display:flex;flex-direction:column;gap:5px}
+.mp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.mp-tabs{display:inline-flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;padding:4px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:11px;width:100%;max-width:940px}
+.mp-tab{padding:7px 15px;border-radius:8px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13.5px;transition:background .12s,color .12s}
+.mp-tab:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
+.mp-tab.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
+.mp-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px}
 .mp-input:focus{border-color:var(--dsw-alias-brand-primary)}
 /* 所问之事：多行文本，视觉与其他输入框一致 */
-.mp-textarea{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:180px;resize:vertical;line-height:1.5;font-family:inherit}
+.mp-textarea{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:8px 11px;font-size:14px;outline:none;width:100%;min-width:0;resize:vertical;line-height:1.5;font-family:inherit}
 .mp-textarea:focus{border-color:var(--dsw-alias-brand-primary)}
 .mp-textarea.invalid{border-color:var(--dsw-alias-state-error-primary)}
-.mp-ask{flex:1 1 240px;min-width:0}
-.mp-dir{min-width:104px}
-.mp-btn{padding:8px 20px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px}
+.mp-btn{padding:8px 22px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px;font-weight:600;min-width:132px}
 .mp-btn.ghost{background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
-.mp-seg{display:inline-flex;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden}
-.mp-seg button{padding:6px 13px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:13px;cursor:pointer}
+.mp-seg{display:flex;width:100%;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden;height:36px}
+.mp-seg button{flex:1;padding:0 8px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:13px;cursor:pointer}
 .mp-seg button.on{background:var(--dsw-alias-brand-primary);color:#fff}
-.mp-hint{font-size:12.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
+.mp-hist{margin-bottom:14px}
+.mp-hist-h{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--dsw-alias-label-secondary);margin-bottom:6px}
+.mp-hist-clear{background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer;padding:0}
+.mp-hist-clear:hover{color:var(--dsw-alias-state-error-primary)}
+.mp-hist-list{display:flex;gap:8px;flex-wrap:wrap}
+.mp-hist-item{display:flex;align-items:baseline;gap:6px;padding:6px 10px;border-radius:9px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-primary);font-size:12px;cursor:pointer;max-width:100%}
+.mp-hist-item:hover{border-color:var(--dsw-alias-brand-primary)}
+.mp-hist-item b{font-weight:600}
+.mp-hist-item span{color:var(--dsw-alias-label-secondary)}
+.mp-hist-item i{font-style:normal;color:var(--dsw-alias-label-secondary);opacity:.7;font-size:11px}.mp-hint{font-size:12.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
 .mp-card{margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1)}
 .mp-flat{margin-top:16px;padding:0;border:none;background:transparent;border-radius:0}
 .mp-dim{color:var(--dsw-alias-label-secondary)}
-.mp-err{margin-top:16px;padding:10px 14px;border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 14%,transparent);color:var(--dsw-alias-state-error-primary)}
+.mp-err{margin-top:16px;padding:9px 14px;border-radius:8px;border-left:3px solid var(--dsw-alias-state-error-primary);background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 8%,transparent);color:var(--dsw-alias-state-error-primary);font-size:13px}
+.mp-empty{margin-top:26px;padding:34px 24px;border:1px dashed var(--dsw-alias-border-l1);border-radius:12px;text-align:center;color:var(--dsw-alias-label-secondary);font-size:13px;line-height:2}
+.mp-empty b{display:block;font-size:15px;color:var(--dsw-alias-label-primary);margin-bottom:6px;font-weight:600}
+.mp-note{margin-top:12px;padding:9px 14px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--dsw-alias-state-warning-primary) 14%,transparent);color:var(--dsw-alias-state-warning-primary)}
 .mp-bar{display:flex;gap:8px;align-items:center;margin-top:14px}
 /* 起卦类 tab 的「已自动取当前时刻」提示（.mp-hint 的补充行，不额外占横向空间） */
 .mp-auto{margin:-8px 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
 /* 结果头部的「起卦时刻」一行 */
 .mp-cast{margin:0 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
 .mp-cast b{color:var(--dsw-alias-label-primary);font-weight:600}
+/* ── 窄屏 / 手机：网格降列，按钮占满 ── */
+@media (max-width:860px){
+  .mp-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:720px){
+  .mp-wrap{padding:14px 14px 36px}
+  .mp-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:12px}
+  .mp-tab{padding:9px 4px;font-size:13.5px;text-align:center}
+  .mp-input,.mp-textarea{padding:10px 12px;font-size:16px;min-height:44px;height:auto}
+  .mp-textarea{min-height:76px}
+  .mp-actions{margin-top:12px}
+  .mp-btn{width:100%;padding:12px;font-size:15px;min-height:46px;min-width:0}
+  .mp-hint,.mp-auto,.mp-cast{font-size:12.5px}
+  .mp-empty{margin-top:18px;padding:24px 16px;font-size:12.5px}
+  .mp-bar{flex-wrap:wrap}
+}
+@media (max-width:480px){
+  .mp-row{grid-template-columns:1fr}
+}
+@media (max-width:420px){
+  .mp-wrap{padding:12px 10px 32px}
+  .mp-tab{font-size:13px;padding:8px 2px}
+}
 `;
 
 const { useState, useEffect } = React;
@@ -57,7 +127,8 @@ const TABS = [
   { k: 'liuyao', label: '六爻', timeLabel: '起卦时刻', hint: '六爻不需要出生时间：只用起卦当下的日辰定六神、月建定旺衰，卦由摇出。' },
   { k: 'meihua', label: '梅花', timeLabel: '起卦时刻', hint: '梅花用起卦时刻的年月日时数成卦，也可直接给两个数字起卦；与出生时间无关。' },
   { k: 'daliuren', label: '六壬', timeLabel: '起卦时刻', hint: '大六壬用起卦时刻的日干支、时支与月将起天地盘；同样与出生时间无关。' },
-  { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
+  { k: 'hepan', label: '合盘', timeLabel: '你的出生时刻', hint: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。' },
+    { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
 ];
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -72,7 +143,7 @@ function nowParts() {
 // cast ：六爻 / 梅花 / 大六壬 —— 要的是「起卦时刻」，占的就是当下，自动取本机当前时刻
 // none ：塔罗 —— 不看时间，日期时间字段整个隐藏
 const TIME_KIND = {
-  ziwei: 'birth', bazi: 'birth',
+  ziwei: 'birth', bazi: 'birth', hepan: 'birth',
   liuyao: 'cast', meihua: 'cast', daliuren: 'cast',
   tarot: 'none',
 };
@@ -89,11 +160,20 @@ function App() {
   const [time, setTime] = useState('14:30');
   const [gender, setGender] = useState('female');
   const [address, setAddress] = useState('');
+  // 合盘用的第二个人
+  const [pDate, setPDate] = useState('1992-08-15');
+  const [pTime, setPTime] = useState('10:00');
+  const [pGender, setPGender] = useState('female');
+  const [pAddress, setPAddress] = useState('');
+  const [hpChart, setHpChart] = useState('bazi');
   const [trueSolar, setTrueSolar] = useState(true);
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
+  const [hist, setHist] = useState(() => loadHistory());
+  const [replayArgs, setReplayArgs] = useState(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [count, setCount] = useState('3');
   const [question, setQuestion] = useState('');
   const [direction, setDirection] = useState('general');
@@ -112,7 +192,7 @@ function App() {
   const [manual, setManual] = useState({ birth: null, cast: null });
 
   const meta = TABS.find((t) => t.k === tab) || TABS[0];
-  const isBirth = tab === 'bazi' || tab === 'ziwei';
+  const isBirth = tab === 'bazi' || tab === 'ziwei' || tab === 'hepan';
   const timeKind = kindOf(tab);
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
   const showDT = tab !== 'tarot' && usesTimeInput;
@@ -140,9 +220,25 @@ function App() {
       }
       if (k === 'liuyao') {
         const parsed = lines.split(/[^0-9]+/).filter(Boolean).map(Number);
-        if (parsed.length === 6) args.lines = parsed;
+        const bad = parsed.filter((n) => ![6, 7, 8, 9].includes(n));
+        if (parsed.length === 6 && bad.length === 0) {
+          args.lines = parsed;
+        } else if (lines.trim()) {
+          setNotice(parsed.length !== 6
+            ? `爻值需要正好 6 个数字（当前 ${parsed.length} 个），本次按随机摇卦。`
+            : `爻值只能是 6/7/8/9（收到 ${bad.join('/')}），本次按随机摇卦。`);
+        }
       }
       if (k === 'tarot') args.count = Number(count);
+      if (k === 'hepan') {
+        args.chart = hpChart;
+        args.partner = {
+          datetime: `${pDate}T${pTime}`,
+          gender: pGender,
+          address: pAddress.trim() || undefined,
+          trueSolar,
+        };
+      }
       // 所问之事必填：问事的体系不给一份没有落点的解读
       if (needAsk(k)) {
         if (!question.trim()) {
@@ -157,8 +253,19 @@ function App() {
       if (k === 'meihua') {
         args.mode = mh;
         if (mh === 'number') {
+          // 空输入会被 Number('') 变成 0，进而余 8 起成坤为地——必须挡掉
+          if (upper.trim() === '' || lower.trim() === '') {
+            setError('数字起卦需要填两个数（第一个数定上卦、第二个数定下卦）。');
+            setResult(null);
+            return;
+          }
           args.upper = Number(upper);
           args.lower = Number(lower);
+          if (!Number.isFinite(args.upper) || !Number.isFinite(args.lower)) {
+            setError('两个数都要是数字，例如 17 和 29。');
+            setResult(null);
+            return;
+          }
           if (changing !== '') args.changing = Number(changing);
         }
       }
@@ -170,8 +277,24 @@ function App() {
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       setResult({ kind: k, r, it, at: dt, timed });
-      setError('');
-      setCopied('');
+      setError('');      setCopied('');
+      // 历史记录：塔罗是随机抽牌，重放会变成另一副牌，不入历史
+      if (k !== 'tarot') {
+        const entry = {
+          kind: k, date, time, gender, address,
+          lines: k === 'liuyao' ? lines : '',
+          question: needAsk(k) ? question.trim() : '',
+          direction, count,
+          mhMode, upper, lower, changing,
+          label: HISTORY_LABEL(k, r),
+          at: Date.now(),
+        };
+        setHist((prev) => {
+          const next = [entry, ...prev.filter((x) => !sameEntry(x, entry))].slice(0, 20);
+          saveHistory(next);
+          return next;
+        });
+      }
     } catch (e) {
       setError(e && e.message ? e.message : String(e));
       setResult(null);
@@ -207,6 +330,21 @@ function App() {
     // 「此刻」是明确的「回到自动」：清掉该类下的手动值，以后切 tab 仍会跟随当前时刻
     if (timeKind !== 'none') setManual((m) => Object.assign({}, m, { [timeKind]: null }));
     run(tab, t);
+  };
+
+  /**
+   * 主按钮：时间仍是「自动」状态（没手动改过）时，点它就取当下再起卦；
+   * 手动改过则用你填的时刻。这样不必再单独放一个「此刻」按钮。
+   */
+  const go = () => {
+    if (timeKind !== 'none' && !manual[timeKind]) {
+      const t = nowParts();
+      setDate(t.date);
+      setTime(t.time);
+      run(tab, t);
+      return;
+    }
+    run(tab);
   };
 
   /** 切起卦方式（时间/数字）：立刻重起一卦，避免结果头部留着上一模式的「起卦时刻」 */
@@ -254,84 +392,149 @@ function App() {
     } catch (e) { setCopied('复制失败'); }
   };
 
-  const field = (label, node) => h('label', { className: 'mp-field' }, label, node);
+  const field = (label, node) => h('label', { className: 'mp-field' }, h('span', { className: 'mp-lbl' }, label), node);
+
+  /** 点历史条目：先把参数回填到表单，再交给一个 effect 触发重排（避免闭包读到旧 state） */
+  const replay = (x) => {
+    setTab(x.kind);
+    if (x.date) setDate(x.date);
+    if (x.time) setTime(x.time);
+    if (x.gender) setGender(x.gender);
+    setAddress(x.address || '');
+    setLines(x.lines || '');
+    setQuestion(x.question || '');
+    setDirection(x.direction || 'general');
+    setCount(x.count || '3');
+    setMhMode(x.mhMode || 'time');
+    setUpper(x.upper || '');
+    setLower(x.lower || '');
+    setChanging(x.changing || '');
+    setAskInvalid(false);
+    setReplayArgs(x);
+  };
+  const clearHist = () => { setHist([]); saveHistory([]); };
 
   useEffect(() => { run('ziwei'); }, []);
+  useEffect(() => {
+    if (!replayArgs) return;
+    const k = replayArgs.kind;
+    setReplayArgs(null);
+    run(k);
+  }, [replayArgs]);
 
   const children = [
-    h('div', { key: 'tabs', className: 'mp-tabs' }, TABS.map((t) =>
+    h('div', { key: 'tabs', className: 'mp-tabs', role: 'tablist', 'aria-label': '命理体系' }, TABS.map((t) =>
       h('button', {
         key: t.k,
+        role: 'tab',
+        'aria-selected': tab === t.k ? 'true' : 'false',
+        tabIndex: tab === t.k ? 0 : -1,
         className: 'mp-tab' + (tab === t.k ? ' on' : ''),
         onClick: () => switchTo(t.k),
       }, t.label))),
 
-    h('div', { key: 'head', className: 'mp-head' },
-      showDT ? field(isBirth ? '出生日期（公历）' : '起卦日期（公历）',
-        h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
-      showDT ? field(isBirth ? '出生时刻' : '起卦时刻',
-        h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => editTime(e.target.value) })) : null,
-      isBirth ? field('性别', h('select', {
-        className: 'mp-input', value: gender, onChange: (e) => setGender(e.target.value),
-      }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
-      isBirth ? field('出生地（省/市即可）', h('input', {
-        className: 'mp-input', style: { minWidth: 200 }, placeholder: '如 河北石家庄 / 成都', value: address,
-        onChange: (e) => setAddress(e.target.value),
-      })) : null,
-      isBirth ? h('label', { key: 'ts', className: 'mp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 6 } },
-        h('input', { type: 'checkbox', checked: trueSolar, onChange: (e) => setTrueSolar(e.target.checked) }), '真太阳时') : null,
-      isBirth ? h('label', { key: 'og', className: 'mp-field', style: { flexDirection: 'row', alignItems: 'center', gap: 6 }, title: '开启后会请求 OpenStreetMap，把区县/村落到更精确的坐标' },
-        h('input', { type: 'checkbox', checked: onlineGeo, onChange: (e) => setOnlineGeo(e.target.checked) }), '联网精确到区县') : null,
-      tab === 'liuyao' ? field('六爻（可空，空则随机）', h('input', {
-        className: 'mp-input', placeholder: '9 7 8 8 7 6', value: lines,
-        onChange: (e) => setLines(e.target.value),
-      })) : null,
-      tab === 'meihua' ? field('起卦方式', h('div', { className: 'mp-seg' },
-        h('button', { className: mhMode === 'time' ? 'on' : '', onClick: () => switchMode('time') }, '时间起卦'),
-        h('button', { className: mhMode === 'number' ? 'on' : '', onClick: () => switchMode('number') }, '数字起卦'))) : null,
-      (tab === 'meihua' && mhMode === 'number') ? field('第一个数', h('input', {
-        className: 'mp-input', style: { minWidth: 88 }, value: upper, placeholder: '如 17',
-        onChange: (e) => setUpper(e.target.value),
-      })) : null,
-      (tab === 'meihua' && mhMode === 'number') ? field('第二个数', h('input', {
-        className: 'mp-input', style: { minWidth: 88 }, value: lower, placeholder: '如 29',
-        onChange: (e) => setLower(e.target.value),
-      })) : null,
-      (tab === 'meihua' && mhMode === 'number') ? field('动爻（可空）', h('input', {
-        className: 'mp-input', style: { minWidth: 88 }, value: changing, placeholder: '1-6',
-        onChange: (e) => setChanging(e.target.value),
-      })) : null,
-      // 所问之事 + 询问方向：问事的体系共用，问题必填，两者都会交给下方解读
-      needAsk(tab) ? field('所问之事（必填）', h('textarea', {
-        className: 'mp-textarea' + (askInvalid ? ' invalid' : ''),
-        rows: 2, value: question,
-        placeholder: '用一句话描述所问之事，例如：今年是否适合换工作？',
-        onChange: (e) => { setQuestion(e.target.value); setAskInvalid(false); },
-        onBlur: (e) => refreshInterpret(undefined, e.target.value),
-      })) : null,
-      needAsk(tab) ? field('询问方向', h('select', {
-        className: 'mp-input mp-dir', value: direction,
-        onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
-      }, (Engine.DIRECTIONS || []).map((d) => h('option', { key: d.key, value: d.key }, d.label)))) : null,
-      tab === 'tarot' ? field('张数', h('select', {
-        className: 'mp-input', value: count, onChange: (e) => setCount(e.target.value),
-      }, h('option', { value: '1' }, '1 张 · 指引'), h('option', { value: '3' }, '3 张 · 过去现在未来'), h('option', { value: '5' }, '5 张 · 十字牌阵'))) : null,
-      tab !== 'tarot' ? h('button', {
-        key: 'now', className: 'mp-btn ghost', style: { padding: '7px 14px' }, title: '把时间换成此刻并立即起卦',
-        onClick: runNow,
-      }, '此刻') : null,
-      h('button', { key: 'go', className: 'mp-btn', onClick: () => run(tab) },
-        tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : '起卦')),
+    h('div', { key: 'head', className: 'mp-panel' },
+      h('div', { className: 'mp-row' },
+        showDT ? field(isBirth ? '出生日期（公历）' : '起卦日期（公历）',
+          h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
+        showDT ? field(isBirth ? '出生时刻' : '起卦时刻',
+          h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => editTime(e.target.value) })) : null,
+        isBirth ? field('性别', h('select', {
+          className: 'mp-input', value: gender, onChange: (e) => setGender(e.target.value),
+        }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
+        isBirth ? field('出生地（省/市即可）', h('input', {
+          className: 'mp-input', placeholder: '如 河北石家庄 / 成都', value: address,
+          onChange: (e) => setAddress(e.target.value),
+        })) : null,
+        tab === 'hepan' ? field('对方出生日期', h('input', {
+          className: 'mp-input', type: 'date', value: pDate, onChange: (e) => setPDate(e.target.value),
+        })) : null,
+        tab === 'hepan' ? field('对方出生时刻', h('input', {
+          className: 'mp-input', type: 'time', value: pTime, onChange: (e) => setPTime(e.target.value),
+        })) : null,
+        tab === 'hepan' ? field('对方性别', h('select', {
+          className: 'mp-input', value: pGender, onChange: (e) => setPGender(e.target.value),
+        }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
+        tab === 'hepan' ? field('合盘方式', h('div', { className: 'mp-seg' },
+          h('button', { className: hpChart === 'bazi' ? 'on' : '', onClick: () => setHpChart('bazi') }, '八字'),
+          h('button', { className: hpChart === 'ziwei' ? 'on' : '', onClick: () => setHpChart('ziwei') }, '紫微'))) : null,        tab === 'hepan' ? field('对方出生地（可空）', h('input', {
+          className: 'mp-input', placeholder: '如 四川成都', value: pAddress,
+          onChange: (e) => setPAddress(e.target.value),
+        })) : null,
+        needAsk(tab) ? field('询问方向', h('select', {
+          className: 'mp-input', value: direction,
+          onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
+        }, (Engine.DIRECTIONS || []).map((d) => h('option', { key: d.key, value: d.key }, d.label)))) : null,
+        tab === 'tarot' ? field('张数', h('select', {
+          className: 'mp-input', value: count, onChange: (e) => setCount(e.target.value),
+        }, h('option', { value: '1' }, '1 张 · 指引'), h('option', { value: '3' }, '3 张 · 过去现在未来'), h('option', { value: '5' }, '5 张 · 十字牌阵'))) : null,
+        tab === 'liuyao' ? field('六爻（可空）', h('input', {
+          className: 'mp-input', placeholder: '空则随机，如 9 7 8 8 7 6', value: lines,
+          onChange: (e) => setLines(e.target.value),
+        })) : null,
+        tab === 'meihua' ? field('起卦方式', h('div', { className: 'mp-seg' },
+          h('button', { className: mhMode === 'time' ? 'on' : '', onClick: () => switchMode('time') }, '时间'),
+          h('button', { className: mhMode === 'number' ? 'on' : '', onClick: () => switchMode('number') }, '数字'))) : null,
+        (tab === 'meihua' && mhMode === 'number') ? field('第一个数', h('input', {
+          className: 'mp-input', value: upper, placeholder: '如 17',
+          onChange: (e) => setUpper(e.target.value),
+        })) : null,
+        (tab === 'meihua' && mhMode === 'number') ? field('第二个数', h('input', {
+          className: 'mp-input', value: lower, placeholder: '如 29',
+          onChange: (e) => setLower(e.target.value),
+        })) : null,
+        (tab === 'meihua' && mhMode === 'number') ? field('动爻（可空）', h('input', {
+          className: 'mp-input', value: changing, placeholder: '1-6',
+          onChange: (e) => setChanging(e.target.value),
+        })) : null,
+      ),
+      isBirth ? h('div', { className: 'mp-checks' },
+        h('label', { title: '按出生地经度把钟表时间换算成真太阳时' },
+          h('input', { type: 'checkbox', checked: trueSolar, onChange: (e) => setTrueSolar(e.target.checked) }), '真太阳时'),
+        h('label', { title: '开启后会请求 OpenStreetMap，把区县/村落到更精确的坐标' },
+          h('input', { type: 'checkbox', checked: onlineGeo, onChange: (e) => setOnlineGeo(e.target.checked) }), '联网精确到区县')) : null,
+      // 所问之事独占一行：它是问事体系的核心输入，不该挤在字段堆里
+      needAsk(tab) ? h('div', { className: 'mp-askblock' },
+        h('span', { className: 'mp-lbl' }, '所问之事（必填）'),
+        h('textarea', {
+          className: 'mp-textarea' + (askInvalid ? ' invalid' : ''),
+          rows: 2, value: question,
+          placeholder: '用一句话描述所问之事，例如：今年是否适合换工作？',
+          onChange: (e) => { setQuestion(e.target.value); setAskInvalid(false); },
+          onBlur: (e) => refreshInterpret(undefined, e.target.value),
+        })) : null,
+      h('div', { key: 'actions', className: 'mp-actions' },
+        h('button', { className: 'mp-btn', onClick: go, title: '时间仍为自动时，点它会取当下再起卦' },
+          tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : tab === 'hepan' ? '合盘' : '起卦'))),
 
     h('div', { key: 'hint', className: 'mp-hint' }, meta.hint),
+
+    hist.length ? h('div', { key: 'hist', className: 'mp-hist' },
+      h('div', { className: 'mp-hist-h' },
+        h('span', null, '最近排过'),
+        h('button', { className: 'mp-hist-clear', onClick: clearHist }, '清空')),
+      h('div', { className: 'mp-hist-list' }, hist.map((x, i) =>
+        h('button', {
+          key: i, className: 'mp-hist-item', title: `${x.date} ${x.time}`,
+          onClick: () => replay(x),
+        },
+          h('b', null, (TABS.find((t) => t.k === x.kind) || {}).label || x.kind),
+          h('span', null, x.label || '—'),
+          h('i', null, `${x.date.slice(5)} ${x.time}`))))) : null,
 
     (timeKind === 'cast' && usesTimeInput) ? h('div', { key: 'auto', className: 'mp-auto' },
       // 文案分清「自动取的」和「你手动填的」，免得明明改过还说自动取
       manual.cast
-        ? `起卦时刻现在用的是你手动填的（${time}）；点「此刻」可回到自动取当下。`
-        : `起卦时刻已自动取你的本机时间（${time}）；想用别的时刻可以直接改，或点「此刻」重新取当下。`) : null,
+        ? `起卦时刻用的是你手动填的（${time}）；想跟随当下，把时间改回或清空即可。`
+        : `起卦时刻已自动取本机时间（${time}），每次点起卦都会重新取当下；想固定时刻就在上面改。`) : null,
 
     error ? h('div', { key: 'err', className: 'mp-err' }, error) : null,
+    notice ? h('div', { key: 'ntc', className: 'mp-note' }, notice) : null,
+
+    (!result && !error) ? h('div', { key: 'empty', className: 'mp-empty' },
+      h('b', null, tab === 'ziwei' ? '填好出生信息，点「排盘」' : tab === 'bazi' ? '填好出生信息，点「排盘」'
+        : tab === 'tarot' ? '写下想问的事，点「抽牌」' : '写下所问之事，点「起卦」'),
+      tab === 'ziwei' || tab === 'bazi' ? '出生日期、时刻与性别即可；出生地只影响真太阳时。' : '起卦时刻已自动取当下，也可以手动改。') : null,
 
     result ? h('div', {
       key: 'card',
@@ -343,6 +546,7 @@ function App() {
             : result.kind === 'bazi' ? PP.baziHTML(result.r)
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
                 : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
+                  : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : PP.liuyaoHTML(result.r),
           result.it,
@@ -436,3 +640,10 @@ return {
     }
   },
 };
+
+
+
+
+
+
+

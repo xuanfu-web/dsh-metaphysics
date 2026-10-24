@@ -130,8 +130,8 @@ for (const [name, args] of Object.entries(CASES)) {
   ok(text.includes('以上解析'), 'renderText 带上免责声明');
   ok(!renderText(compute({ ...CASES.bazi })).includes('解析与详解'), '未要求解析时文本不膨胀');
   let msg = '';
-  try { compute({ system: 'qimen', datetime: '1990-05-12T14:30' }); } catch (e) { msg = String(e.message); }
-  ok(/meihua/.test(msg) && /daliuren/.test(msg) && /ziwei/.test(msg), '未知体系报错列出全部六种体系', msg);
+  try { compute({ system: 'zzz-unknown', datetime: '1990-05-12T14:30' }); } catch (e) { msg = String(e.message); }
+  ok(/bazi/.test(msg) && /ziwei/.test(msg) && /liuyao/.test(msg) && /meihua/.test(msg) && /daliuren/.test(msg) && /qimen/.test(msg) && /hepan/.test(msg) && /tarot/.test(msg), '未知体系报错列出全部八种体系', msg);
 }
 ok(interpret(null) === null, 'interpret(null) 返回 null');
 ok(interpret({}) === null, 'interpret({}) 返回 null');
@@ -145,7 +145,9 @@ const EDGE = [
   ['梅花 极大数', { system: 'meihua', mode: 'number', upper: 99999, lower: 88888 }],
   ['梅花 零', { system: 'meihua', mode: 'number', upper: 0, lower: 0 }],
   ['梅花 负数', { system: 'meihua', mode: 'number', upper: -3, lower: -5 }],
-  ['六爻 非法值', { system: 'liuyao', datetime: '2026-03-03T08:00', lines: 'abc' }],
+  // 六爻「非法值」自 0.14.1 起在 compute 层明确报错（见 test/args.test.mjs），
+  // 这里换成合法的极端盘：六爻全动，检验解读层仍能出满五维
+  ['六爻 六爻全动', { system: 'liuyao', datetime: '2026-03-03T08:00', lines: [6, 6, 6, 9, 9, 9] }],
   ['六壬 子时', { system: 'daliuren', datetime: '2026-01-01T00:30' }],
 ];
 for (const [name, args] of EDGE) {
@@ -160,3 +162,6 @@ for (const [name, args] of EDGE) {
 
 console.log(`\n———— ${pass} PASS / ${fail} FAIL ————`);
 process.exit(fail ? 1 : 0);
+
+
+

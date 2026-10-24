@@ -1,5 +1,8 @@
 node_modules/
 *.tgz
+# 临时调试脚本：test/_moon-debug.mjs、自检生成的 test/_broken.test.mjs 等
 test/_*.mjs
+# 但共用断言工具必须入库
+!test/_harness.mjs
 .DS_Store
 fork.json

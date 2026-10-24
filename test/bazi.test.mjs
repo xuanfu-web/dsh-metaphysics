@@ -1,7 +1,6 @@
 import { buildBazi } from '../engine/bazi.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 const four = (r) => ['year', 'month', 'day', 'hour'].map((k) => r.pillars[k].ganzhi).join(' ');
 

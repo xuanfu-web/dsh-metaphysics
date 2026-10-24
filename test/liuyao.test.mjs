@@ -1,7 +1,6 @@
 import { buildLiuyao, hexagramFromBits, HEXAGRAM_COUNT } from '../engine/liuyao.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 ok('六十四卦表完整', HEXAGRAM_COUNT === 64, String(HEXAGRAM_COUNT));
 

@@ -3,8 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { assemble } from '../tools/build-client.mjs';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 const reactStub = { createElement: () => null, useState: () => [null, () => {}] };
 
@@ -86,8 +85,16 @@ ok('紫微输出带真太阳时', !!(ZK.solarTime && ZK.solarTime.trueSolarText)
 // ── 梅花易数 ──
 const MH = E.compute({ system: 'meihua', mode: 'time', datetime: '1996-01-19T07:40' });
 ok('梅花时间起卦', MH.ben.name === '雷天大壮' && MH.moving === 3, `${MH.ben.name} 动${MH.moving}`);
-ok('梅花互卦/变卦/错综', MH.hu.name === '泽天夬' && MH.bian.name === '雷泽归妹' && MH.cuo.name === '风地观' && MH.zong.name === '天雷无妄',
+ok('梅花互卦/变卦/错综', MH.hu.name === '泽天夬' && MH.bian.name === '雷泽归妹' && MH.cuo.name === '风地观' && MH.zong.name === '天山遁',
   `${MH.hu.name}/${MH.bian.name}/${MH.cuo.name}/${MH.zong.name}`);
+// 综卦＝整卦倒转，用标准覆卦对校验（33/34、43/44、11/12 互为综卦）
+const zongPair = (u, l) => E.compute({ system: 'meihua', mode: 'number', upper: u, lower: l });
+const Z1 = zongPair(1, 5);  // 天风姤 → 综 泽天夬
+const Z2 = zongPair(4, 1);  // 雷天大壮 → 综 天山遁
+const Z3 = zongPair(8, 1);  // 地天泰 → 综 天地否
+ok('综卦 姤→夬', Z1.ben.name === '天风姤' && Z1.zong.name === '泽天夬', `${Z1.ben.name}→${Z1.zong.name}`);
+ok('综卦 大壮→遁', Z2.ben.name === '雷天大壮' && Z2.zong.name === '天山遁', `${Z2.ben.name}→${Z2.zong.name}`);
+ok('综卦 泰→否', Z3.ben.name === '地天泰' && Z3.zong.name === '天地否', `${Z3.ben.name}→${Z3.zong.name}`);
 ok('梅花体用', MH.bodyUse.body.trigram === '震' && MH.bodyUse.use.trigram === '乾' && MH.bodyUse.level === '凶',
   `${MH.bodyUse.body.trigram}/${MH.bodyUse.use.trigram}/${MH.bodyUse.level}`);
 const MN = E.compute({ system: 'meihua', mode: 'number', upper: 17, lower: 23 });

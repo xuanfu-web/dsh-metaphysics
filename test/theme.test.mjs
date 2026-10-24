@@ -1,4 +1,4 @@
-// 0.11.0：深色主题（变量化）、导出 PDF（打印样式）、窄屏 tab 排布
+﻿// 0.11.0：深色主题（变量化）、导出 PDF（打印样式）、窄屏 tab 排布
 import fs from 'node:fs';
 
 let pass = 0;
@@ -81,7 +81,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   const printAt = HTML.indexOf('@media print{');
   ok(printAt > 0, '存在 @media print 块');
   const printBlock = HTML.slice(printAt, HTML.indexOf('`;', printAt));
-  ok(/\.tabs,\.bar,\.tip,\.go,\.now,\.no-print,\.exp\{display:none!important\}/.test(printBlock), '打印时隐藏输入区/tab/导出按钮');
+  ok(/\.tabs,\.bar,\.tip,\.go,\.no-print,\.exp\{display:none!important\}/.test(printBlock), '打印时隐藏输入区/tab/导出按钮');
   ok(/\.pp,#out \.mp-it\{break-inside:avoid/.test(printBlock), '盘面与解读不被撕页');
   ok(/@page\{size:A4 portrait/.test(printBlock), '打印纸张默认 A4 纵向');
   ok(/print-color-adjust:exact/.test(printBlock), '打印保留四化色块颜色');
@@ -109,3 +109,4 @@ if (fails.length) {
   process.exit(1);
 }
 console.log(`PASS 深色/导出/窄屏排布 ${pass} 项断言`);
+

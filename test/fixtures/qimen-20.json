@@ -1,0 +1,6602 @@
+[
+  {
+    "slot": {
+      "solarDate": "2026-10-24",
+      "hour": 23,
+      "shichen": "子"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 24,
+        "hour": 23,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 24,
+        "h": 23,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 23,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "庚子"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "子",
+        "monthCN": "九",
+        "dayCN": "十五"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天芮",
+        "fuGong": 6,
+        "fuYuanGong": 5,
+        "valueGate": "死门",
+        "valueGong": 2,
+        "hourXunYi": "辛",
+        "dayXunYi": "戊",
+        "hourStem": "庚",
+        "ma": {
+          "zhi": "寅",
+          "gong": 8
+        },
+        "kong": {
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "gong": [
+            4,
+            4
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "九天",
+          "gate": "休门",
+          "anGan": "丙",
+          "tianGan": "己",
+          "diGan": "丙",
+          "geju": {
+            "name": "火悖地户",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "太阴",
+          "gate": "死门",
+          "anGan": "丁",
+          "tianGan": "壬",
+          "diGan": "丁",
+          "geju": {
+            "name": "干合蛇刑",
+            "luck": "中"
+          },
+          "tianState": "养",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "朱雀",
+          "gate": "伤门",
+          "anGan": "癸",
+          "tianGan": "丙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "凶"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "勾陈",
+          "gate": "杜门",
+          "anGan": "壬",
+          "tianGan": "戊",
+          "diGan": "壬",
+          "geju": {
+            "name": "青龙破狱",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "值符",
+          "gate": "开门",
+          "anGan": "庚",
+          "tianGan": "丁",
+          "diGan": "庚",
+          "geju": {
+            "name": "玉女刑杀",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "螣蛇",
+          "gate": "惊门",
+          "anGan": "己",
+          "tianGan": "乙",
+          "diGan": "己",
+          "geju": {
+            "name": "日奇入墓",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "九地",
+          "gate": "生门",
+          "anGan": "戊",
+          "tianGan": "庚",
+          "diGan": "戊",
+          "geju": {
+            "name": "太白天乙伏宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "六合",
+          "gate": "景门",
+          "anGan": "乙",
+          "tianGan": "癸",
+          "diGan": "乙",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 1,
+      "shichen": "丑"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 1,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 1,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 1,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "辛丑"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "丑",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天芮",
+        "fuGong": 2,
+        "fuYuanGong": 5,
+        "valueGate": "死门",
+        "valueGong": 4,
+        "hourXunYi": "辛",
+        "dayXunYi": "戊",
+        "hourStem": "辛",
+        "ma": {
+          "zhi": "亥",
+          "gong": 6
+        },
+        "kong": {
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "gong": [
+            4,
+            4
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "朱雀",
+          "gate": "伤门",
+          "anGan": "丙",
+          "tianGan": "丙",
+          "diGan": "丙",
+          "geju": {
+            "name": "月奇悖师",
+            "luck": "凶"
+          },
+          "tianState": "胎",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "值符",
+          "gate": "开门",
+          "anGan": "丁",
+          "tianGan": "丁",
+          "diGan": "丁",
+          "geju": {
+            "name": "奇入太阴",
+            "luck": "吉"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "六合",
+          "gate": "景门",
+          "anGan": "癸",
+          "tianGan": "癸",
+          "diGan": "癸",
+          "geju": {
+            "name": "天网四张",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "太阴",
+          "gate": "死门",
+          "anGan": "壬",
+          "tianGan": "壬",
+          "diGan": "壬",
+          "geju": {
+            "name": "蛇入地罗",
+            "luck": "中"
+          },
+          "tianState": "墓",
+          "diState": "墓",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "九地",
+          "gate": "生门",
+          "anGan": "庚",
+          "tianGan": "庚",
+          "diGan": "庚",
+          "geju": {
+            "name": "战格",
+            "luck": "凶"
+          },
+          "tianState": "衰",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "九天",
+          "gate": "休门",
+          "anGan": "己",
+          "tianGan": "己",
+          "diGan": "己",
+          "geju": {
+            "name": "地户逢鬼",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "勾陈",
+          "gate": "杜门",
+          "anGan": "戊",
+          "tianGan": "戊",
+          "diGan": "戊",
+          "geju": {
+            "name": "伏吟",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "养",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "螣蛇",
+          "gate": "惊门",
+          "anGan": "乙",
+          "tianGan": "乙",
+          "diGan": "乙",
+          "geju": {
+            "name": "日奇伏吟",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 3,
+      "shichen": "寅"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 3,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 3,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 3,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "壬寅"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "寅",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天芮",
+        "fuGong": 4,
+        "fuYuanGong": 5,
+        "valueGate": "死门",
+        "valueGong": 3,
+        "hourXunYi": "辛",
+        "dayXunYi": "戊",
+        "hourStem": "壬",
+        "ma": {
+          "zhi": "申",
+          "gong": 2
+        },
+        "kong": {
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "gong": [
+            4,
+            4
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "六合",
+          "gate": "杜门",
+          "anGan": "丙",
+          "tianGan": "癸",
+          "diGan": "丙",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "中"
+          },
+          "tianState": "临官",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "九地",
+          "gate": "休门",
+          "anGan": "丁",
+          "tianGan": "庚",
+          "diGan": "丁",
+          "geju": {
+            "name": "亭亭之格",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "螣蛇",
+          "gate": "死门",
+          "anGan": "癸",
+          "tianGan": "乙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "值符",
+          "gate": "惊门",
+          "anGan": "壬",
+          "tianGan": "丁",
+          "diGan": "壬",
+          "geju": {
+            "name": "五神互合",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "墓",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "勾陈",
+          "gate": "伤门",
+          "anGan": "庚",
+          "tianGan": "戊",
+          "diGan": "庚",
+          "geju": {
+            "name": "值符飞宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "朱雀",
+          "gate": "生门",
+          "anGan": "己",
+          "tianGan": "丙",
+          "diGan": "己",
+          "geju": {
+            "name": "火悖入刑",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "太阴",
+          "gate": "景门",
+          "anGan": "戊",
+          "tianGan": "壬",
+          "diGan": "戊",
+          "geju": {
+            "name": "小蛇化龙",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "养",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "九天",
+          "gate": "开门",
+          "anGan": "乙",
+          "tianGan": "己",
+          "diGan": "乙",
+          "geju": {
+            "name": "墓神不明",
+            "luck": "凶"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 5,
+      "shichen": "卯"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 5,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 5,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 5,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "癸卯"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "卯",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天芮",
+        "fuGong": 3,
+        "fuYuanGong": 5,
+        "valueGate": "死门",
+        "valueGong": 2,
+        "hourXunYi": "辛",
+        "dayXunYi": "戊",
+        "hourStem": "癸",
+        "ma": {
+          "zhi": "巳",
+          "gong": 4
+        },
+        "kong": {
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "gong": [
+            4,
+            4
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "太阴",
+          "gate": "休门",
+          "anGan": "丙",
+          "tianGan": "壬",
+          "diGan": "丙",
+          "geju": {
+            "name": "水蛇入火",
+            "luck": "凶"
+          },
+          "tianState": "帝旺",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "朱雀",
+          "gate": "死门",
+          "anGan": "丁",
+          "tianGan": "丙",
+          "diGan": "丁",
+          "geju": {
+            "name": "星奇朱雀",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "值符",
+          "gate": "伤门",
+          "anGan": "癸",
+          "tianGan": "丁",
+          "diGan": "癸",
+          "geju": {
+            "name": "朱雀投江",
+            "luck": "凶"
+          },
+          "tianState": "病",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "九天",
+          "gate": "杜门",
+          "anGan": "壬",
+          "tianGan": "己",
+          "diGan": "壬",
+          "geju": {
+            "name": "地网高张",
+            "luck": "凶"
+          },
+          "tianState": "衰",
+          "diState": "墓",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": true
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "六合",
+          "gate": "开门",
+          "anGan": "庚",
+          "tianGan": "癸",
+          "diGan": "庚",
+          "geju": {
+            "name": "太白入网",
+            "luck": "中"
+          },
+          "tianState": "衰",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "勾陈",
+          "gate": "惊门",
+          "anGan": "己",
+          "tianGan": "戊",
+          "diGan": "己",
+          "geju": {
+            "name": "贵人入狱",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "螣蛇",
+          "gate": "生门",
+          "anGan": "戊",
+          "tianGan": "乙",
+          "diGan": "戊",
+          "geju": {
+            "name": "阴害阳门",
+            "luck": "中"
+          },
+          "tianState": "衰",
+          "diState": "养",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "九地",
+          "gate": "景门",
+          "anGan": "乙",
+          "tianGan": "庚",
+          "diGan": "乙",
+          "geju": {
+            "name": "太白逢星",
+            "luck": "中"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 7,
+      "shichen": "辰"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 7,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 7,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 7,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "甲辰"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "辰",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 4,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 4,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "甲",
+        "ma": {
+          "zhi": "寅",
+          "gong": 8
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "休门",
+          "anGan": "丙",
+          "tianGan": "丙",
+          "diGan": "丙",
+          "geju": {
+            "name": "月奇悖师",
+            "luck": "凶"
+          },
+          "tianState": "胎",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "死门",
+          "anGan": "丁",
+          "tianGan": "丁",
+          "diGan": "丁",
+          "geju": {
+            "name": "奇入太阴",
+            "luck": "吉"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "伤门",
+          "anGan": "癸",
+          "tianGan": "癸",
+          "diGan": "癸",
+          "geju": {
+            "name": "天网四张",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "杜门",
+          "anGan": "壬",
+          "tianGan": "壬",
+          "diGan": "壬",
+          "geju": {
+            "name": "蛇入地罗",
+            "luck": "中"
+          },
+          "tianState": "墓",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "开门",
+          "anGan": "庚",
+          "tianGan": "庚",
+          "diGan": "庚",
+          "geju": {
+            "name": "战格",
+            "luck": "凶"
+          },
+          "tianState": "衰",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "惊门",
+          "anGan": "己",
+          "tianGan": "己",
+          "diGan": "己",
+          "geju": {
+            "name": "地户逢鬼",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "生门",
+          "anGan": "戊",
+          "tianGan": "戊",
+          "diGan": "戊",
+          "geju": {
+            "name": "伏吟",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": true
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "景门",
+          "anGan": "乙",
+          "tianGan": "乙",
+          "diGan": "乙",
+          "geju": {
+            "name": "日奇伏吟",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 9,
+      "shichen": "巳"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 9,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 9,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 9,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "乙巳"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "巳",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 9,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 3,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "乙",
+        "ma": {
+          "zhi": "亥",
+          "gong": 6
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "生门",
+          "anGan": "丙",
+          "tianGan": "庚",
+          "diGan": "丙",
+          "geju": {
+            "name": "太白入荧",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "惊门",
+          "anGan": "丁",
+          "tianGan": "乙",
+          "diGan": "丁",
+          "geju": {
+            "name": "奇仪相佐",
+            "luck": "吉"
+          },
+          "tianState": "养",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "杜门",
+          "anGan": "癸",
+          "tianGan": "戊",
+          "diGan": "癸",
+          "geju": {
+            "name": "青龙华盖",
+            "luck": "中"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "景门",
+          "anGan": "壬",
+          "tianGan": "癸",
+          "diGan": "壬",
+          "geju": {
+            "name": "复见螣蛇",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "休门",
+          "anGan": "庚",
+          "tianGan": "己",
+          "diGan": "庚",
+          "geju": {
+            "name": "利格反名",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "开门",
+          "anGan": "己",
+          "tianGan": "丁",
+          "diGan": "己",
+          "geju": {
+            "name": "火入勾陈",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "伤门",
+          "anGan": "戊",
+          "tianGan": "丙",
+          "diGan": "戊",
+          "geju": {
+            "name": "飞鸟跌穴",
+            "luck": "吉"
+          },
+          "tianState": "养",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "死门",
+          "anGan": "乙",
+          "tianGan": "壬",
+          "diGan": "乙",
+          "geju": {
+            "name": "小蛇得势",
+            "luck": "吉"
+          },
+          "tianState": "胎",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 11,
+      "shichen": "午"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 11,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 11,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 11,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "丙午"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "午",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 1,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 2,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "丙",
+        "ma": {
+          "zhi": "申",
+          "gong": 2
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "惊门",
+          "anGan": "丙",
+          "tianGan": "壬",
+          "diGan": "丙",
+          "geju": {
+            "name": "水蛇入火",
+            "luck": "凶"
+          },
+          "tianState": "帝旺",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "杜门",
+          "anGan": "丁",
+          "tianGan": "丙",
+          "diGan": "丁",
+          "geju": {
+            "name": "星奇朱雀",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": true
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "休门",
+          "anGan": "癸",
+          "tianGan": "丁",
+          "diGan": "癸",
+          "geju": {
+            "name": "朱雀投江",
+            "luck": "凶"
+          },
+          "tianState": "病",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "生门",
+          "anGan": "壬",
+          "tianGan": "己",
+          "diGan": "壬",
+          "geju": {
+            "name": "地网高张",
+            "luck": "凶"
+          },
+          "tianState": "衰",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "死门",
+          "anGan": "庚",
+          "tianGan": "癸",
+          "diGan": "庚",
+          "geju": {
+            "name": "太白入网",
+            "luck": "中"
+          },
+          "tianState": "衰",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "景门",
+          "anGan": "己",
+          "tianGan": "戊",
+          "diGan": "己",
+          "geju": {
+            "name": "贵人入狱",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "开门",
+          "anGan": "戊",
+          "tianGan": "乙",
+          "diGan": "戊",
+          "geju": {
+            "name": "阴害阳门",
+            "luck": "中"
+          },
+          "tianState": "衰",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "伤门",
+          "anGan": "乙",
+          "tianGan": "庚",
+          "diGan": "乙",
+          "geju": {
+            "name": "太白逢星",
+            "luck": "中"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 13,
+      "shichen": "未"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 13,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 13,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 13,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "丁未"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "未",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 2,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 1,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "丁",
+        "ma": {
+          "zhi": "巳",
+          "gong": 4
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "杜门",
+          "anGan": "丙",
+          "tianGan": "己",
+          "diGan": "丙",
+          "geju": {
+            "name": "火悖地户",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "休门",
+          "anGan": "丁",
+          "tianGan": "壬",
+          "diGan": "丁",
+          "geju": {
+            "name": "干合蛇刑",
+            "luck": "中"
+          },
+          "tianState": "养",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "死门",
+          "anGan": "癸",
+          "tianGan": "丙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "凶"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "惊门",
+          "anGan": "壬",
+          "tianGan": "戊",
+          "diGan": "壬",
+          "geju": {
+            "name": "青龙破狱",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": true
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "伤门",
+          "anGan": "庚",
+          "tianGan": "丁",
+          "diGan": "庚",
+          "geju": {
+            "name": "玉女刑杀",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "生门",
+          "anGan": "己",
+          "tianGan": "乙",
+          "diGan": "己",
+          "geju": {
+            "name": "日奇入墓",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "景门",
+          "anGan": "戊",
+          "tianGan": "庚",
+          "diGan": "戊",
+          "geju": {
+            "name": "太白天乙伏宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "开门",
+          "anGan": "乙",
+          "tianGan": "癸",
+          "diGan": "乙",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 15,
+      "shichen": "申"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 15,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 15,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 15,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "戊申"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "申",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 8,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 9,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "戊",
+        "ma": {
+          "zhi": "寅",
+          "gong": 8
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": true
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "开门",
+          "anGan": "丙",
+          "tianGan": "癸",
+          "diGan": "丙",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "中"
+          },
+          "tianState": "临官",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "景门",
+          "anGan": "丁",
+          "tianGan": "庚",
+          "diGan": "丁",
+          "geju": {
+            "name": "亭亭之格",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "生门",
+          "anGan": "癸",
+          "tianGan": "乙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "伤门",
+          "anGan": "壬",
+          "tianGan": "丁",
+          "diGan": "壬",
+          "geju": {
+            "name": "五神互合",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "惊门",
+          "anGan": "庚",
+          "tianGan": "戊",
+          "diGan": "庚",
+          "geju": {
+            "name": "值符飞宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "死门",
+          "anGan": "己",
+          "tianGan": "丙",
+          "diGan": "己",
+          "geju": {
+            "name": "火悖入刑",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "休门",
+          "anGan": "戊",
+          "tianGan": "壬",
+          "diGan": "戊",
+          "geju": {
+            "name": "小蛇化龙",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": true
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "杜门",
+          "anGan": "乙",
+          "tianGan": "己",
+          "diGan": "乙",
+          "geju": {
+            "name": "墓神不明",
+            "luck": "凶"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 17,
+      "shichen": "酉"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 17,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 17,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 17,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "己酉"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "酉",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 7,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 8,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "己",
+        "ma": {
+          "zhi": "亥",
+          "gong": 6
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": true
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "伤门",
+          "anGan": "丙",
+          "tianGan": "丁",
+          "diGan": "丙",
+          "geju": {
+            "name": "星随月转",
+            "luck": "中"
+          },
+          "tianState": "绝",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "开门",
+          "anGan": "丁",
+          "tianGan": "癸",
+          "diGan": "丁",
+          "geju": {
+            "name": "螣蛇夭矫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "景门",
+          "anGan": "癸",
+          "tianGan": "庚",
+          "diGan": "癸",
+          "geju": {
+            "name": "大格",
+            "luck": "凶"
+          },
+          "tianState": "胎",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "死门",
+          "anGan": "壬",
+          "tianGan": "丙",
+          "diGan": "壬",
+          "geju": {
+            "name": "火入天罗",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "生门",
+          "anGan": "庚",
+          "tianGan": "乙",
+          "diGan": "庚",
+          "geju": {
+            "name": "日奇被刑",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "休门",
+          "anGan": "己",
+          "tianGan": "壬",
+          "diGan": "己",
+          "geju": {
+            "name": "反吟蛇刑",
+            "luck": "凶"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "杜门",
+          "anGan": "戊",
+          "tianGan": "己",
+          "diGan": "戊",
+          "geju": {
+            "name": "犬遇青龙",
+            "luck": "中"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "惊门",
+          "anGan": "乙",
+          "tianGan": "戊",
+          "diGan": "乙",
+          "geju": {
+            "name": "青龙和会",
+            "luck": "中"
+          },
+          "tianState": "帝旺",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 19,
+      "shichen": "戌"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 19,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 19,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 19,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "庚戌"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "戌",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 6,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 7,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "庚",
+        "ma": {
+          "zhi": "申",
+          "gong": 2
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "死门",
+          "anGan": "丙",
+          "tianGan": "乙",
+          "diGan": "丙",
+          "geju": {
+            "name": "奇仪顺遂",
+            "luck": "吉"
+          },
+          "tianState": "病",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "伤门",
+          "anGan": "丁",
+          "tianGan": "戊",
+          "diGan": "丁",
+          "geju": {
+            "name": "青龙耀明",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": true
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "开门",
+          "anGan": "癸",
+          "tianGan": "己",
+          "diGan": "癸",
+          "geju": {
+            "name": "地刑玄武",
+            "luck": "凶"
+          },
+          "tianState": "病",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "休门",
+          "anGan": "壬",
+          "tianGan": "庚",
+          "diGan": "壬",
+          "geju": {
+            "name": "上格",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "景门",
+          "anGan": "庚",
+          "tianGan": "壬",
+          "diGan": "庚",
+          "geju": {
+            "name": "太白擒蛇",
+            "luck": "吉"
+          },
+          "tianState": "冠带",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "杜门",
+          "anGan": "己",
+          "tianGan": "癸",
+          "diGan": "己",
+          "geju": {
+            "name": "华盖地户",
+            "luck": "中"
+          },
+          "tianState": "病",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "惊门",
+          "anGan": "戊",
+          "tianGan": "丁",
+          "diGan": "戊",
+          "geju": {
+            "name": "青龙转光",
+            "luck": "吉"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "生门",
+          "anGan": "乙",
+          "tianGan": "丙",
+          "diGan": "乙",
+          "geju": {
+            "name": "日月并行",
+            "luck": "吉"
+          },
+          "tianState": "帝旺",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 21,
+      "shichen": "亥"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 21,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 21,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 21,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "壬申",
+        "time": "辛亥"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "亥",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 2,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 6,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "辛",
+        "ma": {
+          "zhi": "巳",
+          "gong": 4
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "景门",
+          "anGan": "丙",
+          "tianGan": "己",
+          "diGan": "丙",
+          "geju": {
+            "name": "火悖地户",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "生门",
+          "anGan": "丁",
+          "tianGan": "壬",
+          "diGan": "丁",
+          "geju": {
+            "name": "干合蛇刑",
+            "luck": "中"
+          },
+          "tianState": "养",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "惊门",
+          "anGan": "癸",
+          "tianGan": "丙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "凶"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "开门",
+          "anGan": "壬",
+          "tianGan": "戊",
+          "diGan": "壬",
+          "geju": {
+            "name": "青龙破狱",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": true
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "杜门",
+          "anGan": "庚",
+          "tianGan": "丁",
+          "diGan": "庚",
+          "geju": {
+            "name": "玉女刑杀",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "伤门",
+          "anGan": "己",
+          "tianGan": "乙",
+          "diGan": "己",
+          "geju": {
+            "name": "日奇入墓",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "死门",
+          "anGan": "戊",
+          "tianGan": "庚",
+          "diGan": "戊",
+          "geju": {
+            "name": "太白天乙伏宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "休门",
+          "anGan": "乙",
+          "tianGan": "癸",
+          "diGan": "乙",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-25",
+      "hour": 23,
+      "shichen": "子"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 25,
+        "hour": 23,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 25,
+        "h": 23,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 23,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "壬子"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "子",
+        "monthCN": "九",
+        "dayCN": "十六"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 4,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 2,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "壬",
+        "ma": {
+          "zhi": "寅",
+          "gong": 8
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "惊门",
+          "anGan": "丙",
+          "tianGan": "丙",
+          "diGan": "丙",
+          "geju": {
+            "name": "月奇悖师",
+            "luck": "凶"
+          },
+          "tianState": "胎",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "杜门",
+          "anGan": "丁",
+          "tianGan": "丁",
+          "diGan": "丁",
+          "geju": {
+            "name": "奇入太阴",
+            "luck": "吉"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "休门",
+          "anGan": "癸",
+          "tianGan": "癸",
+          "diGan": "癸",
+          "geju": {
+            "name": "天网四张",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "生门",
+          "anGan": "壬",
+          "tianGan": "壬",
+          "diGan": "壬",
+          "geju": {
+            "name": "蛇入地罗",
+            "luck": "中"
+          },
+          "tianState": "墓",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "死门",
+          "anGan": "庚",
+          "tianGan": "庚",
+          "diGan": "庚",
+          "geju": {
+            "name": "战格",
+            "luck": "凶"
+          },
+          "tianState": "衰",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "景门",
+          "anGan": "己",
+          "tianGan": "己",
+          "diGan": "己",
+          "geju": {
+            "name": "地户逢鬼",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "开门",
+          "anGan": "戊",
+          "tianGan": "戊",
+          "diGan": "戊",
+          "geju": {
+            "name": "伏吟",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": true
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "伤门",
+          "anGan": "乙",
+          "tianGan": "乙",
+          "diGan": "乙",
+          "geju": {
+            "name": "日奇伏吟",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 1,
+      "shichen": "丑"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 1,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 1,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 1,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "癸丑"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "丑",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天辅",
+        "fuGong": 3,
+        "fuYuanGong": 4,
+        "valueGate": "杜门",
+        "valueGong": 4,
+        "hourXunYi": "壬",
+        "dayXunYi": "戊",
+        "hourStem": "癸",
+        "ma": {
+          "zhi": "亥",
+          "gong": 6
+        },
+        "kong": {
+          "zhi": [
+            "寅",
+            "卯"
+          ],
+          "gong": [
+            8,
+            3
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "太阴",
+          "gate": "休门",
+          "anGan": "丙",
+          "tianGan": "戊",
+          "diGan": "丙",
+          "geju": {
+            "name": "青龙返首",
+            "luck": "吉"
+          },
+          "tianState": "胎",
+          "diState": "胎",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "朱雀",
+          "gate": "死门",
+          "anGan": "丁",
+          "tianGan": "己",
+          "diGan": "丁",
+          "geju": {
+            "name": "朱雀入墓",
+            "luck": "中"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "值符",
+          "gate": "伤门",
+          "anGan": "癸",
+          "tianGan": "壬",
+          "diGan": "癸",
+          "geju": {
+            "name": "幼女奸淫",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九天",
+          "gate": "杜门",
+          "anGan": "壬",
+          "tianGan": "乙",
+          "diGan": "壬",
+          "geju": {
+            "name": "日奇入地",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "六合",
+          "gate": "开门",
+          "anGan": "庚",
+          "tianGan": "丙",
+          "diGan": "庚",
+          "geju": {
+            "name": "荧入太白",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "勾陈",
+          "gate": "惊门",
+          "anGan": "己",
+          "tianGan": "庚",
+          "diGan": "己",
+          "geju": {
+            "name": "刑格",
+            "luck": "凶"
+          },
+          "tianState": "帝旺",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "螣蛇",
+          "gate": "生门",
+          "anGan": "戊",
+          "tianGan": "癸",
+          "diGan": "戊",
+          "geju": {
+            "name": "天乙会合",
+            "luck": "中"
+          },
+          "tianState": "冠带",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "九地",
+          "gate": "景门",
+          "anGan": "乙",
+          "tianGan": "丁",
+          "diGan": "乙",
+          "geju": {
+            "name": "玉女奇生",
+            "luck": "吉"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 3,
+      "shichen": "寅"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 3,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 3,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 3,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "甲寅"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "寅",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天冲",
+        "fuGong": 3,
+        "fuYuanGong": 3,
+        "valueGate": "伤门",
+        "valueGong": 3,
+        "hourXunYi": "癸",
+        "dayXunYi": "戊",
+        "hourStem": "甲",
+        "ma": {
+          "zhi": "申",
+          "gong": 2
+        },
+        "kong": {
+          "zhi": [
+            "子",
+            "丑"
+          ],
+          "gong": [
+            1,
+            8
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "太阴",
+          "gate": "休门",
+          "anGan": "丙",
+          "tianGan": "丙",
+          "diGan": "丙",
+          "geju": {
+            "name": "月奇悖师",
+            "luck": "凶"
+          },
+          "tianState": "胎",
+          "diState": "胎",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "朱雀",
+          "gate": "死门",
+          "anGan": "丁",
+          "tianGan": "丁",
+          "diGan": "丁",
+          "geju": {
+            "name": "奇入太阴",
+            "luck": "吉"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "值符",
+          "gate": "伤门",
+          "anGan": "癸",
+          "tianGan": "癸",
+          "diGan": "癸",
+          "geju": {
+            "name": "天网四张",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "九天",
+          "gate": "杜门",
+          "anGan": "壬",
+          "tianGan": "壬",
+          "diGan": "壬",
+          "geju": {
+            "name": "蛇入地罗",
+            "luck": "中"
+          },
+          "tianState": "墓",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "六合",
+          "gate": "开门",
+          "anGan": "庚",
+          "tianGan": "庚",
+          "diGan": "庚",
+          "geju": {
+            "name": "战格",
+            "luck": "凶"
+          },
+          "tianState": "衰",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "勾陈",
+          "gate": "惊门",
+          "anGan": "己",
+          "tianGan": "己",
+          "diGan": "己",
+          "geju": {
+            "name": "地户逢鬼",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "螣蛇",
+          "gate": "生门",
+          "anGan": "戊",
+          "tianGan": "戊",
+          "diGan": "戊",
+          "geju": {
+            "name": "伏吟",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九地",
+          "gate": "景门",
+          "anGan": "乙",
+          "tianGan": "乙",
+          "diGan": "乙",
+          "geju": {
+            "name": "日奇伏吟",
+            "luck": "凶"
+          },
+          "tianState": "长生",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 5,
+      "shichen": "卯"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 5,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 5,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 5,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "乙卯"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "卯",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天冲",
+        "fuGong": 9,
+        "fuYuanGong": 3,
+        "valueGate": "伤门",
+        "valueGong": 2,
+        "hourXunYi": "癸",
+        "dayXunYi": "戊",
+        "hourStem": "乙",
+        "ma": {
+          "zhi": "巳",
+          "gong": 4
+        },
+        "kong": {
+          "zhi": [
+            "子",
+            "丑"
+          ],
+          "gong": [
+            1,
+            8
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "勾陈",
+          "gate": "死门",
+          "anGan": "丙",
+          "tianGan": "己",
+          "diGan": "丙",
+          "geju": {
+            "name": "火悖地户",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "胎",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "九天",
+          "gate": "伤门",
+          "anGan": "丁",
+          "tianGan": "壬",
+          "diGan": "丁",
+          "geju": {
+            "name": "干合蛇刑",
+            "luck": "中"
+          },
+          "tianState": "养",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "太阴",
+          "gate": "开门",
+          "anGan": "癸",
+          "tianGan": "丙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "凶"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "螣蛇",
+          "gate": "休门",
+          "anGan": "壬",
+          "tianGan": "戊",
+          "diGan": "壬",
+          "geju": {
+            "name": "青龙破狱",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "朱雀",
+          "gate": "景门",
+          "anGan": "庚",
+          "tianGan": "丁",
+          "diGan": "庚",
+          "geju": {
+            "name": "玉女刑杀",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九地",
+          "gate": "杜门",
+          "anGan": "己",
+          "tianGan": "乙",
+          "diGan": "己",
+          "geju": {
+            "name": "日奇入墓",
+            "luck": "凶"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "六合",
+          "gate": "惊门",
+          "anGan": "戊",
+          "tianGan": "庚",
+          "diGan": "戊",
+          "geju": {
+            "name": "太白天乙伏宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "值符",
+          "gate": "生门",
+          "anGan": "乙",
+          "tianGan": "癸",
+          "diGan": "乙",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "绝",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 7,
+      "shichen": "辰"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 7,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 7,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 7,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "丙辰"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "辰",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天冲",
+        "fuGong": 1,
+        "fuYuanGong": 3,
+        "valueGate": "伤门",
+        "valueGong": 1,
+        "hourXunYi": "癸",
+        "dayXunYi": "戊",
+        "hourStem": "丙",
+        "ma": {
+          "zhi": "寅",
+          "gong": 8
+        },
+        "kong": {
+          "zhi": [
+            "子",
+            "丑"
+          ],
+          "gong": [
+            1,
+            8
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "值符",
+          "gate": "伤门",
+          "anGan": "丙",
+          "tianGan": "癸",
+          "diGan": "丙",
+          "geju": {
+            "name": "华盖悖师",
+            "luck": "中"
+          },
+          "tianState": "临官",
+          "diState": "胎",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "六合",
+          "gate": "开门",
+          "anGan": "丁",
+          "tianGan": "庚",
+          "diGan": "丁",
+          "geju": {
+            "name": "亭亭之格",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九地",
+          "gate": "景门",
+          "anGan": "癸",
+          "tianGan": "乙",
+          "diGan": "癸",
+          "geju": {
+            "name": "华盖逢星",
+            "luck": "吉"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "朱雀",
+          "gate": "死门",
+          "anGan": "壬",
+          "tianGan": "丁",
+          "diGan": "壬",
+          "geju": {
+            "name": "五神互合",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "螣蛇",
+          "gate": "生门",
+          "anGan": "庚",
+          "tianGan": "戊",
+          "diGan": "庚",
+          "geju": {
+            "name": "值符飞宫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "太阴",
+          "gate": "休门",
+          "anGan": "己",
+          "tianGan": "丙",
+          "diGan": "己",
+          "geju": {
+            "name": "火悖入刑",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "九天",
+          "gate": "杜门",
+          "anGan": "戊",
+          "tianGan": "壬",
+          "diGan": "戊",
+          "geju": {
+            "name": "小蛇化龙",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": true
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "勾陈",
+          "gate": "惊门",
+          "anGan": "乙",
+          "tianGan": "己",
+          "diGan": "乙",
+          "geju": {
+            "name": "墓神不明",
+            "luck": "凶"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 9,
+      "shichen": "巳"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 9,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 9,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 9,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "丁巳"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "巳",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天冲",
+        "fuGong": 2,
+        "fuYuanGong": 3,
+        "valueGate": "伤门",
+        "valueGong": 9,
+        "hourXunYi": "癸",
+        "dayXunYi": "戊",
+        "hourStem": "丁",
+        "ma": {
+          "zhi": "亥",
+          "gong": 6
+        },
+        "kong": {
+          "zhi": [
+            "子",
+            "丑"
+          ],
+          "gong": [
+            1,
+            8
+          ]
+        },
+        "wuBuYu": false
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "朱雀",
+          "gate": "惊门",
+          "anGan": "丙",
+          "tianGan": "丁",
+          "diGan": "丙",
+          "geju": {
+            "name": "星随月转",
+            "luck": "中"
+          },
+          "tianState": "绝",
+          "diState": "胎",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "值符",
+          "gate": "杜门",
+          "anGan": "丁",
+          "tianGan": "癸",
+          "diGan": "丁",
+          "geju": {
+            "name": "螣蛇夭矫",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "六合",
+          "gate": "休门",
+          "anGan": "癸",
+          "tianGan": "庚",
+          "diGan": "癸",
+          "geju": {
+            "name": "大格",
+            "luck": "凶"
+          },
+          "tianState": "胎",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "太阴",
+          "gate": "生门",
+          "anGan": "壬",
+          "tianGan": "丙",
+          "diGan": "壬",
+          "geju": {
+            "name": "火入天罗",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九地",
+          "gate": "死门",
+          "anGan": "庚",
+          "tianGan": "乙",
+          "diGan": "庚",
+          "geju": {
+            "name": "日奇被刑",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "九天",
+          "gate": "景门",
+          "anGan": "己",
+          "tianGan": "壬",
+          "diGan": "己",
+          "geju": {
+            "name": "反吟蛇刑",
+            "luck": "凶"
+          },
+          "tianState": "沐浴",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "勾陈",
+          "gate": "开门",
+          "anGan": "戊",
+          "tianGan": "己",
+          "diGan": "戊",
+          "geju": {
+            "name": "犬遇青龙",
+            "luck": "中"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "螣蛇",
+          "gate": "伤门",
+          "anGan": "乙",
+          "tianGan": "戊",
+          "diGan": "乙",
+          "geju": {
+            "name": "青龙和会",
+            "luck": "中"
+          },
+          "tianState": "帝旺",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 11,
+      "shichen": "午"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 11,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 11,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 11,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "戊午"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "午",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天冲",
+        "fuGong": 8,
+        "fuYuanGong": 3,
+        "valueGate": "伤门",
+        "valueGong": 8,
+        "hourXunYi": "癸",
+        "dayXunYi": "戊",
+        "hourStem": "戊",
+        "ma": {
+          "zhi": "申",
+          "gong": 2
+        },
+        "kong": {
+          "zhi": [
+            "子",
+            "丑"
+          ],
+          "gong": [
+            1,
+            8
+          ]
+        },
+        "wuBuYu": true
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "螣蛇",
+          "gate": "生门",
+          "anGan": "丙",
+          "tianGan": "戊",
+          "diGan": "丙",
+          "geju": {
+            "name": "青龙返首",
+            "luck": "吉"
+          },
+          "tianState": "胎",
+          "diState": "胎",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "勾陈",
+          "gate": "惊门",
+          "anGan": "丁",
+          "tianGan": "己",
+          "diGan": "丁",
+          "geju": {
+            "name": "朱雀入墓",
+            "luck": "中"
+          },
+          "tianState": "冠带",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": true
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "九天",
+          "gate": "杜门",
+          "anGan": "癸",
+          "tianGan": "壬",
+          "diGan": "癸",
+          "geju": {
+            "name": "幼女奸淫",
+            "luck": "凶"
+          },
+          "tianState": "死",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九地",
+          "gate": "景门",
+          "anGan": "壬",
+          "tianGan": "乙",
+          "diGan": "壬",
+          "geju": {
+            "name": "日奇入地",
+            "luck": "凶"
+          },
+          "tianState": "冠带",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "太阴",
+          "gate": "休门",
+          "anGan": "庚",
+          "tianGan": "丙",
+          "diGan": "庚",
+          "geju": {
+            "name": "荧入太白",
+            "luck": "凶"
+          },
+          "tianState": "墓",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "六合",
+          "gate": "开门",
+          "anGan": "己",
+          "tianGan": "庚",
+          "diGan": "己",
+          "geju": {
+            "name": "刑格",
+            "luck": "凶"
+          },
+          "tianState": "帝旺",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "值符",
+          "gate": "伤门",
+          "anGan": "戊",
+          "tianGan": "癸",
+          "diGan": "戊",
+          "geju": {
+            "name": "天乙会合",
+            "luck": "中"
+          },
+          "tianState": "冠带",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": true,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "朱雀",
+          "gate": "死门",
+          "anGan": "乙",
+          "tianGan": "丁",
+          "diGan": "乙",
+          "geju": {
+            "name": "玉女奇生",
+            "luck": "吉"
+          },
+          "tianState": "临官",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        }
+      }
+    }
+  },
+  {
+    "slot": {
+      "solarDate": "2026-10-26",
+      "hour": 13,
+      "shichen": "未"
+    },
+    "chart": {
+      "input": {
+        "year": 2026,
+        "month": 10,
+        "day": 26,
+        "hour": 13,
+        "minute": 0,
+        "longitude": 120,
+        "useTrueSolarTime": true,
+        "lateZiCurrentDay": false
+      },
+      "solar": {
+        "y": 2026,
+        "m": 10,
+        "d": 26,
+        "h": 13,
+        "mi": 16
+      },
+      "trueSolar": {
+        "h": 13,
+        "mi": 16,
+        "deltaMin": 16
+      },
+      "siZhu": {
+        "year": "丙午",
+        "month": "戊戌",
+        "day": "癸酉",
+        "time": "己未"
+      },
+      "lunar": {
+        "yearZhi": "午",
+        "timeZhi": "未",
+        "monthCN": "九",
+        "dayCN": "十七"
+      },
+      "jieQi": "霜降",
+      "ju": {
+        "dun": "yin",
+        "dunCN": "阴遁",
+        "num": 8,
+        "yuan": 1,
+        "yuanCN": "中元",
+        "label": "阴遁8局 (中元)"
+      },
+      "core": {
+        "fuStar": "天冲",
+        "fuGong": 7,
+        "fuYuanGong": 3,
+        "valueGate": "伤门",
+        "valueGong": 7,
+        "hourXunYi": "癸",
+        "dayXunYi": "戊",
+        "hourStem": "己",
+        "ma": {
+          "zhi": "巳",
+          "gong": 4
+        },
+        "kong": {
+          "zhi": [
+            "子",
+            "丑"
+          ],
+          "gong": [
+            1,
+            8
+          ]
+        },
+        "wuBuYu": true
+      },
+      "palaces": {
+        "1": {
+          "gong": 1,
+          "gua": "坎",
+          "sym": "☵",
+          "fang": "北",
+          "element": "water",
+          "zhi": [
+            "子"
+          ],
+          "star": "天英",
+          "starRaw": "天英",
+          "shen": "九地",
+          "gate": "景门",
+          "anGan": "丙",
+          "tianGan": "乙",
+          "diGan": "丙",
+          "geju": {
+            "name": "奇仪顺遂",
+            "luck": "吉"
+          },
+          "tianState": "病",
+          "diState": "胎",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "2": {
+          "gong": 2,
+          "gua": "坤",
+          "sym": "☷",
+          "fang": "西南",
+          "element": "earth",
+          "zhi": [
+            "未",
+            "申"
+          ],
+          "star": "天任",
+          "starRaw": "天任",
+          "shen": "螣蛇",
+          "gate": "生门",
+          "anGan": "丁",
+          "tianGan": "戊",
+          "diGan": "丁",
+          "geju": {
+            "name": "青龙耀明",
+            "luck": "吉"
+          },
+          "tianState": "衰",
+          "diState": "冠带",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "3": {
+          "gong": 3,
+          "gua": "震",
+          "sym": "☳",
+          "fang": "东",
+          "element": "wood",
+          "zhi": [
+            "卯"
+          ],
+          "star": "天柱",
+          "starRaw": "天柱",
+          "shen": "勾陈",
+          "gate": "惊门",
+          "anGan": "癸",
+          "tianGan": "己",
+          "diGan": "癸",
+          "geju": {
+            "name": "地刑玄武",
+            "luck": "凶"
+          },
+          "tianState": "病",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        },
+        "4": {
+          "gong": 4,
+          "gua": "巽",
+          "sym": "☴",
+          "fang": "东南",
+          "element": "wood",
+          "zhi": [
+            "辰",
+            "巳"
+          ],
+          "star": "天心",
+          "starRaw": "天心",
+          "shen": "六合",
+          "gate": "开门",
+          "anGan": "壬",
+          "tianGan": "庚",
+          "diGan": "壬",
+          "geju": {
+            "name": "上格",
+            "luck": "凶"
+          },
+          "tianState": "养",
+          "diState": "墓",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": true
+          }
+        },
+        "5": {
+          "gong": 5,
+          "gua": "中",
+          "sym": "",
+          "fang": "中",
+          "element": "earth",
+          "zhi": [],
+          "star": "天禽",
+          "starRaw": "天禽",
+          "shen": "",
+          "gate": "",
+          "anGan": "辛",
+          "tianGan": "辛",
+          "diGan": "辛",
+          "geju": null,
+          "tianState": "",
+          "diState": "",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "6": {
+          "gong": 6,
+          "gua": "乾",
+          "sym": "☰",
+          "fang": "西北",
+          "element": "metal",
+          "zhi": [
+            "戌",
+            "亥"
+          ],
+          "star": "天辅",
+          "starRaw": "天辅",
+          "shen": "九天",
+          "gate": "杜门",
+          "anGan": "庚",
+          "tianGan": "壬",
+          "diGan": "庚",
+          "geju": {
+            "name": "太白擒蛇",
+            "luck": "吉"
+          },
+          "tianState": "冠带",
+          "diState": "衰",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "7": {
+          "gong": 7,
+          "gua": "兑",
+          "sym": "☱",
+          "fang": "西",
+          "element": "metal",
+          "zhi": [
+            "酉"
+          ],
+          "star": "天冲",
+          "starRaw": "天冲",
+          "shen": "值符",
+          "gate": "伤门",
+          "anGan": "己",
+          "tianGan": "癸",
+          "diGan": "己",
+          "geju": {
+            "name": "华盖地户",
+            "luck": "中"
+          },
+          "tianState": "病",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": false,
+            "ma": false
+          }
+        },
+        "8": {
+          "gong": 8,
+          "gua": "艮",
+          "sym": "☶",
+          "fang": "东北",
+          "element": "earth",
+          "zhi": [
+            "丑",
+            "寅"
+          ],
+          "star": "禽芮",
+          "starRaw": "天芮",
+          "shen": "朱雀",
+          "gate": "死门",
+          "anGan": "戊",
+          "tianGan": "丁",
+          "diGan": "戊",
+          "geju": {
+            "name": "青龙转光",
+            "luck": "吉"
+          },
+          "tianState": "墓",
+          "diState": "养",
+          "marks": {
+            "kong": true,
+            "po": false,
+            "ma": false
+          }
+        },
+        "9": {
+          "gong": 9,
+          "gua": "离",
+          "sym": "☲",
+          "fang": "南",
+          "element": "fire",
+          "zhi": [
+            "午"
+          ],
+          "star": "天蓬",
+          "starRaw": "天蓬",
+          "shen": "太阴",
+          "gate": "休门",
+          "anGan": "乙",
+          "tianGan": "丙",
+          "diGan": "乙",
+          "geju": {
+            "name": "日月并行",
+            "luck": "吉"
+          },
+          "tianState": "帝旺",
+          "diState": "长生",
+          "marks": {
+            "kong": false,
+            "po": true,
+            "ma": false
+          }
+        }
+      }
+    }
+  }
+]

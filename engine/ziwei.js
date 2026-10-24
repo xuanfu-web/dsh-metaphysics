@@ -745,10 +745,10 @@ export function enrichLiunian(chart) {
 // 流日命宫起子时 → 顺数至该时辰。四化一律取落点宫的原局宫干。
 // 这条链是紫微看「这个月/这一天/这个时辰」的标准入口，缺了它就只能看到流年。
 
-function asOfParts(v) {
+export function asOfParts(v) {
   if (!v) return null;
   if (typeof v === 'object') return v;
-  const m = String(v).match(/(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2}))?/);
+  const m = String(v).match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2}))?$/);
   if (!m) return null;
   return {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),

@@ -258,8 +258,10 @@ export function buildBazi(input) {
   const forward = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
   const spanDays = forward ? nextJieTerm.jd - jd : jd - prevJieTerm.jd;
   const totalMonths = spanDays * 4; // 3 天 = 1 年 = 12 个月
-  const startAgeYears = Math.floor(totalMonths / 12);
-  const startAgeMonths = Math.round(totalMonths % 12);
+  let startAgeYears = Math.floor(totalMonths / 12);
+  let startAgeMonths = Math.round(totalMonths % 12);
+  // 四舍五入到 12 个月时必须进位，否则显示「X 岁 12 个月起运」
+  if (startAgeMonths >= 12) { startAgeMonths -= 12; startAgeYears += 1; }
 
   const dayun = [];
   for (let i = 1; i <= 8; i++) {
@@ -432,9 +434,31 @@ export function buildBazi(input) {
 
   const p = jdToParts(jd);
 
+  // ── 胎元 / 命宫 / 身宫 ──
+  // 胎元：月柱天干进一位、地支进三位（受胎之月的干支）
+  const mStemIdx = STEMS.indexOf(pillars.month.stem);
+  const mBranchIdx = BRANCHES.indexOf(pillars.month.branch);
+  const taiyuan = ganzhiName(sexagenaryIndex((mStemIdx + 1) % 10, (mBranchIdx + 3) % 12));
+  // 命宫：以子月起正月顺数至生月，再自该宫起子时逆数至生时
+  const hourBrIdxForGong = BRANCHES.indexOf(pillars.hour.branch);
+  const soulIdx = (((mBranchIdx - hourBrIdxForGong) % 12) + 12) % 12;
+  // 命宫天干按五虎遁从年干起（寅为正月）
+  const yinStem = ((STEMS.indexOf(pillars.year.stem) % 5) * 2 + 2) % 10;
+  const soulStemIdx = (yinStem + ((soulIdx - 2 + 12) % 12)) % 10;
+  const minggong = ganzhiName(sexagenaryIndex(soulStemIdx, soulIdx));
+  // 身宫：命宫对宫（相隔六位）
+  const bodyIdx = (soulIdx + 6) % 12;
+  const bodyStemIdx = (yinStem + ((bodyIdx - 2 + 12) % 12)) % 10;
+  const shengong = ganzhiName(sexagenaryIndex(bodyStemIdx, bodyIdx));
+
   return {
     system: 'bazi',
     relations: buildRelations(pillars),
+    palaces: {
+      taiyuan: { ganzhi: taiyuan.name, note: '月干进一、月支进三' },
+      minggong: { ganzhi: minggong.name, branch: minggong.branch, note: '子月起正月顺数至生月，再逆数至生时；干按五虎遁' },
+      shengong: { ganzhi: shengong.name, branch: shengong.branch, note: '命宫对宫' },
+    },
     input: {
       civil: { year, month, day, hour, minute },
       gender,

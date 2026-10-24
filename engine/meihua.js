@@ -91,9 +91,9 @@ export function buildMeihua(input = {}) {
   const useTri = movingInUpper ? ben.upper : ben.lower;
   const rel = relation(TRI_ELEMENT[bodyTri], TRI_ELEMENT[useTri]);
 
-  // 错卦（六爻全变）、综卦（上下颠倒）
+  // 错卦＝六爻全变；综卦＝整卦倒转（覆卦），不是上下卦对调：天风姤 → 泽天夬
   const cuoBits = bits.map((b) => (b ? 0 : 1));
-  const zongBits = [...bits.slice(3), ...bits.slice(0, 3)];
+  const zongBits = bits.slice().reverse();
   const cuo = hexagramFromBits(cuoBits);
   const zong = hexagramFromBits(zongBits);
 

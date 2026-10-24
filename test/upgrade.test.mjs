@@ -67,8 +67,10 @@ for (const [n, label] of [[1, '当下指引'], [3, '过去'], [5, '现状']]) {
   }
 }
 {
-  const r = compute({ system: 'tarot', count: 7 });
-  eq(r.cards.length, 3, '不支持的张数（7）回落到 3 张');
+  // 0.14.1 起不再静默回落：不支持的张数明确报错
+  let err = null;
+  try { compute({ system: 'tarot', count: 7 }); } catch (e) { err = e; }
+  ok(!!err && err.code === 'E_COUNT', '不支持的张数（7）明确报错，不再静默回落');
 }
 
 // ── 五、渲染层：亮度标记出现在盘面 ──────────────────────────────

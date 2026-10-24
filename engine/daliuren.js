@@ -1,4 +1,4 @@
-// 大六壬：天地盘、四课、九宗门三传。
+﻿// 大六壬：天地盘、四课、九宗门三传。
 // 算法移植自本地 MIT 授权插件 @dhicoc/dsh-chinese-traditional-wisdom-skill 的
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
 import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd } from './calendar.js';
@@ -56,6 +56,38 @@ const DAY_NIGHT_MAP = {
   卯: '昼', 辰: '昼', 巳: '昼', 午: '昼', 未: '昼', 申: '昼',
   酉: '夜', 戌: '夜', 亥: '夜', 子: '夜', 丑: '夜', 寅: '夜',
 };
+
+// ── 神煞（只收各派无争议、六壬断课常用的几项） ──
+const RI_LU = { 甲: '寅', 乙: '卯', 丙: '巳', 丁: '午', 戊: '巳', 己: '午', 庚: '申', 辛: '酉', 壬: '亥', 癸: '子' };
+const YANG_REN = { 甲: '卯', 乙: '辰', 丙: '午', 丁: '未', 戊: '午', 己: '未', 庚: '酉', 辛: '戌', 壬: '子', 癸: '丑' };
+const SAN_HE = { 申: '水', 子: '水', 辰: '水', 寅: '火', 午: '火', 戌: '火', 巳: '金', 酉: '金', 丑: '金', 亥: '木', 卯: '木', 未: '木' };
+const SAN_HE_SHEN = {
+  水: { 驿马: '寅', 桃花: '酉', 华盖: '辰', 劫煞: '巳', 亡神: '亥' },
+  火: { 驿马: '申', 桃花: '卯', 华盖: '戌', 劫煞: '亥', 亡神: '巳' },
+  金: { 驿马: '亥', 桃花: '午', 华盖: '丑', 劫煞: '寅', 亡神: '申' },
+  木: { 驿马: '巳', 桃花: '子', 华盖: '未', 劫煞: '申', 亡神: '寅' },
+};
+
+/** 按日干支算神煞 */
+export function calcShensha(dayGz) {
+  const gan = dayGz[0];
+  const zhi = dayGz[1];
+  const out = [];
+  const push = (name, branch, note) => {
+    if (!out.some((x) => x.name === name)) out.push({ name, branch, note });
+  };
+  if (RI_LU[gan]) push('日禄', RI_LU[gan], '日干临官之位');
+  if (YANG_REN[gan]) push('羊刃', YANG_REN[gan], '日干帝旺之位');
+  const trio = SAN_HE_SHEN[SAN_HE[zhi]];
+  if (trio) {
+    push('驿马', trio.驿马, '日支三合冲位，主迁动');
+    push('桃花', trio.桃花, '咸池，主情缘');
+    push('华盖', trio.华盖, '主孤高、技艺');
+    push('劫煞', trio.劫煞, '主意外耗损');
+    push('亡神', trio.亡神, '主失脱、心神不定');
+  }
+  return out;
+}
 
 const XUN_KONG = {
   甲子: ['戌', '亥'], 甲戌: ['申', '酉'], 甲申: ['午', '未'],
@@ -300,8 +332,11 @@ export function buildDaliuren(input) {
       zhong: chuan('中传', zhong, tdp, dayGan, dayGz),
       mo: chuan('末传', mo, tdp, dayGan, dayGz),
     },
+    shensha: calcShensha(dayGz),
     geJu: { name: geJu, detail },
   };
 }
 
 export { ZHI, GAN, TIAN_JIANG, JIANG_FULL, JIEQI_YUE_JIANG };
+
+

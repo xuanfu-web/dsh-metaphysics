@@ -19,3 +19,7 @@ jobs:
           git diff --exit-code -- client.js
       - name: 跑全部回归
         run: node tools/test-all.mjs
+      - name: 断言数不得低于基线
+        run: node tools/check-assertions.mjs
+      - name: 测试自检（故意写错的断言必须变红）
+        run: node tools/verify-tests-can-fail.mjs

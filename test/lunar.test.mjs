@@ -1,7 +1,6 @@
 import { solarToLunar } from '../engine/lunar.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 // 春节（正月初一）锚点
 const springFestivals = {

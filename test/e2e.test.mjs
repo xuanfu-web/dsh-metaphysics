@@ -1,7 +1,6 @@
 import { compute, renderText, parseDateTime } from '../engine/index.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 // 参数解析
 ok('解析 1990-05-12T14:30', JSON.stringify(parseDateTime('1990-05-12T14:30')) ===
@@ -35,8 +34,9 @@ console.log(renderText(z));
 
 // 未支持体系
 let threw2 = false;
-try { compute({ system: 'qimen', datetime: '1990-05-12T14:30' }); } catch (e) { threw2 = /未知体系/.test(e.message); }
+try { compute({ system: 'zzz-unknown', datetime: '1990-05-12T14:30' }); } catch (e) { threw2 = /未知体系/.test(e.message); }
 ok('未知体系报错', threw2);
 
 // JSON 可序列化（工具输出要求）
 ok('结果可 JSON 序列化', (() => { try { JSON.stringify(b); JSON.stringify(l); JSON.stringify(z); return true; } catch { return false; } })());
+

@@ -133,11 +133,12 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 
 ## 精度与口径
 
-- **节气**：Meeus 低精度太阳黄经，与公开历书相差 −3 ~ −8 分钟；出生时刻距「节」不足 15 分钟时会提示复核
+- **节气**：VSOP87B 截断级数（105 项）+ 岁差 + 章动 + 光行差；与日本国立天文台《暦要項》对拍，2024/2025 共 48 个节气最大偏差 **0.6 分钟**；出生时刻距「节」不足 20 分钟时会提示复核
 - **农历**：定朔（Meeus 第 49 章，误差约 1 分钟）+ 冬至所在月为十一月 + 无中气置闰
 - **真太阳时**：经度差 + 均时差；内置 34 个省会 + 200 个地级市坐标（±0.2°），地址更细时可开「联网精确到区县」（Nominatim）。只按经度修正，**未含历史时区与夏令时**：海外出生请先把当地钟表时间换算成东八区标准时再输入
 - **紫微四化**：中州派常用表（庚干作太阳禄、武曲权、太阴科、天同忌）
 - **日主旺衰**：量化算法，非唯一流派
+- **入参**：日期按月份天数与闰年校验（`1990-02-30` 直接报错，不滚到下个月）；八字/紫微/合盘的性别必填（性别决定大运大限顺逆，不做默认）；六爻爻值必须正好 6 个，留空才随机摇卦。非法入参带错误码返回（`E_INPUT` / `E_LINES` / `E_COUNT` / `E_ASOF` / `E_PARTNER`），不静默改成另一个盘
 
 ## 数据与隐私
 
@@ -151,10 +152,19 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 npm run build        # 生成 client.js（浏览器端产物）
 npm run build:html   # 生成独立的 命理排盘.html（可离线双击使用）
 npm test             # 顺序跑完 test/ 下全部 *.test.mjs 并汇总
+npm run test:ci      # 回归 + 断言基线 + 测试自检（CI 跑的就是这条）
+npm run test:baseline # 断言数确实要减少时，显式重建基线
 npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token 从 NPM_TOKEN 读）
 ```
 
-也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`、`node tools/release.mjs`。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/release.mjs`。
+
+**测试的三道闸**（0.14.1 起）：
+
+1. `test/_harness.mjs`——任何一条 `ok()` 失败都让进程非零退出（此前 9 个文件只打印不失败，全量"全绿"没有意义）
+2. `test/assertion-baseline.json`——每个文件的 PASS 条数低于基线即失败，防止"删断言让测试变绿"
+3. `tools/verify-tests-can-fail.mjs`——故意写错一条断言，必须真的变红，防止第 1 条被改回去
+
 `client.js` 是构建产物，不要手改；改动记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ### 发版
@@ -195,3 +205,4 @@ NPM_CLI=/path/to/npm-cli.js NPM_TOKEN=... npm run release   # 本机没有 npm C
 ## License
 
 MIT
+

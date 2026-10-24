@@ -1,10 +1,13 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
 import { buildLiuyao, tossLines } from './liuyao.js';
-import { buildZiwei, BRIGHTNESS, flowOf } from './ziwei.js';
+import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
+import { buildHepan } from './hepan.js';
+import { buildZiweiHepan } from './ziwei-hepan.js';
+import { buildQimen } from './qimen.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
@@ -13,18 +16,61 @@ export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
 
 const pad = (n) => String(n).padStart(2, '0');
 
+/** 带错误码的参数错误：工具层据此给出可执行提示，而不是把内部异常直出给模型 */
+const fail = (code, message) => {
+  const e = new Error(message);
+  e.code = code;
+  return e;
+};
+
+const GENDERS = ['male', 'female'];
+
+function daysInMonth(year, month) {
+  if (month === 2) {
+    const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    return leap ? 29 : 28;
+  }
+  return [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+}
+
+/**
+ * 性别是必填项：它决定大运/大限的顺逆，缺省按某一方排等于给出一张错盘。
+ * 之前用 `=== 'female' ? 'female' : 'male'` 兜底，静默把未填性别的人按男命排。
+ */
+function requireGender(value, who = '') {
+  if (GENDERS.includes(value)) return value;
+  const got = value === undefined || value === null || value === '' ? '（未提供）' : `「${value}」`;
+  throw fail('E_INPUT', `${who ? who + '的' : ''}gender 必须是 male 或 female${got}；性别决定大运/大限顺逆，不能靠默认值`);
+}
+
 /** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD' */
 export function parseDateTime(text) {
-  if (typeof text !== 'string' || !text.trim()) throw new Error('缺少 datetime（公历日期时间）');
-  const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2}))?$/);
-  if (!m) throw new Error(`无法解析 datetime：「${text}」，请用 1990-05-12T14:30 这种格式`);
+  if (typeof text !== 'string' || !text.trim()) {
+    throw fail('E_INPUT', '缺少 datetime（公历日期时间），例如 1990-05-12T14:30');
+  }
+  const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+  if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 1990-05-12T14:30 这种格式`);
   const out = {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
     hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),
   };
-  if (out.month < 1 || out.month > 12) throw new Error('月份超出范围');
-  if (out.day < 1 || out.day > 31) throw new Error('日期超出范围');
-  if (out.hour > 23 || out.minute > 59) throw new Error('时间超出范围');
+  if (out.month < 1 || out.month > 12) throw fail('E_INPUT', `月份超出范围：${out.month}`);
+  // 只校验 1..31 会让 1990-02-30、2026-04-31 这类日期静默滚到下个月，整盘错位且无人察觉
+  const maxDay = daysInMonth(out.year, out.month);
+  if (out.day < 1 || out.day > maxDay) {
+    throw fail('E_INPUT', `日期不存在：${out.year}-${out.month}-${out.day}（${out.year} 年 ${out.month} 月只有 ${maxDay} 天）`);
+  }
+  if (out.hour > 23 || out.minute > 59) throw fail('E_INPUT', `时间超出范围：${out.hour}:${out.minute}`);
+  // ΔT（地球自转改正）表只覆盖 1900–2100，超出后按端点值外推，精度不可保证
+  if (out.year < 1600 || out.year > 2400) {
+    throw fail('E_RANGE', `年份 ${out.year} 超出可计算范围（1600–2400）`);
+  }
+  if (out.year < 1900 || out.year > 2100) {
+    out.precision = {
+      level: 'approx',
+      note: `ΔT 模型仅覆盖 1900–2100，${out.year} 年按端点值外推，节气与朔望时刻可能有分钟级偏差，月柱在交节前后需复核`,
+    };
+  }
   return out;
 }
 
@@ -35,10 +81,14 @@ function baziText(r) {
     + `　地势 ${p.dishi}　自坐 ${p.zizuo}　空亡 ${p.kongwang.join('')}`
     + (p.shensha && p.shensha.length ? `　神煞 ${p.shensha.join('、')}` : '');
   const wuxing = Object.entries(r.wuxing).map(([k, v]) => `${k}${v}`).join(' ');
+  const palaces = r.palaces
+    ? `【胎元】${r.palaces.taiyuan.ganzhi}　命宫 ${r.palaces.minggong.ganzhi}　身宫 ${r.palaces.shengong.ganzhi}`
+    : '';
   const dayun = r.dayun.list.slice(0, 8)
     .map((d) => `${d.startAge}岁 ${d.ganzhi}(${d.stemTenGod})${d.luck ? `·${d.luck.tier}` : ''}${d.relations && d.relations.length ? `[${d.relations.join('')}]` : ''}`).join('　');
-  const near = r.jieqi.nearBoundaryMinutes < 15
-    ? `\n⚠ 出生时刻距「节」仅 ${r.jieqi.nearBoundaryMinutes} 分钟，节气时刻本身有分钟级误差，月柱建议人工复核。`
+  // 阈值 20 分钟：与 NAOJ 历要项对拍实测，本引擎节气最多偏早 13.5 分钟（Meeus 低精度上限约 14 分钟）
+  const near = r.jieqi.nearBoundaryMinutes < 20
+    ? `\n⚠ 出生时刻距「节」仅 ${r.jieqi.nearBoundaryMinutes} 分钟，而节气时刻本身有最多约 14 分钟的偏差，月柱与年柱建议人工复核。`
     : '';
   const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
   const shenshaLine = r.shensha && r.shensha.groups && r.shensha.groups.length
@@ -57,6 +107,7 @@ function baziText(r) {
     `日主：${r.dayMaster.stem}${r.dayMaster.element}（${r.dayMaster.yinYang}）　空亡：${r.kongwang.join('')}`,
     line('年柱', P.year), line('月柱', P.month), line('日柱', P.day), line('时柱', P.hour),
     `五行：${wuxing}`,
+    ...(palaces ? [palaces] : []),
     `日主强弱：${r.strength.level}（${r.strength.score}）　${r.strength.detail}`,
     ...gejuLine,
     `天干关系：${(r.relations && r.relations.stems.length) ? r.relations.stems.join('　') : '—'}`,
@@ -113,6 +164,41 @@ function ziweiText(r) {
   ].filter(Boolean).join('\n');
 }
 
+function qimenText(r) {
+  const P = r.palaces;
+  const cell = (x) => `${x.palace}宫 ${x.star || '—'}／${x.gate || '—'}／${x.god || '—'}${x.kong ? ' 空' : ''}${x.ma ? ' 马' : ''}`;
+  return [
+    `【四柱】${r.siZhu.year} ${r.siZhu.month} ${r.siZhu.day} ${r.siZhu.time}`,
+    `【局数】${r.ju}　节气 ${r.jieqi}（${r.jieqiTime}）`,
+    `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
+    `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
+    `【九宫】${P.map(cell).join('　')}`,
+    `※ ${r.rules[r.rules.length - 1]}`,
+  ].join('\n');
+}
+
+function hepanText(r) {
+  if (r.chart === 'ziwei') {
+    const d = (x) => `${x.label}：${x.score >= 0 ? '+' : ''}${x.score}　${x.text}`;
+    return [
+      `【紫微合盘】${r.score.level}（${r.score.total}/100）`,
+      `你　命宫 ${r.a.soul.branch}（${r.a.soulStars.join('、') || '无主星'}）　夫妻 ${r.a.spouseStars.join('、') || '无主星'}　${r.a.bureau}`,
+      `对方 命宫 ${r.b.soul.branch}（${r.b.soulStars.join('、') || '无主星'}）　夫妻 ${r.b.spouseStars.join('、') || '无主星'}　${r.b.bureau}`,
+      ...r.dimensions.map(d),
+      ...r.interactions.map((h) => `　· ${h.text}`),
+      ...r.notes.map((n) => `※ ${n}`),
+    ].join('\n');
+  }
+  const d = (x) => `${x.label}：${x.score >= 0 ? '+' : ''}${x.score}　${x.text}`;
+  return [
+    `【合盘】${r.score.level}（${r.score.total}/100）`,
+    `你　${r.a.pillars.join(' ')}　日主 ${r.a.dayMaster}　日支 ${r.a.dayBranch}　${r.a.strength || ''}`,
+    `对方 ${r.b.pillars.join(' ')}　日主 ${r.b.dayMaster}　日支 ${r.b.dayBranch}　${r.b.strength || ''}`,
+    ...r.dimensions.map(d),
+    ...r.notes.map((n) => `※ ${n}`),
+  ].join('\n');
+}
+
 function daliurenText(r) {
   const sc = r.sanChuan;
   const one = (c) => `${c.zhi}(${c.jiang}${c.liuQin}${c.xunKong ? '空' : ''})`;
@@ -122,6 +208,7 @@ function daliurenText(r) {
     `【四课】${r.siKe.map((k) => `${k.position}课 ${k.shang}上${k.xia}下(${k.relation}·${k.jiang})`).join('　')}`,
     `【天地盘】${r.pan.map((p) => `${p.di}:${p.tian}(${p.jiang})`).join(' ')}`,
     `【格局】${r.geJu.name}·${r.geJu.detail}`,
+    ...((r.shensha && r.shensha.length) ? [`【神煞】${r.shensha.map((x) => `${x.name}${x.branch}`).join('　')}`] : []),
   ].join('\n');
 }
 
@@ -186,6 +273,10 @@ function jsonSafe(value) {
  */
 export function compute(args = {}) {
   const r = jsonSafe(computeRaw(args));
+  // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
+  if (r && r.precision && r.precision.level === 'approx' && r.summary) {
+    r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
+  }
   // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
   if (args.withInterpret) {
     r.interpret = interpret(r, {
@@ -209,70 +300,146 @@ export function interpretText(i) {
   return out.join('\n');
 }
 
-function computeRaw(args) {
+const JU_METHODS = ['chaibu', 'chaoshen', 'zhirun'];
+const TAROT_COUNTS = [1, 3, 5];
+const LATE_ZI_MODES = ['same-day', 'next-day'];
+
+/** asOf 只接受能解析成真实日期的字符串；非法值以前会静默回退到「此刻」 */
+function checkAsOf(asOf) {
+  if (asOf === undefined || asOf === null || asOf === '') return undefined;
+  const parts = asOfParts(asOf);
+  if (!parts) throw fail('E_ASOF', `无法解析 asOf：「${asOf}」，请用 2026-10-22T16:00 这种格式`);
+  const { year, month, day } = parts;
+  if (!(month >= 1 && month <= 12) || !(day >= 1 && day <= daysInMonth(year, month))) {
+    throw fail('E_ASOF', `asOf 指向的日期不存在：${asOf}`);
+  }
+  return parts;
+}
+
+function computeRaw(args = {}) {
   const system = args.system;
   if (system === 'bazi') {
     const dt = parseDateTime(args.datetime);
     const result = buildBazi({
       ...dt,
-      gender: args.gender === 'female' ? 'female' : 'male',
+      gender: requireGender(args.gender),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       lateZi: args.lateZi !== false,
       trueSolar: args.trueSolar !== false,
     });
-    return { ...result, summary: baziText(result) };
+    return { ...result, precision: dt.precision, summary: baziText(result) };
   }
   if (system === 'ziwei') {
     const dt = parseDateTime(args.datetime);
+    const asOf = checkAsOf(args.asOf);
     const result = buildZiwei({
       ...dt,
-      gender: args.gender === 'female' ? 'female' : 'male',
+      gender: requireGender(args.gender),
       leapAsNext: args.leapAsNext === true,
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       trueSolar: args.trueSolar,
       // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
-      asOf: args.asOf,
+      asOf,
     });
-    return { ...result, summary: ziweiText(result) };
+    return { ...result, precision: dt.precision, summary: ziweiText(result) };
   }
   if (system === 'tarot') {
+    const count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
+    if (!TAROT_COUNTS.includes(count)) {
+      throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
+    }
     // 抽牌不看时间：castAt 只记录此刻，避免误用出生时间
-    const result = drawTarot({ count: Number(args.count) || 3, question: args.question });
+    const result = drawTarot({ count, question: args.question });
     return { ...result, summary: tarotText(result) };
   }
   if (system === 'daliuren') {
     const dt = parseDateTime(args.datetime);
     const result = buildDaliuren({ ...dt, lateZi: args.lateZi !== false });
-    return { ...result, summary: daliurenText(result) };
+    return { ...result, precision: dt.precision, summary: daliurenText(result) };
+  }
+  if (system === 'qimen') {
+    const dt = parseDateTime(args.datetime);
+    if (args.juMethod !== undefined && !JU_METHODS.includes(args.juMethod)) {
+      throw fail('E_INPUT', `juMethod 只能是 chaibu / chaoshen / zhirun，收到「${args.juMethod}」`);
+    }
+    if (args.lateZiHourMode !== undefined && !LATE_ZI_MODES.includes(args.lateZiHourMode)) {
+      throw fail('E_INPUT', `lateZiHourMode 只能是 same-day / next-day，收到「${args.lateZiHourMode}」`);
+    }
+    const result = buildQimen({
+      ...dt,
+      lateZiHourMode: args.lateZiHourMode === 'next-day' ? 'next-day' : 'same-day',
+      juMethod: args.juMethod,
+    });
+    return { ...result, summary: qimenText(result) };
+  }
+  if (system === 'hepan') {
+    const partner = args.partner;
+    if (!partner || typeof partner !== 'object') {
+      throw fail('E_PARTNER', '合盘需要 partner：{ datetime, gender, address? }，其中 partner.datetime 是对方的公历出生时间');
+    }
+    if (!partner.datetime) {
+      throw fail('E_PARTNER', '缺少 partner.datetime（对方的公历出生时间），例如 partner: {"datetime":"1992-03-03T10:00","gender":"female"}');
+    }
+    const pa = parseDateTime(args.datetime);
+    const pb = parseDateTime(partner.datetime);
+    const chart = args.chart === 'ziwei' ? 'ziwei' : 'bazi';
+    // 性别决定双方大运/大限顺逆，两边都不能用默认值
+    const sideA = { ...pa, gender: requireGender(args.gender, '你（主方）'), trueSolar: args.trueSolar };
+    const sideB = { ...pb, gender: requireGender(partner.gender, '对方'), trueSolar: partner.trueSolar };
+    const result = chart === 'ziwei' ? buildZiweiHepan({ a: sideA, b: sideB }) : buildHepan({ a: sideA, b: sideB });
+    return { ...result, summary: hepanText(result) };
   }
   if (system === 'meihua') {
-    const result = buildMeihua({
-      mode: args.mode === 'number' ? 'number' : 'time',
-      datetime: args.datetime,
-      upper: args.upper,
-      lower: args.lower,
-      changing: args.changing,
-    });
+    let result;
+    try {
+      result = buildMeihua({
+        mode: args.mode === 'number' ? 'number' : 'time',
+        datetime: args.datetime,
+        upper: args.upper,
+        lower: args.lower,
+        changing: args.changing,
+      });
+    } catch (e) {
+      throw fail('E_INPUT', `梅花起卦参数不完整：${e && e.message ? e.message : e}`);
+    }
     return { ...result, summary: meihuaText(result) };
   }
   if (system === 'liuyao') {
-    const lines = Array.isArray(args.lines) && args.lines.length
-      ? args.lines.map(Number)
-      : tossLines();
+    let lines;
+    if (args.lines === undefined || args.lines === null) {
+      lines = tossLines(); // 没给爻值 = 随机摇卦，这是明确约定的默认行为
+    } else {
+      if (!Array.isArray(args.lines)) {
+        throw fail('E_LINES', 'lines 必须是数组：自下而上 6 个爻值（6 老阴 / 7 少阳 / 8 少阴 / 9 老阳）');
+      }
+      if (args.lines.length !== 6) {
+        // 以前这里会静默改随机摇卦：用户手抖少填一个，拿到的却是一张"看起来正常"的随机盘
+        throw fail('E_LINES', `六爻需要正好 6 个爻值（自下而上），收到 ${args.lines.length} 个；留空则由引擎随机摇卦`);
+      }
+      lines = args.lines.map(Number);
+    }
     let dayGanZhi;
     if (args.datetime) {
       const dt = parseDateTime(args.datetime);
       const g = ganzhiName(dayGanzhiIndex(toJDN(dt.year, dt.month, dt.day)));
       dayGanZhi = { stem: g.stem, branch: g.branch, name: g.name };
     }
-    const result = buildLiuyao({ lines, question: args.question, dayGanZhi });
+    let result;
+    try {
+      result = buildLiuyao({ lines, question: args.question, dayGanZhi });
+    } catch (e) {
+      throw fail('E_LINES', e && e.message ? e.message : e);
+    }
     return { ...result, summary: liuyaoText(result) };
   }
-  throw new Error(`未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、tarot（塔罗）。`);
+  if (!system) {
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）。');
+  }
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）。`);
 }
 
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
@@ -287,3 +454,12 @@ export function renderText(result) {
 export { geocodeAddress, resolveAddress };
 
 export { buildBazi, buildLiuyao, tossLines };
+
+
+
+
+
+
+
+
+

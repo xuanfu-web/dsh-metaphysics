@@ -148,6 +148,7 @@
   async function run() {
     const date = el('date').value;
     const time = el('time').value;
+    let lineWarn = '';
     const timed = kindOf(tab) === 'cast' && usesTimeInput();
     // 所问之事必填：不给一份没有落点的解读
     if (needAsk(tab) && !el('question').value.trim()) {
@@ -174,13 +175,26 @@
     }
     if (tab === 'liuyao') {
       const v = el('lines').value.split(/[^0-9]+/).filter(Boolean).map(Number);
-      if (v.length === 6) args.lines = v;
+      const bad = v.filter((n) => ![6, 7, 8, 9].includes(n));
+      if (v.length === 6 && bad.length === 0) args.lines = v;
+      else if (el('lines').value.trim()) {
+        lineWarn = v.length !== 6
+          ? `爻值需要正好 6 个数字（当前 ${v.length} 个），本次按随机摇卦。`
+          : `爻值只能是 6/7/8/9（收到 ${bad.join('/')}），本次按随机摇卦。`;
+      }
     }
     if (tab === 'meihua') {
       args.mode = mhMode;
       if (mhMode === 'number') {
-        args.upper = Number(el('upper').value);
-        args.lower = Number(el('lower').value);
+        const u = el('upper').value.trim();
+        const l = el('lower').value.trim();
+        // 空输入 Number('') === 0，会余成 8（坤为地）——直接挡掉
+        if (!u || !l) {
+          el('out').innerHTML = '<div class="err">数字起卦需要填两个数（第一个数定上卦、第二个数定下卦）。</div>';
+          return;
+        }
+        args.upper = Number(u);
+        args.lower = Number(l);
         if (el('changing').value !== '') args.changing = Number(el('changing').value);
       }
     }
@@ -189,26 +203,32 @@
     if (needAsk(tab)) args.question = el('question').value.trim();
     try {
       const r = window.Engine.compute(args);
-      const html = tab === 'ziwei' ? window.__PP.ziweiHTML(r)
+      const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? window.__PP.baziHTML(r)
           : tab === 'meihua' ? window.__PP.meihuaHTML(r)
             : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
               : tab === 'tarot' ? window.__PP.tarotHTML(r)
-                : window.__PP.liuyaoHTML(r);
+                : window.__PP.liuyaoHTML(r));
       last = { r, html, tab, date, time, timed };
       paint();
     } catch (e) {
       last = null;
-      el('out').innerHTML = `<div class="err">${(e && e.message) || e}</div>`;
+      // 错误文案里会带出用户输入的原文（如非法的 datetime），只能走 textContent，不能拼进 innerHTML
+      const out = el('out');
+      const box = document.createElement('div');
+      box.className = 'err';
+      box.textContent = String((e && e.message) || e);
+      out.replaceChildren(box);
     }
   }
 
-  function runNow() {
+  /**
+   * 主按钮：时间仍为「自动」时先取当下再起卦；手动改过就用你填的时刻。
+   * 「此刻」按钮据此取消。
+   */
+  function goCast() {
     const k = kindOf(tab);
-    fillDateTime(nowParts());
-    // 「此刻」是明确的「回到自动」：清掉该类下的手动值，以后切 tab 仍会跟随当前时刻
-    if (k !== 'none') manual[k] = null;
-    renderTip();
+    if (k !== 'none' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
     run();
   }
 
@@ -224,8 +244,8 @@
       note.className = 'auto-note';
       // 文案分清「自动取的」和「你手动填的」，免得明明改过还说自动取
       note.textContent = manual.cast
-        ? `起卦时刻现在用的是你手动填的（${el('time').value}）；点「此刻」可回到自动取当下。`
-        : `起卦时刻已自动取你的本机时间（${el('time').value}）；想用别的时刻可以直接改，或点「此刻」重新取当下。`;
+        ? `起卦时刻用的是你手动填的（${el('time').value}）；想跟随当下，把时间改回或清空即可。`
+        : `起卦时刻已自动取本机时间（${el('time').value}），每次点起卦都会重新取当下；想固定时刻就在上面改。`;
       tip.appendChild(note);
     }
   }
@@ -243,7 +263,6 @@
     el('for-ask').style.display = needAsk(tab) ? '' : 'none';
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
-    el('now').style.display = tab === 'tarot' ? 'none' : '';
     el('lbl-date').textContent = birth ? '出生日期（公历）' : '起卦日期（公历）';
     el('lbl-time').textContent = birth ? '出生时刻' : '起卦时刻';
     el('go').textContent = tab === 'tarot' ? '抽牌' : birth ? '排盘' : '起卦';
@@ -282,8 +301,7 @@
       node.addEventListener('change', onManualEdit);
       node.addEventListener('input', onManualEdit);
     });
-    el('go').addEventListener('click', run);
-    el('now').addEventListener('click', runNow);
+    el('go').addEventListener('click', goCast);
     el('gender').addEventListener('change', run);
     // 换牌阵张数要重新抽牌（1/3/5 张是不同牌阵，不是同一组牌换个显示）
     const tc = el('tcount');

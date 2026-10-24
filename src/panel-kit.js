@@ -26,9 +26,10 @@
     --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0}
 }
 .pp *{box-sizing:border-box}
-.pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(150px,auto));gap:0}
+.pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(150px,auto));gap:0;border:1px solid var(--line)}
 .pp-cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 8px;display:flex;flex-direction:column;position:relative;min-height:150px;background:var(--bg)}
-.pp-cell:nth-child(4n){border-right:none}
+/* 右边框按「视觉列」去，不能按 nth-child：格子用 grid-column 绝对定位，DOM 顺序不等于列序 */
+.pp-cell.pp-lastcol{border-right:none}
 .pp-cell.pp-lastrow{border-bottom:none}
 .pp-center{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;background:var(--bg)}
 .pp-center .ct-t1{font-size:17px;font-weight:700;letter-spacing:.05em;margin-bottom:6px}
@@ -43,6 +44,9 @@
 .pp-st.aux{color:var(--muted)}
 .pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:var(--on-accent);margin-left:1px;vertical-align:1px}
 .pp-m.lu{background:var(--lu)}.pp-m.quan{background:var(--quan)}.pp-m.ke{background:var(--ke)}.pp-m.ji{background:var(--ji)}
+/* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
+.pp-m.view{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
+.pp-m.view.lu{color:var(--lu)}.pp-m.view.quan{color:var(--quan)}.pp-m.view.ke{color:var(--ke)}.pp-m.view.ji{color:var(--ji)}
 /* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
    避免与四化的实心彩色方块抢层次 */
 .pp-b{font-style:normal;font-size:11.5px;margin-left:4px;color:var(--muted);letter-spacing:0;opacity:.9}
@@ -73,13 +77,13 @@
 .pp-flow .flow-row{display:grid;grid-template-columns:66px auto minmax(0,1fr);gap:0 10px;align-items:baseline;padding:6px 11px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.6}
 .pp-flow .flow-row:first-child{border-top:none;background:var(--band);font-size:12px;color:var(--muted)}
 .pp-flow .flow-row b{color:var(--red);font-weight:600;letter-spacing:.04em;white-space:nowrap}
-.pp-flow .flow-rowow-row .flow-p{color:var(--ink)}
-.pp-flow .flow-rowow-row .flow-p .flow-k{white-space:nowrap}
-.pp-flow .flow-rowow-row .flow-m{color:var(--muted);min-width:0}
-.pp-flow .flow-rowow-row .flow-m i{font-style:normal;margin-right:6px;white-space:nowrap}
-.pp-flow .flow-rowow-row .flow-m i em{font-style:normal;color:var(--faint);margin-left:2px}
-.pp-flow .flow-rowow-row .flow-m i.flow-dim{color:var(--faint)}
-.pp-flow .flow-rowow-row .flow-p em.flow-same{font-style:normal;color:var(--faint);font-size:11.5px;margin-left:5px}
+.pp-flow .flow-row .flow-p{color:var(--ink)}
+.pp-flow .flow-row .flow-p .flow-k{white-space:nowrap}
+.pp-flow .flow-row .flow-m{color:var(--muted);min-width:0}
+.pp-flow .flow-row .flow-m i{font-style:normal;margin-right:6px;white-space:nowrap}
+.pp-flow .flow-row .flow-m i em{font-style:normal;color:var(--faint);margin-left:2px}
+.pp-flow .flow-row .flow-m i.flow-dim{color:var(--faint)}
+.pp-flow .flow-row .flow-p em.flow-same{font-style:normal;color:var(--faint);font-size:11.5px;margin-left:5px}
 .pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:var(--label);font-weight:700;margin-bottom:2px}
 .pp-tl{font-size:12.5px;color:var(--muted);line-height:1.75}
 /* 四柱表：按命书版式排 —— 左侧一列窄行名，年/月/日/时四柱固定并排在右，
@@ -120,6 +124,7 @@
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
 .pp-zh{margin-left:4px;white-space:nowrap}
+.pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
 /* —— 宫位点击展开详情 + 三方四正联动 ——
    宫格信息密度太高（尤其竖屏 10px），宫内必然有挤掉的东西。
@@ -241,7 +246,53 @@
 .mp-dl-sk-s{font-size:17px;font-weight:700;color:var(--red);line-height:1.3}
 .mp-dl-sk-x{font-size:14.5px;color:var(--muted);line-height:1.3}
 .mp-dl-sk-r{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
-.mp-dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(84px,auto));border:1px solid var(--line);background:var(--bg)}
+.mp-qm{padding:14px}
+.mp-qm-head{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);margin-bottom:12px}
+.mp-qm-head b{font-size:17px;color:var(--red)}
+.mp-qm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border:1px solid var(--line);padding:4px;background:var(--bg)}
+.pp-qm-cell{border:1px solid var(--line);padding:6px 8px;min-height:74px;display:flex;flex-direction:column;justify-content:space-between;background:var(--bg)}
+.pp-qm-cell.center{align-items:center;justify-content:center;text-align:center;background:var(--band)}
+.pp-qm-top,.pp-qm-bot{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+.pp-qm-mid{display:flex;justify-content:space-between;align-items:baseline}
+.pp-qm-mid .tp,.pp-qm-mid .dp{font-size:15px;font-weight:700;color:var(--ink)}
+.pp-qm-mid .star,.pp-qm-mid .gate{font-size:12px;color:var(--ink2)}
+.pp-qm-top .god{color:var(--red);font-weight:600}
+.pp-qm-top .mk{color:var(--ji);font-weight:600}
+.pp-qm-ju{font-size:14px;font-weight:700;color:var(--red);margin-bottom:4px}
+.pp-qm-kv{font-size:11.5px;color:var(--ink)}
+.pp-qm-kv.dim{color:var(--muted)}
+.mp-qm-legend,.mp-qm-rules{margin-top:10px;font-size:11px;color:var(--muted);line-height:1.7}
+.mp-qm-rules p{margin:2px 0}.mp-hp{padding:14px}
+.mp-hp-head{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.mp-hp-head b{font-size:19px;color:var(--red)}
+.mp-hp-head span{font-size:12px;color:var(--muted)}
+.mp-hp-sides{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.mp-hp-side{border:1px solid var(--line);background:var(--bg);padding:10px 12px}
+.mp-hp-who{font-size:10px;letter-spacing:.14em;color:var(--muted);margin-bottom:4px}
+.mp-hp-gz{font-size:15px;font-weight:700;color:var(--red);letter-spacing:.04em;margin-bottom:6px}
+.mp-hp-kv{display:flex;justify-content:space-between;font-size:12px;line-height:1.7}
+.mp-hp-kv span{color:var(--muted)}
+.mp-hp-dims{display:flex;flex-direction:column;gap:8px}
+.mp-hp-dim{border-top:1px solid var(--line);padding-top:8px}
+.mp-hp-dimh{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:600}
+.mp-hp-dimh b{font-size:12px;color:var(--muted)}
+.mp-hp-dimh b.good{color:var(--lu)}
+.mp-hp-dimh b.bad{color:var(--ji)}
+.mp-hp-dimt{font-size:12px;line-height:1.8;margin-top:3px;color:var(--ink)}
+.mp-hp-inter{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.mp-hp-ith{font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:.06em}
+.mp-hp-inter ul{margin:0;padding-left:14px;font-size:11.5px;line-height:1.8}
+.mp-hp-inter li{margin-bottom:2px}
+.mp-hp-inter li b{display:inline-block;min-width:14px;text-align:center;border-radius:2px;margin-right:4px;color:var(--on-accent);font-size:10px}
+.mp-hp-inter li b.m-禄{background:var(--lu)}
+.mp-hp-inter li b.m-权{background:var(--quan)}
+.mp-hp-inter li b.m-科{background:var(--ke)}
+.mp-hp-inter li b.m-忌{background:var(--ji)}
+.mp-hp-inter li i{font-style:normal;color:var(--red);font-size:10px;margin-left:3px}.mp-hp-notes{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.7}
+.mp-hp-notes p{margin:2px 0}.mp-dl-ss{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:12px}
+.mp-dl-ss b{font-weight:600;color:var(--muted);font-size:11px;letter-spacing:.1em}
+.mp-dl-ss span{color:var(--ink);cursor:help}
+.mp-dl-ss i{font-style:normal;color:var(--red);margin-left:2px;font-weight:600}.mp-dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(84px,auto));border:1px solid var(--line);background:var(--bg)}
 .mp-dl-pc{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 9px;display:flex;flex-direction:column;gap:0}
 .mp-dl-pc .tz{font-size:21px;font-weight:700;color:var(--red);line-height:1.2}
 .mp-dl-pc .dz{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
@@ -349,7 +400,7 @@
   .pp-detail .dt-st .dt-br{font-size:11px}
   /* 流月/流日/流时：窄屏一行放不下「命宫+四化」，四化另起一行 */
   .pp-flow .flow-row{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
-  .pp-flow .flow-rowow-row .flow-m{grid-column:1/-1}
+  .pp-flow .flow-row .flow-m{grid-column:1/-1}
   /* 八字：四柱保持四列并排（参考命书版式），只收紧字号与行距，不折行 */
   .pp-bz{font-size:11.5px}
   .pp-bz th,.pp-bz td{padding:4px 1px}
@@ -425,7 +476,7 @@
   .pp-detail .dt-dr .dt-k{font-size:11.5px}
   .pp-detail .dt-st .dt-br{font-size:11px}
   .pp-flow .flow-row{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
-  .pp-flow .flow-rowow-row .flow-m{grid-column:1/-1}
+  .pp-flow .flow-row .flow-m{grid-column:1/-1}
   .pp-bz{font-size:11.5px}
   .pp-bz th,.pp-bz td{padding:4px 1px}
   .pp-bz th:first-child,.pp-bz td.bz-lbl{width:38px}
@@ -520,15 +571,18 @@
   /** 单爻线：阳一整条，阴两段；动爻描红 */
   const hexBar = (yang, moving, size) => `<span class="mp-hex${yang ? '' : ' yin'}${moving ? ' on' : ''}${size ? ' ' + size : ''}">${yang ? '<i></i>' : '<i></i><i></i>'}</span>`;
 
-  function starsHTML(stars) {
+  function starsHTML(stars, viewHua) {
     if (!stars || !stars.length) return '';
     return stars.map((s) => {
       const cls = TYPE_CLASS[s.type] || 'aux';
       const m = s.mutagen ? `<i class="pp-m ${MUT[s.mutagen]}">${s.mutagen}</i>` : '';
+      // 大限/流年四化用空心框，与生年四化的实心框区分
+      const vh = viewHua && viewHua[s.name];
+      const vm = vh ? `<i class="pp-m view ${MUT[vh]}">${vh}</i>` : '';
       const b = s.brightness ? `<em class="pp-b ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
       // 顺序：星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
-      return `<span class="pp-st ${cls}">${s.name}${b}${m}</span>`;
+      return `<span class="pp-st ${cls}">${s.name}${b}${m}${vm}</span>`;
     }).join('');
   }
 
@@ -543,7 +597,7 @@
   const fx = (n) => ((n % 12) + 12) % 12;
   const isTrine = (b, m) => b !== m && [fx(m + 4), fx(m + 8), fx(m + 6)].includes(b);
 
-  function cellHTML(p, soulIdx, view) {
+  function cellHTML(p, soulIdx, view, allPalaces, viewHua) {
     const pos = POS[p.branch] || [1, 1];
     const b = BR.indexOf(p.branch);
     const cls = ['pp-cell'];
@@ -551,12 +605,26 @@
     else if (isTrine(b, soulIdx)) cls.push('pp-tri');
     if (p.isBody) cls.push('pp-shen');
     if (pos[0] === 4) cls.push('pp-lastrow');
+    if (pos[1] === 4) cls.push('pp-lastcol');
     const ss = p.shensha || {};
     const pname = NAMES[fx(soulIdx - b)];
     const zh = (p.selfHua && p.selfHua.length)
       ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')}</span>` : '';
+    // 命无正曜：命宫无十四主星时，传统要借对宫（迁移宫）主星来看
+    let borrow = '';
+    if (b === soulIdx && allPalaces) {
+      const isMain = (s) => (TYPE_CLASS[s.type] || '') === 'main';
+      if (!(p.stars || []).some(isMain)) {
+        const opp = allPalaces.find((x) => BR.indexOf(x.branch) === fx(b + 6));
+        const borrowed = opp ? (opp.stars || []).filter(isMain) : [];
+        if (borrowed.length) {
+          borrow = `<div class="pp-borrow" title="命宫无主星，借对宫（迁移宫）主星">借 ${borrowed.map((s) => s.name).join(' ')}</div>`;
+        }
+      }
+    }
     return `<div class="${cls.join(' ')}" data-pi="${b}" data-view="${view}" role="button" tabindex="0" aria-expanded="false" style="grid-row:${pos[0]};grid-column:${pos[1]}">
-      <div class="pp-stars">${starsHTML(p.stars)}${zh}</div>
+      <div class="pp-stars">${starsHTML(p.stars, viewHua)}${zh}</div>
+      ${borrow}
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
       <div class="pp-foot">
         <div class="ft-l">
@@ -594,7 +662,16 @@
     const dxIdx = BR.indexOf(dxPalace.branch);
     const lnIdx = ln ? BR.indexOf(ln.lifePalace.branch) : soulIdx;
 
-    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind)).join('');
+    // 大限 / 流年的四化：把该限干、年干飞出的四化铺到对应星上
+    const huaMap = (hits) => {
+      const o = {};
+      for (const h of hits || []) if (h && h.star) o[h.star] = h.type;
+      return o;
+    };
+    const dxObj = (r.daxianList || []).find((d) => d.branch === dxPalace.branch) || null;
+    const huaByView = { da: huaMap(dxObj && dxObj.mutagenHits), ln: huaMap(ln && ln.mutagenHits) };
+
+    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'
         ? `<div class="ct-t1">大限 ${dxPalace.ganzhi}　${dxPalace.daxian.start}-${dxPalace.daxian.end}岁</div>`
@@ -610,7 +687,10 @@
         <div class="ct-t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
         <div class="ct-t4">子年斗君 ${r.doujun ? r.doujun.zinian : '—'}　流年斗君 ${ln && ln.doujun ? ln.doujun : '—'}</div>
         <div class="ct-t4">紫微 ${r.ziwei}　天府 ${r.tianfu}　${kind === 'da' ? '大限命宫 ' + BR[dxIdx] : kind === 'ln' ? '流年命宫 ' + BR[lnIdx] : '本命命宫 ' + r.soul.branch}</div>
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>红框=命宫　浅底=三方四正</span></div>
+        ${kind === 'da' || kind === 'ln' ? `<div class="ct-t4 pp-viewhua">${kind === 'da' ? '大限' : '流年'}四化　${(kind === 'da' ? huaByView.da : huaByView.ln) && Object.keys(kind === 'da' ? huaByView.da : huaByView.ln).length
+          ? Object.entries(kind === 'da' ? huaByView.da : huaByView.ln).map(([s2, t]) => `${s2}化${t}`).join('　')
+          : '<span class="pp-dim">未飞四化</span>'}</div>` : ''}
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -877,8 +957,8 @@
         ${mainBox}
         ${mini('互卦', r.hu.name, r.hu.upper, r.hu.lower, '中藏之象')}
         ${mini('变卦', r.bian.name, r.bian.upper, r.bian.lower, `动 ${r.movingName} 后`)}
-        ${mini('错卦', r.cuo.name, cuoTri[1], cuoTri[0], '六爻全变')}
-        ${mini('综卦', r.zong.name, zongTri[1], zongTri[0], '上下颠倒')}
+        ${mini('错卦', r.cuo.name, cuoTri[0], cuoTri[1], '六爻全变')}
+        ${mini('综卦', r.zong.name, zongTri[0], zongTri[1], '整卦倒转')}
       </div>
       ${useLine}
     </div>`;
@@ -905,7 +985,7 @@
   };
   const TRI_ELEM = { 乾: '金', 兑: '金', 离: '火', 震: '木', 巽: '木', 坎: '水', 艮: '土', 坤: '土' };
   const TRI_EL = (t) => (TRI_ELEM[t] ? ` ${TRI_ELEM[t]}` : '');
-  const TRI_OF = (name) => HEX_TABLE[name] || null; // [下卦, 上卦]
+  const TRI_OF = (name) => HEX_TABLE[name] || null; // [上卦, 下卦]
 
   pp.daliurenHTML = function (r) {
     const sc = r.sanChuan;
@@ -945,6 +1025,7 @@
       <div class="mp-dl-sc">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}${ge}</div>
       <div class="mp-dl-sk">${keCells}</div>
       <div class="mp-dl-pan2">${cells}${center}</div>
+      ${(r.shensha || []).length ? `<div class="mp-dl-ss"><b>神煞</b>${r.shensha.map((x) => `<span title="${esc(x.note || '')}">${x.name}<i>${x.branch}</i></span>`).join('')}</div>` : ''}
       <div class="mp-dl-legend"><span>大字＝天盘支</span><span>小字＝地盘（固定十二支）</span><span>右下＝天将</span></div>
     </div>`;
   };
@@ -959,9 +1040,12 @@
         <div class="mp-tt-kw">${c.keywords.map((k) => `<span>${k}</span>`).join('')}</div>
         <div class="mp-tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}</div>
       </div>`).join('');
-    const reading = (r.reading || []).map((p) => `<p>${p}</p>`).join('');
+    // 所问之事是用户原文，必须转义后再进 innerHTML（塔罗面板曾漏这一处）
+    const q = r.question ? esc(r.question) : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>';
+    // 解读段落里会回显用户问题（"你问的是「…」"），同样走转义
+    const reading = (r.reading || []).map((p) => `<p>${esc(p)}</p>`).join('');
     return `<div class="pp mp-tt">
-      <div class="mp-tt-q"><b>所问</b>${r.question ? r.question : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>'}</div>
+      <div class="mp-tt-q"><b>所问</b>${q}</div>
       <div class="mp-tt-head">${r.spread}${r.castAt ? `　·　抽牌于 ${r.castAt}` : ''}</div>
       <div class="mp-tt-grid">${cards}</div>
       <div class="mp-tt-read"><div class="mp-tt-rt">牌面解读</div>${reading}</div>
@@ -970,6 +1054,91 @@
       </div>
       ${r.systemNote ? `<div class="mp-tt-tip">${r.systemNote}</div>` : ''}
       <div class="mp-tt-tip">塔罗用于自我觉察与娱乐，不作确定性预言。</div>
+    </div>`;
+  };
+
+  pp.hepanHTML = function (r) {
+    const side = (x, who) => `<div class="mp-hp-side">
+      <div class="mp-hp-who">${who}</div>
+      <div class="mp-hp-gz">${x.pillars.join(' ')}</div>
+      <div class="mp-hp-kv"><span>日主</span><b>${x.dayMaster}</b></div>
+      <div class="mp-hp-kv"><span>日支</span><b>${x.dayBranch}</b></div>
+      <div class="mp-hp-kv"><span>强弱</span><b>${x.strength || '—'}</b></div>
+      <div class="mp-hp-kv"><span>喜用</span><b>${x.favor || '—'}</b></div>
+    </div>`;
+    const dims = r.dimensions.map((d) => `<div class="mp-hp-dim">
+      <div class="mp-hp-dimh"><span>${d.label}</span><b class="${d.score >= 10 ? 'good' : d.score < 0 ? 'bad' : ''}">${d.score >= 0 ? '+' : ''}${d.score}</b></div>
+      <div class="mp-hp-dimt">${d.text}</div>
+    </div>`).join('');
+    return `<div class="pp mp-hp">
+      <div class="mp-hp-head"><b>${r.score.level}</b><span>${r.score.total}/100</span></div>
+      <div class="mp-hp-sides">${side(r.a, '你')}${side(r.b, '对方')}</div>
+      <div class="mp-hp-dims">${dims}</div>
+      <div class="mp-hp-notes">${r.notes.map((n) => `<p>${n}</p>`).join('')}</div>
+    </div>`;
+  };
+
+  // 九宫按洛书方位排布：巽4 离9 坤2 / 震3 中5 兑7 / 艮8 坎1 乾6
+  const QM_ROWS = [['4', '9', '2'], ['3', '5', '7'], ['8', '1', '6']];
+  pp.qimenHTML = function (r) {
+    const byGong = {};
+    for (const p of r.palaces) byGong[p.palace] = p;
+    const cell = (g) => {
+      if (g === '5') {
+        return `<div class="pp-qm-cell center">
+          <div class="pp-qm-ju">${r.ju}</div>
+          <div class="pp-qm-kv">${r.siZhu.year} ${r.siZhu.month}</div>
+          <div class="pp-qm-kv">${r.siZhu.day} ${r.siZhu.time}</div>
+          <div class="pp-qm-kv dim">${r.jieqi} ${r.yuan}</div>
+        </div>`;
+      }
+      const p = byGong[g] || {};
+      return `<div class="pp-qm-cell">
+        <div class="pp-qm-top"><span class="god">${p.god || ''}</span><span class="mk">${p.kong ? '空' : ''}${p.ma ? '马' : ''}</span></div>
+        <div class="pp-qm-mid"><span class="tp">${p.tianPan || ''}</span><span class="star">${p.star || ''}</span></div>
+        <div class="pp-qm-mid"><span class="dp">${p.diPan || ''}</span><span class="gate">${p.gate || ''}</span></div>
+        <div class="pp-qm-bot"><span>${p.anGan || ''}</span><span class="no">${g}</span></div>
+      </div>`;
+    };
+    return `<div class="pp mp-qm">
+      <div class="mp-qm-head">
+        <b>${r.ju}</b>
+        <span>${r.siZhu.year} ${r.siZhu.month} ${r.siZhu.day} ${r.siZhu.time}</span>
+        <span>节气 ${r.jieqi}（${r.jieqiTime}）</span>
+        <span>值符 ${r.zhiFu.star}（${r.zhiFu.gong}宫）　值使 ${r.zhiShi.gate}（${r.zhiShi.gong}宫）</span>
+        <span>旬首 ${r.xunshou}　空亡 ${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}</span>
+      </div>
+      <div class="mp-qm-grid">${QM_ROWS.map((row) => row.map(cell).join('')).join('')}</div>
+      <div class="mp-qm-legend">上＝九星　中＝天盘干／八门　下＝地盘干／宫号　角落＝八神</div>
+      <div class="mp-qm-rules">${r.rules.map((x) => `<p>${x}</p>`).join('')}</div>
+    </div>`;
+  };
+
+  pp.ziweiHepanHTML = function (r) {
+    const side = (x, who) => `<div class="mp-hp-side">
+      <div class="mp-hp-who">${who}</div>
+      <div class="mp-hp-gz">命宫 ${x.soul.branch}　夫妻 ${x.soul.branch ? '' : ''}${x.spouseStars.length ? '' : ''}</div>
+      <div class="mp-hp-kv"><span>命宫主星</span><b>${x.soulStars.join('、') || '无正曜'}</b></div>
+      <div class="mp-hp-kv"><span>夫妻宫主星</span><b>${x.spouseStars.join('、') || '无正曜'}</b></div>
+      <div class="mp-hp-kv"><span>五行局</span><b>${x.bureau}</b></div>
+      <div class="mp-hp-kv"><span>身宫</span><b>${x.body.branch}（${x.body.lands || '—'}）</b></div>
+      <div class="mp-hp-kv"><span>生年四化</span><b>${x.natalSihua.join('、')}</b></div>
+    </div>`;
+    const dims = r.dimensions.map((d) => `<div class="mp-hp-dim">
+      <div class="mp-hp-dimh"><span>${d.label}</span><b class="${d.score >= 10 ? 'good' : d.score < 0 ? 'bad' : ''}">${d.score >= 0 ? '+' : ''}${d.score}</b></div>
+      <div class="mp-hp-dimt">${d.text}</div>
+    </div>`).join('');
+    const list = (who) => (r.interactions || []).filter((h) => h.who === who)
+      .map((h) => `<li><b class="m-${h.mutagen}">${h.mutagen}</b>${h.star}：本命${h.ownPalace} → 对方${h.landingPalace || '盘外'}${h.strong ? '<i>（强）</i>' : ''}</li>`).join('');
+    return `<div class="pp mp-hp">
+      <div class="mp-hp-head"><b>${r.score.level}</b><span>${r.score.total}/100　紫微合盘</span></div>
+      <div class="mp-hp-sides">${side(r.a, '你')}${side(r.b, '对方')}</div>
+      <div class="mp-hp-dims">${dims}</div>
+      <div class="mp-hp-inter">
+        <div><div class="mp-hp-ith">你的四化 落在对方</div><ul>${list('你') || '<li>无</li>'}</ul></div>
+        <div><div class="mp-hp-ith">对方的四化 落在你</div><ul>${list('对方') || '<li>无</li>'}</ul></div>
+      </div>
+      <div class="mp-hp-notes">${r.notes.map((n) => `<p>${n}</p>`).join('')}</div>
     </div>`;
   };
 
@@ -1067,6 +1236,11 @@
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln) : ''}
+      ${r.palaces ? sect('胎元与命身宫', `<div class="pp-chips">
+        <span class="pp-chip" title="${r.palaces.taiyuan.note}">胎元 ${r.palaces.taiyuan.ganzhi}</span>
+        <span class="pp-chip" title="${r.palaces.minggong.note}">命宫 ${r.palaces.minggong.ganzhi}</span>
+        <span class="pp-chip" title="${r.palaces.shengong.note}">身宫 ${r.palaces.shengong.ganzhi}</span>
+      </div>`) : ''}
       ${ssx}
       <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运</div>
     </div>`;
@@ -1121,3 +1295,9 @@
     return (html || '') + pp.interpretHTML(it, opt);
   };
 })();
+
+
+
+
+
+

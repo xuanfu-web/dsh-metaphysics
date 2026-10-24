@@ -116,7 +116,7 @@ const ui = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
 ok(ui.includes("NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true }"), '四个问事体系都会要求填问题');
 ok(/foldPref/.test(ui) && /classList.toggle\('folded'/.test(ui), '折叠交互已接入');
 const app = fs.readFileSync(path.join(root, 'src', 'app.js'), 'utf8');
-ok(app.includes('所问之事（必填）') && app.includes('mp-dir'), '侧栏面板同样有这两项控件');
+ok(app.includes('所问之事（必填）') && app.includes('询问方向'), '侧栏面板同样有这两项控件');
 ok(/onFoldClick/.test(app) && /folded: defaultFolded\(\)/.test(app), '侧栏面板同样支持折叠');
 ok(!app.includes("args.question = '手动起卦'"), '六爻不再写死提问文案');
 

@@ -2,8 +2,7 @@
 import { buildBazi } from '../engine/bazi.js';
 import { computeBaziShensha, RULE_TABLE, CATEGORY_ORDER, PILLAR_KEYS } from '../engine/shensha.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 const P = (gz) => ({ stem: gz[0], branch: gz[1], ganzhi: gz });
 const mk = (y, m, d, h) => ({ year: P(y), month: P(m), day: P(d), hour: P(h) });

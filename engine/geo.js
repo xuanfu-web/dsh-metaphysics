@@ -12,6 +12,8 @@ const RAW = `
 徐州 117.28 34.26;扬州 119.41 32.39;盐城 120.16 33.35;泰州 119.92 32.46;镇江 119.45 32.20
 淮安 119.02 33.61;连云港 119.22 34.60;宿迁 118.28 33.96
 合肥 117.23 31.82;芜湖 118.43 31.35;蚌埠 117.39 32.92;安庆 117.05 30.54;阜阳 115.81 32.90
+大同 113.30 40.08;阳泉 113.58 37.86;长治 113.12 36.19;晋城 112.85 35.49;朔州 112.43 39.33
+晋中 112.75 37.69;运城 111.00 35.02;忻州 112.73 38.42;临汾 111.52 36.09;吕梁 111.14 37.52
 六安 116.50 31.75;马鞍山 118.50 31.67;淮南 117.00 32.63;滁州 118.32 32.30;黄山 118.34 29.71
 福州 119.30 26.08;厦门 118.09 24.48;泉州 118.68 24.87;漳州 117.65 24.51;莆田 119.01 25.45
 宁德 119.55 26.67;三明 117.64 26.26;南平 118.18 26.64;龙岩 117.02 25.08
@@ -121,11 +123,15 @@ export function resolveAddress(input) {
       return { lon: c.lon, lat: c.lat, matched: n, level: '地级市', note: `按 ${n} 估算（约 ${c.lon}°E）` };
     }
   }
+  // 省名判定用未去后缀的原文，否则「河北区」会被去掉「区」后误判成河北省
+  const rawFlat = raw.replace(/\s/g, '');
   for (const [prov, capital] of Object.entries(PROVINCES)) {
-    if (text.includes(prov)) {
-      const c = CITIES[capital] || { lon: EXTRA[capital][0], lat: EXTRA[capital][1] };
-      return { lon: c.lon, lat: c.lat, matched: capital, level: '省会', note: `未匹配到具体城市，按 ${prov} 省会 ${capital} 估算（约 ${c.lon}°E）` };
-    }
+    const at = rawFlat.indexOf(prov);
+    if (at < 0) continue;
+    const after = rawFlat.charAt(at + prov.length);
+    if (after === '区' || after === '县') continue;
+    const c = CITIES[capital] || { lon: EXTRA[capital][0], lat: EXTRA[capital][1] };
+    return { lon: c.lon, lat: c.lat, matched: capital, level: '省会', note: `未匹配到具体城市，按 ${prov} 省会 ${capital} 估算（约 ${c.lon}°E）` };
   }
   return { lon: null, lat: null, matched: null, level: '未匹配', note: `没查到「${raw}」，可改填经度（如 116.4）` };
 }
@@ -175,7 +181,11 @@ export async function geocodeAddress(input, opts = {}) {
   if (local && typeof local.lon === 'number' && !DETAIL.test(text)) return local;
   const remote = await onlineLookup(text, opts);
   if (remote) return { ...remote, local: local && local.lon != null ? local : null };
-  return local;
+  // 联网失败不能静默：明确告诉用户已退回内置表，以及精度落在哪一级
+  if (local && typeof local.lon === 'number') {
+    return { ...local, onlineFailed: true, note: `${local.note}（联网解析失败或超时，已退回内置坐标表）` };
+  }
+  return { ...local, onlineFailed: true };
 }
 
 export { CITIES, PROVINCES };

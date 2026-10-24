@@ -2,8 +2,7 @@ import {
   toJDN, dayGanzhiIndex, ganzhiName, termInstantJd, formatJd, TERM_NAMES, partsToJd, jdToParts,
 } from '../engine/calendar.js';
 
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 ok('JDN(2000-01-01) = 2451545', toJDN(2000, 1, 1) === 2451545, String(toJDN(2000, 1, 1)));
 ok('JDN(1949-10-01) = 2433191', toJDN(1949, 10, 1) === 2433191, String(toJDN(1949, 10, 1)));

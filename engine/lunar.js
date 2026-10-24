@@ -1,4 +1,4 @@
-// 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
+﻿// 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
 import {
   toJDN, jdToParts, termInstantJd, deltaTSeconds,
 } from './calendar.js';
@@ -54,12 +54,25 @@ export function newMoonJd(k) {
     + 0.00002 * Math.sin(4 * Mp);
 
   // TT -> UT -> 北京时间
-  return jde + corr - deltaTSeconds(2000 + T * 100) / 86400 + 8 / 24;
+  const jdUT = jde + corr - deltaTSeconds(2000 + T * 100) / 86400;
+  return jdUT + (jdUT < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN);
 }
 
 /** 某时刻所在的「日」：返回当日 0 时的 JDN */
 export function dayNumberOf(jd) {
   return Math.floor(jd + 0.5);
+}
+
+// 1929 年元旦之前，中国历书按「北京地方平时」（116.4E，UTC+7.7611）推算朔与中气；
+// 之后改用东经 120 度标准时（UTC+8）。这一天差会让朔日跨零点，进而整月错位。
+const OFFSET_MODERN = 8 / 24;
+const OFFSET_BEIJING_LOCAL = 7.7611 / 24;
+const CUTOVER_JD = 2425613.5; // 1929-01-01 00:00 UT
+
+/** 把 calendar 给出的「东八区轴」时刻换成当时的地方轴 */
+function toHistoricalLocal(jdBeijing) {
+  const jdUT = jdBeijing - OFFSET_MODERN;
+  return jdUT + (jdUT < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN);
 }
 
 function kNear(jdDay) {
@@ -70,8 +83,9 @@ function kNear(jdDay) {
 function hasZhongQi(year, startDay, endDay) {
   for (let y = year - 1; y <= year + 1; y++) {
     for (let i = 1; i < 24; i += 2) {
-      const d = dayNumberOf(termInstantJd(y, i));
-      if (d >= startDay && d < endDay) return { index: i, jd: termInstantJd(y, i) };
+      const jdLocal = toHistoricalLocal(termInstantJd(y, i));
+      const d = dayNumberOf(jdLocal);
+      if (d >= startDay && d < endDay) return { index: i, jd: jdLocal };
     }
   }
   return null;
@@ -84,24 +98,41 @@ function hasZhongQi(year, startDay, endDay) {
 export function solarToLunar(year, month, day) {
   const targetDay = toJDN(year, month, day);
 
-  const wsDayThisYear = dayNumberOf(termInstantJd(year, 23));
+  const wsDayThisYear = dayNumberOf(toHistoricalLocal(termInstantJd(year, 23)));
   const wsYear = targetDay < wsDayThisYear ? year - 1 : year;
-  const wsDay = dayNumberOf(termInstantJd(wsYear, 23));
+  const wsDay = dayNumberOf(toHistoricalLocal(termInstantJd(wsYear, 23)));
 
   // 十一月朔：日序不晚于冬至的最后一个朔日
   let k = kNear(wsDay);
   while (dayNumberOf(newMoonJd(k)) > wsDay) k--;
   while (dayNumberOf(newMoonJd(k + 1)) <= wsDay) k++;
 
+  // ── 置闰前提（国标口径）──
+  // 只有「两个冬至月之间有 13 个朔望月」才需要置闰，且取其中第一个无中气的月。
+  // 若只有 12 个月，即使某月无中气也不闰（1985 正月、2053 正月就是这种反例）。
+  const nextWsDay = dayNumberOf(toHistoricalLocal(termInstantJd(wsYear + 1, 23)));
+  let kNext = k;
+  while (dayNumberOf(newMoonJd(kNext + 1)) <= nextWsDay) kNext++;
+  const cycleMonths = kNext - k;
+  let leapIdx = -1;
+  if (cycleMonths === 13) {
+    for (let i = 1; i <= cycleMonths; i++) {
+      const s = dayNumberOf(newMoonJd(k + i - 1));
+      const e = dayNumberOf(newMoonJd(k + i));
+      if (!hasZhongQi(wsYear, s, e)) { leapIdx = i; break; }
+    }
+  }
+
   let num = 11;
-  let leapUsed = false;
+  // 农历年以正月初一为界：月序越过「正」之后，岁次进一位
+  let wrapped = false;
   let cursorStart = dayNumberOf(newMoonJd(k));
 
   for (let i = 1; i <= 15; i++) {
     const startDay = dayNumberOf(newMoonJd(k + i - 1));
     const endDay = dayNumberOf(newMoonJd(k + i));
     const zq = hasZhongQi(wsYear, startDay, endDay);
-    const isLeap = !zq && !leapUsed && i > 1;
+    const isLeap = i === leapIdx;
 
     if (targetDay >= startDay && targetDay < endDay) {
       const sp = jdToParts(newMoonJd(k + i - 1));
@@ -110,7 +141,7 @@ export function solarToLunar(year, month, day) {
       return {
         year: wsYear,
         // 农历年号：十一、十二月属上一农历年，正月至十月属 wsYear + 1
-        lunarYear: displayNum >= 11 ? wsYear : wsYear + 1,
+        lunarYear: wrapped ? wsYear + 1 : wsYear,
         month: displayNum,
         day: targetDay - startDay + 1,
         isLeap,
@@ -119,8 +150,11 @@ export function solarToLunar(year, month, day) {
       };
     }
 
-    if (isLeap) leapUsed = true;
-    else num = (num % 12) + 1;
+    if (isLeap) { /* 闰月不推进月号 */ }
+    else {
+      num = (num % 12) + 1;
+      if (num === 1) wrapped = true; // 已越过正月初一
+    }
     cursorStart = endDay;
   }
 
@@ -133,3 +167,8 @@ export function monthStartJd(year, month, day) {
 }
 
 export { SYNODIC };
+
+
+
+
+

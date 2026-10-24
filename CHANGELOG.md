@@ -2,6 +2,32 @@
 
 版本按「一组可感知的改动」发，README 与市场条目描述随能力同步。
 
+## 0.14.1 —— 先让「通过」可信
+
+这一版不加新体系，只补三件会静默出错的地基：测试的失败信号、渲染层的转义、入参的拒绝。
+
+- **测试不再假绿**：`test/_harness.mjs` 统一断言，任何一条 FAIL 都让进程非零退出。此前 bazi / calendar / liuyao / lunar / shensha / tarot / ziwei / e2e / layout 九个文件只 `console.log`，断言写错也 exit 0，`npm test` 恒报 27/27
+  - `tools/check-assertions.mjs`：每个文件的 PASS 条数锁进 `test/assertion-baseline.json`，删断言即失败（`npm run test:baseline` 显式重建）
+  - `tools/verify-tests-can-fail.mjs`：故意写错一条断言，必须变红——保护「测试本身」
+- **两处 XSS**：塔罗面板的「所问」与解读段落回显（`src/panel-kit.js`）、独立页错误提示（`src/web-ui.js`）此前把用户原文拼进 `innerHTML`；现改为 `esc()` 与 `textContent`，并加 `test/security.test.mjs` 回归
+- **入参校验与错误码**：`compute()` 新增 `E_INPUT / E_RANGE / E_LINES / E_COUNT / E_ASOF / E_PARTNER / E_SYSTEM`
+  - 日期按月份天数与闰年校验（`1990-02-30`、`2026-04-31` 不再静默滚到下个月）
+  - `bazi / ziwei / hepan` 的 gender 改为必填（缺省按男命排会让大运/大限方向整个反掉）
+  - 六爻爻数 ≠ 6 时报错（不再悄悄换成随机卦）；塔罗张数非 1/3/5 时报错；`asOf` 非法时报错（不再静默用「此刻」）
+  - 工具层 `execute()` 统一包上 `[错误码]` 前缀，内部异常不再以堆栈式文案直出
+- 测试新增 `test/args.test.mjs`（40 条）、`test/security.test.mjs`（10 条），全量 29 个文件 823 条 PASS
+- CI 增加「断言数不低于基线」与「测试自检」两步
+
+## 0.14.0 —— 奇门、合盘与节气精度（此前只存在于工作树，本版一并落库）
+
+- 新增**奇门遁甲**（时家转盘：拆补 / 超神接气 / 置闰三派取局、值符值使、九宫、空亡驿马）与对应解读
+- 新增**合盘**：八字合盘（日主关系 / 夫妻宫 / 五行互补）与紫微合盘（命宫、夫妻宫、五行局）
+- 节气计算改用 **VSOP87B 截断级数 + 岁差 + 章动 + 光行差**，与 NAOJ 历要项对拍偏差降到 1 分钟内
+- `parseDateTime` 对 ΔT 覆盖范围（1900–2100）之外的年份给出精度提示，摘要顶部标 ⚠
+- `geocodeAddress` 支持地址更细时联网（Nominatim）兜底，失败退回内置坐标表
+- 六壬补神煞与格局文案；紫微补流月/流日/流时并接入盘面与解读
+- `tools/qimen-divergence.mjs`：枚举三派取局的分裂样本，供排盘差异核对
+
 ## 0.13.6
 
 - 修 `npm run release` 的发布后核对：npm 的发布是异步的（PUT 返回 202，registry 生效实测要 1–4 分钟），脚本原来 30 秒就判定失败
