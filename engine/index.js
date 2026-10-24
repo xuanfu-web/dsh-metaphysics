@@ -312,7 +312,11 @@ export function interpretText(i) {
   for (const d of i.dimensions || []) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
     const plain = d.plain ? `（${d.plain}）` : '';
-    out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
+    // 知识条目：「为什么这样断」＋出处＋可信度标注，是结论与依据之外的第三层
+    const know = (d.knowledge || [])
+      .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
+      .join('');
+    out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}${know}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
   if (Array.isArray(i.followups) && i.followups.length) {

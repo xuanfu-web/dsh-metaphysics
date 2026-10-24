@@ -1135,6 +1135,7 @@ const BUILDERS = {
  */
 import { interpretQimen } from './qimen-interpret.js';
 import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
+import { knowledgeFor, caveatsFor, STATUS_LABEL } from './interpret-knowledge.js';
 
 /**
  * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。
@@ -1144,20 +1145,56 @@ function enrichPlain(result, r, ask) {
   if (!result) return result;
   const dims = (result.dimensions || []).map((d) => {
     const p = dimensionPlain(d.key, r, {});
-    return p ? { ...d, plain: p } : d;
+    // 知识条目挂在维度下：讲「为什么这样断」，与结论、依据形成三层
+    const know = knowledgeFor(r.system, d.key).map((k) => ({
+      id: k.id,
+      gist: k.gist,
+      detail: k.detail,
+      source: k.source,
+      status: k.status,
+      statusLabel: STATUS_LABEL[k.status] || k.status,
+      note: k.note || '',
+    }));
+    return { ...d, ...(p ? { plain: p } : {}), ...(know.length ? { knowledge: know } : {}) };
   });
   const texts = [
     result.lead,
-    ...dims.map((d) => [d.label, d.text, d.advice, d.plain].filter(Boolean).join('')),
+    ...dims.map((d) => [d.label, d.text, d.advice, d.plain, ...(d.knowledge || []).map((k) => k.detail)].filter(Boolean).join('')),
     ...(result.sections || []).map((x) => x.text),
   ].filter(Boolean);
+
+  // 文末的诚实声明：把「各家有异说 / 还没做」的部分摊开，而不是藏在专业感里
+  const caveats = caveatsFor(r.system);
+  const caveatLine = caveats.length
+    ? caveats.slice(0, 4).map((k) => `· ${k.gist}（${STATUS_LABEL[k.status] || k.status}）${k.note ? `——${k.note}` : ''}`).join('\n')
+    : '';
+  const secs = [...(result.sections || [])];
+  if (caveatLine) {
+    secs.push({
+      key: 'caveats',
+      label: '这套规则有多稳',
+      text: `下列几条各家说法不一，本插件取其中一派并把分歧标出来，供你判断可信度：\n${caveatLine}`,
+    });
+  }
+  const todos = caveats.filter((k) => k.status === 'todo');
+  if (todos.length) {
+    secs.push({
+      key: 'todo',
+      label: '尚未实现（不猜）',
+      text: todos.map((k) => `· ${k.gist}${k.note ? `——${k.note}` : ''}`).join('\n'),
+    });
+  }
+
   return {
     ...result,
     dimensions: dims,
+    sections: secs,
     answer: result.answer || buildAnswer(r, ask, {}),
     plain: result.plain || buildPlain(r, ask, {}),
     followups: buildFollowups(r, ask),
     glossary: buildGlossary(texts, r.system),
+    knowledgeCount: dims.reduce((n, d) => n + ((d.knowledge || []).length), 0),
+    caveats: caveats.map((k) => ({ id: k.id, gist: k.gist, status: k.status, statusLabel: STATUS_LABEL[k.status] || k.status })),
   };
 }
 

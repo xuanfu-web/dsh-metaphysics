@@ -379,6 +379,17 @@
 .mp-it-dev{margin-top:7px;font-size:12px;line-height:1.75;color:var(--muted)}
 .mp-it-dev b{color:var(--label);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.1em}
 .mp-it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
+/* 规则知识：讲「为什么这样断」并标可信度，视觉上比依据更轻，避免抢正文 */
+.mp-it-know{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.know-row{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.8;color:var(--ink2)}
+.know-status{flex:none;margin-top:2px;padding:1px 6px;border-radius:4px;font-size:10.5px;letter-spacing:.04em;font-family:system-ui,sans-serif;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+/* 状态只用文字色区分，边框统一走 --line：主题测试禁止硬编码色值 */
+.know-status.settled{color:var(--good)}
+.know-status.variant{color:var(--warn)}
+.know-status.todo{color:var(--red)}
+.know-body b{display:block;font-size:12.5px;color:var(--ink);font-weight:600;margin-bottom:2px}
+.know-body i{display:block;font-style:normal;color:var(--muted);font-size:11.5px;margin-top:2px}
+.know-body em{display:block;font-style:normal;color:var(--warn);font-size:11.5px;margin-top:2px}
 .mp-it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
 .mp-it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
 .mp-it-sec{margin-bottom:11px}
@@ -1303,6 +1314,7 @@
       ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
       ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
+      ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-know">${d.knowledge.map((k) => `<div class="know-row"><span class="know-status ${k.status}">${esc(k.statusLabel)}</span><span class="know-body"><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
     const secs = (it.sections && it.sections.length)
