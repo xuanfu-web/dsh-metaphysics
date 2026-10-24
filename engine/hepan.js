@@ -111,6 +111,10 @@ export function buildHepan(input) {
       strength: A.strength ? A.strength.level : null,
       favor: favorA.join(''),
       wuxing: wxA,
+      // 真太阳时口径要能被看到：合盘与单盘用同一套修正，否则同一个人会出现两套四柱
+      longitude: A.input.longitude ?? null,
+      trueSolar: A.input.trueSolar !== false,
+      solarNote: A.solarTime ? A.solarTime.note : '',
       summary: A.summary,
     },
     b: {
@@ -121,6 +125,9 @@ export function buildHepan(input) {
       strength: B.strength ? B.strength.level : null,
       favor: favorB.join(''),
       wuxing: wxB,
+      longitude: B.input.longitude ?? null,
+      trueSolar: B.input.trueSolar !== false,
+      solarNote: B.solarTime ? B.solarTime.note : '',
       summary: B.summary,
     },
     score: { total: pct, level },

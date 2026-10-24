@@ -10,6 +10,7 @@ import { buildZiweiHepan } from './ziwei-hepan.js';
 import { buildQimen } from './qimen.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
+import { randomOf, isSeed } from './random.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 
 export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
@@ -113,7 +114,7 @@ function baziText(r) {
     `天干关系：${(r.relations && r.relations.stems.length) ? r.relations.stems.join('　') : '—'}`,
     `地支关系：${(r.relations && r.relations.branches.length) ? r.relations.branches.join('　') : '—'}`,
     shenshaLine,
-    `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）`,
+    `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）　晚子时：${r.input.lateZi ? '23:00 后算次日' : '23:00 后仍算当日'}`,
     `节气：上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`,
     `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运`,
     `　${dayun}`,
@@ -173,6 +174,7 @@ function qimenText(r) {
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
     `【九宫】${P.map(cell).join('　')}`,
+    `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
     `※ ${r.rules[r.rules.length - 1]}`,
   ].join('\n');
 }
@@ -190,10 +192,15 @@ function hepanText(r) {
     ].join('\n');
   }
   const d = (x) => `${x.label}：${x.score >= 0 ? '+' : ''}${x.score}　${x.text}`;
+  const solarLine = (side) => {
+    if (!side || !side.solarNote) return '—';
+    return `${side.longitude == null ? '未含经度修正' : `${side.longitude}°E`}（${side.solarNote}）`;
+  };
   return [
     `【合盘】${r.score.level}（${r.score.total}/100）`,
     `你　${r.a.pillars.join(' ')}　日主 ${r.a.dayMaster}　日支 ${r.a.dayBranch}　${r.a.strength || ''}`,
     `对方 ${r.b.pillars.join(' ')}　日主 ${r.b.dayMaster}　日支 ${r.b.dayBranch}　${r.b.strength || ''}`,
+    `真太阳时：你 ${solarLine(r.a)}；对方 ${solarLine(r.b)}`,
     ...r.dimensions.map(d),
     ...r.notes.map((n) => `※ ${n}`),
   ].join('\n');
@@ -203,7 +210,7 @@ function daliurenText(r) {
   const sc = r.sanChuan;
   const one = (c) => `${c.zhi}(${c.jiang}${c.liuQin}${c.xunKong ? '空' : ''})`;
   return [
-    `【日时】${r.dayGanZhi}日　${r.hourZhi}时（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}`,
+    `【日时】${r.dayGanZhi}日　${r.hourZhi}时（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　${r.lateZi === false ? '晚子时不换日' : '晚子时换日'}`,
     `【三传】初 ${one(sc.chu)} → 中 ${one(sc.zhong)} → 末 ${one(sc.mo)}`,
     `【四课】${r.siKe.map((k) => `${k.position}课 ${k.shang}上${k.xia}下(${k.relation}·${k.jiang})`).join('　')}`,
     `【天地盘】${r.pan.map((p) => `${p.di}:${p.tian}(${p.jiang})`).join(' ')}`,
@@ -277,6 +284,10 @@ export function compute(args = {}) {
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
   }
+  // 没有经度就没有真太阳时：时柱可能整柱偏（海外出生尤其常见），必须显式告警而不是藏在括号里
+  if (r && (r.system === 'bazi' || r.system === 'ziwei') && r.input && r.input.longitude == null && r.summary) {
+    r.summary = `⚠ 未提供出生地或经度：按东八区平太阳时排盘，时柱可能与本命盘相差一个时辰；海外出生请先把当地时间换算成东八区标准时。\n${r.summary}`;
+  }
   // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
   if (args.withInterpret) {
     r.interpret = interpret(r, {
@@ -320,6 +331,7 @@ function computeRaw(args = {}) {
   const system = args.system;
   if (system === 'bazi') {
     const dt = parseDateTime(args.datetime);
+    const asOf = checkAsOf(args.asOf);
     const result = buildBazi({
       ...dt,
       gender: requireGender(args.gender),
@@ -328,8 +340,10 @@ function computeRaw(args = {}) {
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       lateZi: args.lateZi !== false,
       trueSolar: args.trueSolar !== false,
+      // 流年表默认从「今年」起排；要复现历史结论就把基准年钉死
+      nowYear: asOf ? asOf.year : undefined,
     });
-    return { ...result, precision: dt.precision, summary: baziText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: baziText(result) };
   }
   if (system === 'ziwei') {
     const dt = parseDateTime(args.datetime);
@@ -352,13 +366,18 @@ function computeRaw(args = {}) {
     if (!TAROT_COUNTS.includes(count)) {
       throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
     }
-    // 抽牌不看时间：castAt 只记录此刻，避免误用出生时间
-    const result = drawTarot({ count, question: args.question });
-    return { ...result, summary: tarotText(result) };
+    if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
+    const asOf = checkAsOf(args.asOf);
+    // 抽牌不看时间：castAt 只记录此刻（或 asOf），避免误用出生时间；给了 seed 就能复现同一次抽牌
+    const result = drawTarot({ count, question: args.question, at: args.asOf, random: randomOf(args.seed) });
+    if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
+    return { ...result, ...(asOf ? { asOf } : {}), summary: tarotText(result) };
   }
   if (system === 'daliuren') {
     const dt = parseDateTime(args.datetime);
-    const result = buildDaliuren({ ...dt, lateZi: args.lateZi !== false });
+    const lateZi = args.lateZi !== false;
+    const result = buildDaliuren({ ...dt, lateZi });
+    result.lateZi = lateZi;
     return { ...result, precision: dt.precision, summary: daliurenText(result) };
   }
   if (system === 'qimen') {
@@ -366,14 +385,17 @@ function computeRaw(args = {}) {
     if (args.juMethod !== undefined && !JU_METHODS.includes(args.juMethod)) {
       throw fail('E_INPUT', `juMethod 只能是 chaibu / chaoshen / zhirun，收到「${args.juMethod}」`);
     }
-    if (args.lateZiHourMode !== undefined && !LATE_ZI_MODES.includes(args.lateZiHourMode)) {
-      throw fail('E_INPUT', `lateZiHourMode 只能是 same-day / next-day，收到「${args.lateZiHourMode}」`);
+    // 全插件只有"晚子时"这一件事，参数名不该按体系分裂：
+    // lateZiHourMode 是奇门的历史参数名，lateZi 是八字/六壬的；两者互为别名。
+    const mode = args.lateZiHourMode !== undefined
+      ? args.lateZiHourMode
+      : args.lateZi === true ? 'next-day' : args.lateZi === false ? 'same-day' : undefined;
+    if (mode !== undefined && !LATE_ZI_MODES.includes(mode)) {
+      throw fail('E_INPUT', `lateZiHourMode 只能是 same-day / next-day，收到「${mode}」`);
     }
-    const result = buildQimen({
-      ...dt,
-      lateZiHourMode: args.lateZiHourMode === 'next-day' ? 'next-day' : 'same-day',
-      juMethod: args.juMethod,
-    });
+    const lateZiHourMode = mode === 'next-day' ? 'next-day' : 'same-day';
+    const result = buildQimen({ ...dt, lateZiHourMode, juMethod: args.juMethod });
+    result.lateZiHourMode = lateZiHourMode;
     return { ...result, summary: qimenText(result) };
   }
   if (system === 'hepan') {
@@ -425,9 +447,11 @@ function computeRaw(args = {}) {
     return { ...result, summary: meihuaText(result) };
   }
   if (system === 'liuyao') {
+    if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
     let lines;
     if (args.lines === undefined || args.lines === null) {
-      lines = tossLines(); // 没给爻值 = 随机摇卦，这是明确约定的默认行为
+      // 没给爻值 = 随机摇卦；给了 seed 则同一次摇卦可复现
+      lines = tossLines(randomOf(args.seed));
     } else {
       if (!Array.isArray(args.lines)) {
         throw fail('E_LINES', 'lines 必须是数组：自下而上 6 个爻值（6 老阴 / 7 少阳 / 8 少阴 / 9 老阳）');
@@ -450,6 +474,7 @@ function computeRaw(args = {}) {
     } catch (e) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
+    if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, summary: liuyaoText(result) };
   }
   if (!system) {

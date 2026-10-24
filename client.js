@@ -157,7 +157,18 @@ function deltaTSeconds(year) {
   return knots[knots.length - 1][1];
 }
 
-function termInstantJd(year, index) {
+const OFFSET_MODERN = 8 / 24;
+const OFFSET_BEIJING_LOCAL = 7.7611 / 24;
+const CUTOVER_JD = 2425612 + 4 / 24;
+
+function localOffsetFor(jdUt) {
+  return jdUt < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN;
+}
+
+const TERM_INSTANT_CACHE = new Map();
+const TERM_INSTANT_CACHE_MAX = 4096;
+
+function computeTermInstantJd(year, index) {
   const target = termLongitude(index);
   const anchor = toJDN(year, 1, 5) - 0.5 + index * 15.2184;
   let jd = anchor;
@@ -167,7 +178,20 @@ function termInstantJd(year, index) {
     jd += diff / 0.98564736;
     if (Math.abs(diff) < 1e-7) break;
   }
-  return jd - deltaTSeconds(year) / 86400 + 8 / 24;
+  const jdUt = jd - deltaTSeconds(year) / 86400;
+  return jdUt + localOffsetFor(jdUt);
+}
+
+function termInstantJd(year, index) {
+  const key = year * 24 + index;
+  const hit = TERM_INSTANT_CACHE.get(key);
+  if (hit !== undefined) return hit;
+  const jd = computeTermInstantJd(year, index);
+  if (TERM_INSTANT_CACHE.size >= TERM_INSTANT_CACHE_MAX) {
+    TERM_INSTANT_CACHE.delete(TERM_INSTANT_CACHE.keys().next().value);
+  }
+  TERM_INSTANT_CACHE.set(key, jd);
+  return jd;
 }
 
 function jdToParts(jdLocal) {
@@ -194,7 +218,12 @@ function equationOfTime(year, month, day) {
   return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
 }
 
+const TERM_WINDOW_CACHE = new Map();
+const TERM_WINDOW_CACHE_MAX = 8;
+
 function termWindow(year) {
+  const cached = TERM_WINDOW_CACHE.get(year);
+  if (cached) return cached;
   const list = [];
   for (let y = year - 1; y <= year + 1; y++) {
     for (let i = 0; i < 24; i++) {
@@ -202,6 +231,10 @@ function termWindow(year) {
     }
   }
   list.sort((a, b) => a.jd - b.jd);
+  if (TERM_WINDOW_CACHE.size >= TERM_WINDOW_CACHE_MAX) {
+    TERM_WINDOW_CACHE.delete(TERM_WINDOW_CACHE.keys().next().value);
+  }
+  TERM_WINDOW_CACHE.set(year, list);
   return list;
 }
 
@@ -229,11 +262,11 @@ function formatJd(jd) {
   return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}`;
 }
 
-return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryIndex, ganzhiName, dayGanzhiIndex, sunLongitude, deltaTSeconds, termInstantJd, jdToParts, partsToJd, equationOfTime, termWindow, previousJie, nextJie, formatJd };
+return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryIndex, ganzhiName, dayGanzhiIndex, sunLongitude, deltaTSeconds, OFFSET_MODERN, OFFSET_BEIJING_LOCAL, CUTOVER_JD, localOffsetFor, termInstantJd, jdToParts, partsToJd, equationOfTime, termWindow, previousJie, nextJie, formatJd };
 })();
 
 __mods.lunar = (function () {
-const { toJDN, jdToParts, termInstantJd, deltaTSeconds } = __mods.calendar;
+const { toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor, OFFSET_MODERN } = __mods.calendar;
 
 const SYNODIC = 29.530588861;
 const NEW_MOON_EPOCH = 2451550.09766;
@@ -282,20 +315,16 @@ function newMoonJd(k) {
     + 0.00002 * Math.sin(4 * Mp);
 
   const jdUT = jde + corr - deltaTSeconds(2000 + T * 100) / 86400;
-  return jdUT + (jdUT < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN);
+  return jdUT + localOffsetFor(jdUT);
 }
 
 function dayNumberOf(jd) {
   return Math.floor(jd + 0.5);
 }
 
-const OFFSET_MODERN = 8 / 24;
-const OFFSET_BEIJING_LOCAL = 7.7611 / 24;
-const CUTOVER_JD = 2425613.5;
-
 function toHistoricalLocal(jdBeijing) {
-  const jdUT = jdBeijing - OFFSET_MODERN;
-  return jdUT + (jdUT < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN);
+  const jdUt = jdBeijing - OFFSET_MODERN;
+  return jdUt + localOffsetFor(jdUt);
 }
 
 function kNear(jdDay) {
@@ -515,6 +544,8 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
+const USER_AGENT = 'dsh-metaphysics/0.14.2 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
   let timer = null;
@@ -525,7 +556,7 @@ async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
       + encodeURIComponent(text);
     const res = await fetch(url, {
       signal: controller ? controller.signal : undefined,
-      headers: { 'User-Agent': 'dsh-metaphysics/0.2 (local plugin)' },
+      headers: { 'User-Agent': USER_AGENT },
     });
     if (!res || !res.ok) return null;
     const list = await res.json();
@@ -546,7 +577,7 @@ async function geocodeAddress(input, opts = {}) {
   const local = resolveAddress(input);
   const text = String(input || '').trim();
   if (!text) return local;
-  const wantOnline = opts.online !== false;
+  const wantOnline = opts.online === true;
   if (!wantOnline) return local;
   if (local && typeof local.lon === 'number' && !DETAIL.test(text)) return local;
   const remote = await onlineLookup(text, opts);
@@ -558,6 +589,34 @@ async function geocodeAddress(input, opts = {}) {
 }
 
 return { CITIES, PROVINCES, resolveAddress, geocodeAddress };
+})();
+
+__mods.random = (function () {
+
+function mulberry32(seed) {
+  let a = Number(seed) >>> 0;
+  if (!a) a = 0x9e3779b9;
+  return function next() {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomOf(seed) {
+  if (seed === undefined || seed === null || seed === '') return Math.random;
+  const n = Number(seed);
+  return Number.isFinite(n) ? mulberry32(n) : Math.random;
+}
+
+function isSeed(v) {
+  if (v === undefined || v === null || v === '') return true;
+  return Number.isFinite(Number(v));
+}
+
+return { mulberry32, randomOf, isSeed };
 })();
 
 __mods.shensha = (function () {
@@ -1522,7 +1581,7 @@ function buildBazi(input) {
     });
   }
 
-  const thisYear = new Date().getFullYear();
+  const thisYear = Number(input.nowYear) || new Date().getFullYear();
   const liunian = [];
   for (let y = thisYear; y < thisYear + 10; y++) {
     const idx = (((y - 4) % 60) + 60) % 60;
@@ -1725,6 +1784,7 @@ function buildBazi(input) {
     strength,
     frame,
     liunian,
+    liunianFrom: thisYear,
   };
 }
 
@@ -3037,16 +3097,17 @@ function tarotReading({ question = '', cards = [] } = {}) {
   return paras;
 }
 
-function drawTarot({ count = 3, question = '', at } = {}) {
+function drawTarot({ count = 3, question = '', at, random = Math.random } = {}) {
   const n = [1, 3, 5].includes(count) ? count : 3;
+  const rand = typeof random === 'function' ? random : Math.random;
   const deck = tarotDeck();
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   const positions = SPREADS[n];
   const cards = deck.slice(0, n).map((c, i) => {
-    const upright = Math.random() < 0.5;
+    const upright = rand() < 0.5;
     const pos = positions[i];
     return {
       position: pos.name,
@@ -3642,6 +3703,9 @@ function buildHepan(input) {
       strength: A.strength ? A.strength.level : null,
       favor: favorA.join(''),
       wuxing: wxA,
+      longitude: A.input.longitude ?? null,
+      trueSolar: A.input.trueSolar !== false,
+      solarNote: A.solarTime ? A.solarTime.note : '',
       summary: A.summary,
     },
     b: {
@@ -3652,6 +3716,9 @@ function buildHepan(input) {
       strength: B.strength ? B.strength.level : null,
       favor: favorB.join(''),
       wuxing: wxB,
+      longitude: B.input.longitude ?? null,
+      trueSolar: B.input.trueSolar !== false,
+      solarNote: B.solarTime ? B.solarTime.note : '',
       summary: B.summary,
     },
     score: { total: pct, level },
@@ -5418,6 +5485,7 @@ const { buildZiweiHepan } = __mods['ziwei-hepan'];
 const { buildQimen } = __mods.qimen;
 const { geocodeAddress, resolveAddress } = __mods.geo;
 const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
+const { randomOf, isSeed } = __mods.random;
 const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -5510,7 +5578,7 @@ function baziText(r) {
     `天干关系：${(r.relations && r.relations.stems.length) ? r.relations.stems.join('　') : '—'}`,
     `地支关系：${(r.relations && r.relations.branches.length) ? r.relations.branches.join('　') : '—'}`,
     shenshaLine,
-    `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）`,
+    `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）　晚子时：${r.input.lateZi ? '23:00 后算次日' : '23:00 后仍算当日'}`,
     `节气：上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`,
     `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运`,
     `　${dayun}`,
@@ -5570,6 +5638,7 @@ function qimenText(r) {
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
     `【九宫】${P.map(cell).join('　')}`,
+    `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
     `※ ${r.rules[r.rules.length - 1]}`,
   ].join('\n');
 }
@@ -5587,10 +5656,15 @@ function hepanText(r) {
     ].join('\n');
   }
   const d = (x) => `${x.label}：${x.score >= 0 ? '+' : ''}${x.score}　${x.text}`;
+  const solarLine = (side) => {
+    if (!side || !side.solarNote) return '—';
+    return `${side.longitude == null ? '未含经度修正' : `${side.longitude}°E`}（${side.solarNote}）`;
+  };
   return [
     `【合盘】${r.score.level}（${r.score.total}/100）`,
     `你　${r.a.pillars.join(' ')}　日主 ${r.a.dayMaster}　日支 ${r.a.dayBranch}　${r.a.strength || ''}`,
     `对方 ${r.b.pillars.join(' ')}　日主 ${r.b.dayMaster}　日支 ${r.b.dayBranch}　${r.b.strength || ''}`,
+    `真太阳时：你 ${solarLine(r.a)}；对方 ${solarLine(r.b)}`,
     ...r.dimensions.map(d),
     ...r.notes.map((n) => `※ ${n}`),
   ].join('\n');
@@ -5600,7 +5674,7 @@ function daliurenText(r) {
   const sc = r.sanChuan;
   const one = (c) => `${c.zhi}(${c.jiang}${c.liuQin}${c.xunKong ? '空' : ''})`;
   return [
-    `【日时】${r.dayGanZhi}日　${r.hourZhi}时（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}`,
+    `【日时】${r.dayGanZhi}日　${r.hourZhi}时（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　${r.lateZi === false ? '晚子时不换日' : '晚子时换日'}`,
     `【三传】初 ${one(sc.chu)} → 中 ${one(sc.zhong)} → 末 ${one(sc.mo)}`,
     `【四课】${r.siKe.map((k) => `${k.position}课 ${k.shang}上${k.xia}下(${k.relation}·${k.jiang})`).join('　')}`,
     `【天地盘】${r.pan.map((p) => `${p.di}:${p.tian}(${p.jiang})`).join(' ')}`,
@@ -5666,6 +5740,9 @@ function compute(args = {}) {
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
   }
+  if (r && (r.system === 'bazi' || r.system === 'ziwei') && r.input && r.input.longitude == null && r.summary) {
+    r.summary = `⚠ 未提供出生地或经度：按东八区平太阳时排盘，时柱可能与本命盘相差一个时辰；海外出生请先把当地时间换算成东八区标准时。\n${r.summary}`;
+  }
   if (args.withInterpret) {
     r.interpret = interpret(r, {
       question: typeof args.question === 'string' ? args.question : '',
@@ -5706,6 +5783,7 @@ function computeRaw(args = {}) {
   const system = args.system;
   if (system === 'bazi') {
     const dt = parseDateTime(args.datetime);
+    const asOf = checkAsOf(args.asOf);
     const result = buildBazi({
       ...dt,
       gender: requireGender(args.gender),
@@ -5714,8 +5792,9 @@ function computeRaw(args = {}) {
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       lateZi: args.lateZi !== false,
       trueSolar: args.trueSolar !== false,
+      nowYear: asOf ? asOf.year : undefined,
     });
-    return { ...result, precision: dt.precision, summary: baziText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: baziText(result) };
   }
   if (system === 'ziwei') {
     const dt = parseDateTime(args.datetime);
@@ -5737,12 +5816,17 @@ function computeRaw(args = {}) {
     if (!TAROT_COUNTS.includes(count)) {
       throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
     }
-    const result = drawTarot({ count, question: args.question });
-    return { ...result, summary: tarotText(result) };
+    if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
+    const asOf = checkAsOf(args.asOf);
+    const result = drawTarot({ count, question: args.question, at: args.asOf, random: randomOf(args.seed) });
+    if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
+    return { ...result, ...(asOf ? { asOf } : {}), summary: tarotText(result) };
   }
   if (system === 'daliuren') {
     const dt = parseDateTime(args.datetime);
-    const result = buildDaliuren({ ...dt, lateZi: args.lateZi !== false });
+    const lateZi = args.lateZi !== false;
+    const result = buildDaliuren({ ...dt, lateZi });
+    result.lateZi = lateZi;
     return { ...result, precision: dt.precision, summary: daliurenText(result) };
   }
   if (system === 'qimen') {
@@ -5750,14 +5834,15 @@ function computeRaw(args = {}) {
     if (args.juMethod !== undefined && !JU_METHODS.includes(args.juMethod)) {
       throw fail('E_INPUT', `juMethod 只能是 chaibu / chaoshen / zhirun，收到「${args.juMethod}」`);
     }
-    if (args.lateZiHourMode !== undefined && !LATE_ZI_MODES.includes(args.lateZiHourMode)) {
-      throw fail('E_INPUT', `lateZiHourMode 只能是 same-day / next-day，收到「${args.lateZiHourMode}」`);
+    const mode = args.lateZiHourMode !== undefined
+      ? args.lateZiHourMode
+      : args.lateZi === true ? 'next-day' : args.lateZi === false ? 'same-day' : undefined;
+    if (mode !== undefined && !LATE_ZI_MODES.includes(mode)) {
+      throw fail('E_INPUT', `lateZiHourMode 只能是 same-day / next-day，收到「${mode}」`);
     }
-    const result = buildQimen({
-      ...dt,
-      lateZiHourMode: args.lateZiHourMode === 'next-day' ? 'next-day' : 'same-day',
-      juMethod: args.juMethod,
-    });
+    const lateZiHourMode = mode === 'next-day' ? 'next-day' : 'same-day';
+    const result = buildQimen({ ...dt, lateZiHourMode, juMethod: args.juMethod });
+    result.lateZiHourMode = lateZiHourMode;
     return { ...result, summary: qimenText(result) };
   }
   if (system === 'hepan') {
@@ -5808,9 +5893,10 @@ function computeRaw(args = {}) {
     return { ...result, summary: meihuaText(result) };
   }
   if (system === 'liuyao') {
+    if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
     let lines;
     if (args.lines === undefined || args.lines === null) {
-      lines = tossLines();
+      lines = tossLines(randomOf(args.seed));
     } else {
       if (!Array.isArray(args.lines)) {
         throw fail('E_LINES', 'lines 必须是数组：自下而上 6 个爻值（6 老阴 / 7 少阳 / 8 少阴 / 9 老阳）');
@@ -5832,6 +5918,7 @@ function computeRaw(args = {}) {
     } catch (e) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
+    if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, summary: liuyaoText(result) };
   }
   if (!system) {
@@ -7539,8 +7626,8 @@ function App() {
         ? `起卦时刻用的是你手动填的（${time}）；想跟随当下，把时间改回或清空即可。`
         : `起卦时刻已自动取本机时间（${time}），每次点起卦都会重新取当下；想固定时刻就在上面改。`) : null,
 
-    error ? h('div', { key: 'err', className: 'mp-err' }, error) : null,
-    notice ? h('div', { key: 'ntc', className: 'mp-note' }, notice) : null,
+    error ? h('div', { key: 'err', className: 'mp-err', role: 'alert' }, error) : null,
+    notice ? h('div', { key: 'ntc', className: 'mp-note', role: 'status' }, notice) : null,
 
     (!result && !error) ? h('div', { key: 'empty', className: 'mp-empty' },
       h('b', null, tab === 'ziwei' ? '填好出生信息，点「排盘」' : tab === 'bazi' ? '填好出生信息，点「排盘」'
@@ -7550,6 +7637,9 @@ function App() {
     result ? h('div', {
       key: 'card',
       className: 'mp-card mp-flat',
+      role: 'region',
+      'aria-label': '排盘结果',
+      'aria-live': 'polite',
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
         __html: castAtHTML(result) + PP.resultWithInterpret(

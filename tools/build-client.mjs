@@ -1,11 +1,11 @@
-﻿// 把 engine/*.js 打成单个浏览器模块，供 client.js 内联使用。
+// 把 engine/*.js 打成单个浏览器模块，供 client.js 内联使用。
 // 每个模块包在独立 IIFE 里，避免顶层同名冲突（NAYIN_NAMES / PALACE_NAMES / GENERATES 等）。
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
-const ORDER = ['vsop-earth', 'calendar', 'lunar', 'geo', 'shensha', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'interpret', 'index'];
+const ORDER = ['vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'shensha', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'interpret', 'index'];
 
 export const MODULE_ORDER = ORDER;
 

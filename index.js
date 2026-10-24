@@ -9,10 +9,11 @@ export const inject = ['tools'];
 const TOOL_NAME = 'metaphysics_chart';
 
 const DESCRIPTION = [
-  '排中国传统命理盘与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）或塔罗抽牌（tarot）。',
-  '当用户明确要求“排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势”时调用。',
-  'bazi 与 ziwei 需要公历出生时间；liuyao 可给定六爻值或随机起卦；meihua 可按时间或数字起卦；tarot 可指定张数与问题。',
+  '排中国传统命理盘与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）、奇门遁甲（qimen）、合盘（hepan）或塔罗抽牌（tarot）。',
+  '当用户明确要求“排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘”时调用。',
+  'bazi 与 ziwei 需要公历出生时间与性别；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦；meihua 可按时间或数字起卦；tarot 可指定张数与问题。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
+  '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。',
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
 
@@ -23,16 +24,38 @@ export function apply(ctx) {
     return e;
   };
 
-  /** 工具主体的实际流程：参数整形 → 地址联网 → 排盘 */
+  /**
+   * 地址解析缓存：同一次会话里反复排盘（尤其是合盘两侧）不必重复请求。
+   * 只缓存联网结果；离线查表本身是常数级开销。
+   */
+  const GEO_TTL_MS = 6 * 60 * 60 * 1000;
+  const geoCache = new Map();
+  async function geocodeCached(address, opts) {
+    const key = `${String(address).trim()}|${opts.online ? 'online' : 'offline'}`;
+    const hit = geoCache.get(key);
+    const now = Date.now();
+    if (hit && now - hit.at < GEO_TTL_MS) return hit.value;
+    const value = await geocodeAddress(address, opts);
+    if (geoCache.size >= 200) geoCache.delete(geoCache.keys().next().value);
+    geoCache.set(key, { at: now, value });
+    return value;
+  }
+
+  /** 工具主体的实际流程：参数整形 → 地址解析（默认离线） → 排盘 */
   async function run(args) {
     if (!args || typeof args !== 'object' || Array.isArray(args)) throw bad('参数必须是对象');
+    if (args.geocode !== undefined && args.geocode !== 'offline' && args.geocode !== 'online') {
+      throw bad(`geocode 只能是 offline / online，收到「${args.geocode}」`);
+    }
     const next = { ...args };
-    // 地址 -> 经度：先查内置表，地址更细或未命中时联网（Nominatim）。真太阳时决定时柱/日柱，合盘两侧都要算
+    // 默认离线：内置表覆盖到地级市，足够真太阳时用；联网是把出生地原文发给第三方，必须显式开启
+    const wantsOnline = next.geocode === 'online';
     const resolveGeo = async (person) => {
+      if (!wantsOnline) return; // 离线：引擎自己会查内置表
       if (typeof person.address !== 'string' || !person.address.trim()) return;
       if (typeof person.longitude === 'number') return;
       try {
-        const geo = await geocodeAddress(person.address, { online: true });
+        const geo = await geocodeCached(person.address, { online: true });
         if (geo && typeof geo.lon === 'number') {
           person.longitude = geo.lon;
           person.geo = geo;
@@ -75,7 +98,13 @@ export function apply(ctx) {
         address: {
           type: 'string',
           description:
-            '出生地地址，如「河北石家庄」「成都」「新疆喀什」。用于推算经度并按真太阳时排盘（bazi 与 ziwei 都适用）；只写到省市即可，内置地级市坐标表。与 longitude 同时给出时以 longitude 为准。',
+            '出生地地址，如「河北石家庄」「成都」「新疆喀什」。用于推算经度并按真太阳时排盘（bazi / ziwei / hepan 都适用，合盘的 partner.address 同理）；只写到省市即可，内置地级市坐标表。与 longitude 同时给出时以 longitude 为准。',
+        },
+        geocode: {
+          type: 'string',
+          enum: ['offline', 'online'],
+          description:
+            '地址解析方式，默认 offline：只用内置坐标表（最细到地级市，够真太阳时用）。online 会向 OpenStreetMap Nominatim 发一次查询，可精确到区县/路名；出生地原文会发给第三方，仅在用户明确要求精确到区县时开启。',
         },
         longitude: {
           type: 'number',
@@ -84,7 +113,8 @@ export function apply(ctx) {
         },
         lateZi: {
           type: 'boolean',
-          description: '23:00 后是否算次日（晚子时换日），默认 true。',
+          description:
+            '23:00 后是否算次日（晚子时换日）。八字/大六壬默认 true（换日）；奇门默认 false（归当日），也可用 lateZiHourMode 指定。输出摘要会写明实际采用的口径。',
         },
         trueSolar: {
           type: 'boolean',
@@ -111,7 +141,11 @@ export function apply(ctx) {
         },
         asOf: {
           type: 'string',
-          description: '紫微流月/流日/流时的基准时刻，形如 2026-10-22T16:00；省略则按调用时的本机当前时刻。要复现某一时刻的推演结果时请显式给出。',
+          description: '基准时刻，形如 2026-10-22T16:00。紫微用它定流月/流日/流时；八字用它钉死「流年从哪年起排」；塔罗用它记录 castAt（抽牌时刻）。省略则按调用时的本机当前时刻——要复现某一次结果就显式给出。',
+        },
+        seed: {
+          type: 'number',
+          description: '随机种子，仅 tarot / liuyao 使用。给了同一个 seed，抽牌或摇卦的结果可完整复现（便于回放与对拍）；不传则真随机。',
         },
         juMethod: {
           type: 'string',

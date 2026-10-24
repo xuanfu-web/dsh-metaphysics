@@ -23,3 +23,5 @@ jobs:
         run: node tools/check-assertions.mjs
       - name: 测试自检（故意写错的断言必须变红）
         run: node tools/verify-tests-can-fail.mjs
+      - name: HTML 注入面扫描（innerHTML 拼接必须转义）
+        run: node tools/check-html-sinks.mjs

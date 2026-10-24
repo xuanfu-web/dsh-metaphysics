@@ -353,17 +353,18 @@ export function tarotReading({ question = '', cards = [] } = {}) {
   return paras;
 }
 
-/** 抽牌：count 张，按牌阵给出位置 */
-export function drawTarot({ count = 3, question = '', at } = {}) {
+/** 抽牌：count 张，按牌阵给出位置。random 可注入（配合 seed 复现同一次抽牌） */
+export function drawTarot({ count = 3, question = '', at, random = Math.random } = {}) {
   const n = [1, 3, 5].includes(count) ? count : 3;
+  const rand = typeof random === 'function' ? random : Math.random;
   const deck = tarotDeck();
   for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
   const positions = SPREADS[n];
   const cards = deck.slice(0, n).map((c, i) => {
-    const upright = Math.random() < 0.5;
+    const upright = rand() < 0.5;
     const pos = positions[i];
     return {
       position: pos.name,

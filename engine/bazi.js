@@ -278,8 +278,8 @@ export function buildBazi(input) {
     });
   }
 
-  // 流年（当年起 10 年）
-  const thisYear = new Date().getFullYear();
+  // 流年（默认从「今年」起排 10 年；传 input.nowYear 可钉死基准年，用于复现历史结论）
+  const thisYear = Number(input.nowYear) || new Date().getFullYear();
   const liunian = [];
   for (let y = thisYear; y < thisYear + 10; y++) {
     const idx = (((y - 4) % 60) + 60) % 60;
@@ -496,5 +496,6 @@ export function buildBazi(input) {
     strength,
     frame,
     liunian,
+    liunianFrom: thisYear,
   };
 }

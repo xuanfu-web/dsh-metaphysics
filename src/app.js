@@ -1,4 +1,4 @@
-﻿// ── 历史记录（localStorage，只存参数，最多 20 条） ──
+// ── 历史记录（localStorage，只存参数，最多 20 条） ──
 const HIST_KEY = 'dsh-metaphysics/history-v1';
 function loadHistory() {
   try {
@@ -528,8 +528,8 @@ function App() {
         ? `起卦时刻用的是你手动填的（${time}）；想跟随当下，把时间改回或清空即可。`
         : `起卦时刻已自动取本机时间（${time}），每次点起卦都会重新取当下；想固定时刻就在上面改。`) : null,
 
-    error ? h('div', { key: 'err', className: 'mp-err' }, error) : null,
-    notice ? h('div', { key: 'ntc', className: 'mp-note' }, notice) : null,
+    error ? h('div', { key: 'err', className: 'mp-err', role: 'alert' }, error) : null,
+    notice ? h('div', { key: 'ntc', className: 'mp-note', role: 'status' }, notice) : null,
 
     (!result && !error) ? h('div', { key: 'empty', className: 'mp-empty' },
       h('b', null, tab === 'ziwei' ? '填好出生信息，点「排盘」' : tab === 'bazi' ? '填好出生信息，点「排盘」'
@@ -539,6 +539,9 @@ function App() {
     result ? h('div', {
       key: 'card',
       className: 'mp-card mp-flat',
+      role: 'region',
+      'aria-label': '排盘结果',
+      'aria-live': 'polite',
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
         __html: castAtHTML(result) + PP.resultWithInterpret(

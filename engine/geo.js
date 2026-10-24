@@ -1,5 +1,7 @@
-// 地址 -> 经度（真太阳时用）。内置省级 + 主要地级市坐标，供离线使用。
-// 坐标为近似值（±0.2°≈0.8 分钟时差），足够真太阳时使用；不联网、不上传。
+// 地址 -> 经度（真太阳时用）。内置省级 + 主要地级市坐标，离线即可用。
+// 坐标为近似值（±0.2°≈0.8 分钟时差），足够真太阳时使用。
+// 联网（Nominatim）是显式可选项：只有调用方传 online: true 才会把地址原文发出去，
+// 默认走内置表，不上传任何数据。
 const RAW = `
 北京 116.41 39.90;上海 121.47 31.23;天津 117.20 39.13;重庆 106.55 29.56
 广州 113.26 23.13;深圳 114.06 22.55;珠海 113.58 22.27;东莞 113.75 23.02;佛山 113.12 23.02
@@ -139,7 +141,10 @@ export function resolveAddress(input) {
 /** 地址里出现了比「城市」更细的层级时，优先联网 */
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-/** OpenStreetMap Nominatim：免密钥、支持中文。失败返回 null。 */
+/** OpenStreetMap Nominatim：免密钥、支持中文。失败返回 null。
+ *  UA 按 OSM 使用政策要求写明应用与联系方式（改版本时同步这里）。 */
+const USER_AGENT = 'dsh-metaphysics/0.14.2 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
   let timer = null;
@@ -150,7 +155,7 @@ async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
       + encodeURIComponent(text);
     const res = await fetch(url, {
       signal: controller ? controller.signal : undefined,
-      headers: { 'User-Agent': 'dsh-metaphysics/0.2 (local plugin)' },
+      headers: { 'User-Agent': USER_AGENT },
     });
     if (!res || !res.ok) return null;
     const list = await res.json();
@@ -168,7 +173,8 @@ async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
 }
 
 /**
- * 地址 -> 经度。离线表优先；地址更细（含区/县/村/小区等）或离线未命中时联网查。
+ * 地址 -> 经度。默认只查内置表；显式 online: true 时，地址更细（含区/县/村/小区等）
+ * 或离线未命中才会联网查。
  * @param {string} input 地址
  * @param {{online?: boolean, timeoutMs?: number}} opts
  */
@@ -176,7 +182,8 @@ export async function geocodeAddress(input, opts = {}) {
   const local = resolveAddress(input);
   const text = String(input || '').trim();
   if (!text) return local;
-  const wantOnline = opts.online !== false;
+  // 默认离线：联网必须显式开启（会把出生地原文发给第三方）
+  const wantOnline = opts.online === true;
   if (!wantOnline) return local;
   if (local && typeof local.lon === 'number' && !DETAIL.test(text)) return local;
   const remote = await onlineLookup(text, opts);

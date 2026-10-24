@@ -1,6 +1,6 @@
 {
     "name":  "dsh-metaphysics",
-    "version":  "0.14.1",
+    "version":  "0.14.2",
     "type":  "module",
     "description":  "命理排盘 for DeepSeek Harness: BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年四化), LiuYao with real line rendering, MeiHua YiShu, Da Liu Ren (heaven-earth plate, four lessons, three transmissions) and Tarot, Ask（所问之事 + 询问方向）driven interpretation, plus a plain-language 解析与详解 module (five dimensions + hexagram/card sections) — as an agent tool plus a Web panel.",
     "keywords":  [
@@ -46,8 +46,9 @@
                     "build":  "node tools/build-client.mjs",
                     "build:html":  "node tools/build-html.mjs",
                     "test":  "node tools/test-all.mjs",
-                    "test:ci":  "node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs",
+                    "test:ci":  "node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs && node tools/check-html-sinks.mjs",
                     "test:baseline":  "node tools/check-assertions.mjs --update",
+                    "check:html":  "node tools/check-html-sinks.mjs",
                     "release":  "node tools/release.mjs"
                 },
     "exports":  {

@@ -1,6 +1,6 @@
-﻿// 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
+// 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
 import {
-  toJDN, jdToParts, termInstantJd, deltaTSeconds,
+  toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor, OFFSET_MODERN,
 } from './calendar.js';
 
 const SYNODIC = 29.530588861;
@@ -53,9 +53,9 @@ export function newMoonJd(k) {
     - 0.00002 * Math.sin(3 * Mp + M)
     + 0.00002 * Math.sin(4 * Mp);
 
-  // TT -> UT -> 北京时间
+  // TT -> UT -> 当时本地时间轴（1929 前北京地方平时，之后东八区；与节气共用同一套换算）
   const jdUT = jde + corr - deltaTSeconds(2000 + T * 100) / 86400;
-  return jdUT + (jdUT < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN);
+  return jdUT + localOffsetFor(jdUT);
 }
 
 /** 某时刻所在的「日」：返回当日 0 时的 JDN */
@@ -63,16 +63,11 @@ export function dayNumberOf(jd) {
   return Math.floor(jd + 0.5);
 }
 
-// 1929 年元旦之前，中国历书按「北京地方平时」（116.4E，UTC+7.7611）推算朔与中气；
-// 之后改用东经 120 度标准时（UTC+8）。这一天差会让朔日跨零点，进而整月错位。
-const OFFSET_MODERN = 8 / 24;
-const OFFSET_BEIJING_LOCAL = 7.7611 / 24;
-const CUTOVER_JD = 2425613.5; // 1929-01-01 00:00 UT
-
+// 1929 年前后的时区切换常量与换算统一放在 calendar.js（节气与农历共用）
 /** 把 calendar 给出的「东八区轴」时刻换成当时的地方轴 */
 function toHistoricalLocal(jdBeijing) {
-  const jdUT = jdBeijing - OFFSET_MODERN;
-  return jdUT + (jdUT < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN);
+  const jdUt = jdBeijing - OFFSET_MODERN;
+  return jdUt + localOffsetFor(jdUt);
 }
 
 function kNear(jdDay) {

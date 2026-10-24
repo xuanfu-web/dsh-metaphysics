@@ -127,11 +127,31 @@ export function deltaTSeconds(year) {
   return knots[knots.length - 1][1];
 }
 
+// 1929 年元旦之前，中国历书按「北京地方平时」（116.4°E，UTC+7.7611）推算朔与中气；
+// 之后改用东经 120° 标准时（UTC+8）。这 14 分钟会让交节/合朔跨零点，进而整月错位，
+// 所以节气与农历必须共用同一套换算，不能各写一份。
+export const OFFSET_MODERN = 8 / 24;
+export const OFFSET_BEIJING_LOCAL = 7.7611 / 24;
+// 切点 = 1929-01-01 00:00（东八区）对应的 UT 儒略日 = 1928-12-31 16:00 UT。
+// 这里用的是真儒略日轴：partsToJd(1929,1,1) = 2425612.5，减 8/24 即 2425612.1667。
+export const CUTOVER_JD = 2425612 + 4 / 24; // 2425612.1667
+
+/** 某时刻（UT 轴）应当使用的本地时区偏移量 */
+export function localOffsetFor(jdUt) {
+  return jdUt < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN;
+}
+
 /**
- * 第 index 个节气（0 = 小寒）在指定年份的时刻，返回北京时间儒略日。
+ * 第 index 个节气（0 = 小寒）在指定年份的时刻，返回「当时本地时间轴」的儒略日。
  * index 为偶数的是「节」（定月柱），奇数的是「气」。
+ *
+ * 结果按 (year, index) 缓存：农历换算一次要问几百次中气（每个候选月都要判有无中气），
+ * 而 VSOP87 的 earthL 是整个引擎最贵的一段——不缓存时紫微盘 10ms 里有 8ms 花在这里。
  */
-export function termInstantJd(year, index) {
+const TERM_INSTANT_CACHE = new Map();
+const TERM_INSTANT_CACHE_MAX = 4096;
+
+function computeTermInstantJd(year, index) {
   const target = termLongitude(index);
   const anchor = toJDN(year, 1, 5) - 0.5 + index * 15.2184;
   let jd = anchor;
@@ -141,8 +161,21 @@ export function termInstantJd(year, index) {
     jd += diff / 0.98564736;
     if (Math.abs(diff) < 1e-7) break;
   }
-  // TT -> UT -> 本地时间轴（求解轴是 UT，展示轴是东八区）
-  return jd - deltaTSeconds(year) / 86400 + 8 / 24;
+  // TT -> UT -> 当时本地时间轴（1929 前是北京地方平时，之后是东八区）
+  const jdUt = jd - deltaTSeconds(year) / 86400;
+  return jdUt + localOffsetFor(jdUt);
+}
+
+export function termInstantJd(year, index) {
+  const key = year * 24 + index;
+  const hit = TERM_INSTANT_CACHE.get(key);
+  if (hit !== undefined) return hit;
+  const jd = computeTermInstantJd(year, index);
+  if (TERM_INSTANT_CACHE.size >= TERM_INSTANT_CACHE_MAX) {
+    TERM_INSTANT_CACHE.delete(TERM_INSTANT_CACHE.keys().next().value);
+  }
+  TERM_INSTANT_CACHE.set(key, jd);
+  return jd;
 }
 
 /** 儒略日（本地时间轴）拆成日期与时刻 */
@@ -171,8 +204,15 @@ export function equationOfTime(year, month, day) {
   return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
 }
 
-/** 列出 [year-1, year+1] 三年的节气，按时间升序 */
+// 一次排盘要算 72 个节气（三年窗口），每次 12 轮牛顿迭代 × VSOP87 105 项。
+// 同一年的盘经常连着排（面板切 tab、合盘两侧），按年缓存能把这块成本降到常数级。
+const TERM_WINDOW_CACHE = new Map();
+const TERM_WINDOW_CACHE_MAX = 8;
+
+/** 列出 [year-1, year+1] 三年的节气，按时间升序（结果按年缓存，调用方不要修改返回值） */
 export function termWindow(year) {
+  const cached = TERM_WINDOW_CACHE.get(year);
+  if (cached) return cached;
   const list = [];
   for (let y = year - 1; y <= year + 1; y++) {
     for (let i = 0; i < 24; i++) {
@@ -180,6 +220,10 @@ export function termWindow(year) {
     }
   }
   list.sort((a, b) => a.jd - b.jd);
+  if (TERM_WINDOW_CACHE.size >= TERM_WINDOW_CACHE_MAX) {
+    TERM_WINDOW_CACHE.delete(TERM_WINDOW_CACHE.keys().next().value);
+  }
+  TERM_WINDOW_CACHE.set(year, list);
   return list;
 }
 
