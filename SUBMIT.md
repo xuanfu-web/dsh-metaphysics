@@ -59,14 +59,15 @@ PR 合并后站点与 dsh-market 会自动重建，通常一天内可见。
 npm publish --access public
 ```
 
-## 四、提交状态（2026-10-22）
+## 四、提交状态（2026-10-24 更新）
 
 - **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/8517 （`open`，单文件 `data/plugins/xuanfu-web__dsh-metaphysics.yml`）
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **卡点（本机）**：
-  1. 用于建仓/推送的临时令牌已按约删除（API 401）
-  2. 本机到 `github.com:443` 的 git 连接间歇失败（`Could not connect to server`），`api.github.com` 正常
-- **待办**：本地 `main` 比 `origin/main` 多 3 个提交（0.5.0 → 0.14.2，含 0.14.0 的奇门/合盘与 0.14.1/0.14.2 的口径与测试整改），推送后市场侧安装到的才是新版；条目描述已在 PR 分支更新
+- **已推送**：`origin/main` = `83e29ab`（0.14.2），本地不再领先；市场侧安装到的是 0.13.6 的 npm 版本，**还需发一次 npm**（见下）
+- **待办**：`npm publish` 需要 `NPM_TOKEN`；本机没有 npm CLI，但 `.dsh` 自带 pnpm 11.28.5，可用
+  `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
+  （token 走临时 `.npmrc`，用后删除）
+- **历史卡点**：建仓用的临时令牌已删除（API 401）；`github.com:443` 曾间歇失败，现已可推
 
 ## 五、本地同步（已完成）
 
@@ -74,6 +75,11 @@ npm publish --access public
 
 - `~/.dsh/profiles/desktop/package.json` → `"dsh-metaphysics": "link:<本目录>"`
 - `~/.dsh/profiles/desktop/node_modules/dsh-metaphysics` → 指向本目录的符号链接
-- `~/.dsh/profiles/desktop/cordis.patch.yml` 已启用 `dsh-metaphysics`
+- `~/.dsh/profiles/desktop/package.json` 的 `dsh.profile.bundles` 必须含 `"dsh-metaphysics"`
 
-改了 `client.js`（浏览器端产物）之后，刷新页面即可；无需重装。
+> **踩过的坑（2026-10-24）**：某次重启后 profile 的 `bundles` 列表里这一项掉了，
+> 表现是**工具与面板一起消失**（`metaphysics_chart` 报 unknown tool），但依赖与软链都还在。
+> 修复：`plugin_manager` 的 `set_bundle`（target `dsh-metaphysics`，enabled true）可即时恢复并把条目写回 `bundles`。
+> 以后遇到"插件突然不见了"，先看 `bundles` 里还有没有它。
+
+改了 `client.js`（浏览器端产物）之后，刷新页面即可；改了 Host 侧（`index.js` / `engine/`）需要重启 dsh web。
