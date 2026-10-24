@@ -146,6 +146,26 @@ export function apply(ctx) {
           type: 'boolean',
           description: '八字 / 紫微专用：为同一份出生信息再排另一套盘，返回「八字 × 紫微 交叉验证」（同向 / 有张力 / 互补），不合并数值。',
         },
+        verifyPast: {
+          type: 'number',
+          description: '验前事（仅八字）：传年数（如 6），返回过去 N 年的流年信号行，供用户勾选「准/不准」并算贴合度；只读，不改盘。',
+        },
+        rectify: {
+          type: 'boolean',
+          description: '生时校正（仅八字）：配合 events 使用，把候选时辰逐一排盘并按固定规则对过去事件打分，返回候选排序；用于缩小时辰范围，不替代出生记录。',
+        },
+        events: {
+          type: 'array',
+          description: '生时校正用的过去事件：年份 + 类别（career/wealth/love/move/health/other）。',
+          items: {
+            type: 'object',
+            properties: {
+              year: { type: 'integer', description: '事件发生的公历年份，如 2019' },
+              kind: { type: 'string', enum: ['career', 'wealth', 'love', 'move', 'health', 'other'], description: '事件类别' },
+            },
+            required: ['year'],
+          },
+        },
         ask: {
           type: 'string',
           description: '追问：围绕已算好的盘回答「某一年 / 某方面」的问题，如「2027 年事业怎么样」「感情如何」。只取盘面已有字段，不重排、不猜测。',

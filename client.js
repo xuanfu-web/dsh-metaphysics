@@ -746,7 +746,7 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-const USER_AGENT = 'dsh-metaphysics/0.16.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.17.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
@@ -6843,6 +6843,169 @@ function crossText(cross) {
 return { crossCheck, crossText };
 })();
 
+__mods.verify = (function () {
+const KIND_LABEL = {
+  career: '事业变动',
+  wealth: '财运起伏',
+  love: '感情变化',
+  move: '搬迁 / 出行',
+  health: '健康问题',
+  other: '其他大事',
+};
+
+const THEME = (l) => {
+  const rel = (l.relations || []).join('');
+  if (/冲/.test(rel)) return '有冲：变动 / 摩擦';
+  if (/刑/.test(rel)) return '有刑：内耗 / 反复';
+  if (/合/.test(rel)) return '有合：合作 / 牵引';
+  const tier = l.luck && l.luck.tier;
+  if (tier === '大吉' || tier === '吉') return '流年偏顺';
+  if (tier === '大忌' || tier === '忌') return '流年偏压';
+  return '信号平缓';
+};
+
+function pastSignals(chart, untilYear) {
+  const until = Number(untilYear) || Infinity;
+  return (chart.liunian || [])
+    .filter((l) => Number(l.year) <= until)
+    .map((l) => ({
+      year: Number(l.year),
+      ganzhi: l.ganzhi,
+      tier: (l.luck && l.luck.tier) || '平',
+      tenGod: l.stemTenGod || '',
+      relations: l.relations || [],
+      theme: THEME(l),
+    }));
+}
+
+function verifyFit(rows, marks) {
+  const list = Array.isArray(rows) ? rows : [];
+  const m = marks || {};
+  const picked = list.filter((r) => m[r.year] === 'yes' || m[r.year] === 'no');
+  const yes = picked.filter((r) => m[r.year] === 'yes').length;
+  const no = picked.length - yes;
+  const rate = picked.length ? yes / picked.length : null;
+  const level = rate == null ? '未评' : rate >= 0.7 ? '高' : rate >= 0.4 ? '中' : '低';
+  let advice = '';
+  if (rate == null) advice = '先勾几项「准 / 不准 / 不确定」，再看得出的贴合度。';
+  else if (level === '高') advice = '前事与流年信号对得较顺，可以按这张盘继续看；有分歧时以事实为准。';
+  else if (level === '中') advice = '有一部分对得上：先用「追问」核对具体年份，再决定信到什么程度。';
+  else advice = '对得不多：优先核对出生时间、出生地（时区/真太阳时）与晚子时口径，而不是改结论。';
+  return { answered: picked.length, yes, no, rate, level, advice, labels: { ...KIND_LABEL } };
+}
+
+return { KIND_LABEL, pastSignals, verifyFit };
+})();
+
+__mods.rectify = (function () {
+const { buildBazi } = __mods.bazi;
+
+const KINDS = ['career', 'wealth', 'love', 'move', 'health', 'other'];
+const HOURS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23];
+
+const TEN_GOD = (l) => l.stemTenGod || '';
+const has = (l, re) => re.test((l.relations || []).join(''));
+const tier = (l) => (l.luck && l.luck.tier) || '平';
+
+function matchEvent(l, kind) {
+  if (!l) return false;
+  const tg = TEN_GOD(l);
+  const t = tier(l);
+  switch (kind) {
+    case 'career': return /官|杀|食|伤/.test(tg) || has(l, /冲|合/) || t === '大吉' || t === '大忌';
+    case 'wealth': return /财|食|伤/.test(tg) || t === '大吉' || t === '吉';
+    case 'love': return /财|官|杀/.test(tg) || has(l, /合|冲/);
+    case 'move': return has(l, /冲|合/);
+    case 'health': return has(l, /刑|害|冲/) || t === '大忌' || t === '忌';
+    default: return t === '大吉' || t === '大忌' || has(l, /冲|刑|合/);
+  }
+}
+
+function rectifyBirth(opts) {
+  const base = opts && opts.base;
+  const events = (opts && opts.events) || [];
+  const gender = opts && opts.gender;
+  if (!base || !Number.isInteger(base.year) || !Number.isInteger(base.month) || !Number.isInteger(base.day)) {
+    const e = new Error('生时校正需要出生日期 { year, month, day }');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  if (!gender) {
+    const e = new Error('生时校正需要性别');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  const clean = events
+    .filter((x) => x && Number.isInteger(Number(x.year)))
+    .map((x) => ({ year: Number(x.year), kind: KINDS.includes(x.kind) ? x.kind : 'other' }));
+  if (!clean.length) {
+    const e = new Error('生时校正需要至少一条「过去发生的事」（年份 + 类别）');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  const nowYear = Math.min(...clean.map((x) => x.year));
+  const hours = Array.isArray(opts.hours) && opts.hours.length
+    ? opts.hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23)
+    : HOURS;
+
+  const candidates = hours.map((hour) => {
+    const chart = buildBazi({
+      ...base,
+      hour,
+      minute: 0,
+      gender,
+      lateZi: opts.lateZi !== false,
+      trueSolar: opts.trueSolar !== false,
+      address: typeof opts.address === 'string' ? opts.address : undefined,
+      longitude: typeof opts.longitude === 'number' ? opts.longitude : undefined,
+      geo: opts.geo && typeof opts.geo === 'object' ? opts.geo : undefined,
+      nowYear,
+    });
+    const matched = [];
+    const missed = [];
+    for (const ev of clean) {
+      const l = (chart.liunian || []).find((x) => Number(x.year) === ev.year);
+      (matchEvent(l, ev.kind) ? matched : missed).push(ev);
+    }
+    return {
+      hour,
+      label: `${String(hour).padStart(2, '0')}:00 起`,
+      dayGanzhi: chart.pillars.day.ganzhi,
+      hourGanzhi: chart.pillars.hour.ganzhi,
+      score: clean.length ? matched.length / clean.length : 0,
+      hits: matched.length,
+      total: clean.length,
+      matchedYears: matched.map((x) => x.year),
+      missedYears: missed.map((x) => x.year),
+    };
+  });
+  candidates.sort((a, b) => b.score - a.score || a.hour - b.hour);
+
+  const days = [...new Set(candidates.map((c) => c.dayGanzhi))];
+  const best = candidates[0];
+  const second = candidates[1];
+  const tie = second && second.score === best.score;
+
+  return {
+    system: 'bazi',
+    base,
+    events: clean,
+    hours,
+    candidates,
+    best: best || null,
+    tie,
+    dayChanged: days.length > 1,
+    note: `候选 ${candidates.length} 个：命中数最高 ${best ? best.hits : 0}/${clean.length}${tie ? `（有并列：${candidates.filter((c) => c.score === best.score).map((c) => c.hour).join('、')} 点）` : ''}。` +
+      (days.length > 1 ? `注意：跨 23:00 的候选会改变日柱（${days.join(' / ')}），这类差异比时柱更关键。` : '候选之间只差时柱（日柱未变）。') +
+      ' 这是缩小范围的参考，不替代出生记录；命中数接近时不要硬选。',
+  };
+}
+
+const RECTIFY_KINDS = KINDS;
+
+return { matchEvent, rectifyBirth, RECTIFY_KINDS };
+})();
+
 __mods.index = (function () {
 const { buildBazi } = __mods.bazi;
 const { buildLiuyao, tossLines } = __mods.liuyao;
@@ -6859,6 +7022,8 @@ const { randomOf, isSeed } = __mods.random;
 const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
 const { followup } = __mods.followup;
 const { crossCheck, crossText } = __mods.crosscheck;
+const { pastSignals, verifyFit } = __mods.verify;
+const { rectifyBirth } = __mods.rectify;
 const { fail } = __mods.fail;
 const { assertCivil } = __mods.validate;
 
@@ -7137,6 +7302,39 @@ function compute(args = {}) {
       r.interpret.sections.push({ key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: crossText(r.cross) });
     }
   }
+  if (Number.isInteger(args.verifyPast) && args.verifyPast > 0 && r.system === 'bazi') {
+    const years = Math.min(Math.max(args.verifyPast, 1), 10);
+    const from = Number(r.liunianFrom) - years;
+    const pastChart = buildBazi({
+      ...parseDateTime(args.datetime),
+      gender: requireGender(args.gender),
+      lateZi: args.lateZi !== false,
+      trueSolar: args.trueSolar !== false,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      nowYear: from,
+    });
+    r.past = {
+      rows: pastSignals(pastChart, Number(r.liunianFrom) - 1),
+      years,
+      until: Number(r.liunianFrom) - 1,
+    };
+  }
+  if (args.rectify === true && r.system === 'bazi') {
+    const base = parseDateTime(args.datetime);
+    r.rectify = rectifyBirth({
+      base: { year: base.year, month: base.month, day: base.day, minute: base.minute },
+      gender: requireGender(args.gender),
+      events: Array.isArray(args.events) ? args.events : [],
+      hours: Array.isArray(args.rectifyHours) ? args.rectifyHours : undefined,
+      lateZi: args.lateZi !== false,
+      trueSolar: args.trueSolar !== false,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+    });
+  }
   if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
   return r;
 }
@@ -7355,7 +7553,7 @@ function renderText(result) {
   return parts.filter(Boolean).join('\n\n');
 }
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, crossCheck, crossText, parseDateTime, compute, interpretText, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, parseDateTime, compute, interpretText, renderText };
 })();
 
     const Engine = __mods.index;
@@ -8908,6 +9106,19 @@ const CSS = `
 .mp-askbox{display:flex;gap:8px;align-items:center;margin-top:12px}
 .mp-askbox .mp-input{flex:1;min-width:0}
 .mp-fx{margin-top:10px}
+.mp-verify,.mp-rect{margin-top:12px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2)}
+.mp-verify-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--dsw-alias-label-secondary);margin-bottom:8px}
+.mp-verify-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0}
+.mp-verify-btns{display:flex;gap:4px}
+.mp-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer}
+.mp-chip.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:transparent}
+.mp-verify-foot{display:flex;align-items:flex-start;gap:8px;margin-top:8px;flex-wrap:wrap}
+.mp-verify-fit{font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.7;flex:1;min-width:0}
+.mp-rect-row{display:flex;gap:6px;margin-bottom:6px}
+.mp-rect-row .mp-input{flex:1;min-width:0}
+.mp-rect-cand{font-size:12px;padding:5px 8px;border-radius:6px;background:var(--dsw-alias-bg-layer-1);margin-top:4px;color:var(--dsw-alias-label-secondary)}
+.mp-rect-cand.best{border-left:3px solid var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary)}
+.mp-rect-err{color:var(--dsw-alias-label-secondary);font-size:12px}
 .mp-checks{flex-direction:row;align-items:center;gap:7px;font-size:12.5px}
 .mp-checks input{width:15px;height:15px;accent-color:var(--dsw-alias-brand-primary)}
 .mp-auto{margin:-8px 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
@@ -8995,9 +9206,15 @@ function App() {
   const [hpChart, setHpChart] = useState('bazi');
   const [qimenRule, setQimenRule] = useState('chaibu');
   const [trueSolar, setTrueSolar] = useState(true);
+  const [lateZi, setLateZi] = useState(true);
+  const [qLateZi, setQLateZi] = useState('same-day');
   const [crossOn, setCrossOn] = useState(false);
   const [askText, setAskText] = useState('');
   const [fx, setFx] = useState(null);
+  const [pastMarks, setPastMarks] = useState({});
+  const [fit, setFit] = useState(null);
+  const [rectEvents, setRectEvents] = useState([{ year: '2019', kind: 'career' }, { year: '2022', kind: 'love' }]);
+  const [rectRes, setRectRes] = useState(null);
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
@@ -9046,13 +9263,14 @@ function App() {
           }
         }
         if (k !== 'hepan') args.cross = crossOn;
+        args.lateZi = lateZi;
       }
       if (k === 'liuyao') {
         const parsed = Core.parseLines(lines);
         if (parsed.lines) args.lines = parsed.lines;
         else if (parsed.warning) setNotice(parsed.warning);
       }
-      if (k === 'qimen') args.juMethod = qimenRule;
+      if (k === 'qimen') { args.juMethod = qimenRule; args.lateZiHourMode = qLateZi; }
       if (k === 'tarot') args.count = Number(count);
       if (k === 'hepan') {
         args.chart = hpChart;
@@ -9101,7 +9319,7 @@ function App() {
       }
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       setResult({ kind: k, r, it, at: dt, timed });
-      setFx(null);
+      setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       if (k !== 'tarot') {
         const entry = {
@@ -9259,6 +9477,34 @@ function App() {
     }
   };
 
+  const btnStyle = { fontSize: 12, padding: '5px 12px' };
+
+  const calcFit = () => {
+    if (!result || !result.r || !result.r.past) return;
+    setFit(Engine.verifyFit ? Engine.verifyFit(result.r.past.rows, pastMarks) : null);
+  };
+
+  const runRectify = () => {
+    if (!result || result.kind !== 'bazi') return;
+    try {
+      const [y, m, d] = String(date).split('-').map(Number);
+      const [, mm] = String(time).split(':').map(Number);
+      const events = rectEvents
+        .filter((e) => Number(e.year))
+        .map((e) => ({ year: Number(e.year), kind: e.kind }));
+      setRectRes(Engine.rectifyBirth ? Engine.rectifyBirth({
+        base: { year: y, month: m, day: d, minute: Number.isFinite(mm) ? mm : 0 },
+        gender,
+        events,
+        lateZi,
+        trueSolar,
+        address: address.trim() || undefined,
+      }) : { error: '当前客户端未加载生时校正模块' });
+    } catch (e) {
+      setRectRes({ error: e && e.message ? e.message : String(e) });
+    }
+  };
+
   const field = (label, node) => h('label', { className: 'mp-field' }, h('span', { className: 'mp-lbl' }, label), node);
 
   const replay = (x) => {
@@ -9345,6 +9591,10 @@ function App() {
               onChange: () => setQimenRule(value),
             }),
             h('span', null, label)))),
+          h('div', { className: 'mp-field' }, h('span', { className: 'mp-lbl' }, '晚子时'),
+            h('select', { className: 'mp-input', value: qLateZi, onChange: (e) => setQLateZi(e.target.value) },
+              h('option', { value: 'same-day' }, '23:00 后归当日'),
+              h('option', { value: 'next-day' }, '23:00 后归次日'))),
           h('details', { className: 'mp-qmhelp' },
             h('summary', null, '三种规则有什么区别？'),
             h('p', null, '决定符头与节气如何对齐、是否插入闰局；同一个时刻在不同规则下可能得到不同局数。默认「拆补」与工具层一致。'))) : null,
@@ -9378,6 +9628,9 @@ function App() {
       isBirth ? h('div', { className: 'mp-checks' },
         h('label', { title: '按出生地经度把钟表时间换算成真太阳时' },
           h('input', { type: 'checkbox', checked: trueSolar, onChange: (e) => setTrueSolar(e.target.checked) }), '真太阳时'),
+        isBirth ? h('label', { className: 'mp-field mp-checks' },
+          h('input', { type: 'checkbox', checked: lateZi, onChange: (e) => setLateZi(e.target.checked) }),
+          h('span', { className: 'mp-lbl' }, '晚子时换日')) : null,
         h('label', { title: '开启后会请求 OpenStreetMap，把区县/村落到更精确的坐标' },
           h('input', { type: 'checkbox', checked: onlineGeo, onChange: (e) => setOnlineGeo(e.target.checked) }), '联网精确到区县')) : null,
       needAsk(tab) ? h('div', { className: 'mp-askblock' },
@@ -9470,6 +9723,40 @@ function App() {
       h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问')) : null,
 
     fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
+
+    (result && result.kind === 'bazi' && result.r.past) ? h('div', { key: 'verify', className: 'mp-verify' },
+      h('div', { className: 'mp-verify-h' }, '验前事 · 过去几年的信号（只读，不改盘）'),
+      result.r.past.rows.map((row) => h('div', { key: row.year, className: 'mp-verify-row' },
+        h('span', { className: 'mp-verify-txt' }, `${row.year} ${row.ganzhi} · ${row.theme}`),
+        h('span', { className: 'mp-verify-btns' }, ['yes', 'no', 'unsure'].map((m) => h('button', {
+          key: m,
+          className: 'mp-chip' + (pastMarks[row.year] === m ? ' on' : ''),
+          onClick: () => setPastMarks(Object.assign({}, pastMarks, { [row.year]: m })),
+        }, m === 'yes' ? '准' : m === 'no' ? '不准' : '不确定'))))),
+      h('div', { className: 'mp-verify-foot' },
+        h('button', { className: 'mp-btn ghost', style: btnStyle, onClick: calcFit }, '算贴合度'),
+        fit ? h('span', { className: 'mp-verify-fit' }, `命中 ${fit.yes}/${fit.answered}（${fit.level}）：${fit.advice}`) : null)) : null,
+
+    (result && result.kind === 'bazi') ? h('div', { key: 'rect', className: 'mp-rect' },
+      h('div', { className: 'mp-verify-h' }, '生时校正 · 用过去的事反推时辰'),
+      rectEvents.map((ev, i) => h('div', { key: i, className: 'mp-rect-row' },
+        h('input', {
+          className: 'mp-input', type: 'number', min: 1900, max: 2100, value: ev.year,
+          onChange: (e) => setRectEvents(rectEvents.map((x, j) => (j === i ? Object.assign({}, x, { year: e.target.value }) : x))),
+        }),
+        h('select', {
+          className: 'mp-input', value: ev.kind,
+          onChange: (e) => setRectEvents(rectEvents.map((x, j) => (j === i ? Object.assign({}, x, { kind: e.target.value }) : x))),
+        }, [['career', '事业变动'], ['wealth', '财运'], ['love', '感情'], ['move', '搬迁/出行'], ['health', '健康'], ['other', '其他']]
+          .map(([v, l]) => h('option', { key: v, value: v }, l))))),
+      h('button', { className: 'mp-btn ghost', style: btnStyle, onClick: runRectify }, '计算候选时辰'),
+      rectRes ? (rectRes.error
+        ? h('div', { className: 'mp-rect-err' }, rectRes.error)
+        : h('div', { className: 'mp-rect-out' },
+          h('div', { className: 'mp-verify-fit' }, rectRes.note),
+          rectRes.candidates.slice(0, 6).map((c) => h('div', {
+            key: c.hour, className: 'mp-rect-cand' + (c === rectRes.best ? ' best' : ''),
+          }, `${c.label} · 时柱 ${c.hourGanzhi} · 日柱 ${c.dayGanzhi} · 命中 ${c.hits}/${c.total}`)))) : null) : null,
 
     (!result && !error) ? h('div', { key: 'ph', className: 'mp-dim', style: { marginTop: 24, fontSize: 12 } },
       '选择体系后点「排盘」。所有计算在本机完成，不上传任何数据。') : null,

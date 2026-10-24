@@ -59,7 +59,7 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
 {
   const html = page();
   ok('方法页存在且默认隐藏', /id="method"[^>]*hidden/.test(html));
-  ok('方法页写明对拍与测试', /128 条/.test(html) && /52 个测试文件|1335 条断言/.test(html));
+  ok('方法页写明对拍与测试', /128 条/.test(html) && /53 个测试文件|1360 条断言/.test(html));
   ok('方法页写明已知边界', /已知边界/.test(html) && /应期|金额/.test(html));
   ok('有打开方法页的入口', /id="method-open"/.test(html) && /方法与验证/.test(html));
   const ui = read('src/web-ui.js');

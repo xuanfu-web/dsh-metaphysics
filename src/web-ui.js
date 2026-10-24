@@ -135,6 +135,7 @@
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
       + followupBar()
+      + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
       + exportBar();
     last.it = it;
   }
@@ -156,6 +157,67 @@
     const fx = window.Engine.followup ? window.Engine.followup(last.r, q) : null;
     const out = el('fout');
     if (out) out.innerHTML = fx ? window.__PP.followupHTML(fx) : '';
+  }
+
+  // ── 验前事 / 生时校正（仅八字）─────────────────────────────
+  let pastMarks = {};
+  let pastFit = null;
+  let rectOut = null;
+  const rectEvents = [{ year: '2019', kind: 'career' }, { year: '2022', kind: 'love' }];
+
+  function verifyHTML() {
+    const rows = (last && last.r && last.r.past && last.r.past.rows) || [];
+    if (!rows.length) return '';
+    const row = (r) => `<div class="mp-verify-row"><span class="mp-verify-txt">${r.year} ${r.ganzhi} · ${r.theme}</span>
+      <span class="mp-verify-btns">${[['yes', '准'], ['no', '不准'], ['unsure', '不确定']].map(([m, l]) =>
+    `<button type="button" class="mp-chip${pastMarks[r.year] === m ? ' on' : ''}" data-pmark="${r.year}" data-mark="${m}">${l}</button>`).join('')}</span></div>`;
+    return `<div class="mp-verify"><div class="mp-verify-h">验前事 · 过去几年的信号（只读，不改盘）</div>
+      ${rows.map(row).join('')}
+      <div class="mp-verify-foot"><button type="button" class="mp-btn ghost" data-calfit="1" style="font-size:12px;padding:5px 12px">算贴合度</button>
+      <span id="fitout" class="mp-verify-fit">${pastFit ? `命中 ${pastFit.yes}/${pastFit.answered}（${pastFit.level}）：${pastFit.advice}` : ''}</span></div></div>`;
+  }
+
+  function rectifyHTML() {
+    const rows = rectEvents.map((ev, i) => `<div class="mp-rect-row">
+      <input id="ry${i}" type="number" min="1900" max="2100" value="${ev.year}" class="mp-input" style="flex:1">
+      <select id="rk${i}" class="mp-input" style="flex:1">
+        ${[['career', '事业变动'], ['wealth', '财运'], ['love', '感情'], ['move', '搬迁/出行'], ['health', '健康'], ['other', '其他']]
+    .map(([v, l]) => `<option value="${v}"${ev.kind === v ? ' selected' : ''}>${l}</option>`).join('')}
+      </select></div>`).join('');
+    return `<div class="mp-rect"><div class="mp-verify-h">生时校正 · 用过去的事反推时辰</div>${rows}
+      <button type="button" class="mp-btn ghost" data-rectify="1" style="font-size:12px;padding:5px 12px">计算候选时辰</button>
+      <div id="rectout">${rectOutHTML()}</div></div>`;
+  }
+
+  function rectOutHTML() {
+    if (!rectOut) return '';
+    if (rectOut.error) return `<div class="mp-rect-err">${rectOut.error}</div>`;
+    return `<div class="mp-verify-fit">${rectOut.note}</div>${rectOut.candidates.slice(0, 6)
+      .map((c) => `<div class="mp-rect-cand${c === rectOut.best ? ' best' : ''}">${c.label} · 时柱 ${c.hourGanzhi} · 日柱 ${c.dayGanzhi} · 命中 ${c.hits}/${c.total}</div>`).join('')}`;
+  }
+
+  function doRectify() {
+    if (!last || !last.r || last.tab !== 'bazi') return;
+    const events = rectEvents
+      .map((ev, i) => ({ year: Number(el('ry' + i) && el('ry' + i).value), kind: el('rk' + i) ? el('rk' + i).value : 'other' }))
+      .filter((e) => Number.isInteger(e.year) && e.year > 1900);
+    try {
+      rectOut = window.Engine.rectifyBirth ? window.Engine.rectifyBirth({
+        base: {
+          year: Number(last.date.slice(0, 4)),
+          month: Number(last.date.slice(5, 7)),
+          day: Number(last.date.slice(8, 10)),
+          minute: Number(last.time.slice(3, 5)) || 0,
+        },
+        gender: el('gender').value,
+        events,
+        lateZi: el('latezi') ? el('latezi').checked : true,
+        trueSolar: el('ts') ? el('ts').checked : true,
+        address: el('addr') && el('addr').value.trim() ? el('addr').value.trim() : undefined,
+      }) : { error: '当前页面未加载生时校正模块' };
+    } catch (e) { rectOut = { error: e && e.message ? e.message : String(e) }; }
+    const out = el('rectout');
+    if (out) out.innerHTML = rectOutHTML();
   }
 
   // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
@@ -223,6 +285,7 @@
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
       args.gender = el('gender').value;
+      if (el('latezi')) args.lateZi = el('latezi').checked;
       args.trueSolar = el('ts').checked;
       const addr = el('addr').value.trim();
       if (addr) {
@@ -249,7 +312,9 @@
     if (tab === 'qimen') {
       const picked = document.querySelector('input[name="qimen_rule"]:checked');
       args.juMethod = picked ? picked.value : 'chaibu';
+      if (el('qlatezi')) args.lateZiHourMode = el('qlatezi').value;
     }
+    if (tab === 'bazi') args.verifyPast = 6;
     if (tab === 'liuyao') {
       const parsed = Core.parseLines(el('lines').value);
       if (parsed.lines) args.lines = parsed.lines;
@@ -418,6 +483,19 @@
     el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      const pm = e.target && e.target.closest ? e.target.closest('[data-pmark]') : null;
+      if (pm) { pastMarks[pm.dataset.pmark] = pm.dataset.mark; const vb = el('vbox'); if (vb) vb.innerHTML = verifyHTML(); return; }
+      const cf = e.target && e.target.closest ? e.target.closest('[data-calfit]') : null;
+      if (cf) {
+        if (last && last.r && last.r.past && window.Engine.verifyFit) {
+          pastFit = window.Engine.verifyFit(last.r.past.rows, pastMarks);
+          const fo = el('fitout');
+          if (fo) fo.textContent = `命中 ${pastFit.yes}/${pastFit.answered}（${pastFit.level}）：${pastFit.advice}`;
+        }
+        return;
+      }
+      const rc = e.target && e.target.closest ? e.target.closest('[data-rectify]') : null;
+      if (rc) { doRectify(); return; }
       const askBtn = e.target && e.target.closest ? e.target.closest('[data-act="ask"]') : null;
       if (askBtn) { doAsk(); return; }
       onExportClick(e);

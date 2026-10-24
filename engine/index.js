@@ -14,6 +14,8 @@ import { randomOf, isSeed } from './random.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 import { followup } from './followup.js';
 import { crossCheck, crossText } from './crosscheck.js';
+import { pastSignals, verifyFit } from './verify.js';
+import { rectifyBirth } from './rectify.js';
 import { fail } from './fail.js';
 import { assertCivil } from './validate.js';
 
@@ -313,6 +315,41 @@ export function compute(args = {}) {
       r.interpret.sections.push({ key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: crossText(r.cross) });
     }
   }
+  // 验前事：把过去若干年的流年信号摊开（只读，不改盘）
+  if (Number.isInteger(args.verifyPast) && args.verifyPast > 0 && r.system === 'bazi') {
+    const years = Math.min(Math.max(args.verifyPast, 1), 10);
+    const from = Number(r.liunianFrom) - years;
+    const pastChart = buildBazi({
+      ...parseDateTime(args.datetime),
+      gender: requireGender(args.gender),
+      lateZi: args.lateZi !== false,
+      trueSolar: args.trueSolar !== false,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      nowYear: from,
+    });
+    r.past = {
+      rows: pastSignals(pastChart, Number(r.liunianFrom) - 1),
+      years,
+      until: Number(r.liunianFrom) - 1,
+    };
+  }
+  // 生时校正：候选时辰 × 过去事件，按固定规则打分（仅八字）
+  if (args.rectify === true && r.system === 'bazi') {
+    const base = parseDateTime(args.datetime);
+    r.rectify = rectifyBirth({
+      base: { year: base.year, month: base.month, day: base.day, minute: base.minute },
+      gender: requireGender(args.gender),
+      events: Array.isArray(args.events) ? args.events : [],
+      hours: Array.isArray(args.rectifyHours) ? args.rectifyHours : undefined,
+      lateZi: args.lateZi !== false,
+      trueSolar: args.trueSolar !== false,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+    });
+  }
   // 追问：围绕已算好的盘回答「某一年 / 某方面」的具体问题
   if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
   return r;
@@ -554,6 +591,7 @@ export { geocodeAddress, resolveAddress };
 
 export { buildBazi, buildLiuyao, tossLines };
 export { followup };
+export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText };
 
 
