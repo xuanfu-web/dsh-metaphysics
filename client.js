@@ -5200,6 +5200,9 @@ function liuyaoInterpret(r) {
   const movingLiuqin = moving?.liuqin || '';
   const movingLiushen = moving?.liushen || '';
   const dayGZ = pick(r.dayGanZhi, 'name', '');
+  const cnt = (k) => lines.filter((l) => l.liuqin === k).length;
+  const lineEv = (l) => (l ? `${l.position}爻${l.liuqin}${l.liushen ? '·' + l.liushen : ''}${l.moving ? '（动）' : ''}` : '—');
+  const ev = (...xs) => xs.filter((x) => x != null && x !== '');
 
   sections.push({
     key: 'liuqin', label: '六亲取用',
@@ -5213,12 +5216,23 @@ function liuyaoInterpret(r) {
       text: `这一卦是「${benInfo.full}」，${benInfo.meaning}。${movingLiushen ? `动爻带${movingLiushen}，事情带一点${movingLiushen === '青龙' ? '喜庆顺遂' : movingLiushen === '白虎' ? '压力与阻碍' : movingLiushen === '朱雀' ? '口舌与是非' : movingLiushen === '玄武' ? '不明朗、需要核实' : '反复与牵扯'}的色彩。` : ''}` +
         `日辰为${dayGZ}，卦宫属${palaceEl}，整体更像是${benInfo.scene}的阶段。`,
       advice: `${benInfo.scene}——顺着这句做就行。${moving ? '既然有动爻，说明事情还在变化，先观察几天再定也不迟。' : '暂无动爻，说明短期内不会有大的转折，维持现状反而是稳妥选择。'}`,
+      evidence: ev(
+        `本卦 ${ben.name || '—'}（${ben.upper || ''}/${ben.lower || ''}）`,
+        moving ? `动爻 ${lineEv(moving)}` : '无动爻',
+        `日辰 ${dayGZ || '—'}`,
+        `卦宫 ${pick(ben, 'palace', '—')}·${palaceEl || '—'}`,
+      ),
     },
     {
       key: 'work', label: '工作与职业选择',
       text: `问工作看官鬼与父母：本卦中${(lines.filter((l) => l.liuqin === '官鬼').length ? `官鬼出现${lines.filter((l) => l.liuqin === '官鬼').length}处，${lines.find((l) => l.liuqin === '官鬼').moving ? '且有发动，岗位或考核层面会有动作' : '但未发动，职位层面暂时平稳'}` : '未见官鬼，工作这件事在卦中不是主要矛盾')}；` +
         `${(lines.filter((l) => l.liuqin === '父母').length ? '父母（文书、合同、资质）有出现，涉及手续与材料的事要提前准备' : '父母未现，手续类事务暂无明显阻碍')}。`,
       advice: `如果正在看机会，建议先把合同、岗位职责这些落到纸面上的东西问清楚；${moving?.liuqin === '官鬼' ? '动爻在官鬼，工作层面近期有变动的迹象，可以主动谈，但别先辞再找。' : '工作层面暂无强动象，稳住手上的事更划算。'}`,
+      evidence: ev(
+        `官鬼 ${cnt('官鬼')} 现`,
+        `父母 ${cnt('父母')} 现`,
+        movingLiuqin ? `动爻六亲 ${movingLiuqin}` : '无动爻',
+      ),
     },
     {
       key: 'career', label: '事业发展',
@@ -5226,18 +5240,33 @@ function liuyaoInterpret(r) {
         `世应之间${shiLine && yingLine ? (shiLine.liuqin === yingLine.liuqin ? '同气相求，双方立场接近' : '立场有别，需要多沟通') : '信号不明'}，` +
         `${bianInfo ? `变卦「${bianInfo.full}」提示后续走向是${bianInfo.scene}` : '暂无变卦'}。`,
       advice: `事业上的建议是：${shiLine?.moving ? '你自己这边有主动变化的意思，那就把想法说出来、把动作做出来' : '先不动，把手上的事做扎实'}；${bianInfo ? `按${bianInfo.scene}的方向去准备，会比被动等结果好。` : ''}`,
+      evidence: ev(
+        `世 ${lineEv(shiLine)}`,
+        `应 ${lineEv(yingLine)}`,
+        bian.name ? `变卦 ${bian.name}` : '无变卦',
+      ),
     },
     {
       key: 'love', label: '爱情与感情',
       text: `问感情，男看妻财、女看官鬼。本卦中${(lines.filter((l) => l.liuqin === '妻财').length ? `妻财${lines.filter((l) => l.liuqin === '妻财').length}现${lines.find((l) => l.liuqin === '妻财').moving ? '且发动，感情层面有动静' : '但安静，关系暂时平缓'}` : '妻财未现，感情不是当前卦象的重点')}；` +
         `${(lines.filter((l) => l.liuqin === '官鬼').length ? '官鬼有现，对方或关系中的压力面是被看到的' : '官鬼未现')}。${benInfo.meaning}，放在关系里就是${benInfo.scene}。`,
       advice: `关系里${moving?.liuqin === '妻财' || moving?.liuqin === '官鬼' ? '近期有变化的可能，适合把话说开，别憋着' : '暂时平稳，可以按自己的节奏相处'}。卦象只给倾向，真正决定关系的是你们怎么沟通。`,
+      evidence: ev(
+        `妻财 ${cnt('妻财')} 现`,
+        `官鬼 ${cnt('官鬼')} 现`,
+        `世应 ${lineEv(shiLine)} / ${lineEv(yingLine)}`,
+      ),
     },
     {
       key: 'health', label: '健康状况',
       text: `问健康，看官鬼（病）与子孙（医药、消散）。本卦中${(lines.filter((l) => l.liuqin === '官鬼').length ? `官鬼有现${lines.find((l) => l.liuqin === '官鬼').moving ? '且发动，提示身体上可能有需要留意的地方' : '，但安静，暂无明显变化'}` : '官鬼未现，卦象未指向明显的身体问题')}；` +
         `${(lines.filter((l) => l.liuqin === '子孙').length ? '子孙有现，恢复与调养的出口是有的' : '子孙未现，休息与调养需要自己主动安排')}。${movingLiushen === '白虎' ? '动爻带白虎，尤其别忽视突发的身体信号。' : ''}`,
       advice: `这一卦在健康上的提醒是${(lines.filter((l) => l.liuqin === '官鬼').length ? '别硬扛，累了就休息，有机会就做一次检查' : '维持现有作息即可，别自己吓自己')}。任何不适请就医，卦象不能替代诊断。`,
+      evidence: ev(
+        `官鬼 ${cnt('官鬼')} 现`,
+        `子孙 ${cnt('子孙')} 现`,
+        movingLiushen ? `动爻六神 ${movingLiushen}` : '',
+      ),
     },
   ];
 
@@ -5286,30 +5315,53 @@ function meihuaInterpret(r) {
       text: `本卦「${benInfo.full}」，${benInfo.meaning}。体${bodyEl}用${useEl}，${relation}，判定为${mhLevel}。` +
         `${isJi ? '整体的倾向是顺的：外部环境对你不算苛刻，可以正常推进' : isXiong ? '整体有阻力：不是不能做，而是要多留余量与耐心' : '整体平稳，不会有大的起落'}。`,
       advice: `${benInfo.scene}。${isXiong ? '建议把节奏放慢，先解决卡点再谈推进' : isJi ? '可以趁势把想做的事往前推一步' : '按原计划走，不必刻意改变'}。`,
+      evidence: [
+        `本卦 ${benInfo.full}`,
+        `互卦 ${pick(hu, 'name', '—')}`,
+        `变卦 ${pick(bian, 'name', '—')}`,
+        `体${bodyEl} / 用${useEl}·${relation || '—'}`,
+        `判定 ${mhLevel || '—'}`,
+      ].filter(Boolean),
     },
     {
       key: 'work', label: '工作与职业选择',
       text: `梅花里工作看用卦与体卦的生克：现在用卦${useEl}${isJi ? '对体卦有利，说明当下的工作环境或岗位与你的匹配度还不错' : isXiong ? '与体卦相耗，说明眼下这份工作消耗感偏重' : '与体卦关系平和，属于不好不坏'}` +
         `。本卦${benInfo.meaning}，对应到工作里就是${benInfo.scene}。`,
       advice: `${isXiong ? '如果长期觉得被消耗，可以先在内部争取调整职责，再考虑外部机会' : isJi ? '适合主动争取更多责任或更好的岗位' : '把手上的事做好，等一个明确的信号再动'}。选工作时优先考虑让你舒服的环境，长期看比短期收益重要。`,
+      evidence: [`体卦 ${bodyEl}`, `用卦 ${useEl}`, `体用 ${relation || '—'}`],
     },
     {
       key: 'career', label: '事业发展',
       text: `变卦「${bianInfo ? bianInfo.full : ''}」代表事情的结局方向，${bianInfo ? bianInfo.meaning : ''}。互卦「${pick(hu, 'name', '')}」代表过程，${hexInfo(hu.name, hu.upper, hu.lower).meaning}。` +
         `合起来看：过程${hexInfo(hu.name, hu.upper, hu.lower).scene}，结果${bianInfo ? bianInfo.scene : '暂不明朗'}。`,
       advice: `按这个结构，建议${isJi ? '现在就把关键的一步迈出去' : isXiong ? '先补短板、攒条件，等下一轮再动' : '小步推进，边做边看'}。动爻在${pick(r, 'movingName', '某爻')}，变化点就在那里，值得重点关注。`,
+      evidence: [
+        `互卦 ${pick(hu, 'name', '—')}`,
+        `变卦 ${pick(bian, 'name', '—')}`,
+        `动爻 ${pick(r, 'movingName', '—')}`,
+      ],
     },
     {
       key: 'love', label: '爱情与感情',
       text: `感情上看体用是否相合：体${bodyEl}与用${useEl}之间是${relation}，${isJi ? '这种组合在关系里意味着双方相处比较顺，彼此能给到支撑' : isXiong ? '这种组合提示相处中有一方付出更多，需要留意平衡' : '关系处在常态，没有特别的张力'}` +
         `。本卦${benInfo.meaning}，放到两人之间就是${benInfo.scene}。`,
       advice: `${isXiong ? '别把不满攒着，找个合适的时机说清楚；也别指望对方猜' : isJi ? '可以主动推进关系，做一些共同的事' : '维持现在的相处节奏就好'}。卦象看的是当下的气氛，关系的走向取决于你们怎么经营。`,
+      evidence: [
+        `体 ${bodyEl} / 用 ${useEl}`,
+        `体用 ${relation || '—'}`,
+        `本卦 ${benInfo.full}`,
+      ],
     },
     {
       key: 'health', label: '健康状况',
       text: `梅花里健康看体卦的强弱：体卦${pick(bu.body, 'trigram', '')}属${bodyEl}，${isXiong ? '被用卦所耗，传统取象上提示近期精力消耗偏大' : isJi ? '得到生扶，精力状态相对好' : '平顺，无明显偏枯'}。` +
         `${WUXING_ORGAN[bodyEl] ? `${bodyEl}对应${WUXING_ORGAN[bodyEl].part}，${WUXING_ORGAN[bodyEl].note}。` : ''}这是取象提示，不是诊断。`,
       advice: `${isXiong ? '近期别硬撑，睡眠与饮食先稳住，有条件做一次常规体检' : '保持现在的作息即可，顺势多动一动更好'}。身体有明确的症状请直接看医生。`,
+      evidence: [
+        `体卦 ${pick(bu.body, 'trigram', '—')}属${bodyEl}`,
+        `用卦 ${pick(bu.use, 'trigram', '—')}属${useEl}`,
+        `体用 ${relation || '—'}`,
+      ],
     },
   ];
 
@@ -5345,6 +5397,9 @@ function daliurenInterpret(r) {
   const chuQin = pick(chu, 'liuQin', '');
   const moQin = pick(mo, 'liuQin', '');
   const hasKong = !!(chu.xunKong || zhong.xunKong || mo.xunKong);
+  const scText = JSON.stringify(sc);
+  const has = (x) => scText.includes(x);
+  const chuan = `初${pick(chu, 'zhi', '—')} → 中${pick(zhong, 'zhi', '—')} → 末${pick(mo, 'zhi', '—')}`;
 
   const dimensions = [
     {
@@ -5353,6 +5408,12 @@ function daliurenInterpret(r) {
         `${hasKong ? '课中有旬空，提示事情里有「看着有、实则虚」的部分，涉及承诺与数字的要核实。' : '课中无旬空，事情相对实在。'}` +
         `整体倾向是：${/吉|生|合/.test(jiangOf(chu) + jiangOf(mo)) ? '开局与结局的象都不差，可以正常推进' : /虎|蛇|勾|空/.test(jiangOf(chu) + jiangOf(mo)) ? '过程中有牵绊与不明朗处，宜慢不宜快' : '平顺中带一点摩擦' }。`,
       advice: `${hasKong ? '先把信息核实清楚，别在含糊的基础上做决定' : '按你原本的计划推进即可'}。${/虎/.test(jiangOf(chu)) ? '开局带白虎，头几天别硬碰，先观察。' : ''}事情的局面是动态的，这一课看的是当下这一刻的气象。`,
+      evidence: [
+        `课体 ${pick(gj, 'name', '—')}`,
+        `三传 ${chuan}`,
+        `月将 ${pick(r.yueJiang, 'name', '—')}`,
+        hasKong ? '课中见旬空' : '无旬空',
+      ],
     },
     {
       key: 'work', label: '工作与职业选择',
@@ -5360,12 +5421,22 @@ function daliurenInterpret(r) {
         `${/青龙/.test(JSON.stringify(sc)) ? '课中见青龙，工作层面有喜庆与进益的象' : '课中未见青龙，工作层面属常态推进'}；` +
         `${/朱雀/.test(JSON.stringify(sc)) ? '见朱雀，文书、沟通与口舌要留意，材料务必留底' : ''}`,
       advice: `涉及岗位与待遇的事，建议把口头承诺落成文字；${/朱雀/.test(JSON.stringify(sc)) ? '沟通时少说满话，多留余地。' : '正常沟通即可。'}选工作时优先考虑课象中显示出支撑力的方向。`,
+      evidence: [
+        `初传 ${pick(chu, 'zhi', '—')}·${chuQin || '未取'}·${jiangOf(chu) || '—'}`,
+        has('青龙') ? '见青龙' : '无青龙',
+        has('朱雀') ? '见朱雀' : '无朱雀',
+      ],
     },
     {
       key: 'career', label: '事业发展',
       text: `末传${pick(mo, 'zhi', '')}（${moQin || ''}·${jiangOf(mo) || ''}）主结局，${moQin === '官鬼' ? '结局落在官鬼，事业这条线会有明确的结果或位置变化' : moQin === '妻财' ? '结局落在妻财，更多体现为收入与资源的落袋' : moQin === '子孙' ? '结局落在子孙，压力会消散，适合收尾与转向' : '结局的信号相对中性'}。` +
         `${mo.xunKong ? '末传旬空，结局有落空的可能，别把预期定得太满。' : '末传不空，结果相对实在。'}`,
       advice: `按三传的顺序安排节奏：初传阶段先摸清情况，中传阶段处理摩擦，末传阶段收果。${mo.xunKong ? '对结果保留一点弹性，Plan B 提前想好。' : '可以朝着末传给出的方向去准备。'}`,
+      evidence: [
+        `末传 ${pick(mo, 'zhi', '—')}·${moQin || '未取'}·${jiangOf(mo) || '—'}`,
+        mo.xunKong ? '末传旬空' : '末传不空',
+        `三传 ${chuan}`,
+      ],
     },
     {
       key: 'love', label: '爱情与感情',
@@ -5373,12 +5444,22 @@ function daliurenInterpret(r) {
         `${/天后/.test(JSON.stringify(sc)) ? '见天后，有被照顾、被回应的象' : ''}${/玄武/.test(JSON.stringify(sc)) ? '见玄武，提示信息不明或有隐瞒，重要的事要当面问清' : ''}` +
         `${/妻财/.test(JSON.stringify(sc)) ? '课中见妻财，感情这条线是被看到的' : ''}。`,
       advice: `${/玄武/.test(JSON.stringify(sc)) ? '关系里有看不清的地方，别猜，直接问。' : '按你感受到的相处状态来判断就好。'}卦象只反映当下的气氛，关系如何取决于两个人怎么做。`,
+      evidence: [
+        has('六合') ? '见六合' : '无六合',
+        has('天后') ? '见天后' : '无天后',
+        has('妻财') ? '见妻财' : '无妻财',
+      ],
     },
     {
       key: 'health', label: '健康状况',
       text: `健康看白虎与子孙：本课${/白虎/.test(JSON.stringify(sc)) ? '见白虎，传统取象上提示身体有需要留意的地方，尤其突发的不适别忽视' : '未见白虎，卦象未指向明显的身体问题'}；` +
         `${/子孙/.test(JSON.stringify(sc)) ? '见子孙，医药与调养的出口是有的，恢复的象在' : '未见子孙，休息与调养需要自己主动安排'}。这些都是象征提示，不构成医学判断。`,
       advice: `${/白虎/.test(JSON.stringify(sc)) ? '近期别熬夜、别硬扛，有条件做一次检查' : '保持现有作息，适度运动即可'}。任何不适请就医，这一课不能替代诊断。`,
+      evidence: [
+        has('白虎') ? '见白虎' : '无白虎',
+        has('子孙') ? '见子孙' : '无子孙',
+        `课体 ${pick(gj, 'name', '—')}`,
+      ],
     },
   ];
 
@@ -5442,6 +5523,12 @@ function tarotInterpret(r) {
         `${reversed.length ? `其中${join(reversed.map((c) => `${c.name}（${c.position}）`))}是逆位，逆位不等于凶，更像那股力量还没顺过来或用力过猛，它是这张牌阵里最值得你先看的部分。` : '全部为正位，说明牌面呈现的状态与你当下的处境是通的。'}` +
         `${lack.length ? `元素上缺${join(lack)}，${lack.map((e) => TAROT_ELEMENT_FOCUS[e]?.area).filter(Boolean).join('、')}这一块容易被忽略。` : ''}`,
       advice: `${reversed.length ? `先把${reversed[0].name}指出的卡点处理掉（${(reversed[0].keywords || []).join('、')}），暂时不要加码推进` : '按牌面呈现的节奏走'}；${lack.length ? `补一点${lack[0]}的力量：${TAROT_ELEMENT_FOCUS[lack[0]]?.advice || ''}` : '把注意力放在能立刻做的小事上，先动一件'}。牌是镜子，照的是你此刻的状态。`,
+      evidence: [
+        `牌阵 ${n} 张（${cards.map((c) => c.position).join(' / ')}）`,
+        `主轴 ${axis ? `${axis.name}·${axis.position}·${axis.orientation}` : '—'}`,
+        `逆位 ${reversed.length} / 正位 ${upright.length}`,
+        lack.length ? `缺 ${join(lack)}` : '五行元素齐',
+      ],
     },
     {
       key: 'work', label: '工作与职业选择',
@@ -5449,6 +5536,11 @@ function tarotInterpret(r) {
         `${court.length ? `牌中有宫廷牌${join(court.map((c) => c.name))}，说明局面里有具体的人（也可能就是你自己的某个侧面）在起作用。` : ''}` +
         `${elCount.土 ? '有土元素，现实条件与资源是被这张牌阵看到的。' : '缺土元素，现实条件与资源这块容易估计不足。'}`,
       advice: `工作上建议：${elCount.土 ? '把计划落到预算与时间表上，别停在口头' : '先把现实条件摸清楚——薪资、工时、稳定性，再谈喜好'}；${dimBase('work') && !dimBase('work').upright ? '这张相关牌是逆位，说明当下的不适主要来自状态而非岗位本身，可以调状态再看。' : ''}`,
+      evidence: [
+        `工作相关牌 ${dimBase('work') ? `${dimBase('work').name}·${dimBase('work').position}·${dimBase('work').orientation}` : '无'}`,
+        `宫廷牌 ${court.length} 张`,
+        `土元素 ${elCount.土 || 0} 张`,
+      ],
     },
     {
       key: 'career', label: '事业发展',
@@ -5456,12 +5548,20 @@ function tarotInterpret(r) {
         `${major.length >= Math.ceil(n / 2) ? '大牌过半，事业这条线牵动的不只是岗位，还有你对自己要往哪走的判断' : '变化更多发生在具体事务层面，先把眼前的项目做成'}` +
         `${axis ? `；结局位置的「${axis.name}」给出的方向是${axis.core || ''}` : ''}。`,
       advice: `建议把${cards[0]?.position || '最初'}这一环的课题先收尾，再往${axis?.position || '结果'}的方向推进；${elCount.火 ? '火的能量在，适合主动出击一步' : '缺火时别等热情来，先用流程推着自己动'}。事业发展是长线，牌面只反映当前这一段。`,
+      evidence: [
+        `时间线 ${cards.map((c) => `${c.position}·${c.name}${c.orientation}`).join(' → ')}`,
+        `大阿卡纳 ${major.length}/${n}`,
+      ],
     },
     {
       key: 'love', label: '爱情与感情',
       text: `${dimBase('love') ? `与感情最相关的是「${dimBase('love').name}」（${dimBase('love').position}·${dimBase('love').orientation}）：${dimBase('love').core || (dimBase('love').keywords || []).join('、')}。` : '牌面上没有明确指向感情的牌，当下这段关系不是主要议题。'}` +
         `${elCount.水 ? '有水元素，情感与感受在这件事里占的分量不轻。' : '缺水元素，容易用理性压过感受，留意别忽略自己的情绪。'}`,
       advice: `${elCount.水 ? '先照顾好感受再谈效率：把想说的话说出口，比猜对方心思有效' : '给自己留一点感受情绪的时间，别把所有事都当任务处理'}；${dimBase('love') && !dimBase('love').upright ? '相关牌为逆位，提示关系里有没说开的地方，找个合适时机讲清楚。' : ''}关系取决于你们怎么做，牌只帮你把问题问清楚。`,
+      evidence: [
+        `感情相关牌 ${dimBase('love') ? `${dimBase('love').name}·${dimBase('love').position}·${dimBase('love').orientation}` : '无'}`,
+        `水元素 ${elCount.水 || 0} 张`,
+      ],
     },
     {
       key: 'health', label: '健康状况',
@@ -5469,6 +5569,11 @@ function tarotInterpret(r) {
         `${reversed.length >= 2 ? `${reversed.length} 张逆位，提示内在消耗偏大，身体往往是第一个反映出来的` : '整体状态与牌面呈现的相对一致'}` +
         `${elCount.土 || elCount.水 ? '' : '；缺土与水，作息与身体的基本盘容易被牺牲'}。这些是象征性的提示，不是诊断。`,
       advice: `${reversed.length >= 2 ? '建议先把睡眠与饮食稳住，别在这个阶段额外加压' : '维持现有作息，适度运动即可'}；${lack.length ? `补${lack[0]}所代表的${TAROT_ELEMENT_FOCUS[lack[0]]?.area || ''}：${TAROT_ELEMENT_FOCUS[lack[0]]?.advice || ''}` : ''}身体有明确不适请就医，牌面不能替代专业意见。`,
+      evidence: [
+        `健康相关牌 ${dimBase('health') ? `${dimBase('health').name}·${dimBase('health').position}` : '无'}`,
+        `逆位 ${reversed.length} 张`,
+        `元素 土${elCount.土 || 0} / 水${elCount.水 || 0}`,
+      ],
     },
   ];
 

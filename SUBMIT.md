@@ -63,11 +63,12 @@ npm publish --access public
 
 - **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/8517 （`open`，单文件 `data/plugins/xuanfu-web__dsh-metaphysics.yml`）
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已推送**：`origin/main` = `83e29ab`（0.14.2），本地不再领先；市场侧安装到的是 0.13.6 的 npm 版本，**还需发一次 npm**（见下）
-- **待办**：`npm publish` 需要 `NPM_TOKEN`；本机没有 npm CLI，但 `.dsh` 自带 pnpm 11.28.5，可用
+- **已发布**：npm `dsh-metaphysics@0.14.2`（`dist-tags.latest = 0.14.2`，registry 已核对）；git tag `v0.14.2` 已推
+- **已推送**：`origin/main` 为本仓库最新提交；市场侧装到的是 npm 上的 0.14.2
+- **发版命令**（本机无 npm CLI，用 `.dsh` 自带 pnpm）：
   `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
-  （token 走临时 `.npmrc`，用后删除）
-- **历史卡点**：建仓用的临时令牌已删除（API 401）；`github.com:443` 曾间歇失败，现已可推
+  token 走临时 `.npmrc`（0600），发布后立即删除
+- **历史卡点**：建仓用的临时令牌已删除（API 401）；`github.com:443` 曾间歇失败，重试后可推
 
 ## 五、本地同步（已完成）
 

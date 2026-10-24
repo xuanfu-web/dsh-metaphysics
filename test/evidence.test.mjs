@@ -40,6 +40,22 @@ const zwAll = zwDims.flatMap((d) => d.evidence || []).join('｜');
 ok('紫微依据含命宫主星', /命宫\s*\S/.test(zwAll), zwAll.slice(0, 40));
 ok('紫微依据含宫位主星', /官禄|夫妻宫|疾厄宫/.test(zwAll));
 
+// ── ②b 卦象/牌阵类：同样五维都有依据（取象依据 = 卦面/牌面事实）──
+const DIVINATION = [
+  ['六爻', { system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], question: '这件事能成吗' }],
+  ['梅花', { system: 'meihua', mode: 'time', datetime: '2026-03-03T08:00' }],
+  ['大六壬', { system: 'daliuren', datetime: '2026-10-24T11:43' }],
+  ['塔罗', { system: 'tarot', count: 3, seed: 9, question: '要不要接这份工作' }],
+];
+for (const [label, args] of DIVINATION) {
+  const r = compute({ ...args, withInterpret: true });
+  const dims = (r.interpret && r.interpret.dimensions) || [];
+  ok(`${label}：五维都有依据`, dims.length === 5 && dims.every((d) => Array.isArray(d.evidence) && d.evidence.length >= 2),
+    dims.map((d) => (d.evidence || []).length).join(','));
+  ok(`${label}：文本带依据行`, (interpretText(r.interpret).match(/\n　依据：/g) || []).length === 5);
+  ok(`${label}：依据无未定义值`, !/undefined|NaN/.test(JSON.stringify(dims)));
+}
+
 // ── ③ 文本渲染带「依据」行 ─────────────────────────────────
 const txt = interpretText(BZ.interpret);
 // 用「缩进 + 依据」定位维度下的依据行，避免把「格局依据」这个 section 标题算进来
