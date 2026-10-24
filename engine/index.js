@@ -583,6 +583,19 @@ export function renderText(result) {
     const f = result.followup;
     parts.push(`【追问】${f.question}\n${f.answer}${f.evidence && f.evidence.length ? `\n　依据：${f.evidence.join('；')}　置信度：${f.confidence}` : ''}`);
   }
+  // 验前事：过去几年的信号（只读）；贴合度由用户在面板里勾选后算，这里只列事实
+  if (result.past && Array.isArray(result.past.rows) && result.past.rows.length) {
+    parts.push(`【验前事】过去 ${result.past.years} 年的流年信号（只读，不改盘）\n` +
+      result.past.rows.map((r) => `· ${r.year} ${r.ganzhi} · ${r.theme}（${r.tier}${r.tenGod ? `，${r.tenGod}` : ''}）`).join('\n') +
+      '\n用法：在面板里勾「准 / 不准 / 不确定」后算贴合度；贴合度低时先核对出生时间、时区与晚子时口径。');
+  }
+  // 生时校正：候选时辰的排序与命中数（固定规则，只缩小范围）
+  if (result.rectify && Array.isArray(result.rectify.candidates)) {
+    const rc = result.rectify;
+    parts.push(`【生时校正】候选时辰 ${rc.candidates.length} 个（固定规则打分，只缩小范围）\n` +
+      rc.candidates.slice(0, 8).map((c) => `· ${c.label} 时柱 ${c.hourGanzhi} / 日柱 ${c.dayGanzhi} · 命中 ${c.hits}/${c.total}`).join('\n') +
+      `\n${rc.note}`);
+  }
   return parts.filter(Boolean).join('\n\n');
 }
 

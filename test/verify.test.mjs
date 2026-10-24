@@ -62,4 +62,9 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
   ok('面板有生时校正区块', /生时校正/.test(read('src/app.js')) && /rectifyBirth/.test(read('src/app.js')));
   ok('独立页有生时校正区块', /生时校正/.test(read('src/web-ui.js')) && /rectifyBirth/.test(read('src/web-ui.js')));
   ok('工具 schema 有 verifyPast/rectify/events', /verifyPast/.test(read('index.js')) && /rectify:/.test(read('index.js')) && /events:/.test(read('index.js')));
+  // 工具输出（renderText）必须把这两块渲染出来，否则参数生效了但用户/模型看不见
+  const { renderText } = await import('../engine/index.js');
+  const rp = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', verifyPast: 6 });
+  ok('工具文本含【验前事】', renderText(rp).includes('【验前事】'), renderText(rp).slice(0, 60));
+  ok('工具文本含【生时校正】', renderText(r).includes('【生时校正】') && /候选时辰/.test(renderText(r)));
 }
