@@ -5,6 +5,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compute } from '../engine/index.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT, dirOf } from '../engine/interpret.js';
+// 直接向构建器要页面内容，不读工作区里那份生成物：
+// CI 只 checkout 仓库，`../命理排盘.html` 不存在，之前就是这里导致 ask.test 在 CI 挂掉。
+import { page } from '../tools/build-html.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -103,7 +106,7 @@ ok(PP.interpretHTML(null) === '' && PP.interpretHTML({ dimensions: [] }) === '',
 ok(!/undefined|NaN|\[object/.test(openHTML), '面板输出无 undefined / NaN');
 
 // ── 4. 产物：表单控件与校验 ─────────────────────────────────
-const html = fs.readFileSync(path.join(root, '..', '命理排盘.html'), 'utf8');
+const html = page();
 ok(/<textarea id="question" rows="2"/.test(html), '产物含多行文本的问题输入框');
 ok(html.includes('placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"'), '问题框带示例 placeholder');
 ok(/<select id="direction">/.test(html), '产物含询问方向下拉');
