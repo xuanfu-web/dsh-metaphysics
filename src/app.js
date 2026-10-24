@@ -285,10 +285,12 @@ function App() {
         }
       }
       const r = Engine.compute(args);
-      // 问题与方向一并与卦象交给解读：解读按它展开，并在开头回显供确认
-      const it = Engine.interpret
-        ? Engine.interpret(r, needAsk(k) ? { question: question.trim(), direction } : undefined)
-        : null;
+      // 问题与方向一并与卦象交给解读：解读按它展开，并在开头回显供确认。
+      // 奇门虽然不问事，但「询问方向」决定取哪个门/星作用神，所以也要传。
+      const ask = (needAsk(k) || k === 'qimen')
+        ? { question: needAsk(k) ? question.trim() : '', direction }
+        : undefined;
+      const it = Engine.interpret ? Engine.interpret(r, ask) : null;
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       setResult({ kind: k, r, it, at: dt, timed });
@@ -387,8 +389,11 @@ function App() {
 
   /** 改问题或方向：拿缓存的卦象重出解读，不重摇一卦 */
   const refreshInterpret = (dir, q) => {
-    if (!result || !needAsk(tab)) return;
-    const ask = { question: (q === undefined ? question : q).trim(), direction: dir === undefined ? direction : dir };
+    if (!result || !(needAsk(tab) || tab === 'qimen')) return;
+    const ask = {
+      question: needAsk(tab) ? (q === undefined ? question : q).trim() : '',
+      direction: dir === undefined ? direction : dir,
+    };
     const it = Engine.interpret ? Engine.interpret(result.r, ask) : null;
     setResult(Object.assign({}, result, { it }));
   };
@@ -491,7 +496,7 @@ function App() {
           h('details', { className: 'mp-qmhelp' },
             h('summary', null, '三种规则有什么区别？'),
             h('p', null, '决定符头与节气如何对齐、是否插入闰局；同一个时刻在不同规则下可能得到不同局数。默认「拆补」与工具层一致。'))) : null,
-        needAsk(tab) ? field('询问方向', h('select', {
+        needAsk(tab) || tab === 'qimen' ? field(tab === 'qimen' ? '询问方向（定用神）' : '询问方向', h('select', {
           className: 'mp-input', value: direction,
           onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
         }, (Engine.DIRECTIONS || []).map((d) => h('option', { key: d.key, value: d.key }, d.label)))) : null,

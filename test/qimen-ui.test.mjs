@@ -42,6 +42,8 @@ ok('三个取值都用原生 radio 且同 name', /name: 'qimen_rule'/.test(app) 
 ok('juMethod 透传到 compute', /args\.juMethod = qimenRule/.test(app));
 ok('结果区渲染盘面 + 事实', /result\.kind === 'qimen'/.test(app) && /qimenFactsHTML/.test(app));
 ok('奇门按起局时刻处理', /qimen: 'cast'/.test(app));
+ok('奇门可选询问方向（定用神）', /询问方向（定用神）/.test(app) && /needAsk\(tab\) \|\| tab === 'qimen'/.test(app));
+ok('奇门解读透传 direction', /needAsk\(k\) \|\| k === 'qimen'/.test(app) && /direction \}/.test(app));
 
 // ── ④ 合盘回归：主方性别/出生地必须与八字同一分支 ───────────
 ok('合盘主方也带性别与经度', /k === 'bazi' \|\| k === 'ziwei' \|\| k === 'hepan'/.test(app),
