@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 1053,
+  "total": 1075,
   "files": {
     "args.test.mjs": {
       "pass": 40,
@@ -120,6 +120,10 @@
     },
     "qimen-golden.test.mjs": {
       "pass": 5,
+      "fail": 0
+    },
+    "qimen-ui.test.mjs": {
+      "pass": 22,
       "fail": 0
     },
     "qimen.test.mjs": {

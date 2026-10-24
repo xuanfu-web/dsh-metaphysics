@@ -7130,6 +7130,24 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     </div>`;
   };
 
+  pp.qimenFactsHTML = function (r) {
+    if (!r || !r.palaces) return '';
+    const row = (k, v) => `<div class="relation__row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`;
+    const rows = [
+      ['局数', `${r.ju}${r.yuan ? `（${r.yuan}）` : ''}`],
+      ['节气', `${r.jieqi || '—'}${r.jieqiTime ? `（${r.jieqiTime}）` : ''}`],
+      ['四柱', `${r.siZhu ? `${r.siZhu.year} ${r.siZhu.month} ${r.siZhu.day} ${r.siZhu.time}` : '—'}`],
+      ['值符', r.zhiFu ? `${r.zhiFu.star} · ${r.zhiFu.gong}宫` : '—'],
+      ['值使', r.zhiShi ? `${r.zhiShi.gate} · ${r.zhiShi.gong}宫` : '—'],
+      ['旬首', r.xunshou || '—'],
+      ['空亡', (r.kongWang || []).join('') || '—'],
+      ['驿马', r.ma && r.ma.zhi ? `${r.ma.zhi}${r.ma.gong ? `（${r.ma.gong}宫）` : ''}` : '—'],
+      ['换局规则', r.juMethodNote || r.juMethod || '—'],
+      ['晚子时', r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'],
+    ];
+    return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
+  };
+
   const QM_ROWS = [['4', '9', '2'], ['3', '5', '7'], ['8', '1', '6']];
   pp.qimenHTML = function (r) {
     const byGong = {};
@@ -7387,6 +7405,18 @@ const CSS = `
 .mp-seg{display:flex;width:100%;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden;height:36px}
 .mp-seg button{flex:1;padding:0 8px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:13px;cursor:pointer}
 .mp-seg button.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-qmrule{grid-column:1 / -1;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.mp-qmrule legend{padding:0}
+.mp-qmopts{display:flex;flex-wrap:wrap;gap:8px}
+.mp-qmopt{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;font-size:13px;cursor:pointer;color:var(--dsw-alias-label-primary)}
+.mp-qmopt input{accent-color:var(--dsw-alias-brand-primary);margin:0}
+.mp-qmhelp{flex:1 1 100%;font-size:12.5px;color:var(--dsw-alias-label-secondary)}
+.mp-qmhelp summary{cursor:pointer}
+.mp-qmhelp p{margin:6px 0 0}
+.relation{display:flex;flex-direction:column;gap:6px;margin:14px 0 0;padding:12px;background:var(--dsw-alias-bg-layer-2);border-left:3px solid var(--dsw-alias-brand-primary);border-radius:8px}
+.relation__row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:baseline}
+.relation__row dt{margin:0;font-size:12.5px;color:var(--dsw-alias-label-secondary)}
+.relation__row dd{margin:0;font-size:13.5px;color:var(--dsw-alias-label-primary)}
 .mp-hist{margin-bottom:14px}
 .mp-hist-h{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--dsw-alias-label-secondary);margin-bottom:6px}
 .mp-hist-clear{background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:12px;cursor:pointer;padding:0}
@@ -7454,6 +7484,7 @@ const TABS = [
   { k: 'liuyao', label: '六爻', timeLabel: '起卦时刻', hint: '六爻不需要出生时间：只用起卦当下的日辰定六神、月建定旺衰，卦由摇出。' },
   { k: 'meihua', label: '梅花', timeLabel: '起卦时刻', hint: '梅花用起卦时刻的年月日时数成卦，也可直接给两个数字起卦；与出生时间无关。' },
   { k: 'daliuren', label: '六壬', timeLabel: '起卦时刻', hint: '大六壬用起卦时刻的日干支、时支与月将起天地盘；同样与出生时间无关。' },
+  { k: 'qimen', label: '奇门', timeLabel: '起局时刻', hint: '奇门时家转盘：用起局时刻定节气、三元与局数；换局规则决定符头与节气如何对齐。' },
   { k: 'hepan', label: '合盘', timeLabel: '你的出生时刻', hint: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。' },
     { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
 ];
@@ -7467,7 +7498,7 @@ function nowParts() {
 
 const TIME_KIND = {
   ziwei: 'birth', bazi: 'birth', hepan: 'birth',
-  liuyao: 'cast', meihua: 'cast', daliuren: 'cast',
+  liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
   tarot: 'none',
 };
 const SAMPLE = { date: '1990-05-12', time: '14:30' };
@@ -7487,6 +7518,7 @@ function App() {
   const [pGender, setPGender] = useState('female');
   const [pAddress, setPAddress] = useState('');
   const [hpChart, setHpChart] = useState('bazi');
+  const [qimenRule, setQimenRule] = useState('chaibu');
   const [trueSolar, setTrueSolar] = useState(true);
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
@@ -7521,7 +7553,7 @@ function App() {
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
       if (k !== 'tarot') args.datetime = datetime;
-      if (k === 'bazi' || k === 'ziwei') {
+      if (k === 'bazi' || k === 'ziwei' || k === 'hepan') {
         args.gender = gender;
         args.trueSolar = trueSolar;
         if (address.trim()) {
@@ -7539,6 +7571,7 @@ function App() {
         if (parsed.lines) args.lines = parsed.lines;
         else if (parsed.warning) setNotice(parsed.warning);
       }
+      if (k === 'qimen') args.juMethod = qimenRule;
       if (k === 'tarot') args.count = Number(count);
       if (k === 'hepan') {
         args.chart = hpChart;
@@ -7754,6 +7787,21 @@ function App() {
           className: 'mp-input', placeholder: '如 四川成都', value: pAddress,
           onChange: (e) => setPAddress(e.target.value),
         })) : null,
+        tab === 'qimen' ? h('fieldset', { key: 'qmr', className: 'mp-qmrule' },
+          h('legend', { className: 'mp-lbl' }, '换局规则'),
+          h('div', { className: 'mp-qmopts', role: 'radiogroup', 'aria-label': '奇门换局规则' },
+            [['chaibu', '拆补'], ['chaoshen', '超神接气'], ['zhirun', '置闰']].map(([value, label]) => h('label', {
+              key: value, className: 'mp-qmopt',
+            },
+            h('input', {
+              type: 'radio', name: 'qimen_rule', value,
+              checked: qimenRule === value,
+              onChange: () => setQimenRule(value),
+            }),
+            h('span', null, label)))),
+          h('details', { className: 'mp-qmhelp' },
+            h('summary', null, '三种规则有什么区别？'),
+            h('p', null, '决定符头与节气如何对齐、是否插入闰局；同一个时刻在不同规则下可能得到不同局数。默认「拆补」与工具层一致。'))) : null,
         needAsk(tab) ? field('询问方向', h('select', {
           className: 'mp-input', value: direction,
           onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
@@ -7840,6 +7888,7 @@ function App() {
             : result.kind === 'bazi' ? PP.baziHTML(result.r)
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
                 : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
+                  : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
                   : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : PP.liuyaoHTML(result.r),

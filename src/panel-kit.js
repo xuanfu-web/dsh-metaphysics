@@ -1084,6 +1084,26 @@
     </div>`;
   };
 
+  // 奇门盘面事实：键值型数据用 dl 承载，与解读区的结论分开——
+  // 「事实」可复核，「关系/结论」才进解读。
+  pp.qimenFactsHTML = function (r) {
+    if (!r || !r.palaces) return '';
+    const row = (k, v) => `<div class="relation__row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`;
+    const rows = [
+      ['局数', `${r.ju}${r.yuan ? `（${r.yuan}）` : ''}`],
+      ['节气', `${r.jieqi || '—'}${r.jieqiTime ? `（${r.jieqiTime}）` : ''}`],
+      ['四柱', `${r.siZhu ? `${r.siZhu.year} ${r.siZhu.month} ${r.siZhu.day} ${r.siZhu.time}` : '—'}`],
+      ['值符', r.zhiFu ? `${r.zhiFu.star} · ${r.zhiFu.gong}宫` : '—'],
+      ['值使', r.zhiShi ? `${r.zhiShi.gate} · ${r.zhiShi.gong}宫` : '—'],
+      ['旬首', r.xunshou || '—'],
+      ['空亡', (r.kongWang || []).join('') || '—'],
+      ['驿马', r.ma && r.ma.zhi ? `${r.ma.zhi}${r.ma.gong ? `（${r.ma.gong}宫）` : ''}` : '—'],
+      ['换局规则', r.juMethodNote || r.juMethod || '—'],
+      ['晚子时', r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'],
+    ];
+    return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
+  };
+
   // 九宫按洛书方位排布：巽4 离9 坤2 / 震3 中5 兑7 / 艮8 坎1 乾6
   const QM_ROWS = [['4', '9', '2'], ['3', '5', '7'], ['8', '1', '6']];
   pp.qimenHTML = function (r) {
