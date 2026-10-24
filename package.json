@@ -1,6 +1,6 @@
 {
     "name":  "dsh-metaphysics",
-    "version":  "0.14.2",
+    "version":  "0.14.3",
     "type":  "module",
     "description":  "命理排盘 for DeepSeek Harness: eight systems — BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年/流月/流日/流时四化), LiuYao with real line rendering, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia (chaibu / chaoshen / zhirun), compatibility charts (BaZi + Zi Wei) and Tarot; Ask（所问之事 + 询问方向）driven interpretation, plus a plain-language 解析与详解 module. Reproducible via seed/asOf. All computed locally, networking off by default — as an agent tool plus a Web panel.",
     "keywords":  [
