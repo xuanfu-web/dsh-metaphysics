@@ -233,7 +233,11 @@ ${ui}
 }
 
 const out = page();
-const target = path.resolve(root, '..', '命理排盘.html');
+// 默认写到工作区根目录；`--out <file>` 可另存（例如同步到桌面那份拷贝）
+const outIdx = process.argv.indexOf('--out');
+const target = outIdx > 0 && process.argv[outIdx + 1]
+  ? path.resolve(process.argv[outIdx + 1])
+  : path.resolve(root, '..', '命理排盘.html');
 fs.writeFileSync(target, out, 'utf8');
 console.log(`written: ${target}  (${(out.length / 1024).toFixed(1)} KB)`);
 

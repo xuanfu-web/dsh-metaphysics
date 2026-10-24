@@ -126,6 +126,8 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 
 重启后侧栏出现**太极图标**，点开是排盘面板：紫微 / 八字 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗八个 tab。奇门 tab 里「换局规则」可选拆补、超神接气、置闰；盘面下方用键值表列出局数、值符值使、空亡驿马等事实，与解读区的结论分开。
 
+> 独立页（`命理排盘.html`）目前只有紫微 / 八字 / 六爻 / 梅花 / 六壬 / 塔罗六个 tab；合盘与奇门在宿主面板和对话工具里。两份文件是**各自生成**的：重新构建后要单独同步你在用的那份拷贝（见「开发」里的 `--out`）。
+
 ### 深色与导出
 
 - **深色主题**：跟随系统（`prefers-color-scheme`），盘面与页面同时切换，只换一套 CSS 变量，元素规则一行不改
@@ -154,7 +156,8 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 
 ```bash
 npm run build        # 生成 client.js（浏览器端产物）
-npm run build:html   # 生成独立的 命理排盘.html（可离线双击使用）
+npm run build:html   # 生成独立的 命理排盘.html（可离线双击使用），默认写到工作区根目录
+# 想同时更新别处的拷贝（例如桌面那份）：node tools/build-html.mjs --out "C:\Users\<你>\Desktop\命理排盘.html"
 npm test             # 顺序跑完 test/ 下全部 *.test.mjs 并汇总
 npm run test:ci      # 回归 + 断言基线 + 测试自检 + HTML 注入面 + 工程约定（CI 跑的就是这条）
 npm run test:baseline # 断言数确实要减少时，显式重建基线
