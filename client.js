@@ -5449,6 +5449,7 @@ function baziInterpret(r) {
   const primary = pick(frame, 'primaryName', '未取定');
   const gender = pick(r.input, 'gender', '');
   const isMale = gender === 'male';
+  const spouseKey = isMale ? '财' : '官杀';
 
   const age = Number(pick(r.liunian?.[0], 'age', NaN));
   const list = Array.isArray(r.dayun?.list) ? r.dayun.list : [];
@@ -5641,12 +5642,15 @@ function baziInterpret(r) {
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
     },
     {
+      key: 'quant', label: '量化口径',
+      text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`,
+    },
+    {
       key: 'limits', label: '未纳入',
       text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用以扶抑为主、调候只做简化提示，各派取法不同；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 
-  const spouseKey = isMale ? '财' : '官杀';
   const outline = [
     { key: 'overall', label: '整体', text: `${level}，喜${join(favor) || '—'}、忌${join(avoid) || '—'}` },
     { key: 'career', label: '事业', text: `主格${primary}，${topName}偏旺` },
@@ -5861,6 +5865,10 @@ function ziweiInterpret(r) {
         const yrs = (r.liunian || []).slice(0, 5).map((l) => `${l.year} ${l.ganzhi} ${l.age}岁·命宫${l.lifePalace ? l.lifePalace.palace : '—'}`).join('；');
         return `大限：${dx || '—'}。\n近五年流年：${yrs || '—'}。\n读法：大限定十年的主题，流年四化指出今年往哪边偏；两层方向相反时，以守住大限主题为主。`;
       })(),
+    },
+    {
+      key: 'quant', label: '量化口径',
+      text: '紫微这边只数「宫位里有什么」：大限看落宫与四化命中数、流年看命宫与四化星数；不把星曜折算成分数，也不预测金额与疾病诊断。四化命中数只是结构计数，不等于吉凶强度。',
     },
     {
       key: 'limits', label: '未纳入',
@@ -6550,6 +6558,291 @@ function interpret(r, opts) {
 return { DIMENSIONS, MODULE_TYPE, SYSTEM_LABEL, DIRECTIONS, DIRECTION_DEFAULT, dirOf, hexInfo, interpret };
 })();
 
+__mods.followup = (function () {
+const { ZIWEI_STARS } = __mods['interpret-data'];
+
+const TOPICS = [
+  { key: 'career', label: '事业', words: ['事业', '工作', '跳槽', '升职', '创业', '职业', '岗位', '离职', '加薪', '面试', 'offer'] },
+  { key: 'wealth', label: '财富', words: ['财', '钱', '收入', '投资', '买房', '存款', '亏', '赚', '分红'] },
+  { key: 'love', label: '感情', words: ['感情', '婚', '恋', '对象', '分手', '复合', '姻缘', '结婚', '桃花'] },
+  { key: 'health', label: '健康', words: ['健康', '病', '身体', '手术', '失眠', '体检', '医院'] },
+  { key: 'study', label: '学业', words: ['学业', '考试', '学习', '考研', '考公', '证书', '升学'] },
+  { key: 'travel', label: '出行', words: ['出行', '搬家', '旅行', '出国', '迁', '远行'] },
+];
+
+const ZW_PALACE_BY_TOPIC = { career: '官禄', wealth: '财帛', love: '夫妻', health: '疾厄', study: '官禄', travel: '迁移', overall: '命宫' };
+
+const parseYear = (q, r) => {
+  const m = String(q).match(/(20\d{2})\s*年?/);
+  if (m) return Number(m[1]);
+  const base = Array.isArray(r.liunian) && r.liunian[0] ? Number(r.liunian[0].year) : null;
+  if (!base) return null;
+  if (/明年/.test(q)) return base + 1;
+  if (/后年/.test(q)) return base + 2;
+  if (/去年/.test(q)) return base - 1;
+  if (/今年|本年/.test(q)) return base;
+  return null;
+};
+
+const topicOf = (q) => TOPICS.find((t) => t.words.some((w) => String(q).includes(w))) || null;
+
+function baziAnswer(r, q) {
+  const year = parseYear(q, r);
+  const topic = topicOf(q);
+  const liunian = Array.isArray(r.liunian) ? r.liunian : [];
+  const dayun = Array.isArray(r.dayun?.list) ? r.dayun.list : [];
+  const years = liunian.map((l) => l.year);
+  if (year && !liunian.some((l) => Number(l.year) === year)) {
+    return {
+      ok: false, year, topic,
+      answer: `这一盘已排的流年范围是 ${years[0]}–${years[years.length - 1]}，没有 ${year} 年。可以把问题改到范围内，或用 asOf 指定你想看的年份重新排盘。`,
+      evidence: [`已排流年：${years.join('、')}`], confidence: '弱',
+    };
+  }
+  if (year) {
+    const l = liunian.find((x) => Number(x.year) === year);
+    const d = dayun.find((x) => Number(x.startAge) <= Number(l.age) && Number(l.age) <= Number(x.startAge) + 9) || null;
+    const tier = l.luck?.tier || '平';
+    const reasons = (l.luck?.reasons || []).slice(0, 3);
+    const rel = (l.relations || []).join('、');
+    const topicLine = topic ? topicSentence(r, topic.key) : '';
+    return {
+      ok: true, year, topic,
+      answer: `${year} 年（${l.ganzhi}）流年，十神为${l.stemTenGod || '—'}，档位「${tier}」；所行大运 ${d ? `${d.ganzhi}（${d.luck?.tier || '平'}）` : '未取到'}。` +
+        `${reasons.length ? `理由：${reasons.join('，')}。` : ''}${rel ? `与该年地支相关的原局关系：${rel}。` : ''}${topicLine}`,
+      evidence: [
+        `流年 ${l.year} ${l.ganzhi}·${l.stemTenGod || ''}·${tier}`,
+        d ? `大运 ${d.ganzhi}·${d.luck?.tier || '平'}` : '',
+        rel ? `原局关系 ${rel}` : '',
+        topic ? `问题方向：${topic.label}` : '',
+      ].filter(Boolean),
+      confidence: d && reasons.length ? '强' : '中',
+    };
+  }
+  if (topic) {
+    const near = { wealth: 'overall', study: 'work', travel: 'overall' }[topic.key] || topic.key;
+    const dim = (r.interpret?.dimensions || []).find((x) => x.key === topic.key || x.key === near);
+    if (dim) {
+      const groups = (r.frame && r.frame.godStats && r.frame.godStats.groups) || {};
+      const quant = topic.key === 'wealth'
+        ? ` 财星权重 ${Number(groups['财'] || 0)}（只作结构参考，不含金额）。`
+        : '';
+      return {
+        ok: true, year: null, topic,
+        answer: `按${topic.label}这条线看：${dim.text}${quant}${dim.advice ? ` 建议：${dim.advice}` : ''}`,
+        evidence: (dim.evidence || []).slice(0, 4), confidence: dim.confidence || '中',
+      };
+    }
+  }
+  return {
+    ok: false, year: null, topic,
+    answer: `这个问题里没有识别到具体的年份或方面。可以这样问：「2027 年事业怎么样」「财运如何」「感情在 2028 年」；已排流年是 ${years[0]}–${years[years.length - 1]}。`,
+    evidence: [`可问年份：${years.join('、')}`], confidence: '弱',
+  };
+}
+
+function ziweiAnswer(r, q) {
+  const year = parseYear(q, r);
+  const topic = topicOf(q);
+  const liunian = Array.isArray(r.liunian) ? r.liunian : [];
+  if (year && !liunian.some((l) => Number(l.year) === year)) {
+    return {
+      ok: false, year, topic,
+      answer: `这一盘的流年表覆盖 ${liunian[0]?.year}–${liunian[liunian.length - 1]?.year}，没有 ${year} 年；可以换一个年份，或用 asOf 指定起点重新排盘。`,
+      evidence: [`流年表：${liunian.map((l) => l.year).join('、')}`], confidence: '弱',
+    };
+  }
+  if (year) {
+    const l = liunian.find((x) => Number(x.year) === year);
+    const dx = l.daxian || {};
+    return {
+      ok: true, year, topic,
+      answer: `${year} 年（${l.ganzhi}，${l.age} 岁）流年命宫落在「${l.lifePalace ? l.lifePalace.palace : '—'}」，四化为 ${(l.mutagen || []).join('、') || '不明显'}；所行大限${dx.palace ? `在${dx.palace}（${dx.start}–${dx.end} 岁）` : '未取到'}。${topic ? `与「${topic.label}」对应的宫位信号见下条依据。` : ''}`,
+      evidence: [
+        `流年命宫 ${l.lifePalace ? l.lifePalace.palace : '—'}（${l.lifePalace ? l.lifePalace.branch : '—'}）`,
+        `四化 ${(l.mutagen || []).join('、') || '不明显'}`,
+        dx.palace ? `大限 ${dx.palace}·${dx.start}–${dx.end}岁` : '',
+      ].filter(Boolean),
+      confidence: (l.mutagen || []).length >= 3 ? '强' : '中',
+    };
+  }
+  if (topic) {
+    const name = ZW_PALACE_BY_TOPIC[topic.key] || '命宫';
+    const p = (r.palaces || []).find((x) => x.palace === name);
+    if (p) {
+      const stars = (p.stars || []).filter((s) => s.type === '主星').map((s) => s.name);
+      const trait = stars.map((s) => ZIWEI_STARS[s]?.trait).filter(Boolean).slice(0, 2).join('；');
+      return {
+        ok: true, year: null, topic,
+        answer: `「${topic.label}」看${name}：主星${stars.length ? stars.join('、') : '无正曜（借对宫）'}${trait ? `——${trait}` : ''}。宫支${p.branch}，${p.stems ? '' : ''}生年四化与煞星的影响需结合报告里的对应分节一起看。`,
+        evidence: [`${name} ${p.branch}·${stars.join('、') || '无正曜'}`, ...(p.shensha || []).slice(0, 3)],
+        confidence: stars.length ? '强' : '弱',
+      };
+    }
+  }
+  return {
+    ok: false, year: null, topic,
+    answer: '没有识别到具体年份或方面。可以问「2028 年事业」「感情怎么样」「财运在 2030 年」；也可以直接问某个宫位，如「夫妻宫」。',
+    evidence: [], confidence: '弱',
+  };
+}
+
+function topicSentence(r, key) {
+  const map = { career: '事业', wealth: '财富', love: '感情', health: '健康', study: '学业', travel: '出行' };
+  return `这段时间可以重点对照报告里「${map[key] || '整体'}」一节看。`;
+}
+
+function genericAnswer(r, q) {
+  const topic = topicOf(q);
+  const sections = Array.isArray(r.interpret?.sections) ? r.interpret.sections : [];
+  const hit = topic
+    ? sections.find((s) => s.label.includes(topic.label) || s.text.includes(topic.label))
+    : null;
+  if (hit) {
+    return { ok: true, year: null, topic, answer: hit.text, evidence: [`引用分节：${hit.label}`], confidence: '中' };
+  }
+  const first = sections[0];
+  return {
+    ok: false, year: null, topic,
+    answer: first
+      ? `这一盘的追问需要落到具体方面（事业 / 财富 / 感情 / 健康 / 学业 / 出行）。先看「${first.label}」这一节，或把问题说得更具体一点。`
+      : '这一盘暂时没有可追问的分节；先看完整解析，再问具体方面。',
+    evidence: [], confidence: '弱',
+  };
+}
+
+function followup(r, question) {
+  const q = String(question || '').trim();
+  const result = r && r.system === 'bazi' ? baziAnswer(r, q)
+    : r && r.system === 'ziwei' ? ziweiAnswer(r, q)
+      : genericAnswer(r, q);
+  return { question: q, ...result };
+}
+
+return { followup };
+})();
+
+__mods.crosscheck = (function () {
+const { ZIWEI_STARS } = __mods['interpret-data'];
+
+const groupsOf = (bazi) => (bazi && bazi.frame && bazi.frame.godStats && bazi.frame.godStats.groups) || {};
+const topOf = (groups) => Object.entries(groups).sort((a, b) => Number(b[1]) - Number(a[1]))[0] || null;
+const zwPalace = (zw, name) => (zw.palaces || []).find((p) => p.palace === name) || null;
+const zwMain = (p) => (p && p.stars ? p.stars.filter((s) => s.type === '主星').map((s) => s.name) : []);
+const countSha = (p) => (p && p.stars ? p.stars.filter((s) => s.type === '煞星').length : 0);
+const tierOf = (bazi) => {
+  const age = Number(bazi.liunian && bazi.liunian[0] ? bazi.liunian[0].age : NaN);
+  const list = (bazi.dayun && bazi.dayun.list) || [];
+  let cur = null;
+  for (const d of list) if (Number.isFinite(age) && Number(d.startAge) <= age) cur = d;
+  return cur ? (cur.luck && cur.luck.tier) || '平' : '—';
+};
+const daxianOf = (zw) => {
+  const age = Number(zw.liunian && zw.liunian[0] ? zw.liunian[0].age : NaN);
+  for (const p of zw.palaces || []) {
+    const d = p.daxian || {};
+    if (Number.isFinite(age) && Number(d.start) <= age && age <= Number(d.end)) return p;
+  }
+  return null;
+};
+
+function crossCheck(bazi, zw) {
+  const groups = groupsOf(bazi);
+  const top = topOf(groups);
+  const items = [];
+  const push = (key, label, baziText, ziweiText, stance, note) => items.push({ key, label, bazi: baziText, ziwei: ziweiText, stance, note });
+
+  {
+    const career = zwPalace(zw, '官禄');
+    const main = zwMain(career);
+    const baziStrong = Number(groups['官杀'] || 0) + Number(groups['食伤'] || 0) >= 2;
+    const ziweiHas = main.length > 0;
+    const stance = baziStrong && ziweiHas ? '同向' : !baziStrong && !ziweiHas ? '同向' : '有张力';
+    push('career', '事业主线',
+      `${top ? `十神以${top[0]}最重（${top[1]}）` : '十神未取到'}；官杀+食伤权重 ${(Number(groups['官杀'] || 0) + Number(groups['食伤'] || 0)).toFixed(1)}`,
+      main.length ? `官禄宫主星 ${main.join('、')}${ZIWEI_STARS[main[0]] ? `（${ZIWEI_STARS[main[0]].work}）` : ''}` : '官禄无正曜',
+      stance,
+      stance === '同向' ? '两边都指向（或都不强调）事业主线，方向可互参' : '一边强调事业主线、一边信号弱，建议以信号强的一边为主，另一边作补充');
+  }
+
+  {
+    const wealth = zwPalace(zw, '财帛');
+    const main = zwMain(wealth);
+    const sha = countSha(wealth);
+    const w = Number(groups['财'] || 0);
+    const baziStrong = w >= 2;
+    const ziweiStrong = main.length > 0;
+    const stance = baziStrong && ziweiStrong ? '同向' : !baziStrong && !ziweiStrong ? '同向' : '有张力';
+    push('wealth', '财运结构',
+      `财星权重 ${w}${baziStrong ? '（偏强）' : '（偏弱）'}`,
+      `${main.length ? `财帛主星 ${main.join('、')}` : '财帛无正曜'}${sha ? `；煞星 ${sha} 颗` : ''}`,
+      stance,
+      '两套体系对「财」的定义不同：八字看十神财星，紫微看财帛宫，只作对照，不作数值合并');
+  }
+
+  {
+    const spouse = zwPalace(zw, '夫妻');
+    const main = zwMain(spouse);
+    const isMale = bazi.input && bazi.input.gender === 'male';
+    const key = isMale ? '财' : '官杀';
+    const v = Number(groups[key] || 0);
+    const baziStrong = v >= 2;
+    const ziweiStrong = main.length > 0;
+    const stance = baziStrong && ziweiStrong ? '同向' : !baziStrong && !ziweiStrong ? '同向' : '有张力';
+    push('love', '感情线索',
+      `${isMale ? '妻' : '夫'}星（${key}）权重 ${v}${baziStrong ? '（不弱）' : '（偏弱）'}`,
+      main.length ? `夫妻宫主星 ${main.join('、')}${ZIWEI_STARS[main[0]] ? `（${ZIWEI_STARS[main[0]].love}）` : ''}` : '夫妻宫无正曜',
+      stance,
+      stance === '同向' ? '两边对感情的强弱判断接近' : '一边说缘分不弱、一边主星信号弱，宜按「多主动创造场景」处理');
+  }
+
+  {
+    const wx = bazi.wuxing || {};
+    const weakest = Object.entries(wx).sort((a, b) => Number(a[1]) - Number(b[1]))[0];
+    const health = zwPalace(zw, '疾厄');
+    const main = zwMain(health);
+    const sha = countSha(health);
+    push('health', '身体关注点',
+      weakest ? `最弱五行 ${weakest[0]}（${weakest[1]}）` : '五行未取到',
+      `${main.length ? `疾厄主星 ${main.join('、')}` : '疾厄无正曜'}${sha ? `；煞星 ${sha} 颗` : ''}`,
+      '互补',
+      '两边指向的器官/系统不一定相同，合并起来看更稳；任何健康问题以体检与医生为准');
+  }
+
+  {
+    const t = tierOf(bazi);
+    const d = daxianOf(zw);
+    const sha = d ? countSha(d) : 0;
+    const good = ['吉', '大吉'];
+    const bad = ['忌', '大忌'];
+    const baziGood = good.includes(t);
+    const baziBad = bad.includes(t);
+    const ziweiHeavy = sha >= 2;
+    let stance = '有张力';
+    let note = '一边顺、一边压，按「大方向跟顺的一边、具体动作避开压的年份」处理';
+    if ((baziGood && !ziweiHeavy) || (baziBad && ziweiHeavy) || (!baziGood && !baziBad && !ziweiHeavy)) {
+      stance = '同向';
+      note = '两边对当前阶段的松紧判断接近';
+    }
+    push('rhythm', '当前节奏',
+      `大运档位 ${t}`,
+      `${d ? `大限在${d.palace}` : '大限未取到'}${sha ? `；煞星 ${sha} 颗` : '；无煞星'}`,
+      stance, note);
+  }
+
+  return { items };
+}
+
+function crossText(cross) {
+  if (!cross || !Array.isArray(cross.items)) return '';
+  return cross.items
+    .map((i) => `· ${i.label}：八字——${i.bazi}；紫微——${i.ziwei}；判断：${i.stance}（${i.note}）`)
+    .join('\n');
+}
+
+return { crossCheck, crossText };
+})();
+
 __mods.index = (function () {
 const { buildBazi } = __mods.bazi;
 const { buildLiuyao, tossLines } = __mods.liuyao;
@@ -6564,6 +6857,8 @@ const { geocodeAddress, resolveAddress } = __mods.geo;
 const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
 const { randomOf, isSeed } = __mods.random;
 const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
+const { followup } = __mods.followup;
+const { crossCheck, crossText } = __mods.crosscheck;
 const { fail } = __mods.fail;
 const { assertCivil } = __mods.validate;
 
@@ -6823,6 +7118,26 @@ function compute(args = {}) {
       direction: typeof args.direction === 'string' ? args.direction : 'general',
     });
   }
+  if (args.cross === true && (r.system === 'bazi' || r.system === 'ziwei')) {
+    const cdt = parseDateTime(args.datetime);
+    const common = {
+      ...cdt,
+      gender: requireGender(args.gender),
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      trueSolar: args.trueSolar !== false,
+    };
+    const asOf = checkAsOf(args.asOf);
+    const other = r.system === 'bazi'
+      ? buildZiwei({ ...common, leapAsNext: args.leapAsNext === true, asOf })
+      : buildBazi({ ...common, lateZi: args.lateZi !== false, nowYear: asOf ? asOf.year : undefined });
+    r.cross = crossCheck(r.system === 'bazi' ? r : other, r.system === 'ziwei' ? r : other);
+    if (r.interpret) {
+      r.interpret.sections.push({ key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: crossText(r.cross) });
+    }
+  }
+  if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
   return r;
 }
 
@@ -7027,12 +7342,20 @@ function computeRaw(args = {}) {
 
 function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
-  if (!result.interpret) return base;
-  const extra = interpretText(result.interpret);
-  return extra ? `${base}\n\n${extra}` : base;
+  const parts = [base];
+  if (result.interpret) {
+    const extra = interpretText(result.interpret);
+    if (extra) parts.push(extra);
+  }
+  if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);
+  if (result.followup) {
+    const f = result.followup;
+    parts.push(`【追问】${f.question}\n${f.answer}${f.evidence && f.evidence.length ? `\n　依据：${f.evidence.join('；')}　置信度：${f.confidence}` : ''}`);
+  }
+  return parts.filter(Boolean).join('\n\n');
 }
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, parseDateTime, compute, interpretText, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, crossCheck, crossText, parseDateTime, compute, interpretText, renderText };
 })();
 
     const Engine = __mods.index;
@@ -7457,6 +7780,11 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   .mp-table-wrap,.mp-it-sec,.mp-it-dim{break-inside:avoid}
   .mp-table-wrap{page-break-inside:avoid}
 }
+.mp-fu{margin:12px 16px;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px;font-size:13px;line-height:1.8;color:var(--ink2)}
+.mp-fu.miss{border-left-color:var(--red)}
+.mp-fu-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--lu);margin-bottom:4px;font-family:system-ui,sans-serif}
+.mp-fu.miss .mp-fu-h{color:var(--red)}
+.mp-fu-ev{margin-top:5px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 @media (max-width:640px){
@@ -8372,6 +8700,18 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     </div>`;
   };
 
+  pp.followupHTML = function (fx) {
+    if (!fx) return '';
+    const ev = (fx.evidence && fx.evidence.length)
+      ? `<div class="mp-fu-ev">依据：${fx.evidence.map((x) => esc(x)).join('；')}　置信度：${esc(fx.confidence || '弱')}</div>`
+      : '';
+    return `<div class="mp-fu${fx.ok ? '' : ' miss'}">
+      <div class="mp-fu-h">追问 · ${esc(fx.question)}</div>
+      <div class="mp-fu-a">${esc(fx.answer)}</div>
+      ${ev}
+    </div>`;
+  };
+
   pp.resultWithInterpret = function (html, it, opt) {
     return (html || '') + pp.interpretHTML(it, opt);
   };
@@ -8459,6 +8799,11 @@ const CSS = `
 .mp-empty b{display:block;font-size:15px;color:var(--dsw-alias-label-primary);margin-bottom:6px;font-weight:600}
 .mp-note{margin-top:12px;padding:9px 14px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--dsw-alias-state-warning-primary) 14%,transparent);color:var(--dsw-alias-state-warning-primary)}
 .mp-bar{display:flex;gap:8px;align-items:center;margin-top:14px}
+.mp-askbox{display:flex;gap:8px;align-items:center;margin-top:12px}
+.mp-askbox .mp-input{flex:1;min-width:0}
+.mp-fx{margin-top:10px}
+.mp-checks{flex-direction:row;align-items:center;gap:7px;font-size:12.5px}
+.mp-checks input{width:15px;height:15px;accent-color:var(--dsw-alias-brand-primary)}
 .mp-auto{margin:-8px 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
 .mp-cast{margin:0 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
 .mp-cast b{color:var(--dsw-alias-label-primary);font-weight:600}
@@ -8544,6 +8889,9 @@ function App() {
   const [hpChart, setHpChart] = useState('bazi');
   const [qimenRule, setQimenRule] = useState('chaibu');
   const [trueSolar, setTrueSolar] = useState(true);
+  const [crossOn, setCrossOn] = useState(false);
+  const [askText, setAskText] = useState('');
+  const [fx, setFx] = useState(null);
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
@@ -8591,6 +8939,7 @@ function App() {
             console.error('[metaphysics] 地址解析失败，退回内置表', e);
           }
         }
+        if (k !== 'hepan') args.cross = crossOn;
       }
       if (k === 'liuyao') {
         const parsed = Core.parseLines(lines);
@@ -8641,8 +8990,12 @@ function App() {
         ? { question: needAsk(k) ? question.trim() : '', direction }
         : undefined;
       const it = Engine.interpret ? Engine.interpret(r, ask) : null;
+      if (it && r.cross && Engine.crossText) {
+        it.sections = [...(it.sections || []), { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: Engine.crossText(r.cross) }];
+      }
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       setResult({ kind: k, r, it, at: dt, timed });
+      setFx(null);
       setError('');      setCopied('');
       if (k !== 'tarot') {
         const entry = {
@@ -8760,6 +9113,30 @@ function App() {
     } catch (e) { setCopied('复制失败'); }
   };
 
+  const doAsk = () => {
+    if (!result || !result.r || !askText.trim()) return;
+    try {
+      setFx(Engine.followup ? Engine.followup(result.r, askText.trim()) : null);
+    } catch (e) { setFx({ question: askText.trim(), ok: false, answer: '追问失败：' + (e && e.message ? e.message : e), evidence: [], confidence: '弱' }); }
+  };
+
+  const downloadReport = () => {
+    if (!result || !result.r) return;
+    try {
+      const text = Engine.renderText ? Engine.renderText(result.r) : (result.r.summary || '');
+      const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `命理报告-${result.r.system}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch (e) {
+      console.error('[metaphysics] 导出失败', e);
+    }
+  };
+
   const field = (label, node) => h('label', { className: 'mp-field' }, h('span', { className: 'mp-lbl' }, label), node);
 
   const replay = (x) => {
@@ -8813,6 +9190,12 @@ function App() {
           className: 'mp-input', placeholder: '如 河北石家庄 / 成都', value: address,
           onChange: (e) => setAddress(e.target.value),
         })) : null,
+        (tab === 'bazi' || tab === 'ziwei') ? h('label', { className: 'mp-field mp-checks' },
+          h('input', {
+            type: 'checkbox', checked: crossOn,
+            onChange: (e) => setCrossOn(e.target.checked),
+          }),
+          h('span', { className: 'mp-lbl' }, '八字 × 紫微 交叉验证')) : null,
         tab === 'hepan' ? field('对方出生日期', h('input', {
           className: 'mp-input', type: 'date', value: pDate, onChange: (e) => setPDate(e.target.value),
         })) : null,
@@ -8945,7 +9328,22 @@ function App() {
 
     result ? h('div', { key: 'bar', className: 'mp-bar' },
       h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: copyResult },
-        copied || '复制文字结果')) : null,
+        copied || '复制文字结果'),
+      h('button', {
+        className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
+        onClick: downloadReport, title: '导出盘面 + 解析（含一页读懂、三张表）为 Markdown',
+      }, '导出 .md')) : null,
+
+    result ? h('div', { key: 'ask', className: 'mp-askbox' },
+      h('input', {
+        className: 'mp-input', value: askText, maxLength: 120,
+        placeholder: '追问：如 2027 年事业怎么样（回车提交）',
+        onChange: (e) => setAskText(e.target.value),
+        onKeyDown: (e) => { if (e.key === 'Enter') doAsk(); },
+      }),
+      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问')) : null,
+
+    fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
 
     (!result && !error) ? h('div', { key: 'ph', className: 'mp-dim', style: { marginTop: 24, fontSize: 12 } },
       '选择体系后点「排盘」。所有计算在本机完成，不上传任何数据。') : null,

@@ -128,9 +128,33 @@
     try {
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
     } catch (e) { it = null; }
+    // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节，保证与真实报告同一渲染路径
+    if (it && last.r && last.r.cross && window.Engine.crossText) {
+      it.sections = [...(it.sections || []), { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: window.Engine.crossText(last.r.cross) }];
+    }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
+      + followupBar()
       + exportBar();
+  }
+
+  /** 追问区：只对已算好的盘发问，不重新起盘 */
+  function followupBar() {
+    return `<div class="askbox no-print">
+      <input id="askq" maxlength="120" placeholder="追问：如 2027 年事业怎么样（回车提交）">
+      <button type="button" data-act="ask">追问</button>
+      <span class="hint">只回答盘面能支持的部分；找不到会说找不到</span>
+    </div><div id="fout"></div>`;
+  }
+
+  function doAsk() {
+    if (!last || !last.r) return;
+    const box = el('askq');
+    const q = box && box.value ? box.value.trim() : '';
+    if (!q) return;
+    const fx = window.Engine.followup ? window.Engine.followup(last.r, q) : null;
+    const out = el('fout');
+    if (out) out.innerHTML = fx ? window.__PP.followupHTML(fx) : '';
   }
 
   // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
@@ -139,14 +163,30 @@
     return `<div class="exp no-print">
       <button type="button" data-act="pdf">存为 PDF</button>
       <button type="button" data-act="print">打印</button>
-      <span class="hint">在打印对话框里选「另存为 PDF」，纸张 A4 纵向</span>
+      <button type="button" data-act="md">导出 .md</button>
+      <span class="hint">在打印对话框里选「另存为 PDF」，纸张 A4 纵向；.md 可直接存档或分享</span>
     </div>`;
   }
 
   function onExportClick(e) {
     const b = e.target && e.target.closest ? e.target.closest('.exp [data-act]') : null;
     if (!b) return;
+    if (b.dataset.act === 'md') { downloadReport(); return; }
     window.print();
+  }
+
+  /** 导出 Markdown：盘面 + 解析（含一页读懂、三张表、交叉验证）与追问 */
+  function downloadReport() {
+    if (!last || !last.r) return;
+    const text = window.Engine.renderText ? window.Engine.renderText(last.r) : String(last.r.summary || '');
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `命理报告-${last.r.system}-${last.date || ''}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
   async function run() {
@@ -188,6 +228,8 @@
         trueSolar: el('ts').checked,
       };
     }
+    // 八字/紫微可勾选「交叉验证」：同一份出生信息再排另一套盘并列对照
+    if ((tab === 'bazi' || tab === 'ziwei') && el('cross') && el('cross').checked) args.cross = true;
     if (tab === 'qimen') {
       const picked = document.querySelector('input[name="qimen_rule"]:checked');
       args.juMethod = picked ? picked.value : 'chaibu';
@@ -349,11 +391,19 @@
     document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
     const qdir = el('qdir');
     if (qdir) qdir.addEventListener('change', () => { if (tab === 'qimen') paint(); });
+    // 方法与验证页：按钮开合（静态内容，无网络）
+    const mOpen = el('method-open');
+    const mClose = el('method-close');
+    const mSec = el('method');
+    if (mOpen && mSec) mOpen.addEventListener('click', () => { mSec.hidden = false; mSec.scrollIntoView({ behavior: 'smooth' }); });
+    if (mClose && mSec) mClose.addEventListener('click', () => { mSec.hidden = true; });
     // 改问题或方向：只重出解读，不重摇一卦
     el('question').addEventListener('change', () => { if (needAsk(tab)) paint(); });
     el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      const askBtn = e.target && e.target.closest ? e.target.closest('[data-act="ask"]') : null;
+      if (askBtn) { doAsk(); return; }
       onExportClick(e);
       const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
       if (!head) return;
@@ -365,6 +415,10 @@
       const hint = head.querySelector('.mp-it-hint');
       if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
       foldPref = folded;
+    });
+    // 追问输入框回车提交
+    el('out').addEventListener('keydown', (e) => {
+      if (e.target && e.target.id === 'askq' && e.key === 'Enter') { e.preventDefault(); doAsk(); }
     });
     // 切到问事的体系时把光标放进「所问之事」
     document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {

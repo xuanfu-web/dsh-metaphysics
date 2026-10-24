@@ -12,6 +12,8 @@ import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
+import { followup } from './followup.js';
+import { crossCheck, crossText } from './crosscheck.js';
 import { fail } from './fail.js';
 import { assertCivil } from './validate.js';
 
@@ -291,6 +293,28 @@ export function compute(args = {}) {
       direction: typeof args.direction === 'string' ? args.direction : 'general',
     });
   }
+  // 八字 × 紫微交叉验证：同一份出生信息再排另一套盘，并列两边对同一件事的说法
+  if (args.cross === true && (r.system === 'bazi' || r.system === 'ziwei')) {
+    const cdt = parseDateTime(args.datetime);
+    const common = {
+      ...cdt,
+      gender: requireGender(args.gender),
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      trueSolar: args.trueSolar !== false,
+    };
+    const asOf = checkAsOf(args.asOf);
+    const other = r.system === 'bazi'
+      ? buildZiwei({ ...common, leapAsNext: args.leapAsNext === true, asOf })
+      : buildBazi({ ...common, lateZi: args.lateZi !== false, nowYear: asOf ? asOf.year : undefined });
+    r.cross = crossCheck(r.system === 'bazi' ? r : other, r.system === 'ziwei' ? r : other);
+    if (r.interpret) {
+      r.interpret.sections.push({ key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: crossText(r.cross) });
+    }
+  }
+  // 追问：围绕已算好的盘回答「某一年 / 某方面」的具体问题
+  if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
   return r;
 }
 
@@ -512,15 +536,25 @@ function computeRaw(args = {}) {
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 export function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
-  if (!result.interpret) return base;
-  const extra = interpretText(result.interpret);
-  return extra ? `${base}\n\n${extra}` : base;
+  const parts = [base];
+  if (result.interpret) {
+    const extra = interpretText(result.interpret);
+    if (extra) parts.push(extra);
+  }
+  if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);
+  if (result.followup) {
+    const f = result.followup;
+    parts.push(`【追问】${f.question}\n${f.answer}${f.evidence && f.evidence.length ? `\n　依据：${f.evidence.join('；')}　置信度：${f.confidence}` : ''}`);
+  }
+  return parts.filter(Boolean).join('\n\n');
 }
 
 /** 对外暴露：地址解析（异步，含联网） */
 export { geocodeAddress, resolveAddress };
 
 export { buildBazi, buildLiuyao, tossLines };
+export { followup };
+export { crossCheck, crossText };
 
 
 

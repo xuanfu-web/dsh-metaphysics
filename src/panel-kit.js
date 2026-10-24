@@ -438,6 +438,12 @@
   .mp-table-wrap,.mp-it-sec,.mp-it-dim{break-inside:avoid}
   .mp-table-wrap{page-break-inside:avoid}
 }
+/* 追问结果 */
+.mp-fu{margin:12px 16px;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px;font-size:13px;line-height:1.8;color:var(--ink2)}
+.mp-fu.miss{border-left-color:var(--red)}
+.mp-fu-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--lu);margin-bottom:4px;font-family:system-ui,sans-serif}
+.mp-fu.miss .mp-fu-h{color:var(--red)}
+.mp-fu-ev{margin-top:5px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 /* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
@@ -1421,6 +1427,19 @@
         ${gloss}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>
       </div>
+    </div>`;
+  };
+
+  /** 追问结果：只展示问题、答案、依据与置信度；找不到时明确说找不到 */
+  pp.followupHTML = function (fx) {
+    if (!fx) return '';
+    const ev = (fx.evidence && fx.evidence.length)
+      ? `<div class="mp-fu-ev">依据：${fx.evidence.map((x) => esc(x)).join('；')}　置信度：${esc(fx.confidence || '弱')}</div>`
+      : '';
+    return `<div class="mp-fu${fx.ok ? '' : ' miss'}">
+      <div class="mp-fu-h">追问 · ${esc(fx.question)}</div>
+      <div class="mp-fu-a">${esc(fx.answer)}</div>
+      ${ev}
     </div>`;
   };
 

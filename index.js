@@ -142,7 +142,14 @@ export function apply(ctx) {
           enum: ['general', 'wealth', 'career', 'love', 'health', 'study', 'travel'],
           description: '询问方向（仅配合 withInterpret 生效）：general 综合、wealth 财运、career 事业、love 感情、health 健康、study 学业、travel 出行。默认 general。',
         },
-        withInterpret: {
+        cross: {
+          type: 'boolean',
+          description: '八字 / 紫微专用：为同一份出生信息再排另一套盘，返回「八字 × 紫微 交叉验证」（同向 / 有张力 / 互补），不合并数值。',
+        },
+        ask: {
+          type: 'string',
+          description: '追问：围绕已算好的盘回答「某一年 / 某方面」的问题，如「2027 年事业怎么样」「感情如何」。只取盘面已有字段，不重排、不猜测。',
+        },        withInterpret: {
           type: 'boolean',
           description: '是否附带「解析与详解」（五个维度 + 用神/格局等分节 + 免责声明）；默认 false，避免默认输出过长。',
         },

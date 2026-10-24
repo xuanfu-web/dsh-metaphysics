@@ -81,6 +81,15 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .cast-at{margin:0 0 14px;font-size:13.5px;color:var(--dim);line-height:1.7}
 .cast-at b{color:var(--ink);font-weight:600;letter-spacing:.02em}
 /* 结果区下方：导出/打印 */
+.askbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0 0;padding:10px 12px;border:1px dashed var(--line);border-radius:8px}
+.askbox input{flex:1 1 240px;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit}
+.askbox button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--gold);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.askbox .hint{font-size:12px;color:var(--dim)}
+.method{max-width:860px;margin:0 auto;padding:24px 18px 40px;font-size:14px;line-height:1.9;color:var(--ink2)}
+.method h2{font-size:18px;color:var(--gold);margin:0 0 12px}
+.method h3{font-size:15px;color:var(--ink);margin:18px 0 6px}
+.method ul{margin:6px 0;padding-left:20px}
+.method .note{color:var(--dim);font-size:13px}
 .exp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
 .exp button{padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer}
 .exp button:hover{background:var(--panel2);border-color:var(--gold)}
@@ -191,6 +200,7 @@ function page() {
       <label class="field">出生地<input id="addr" placeholder="如 河北石家庄 / 成都"></label>
       <label class="field check"><input id="ts" type="checkbox" checked> 真太阳时</label>
       <label class="field check" title="开启后会请求 OpenStreetMap"><input id="online" type="checkbox"> 联网精确到区县</label>
+      <label class="field check" title="同一份出生信息再排另一套盘，并列对照"><input id="cross" type="checkbox"> 八字 × 紫微 交叉验证</label>
     </div>
     <label class="field" id="for-liuyao" style="display:none">六爻<input id="lines" placeholder="9 7 8 8 7 6，空则随机"></label>
     <!-- 合盘：第二个人的出生信息；合盘方式决定用八字还是紫微两盘对照 -->
@@ -262,6 +272,22 @@ function page() {
   <div class="tip" id="tip"></div>
 
   <main id="out"></main>
+
+  <section id="method" class="method no-print" hidden>
+    <h2>方法与验证</h2>
+    <p class="note">这个页面只做一件事：把「结论是怎么来的、验证到什么程度」交代清楚。</p>
+    <h3>八套体系，全部本地计算</h3>
+    <ul><li>八字（四柱 · 藏干 · 十神 · 神煞 · 大运流年 · 格局用神）</li><li>紫微斗数（安星 · 四化 · 大限 · 流年/流月/流日/流时）</li><li>六爻纳甲（装卦 · 六亲 · 六神 · 世应 · 变卦 · 旬空）</li><li>梅花易数 · 大六壬 · 奇门遁甲 · 合盘 · 塔罗</li></ul>
+    <h3>对拍：把典籍当期望值</h3>
+    <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li></ul>
+    <h3>工程验证</h3>
+    <ul><li>测试：52 个测试文件 / 1327 条断言；五道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <h3>已知边界（不猜）</h3>
+    <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星串连、八字交运日的时辰级细分未做</li></ul>
+    <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
+    <button id="method-close" class="go" style="margin-top:12px">收起</button>
+  </section>
+  <div class="no-print" style="text-align:center;margin:18px 0 30px"><button id="method-open" style="background:none;border:none;color:var(--dim);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer">方法与验证</button></div>
 </div>
 
 <script>

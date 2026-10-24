@@ -88,6 +88,12 @@ const CSS = `
 .mp-empty b{display:block;font-size:15px;color:var(--dsw-alias-label-primary);margin-bottom:6px;font-weight:600}
 .mp-note{margin-top:12px;padding:9px 14px;border-radius:10px;font-size:12px;background:color-mix(in srgb,var(--dsw-alias-state-warning-primary) 14%,transparent);color:var(--dsw-alias-state-warning-primary)}
 .mp-bar{display:flex;gap:8px;align-items:center;margin-top:14px}
+/* 追问：输入 + 结果卡 */
+.mp-askbox{display:flex;gap:8px;align-items:center;margin-top:12px}
+.mp-askbox .mp-input{flex:1;min-width:0}
+.mp-fx{margin-top:10px}
+.mp-checks{flex-direction:row;align-items:center;gap:7px;font-size:12.5px}
+.mp-checks input{width:15px;height:15px;accent-color:var(--dsw-alias-brand-primary)}
 /* 起卦类 tab 的「已自动取当前时刻」提示（.mp-hint 的补充行，不额外占横向空间） */
 .mp-auto{margin:-8px 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
 /* 结果头部的「起卦时刻」一行 */
@@ -185,6 +191,10 @@ function App() {
   // 奇门换局规则：chaibu 拆补 / chaoshen 超神接气 / zhirun 置闰（引擎三种取局口径）
   const [qimenRule, setQimenRule] = useState('chaibu');
   const [trueSolar, setTrueSolar] = useState(true);
+  // 八字 × 紫微交叉验证；追问输入与结果
+  const [crossOn, setCrossOn] = useState(false);
+  const [askText, setAskText] = useState('');
+  const [fx, setFx] = useState(null);
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
@@ -240,6 +250,8 @@ function App() {
             console.error('[metaphysics] 地址解析失败，退回内置表', e);
           }
         }
+        // 交叉验证只对八字/紫微有意义：引擎会用同一份出生信息再排另一套盘
+        if (k !== 'hepan') args.cross = crossOn;
       }
       if (k === 'liuyao') {
         const parsed = Core.parseLines(lines);
@@ -294,9 +306,14 @@ function App() {
         ? { question: needAsk(k) ? question.trim() : '', direction }
         : undefined;
       const it = Engine.interpret ? Engine.interpret(r, ask) : null;
+      // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节（与独立页同一渲染路径）
+      if (it && r.cross && Engine.crossText) {
+        it.sections = [...(it.sections || []), { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: Engine.crossText(r.cross) }];
+      }
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       setResult({ kind: k, r, it, at: dt, timed });
+      setFx(null);
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌，不入历史
       if (k !== 'tarot') {
@@ -427,6 +444,32 @@ function App() {
     } catch (e) { setCopied('复制失败'); }
   };
 
+  /** 追问：只从已算好的盘面取数，不重排 */
+  const doAsk = () => {
+    if (!result || !result.r || !askText.trim()) return;
+    try {
+      setFx(Engine.followup ? Engine.followup(result.r, askText.trim()) : null);
+    } catch (e) { setFx({ question: askText.trim(), ok: false, answer: '追问失败：' + (e && e.message ? e.message : e), evidence: [], confidence: '弱' }); }
+  };
+
+  /** 导出 Markdown：盘面 + 解析（一页读懂 / 三张表 / 交叉验证） */
+  const downloadReport = () => {
+    if (!result || !result.r) return;
+    try {
+      const text = Engine.renderText ? Engine.renderText(result.r) : (result.r.summary || '');
+      const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `命理报告-${result.r.system}.md`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch (e) {
+      console.error('[metaphysics] 导出失败', e);
+    }
+  };
+
   const field = (label, node) => h('label', { className: 'mp-field' }, h('span', { className: 'mp-lbl' }, label), node);
 
   /** 点历史条目：先把参数回填到表单，再交给一个 effect 触发重排（避免闭包读到旧 state） */
@@ -481,6 +524,12 @@ function App() {
           className: 'mp-input', placeholder: '如 河北石家庄 / 成都', value: address,
           onChange: (e) => setAddress(e.target.value),
         })) : null,
+        (tab === 'bazi' || tab === 'ziwei') ? h('label', { className: 'mp-field mp-checks' },
+          h('input', {
+            type: 'checkbox', checked: crossOn,
+            onChange: (e) => setCrossOn(e.target.checked),
+          }),
+          h('span', { className: 'mp-lbl' }, '八字 × 紫微 交叉验证')) : null,
         tab === 'hepan' ? field('对方出生日期', h('input', {
           className: 'mp-input', type: 'date', value: pDate, onChange: (e) => setPDate(e.target.value),
         })) : null,
@@ -615,7 +664,22 @@ function App() {
 
     result ? h('div', { key: 'bar', className: 'mp-bar' },
       h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: copyResult },
-        copied || '复制文字结果')) : null,
+        copied || '复制文字结果'),
+      h('button', {
+        className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
+        onClick: downloadReport, title: '导出盘面 + 解析（含一页读懂、三张表）为 Markdown',
+      }, '导出 .md')) : null,
+
+    result ? h('div', { key: 'ask', className: 'mp-askbox' },
+      h('input', {
+        className: 'mp-input', value: askText, maxLength: 120,
+        placeholder: '追问：如 2027 年事业怎么样（回车提交）',
+        onChange: (e) => setAskText(e.target.value),
+        onKeyDown: (e) => { if (e.key === 'Enter') doAsk(); },
+      }),
+      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问')) : null,
+
+    fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
 
     (!result && !error) ? h('div', { key: 'ph', className: 'mp-dim', style: { marginTop: 24, fontSize: 12 } },
       '选择体系后点「排盘」。所有计算在本机完成，不上传任何数据。') : null,

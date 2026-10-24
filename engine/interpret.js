@@ -162,6 +162,7 @@ function baziInterpret(r) {
   const primary = pick(frame, 'primaryName', '未取定');
   const gender = pick(r.input, 'gender', '');
   const isMale = gender === 'male';
+  const spouseKey = isMale ? '财' : '官杀';
 
   // 当前大运与流年
   const age = Number(pick(r.liunian?.[0], 'age', NaN));
@@ -369,12 +370,15 @@ function baziInterpret(r) {
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
     },
     {
+      key: 'quant', label: '量化口径',
+      text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`,
+    },
+    {
       key: 'limits', label: '未纳入',
       text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用以扶抑为主、调候只做简化提示，各派取法不同；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 
-  const spouseKey = isMale ? '财' : '官杀';
   // 一页读懂：报告顶部的五条结论（整体 / 事业 / 财富 / 感情 / 节奏）。
   // 只做「摘要」，不引入新判断——全部取自下面已经算好的字段。
   const outline = [
@@ -614,6 +618,10 @@ function ziweiInterpret(r) {
         const yrs = (r.liunian || []).slice(0, 5).map((l) => `${l.year} ${l.ganzhi} ${l.age}岁·命宫${l.lifePalace ? l.lifePalace.palace : '—'}`).join('；');
         return `大限：${dx || '—'}。\n近五年流年：${yrs || '—'}。\n读法：大限定十年的主题，流年四化指出今年往哪边偏；两层方向相反时，以守住大限主题为主。`;
       })(),
+    },
+    {
+      key: 'quant', label: '量化口径',
+      text: '紫微这边只数「宫位里有什么」：大限看落宫与四化命中数、流年看命宫与四化星数；不把星曜折算成分数，也不预测金额与疾病诊断。四化命中数只是结构计数，不等于吉凶强度。',
     },
     {
       key: 'limits', label: '未纳入',
