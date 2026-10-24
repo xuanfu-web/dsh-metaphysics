@@ -5,7 +5,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
-const ORDER = ['vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'shensha', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'interpret', 'index'];
+const ORDER = ['vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'shensha', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'interpret-plain', 'interpret', 'index'];
 
 export const MODULE_ORDER = ORDER;
 

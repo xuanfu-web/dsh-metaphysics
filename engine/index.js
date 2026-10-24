@@ -303,14 +303,24 @@ export function compute(args = {}) {
 export function interpretText(i) {
   if (!i) return '';
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
+  // 直答放在最前：先回答「你问的事」，再说依据，避免读者读到最后才知道结论
+  if (i.answer) out.push(`▶ 先答所问：${i.answer}`);
+  if (i.plain) out.push(`▶ 说人话：${i.plain}`);
   if (i.lead) out.push(i.lead);
   // 解析生成失败时不能只返回一个空壳：盘面数据仍然可用，但要让调用方知道"这段没生成出来"
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   for (const d of i.dimensions || []) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
-    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
+    const plain = d.plain ? `（${d.plain}）` : '';
+    out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  if (Array.isArray(i.followups) && i.followups.length) {
+    out.push('还可以这样追问：' + i.followups.map((q) => `「${q}」`).join('　'));
+  }
+  if (Array.isArray(i.glossary) && i.glossary.length) {
+    out.push('名词解释：' + i.glossary.map((g) => `${g.term}＝${g.plain}`).join('　'));
+  }
   if (i.disclaimer) out.push(i.disclaimer);
   return out.join('\n');
 }

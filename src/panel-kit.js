@@ -352,6 +352,19 @@
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 .mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
 .mp-it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
+/* 白话四层：直答 / 说人话 / 每维一句话 / 追问 / 名词解释
+   目的：先给结论再给依据，术语另设解释区，让「想问的人」不必先学会术语才能读懂 */
+.mp-it-ans{margin:12px 16px 0;padding:12px 14px;border-left:3px solid var(--red);background:var(--band);font-size:13.5px;line-height:1.9;text-align:justify}
+.mp-it-ans b{display:block;font-size:11px;letter-spacing:.12em;color:var(--red);font-family:system-ui,sans-serif;margin-bottom:5px;font-weight:600}
+.mp-it-plain{margin:10px 16px 0;padding:11px 14px;border:1px dashed var(--line);border-radius:8px;font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+.mp-it-plain b{color:var(--lu);font-weight:600;margin-right:6px}
+.mp-it-dplain{margin-bottom:6px;font-size:12.5px;line-height:1.8;color:var(--lu)}
+.mp-it-fu{margin:4px 16px 12px;padding:11px 14px;background:var(--band);border-radius:8px}
+.mp-it-fu b{display:block;font-size:11px;letter-spacing:.12em;color:var(--label);font-family:system-ui,sans-serif;margin-bottom:6px;font-weight:600}
+.mp-it-fu li{font-size:12.5px;line-height:1.85;margin-left:16px;color:var(--ink2)}
+.mp-it-gloss{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted)}
+.mp-it-gloss summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
+.mp-it-gloss span{color:var(--ink2);font-weight:600;margin-right:4px}
 /* 解析生成失败：这属于"这段没出来"，不是断语，用警示色单独一行 */
 .mp-it-err{margin:12px 16px;padding:9px 12px;border-left:2px solid var(--red);background:var(--soul);font-size:12.5px;line-height:1.8;color:var(--ink2)}
 .mp-it-err b{color:var(--red);margin-right:6px}
@@ -1282,10 +1295,12 @@
   pp.interpretHTML = function (it, opt) {
     // 解析生成失败时 dimensions 为空但带 error：这种情况也要把壳渲染出来，否则用户只看到"没有解析"
     if (!it) return '';
-    if (!(it.dimensions && it.dimensions.length) && !it.error) return '';
+    const hasBody = (it.dimensions && it.dimensions.length) || (it.sections && it.sections.length);
+    if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
-    const dims = it.dimensions.map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
+    const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
+      ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
       ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
@@ -1303,6 +1318,15 @@
     const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
       ? `<div class="mp-it-ask"><span class="ask-q">问题：${ask.question ? esc(ask.question) : '<span class="ask-none">（未填写）</span>'}</span><span class="ask-sep">｜</span><span class="ask-d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
       : '';
+    // 直答与说人话：放在正文最前，先给结论再给推导
+    const answer = it.answer ? `<div class="mp-it-ans"><b>先答所问</b>${esc(it.answer)}</div>` : '';
+    const plain = it.plain ? `<div class="mp-it-plain"><b>说人话</b>${esc(it.plain)}</div>` : '';
+    const fu = (it.followups && it.followups.length)
+      ? `<div class="mp-it-fu"><b>还可以这样追问</b><ul>${it.followups.map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>`
+      : '';
+    const gloss = (it.glossary && it.glossary.length)
+      ? `<details class="mp-it-gloss"><summary>名词解释（${it.glossary.length} 条）</summary>${it.glossary.map((g) => `<div><span>${esc(g.term)}</span>${esc(g.plain)}</div>`).join('')}</details>`
+      : '';
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -1311,10 +1335,14 @@
       </button>
       <div class="mp-it-wrap">
         ${askLine}
+        ${answer}
+        ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
         ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
         <div class="mp-it-body">${dims}</div>
         ${secs}
+        ${fu}
+        ${gloss}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>
       </div>
     </div>`;

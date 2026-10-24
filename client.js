@@ -168,16 +168,24 @@ function localOffsetFor(jdUt) {
 const TERM_INSTANT_CACHE = new Map();
 const TERM_INSTANT_CACHE_MAX = 4096;
 
+const TERM_CONVERGE_DEG = 1e-5;
+
+const TERM_GUESS_CACHE = new Map();
+const TROPICAL_YEAR = 365.2422;
+
 function computeTermInstantJd(year, index) {
   const target = termLongitude(index);
   const anchor = toJDN(year, 1, 5) - 0.5 + index * 15.2184;
-  let jd = anchor;
+  const prev = TERM_GUESS_CACHE.get(index);
+  let jd = prev !== undefined ? prev + TROPICAL_YEAR : anchor;
+  if (Math.abs(jd - anchor) > 20) jd = anchor;
   for (let n = 0; n < 12; n++) {
     let diff = target - sunLongitude(jd);
     diff = ((((diff + 180) % 360) + 360) % 360) - 180;
     jd += diff / 0.98564736;
-    if (Math.abs(diff) < 1e-7) break;
+    if (Math.abs(diff) < TERM_CONVERGE_DEG) break;
   }
+  TERM_GUESS_CACHE.set(index, jd);
   const jdUt = jd - deltaTSeconds(year) / 86400;
   return jdUt + localOffsetFor(jdUt);
 }
@@ -220,22 +228,62 @@ function equationOfTime(year, month, day) {
 
 const TERM_WINDOW_CACHE = new Map();
 const TERM_WINDOW_CACHE_MAX = 8;
+const TERM_YEAR_CACHE = new Map();
+const TERM_YEAR_CACHE_MAX = 32;
+const ALL_TERM_INDEXES = Array.from({ length: 24 }, (_, i) => i);
+const JIE_TERM_INDEXES = ALL_TERM_INDEXES.filter((i) => i % 2 === 0);
 
-function termWindow(year) {
-  const cached = TERM_WINDOW_CACHE.get(year);
-  if (cached) return cached;
-  const list = [];
-  for (let y = year - 1; y <= year + 1; y++) {
-    for (let i = 0; i < 24; i++) {
-      list.push({ year: y, index: i, name: TERM_NAMES[i], jd: termInstantJd(y, i) });
+function termYearList(year, jieOnly) {
+  const key = jieOnly ? `${year}|jie` : `${year}|all`;
+  const hit = TERM_YEAR_CACHE.get(key);
+  if (hit) return hit;
+  if (jieOnly) {
+    const full = TERM_YEAR_CACHE.get(`${year}|all`);
+    if (full) {
+      const jie = full.filter((t) => t.index % 2 === 0);
+      TERM_YEAR_CACHE.set(key, jie);
+      return jie;
     }
   }
+  const list = [];
+  for (const i of (jieOnly ? JIE_TERM_INDEXES : ALL_TERM_INDEXES)) {
+    list.push({ year, index: i, name: TERM_NAMES[i], jd: termInstantJd(year, i) });
+  }
+  list.sort((a, b) => a.jd - b.jd);
+  if (TERM_YEAR_CACHE.size >= TERM_YEAR_CACHE_MAX) {
+    TERM_YEAR_CACHE.delete(TERM_YEAR_CACHE.keys().next().value);
+  }
+  TERM_YEAR_CACHE.set(key, list);
+  return list;
+}
+
+function termWindow(year, opts = {}) {
+  const jieOnly = opts.jieOnly === true;
+  const cacheKey = jieOnly ? `${year}|jie` : year;
+  const cached = TERM_WINDOW_CACHE.get(cacheKey);
+  if (cached) return cached;
+  const list = [
+    ...termYearList(year - 1, jieOnly),
+    ...termYearList(year, jieOnly),
+    ...termYearList(year + 1, jieOnly),
+  ];
   list.sort((a, b) => a.jd - b.jd);
   if (TERM_WINDOW_CACHE.size >= TERM_WINDOW_CACHE_MAX) {
     TERM_WINDOW_CACHE.delete(TERM_WINDOW_CACHE.keys().next().value);
   }
-  TERM_WINDOW_CACHE.set(year, list);
+  TERM_WINDOW_CACHE.set(cacheKey, list);
   return list;
+}
+
+function xunKongOf(ganzhi) {
+  if (typeof ganzhi !== 'string' || ganzhi.length < 2) return [];
+  const s = STEMS.indexOf(ganzhi[0]);
+  const b = BRANCHES.indexOf(ganzhi[1]);
+  if (s < 0 || b < 0) return [];
+  const idx = sexagenaryIndex(s, b);
+  if (idx < 0) return [];
+  const head = Math.floor(idx / 10) * 10;
+  return [BRANCHES[(head + 10) % 12], BRANCHES[(head + 11) % 12]];
 }
 
 function previousJie(terms, jd) {
@@ -262,7 +310,7 @@ function formatJd(jd) {
   return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}`;
 }
 
-return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryIndex, ganzhiName, dayGanzhiIndex, sunLongitude, deltaTSeconds, OFFSET_MODERN, OFFSET_BEIJING_LOCAL, CUTOVER_JD, localOffsetFor, termInstantJd, jdToParts, partsToJd, equationOfTime, termWindow, previousJie, nextJie, formatJd };
+return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryIndex, ganzhiName, dayGanzhiIndex, sunLongitude, deltaTSeconds, OFFSET_MODERN, OFFSET_BEIJING_LOCAL, CUTOVER_JD, localOffsetFor, termInstantJd, jdToParts, partsToJd, equationOfTime, termWindow, xunKongOf, previousJie, nextJie, formatJd };
 })();
 
 __mods.lunar = (function () {
@@ -1326,7 +1374,7 @@ return { tenGod, elementRoles, scoreLuck, analyzeBaziFrame };
 })();
 
 __mods.bazi = (function () {
-const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex, termWindow, previousJie, nextJie, equationOfTime, formatJd } = __mods.calendar;
+const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex, termWindow, previousJie, nextJie, equationOfTime, formatJd, xunKongOf } = __mods.calendar;
 const { resolveAddress } = __mods.geo;
 const { computeBaziShensha } = __mods.shensha;
 const { analyzeBaziFrame, scoreLuck } = __mods.geju;
@@ -1532,7 +1580,7 @@ function buildBazi(input) {
   const solar = useTrueSolar ? applyTrueSolar(civilJd, longitude) : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
   const jd = solar.jd;
 
-  const terms = termWindow(year);
+  const terms = termWindow(year, { jieOnly: true });
   const prevJieTerm = previousJie(terms, jd);
   const nextJieTerm = nextJie(terms, jd);
 
@@ -1626,12 +1674,6 @@ function buildBazi(input) {
     return CHANGSHENG[((step % 12) + 12) % 12];
   }
 
-  function xunKong(ganzhi) {
-    const idx = sexagenaryIndex(STEMS.indexOf(ganzhi[0]), BRANCHES.indexOf(ganzhi[1]));
-    const start = Math.floor(idx / 10) * 10;
-    return [BRANCHES[(start + 10) % 12], BRANCHES[(start + 11) % 12]];
-  }
-
   const monthBranch = pillars.month.branch;
 
   const shensha = computeBaziShensha(pillars, kongwang);
@@ -1640,7 +1682,7 @@ function buildBazi(input) {
     const pl = pillars[key];
     pl.dishi = changsheng(dayStem, pl.branch);
     pl.zizuo = changsheng(pl.stem, pl.branch);
-    pl.kongwang = xunKong(pl.ganzhi);
+    pl.kongwang = xunKongOf(pl.ganzhi);
     pl.shensha = shensha.detail[key].map((x) => x.name);
     pl.shenshaDetail = shensha.detail[key];
   }
@@ -1798,7 +1840,7 @@ return { HIDDEN_STEMS, STEM_ELEMENT, BRANCH_ELEMENT, buildRelations, tenGod, nay
 })();
 
 __mods.liuyao = (function () {
-const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex } = __mods.calendar;
+const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xunKongOf } = __mods.calendar;
 
 const TRIGRAM_BITS = {
   乾: [1, 1, 1], 兑: [1, 1, 0], 离: [1, 0, 1], 震: [1, 0, 0],
@@ -1944,9 +1986,7 @@ function buildLiuyao(input = {}) {
 
   const dayIdx = sexagenaryIndex(STEMS.indexOf(dayGanZhi.stem), BRANCHES.indexOf(dayGanZhi.branch));
   const xun = dayIdx >= 0 ? Math.floor(dayIdx / 10) : -1;
-  const xunKong = xun >= 0
-    ? [BRANCHES[(10 - 2 * xun + 12) % 12], BRANCHES[(11 - 2 * xun + 12) % 12]]
-    : [];
+  const xunKong = xunKongOf(`${dayGanZhi.stem}${dayGanZhi.branch}`);
   const xunShou = xun >= 0 ? ganzhiName(xun * 10).name : '';
 
   function decorate(hex, movingSet) {
@@ -3283,7 +3323,7 @@ return { TRI_NAME, TRI_ELEMENT, TRI_BITS, buildMeihua };
 })();
 
 __mods.daliuren = (function () {
-const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd } = __mods.calendar;
+const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } = __mods.calendar;
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -3369,11 +3409,6 @@ function calcShensha(dayGz) {
   return out;
 }
 
-const XUN_KONG = {
-  甲子: ['戌', '亥'], 甲戌: ['申', '酉'], 甲申: ['午', '未'],
-  甲午: ['辰', '巳'], 甲辰: ['寅', '卯'], 甲寅: ['子', '丑'],
-};
-
 const JIA_ZI_60 = Array.from({ length: 60 }, (_, i) => GAN[i % 10] + ZHI[i % 12]);
 
 const ZHI_CHONG = { 子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅', 卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳' };
@@ -3448,10 +3483,7 @@ function analyze(ke) {
 }
 
 function xunKong(dayGz, zhi) {
-  const idx = JIA_ZI_60.indexOf(dayGz);
-  if (idx < 0) return null;
-  const head = JIA_ZI_60[Math.floor(idx / 10) * 10];
-  return (XUN_KONG[head] || []).includes(zhi) ? zhi : null;
+  return xunKongOf(dayGz).includes(zhi) ? zhi : null;
 }
 
 function chuan(pos, zhi, tdp, dayGan, dayGz) {
@@ -4676,6 +4708,191 @@ const TAROT_ELEMENT_FOCUS = {
 return { TRIGRAM, YAO_POSITION, MOVING_NATURE, HEX64, HEX_BY_CORE, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE, LIUREN_JIANG, DISCLAIMER, TAROT_ELEMENT_FOCUS };
 })();
 
+__mods['interpret-plain'] = (function () {
+
+const s = (v, fallback = '') => (v === undefined || v === null || v === '' ? fallback : String(v));
+const join = (arr) => (Array.isArray(arr) ? arr.filter(Boolean).join('') : '');
+const has = (v) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '');
+
+const STRENGTH_PLAIN = {
+  身强: '底子偏足、抗压能力好，但容易自己给自己加码，学会收力比使劲更重要',
+  偏强: '底子略足，扛得住事，也容易把事都往自己身上揽',
+  中和: '力量比较匀，属于「给什么环境就长出什么样子」的类型',
+  偏弱: '底子偏薄，靠外部支援比硬扛有效，选对圈子与节奏很关键',
+  身弱: '底子偏薄，先修恢复力再谈冲刺，硬撑的性价比最低',
+};
+
+const DIR_SECTION = {
+  wealth: '「工作与职业选择」与「时间窗」',
+  career: '「事业发展」与「时间窗」',
+  love: '「爱情与感情」',
+  health: '「健康状况」',
+  study: '「事业发展」与「时间窗」',
+  travel: '「整体运势」与「时间窗」',
+  general: '「整体运势」与「看盘顺序」',
+};
+
+function buildAnswer(r, ask, ctx = {}) {
+  if (!r || !r.system) return '';
+  const q = s(ask && ask.question).trim();
+  const dir = (ask && ask.direction) || 'general';
+  const where = r.system === 'bazi'
+    ? (DIR_SECTION[dir] || DIR_SECTION.general)
+    : '下面与你的问题最贴近的那一节';
+  const head = q ? `你问的是「${q}」。` : '';
+
+  if (r.system === 'bazi') {
+    const dm = r.dayMaster || {};
+    const st = r.strength || {};
+    const ys = (r.frame && r.frame.yongshen) || {};
+    const favor = join(ys.favor);
+    const avoid = join(ys.avoid);
+    const ln = (r.liunian || [])[0];
+    const parts = [
+      head + `先说结论：你是${s(dm.stem)}${s(dm.element)}日主，命局${s(st.level, '待定')}` +
+        `${favor ? `，顺${favor}、忌${avoid}——往${favor}的方向安排事情会更省力` : ''}。`,
+      ln && ln.ganzhi
+        ? `${s(ln.year)} 年是${ln.ganzhi}年（${s(ln.luck && ln.luck.tier, '平')}），这是「大环境」这一层。`
+        : '',
+      `具体到你问的这件事，重点看${where}。`,
+    ];
+    return parts.filter(Boolean).join('');
+  }
+
+  if (r.system === 'ziwei') {
+    const soul = r.soul || {};
+    const body = r.body || {};
+    const bureau = r.bureau || {};
+    const md = r.lifeMaster || '';
+    return [
+      head + `先说结论：你的命宫落${s(soul.branch, '—')}宫` +
+        `${bureau.name ? `、${bureau.name}` : ''}${md ? `，命主${md}` : ''}` +
+        `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
+      `具体到你问的这件事，重点看${where}。`,
+    ].join('');
+  }
+
+  if (r.system === 'liuyao') {
+    const ben = r.ben || {};
+    const moving = (r.cast && r.cast.movingPositions) || [];
+    const bian = r.bian || {};
+    return [
+      head + `先说结论：本卦是${s(ben.name, '—')}` +
+        `${ben.palace ? `（${ben.palace}）` : ''}` +
+        `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。`,
+      '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
+    ].join('');
+  }
+
+  return head ? `${head}下面按五个维度拆开看，重点看${where}。` : `下面按五个维度拆开看，重点看${where}。`;
+}
+
+function buildPlain(r, ask, ctx = {}) {
+  if (!r || !r.system) return '';
+  if (r.system === 'bazi') {
+    const st = r.strength || {};
+    const ys = (r.frame && r.frame.yongshen) || {};
+    const favor = join(ys.favor);
+    const avoid = join(ys.avoid);
+    const strength = STRENGTH_PLAIN[st.level] || '力量偏中性';
+    const tiaohou = ys.tiaohou && ys.tiaohou.note ? `另外，${ys.tiaohou.note}，所以「暖一点、亮一点」的环境通常更舒服。` : '';
+    return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
+      `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
+      tiaohou;
+  }
+  if (r.system === 'ziwei') {
+    const soul = r.soul || {};
+    const body = r.body || {};
+    return `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
+      `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`;
+  }
+  if (r.system === 'liuyao') {
+    const ben = r.ben || {};
+    const moving = (r.cast && r.cast.movingPositions) || [];
+    return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
+      `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}`;
+  }
+  return '';
+}
+
+function dimensionPlain(key, r, ctx = {}) {
+  if (!r || r.system !== 'bazi') return '';
+  const ys = (r.frame && r.frame.yongshen) || {};
+  const favor = join(ys.favor);
+  const avoid = join(ys.avoid);
+  const st = r.strength || {};
+  if (key === 'overall') return `一句话：底子${s(st.level, '中性')}，往${favor || '有利方向'}走省力。`;
+  if (key === 'work') return `一句话：挑${favor || '喜用'}属性的活儿，比硬碰${avoid || '忌神'}省力。`;
+  if (key === 'career') return `一句话：你的上升方式，偏向把${favor || '长处'}做成看得见的成果。`;
+  if (key === 'love') return '一句话：关系里先看清自己要什么，再决定推进速度。';
+  if (key === 'health') return '一句话：作息稳定比任何调理都优先。';
+  return '';
+}
+
+const GLOSSARY = [
+  ['日主', '你出生那天对应的天干，代表「你自己」，整张盘都围着它转。'],
+  ['用神', '这张盘里最需要补的那一类力量，顺着它做事更省力。'],
+  ['忌神', '补得越多越别扭的那一类力量，不是坏东西，只是对你性价比低。'],
+  ['调候', '按出生季节调温补缺：冬天的盘怕冷，夏天的盘怕燥。'],
+  ['格局', '把整张盘的结构归成一个类型，用来看「你适合怎么打」。'],
+  ['十神', '把五行关系翻译成人事：财＝资源、官杀＝规则与压力、印＝支持、食伤＝表达、比劫＝同伴。'],
+  ['月令', '出生的月份，是判断强弱最关键的一个位置。'],
+  ['日支', '日柱的地支，也叫「配偶宫」，看亲密关系的第一落点。'],
+  ['大运', '十年一换的大阶段，决定这十年顺不顺手。'],
+  ['流年', '每一年的干支，看当年的具体环境。'],
+  ['空亡', '落到空亡的字，力量打折，事情容易「看着有、抓不住」。'],
+  ['伏神', '卦里没出现的六亲，藏在同宫首卦的对应爻下，用时才看得见。'],
+  ['世应', '世爻代表你，应爻代表对方或外部环境。'],
+  ['动爻', '会变的爻，是事情「往哪走」的推动点。'],
+  ['纳甲', '给六个爻配上天干地支，六亲与生克才有依据。'],
+  ['四化', '禄权科忌四种变化，标记星曜在这一步运里扮演什么角色。'],
+  ['大限', '紫微里的十年阶段，作用类似八字的「大运」。'],
+];
+
+const GLOSSARY_BY_SYSTEM = {
+  liuyao: {
+    用神: '你问的这件事对应的那一类六亲，断卦先把它找出来。',
+    月令: '起卦时的月份，用来看各爻旺不旺。',
+    日支: '起卦当天的地支，与月建一起决定爻的力量。',
+    大运: '六爻不看大运，这里只取当前这一件事的象。',
+    流年: '六爻一般不看流年，看的是眼下这一卦的时段。',
+  },
+  ziwei: {
+    用神: '紫微斗数以「用神宫」的强弱看事情，不取五行喜忌那套。',
+    日主: '紫微斗数不看日主，看的是命宫与星曜组合。',
+    十神: '紫微斗数用四化与星情，不用十神。',
+  },
+};
+
+function buildGlossary(texts, system) {
+  const body = (Array.isArray(texts) ? texts : [texts]).filter(Boolean).join('');
+  if (!body) return [];
+  const override = GLOSSARY_BY_SYSTEM[system] || {};
+  return GLOSSARY
+    .filter(([term]) => body.includes(term))
+    .map(([term, plain]) => ({ term, plain: override[term] || plain }))
+    .slice(0, 10);
+}
+
+const FOLLOWUPS = {
+  career: ['这份工作要不要动，明年哪几个月是窗口？', '和上级的关系该硬碰还是绕开？', '现在转方向，代价主要在哪儿？'],
+  wealth: ['这笔钱现在投出去合适吗？', '我的财主要来自工资还是副业？', '今年哪段时间最容易破财？'],
+  love: ['这段关系能走到哪一步？', '什么时候适合把关系定下来？', '我在关系里最容易忽略什么？'],
+  health: ['哪段时间身体最需要留意？', '作息怎么调最划算？', '查体和作息之外，还有什么是能自己控制的？'],
+  study: ['今年再考一次，胜算在哪、短板在哪？', '复习节奏该怎么排？', '要不要换目标院校或岗位？'],
+  travel: ['这次出门顺不顺，哪天走更好？', '换个城市生活，合不合适？'],
+  general: ['今年最该抓的一件事是什么？', '最该避开的坑在哪？', '接下来三个月，什么时间点值得留意？'],
+};
+
+function buildFollowups(r, ask) {
+  const dir = (ask && ask.direction) || 'general';
+  const list = FOLLOWUPS[dir] || FOLLOWUPS.general;
+  return list.slice(0, 3);
+}
+
+return { buildAnswer, buildPlain, dimensionPlain, buildGlossary, buildFollowups };
+})();
+
 __mods.interpret = (function () {
 
 const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE, LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER } = __mods['interpret-data'];
@@ -5717,10 +5934,33 @@ const BUILDERS = {
 };
 
 const { interpretQimen } = __mods['qimen-interpret'];
+const { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } = __mods['interpret-plain'];
+
+function enrichPlain(result, r, ask) {
+  if (!result) return result;
+  const dims = (result.dimensions || []).map((d) => {
+    const p = dimensionPlain(d.key, r, {});
+    return p ? { ...d, plain: p } : d;
+  });
+  const texts = [
+    result.lead,
+    ...dims.map((d) => [d.label, d.text, d.advice, d.plain].filter(Boolean).join('')),
+    ...(result.sections || []).map((x) => x.text),
+  ].filter(Boolean);
+  return {
+    ...result,
+    dimensions: dims,
+    answer: result.answer || buildAnswer(r, ask, {}),
+    plain: result.plain || buildPlain(r, ask, {}),
+    followups: buildFollowups(r, ask),
+    glossary: buildGlossary(texts, r.system),
+  };
+}
 
 function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
-  if (r.system === 'qimen') return interpretQimen(r, opts);
+  const ask = askOf(opts);
+  if (r.system === 'qimen') return enrichPlain(interpretQimen(r, opts), r, ask);
   const fn = BUILDERS[r.system];
   if (!fn) return null;
   let body;
@@ -5737,11 +5977,11 @@ function interpret(r, opts) {
       sections: [],
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
-      ask: askOf(opts),
+      ask,
     };
   }
-  const tuned = applyAsk(body.dimensions || [], askOf(opts), body.lead || '');
-  return {
+  const tuned = applyAsk(body.dimensions || [], ask, body.lead || '');
+  return enrichPlain({
     moduleType: MODULE_TYPE[r.system] || 'natal',
     system: r.system,
     systemLabel: SYSTEM_LABEL[r.system] || r.system,
@@ -5750,8 +5990,8 @@ function interpret(r, opts) {
     dimensions: tuned.dims,
     sections: body.sections || [],
     disclaimer: DISCLAIMER,
-    ask: askOf(opts),
-  };
+    ask,
+  }, r, ask);
 }
 
 return { DIMENSIONS, MODULE_TYPE, SYSTEM_LABEL, DIRECTIONS, DIRECTION_DEFAULT, dirOf, hexInfo, interpret };
@@ -6040,13 +6280,22 @@ function compute(args = {}) {
 function interpretText(i) {
   if (!i) return '';
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
+  if (i.answer) out.push(`▶ 先答所问：${i.answer}`);
+  if (i.plain) out.push(`▶ 说人话：${i.plain}`);
   if (i.lead) out.push(i.lead);
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   for (const d of i.dimensions || []) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
-    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
+    const plain = d.plain ? `（${d.plain}）` : '';
+    out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  if (Array.isArray(i.followups) && i.followups.length) {
+    out.push('还可以这样追问：' + i.followups.map((q) => `「${q}」`).join('　'));
+  }
+  if (Array.isArray(i.glossary) && i.glossary.length) {
+    out.push('名词解释：' + i.glossary.map((g) => `${g.term}＝${g.plain}`).join('　'));
+  }
   if (i.disclaimer) out.push(i.disclaimer);
   return out.join('\n');
 }
@@ -6574,6 +6823,17 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 .mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
 .mp-it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
+.mp-it-ans{margin:12px 16px 0;padding:12px 14px;border-left:3px solid var(--red);background:var(--band);font-size:13.5px;line-height:1.9;text-align:justify}
+.mp-it-ans b{display:block;font-size:11px;letter-spacing:.12em;color:var(--red);font-family:system-ui,sans-serif;margin-bottom:5px;font-weight:600}
+.mp-it-plain{margin:10px 16px 0;padding:11px 14px;border:1px dashed var(--line);border-radius:8px;font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+.mp-it-plain b{color:var(--lu);font-weight:600;margin-right:6px}
+.mp-it-dplain{margin-bottom:6px;font-size:12.5px;line-height:1.8;color:var(--lu)}
+.mp-it-fu{margin:4px 16px 12px;padding:11px 14px;background:var(--band);border-radius:8px}
+.mp-it-fu b{display:block;font-size:11px;letter-spacing:.12em;color:var(--label);font-family:system-ui,sans-serif;margin-bottom:6px;font-weight:600}
+.mp-it-fu li{font-size:12.5px;line-height:1.85;margin-left:16px;color:var(--ink2)}
+.mp-it-gloss{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted)}
+.mp-it-gloss summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
+.mp-it-gloss span{color:var(--ink2);font-weight:600;margin-right:4px}
 .mp-it-err{margin:12px 16px;padding:9px 12px;border-left:2px solid var(--red);background:var(--soul);font-size:12.5px;line-height:1.8;color:var(--ink2)}
 .mp-it-err b{color:var(--red);margin-right:6px}
 .mp-it-body{padding:2px 16px 12px}
@@ -7437,10 +7697,12 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
   pp.interpretHTML = function (it, opt) {
     if (!it) return '';
-    if (!(it.dimensions && it.dimensions.length) && !it.error) return '';
+    const hasBody = (it.dimensions && it.dimensions.length) || (it.sections && it.sections.length);
+    if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
-    const dims = it.dimensions.map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
+    const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
+      ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
       ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
@@ -7456,6 +7718,14 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
       ? `<div class="mp-it-ask"><span class="ask-q">问题：${ask.question ? esc(ask.question) : '<span class="ask-none">（未填写）</span>'}</span><span class="ask-sep">｜</span><span class="ask-d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
       : '';
+    const answer = it.answer ? `<div class="mp-it-ans"><b>先答所问</b>${esc(it.answer)}</div>` : '';
+    const plain = it.plain ? `<div class="mp-it-plain"><b>说人话</b>${esc(it.plain)}</div>` : '';
+    const fu = (it.followups && it.followups.length)
+      ? `<div class="mp-it-fu"><b>还可以这样追问</b><ul>${it.followups.map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>`
+      : '';
+    const gloss = (it.glossary && it.glossary.length)
+      ? `<details class="mp-it-gloss"><summary>名词解释（${it.glossary.length} 条）</summary>${it.glossary.map((g) => `<div><span>${esc(g.term)}</span>${esc(g.plain)}</div>`).join('')}</details>`
+      : '';
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -7464,10 +7734,14 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       </button>
       <div class="mp-it-wrap">
         ${askLine}
+        ${answer}
+        ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
         ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
         <div class="mp-it-body">${dims}</div>
         ${secs}
+        ${fu}
+        ${gloss}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>
       </div>
     </div>`;

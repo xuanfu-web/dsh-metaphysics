@@ -1134,10 +1134,37 @@ const BUILDERS = {
  * @returns {object|null} 结构化解析对象
  */
 import { interpretQimen } from './qimen-interpret.js';
+import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
+
+/**
+ * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。
+ * 单独抽出来，是为了让奇门（走 qimen-interpret 的另一条路径）也能共用同一套口吻。
+ */
+function enrichPlain(result, r, ask) {
+  if (!result) return result;
+  const dims = (result.dimensions || []).map((d) => {
+    const p = dimensionPlain(d.key, r, {});
+    return p ? { ...d, plain: p } : d;
+  });
+  const texts = [
+    result.lead,
+    ...dims.map((d) => [d.label, d.text, d.advice, d.plain].filter(Boolean).join('')),
+    ...(result.sections || []).map((x) => x.text),
+  ].filter(Boolean);
+  return {
+    ...result,
+    dimensions: dims,
+    answer: result.answer || buildAnswer(r, ask, {}),
+    plain: result.plain || buildPlain(r, ask, {}),
+    followups: buildFollowups(r, ask),
+    glossary: buildGlossary(texts, r.system),
+  };
+}
 
 export function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
-  if (r.system === 'qimen') return interpretQimen(r, opts);
+  const ask = askOf(opts);
+  if (r.system === 'qimen') return enrichPlain(interpretQimen(r, opts), r, ask);
   const fn = BUILDERS[r.system];
   if (!fn) return null;
   let body;
@@ -1154,11 +1181,11 @@ export function interpret(r, opts) {
       sections: [],
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
-      ask: askOf(opts),
+      ask,
     };
   }
-  const tuned = applyAsk(body.dimensions || [], askOf(opts), body.lead || '');
-  return {
+  const tuned = applyAsk(body.dimensions || [], ask, body.lead || '');
+  return enrichPlain({
     moduleType: MODULE_TYPE[r.system] || 'natal',
     system: r.system,
     systemLabel: SYSTEM_LABEL[r.system] || r.system,
@@ -1167,8 +1194,8 @@ export function interpret(r, opts) {
     dimensions: tuned.dims,
     sections: body.sections || [],
     disclaimer: DISCLAIMER,
-    ask: askOf(opts),
-  };
+    ask,
+  }, r, ask);
 }
 
 export default interpret;

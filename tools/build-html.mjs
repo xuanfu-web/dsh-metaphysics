@@ -151,7 +151,15 @@ function page() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>命理排盘</title>
+<title>命理排盘 · 八字 紫微 六爻 奇门 大六壬 | 本地计算，每步有据可查</title>
+<meta name="description" content="八套命理体系装进一个页面：八字、紫微斗数、六爻纳甲、梅花易数、大六壬、奇门遁甲、合盘、塔罗。全部本地计算、不联网；结果可复现，口径差异逐字可查。">
+<meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme:light)">
+<meta name="theme-color" content="#12110d" media="(prefers-color-scheme:dark)">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:title" content="命理排盘 · 八套体系，一个页面">
+<meta property="og:description" content="八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗。本地计算，不采集数据；口径怎么取、差异在哪里，都能逐字对照。">
+<meta name="twitter:card" content="summary_large_image">
 <style>${CSS}</style>
 </head>
 <body>
