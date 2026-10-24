@@ -64,6 +64,15 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{padding:7px 14px;background:transparent;border:none;color:var(--dim);font-size:13.5px;font-family:inherit;cursor:pointer}
 .seg button.on{background:var(--gold);color:#fff;font-weight:600}
+/* 奇门换局规则：fieldset + 原生 radio（语义优先，外观沿用页面浅色块） */
+.qmrule{grid-column:1 / -1;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.qmrule legend{padding:0;font-size:13.5px;color:var(--dim)}
+.qmopts{display:flex;flex-wrap:wrap;gap:8px}
+.qmopt{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;color:var(--ink);cursor:pointer}
+.qmopt input{accent-color:var(--gold);margin:0}
+.qmhelp{flex:1 1 100%;font-size:12.5px;color:var(--dim)}
+.qmhelp summary{cursor:pointer}
+.qmhelp p{margin:6px 0 0;line-height:1.7}
 .tip{margin:-6px 0 16px;font-size:13.5px;color:var(--dim);line-height:1.8}
 /* 起卦类 tab 的「已自动取当前时刻」提示：与 .tip 同一行块，独立成行，不占横向空间 */
 .tip .auto-note{margin-top:4px;font-size:13.5px;color:var(--good);line-height:1.7}
@@ -148,13 +157,15 @@ function page() {
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">命理排盘<small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 塔罗　全部在本机计算</small></div>
+    <div class="brand">命理排盘<small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></div>
     <div class="tabs">
       <button class="tab" data-tab="ziwei">紫微</button>
       <button class="tab" data-tab="bazi">八字</button>
       <button class="tab" data-tab="liuyao">六爻</button>
       <button class="tab" data-tab="meihua">梅花</button>
       <button class="tab" data-tab="daliuren">六壬</button>
+      <button class="tab" data-tab="qimen">奇门</button>
+      <button class="tab" data-tab="hepan">合盘</button>
       <button class="tab" data-tab="tarot">塔罗</button>
     </div>
   </header>
@@ -173,6 +184,37 @@ function page() {
       <label class="field check" title="开启后会请求 OpenStreetMap"><input id="online" type="checkbox"> 联网精确到区县</label>
     </div>
     <label class="field" id="for-liuyao" style="display:none">六爻<input id="lines" placeholder="9 7 8 8 7 6，空则随机"></label>
+    <!-- 合盘：第二个人的出生信息；合盘方式决定用八字还是紫微两盘对照 -->
+    <div class="grp" id="for-hepan" style="display:none">
+      <label class="field">对方出生日期<input id="pdate" type="date" value="1992-08-15"></label>
+      <label class="field">对方出生时刻<input id="ptime" type="time" value="10:00"></label>
+      <label class="field">对方性别
+        <select id="pgender"><option value="female">女</option><option value="male">男</option></select>
+      </label>
+      <label class="field">对方出生地（可空）<input id="paddr" placeholder="如 四川成都"></label>
+      <div class="field">合盘方式
+        <div class="seg" id="hpchart">
+          <button data-chart="bazi" class="on">八字</button>
+          <button data-chart="ziwei">紫微</button>
+        </div>
+      </div>
+    </div>
+    <!-- 奇门：换局规则（fieldset + 原生 radio）与取用方向；换规则会重起局 -->
+    <div class="grp" id="for-qimen" style="display:none">
+      <fieldset class="qmrule">
+        <legend>换局规则</legend>
+        <div class="qmopts" role="radiogroup" aria-label="奇门换局规则">
+          <label class="qmopt"><input type="radio" name="qimen_rule" value="chaibu" checked><span>拆补</span></label>
+          <label class="qmopt"><input type="radio" name="qimen_rule" value="chaoshen"><span>超神接气</span></label>
+          <label class="qmopt"><input type="radio" name="qimen_rule" value="zhirun"><span>置闰</span></label>
+        </div>
+        <details class="qmhelp">
+          <summary>三种规则有什么区别？</summary>
+          <p>决定符头与节气如何对齐、是否插入闰局；同一个时刻在不同规则下可能得到不同局数。默认「拆补」与工具层一致。</p>
+        </details>
+      </fieldset>
+      <label class="field">询问方向（定用神）<select id="qdir">${DIR_OPTIONS}</select></label>
+    </div>
     <div class="grp" id="for-meihua" style="display:none">
       <div class="field">起卦方式
         <div class="seg">
@@ -232,14 +274,19 @@ ${ui}
 `;
 }
 
-const out = page();
-// 默认写到工作区根目录；`--out <file>` 可另存（例如同步到桌面那份拷贝）
-const outIdx = process.argv.indexOf('--out');
-const target = outIdx > 0 && process.argv[outIdx + 1]
-  ? path.resolve(process.argv[outIdx + 1])
-  : path.resolve(root, '..', '命理排盘.html');
-fs.writeFileSync(target, out, 'utf8');
-console.log(`written: ${target}  (${(out.length / 1024).toFixed(1)} KB)`);
+export { page };
+
+// 只有直接运行时才写文件；被测试 import 时只取 page()，不产生副作用
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const out = page();
+  // 默认写到工作区根目录；`--out <file>` 可另存（例如同步到桌面那份拷贝）
+  const outIdx = process.argv.indexOf('--out');
+  const target = outIdx > 0 && process.argv[outIdx + 1]
+    ? path.resolve(process.argv[outIdx + 1])
+    : path.resolve(root, '..', '命理排盘.html');
+  fs.writeFileSync(target, out, 'utf8');
+  console.log(`written: ${target}  (${(out.length / 1024).toFixed(1)} KB)`);
+}
 
 
 

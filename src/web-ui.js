@@ -12,8 +12,8 @@
   // cast ：六爻 / 梅花 / 大六壬 —— 要的是「起卦时刻」，占的就是当下，自动取本机当前时刻
   // none ：塔罗 —— 不看时间，日期时间字段整个隐藏
   const TIME_KIND = {
-    ziwei: 'birth', bazi: 'birth',
-    liuyao: 'cast', meihua: 'cast', daliuren: 'cast',
+    ziwei: 'birth', bazi: 'birth', hepan: 'birth',
+    liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
     tarot: 'none',
   };
   const SAMPLE = { date: '1990-05-12', time: '14:30' };
@@ -37,6 +37,8 @@
     liuyao: '六爻不需要出生时间：只用起卦当下的日辰定六神、月建定旺衰，卦由摇出。',
     meihua: '梅花用起卦时刻的年月日时数成卦，也可直接给两个数字起卦；与出生时间无关。',
     daliuren: '大六壬用起卦时刻的日干支、时支与月将起天地盘；同样与出生时间无关。',
+    qimen: '奇门时家转盘：用起局时刻定节气、三元与局数；「换局规则」决定符头与节气如何对齐。',
+    hepan: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。',
     tarot: '塔罗不看时间，只记录抽牌时刻与你的提问。',
   };
 
@@ -46,8 +48,9 @@
   const needAsk = Core.needAsk || (() => false);
   const ASK_PLACEHOLDER = '用一句话描述所问之事，例如：今年是否适合换工作？';
 
-  /** 本次要交给解读的「问题 + 方向」；命盘类不传 */
+  /** 本次要交给解读的「问题 + 方向」；命盘类不传。奇门不问事，但方向决定取哪门作用神 */
   function askArgs() {
+    if (tab === 'qimen') return { question: '', direction: el('qdir').value };
     if (!needAsk(tab)) return undefined;
     return { question: el('question').value.trim(), direction: el('direction').value };
   }
@@ -161,7 +164,8 @@
     markAskInvalid(false);
     const args = { system: tab };
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
-    if (tab === 'bazi' || tab === 'ziwei') {
+    if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
+      // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
       args.gender = el('gender').value;
       args.trueSolar = el('ts').checked;
       const addr = el('addr').value.trim();
@@ -173,6 +177,20 @@
           if (g && typeof g.lon === 'number') { args.longitude = g.lon; args.geo = g; }
         } catch (e) { /* 退回内置表 */ }
       }
+    }
+    if (tab === 'hepan') {
+      const chartBtn = document.querySelector('#hpchart .on');
+      args.chart = chartBtn && chartBtn.dataset.chart === 'ziwei' ? 'ziwei' : 'bazi';
+      args.partner = {
+        datetime: `${el('pdate').value}T${el('ptime').value}`,
+        gender: el('pgender').value,
+        address: el('paddr').value.trim() || undefined,
+        trueSolar: el('ts').checked,
+      };
+    }
+    if (tab === 'qimen') {
+      const picked = document.querySelector('input[name="qimen_rule"]:checked');
+      args.juMethod = picked ? picked.value : 'chaibu';
     }
     if (tab === 'liuyao') {
       const parsed = Core.parseLines(el('lines').value);
@@ -201,10 +219,12 @@
       const r = window.Engine.compute(args);
       const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? window.__PP.baziHTML(r)
-          : tab === 'meihua' ? window.__PP.meihuaHTML(r)
-            : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
-              : tab === 'tarot' ? window.__PP.tarotHTML(r)
-                : window.__PP.liuyaoHTML(r));
+          : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
+            : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
+              : tab === 'meihua' ? window.__PP.meihuaHTML(r)
+                : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
+                  : tab === 'tarot' ? window.__PP.tarotHTML(r)
+                    : window.__PP.liuyaoHTML(r));
       last = { r, html, tab, date, time, timed };
       paint();
     } catch (e) {
@@ -255,13 +275,19 @@
     el('for-gender').style.display = birth ? '' : 'none';
     el('for-liuyao').style.display = tab === 'liuyao' ? '' : 'none';
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';
+    el('for-hepan').style.display = tab === 'hepan' ? '' : 'none';
+    el('for-qimen').style.display = tab === 'qimen' ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
     el('for-ask').style.display = needAsk(tab) ? '' : 'none';
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
-    el('lbl-date').textContent = birth ? '出生日期（公历）' : '起卦日期（公历）';
-    el('lbl-time').textContent = birth ? '出生时刻' : '起卦时刻';
-    el('go').textContent = tab === 'tarot' ? '抽牌' : birth ? '排盘' : '起卦';
+    const castLabel = tab === 'qimen';
+    el('lbl-date').textContent = birth ? '出生日期（公历）' : (castLabel ? '起局日期（公历）' : '起卦日期（公历）');
+    el('lbl-time').textContent = birth ? '出生时刻' : (castLabel ? '起局时刻' : '起卦时刻');
+    el('go').textContent = tab === 'tarot' ? '抽牌'
+      : tab === 'hepan' ? '合盘'
+        : tab === 'qimen' ? '起局'
+          : birth ? '排盘' : '起卦';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
@@ -302,6 +328,19 @@
     // 换牌阵张数要重新抽牌（1/3/5 张是不同牌阵，不是同一组牌换个显示）
     const tc = el('tcount');
     if (tc) tc.addEventListener('change', run);
+    // 合盘：合盘方式切换与对方信息改动都要重算
+    document.querySelectorAll('#hpchart button').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('#hpchart button').forEach((x) => x.classList.toggle('on', x === b));
+      run();
+    }));
+    ['pdate', 'ptime', 'pgender', 'paddr'].forEach((id) => {
+      const node = el(id);
+      if (node) node.addEventListener('change', run);
+    });
+    // 奇门：换局规则改动重起局；询问方向改动只重出解读（用神跟着方向走）
+    document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
+    const qdir = el('qdir');
+    if (qdir) qdir.addEventListener('change', () => { if (tab === 'qimen') paint(); });
     // 改问题或方向：只重出解读，不重摇一卦
     el('question').addEventListener('change', () => { if (needAsk(tab)) paint(); });
     el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });

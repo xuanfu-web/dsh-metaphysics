@@ -107,7 +107,9 @@ const html = fs.readFileSync(path.join(root, '..', '命理排盘.html'), 'utf8')
 ok(/<textarea id="question" rows="2"/.test(html), '产物含多行文本的问题输入框');
 ok(html.includes('placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"'), '问题框带示例 placeholder');
 ok(/<select id="direction">/.test(html), '产物含询问方向下拉');
-ok((html.match(/<option value="(general|wealth|career|love|health|study|travel)"/g) || []).length === 7, '下拉含 7 个方向选项');
+// 奇门另有 id="qdir" 的方向下拉（定用神），这里只数 #direction 自己的选项
+const dirBlock = (html.match(/<select id="direction">([\s\S]*?)<\/select>/) || [])[1] || '';
+ok((dirBlock.match(/<option value="/g) || []).length === 7, '下拉含 7 个方向选项');
 ok(/<option value="general" selected/.test(html), '默认选中「综合」');
 ok(html.includes('id="for-ask"'), '问事字段组存在');
 ok(html.includes('请先填写「所问之事」'), '含必填校验提示文案');
