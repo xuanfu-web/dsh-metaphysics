@@ -4940,6 +4940,55 @@ function baziInterpret(r) {
   const sections = [
     ...(cross.length ? [{ key: 'cross', label: '交叉判断', text: cross.join('　') }] : []),
     {
+      key: 'reasoning', label: '看盘顺序',
+      text: [
+        `① 先看月令：${st.parts && st.parts.season ? `${st.parts.season.branch}月，日主${dm.element}${st.parts.season.word}（${st.parts.season.weight}）` : '月令已定'}，得旺衰 ${level}（${pick(st, 'score', '—')} 分）。这一步定的是"你有没有力气"。`,
+        `② 再定用神：身强则取泄、耗、制——喜${join(favor)}（${join(ys.favorRoles || [])}），忌${join(avoid)}（${join(ys.avoidRoles || [])}）。这一步定的是"往哪走省力"。`,
+        `③ 看格局：主格${primary}${(() => {
+          const others = (Array.isArray(frame.geju) ? frame.geju : []).map((g) => g.name).filter((n) => n && n !== primary);
+          return others.length ? `，另有${others.join('、')}` : '';
+        })()}。格局与前两步同向时可信度更高；冲突时以用神为先。`,
+        `④ 看大运：当前${pick(cur, 'ganzhi', '—')}（${curTier}）${ln && ln.year ? `，${ln.year} 年流年${ln.ganzhi}为${lnTier}` : ''}。行运的吉凶不看名字，看它落在喜用还是忌神（下方「时间窗」给了理由）。`,
+        `⑤ 落到维度：工作看喜用五行与十神权重；感情看配偶星与日支；健康看最旺与最弱的五行。五维度都只是这套推导的应用，不是另一套算法。`,
+      ].join('\n'),
+    },
+    {
+      key: 'timeline', label: '时间窗',
+      text: (() => {
+        const curSpan = cur && cur.startAge != null ? `${cur.startAge}–${cur.startAge + 9}岁，${curTier}${curLuck.reasons && curLuck.reasons.length ? `；${curLuck.reasons.join('，')}` : ''}` : '—';
+        const nextTwo = (ahead || []).slice(0, 2).map((d) => `${d.ganzhi}（${d.startAge}–${d.startAge + 9}岁，${d.luck?.tier || '平'}）`).join(' → ') || '—';
+        const years = (r.liunian || []).slice(0, 5).map((l) => {
+          const lk = isObj(l.luck) ? l.luck : {};
+          const why = (lk.reasons || []).slice(0, 2).join('，');
+          return `${l.year} ${l.ganzhi}·${l.stemTenGod || ''}·${lk.tier || '平'}${why ? `（${why}）` : ''}`;
+        }).join('；');
+        return `当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
+      })(),
+    },
+    {
+      key: 'checks', label: '交叉校验',
+      text: (() => {
+        const favorScore = favor.reduce((sum, el) => sum + (Number(wx[el]) || 0), 0);
+        const avoidScore = avoid.reduce((sum, el) => sum + (Number(wx[el]) || 0), 0);
+        const out = [];
+        out.push(favorScore < avoidScore
+          ? `喜用合计 ${favorScore.toFixed?.(1) ?? favorScore} 低于忌神合计 ${avoidScore.toFixed?.(1) ?? avoidScore}：原局里"顺风的条件"偏少，靠行运与外部环境补更现实，别硬扛。`
+          : `喜用合计 ${favorScore} 不低于忌神合计 ${avoidScore}：原局自带可用的条件，行运只是把它放大或压住。`);
+        if (curTier && lnTier) {
+          const good = ['吉', '大吉'];
+          if (good.includes(curTier) && !good.includes(lnTier)) out.push('大运顺、当年逆：方向可以按大运走，具体动作挑流年的顺月做，不必因为一年不顺就推翻长期计划。');
+          else if (!good.includes(curTier) && good.includes(lnTier)) out.push('大运逆、当年顺：今年适合借势处理具体事务，但不宜把长期结构性问题押在这一年解决。');
+          else if (!good.includes(curTier) && !good.includes(lnTier)) out.push('大运与流年都偏逆：以守住基本盘为主，减少新增承诺。');
+          else out.push('大运与流年同向偏顺：可以把想做但一直拖着的事排上日程。');
+        }
+        const tiao = ys.tiaohou && ys.tiaohou.element;
+        if (tiao) out.push(favor.includes(tiao)
+          ? `调候喜${tiao}，与扶抑用神同向：取用上不打架，${tiao}相关的行业与环境优先。`
+          : `调候喜${tiao}，不在扶抑的喜用里：两套取法有分歧，这里以扶抑为主，${tiao}只作环境上的小幅偏好。`);
+        return out.join('　');
+      })(),
+    },
+    {
       key: 'yongshen', label: '用神与忌神',
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
         `${pick(ys, 'detail', '')}`,
@@ -4947,6 +4996,10 @@ function baziInterpret(r) {
     {
       key: 'geju', label: '格局依据',
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
+    },
+    {
+      key: 'limits', label: '未纳入',
+      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用以扶抑为主、调候只做简化提示，各派取法不同；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 
@@ -5112,6 +5165,38 @@ function ziweiInterpret(r) {
   const sections = [
     { key: 'palaces', label: '关键宫位', text: `命宫${soulStar}　官禄${careerStar || '无正曜'}　财帛${wealthStar || '无正曜'}　夫妻${spouseStar || '无正曜'}　疾厄${healthStar || '无正曜'}` },
     { key: 'patterns', label: '格局', text: patText },
+    {
+      key: 'reasoning', label: '看盘顺序',
+      text: [
+        `① 先看命宫：${soulFrom}${S.trait ? `，底色是「${S.trait}」` : ''}。命宫回答的是"你是谁"，不是"会遇到什么"。`,
+        `② 再看三方四正：${(soul && soul.sanfang) ? soul.sanfang.join('、') : '命/财/官/迁'}，会到的主星是${(() => {
+          const names = (soul && soul.sanfang ? soul.sanfang : [])
+            .map((n) => zwMainStar(zwPalace(r, n)))
+            .filter(Boolean);
+          const uniq = [...new Set(names)];
+          return uniq.length ? uniq.join('、') : '无正曜';
+        })()}——这是你与外界打交道时的常用手法。`,
+        natalSihuaText ? `③ 生年四化：${natalSihuaText}。四化比星曜更能指出"你在意什么、哪里会反复"。` : '③ 生年四化：本盘四化信号不明显。',
+        `④ 大限：${daxianPalace ? `${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）` : '当前阶段'}。紫微里大限比流年重：十年的主题定下来，流年只是其中一年的天气。`,
+        lnMutagen ? `⑤ 流年四化：${lnMutagen}${r.flow && r.flow.month ? `；流月命宫 ${r.flow.month.ganzhi}${r.flow.month.palace ? `（${r.flow.month.palace}）` : ''}` : ''}。` : '⑤ 流年四化：信号不明显。',
+        '⑥ 落到维度：工作看命宫与官禄的配合；感情看夫妻宫与煞星；健康看疾厄宫——五维度都是上面几步的应用。',
+      ].join('\n'),
+    },
+    {
+      key: 'timeline', label: '时间窗',
+      text: (() => {
+        const list = (r.daxianList || []).slice().sort((a, b) => a.ages[0] - b.ages[0]);
+        const idx = list.findIndex((d) => Number.isFinite(age) && age >= d.ages[0] && age <= d.ages[1]);
+        const pick3 = list.slice(idx >= 0 ? idx : 0, (idx >= 0 ? idx : 0) + 3);
+        const dx = pick3.map((d) => `${d.palace} ${d.ages[0]}–${d.ages[1]}岁·会${(d.mainStars || []).join('') || '—'}${(d.mutagenHits || []).length ? `·${d.mutagenHits.map((m) => m.star + m.type).join('')}` : ''}`).join(' → ');
+        const yrs = (r.liunian || []).slice(0, 5).map((l) => `${l.year} ${l.ganzhi} ${l.age}岁·命宫${l.lifePalace ? l.lifePalace.palace : '—'}`).join('；');
+        return `大限：${dx || '—'}。\n近五年流年：${yrs || '—'}。\n读法：大限定十年的主题，流年四化指出今年往哪边偏；两层方向相反时，以守住大限主题为主。`;
+      })(),
+    },
+    {
+      key: 'limits', label: '未纳入',
+      text: '本盘没有计算：飞星四化（宫干引发的连锁）、小限与大限的加权、流日流时的具体事项定位，以及双星组合的强弱细分。四化表取中州派常用口径，其他流派（如飞星派）结论会不同；这些不改变盘面事实，只影响轻重，所以只作方向参考。',
+    },
   ];
   if (natalSihua.length) {
     const ke = natalSihua.find((m) => m.type === '科') || null;
@@ -5208,6 +5293,22 @@ function liuyaoInterpret(r) {
     key: 'liuqin', label: '六亲取用',
     text: `这一卦里，${movingLiuqin ? `动爻落在${movingLiuqin}（${LIUQIN_USE[movingLiuqin] || ''}）` : '没有发动的六亲'}。` +
       `如果你心里有具体问题，可以对号入座：${Object.entries(LIUQIN_USE).map(([k, v]) => `${k}主${v.split('，')[0]}`).join('；')}。`,
+  });
+
+  sections.push({
+    key: 'reasoning', label: '看卦顺序',
+    text: [
+      `① 先定卦宫：本卦「${ben.name || '—'}」属${String(pick(ben, 'palace', '—')).replace(/宫$/, '')}宫（${palaceEl || '—'}），六亲由此排定——宫变了，同一个字的六亲就变了。`,
+      `② 再看世应：世在${ben.shi}爻（${shiLine ? `${shiLine.liuqin}${shiLine.liushen ? `·${shiLine.liushen}` : ''}` : '—'}），应在${ben.ying}爻（${yingLine ? `${yingLine.liuqin}` : '—'}）；世代表你，应代表对方与环境。`,
+      `③ 看动爻：${moving ? `${moving.position}爻${moving.liuqin}${moving.liushen ? `（${moving.liushen}）` : ''}发动，事情的变化点在这里` : '六爻安静，短期不会有大的转折'}。`,
+      `④ 定用神：按所问之事取六亲——问工作看官鬼、文书看父母、求财与感情（男）看妻财、健康看官鬼与子孙；用神不上卦时，看伏神或借日月。`,
+      `⑤ 看日辰：${dayGZ || '—'}日起六神、定旬空；日辰能生克动爻，但不被爻所伤。`,
+      `⑥ 看变卦：${bian.name ? `变出「${bian.name}」，是事情后续的走向` : '本卦无变，以静卦论'}。以上每一步都能在下方「依据」里对上号。`,
+    ].join('\n'),
+  });
+  sections.push({
+    key: 'limits', label: '未纳入',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神与反吟伏吟的细节，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -5379,6 +5480,12 @@ function daliurenInterpret(r) {
   const gj = isObj(r.geJu) ? r.geJu : {};
   const ke = Array.isArray(r.siKe) ? r.siKe : [];
   const jiangOf = (x) => LIUREN_JIANG[x?.jiangFull] || LIUREN_JIANG[x?.jiang] || '';
+  const chuQin = pick(chu, 'liuQin', '');
+  const moQin = pick(mo, 'liuQin', '');
+  const hasKong = !!(chu.xunKong || zhong.xunKong || mo.xunKong);
+  const scText = JSON.stringify(sc);
+  const has = (x) => scText.includes(x);
+  const chuan = `初${pick(chu, 'zhi', '—')} → 中${pick(zhong, 'zhi', '—')} → 末${pick(mo, 'zhi', '—')}`;
 
   const sections = [
     {
@@ -5392,14 +5499,22 @@ function daliurenInterpret(r) {
       key: 'geju', label: '课体与四课',
       text: `本课为${pick(gj, 'name', '未定')}${gj.detail ? `（${gj.detail}）` : ''}。${ke.length ? `四课：${ke.map((k, i) => `${i + 1}课 ${k.shang || ''}上${k.xia || ''}下`).join('　')}` : ''}`,
     },
+    {
+      key: 'reasoning', label: '看课顺序',
+      text: [
+        `① 先看月将加时：月将${pick(r.yueJiang, 'name', '—')}${pick(r.yueJiang, 'zhi', '')}加在${pick(r, 'hourZhi', '—')}时上，定出天地盘——后面所有关系都从这张盘推。`,
+        `② 再看四课：日干寄宫起一课，日支起二课，依次得三、四课；四课是"事情的四个面"。`,
+        `③ 看三传：初传${pick(chu, 'zhi', '—')}（${chuQin || '—'}）起，中传${pick(zhong, 'zhi', '—')}（${pick(zhong, 'liuQin', '—')}），末传${pick(mo, 'zhi', '—')}（${moQin || '—'}）落——发端、过程、结局。`,
+        `④ 定课体：${pick(gj, 'name', '未定')}${gj.detail ? `（${gj.detail}）` : ''}；课体决定这件事"以什么方式"推进，不是吉凶标签。`,
+        `⑤ 看神将：月将、贵人与旬空决定信号强弱；旬空处多为"看着有、实则虚"，须核实。`,
+        '⑥ 落到维度：工作看官鬼与青龙、朱雀；感情看六合、天后与妻财；健康看白虎与子孙——都是上面几步的应用。',
+      ].join('\n'),
+    },
+    {
+      key: 'limits', label: '未纳入',
+      text: '本课没有计算：年命与行年（命上神）、神煞的加权轻重、伏吟反吟的细分，以及课体之间的互涉。三传只取九宗门里的主要取法，其他流派（如以贵神起课）结论可能不同；这些只影响轻重，不改变课面事实。',
+    },
   ];
-
-  const chuQin = pick(chu, 'liuQin', '');
-  const moQin = pick(mo, 'liuQin', '');
-  const hasKong = !!(chu.xunKong || zhong.xunKong || mo.xunKong);
-  const scText = JSON.stringify(sc);
-  const has = (x) => scText.includes(x);
-  const chuan = `初${pick(chu, 'zhi', '—')} → 中${pick(zhong, 'zhi', '—')} → 末${pick(mo, 'zhi', '—')}`;
 
   const dimensions = [
     {
