@@ -258,6 +258,7 @@ function liuyaoText(r) {
   const out = [
     `起卦：${r.cast.notation.join('、')}（自下而上）`,
     `日辰：${r.dayGanZhi.name}`,
+    r.xunShou ? `旬首：${r.xunShou}　旬空：${(r.xunKong || []).join('') || '—'}` : '',
     r.question ? `所问：${r.question}` : '',
     '本卦：',
     fmt(r.ben),

@@ -1,5 +1,5 @@
 // 六爻（纳甲）引擎：摇卦、装卦、六亲、六神、世应、变卦
-import { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
+import { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex } from './calendar.js';
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -156,6 +156,15 @@ export function buildLiuyao(input = {}) {
 
   const liushenStart = LIUSHEN_START[dayGanZhi.stem] ?? 0;
 
+  // 旬空：由日柱所在的旬推两位空亡（甲子旬→戌亥、甲戌旬→申酉、甲申旬→午未、
+  // 甲午旬→辰巳、甲辰旬→寅卯、甲寅旬→子丑）。六爻断卦离不开它，之前没有输出。
+  const dayIdx = sexagenaryIndex(STEMS.indexOf(dayGanZhi.stem), BRANCHES.indexOf(dayGanZhi.branch));
+  const xun = dayIdx >= 0 ? Math.floor(dayIdx / 10) : -1;
+  const xunKong = xun >= 0
+    ? [BRANCHES[(10 - 2 * xun + 12) % 12], BRANCHES[(11 - 2 * xun + 12) % 12]]
+    : [];
+  const xunShou = xun >= 0 ? ganzhiName(xun * 10).name : '';
+
   function decorate(hex, movingSet) {
     const rows = [];
     for (let i = 0; i < 6; i++) {
@@ -201,6 +210,8 @@ export function buildLiuyao(input = {}) {
       movingPositions: moving.map((i) => i + 1),
     },
     dayGanZhi: { name: dayGanZhi.name, stem: dayGanZhi.stem, branch: dayGanZhi.branch },
+    xunShou,
+    xunKong,
     ben: {
       name: ben.name,
       upper: ben.upper,

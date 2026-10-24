@@ -1798,7 +1798,7 @@ return { HIDDEN_STEMS, STEM_ELEMENT, BRANCH_ELEMENT, buildRelations, tenGod, nay
 })();
 
 __mods.liuyao = (function () {
-const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
+const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex } = __mods.calendar;
 
 const TRIGRAM_BITS = {
   乾: [1, 1, 1], 兑: [1, 1, 0], 离: [1, 0, 1], 震: [1, 0, 0],
@@ -1942,6 +1942,13 @@ function buildLiuyao(input = {}) {
 
   const liushenStart = LIUSHEN_START[dayGanZhi.stem] ?? 0;
 
+  const dayIdx = sexagenaryIndex(STEMS.indexOf(dayGanZhi.stem), BRANCHES.indexOf(dayGanZhi.branch));
+  const xun = dayIdx >= 0 ? Math.floor(dayIdx / 10) : -1;
+  const xunKong = xun >= 0
+    ? [BRANCHES[(10 - 2 * xun + 12) % 12], BRANCHES[(11 - 2 * xun + 12) % 12]]
+    : [];
+  const xunShou = xun >= 0 ? ganzhiName(xun * 10).name : '';
+
   function decorate(hex, movingSet) {
     const rows = [];
     for (let i = 0; i < 6; i++) {
@@ -1987,6 +1994,8 @@ function buildLiuyao(input = {}) {
       movingPositions: moving.map((i) => i + 1),
     },
     dayGanZhi: { name: dayGanZhi.name, stem: dayGanZhi.stem, branch: dayGanZhi.branch },
+    xunShou,
+    xunKong,
     ben: {
       name: ben.name,
       upper: ben.upper,
@@ -5997,6 +6006,7 @@ function liuyaoText(r) {
   const out = [
     `起卦：${r.cast.notation.join('、')}（自下而上）`,
     `日辰：${r.dayGanZhi.name}`,
+    r.xunShou ? `旬首：${r.xunShou}　旬空：${(r.xunKong || []).join('') || '—'}` : '',
     r.question ? `所问：${r.question}` : '',
     '本卦：',
     fmt(r.ben),

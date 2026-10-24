@@ -134,6 +134,68 @@ const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉
   ok(`卦例本变卦对（${(FIX.liuyaoExamples || []).length} 例）`, misses.length === 0, misses.slice(0, 3).join('｜'));
 }
 
+// ── ⑧ 卦例：《卜筮正宗》的「本之变」与卦宫（docx 文字层）────────
+// 只验能从原文表格稳定取到的字段：本卦→变卦、卦宫（宫 + 五行）、有日期的旬空。
+// 书中空亡与通用旬空冲突的那一条，fixture 里 kong 留空，不参与断言。
+{
+  const ALL = [];
+  for (let b = 0; b < 64; b++) {
+    const bits = Array.from({ length: 6 }, (_, i) => (b >> i) & 1);
+    ALL.push({ name: hexagramFromBits(bits).name, bits });
+  }
+  const VAR = [['干', '乾'], ['遯', '遁'], ['兌', '兑'], ['離', '离'], ['異', '巽']];
+  const norm = (s) => { let x = String(s); for (const [a, b] of VAR) x = x.split(a).join(b); return x; };
+  const resolve = (raw) => {
+    const name = norm(raw);
+    const exact = ALL.find((x) => x.name === name);
+    if (exact) return exact;
+    const cands = ALL.filter((x) => x.name.endsWith(name));
+    return cands.length === 1 ? cands[0] : null;
+  };
+  const EL = { 乾: '金', 坎: '水', 艮: '土', 震: '木', 巽: '木', 离: '火', 坤: '土', 兑: '金' };
+  const misses = [];
+  let checked = 0;
+  let kongChecked = 0;
+  for (const ex of FIX.boshizhengzong || []) {
+    const parts = String(ex.name).split('之');
+    const A = resolve(parts[0]);
+    const B = resolve(parts[1] || '');
+    if (!A || !B) { misses.push(`${ex.zhan}「${ex.name}」名字无法解析`); continue; }
+    const moving = A.bits.map((bit, i) => (bit !== B.bits[i] ? i : -1)).filter((i) => i >= 0);
+    if (!moving.length) { misses.push(`${ex.zhan} 本卦与变卦相同`); continue; }
+    const lines = A.bits.map((bit, i) => (moving.includes(i) ? (bit ? 9 : 6) : (bit ? 7 : 8)));
+    const dayMatch = String(ex.date || '').match(/月([甲乙丙丁戊己庚辛壬癸])([子丑寅卯辰巳午未申酉戌亥])日/);
+    const dayGanZhi = dayMatch ? { stem: dayMatch[1], branch: dayMatch[2], name: dayMatch[1] + dayMatch[2] } : undefined;
+    const r = buildLiuyao({ lines, dayGanZhi });
+    checked += 1;
+    if (r.ben.name !== A.name) misses.push(`${ex.zhan} 本卦 ${r.ben.name} ≠ ${A.name}`);
+    else if (!r.bian || r.bian.name !== B.name) misses.push(`${ex.zhan} 变卦 ${r.bian && r.bian.name} ≠ ${B.name}`);
+    else if (r.ben.palace !== `${ex.gong[0]}宫` || r.ben.palaceElement !== EL[ex.gong[0]]) {
+      misses.push(`${ex.zhan} 卦宫 ${r.ben.palace}${r.ben.palaceElement} ≠ ${ex.gong}`);
+    } else if (ex.kong && dayGanZhi) {
+      const k = (r.xunKong || []).slice().sort().join('');
+      if (k !== ex.kong.split('').sort().join('')) misses.push(`${ex.zhan} 旬空 ${k} ≠ 书 ${ex.kong}`);
+      else kongChecked += 1;
+    }
+  }
+  ok(`卜筮正宗卦例（${checked} 条：本变卦 / 卦宫 / 旬空）`, misses.length === 0, misses.slice(0, 3).join('｜'));
+  ok('卜筮正宗旬空有可核对的样本', kongChecked >= 1, String(kongChecked));
+}
+
+// ── ⑨ 旬空：六旬的通用表（甲子旬戌亥 … 甲寅旬子丑）──────────
+{
+  const XUN = [['甲子', '戌亥'], ['甲戌', '申酉'], ['甲申', '午未'], ['甲午', '辰巳'], ['甲辰', '寅卯'], ['甲寅', '子丑']];
+  const bad = [];
+  for (const [xun, kong] of XUN) {
+    const r = buildLiuyao({ lines: [7, 7, 7, 7, 7, 7], dayGanZhi: { stem: xun[0], branch: xun[1], name: xun } });
+    const got = (r.xunKong || []).join('');
+    if (got !== kong || r.xunShou !== xun) bad.push(`${xun} → ${r.xunShou}${got} ≠ ${xun}${kong}`);
+  }
+  ok('六旬旬空与旬首', bad.length === 0, bad.join('｜'));
+  const chen = buildLiuyao({ lines: [7, 7, 7, 7, 7, 7], dayGanZhi: { stem: '丙', branch: '辰', name: '丙辰' } });
+  ok('丙辰日属甲寅旬、空子丑', chen.xunShou === '甲寅' && chen.xunKong.join('') === '子丑', `${chen.xunShou}${chen.xunKong.join('')}`);
+}
+
 function parse(text) {
   const m = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2})$/);
   return { year: +m[1], month: +m[2], day: +m[3], hour: +m[4], minute: +m[5] };

@@ -85,6 +85,34 @@ const liuyaoExamples = [
   { chapter: '用神元神忌神仇神章第九', month: '辰', day: '癸巳', ben: '坎为水', bian: '风水涣', quote: '辰月癸巳日，得坎为水变风水涣卦' },
 ];
 
+// ── 《卜筮正宗》卦例（复城道长精校 docx，有文字层）──────────────
+// 从正文表格提取：占事 / 卦名（本之变）/ 卦宫；有日期的记日期。
+// 只收「本卦明确变出另一卦」且卦名可唯一解析的例子；判不准的（卦名讹字、无变卦）不收。
+// 书里印的「空亡」若与通用旬空不符，只记录不断言（见 meta.sources 里的说明）。
+const boshizhengzong = [
+  // 此例书作「空亡 戌亥」，但丙辰日属甲寅旬、通用旬空应为子丑——只取卦名与卦宫，kong 留空
+  { zhan: '自己终身成败', name: '火山旅之山风蛊', gong: '离火', date: '辰月丙辰日', kong: '', quote: '忆予于戊辰年辰月丙辰日卜自己终身成败得旅之蛊卦' },
+  { zhan: '父为子择媳', name: '地雷复之火雷噬嗑', gong: '坤土', date: '申月甲午日', kong: '辰巳', quote: '又一人申月甲午日父为子择媳，得复之噬嗑卦' },
+  { zhan: '占弟病业已临危', name: '水火既济之泽火革', gong: '坎水', date: '', kong: '辰巳' },
+  { zhan: '占开店', name: '艮为山之地火明夷', gong: '艮土', date: '', kong: '子丑' },
+  { zhan: '一人占仆何日回', name: '泽天夬之天泽履', gong: '坤土', date: '', kong: '午未' },
+  { zhan: '占虑大计', name: '火山旅之地火明夷', gong: '离火', date: '', kong: '子丑' },
+  { zhan: '两村争戽水闹殴', name: '离为火之坤为地', gong: '离火', date: '', kong: '子丑' },
+  // 原文此例「卦宫」列为兑金，但水风井属震宫（木），与八宫表冲突——可能表格串行，先不收
+  { zhan: '占升选', name: '地泽临之风泽中孚', gong: '坤土', date: '', kong: '申酉' },
+  { zhan: '客外占众中安否', name: '天雷无妄之乾为天', gong: '巽木', date: '', kong: '子丑' },
+  { zhan: '占子病吉凶', name: '艮为山之山水蒙', gong: '艮土', date: '', kong: '辰巳' },
+  { zhan: '占功名终得出任否', name: '天火同人之泽火革', gong: '离火', date: '', kong: '戌亥' },
+  { zhan: '占何日得财', name: '离为火之雷火丰', gong: '离火', date: '', kong: '申酉' },
+  { zhan: '占因误军粮被参', name: '雷火丰之火山旅', gong: '坎水', date: '', kong: '寅卯' },
+  { zhan: '一人因自及子俱被拿问', name: '巽为风之坤为地', gong: '巽木', date: '', kong: '子丑' },
+  { zhan: '占妾近病', name: '巽为风之火天大有', gong: '巽木', date: '', kong: '辰巳' },
+  { zhan: '占雨久伤麦可否', name: '天火同人之泽火革', gong: '离火', date: '', kong: '午未' },
+  { zhan: '占父在乱军中吉凶', name: '山天大畜之泽地萃', gong: '艮土', date: '', kong: '戌亥' },
+  { zhan: '占子何日脱难', name: '雷地豫之雷泽归妹', gong: '震木', date: '', kong: '寅卯' },
+  { zhan: '因母病占问流年', name: '风雷益之天雷无妄', gong: '巽木', date: '', kong: '辰巳' },
+];
+
 // ── 紫微斗数安星要诀（《紫微斗数全书》通行本）──────────────
 // 五行局由命宫纳音五行定：水二局、木三局、金四局、土五局、火六局
 const wuxingJu = { 水: { name: '水二局', number: 2 }, 木: { name: '木三局', number: 3 }, 金: { name: '金四局', number: 4 }, 土: { name: '土五局', number: 5 }, 火: { name: '火六局', number: 6 } };
@@ -102,12 +130,15 @@ const fixture = {
       liuren: '《大六壬指南》日干寄宫、中气换将（雨水登明亥将起，逐中气一将）',
       ziwei: '《紫微斗数全书》安星要诀：纳音定五行局、紫微天府以寅申为轴相照',
       liuyaoExamples: '《增删卜易》卦例（luckclub.cn 古籍典藏电子本，PDF 有文字层）；原文用字保留（遯/遁 异体），动爻不录——原书卦象图在 PDF 里压成一行，位置不可靠',
+      boshizhengzong: '《卜筮正宗》（复城道长精校 docx）：20 条卦例的占事/卦名/卦宫取自正文表格；卦名异体（干/乾、遯/遁）已归一。书中「空亡」与通用旬空不一致的例子（丙辰日作戌亥，应为子丑）只保留卦名卦宫，不断言空亡',
+      boshizhengzongNote: 'docx 正文约 173k 字，识别出 138 条带「占事」的卦例，其中 99 条卦名可唯一解析；本文件收 20 条（含 2 条有日期），其余因卦名讹字或缺变卦未收',
       boshizhengzong: '《卜筮正宗》（复城道长精校）为扫描版、无文字层，暂未引用',
     },
     variants: { 遯: '遁' },
   },
   bajua,
   liuyaoExamples,
+  boshizhengzong,
   liuren: { ganJiGong, yueJiangByZhongQi, yueJiangSamples },
   ziwei: { wuxingJu, tianfuFromZiwei },
 };
