@@ -1,0 +1,615 @@
+{
+  "meta": {
+    "note": "公开经典通例，规则级录入（典籍 + 条目），不是从引擎输出反推的期望值。",
+    "generatedBy": "tools/gen-classics-fixture.mjs",
+    "sources": {
+      "bajua": "《京氏易传》八宫卦序；世应交位为通行定例（八纯上爻、一至五世依次、游魂四爻、归魂三爻）",
+      "liuren": "《大六壬指南》日干寄宫、中气换将（雨水登明亥将起，逐中气一将）",
+      "ziwei": "《紫微斗数全书》安星要诀：纳音定五行局、紫微天府以寅申为轴相照"
+    }
+  },
+  "bajua": [
+    {
+      "name": "乾为天",
+      "palace": "乾宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "天风姤",
+      "palace": "乾宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "天山遁",
+      "palace": "乾宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "天地否",
+      "palace": "乾宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "风地观",
+      "palace": "乾宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "山地剥",
+      "palace": "乾宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "火地晋",
+      "palace": "乾宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "火天大有",
+      "palace": "乾宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "坎为水",
+      "palace": "坎宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "水泽节",
+      "palace": "坎宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "水雷屯",
+      "palace": "坎宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "水火既济",
+      "palace": "坎宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "泽火革",
+      "palace": "坎宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "雷火丰",
+      "palace": "坎宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "地火明夷",
+      "palace": "坎宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "地水师",
+      "palace": "坎宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "艮为山",
+      "palace": "艮宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "山火贲",
+      "palace": "艮宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "山天大畜",
+      "palace": "艮宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "山泽损",
+      "palace": "艮宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "火泽睽",
+      "palace": "艮宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "天泽履",
+      "palace": "艮宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "风泽中孚",
+      "palace": "艮宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "风山渐",
+      "palace": "艮宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "震为雷",
+      "palace": "震宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "雷地豫",
+      "palace": "震宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "雷水解",
+      "palace": "震宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "雷风恒",
+      "palace": "震宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "地风升",
+      "palace": "震宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "水风井",
+      "palace": "震宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "泽风大过",
+      "palace": "震宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "泽雷随",
+      "palace": "震宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "巽为风",
+      "palace": "巽宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "风天小畜",
+      "palace": "巽宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "风火家人",
+      "palace": "巽宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "风雷益",
+      "palace": "巽宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "天雷无妄",
+      "palace": "巽宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "火雷噬嗑",
+      "palace": "巽宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "山雷颐",
+      "palace": "巽宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "山风蛊",
+      "palace": "巽宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "离为火",
+      "palace": "离宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "火山旅",
+      "palace": "离宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "火风鼎",
+      "palace": "离宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "火水未济",
+      "palace": "离宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "山水蒙",
+      "palace": "离宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "风水涣",
+      "palace": "离宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "天水讼",
+      "palace": "离宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "天火同人",
+      "palace": "离宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "坤为地",
+      "palace": "坤宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "地雷复",
+      "palace": "坤宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "地泽临",
+      "palace": "坤宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "地天泰",
+      "palace": "坤宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "雷天大壮",
+      "palace": "坤宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "泽天夬",
+      "palace": "坤宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "水天需",
+      "palace": "坤宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "水地比",
+      "palace": "坤宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "兑为泽",
+      "palace": "兑宫",
+      "order": 0,
+      "shi": 6,
+      "ying": 3
+    },
+    {
+      "name": "泽水困",
+      "palace": "兑宫",
+      "order": 1,
+      "shi": 1,
+      "ying": 4
+    },
+    {
+      "name": "泽地萃",
+      "palace": "兑宫",
+      "order": 2,
+      "shi": 2,
+      "ying": 5
+    },
+    {
+      "name": "泽山咸",
+      "palace": "兑宫",
+      "order": 3,
+      "shi": 3,
+      "ying": 6
+    },
+    {
+      "name": "水山蹇",
+      "palace": "兑宫",
+      "order": 4,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "地山谦",
+      "palace": "兑宫",
+      "order": 5,
+      "shi": 5,
+      "ying": 2
+    },
+    {
+      "name": "雷山小过",
+      "palace": "兑宫",
+      "order": 6,
+      "shi": 4,
+      "ying": 1
+    },
+    {
+      "name": "雷泽归妹",
+      "palace": "兑宫",
+      "order": 7,
+      "shi": 3,
+      "ying": 6
+    }
+  ],
+  "liuren": {
+    "ganJiGong": {
+      "甲": "寅",
+      "乙": "辰",
+      "丙": "巳",
+      "丁": "未",
+      "戊": "巳",
+      "己": "未",
+      "庚": "申",
+      "辛": "戌",
+      "壬": "亥",
+      "癸": "丑"
+    },
+    "yueJiangByZhongQi": [
+      {
+        "zhongqi": "雨水",
+        "jiang": "亥",
+        "name": "登明"
+      },
+      {
+        "zhongqi": "春分",
+        "jiang": "戌",
+        "name": "河魁"
+      },
+      {
+        "zhongqi": "谷雨",
+        "jiang": "酉",
+        "name": "从魁"
+      },
+      {
+        "zhongqi": "小满",
+        "jiang": "申",
+        "name": "传送"
+      },
+      {
+        "zhongqi": "夏至",
+        "jiang": "未",
+        "name": "小吉"
+      },
+      {
+        "zhongqi": "大暑",
+        "jiang": "午",
+        "name": "胜光"
+      },
+      {
+        "zhongqi": "处暑",
+        "jiang": "巳",
+        "name": "太乙"
+      },
+      {
+        "zhongqi": "秋分",
+        "jiang": "辰",
+        "name": "天罡"
+      },
+      {
+        "zhongqi": "霜降",
+        "jiang": "卯",
+        "name": "太冲"
+      },
+      {
+        "zhongqi": "小雪",
+        "jiang": "寅",
+        "name": "功曹"
+      },
+      {
+        "zhongqi": "冬至",
+        "jiang": "丑",
+        "name": "大吉"
+      },
+      {
+        "zhongqi": "大寒",
+        "jiang": "子",
+        "name": "神后"
+      }
+    ],
+    "yueJiangSamples": [
+      {
+        "zhongqi": "雨水",
+        "date": "2026-02-25T12:00"
+      },
+      {
+        "zhongqi": "春分",
+        "date": "2026-03-25T12:00"
+      },
+      {
+        "zhongqi": "谷雨",
+        "date": "2026-04-25T12:00"
+      },
+      {
+        "zhongqi": "小满",
+        "date": "2026-05-25T12:00"
+      },
+      {
+        "zhongqi": "夏至",
+        "date": "2026-06-25T12:00"
+      },
+      {
+        "zhongqi": "大暑",
+        "date": "2026-07-28T12:00"
+      },
+      {
+        "zhongqi": "处暑",
+        "date": "2026-08-28T12:00"
+      },
+      {
+        "zhongqi": "秋分",
+        "date": "2026-09-28T12:00"
+      },
+      {
+        "zhongqi": "霜降",
+        "date": "2026-10-28T12:00"
+      },
+      {
+        "zhongqi": "小雪",
+        "date": "2026-11-26T12:00"
+      },
+      {
+        "zhongqi": "冬至",
+        "date": "2026-12-26T12:00"
+      },
+      {
+        "zhongqi": "大寒",
+        "date": "2027-01-25T12:00"
+      }
+    ]
+  },
+  "ziwei": {
+    "wuxingJu": {
+      "水": {
+        "name": "水二局",
+        "number": 2
+      },
+      "木": {
+        "name": "木三局",
+        "number": 3
+      },
+      "金": {
+        "name": "金四局",
+        "number": 4
+      },
+      "土": {
+        "name": "土五局",
+        "number": 5
+      },
+      "火": {
+        "name": "火六局",
+        "number": 6
+      }
+    },
+    "tianfuFromZiwei": {
+      "rule": "tianfuIndex = (4 - ziweiIndex + 12) % 12",
+      "basis": "紫微天府对照（寅申同宫，其余相照）"
+    }
+  }
+}

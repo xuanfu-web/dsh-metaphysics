@@ -3603,7 +3603,7 @@ function buildDaliuren(input) {
   };
 }
 
-return { ZHI, GAN, TIAN_JIANG, JIANG_FULL, JIEQI_YUE_JIANG, calcShensha, buildDaliuren };
+return { ZHI, GAN, TIAN_JIANG, JIANG_FULL, JIEQI_YUE_JIANG, GAN_JI_GONG, calcShensha, buildDaliuren };
 })();
 
 __mods.hepan = (function () {

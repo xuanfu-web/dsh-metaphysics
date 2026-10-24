@@ -1,4 +1,4 @@
-﻿// 大六壬：天地盘、四课、九宗门三传。
+// 大六壬：天地盘、四课、九宗门三传。
 // 算法移植自本地 MIT 授权插件 @dhicoc/dsh-chinese-traditional-wisdom-skill 的
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
 import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd } from './calendar.js';
@@ -337,6 +337,6 @@ export function buildDaliuren(input) {
   };
 }
 
-export { ZHI, GAN, TIAN_JIANG, JIANG_FULL, JIEQI_YUE_JIANG };
+export { ZHI, GAN, TIAN_JIANG, JIANG_FULL, JIEQI_YUE_JIANG, GAN_JI_GONG };
 
 
