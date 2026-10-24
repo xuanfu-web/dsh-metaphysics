@@ -46,9 +46,10 @@
                     "build":  "node tools/build-client.mjs",
                     "build:html":  "node tools/build-html.mjs",
                     "test":  "node tools/test-all.mjs",
-                    "test:ci":  "node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs && node tools/check-html-sinks.mjs",
+                    "test:ci":  "node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs && node tools/check-html-sinks.mjs && node tools/check-patterns.mjs",
                     "test:baseline":  "node tools/check-assertions.mjs --update",
                     "check:html":  "node tools/check-html-sinks.mjs",
+                    "check:patterns":  "node tools/check-patterns.mjs",
                     "release":  "node tools/release.mjs"
                 },
     "exports":  {

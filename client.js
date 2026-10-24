@@ -5907,9 +5907,11 @@ function computeRaw(args = {}) {
       lines = args.lines.map(Number);
     }
     let dayGanZhi;
-    if (args.datetime) {
-      const dt = parseDateTime(args.datetime);
-      const g = ganzhiName(dayGanzhiIndex(toJDN(dt.year, dt.month, dt.day)));
+    let asOf = null;
+    const stamp = args.datetime ? parseDateTime(args.datetime) : checkAsOf(args.asOf);
+    if (stamp) {
+      if (!args.datetime) asOf = stamp;
+      const g = ganzhiName(dayGanzhiIndex(toJDN(stamp.year, stamp.month, stamp.day)));
       dayGanZhi = { stem: g.stem, branch: g.branch, name: g.name };
     }
     let result;
@@ -5919,7 +5921,7 @@ function computeRaw(args = {}) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
-    return { ...result, summary: liuyaoText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
   }
   if (!system) {
     throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）。');

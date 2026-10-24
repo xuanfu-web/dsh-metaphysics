@@ -154,20 +154,23 @@ dsh plugin install ./dsh-metaphysics-0.6.0.tgz
 npm run build        # 生成 client.js（浏览器端产物）
 npm run build:html   # 生成独立的 命理排盘.html（可离线双击使用）
 npm test             # 顺序跑完 test/ 下全部 *.test.mjs 并汇总
-npm run test:ci      # 回归 + 断言基线 + 测试自检 + HTML 注入面扫描（CI 跑的就是这条）
+npm run test:ci      # 回归 + 断言基线 + 测试自检 + HTML 注入面 + 工程约定（CI 跑的就是这条）
 npm run test:baseline # 断言数确实要减少时，显式重建基线
 npm run check:html   # 单独跑 HTML 注入面扫描
+npm run check:patterns # 单独跑工程约定检查
 npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token 从 NPM_TOKEN 读）
 ```
 
-也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/release.mjs`。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/release.mjs`。
 
-**测试的三道闸**（0.14.1 起）：
+**测试的四道闸 + 一道稳定性扫射**：
 
 1. `test/_harness.mjs`——任何一条 `ok()` 失败都让进程非零退出（此前 9 个文件只打印不失败，全量"全绿"没有意义）
 2. `test/assertion-baseline.json`——每个文件的 PASS 条数低于基线即失败，防止"删断言让测试变绿"
 3. `tools/verify-tests-can-fail.mjs`——故意写错一条断言，必须真的变红，防止第 1 条被改回去
 4. `tools/check-html-sinks.mjs`——`innerHTML` 里拼接的量必须经过白名单转义函数，否则 CI 直接红
+5. `tools/check-patterns.mjs`——engine 不得引用浏览器/Node API 与 `console`，不得用 `var`/`debugger`，`new Date()` 与 `Math.random` 只允许出现在白名单文件
+6. `test/fuzz.test.mjs`——固定种子的随机生日扫射八个体系，覆盖边界日期、参数矩阵与"同参数必得同结果"
 
 `client.js` 是构建产物，不要手改；改动记录见 [CHANGELOG.md](CHANGELOG.md)。
 

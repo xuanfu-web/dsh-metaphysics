@@ -7,15 +7,16 @@
 - **1929 年前的节气改用当时的地方时**：`termInstantJd` 与农历共用同一套换算（1929-01-01 前为北京地方平时 UTC+7.7611，之后东八区），并顺手修正切点常量的半天偏移。此前农历切换、节气一律 +8，1929 年前出生者在交节前后约 14 分钟内可能月柱整柱错位
 - **晚子时口径统一**：`lateZi`（八字/六壬）与 `lateZiHourMode`（奇门）互为别名，一个概念不再有两个参数名；四套体系的摘要都会写明实际采用的口径（换日 / 不换日）。默认值保持原样（八字/六壬换日、奇门不换日），不偷偷改盘
 - **无经度必须告警**：没给出生地/经度时，八字与紫微摘要首行出现 ⚠（此前只在一行括号里提一句，海外出生很容易被忽略）
-- **可复现**：塔罗/六爻新增 `seed`（同 seed 同结果，可回放、可对拍）；塔罗 `castAt` 由 `asOf` 决定；八字流年可用 `asOf` 钉死基准年（此前锚在"当前年份"，隔年重算结论就变了）
+- **可复现**：塔罗/六爻新增 `seed`（同 seed 同结果，可回放、可对拍）；塔罗 `castAt` 由 `asOf` 决定；八字流年可用 `asOf` 钉死基准年（此前锚在"当前年份"，隔年重算结论就变了）；六爻的日辰（六神起法）也可用 `asOf` 固定，不再随本机日期漂移
 - **默认离线**：工具新增 `geocode: 'offline' | 'online'`，默认 `offline`——内置坐标表已到地级市，足够真太阳时；只有显式开启才会把出生地原文发给 Nominatim。地址解析加 6 小时缓存，UA 补上版本与仓库地址
 - **性能**：`termInstantJd` / `termWindow` 按年缓存（农历换算一次要问几百次中气，而 VSOP87 是全引擎最贵的一段）
   - 紫微盘 10.9ms → **0.5ms**，奇门 8.1ms → **0.07ms**，八字 2.4ms → **0.4ms**
   - 全量回归 15.8s → **3.3s**
 - **无障碍**：结果区补 `role="region"` + `aria-live="polite"`，错误提示 `role="alert"`，通知 `role="status"`
 - **工具层**：`geocode` / `seed` 进 schema，`asOf` 说明覆盖紫微/八字/塔罗三个体系；非法 `geocode` 值报 `E_INPUT`
-- **CI**：新增 `tools/check-html-sinks.mjs`（innerHTML 拼接必须经过白名单转义函数），正/负向都验证过
-- 测试：35 个文件 / 941 条 PASS（新增 historical-tz、repro、caliber、tool-geo 四组）
+- **CI**：新增 `tools/check-html-sinks.mjs`（innerHTML 拼接必须经过白名单转义函数）与 `tools/check-patterns.mjs`（engine 纯净性、日志、`var`、`debugger`、`new Date()`/`Math.random` 白名单），正/负向都验证过
+- **稳定性扫射**：`test/fuzz.test.mjs` —— 用固定种子随机 12 组生日跑遍八个体系，覆盖参数矩阵、边界日期（1600/2400/闰年/1929 切换点）、解析层与"同参数两次结果字节一致"
+- 测试：36 个文件 / 958 条 PASS（新增 historical-tz、repro、caliber、tool-geo、fuzz 五组）
 
 ## 0.14.1 —— 先让「通过」可信
 
