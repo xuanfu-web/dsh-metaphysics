@@ -5811,6 +5811,7 @@ function interpretText(i) {
   if (!i) return '';
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   if (i.lead) out.push(i.lead);
+  if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   for (const d of i.dimensions || []) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
     out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
@@ -6315,6 +6316,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 .mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
 .mp-it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
+.mp-it-err{margin:12px 16px;padding:9px 12px;border-left:2px solid var(--red);background:var(--soul);font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-it-err b{color:var(--red);margin-right:6px}
 .mp-it-body{padding:2px 16px 12px}
 .mp-it-dim{padding:12px 0;border-bottom:1px dashed var(--line)}
 .mp-it-dim:last-of-type{border-bottom:none}
@@ -7157,7 +7160,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   const MT_LABEL = { natal: '命盘解析', divination: '卦象解析', card: '牌阵解析' };
 
   pp.interpretHTML = function (it, opt) {
-    if (!it || !it.dimensions || !it.dimensions.length) return '';
+    if (!it) return '';
+    if (!(it.dimensions && it.dimensions.length) && !it.error) return '';
     const folded = !!(opt && opt.folded);
     const dims = it.dimensions.map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
@@ -7185,6 +7189,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       <div class="mp-it-wrap">
         ${askLine}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
+        ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
         <div class="mp-it-body">${dims}</div>
         ${secs}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>

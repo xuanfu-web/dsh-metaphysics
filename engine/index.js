@@ -303,6 +303,8 @@ export function interpretText(i) {
   if (!i) return '';
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   if (i.lead) out.push(i.lead);
+  // 解析生成失败时不能只返回一个空壳：盘面数据仍然可用，但要让调用方知道"这段没生成出来"
+  if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   for (const d of i.dimensions || []) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
     out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);

@@ -60,3 +60,21 @@ const evil = JSON.parse(JSON.stringify(BZ.interpret));
 evil.dimensions[0].evidence = ['<img src=x onerror=alert(1)>'];
 const evilHtml = PP.interpretHTML(evil);
 ok('依据内容被转义', !/<img/i.test(evilHtml) && evilHtml.includes('&lt;img'));
+
+// ── ⑤ 解析生成失败：不能只剩一个空壳 ───────────────────────
+// 用一个"读任何属性都抛错"的代理，逼 builder 走 catch 分支
+const { interpret } = await import('../engine/interpret.js');
+const bomb = new Proxy({}, {
+  get(_t, key) {
+    if (key === 'system') return 'bazi';
+    if (key === 'then') return undefined;
+    throw new Error('模拟 builder 崩溃');
+  },
+});
+const failed = interpret(bomb);
+ok('builder 异常被兜住且带 error', !!failed && !!failed.error, failed && failed.error);
+const failText = interpretText(failed);
+ok('文本渲染标出解析失败', /解析生成失败/.test(failText), failText.split('\n')[0]);
+const failHtml = PP.interpretHTML(failed);
+ok('面板渲染出失败提示', /mp-it-err/.test(failHtml) && /解析生成失败/.test(failHtml));
+ok('失败提示里的错误被转义', !/<img/i.test(PP.interpretHTML({ ...failed, error: '<img src=x>' })));
