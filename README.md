@@ -192,7 +192,7 @@ npm run check:patterns # 单独跑工程约定检查
 npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token 从 NPM_TOKEN 读）
 ```
 
-也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/release.mjs`。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/check-bundle.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/release.mjs`。
 
 **测试的四道闸 + 一道稳定性扫射**：
 
@@ -202,6 +202,7 @@ npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token �
 4. `tools/check-html-sinks.mjs`——`innerHTML` 里拼接的量必须经过白名单转义函数，否则 CI 直接红
 5. `tools/check-patterns.mjs`——engine 不得引用浏览器/Node API 与 `console`，不得用 `var`/`debugger`，`new Date()` 与 `Math.random` 只允许出现在白名单文件
 6. `test/fuzz.test.mjs`——固定种子的随机生日扫射八个体系，覆盖边界日期、参数矩阵与"同参数必得同结果"
+7. `tools/check-bundle.mjs`——产物必须在**宿主形态**下能编译能跑：读 `client.js` 原文逐模块编译、模拟 `__ModuleLoader__` 执行 factory、校验 IIFE 收口与不可见分隔符，并要求产物与源码重构建逐字节一致（2026-10-25 的启动崩溃就是 Node 侧全绿、Chromium 侧语法错，这道闸专门守这个缝）
 
 `client.js` 是构建产物，不要手改；改动记录见 [CHANGELOG.md](CHANGELOG.md)。
 

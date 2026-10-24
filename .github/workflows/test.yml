@@ -17,6 +17,8 @@ jobs:
         run: |
           node tools/build-client.mjs
           git diff --exit-code -- client.js
+      - name: 产物自检（宿主形态可编译可执行，逐模块定位）
+        run: node tools/check-bundle.mjs
       - name: 跑全部回归
         run: node tools/test-all.mjs
       - name: 断言数不得低于基线
