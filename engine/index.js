@@ -302,10 +302,14 @@ export function interpretText(i) {
   if (i.answer) out.push(`▶ 先答所问：${i.answer}`);
   if (i.plain) out.push(`▶ 说人话：${i.plain}`);
   if (i.lead) out.push(i.lead);
+  // 一页读懂：报告顶部的五条结论，先给读的人一个「整体形状」
+  if (Array.isArray(i.outline) && i.outline.length) {
+    out.push('一页读懂：' + i.outline.map((o) => `${o.label}·${o.text}`).join('　'));
+  }
   // 解析生成失败时不能只返回一个空壳：盘面数据仍然可用，但要让调用方知道"这段没生成出来"
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   for (const d of i.dimensions || []) {
-    const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
+    const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}${d.confidence ? `　置信度：${d.confidence}` : ''}` : '';
     const plain = d.plain ? `（${d.plain}）` : '';
     // 知识条目：「为什么这样断」＋出处＋可信度标注，是结论与依据之外的第三层
     const know = (d.knowledge || [])
@@ -314,6 +318,12 @@ export function interpretText(i) {
     out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}${know}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  // 三张表：大运 / 流年 / 触发事件（纯文本对齐，工具输出也能直接读）
+  for (const t of i.tables || []) {
+    if (!Array.isArray(t.rows) || !t.rows.length) continue;
+    out.push(`【${t.title}】`);
+    out.push([t.columns.join(' | '), ...t.rows.map((r) => r.join(' | '))].join('\n'));
+  }
   if (Array.isArray(i.followups) && i.followups.length) {
     out.push('还可以这样追问：' + i.followups.map((q) => `「${q}」`).join('　'));
   }

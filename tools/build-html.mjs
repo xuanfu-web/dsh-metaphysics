@@ -51,6 +51,7 @@ header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16p
 .field.check input{min-width:0;width:18px;height:18px;accent-color:var(--gold);padding:0}
 .go{margin-left:0;grid-column:4;justify-self:end;align-self:end;padding:10px 22px;border-radius:6px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px}
 .go:hover{filter:brightness(1.08)}
+.go.ghost{grid-column:3;background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;margin-right:8px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{font-size:13px;padding:4px 10px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
 .chip.ok{color:var(--good);border-color:rgba(95,191,139,.35)}
@@ -254,6 +255,7 @@ function page() {
         </select>
       </label>
     </div>
+    <button id="sample" class="go ghost" title="用固定示例盘看完整报告">看示例</button>
     <button id="go" class="go">排盘</button>
   </div>
 

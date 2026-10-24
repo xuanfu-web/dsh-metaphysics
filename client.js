@@ -5646,9 +5646,35 @@ function baziInterpret(r) {
     },
   ];
 
+  const spouseKey = isMale ? '财' : '官杀';
+  const outline = [
+    { key: 'overall', label: '整体', text: `${level}，喜${join(favor) || '—'}、忌${join(avoid) || '—'}` },
+    { key: 'career', label: '事业', text: `主格${primary}，${topName}偏旺` },
+    { key: 'wealth', label: '财富', text: `财星权重 ${groups['财'] ?? 0}${favor.includes('金') ? '，喜金助财' : ''}` },
+    { key: 'love', label: '感情', text: `${spouseKey}星权重 ${groups[spouseKey] ?? 0}，日支 ${pick(r.pillars?.day, 'branch', '—')}` },
+    { key: 'rhythm', label: '节奏', text: `当前${pick(cur, 'ganzhi', '—')}（${curTier}），${pick(ln, 'year', '')} ${pick(ln, 'ganzhi', '')}（${lnTier}）` },
+  ];
+  const tables = [
+    {
+      key: 'dayun', title: '大运表', columns: ['大运', '年龄', '十神', '档位', '理由'],
+      rows: list.map((d) => [d.ganzhi, `${d.startAge}–${d.startAge + 9}`, d.stemTenGod || '', d.luck?.tier || '平', (d.luck?.reasons || []).join('，')]),
+    },
+    {
+      key: 'liunian', title: '流年表（近十年）', columns: ['年份', '干支', '十神', '档位', '与原局'],
+      rows: (r.liunian || []).slice(0, 10).map((l) => [String(l.year), l.ganzhi, l.stemTenGod || '', l.luck?.tier || '平', (l.relations || []).join('、')]),
+    },
+  ];
+  const triggerRows = (r.liunian || [])
+    .filter((l) => Array.isArray(l.relations) && l.relations.length)
+    .slice(0, 10)
+    .map((l) => [String(l.year), l.relations.join('、'), `流年${l.ganzhi}与原局地支：${l.relations.join('、')}`]);
+  if (triggerRows.length) {
+    tables.push({ key: 'triggers', title: '触发事件表', columns: ['年份', '触发', '依据'], rows: triggerRows });
+  }
+
   return {
     lead: `下面按五个维度拆开说。所有内容来自你这张命盘的结构，讲的是倾向与建议，不是预言——方向供你参考，怎么走在你自己。`,
-    dimensions, sections,
+    dimensions, sections, outline, tables,
   };
 }
 
@@ -5871,9 +5897,54 @@ function ziweiInterpret(r) {
     });
   }
 
+  const outline = [
+    { key: 'overall', label: '整体', text: `命宫${soulStar}${soulOwn ? '' : '（借对宫）'}${S.trait ? `，${S.trait}` : ''}` },
+    { key: 'career', label: '事业', text: `官禄${careerStar || '无正曜'}` },
+    { key: 'wealth', label: '财富', text: `财帛${wealthStar || '无正曜'}` },
+    { key: 'love', label: '感情', text: `夫妻${spouseStar || '无正曜'}` },
+    {
+      key: 'rhythm', label: '节奏',
+      text: daxianPalace && daxianPalace.daxian
+        ? `当前大限${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）${r.liunian?.[0]?.year ? `，${r.liunian[0].year} 流年` : ''}`
+        : '当前大限未取到',
+    },
+  ];
+  const daxianSorted = (r.daxianList || []).slice().sort((a, b) => a.ages[0] - b.ages[0]);
+  const tables = [
+    {
+      key: 'daxian', title: '大限表', columns: ['大限', '年龄', '会主星', '四化'],
+      rows: daxianSorted.map((d) => [
+        d.palace,
+        `${d.ages[0]}–${d.ages[1]}`,
+        (d.mainStars || []).join('、'),
+        (d.mutagenHits || []).map((m) => `${m.star}${m.type}→${m.palace}`).join('、'),
+      ]),
+    },
+    {
+      key: 'liunian', title: '流年表（近六年）', columns: ['年份', '干支', '年龄', '命宫', '四化'],
+      rows: (r.liunian || []).slice(0, 6).map((l) => [
+        String(l.year),
+        l.ganzhi,
+        String(l.age),
+        l.lifePalace ? l.lifePalace.palace : '—',
+        (l.mutagen || []).join('、'),
+      ]),
+    },
+  ];
+  const triggerRows = daxianSorted
+    .flatMap((d) => (d.mutagenHits || []).map((m) => [
+      `${d.palace}（${d.ages[0]}–${d.ages[1]}岁）`,
+      `${m.star}化${m.type}→${m.palace}`,
+      `大限${d.palace}引动`,
+    ]))
+    .slice(0, 12);
+  if (triggerRows.length) {
+    tables.push({ key: 'triggers', title: '触发事件表（大限四化）', columns: ['大限', '触发', '依据'], rows: triggerRows });
+  }
+
   return {
     lead: `紫微斗数看的是你与环境的互动方式。下面按五个维度拆开，讲的是性格与处境的倾向，具体怎么选仍然在你。`,
-    dimensions, sections,
+    dimensions, sections, outline, tables,
   };
 }
 
@@ -6409,10 +6480,41 @@ function enrichPlain(result, r, ask) {
   };
 }
 
+const TECHNIQUE = {
+  bazi: '八字（月令 · 十神 · 大运流年）',
+  ziwei: '紫微（宫位 · 四化 · 大限流年）',
+  liuyao: '六爻（卦宫 · 世应 · 动爻 · 日辰）',
+  meihua: '梅花（体用 · 互卦 · 变卦）',
+  daliuren: '六壬（月将加时 · 四课 · 三传）',
+  qimen: '奇门（九宫 · 值符值使 · 用神）',
+  tarot: '塔罗（牌阵 · 正逆位 · 元素）',
+  hepan: '合盘（日主 · 夫妻宫 · 五行互补）',
+};
+
+const confidenceOf = (dim) => {
+  const n = Array.isArray(dim && dim.evidence) ? dim.evidence.length : 0;
+  return n >= 3 ? '强' : n >= 2 ? '中' : '弱';
+};
+
+const withReportMeta = (body, r, ask) => enrichPlain({
+  ...body,
+  moduleType: MODULE_TYPE[r.system] || 'natal',
+  system: r.system,
+  systemLabel: SYSTEM_LABEL[r.system] || r.system,
+  title: '解析与详解',
+  dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
+  sections: body.sections || [],
+  outline: body.outline || [],
+  tables: body.tables || [],
+  technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
+  disclaimer: body.disclaimer || DISCLAIMER,
+  ask,
+}, r, ask);
+
 function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const ask = askOf(opts);
-  if (r.system === 'qimen') return enrichPlain(interpretQimen(r, opts), r, ask);
+  if (r.system === 'qimen') return withReportMeta(interpretQimen(r, opts), r, ask);
   const fn = BUILDERS[r.system];
   if (!fn) return null;
   let body;
@@ -6427,22 +6529,21 @@ function interpret(r, opts) {
       lead: '这一盘的解析暂未生成，请稍后重试。',
       dimensions: [],
       sections: [],
+      outline: [],
+      tables: [],
+      technique: TECHNIQUE[r.system] || '',
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
       ask,
     };
   }
   const tuned = applyAsk(body.dimensions || [], ask, body.lead || '');
-  return enrichPlain({
-    moduleType: MODULE_TYPE[r.system] || 'natal',
-    system: r.system,
-    systemLabel: SYSTEM_LABEL[r.system] || r.system,
-    title: '解析与详解',
+  return withReportMeta({
     lead: tuned.lead,
     dimensions: tuned.dims,
     sections: body.sections || [],
-    disclaimer: DISCLAIMER,
-    ask,
+    outline: body.outline || [],
+    tables: body.tables || [],
   }, r, ask);
 }
 
@@ -6731,9 +6832,12 @@ function interpretText(i) {
   if (i.answer) out.push(`▶ 先答所问：${i.answer}`);
   if (i.plain) out.push(`▶ 说人话：${i.plain}`);
   if (i.lead) out.push(i.lead);
+  if (Array.isArray(i.outline) && i.outline.length) {
+    out.push('一页读懂：' + i.outline.map((o) => `${o.label}·${o.text}`).join('　'));
+  }
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   for (const d of i.dimensions || []) {
-    const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
+    const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}${d.confidence ? `　置信度：${d.confidence}` : ''}` : '';
     const plain = d.plain ? `（${d.plain}）` : '';
     const know = (d.knowledge || [])
       .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
@@ -6741,6 +6845,11 @@ function interpretText(i) {
     out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}${know}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  for (const t of i.tables || []) {
+    if (!Array.isArray(t.rows) || !t.rows.length) continue;
+    out.push(`【${t.title}】`);
+    out.push([t.columns.join(' | '), ...t.rows.map((r) => r.join(' | '))].join('\n'));
+  }
   if (Array.isArray(i.followups) && i.followups.length) {
     out.push('还可以这样追问：' + i.followups.map((q) => `「${q}」`).join('　'));
   }
@@ -7311,6 +7420,43 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-it-sec{margin-bottom:11px}
 .mp-it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
 .mp-it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+.mp-outline{margin:12px 16px 0;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px}
+.mp-outline-h{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
+.mp-outline-row{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;padding:3px 0;font-size:13px;line-height:1.7;color:var(--ink2)}
+.mp-outline-row b{color:var(--label);font-weight:600;font-family:system-ui,sans-serif}
+.mp-toc{display:flex;flex-wrap:wrap;gap:6px 10px;margin:10px 16px 0;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;font-size:12px;font-family:system-ui,sans-serif}
+.mp-toc a{color:var(--lu);text-decoration:none;border-bottom:1px dotted rgba(var(--lu-rgb),.5)}
+.mp-toc a:hover{color:var(--ink)}
+.mp-it-ev{margin-top:7px;border:1px solid var(--line);border-radius:6px;background:var(--band);font-size:12px;font-family:system-ui,sans-serif}
+.mp-it-ev>summary{cursor:pointer;padding:6px 9px;color:var(--muted);list-style:none}
+.mp-it-ev>summary::-webkit-details-marker{display:none}
+.mp-it-ev>summary::before{content:'▸ ';color:var(--label)}
+.mp-it-ev[open]>summary::before{content:'▾ '}
+.mp-it-ev-body{padding:2px 9px 8px;display:flex;flex-direction:column;gap:4px}
+.mp-it-ev-item{color:var(--ink2);line-height:1.7;padding-left:12px;position:relative}
+.mp-it-ev-item::before{content:'·';position:absolute;left:2px;color:var(--label)}
+.mp-it-ev-tech{margin-top:4px;color:var(--label);font-size:11px;letter-spacing:.06em}
+.mp-it-conf{font-size:11px;font-family:system-ui,sans-serif;border-radius:999px;padding:1px 8px;margin-left:6px;border:1px solid var(--line);color:var(--muted)}
+.mp-it-conf.c-强{color:var(--lu);border-color:rgba(var(--lu-rgb),.4)}
+.mp-it-conf.c-中{color:var(--label);border-color:var(--line)}
+.mp-it-conf.c-弱{color:var(--red);border-color:rgba(var(--red-rgb),.4)}
+.mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
+.mp-table-wrap{margin-bottom:12px}
+.mp-table-h{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--lu);margin-bottom:5px;font-family:system-ui,sans-serif}
+.mp-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+.mp-table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;color:var(--ink2);font-family:system-ui,sans-serif}
+.mp-table th,.mp-table td{padding:5px 9px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);white-space:nowrap}
+.mp-table th{background:var(--band);color:var(--label);font-weight:600;font-size:11px;letter-spacing:.06em}
+.mp-table tbody tr:last-child td{border-bottom:none}
+.mp-table tbody tr:nth-child(even) td{background:rgba(0,0,0,.02)}
+@media print{
+  .mp-toc{display:none}
+  .mp-it.folded .mp-it-wrap{display:block}
+  .mp-table-scroll{overflow:visible}
+  .mp-table th,.mp-table td{white-space:normal}
+  .mp-table-wrap,.mp-it-sec,.mp-it-dim{break-inside:avoid}
+  .mp-table-wrap{page-break-inside:avoid}
+}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 @media (max-width:640px){
@@ -8161,15 +8307,30 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
     const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
-      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
+      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}${d.confidence ? `<span class="mp-it-conf c-${esc(d.confidence)}">置信度 ${esc(d.confidence)}</span>` : ''}</div>
       ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
-      ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
+      ${(d.evidence && d.evidence.length) ? `<details class="mp-it-ev"><summary>依据 · ${esc(d.evidence.length)} 条盘面事实</summary><div class="mp-it-ev-body">${d.evidence.map((x) => `<span class="mp-it-ev-item">${esc(x)}</span>`).join('')}<span class="mp-it-ev-tech">技法：${esc(it.technique || it.systemLabel || '')}</span></div></details>` : ''}
       ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-know">${d.knowledge.map((k) => `<div class="know-row"><span class="know-status ${k.status}">${esc(k.statusLabel)}</span><span class="know-body"><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
+    const outline = (it.outline && it.outline.length)
+      ? `<div class="mp-outline"><div class="mp-outline-h">一页读懂</div>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
+      : '';
+    const toc = (it.sections && it.sections.length)
+      ? `<nav class="mp-toc" aria-label="报告目录">${it.sections.map((s) => `<a href="#mp-sec-${esc(s.key)}">${esc(s.label)}</a>`).join('')}</nav>`
+      : '';
+    const tables = (it.tables && it.tables.length)
+      ? `<div class="mp-tables">${it.tables.filter((t) => Array.isArray(t.rows) && t.rows.length).map((t) => `<div class="mp-table-wrap">
+          <div class="mp-table-h">${esc(t.title)}</div>
+          <div class="mp-table-scroll"><table class="mp-table">
+            <thead><tr>${t.columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+            <tbody>${t.rows.map((row) => `<tr>${row.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table></div>
+        </div>`).join('')}</div>`
+      : '';
     const secs = (it.sections && it.sections.length)
-      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec">
+      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec" id="mp-sec-${esc(s.key)}">
         <div class="mp-it-sh">${esc(s.label)}</div>
         <div class="mp-it-stext">${esc(s.text)}</div>
       </div>`).join('')}</div>`
@@ -8199,8 +8360,11 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
         ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
+        ${outline}
+        ${toc}
         <div class="mp-it-body">${dims}</div>
         ${secs}
+        ${tables}
         ${fu}
         ${gloss}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>
@@ -8405,19 +8569,21 @@ function App() {
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
   const showDT = tab !== 'tarot' && usesTimeInput;
 
-  const run = async (kind, override, modeOverride) => {
+  const run = async (kind, override, modeOverride, over) => {
     const k = kind || tab;
     const mh = modeOverride || mhMode;
     const dt = override ? override : { date, time };
+    const genderV = over && over.gender ? over.gender : gender;
+    const addressV = over && typeof over.address === 'string' ? over.address : address;
     try {
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
       if (k !== 'tarot') args.datetime = datetime;
       if (k === 'bazi' || k === 'ziwei' || k === 'hepan') {
-        args.gender = gender;
+        args.gender = genderV;
         args.trueSolar = trueSolar;
-        if (address.trim()) {
-          args.address = address.trim();
+        if (addressV.trim()) {
+          args.address = addressV.trim();
           try {
             const g = await Engine.geocodeAddress(args.address, { online: onlineGeo });
             if (g && typeof g.lon === 'number') { args.longitude = g.lon; args.geo = g; }
@@ -8537,6 +8703,17 @@ function App() {
       return;
     }
     run(tab);
+  };
+
+  const openSample = () => {
+    const sample = { date: '1990-05-12', time: '14:30' };
+    setTab('bazi');
+    setGender('male');
+    setAddress('河北石家庄');
+    setManual((m) => Object.assign({}, m, { birth: sample }));
+    setDate(sample.date);
+    setTime(sample.time);
+    run('bazi', sample, null, { gender: 'male', address: '河北石家庄' });
   };
 
   const switchMode = (m) => {
@@ -8708,6 +8885,10 @@ function App() {
           onBlur: (e) => refreshInterpret(undefined, e.target.value),
         })) : null,
       h('div', { key: 'actions', className: 'mp-actions' },
+        h('button', {
+          className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginRight: 8 },
+          onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
+        }, '看示例'),
         h('button', { className: 'mp-btn', onClick: go, title: '时间仍为自动时，点它会取当下再起卦' },
           tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : tab === 'hepan' ? '合盘' : '起卦'))),
 

@@ -322,6 +322,16 @@
       node.addEventListener('input', onManualEdit);
     });
     el('go').addEventListener('click', goCast);
+    // 看示例：填固定示例盘并切到八字，走与真实排盘完全相同的渲染路径
+    const sampleBtn = el('sample');
+    if (sampleBtn) sampleBtn.addEventListener('click', () => {
+      el('date').value = SAMPLE.date;
+      el('time').value = SAMPLE.time;
+      el('gender').value = 'male';
+      el('addr').value = '河北石家庄';
+      setTab('bazi');
+      run();
+    });
     el('gender').addEventListener('change', run);
     // 换牌阵张数要重新抽牌（1/3/5 张是不同牌阵，不是同一组牌换个显示）
     const tc = el('tcount');

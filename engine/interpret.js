@@ -374,9 +374,38 @@ function baziInterpret(r) {
     },
   ];
 
+  const spouseKey = isMale ? '财' : '官杀';
+  // 一页读懂：报告顶部的五条结论（整体 / 事业 / 财富 / 感情 / 节奏）。
+  // 只做「摘要」，不引入新判断——全部取自下面已经算好的字段。
+  const outline = [
+    { key: 'overall', label: '整体', text: `${level}，喜${join(favor) || '—'}、忌${join(avoid) || '—'}` },
+    { key: 'career', label: '事业', text: `主格${primary}，${topName}偏旺` },
+    { key: 'wealth', label: '财富', text: `财星权重 ${groups['财'] ?? 0}${favor.includes('金') ? '，喜金助财' : ''}` },
+    { key: 'love', label: '感情', text: `${spouseKey}星权重 ${groups[spouseKey] ?? 0}，日支 ${pick(r.pillars?.day, 'branch', '—')}` },
+    { key: 'rhythm', label: '节奏', text: `当前${pick(cur, 'ganzhi', '—')}（${curTier}），${pick(ln, 'year', '')} ${pick(ln, 'ganzhi', '')}（${lnTier}）` },
+  ];
+  // 三张表：大运 / 流年 / 触发事件。都是「把已有字段摊平」，不新增算法。
+  const tables = [
+    {
+      key: 'dayun', title: '大运表', columns: ['大运', '年龄', '十神', '档位', '理由'],
+      rows: list.map((d) => [d.ganzhi, `${d.startAge}–${d.startAge + 9}`, d.stemTenGod || '', d.luck?.tier || '平', (d.luck?.reasons || []).join('，')]),
+    },
+    {
+      key: 'liunian', title: '流年表（近十年）', columns: ['年份', '干支', '十神', '档位', '与原局'],
+      rows: (r.liunian || []).slice(0, 10).map((l) => [String(l.year), l.ganzhi, l.stemTenGod || '', l.luck?.tier || '平', (l.relations || []).join('、')]),
+    },
+  ];
+  const triggerRows = (r.liunian || [])
+    .filter((l) => Array.isArray(l.relations) && l.relations.length)
+    .slice(0, 10)
+    .map((l) => [String(l.year), l.relations.join('、'), `流年${l.ganzhi}与原局地支：${l.relations.join('、')}`]);
+  if (triggerRows.length) {
+    tables.push({ key: 'triggers', title: '触发事件表', columns: ['年份', '触发', '依据'], rows: triggerRows });
+  }
+
   return {
     lead: `下面按五个维度拆开说。所有内容来自你这张命盘的结构，讲的是倾向与建议，不是预言——方向供你参考，怎么走在你自己。`,
-    dimensions, sections,
+    dimensions, sections, outline, tables,
   };
 }
 
@@ -623,9 +652,56 @@ function ziweiInterpret(r) {
     });
   }
 
+  // 一页读懂：五条结论（整体 / 事业 / 财富 / 感情 / 节奏），全部取自下面已算好的字段
+  const outline = [
+    { key: 'overall', label: '整体', text: `命宫${soulStar}${soulOwn ? '' : '（借对宫）'}${S.trait ? `，${S.trait}` : ''}` },
+    { key: 'career', label: '事业', text: `官禄${careerStar || '无正曜'}` },
+    { key: 'wealth', label: '财富', text: `财帛${wealthStar || '无正曜'}` },
+    { key: 'love', label: '感情', text: `夫妻${spouseStar || '无正曜'}` },
+    {
+      key: 'rhythm', label: '节奏',
+      text: daxianPalace && daxianPalace.daxian
+        ? `当前大限${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）${r.liunian?.[0]?.year ? `，${r.liunian[0].year} 流年` : ''}`
+        : '当前大限未取到',
+    },
+  ];
+  // 三张表：大限 / 流年 / 触发事件（大限四化）。只摊平已有字段，不加新判断。
+  const daxianSorted = (r.daxianList || []).slice().sort((a, b) => a.ages[0] - b.ages[0]);
+  const tables = [
+    {
+      key: 'daxian', title: '大限表', columns: ['大限', '年龄', '会主星', '四化'],
+      rows: daxianSorted.map((d) => [
+        d.palace,
+        `${d.ages[0]}–${d.ages[1]}`,
+        (d.mainStars || []).join('、'),
+        (d.mutagenHits || []).map((m) => `${m.star}${m.type}→${m.palace}`).join('、'),
+      ]),
+    },
+    {
+      key: 'liunian', title: '流年表（近六年）', columns: ['年份', '干支', '年龄', '命宫', '四化'],
+      rows: (r.liunian || []).slice(0, 6).map((l) => [
+        String(l.year),
+        l.ganzhi,
+        String(l.age),
+        l.lifePalace ? l.lifePalace.palace : '—',
+        (l.mutagen || []).join('、'),
+      ]),
+    },
+  ];
+  const triggerRows = daxianSorted
+    .flatMap((d) => (d.mutagenHits || []).map((m) => [
+      `${d.palace}（${d.ages[0]}–${d.ages[1]}岁）`,
+      `${m.star}化${m.type}→${m.palace}`,
+      `大限${d.palace}引动`,
+    ]))
+    .slice(0, 12);
+  if (triggerRows.length) {
+    tables.push({ key: 'triggers', title: '触发事件表（大限四化）', columns: ['大限', '触发', '依据'], rows: triggerRows });
+  }
+
   return {
     lead: `紫微斗数看的是你与环境的互动方式。下面按五个维度拆开，讲的是性格与处境的倾向，具体怎么选仍然在你。`,
-    dimensions, sections,
+    dimensions, sections, outline, tables,
   };
 }
 
@@ -1198,10 +1274,43 @@ function enrichPlain(result, r, ask) {
   };
 }
 
+/** 各体系采用的技法标签：证据卡第一行要写「这条结论是用什么方法得出的」 */
+const TECHNIQUE = {
+  bazi: '八字（月令 · 十神 · 大运流年）',
+  ziwei: '紫微（宫位 · 四化 · 大限流年）',
+  liuyao: '六爻（卦宫 · 世应 · 动爻 · 日辰）',
+  meihua: '梅花（体用 · 互卦 · 变卦）',
+  daliuren: '六壬（月将加时 · 四课 · 三传）',
+  qimen: '奇门（九宫 · 值符值使 · 用神）',
+  tarot: '塔罗（牌阵 · 正逆位 · 元素）',
+  hepan: '合盘（日主 · 夫妻宫 · 五行互补）',
+};
+
+/** 置信度：只按公开证据条数分档，不引入新算法——3 条以上「强」、2 条「中」、其余「弱」 */
+const confidenceOf = (dim) => {
+  const n = Array.isArray(dim && dim.evidence) ? dim.evidence.length : 0;
+  return n >= 3 ? '强' : n >= 2 ? '中' : '弱';
+};
+
+const withReportMeta = (body, r, ask) => enrichPlain({
+  ...body,
+  moduleType: MODULE_TYPE[r.system] || 'natal',
+  system: r.system,
+  systemLabel: SYSTEM_LABEL[r.system] || r.system,
+  title: '解析与详解',
+  dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
+  sections: body.sections || [],
+  outline: body.outline || [],
+  tables: body.tables || [],
+  technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
+  disclaimer: body.disclaimer || DISCLAIMER,
+  ask,
+}, r, ask);
+
 export function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const ask = askOf(opts);
-  if (r.system === 'qimen') return enrichPlain(interpretQimen(r, opts), r, ask);
+  if (r.system === 'qimen') return withReportMeta(interpretQimen(r, opts), r, ask);
   const fn = BUILDERS[r.system];
   if (!fn) return null;
   let body;
@@ -1216,22 +1325,21 @@ export function interpret(r, opts) {
       lead: '这一盘的解析暂未生成，请稍后重试。',
       dimensions: [],
       sections: [],
+      outline: [],
+      tables: [],
+      technique: TECHNIQUE[r.system] || '',
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
       ask,
     };
   }
   const tuned = applyAsk(body.dimensions || [], ask, body.lead || '');
-  return enrichPlain({
-    moduleType: MODULE_TYPE[r.system] || 'natal',
-    system: r.system,
-    systemLabel: SYSTEM_LABEL[r.system] || r.system,
-    title: '解析与详解',
+  return withReportMeta({
     lead: tuned.lead,
     dimensions: tuned.dims,
     sections: body.sections || [],
-    disclaimer: DISCLAIMER,
-    ask,
+    outline: body.outline || [],
+    tables: body.tables || [],
   }, r, ask);
 }
 

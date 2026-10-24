@@ -215,10 +215,13 @@ function App() {
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
   const showDT = tab !== 'tarot' && usesTimeInput;
 
-  const run = async (kind, override, modeOverride) => {
+  const run = async (kind, override, modeOverride, over) => {
     const k = kind || tab;
     const mh = modeOverride || mhMode;
     const dt = override ? override : { date, time };
+    // over：示例等「临时覆盖」用，避免依赖 React 状态更新后再读（同一个 handler 里 setState 还没生效）
+    const genderV = over && over.gender ? over.gender : gender;
+    const addressV = over && typeof over.address === 'string' ? over.address : address;
     try {
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
@@ -226,10 +229,10 @@ function App() {
       if (k === 'bazi' || k === 'ziwei' || k === 'hepan') {
         // 合盘的主方同样需要性别与出生地：漏掉这两个字段会让合盘拿不到性别（引擎已改为必填），
         // 或者在没有真太阳时的情况下排出与单盘不一致的四柱
-        args.gender = gender;
+        args.gender = genderV;
         args.trueSolar = trueSolar;
-        if (address.trim()) {
-          args.address = address.trim();
+        if (addressV.trim()) {
+          args.address = addressV.trim();
           try {
             const g = await Engine.geocodeAddress(args.address, { online: onlineGeo });
             if (g && typeof g.lon === 'number') { args.longitude = g.lon; args.geo = g; }
@@ -362,6 +365,18 @@ function App() {
       return;
     }
     run(tab);
+  };
+
+  /** 看示例：固定一份示例盘，走与真实排盘完全相同的渲染路径（不新增任何「示例专用」分支） */
+  const openSample = () => {
+    const sample = { date: '1990-05-12', time: '14:30' };
+    setTab('bazi');
+    setGender('male');
+    setAddress('河北石家庄');
+    setManual((m) => Object.assign({}, m, { birth: sample }));
+    setDate(sample.date);
+    setTime(sample.time);
+    run('bazi', sample, null, { gender: 'male', address: '河北石家庄' });
   };
 
   /** 切起卦方式（时间/数字）：立刻重起一卦，避免结果头部留着上一模式的「起卦时刻」 */
@@ -539,6 +554,10 @@ function App() {
           onBlur: (e) => refreshInterpret(undefined, e.target.value),
         })) : null,
       h('div', { key: 'actions', className: 'mp-actions' },
+        h('button', {
+          className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginRight: 8 },
+          onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
+        }, '看示例'),
         h('button', { className: 'mp-btn', onClick: go, title: '时间仍为自动时，点它会取当下再起卦' },
           tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : tab === 'hepan' ? '合盘' : '起卦'))),
 

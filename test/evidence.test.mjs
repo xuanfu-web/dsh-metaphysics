@@ -68,8 +68,11 @@ const sandbox = { window: {}, console };
 vm.runInNewContext(fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8'), sandbox, { filename: 'panel-kit.js' });
 const PP = sandbox.window.__PP;
 const html = PP.interpretHTML(BZ.interpret);
-ok('面板渲染出依据块', (html.match(/mp-it-dev/g) || []).length === 5, String((html.match(/mp-it-dev/g) || []).length));
-ok('依据块含「依据」标签', html.includes('<b>依据</b>'));
+// 依据从「一行灰字」升级成可展开的证据卡：每个维度一张，默认收起
+ok('面板渲染出依据卡', (html.match(/mp-it-ev"/g) || []).length === 5, String((html.match(/mp-it-ev"/g) || []).length));
+ok('依据卡带「依据」标签与条数', html.includes('依据 · ') && html.includes('条盘面事实'));
+ok('依据卡写明技法', html.includes('技法：'));
+ok('依据卡默认收起（details 无 open）', !/<details class="mp-it-ev" open/.test(html));
 
 // 转义：人为塞一条带标签的依据
 const evil = JSON.parse(JSON.stringify(BZ.interpret));

@@ -395,6 +395,49 @@
 .mp-it-sec{margin-bottom:11px}
 .mp-it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
 .mp-it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+/* 一页读懂：报告顶部五条结论 */
+.mp-outline{margin:12px 16px 0;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px}
+.mp-outline-h{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
+.mp-outline-row{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;padding:3px 0;font-size:13px;line-height:1.7;color:var(--ink2)}
+.mp-outline-row b{color:var(--label);font-weight:600;font-family:system-ui,sans-serif}
+/* 目录：锚点跳转；打印时隐藏 */
+.mp-toc{display:flex;flex-wrap:wrap;gap:6px 10px;margin:10px 16px 0;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;font-size:12px;font-family:system-ui,sans-serif}
+.mp-toc a{color:var(--lu);text-decoration:none;border-bottom:1px dotted rgba(var(--lu-rgb),.5)}
+.mp-toc a:hover{color:var(--ink)}
+/* 证据卡：依据收进 details，默认收起，避免长报告被事实淹没 */
+.mp-it-ev{margin-top:7px;border:1px solid var(--line);border-radius:6px;background:var(--band);font-size:12px;font-family:system-ui,sans-serif}
+.mp-it-ev>summary{cursor:pointer;padding:6px 9px;color:var(--muted);list-style:none}
+.mp-it-ev>summary::-webkit-details-marker{display:none}
+.mp-it-ev>summary::before{content:'▸ ';color:var(--label)}
+.mp-it-ev[open]>summary::before{content:'▾ '}
+.mp-it-ev-body{padding:2px 9px 8px;display:flex;flex-direction:column;gap:4px}
+.mp-it-ev-item{color:var(--ink2);line-height:1.7;padding-left:12px;position:relative}
+.mp-it-ev-item::before{content:'·';position:absolute;left:2px;color:var(--label)}
+.mp-it-ev-tech{margin-top:4px;color:var(--label);font-size:11px;letter-spacing:.06em}
+/* 置信度标签 */
+.mp-it-conf{font-size:11px;font-family:system-ui,sans-serif;border-radius:999px;padding:1px 8px;margin-left:6px;border:1px solid var(--line);color:var(--muted)}
+.mp-it-conf.c-强{color:var(--lu);border-color:rgba(var(--lu-rgb),.4)}
+.mp-it-conf.c-中{color:var(--label);border-color:var(--line)}
+.mp-it-conf.c-弱{color:var(--red);border-color:rgba(var(--red-rgb),.4)}
+/* 三张表：横向可滚动，避免窄栏撑破 */
+.mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
+.mp-table-wrap{margin-bottom:12px}
+.mp-table-h{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--lu);margin-bottom:5px;font-family:system-ui,sans-serif}
+.mp-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+.mp-table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;color:var(--ink2);font-family:system-ui,sans-serif}
+.mp-table th,.mp-table td{padding:5px 9px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);white-space:nowrap}
+.mp-table th{background:var(--band);color:var(--label);font-weight:600;font-size:11px;letter-spacing:.06em}
+.mp-table tbody tr:last-child td{border-bottom:none}
+.mp-table tbody tr:nth-child(even) td{background:rgba(0,0,0,.02)}
+/* 打印：表格不撕页、目录隐藏、折叠的内容要展开 */
+@media print{
+  .mp-toc{display:none}
+  .mp-it.folded .mp-it-wrap{display:block}
+  .mp-table-scroll{overflow:visible}
+  .mp-table th,.mp-table td{white-space:normal}
+  .mp-table-wrap,.mp-it-sec,.mp-it-dim{break-inside:avoid}
+  .mp-table-wrap{page-break-inside:avoid}
+}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 /* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
@@ -1310,15 +1353,33 @@
     if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
     const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
-      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
+      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}${d.confidence ? `<span class="mp-it-conf c-${esc(d.confidence)}">置信度 ${esc(d.confidence)}</span>` : ''}</div>
       ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
-      ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
+      ${(d.evidence && d.evidence.length) ? `<details class="mp-it-ev"><summary>依据 · ${esc(d.evidence.length)} 条盘面事实</summary><div class="mp-it-ev-body">${d.evidence.map((x) => `<span class="mp-it-ev-item">${esc(x)}</span>`).join('')}<span class="mp-it-ev-tech">技法：${esc(it.technique || it.systemLabel || '')}</span></div></details>` : ''}
       ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-know">${d.knowledge.map((k) => `<div class="know-row"><span class="know-status ${k.status}">${esc(k.statusLabel)}</span><span class="know-body"><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
+    // 一页读懂：报告顶部五条结论（整体/事业/财富/感情/节奏）
+    const outline = (it.outline && it.outline.length)
+      ? `<div class="mp-outline"><div class="mp-outline-h">一页读懂</div>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
+      : '';
+    // 目录：点击跳到对应分节（面板内锚点；打印时隐藏）
+    const toc = (it.sections && it.sections.length)
+      ? `<nav class="mp-toc" aria-label="报告目录">${it.sections.map((s) => `<a href="#mp-sec-${esc(s.key)}">${esc(s.label)}</a>`).join('')}</nav>`
+      : '';
+    // 三张表：大运 / 流年 / 触发事件（数据由引擎给出，这里只渲染）
+    const tables = (it.tables && it.tables.length)
+      ? `<div class="mp-tables">${it.tables.filter((t) => Array.isArray(t.rows) && t.rows.length).map((t) => `<div class="mp-table-wrap">
+          <div class="mp-table-h">${esc(t.title)}</div>
+          <div class="mp-table-scroll"><table class="mp-table">
+            <thead><tr>${t.columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+            <tbody>${t.rows.map((row) => `<tr>${row.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table></div>
+        </div>`).join('')}</div>`
+      : '';
     const secs = (it.sections && it.sections.length)
-      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec">
+      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec" id="mp-sec-${esc(s.key)}">
         <div class="mp-it-sh">${esc(s.label)}</div>
         <div class="mp-it-stext">${esc(s.text)}</div>
       </div>`).join('')}</div>`
@@ -1351,8 +1412,11 @@
         ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
         ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
+        ${outline}
+        ${toc}
         <div class="mp-it-body">${dims}</div>
         ${secs}
+        ${tables}
         ${fu}
         ${gloss}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>
