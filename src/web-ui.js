@@ -298,8 +298,6 @@
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mhMode));
     const mhNum = tab === 'meihua' && mhMode === 'number';
     el('mh-num').style.display = mhNum ? '' : 'none';
-    const mhTime = el('mh-time');
-    if (mhTime) mhTime.style.display = (tab === 'meihua' && mhMode === 'time') ? '' : 'none';
     // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导
     const showDT = tab !== 'tarot' && !mhNum;
     el('for-date').style.display = showDT ? '' : 'none';

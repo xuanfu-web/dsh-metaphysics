@@ -42,3 +42,11 @@ ok('合盘渲染两套模板', /ziweiHepanHTML\(r\)/.test(ui) && /hepanHTML\(r\)
 // ── ⑤ 产物自全：不引外部脚本、core 已内联 ──────────────────
 ok('没有外部脚本引用', !/<script[^>]+src=/.test(html));
 ok('core 已内联', (html.match(/__MPCore/g) || []).length >= 3);
+
+// ── ⑥ 接线完整性：脚本里 el('…') 引用的 id 必须真的存在 ─────
+{
+  const ids = [...new Set([...ui.matchAll(/el\('([^']+)'\)/g)].map((m) => m[1]))];
+  const have = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+  const missing = ids.filter((id) => !have.has(id));
+  ok('引用的 DOM id 全部存在', missing.length === 0, missing.join(',') || `共 ${ids.length} 个`);
+}
