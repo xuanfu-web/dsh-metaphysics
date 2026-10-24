@@ -1,7 +1,7 @@
 // 大六壬：天地盘、四课、九宗门三传。
 // 算法移植自本地 MIT 授权插件 @dhicoc/dsh-chinese-traditional-wisdom-skill 的
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
-import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd } from './calendar.js';
+import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } from './calendar.js';
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -89,10 +89,7 @@ export function calcShensha(dayGz) {
   return out;
 }
 
-const XUN_KONG = {
-  甲子: ['戌', '亥'], 甲戌: ['申', '酉'], 甲申: ['午', '未'],
-  甲午: ['辰', '巳'], 甲辰: ['寅', '卯'], 甲寅: ['子', '丑'],
-};
+// 旬空不再自建表：统一调用 calendar.xunKongOf（原表与本模块各一份，属三处重复实现之一）
 
 const JIA_ZI_60 = Array.from({ length: 60 }, (_, i) => GAN[i % 10] + ZHI[i % 12]);
 
@@ -168,10 +165,8 @@ function analyze(ke) {
 }
 
 function xunKong(dayGz, zhi) {
-  const idx = JIA_ZI_60.indexOf(dayGz);
-  if (idx < 0) return null;
-  const head = JIA_ZI_60[Math.floor(idx / 10) * 10];
-  return (XUN_KONG[head] || []).includes(zhi) ? zhi : null;
+  // 该支是否落空：由日干支推旬空两支后比对
+  return xunKongOf(dayGz).includes(zhi) ? zhi : null;
 }
 
 function chuan(pos, zhi, tdp, dayGan, dayGz) {

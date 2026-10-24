@@ -2,7 +2,7 @@
 import {
   STEMS, BRANCHES, TERM_NAMES,
   ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex,
-  termWindow, previousJie, nextJie, equationOfTime, formatJd,
+  termWindow, previousJie, nextJie, equationOfTime, formatJd, xunKongOf,
 } from './calendar.js';
 import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
@@ -229,7 +229,8 @@ export function buildBazi(input) {
   const solar = useTrueSolar ? applyTrueSolar(civilJd, longitude) : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
   const jd = solar.jd;
 
-  const terms = termWindow(year);
+  // 八字只用「节」定月柱与起运（气不参与），传 jieOnly 省掉一半节气求值
+  const terms = termWindow(year, { jieOnly: true });
   const prevJieTerm = previousJie(terms, jd);
   const nextJieTerm = nextJie(terms, jd);
 
@@ -333,12 +334,8 @@ export function buildBazi(input) {
     return CHANGSHENG[((step % 12) + 12) % 12];
   }
 
-  function xunKong(ganzhi) {
-    const idx = sexagenaryIndex(STEMS.indexOf(ganzhi[0]), BRANCHES.indexOf(ganzhi[1]));
-    const start = Math.floor(idx / 10) * 10;
-    return [BRANCHES[(start + 10) % 12], BRANCHES[(start + 11) % 12]];
-  }
-
+  // 旬空统一走 calendar.xunKongOf：此前 bazi / liuyao / daliuren 各写一份公式，
+  // 三份形式不同（一处用 (start+10)%12、一处用 (10-2k)%12、一处查表），改一处极易漏改另两处。
   const monthBranch = pillars.month.branch;
 
   // 神煞：表驱动、双查法（年干/日干、年支/日支、月支、日柱、时柱），详见 engine/shensha.js
@@ -348,7 +345,7 @@ export function buildBazi(input) {
     const pl = pillars[key];
     pl.dishi = changsheng(dayStem, pl.branch);
     pl.zizuo = changsheng(pl.stem, pl.branch);
-    pl.kongwang = xunKong(pl.ganzhi);
+    pl.kongwang = xunKongOf(pl.ganzhi);
     // shensha 保持字符串数组以兼容既有 UI / 测试；明细见 shenshaDetail
     pl.shensha = shensha.detail[key].map((x) => x.name);
     pl.shenshaDetail = shensha.detail[key];
