@@ -304,7 +304,8 @@ export function interpretText(i) {
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   if (i.lead) out.push(i.lead);
   for (const d of i.dimensions || []) {
-    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}`);
+    const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
+    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
   if (i.disclaimer) out.push(i.disclaimer);

@@ -359,6 +359,9 @@
 .mp-it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:var(--on-accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
 .mp-it-dlabel{font-size:14.5px;font-weight:700;letter-spacing:.04em}
 .mp-it-dtext{font-size:13px;line-height:1.9;text-align:justify}
+/* 依据：这条结论引用的盘面事实，弱化成灰字，不抢正文 */
+.mp-it-dev{margin-top:7px;font-size:12px;line-height:1.75;color:var(--muted)}
+.mp-it-dev b{color:var(--label);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.1em}
 .mp-it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
 .mp-it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
 .mp-it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
@@ -1259,6 +1262,7 @@
     const dims = it.dimensions.map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
       <div class="mp-it-dtext">${esc(d.text)}</div>
+      ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
     const secs = (it.sections && it.sections.length)

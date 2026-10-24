@@ -16,7 +16,10 @@
 - **工具层**：`geocode` / `seed` 进 schema，`asOf` 说明覆盖紫微/八字/塔罗三个体系；非法 `geocode` 值报 `E_INPUT`
 - **CI**：新增 `tools/check-html-sinks.mjs`（innerHTML 拼接必须经过白名单转义函数）与 `tools/check-patterns.mjs`（engine 纯净性、日志、`var`、`debugger`、`new Date()`/`Math.random` 白名单），正/负向都验证过
 - **稳定性扫射**：`test/fuzz.test.mjs` —— 用固定种子随机 12 组生日跑遍八个体系，覆盖参数矩阵、边界日期（1600/2400/闰年/1929 切换点）、解析层与"同参数两次结果字节一致"
-- 测试：36 个文件 / 958 条 PASS（新增 historical-tz、repro、caliber、tool-geo、fuzz 五组）
+- **自刑补齐**：辰午酉亥两柱同见判「自刑」，大运/流年支与原局同支也按自刑处理。此前 `buildRelations` 遇到同支直接跳过，四柱里 3 个辰也不会报刑
+- **权重口径显式化**：五行占比（1/0.5/0.3）与日主通根（1.2/0.6/0.3）各自命名并注明用途——数值未变，只是不再像"同一件事写了两份"
+- **解析加「依据」**：八字与紫微的五个维度各附一行盘面事实（日主旺衰、月令、喜忌、大运流年、宫位主星、煞星等），面板渲染 `mp-it-dev`、文本渲染「　依据：…」，结论出处可核对
+- 测试：38 个文件 / 1001 条 PASS（新增 historical-tz、repro、caliber、tool-geo、fuzz、relations、evidence 七组）
 
 ## 0.14.1 —— 先让「通过」可信
 

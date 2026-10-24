@@ -1361,6 +1361,9 @@ const OVERCOMES = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' }
 
 const isYangStem = (stem) => STEMS.indexOf(stem) % 2 === 0;
 
+const WUXING_HIDDEN_WEIGHT = [1, 0.5, 0.3];
+const ROOT_HIDDEN_WEIGHT = [1.2, 0.6, 0.3];
+
 const STEM_HE = { 甲己: '土', 乙庚: '金', 丙辛: '水', 丁壬: '木', 戊癸: '火' };
 const STEM_CHONG_PAIRS = ['甲庚', '乙辛', '丙壬', '丁癸'];
 const BRANCH_HE = { 子丑: '土', 寅亥: '木', 卯戌: '火', 辰酉: '金', 巳申: '水', 午未: '土' };
@@ -1370,6 +1373,7 @@ const BRANCH_CHONG = ['子午', '丑未', '寅申', '卯酉', '辰戌', '巳亥'
 const BRANCH_HAI = ['子未', '丑午', '寅巳', '卯辰', '申亥', '酉戌'];
 const BRANCH_PO = ['子酉', '丑辰', '寅亥', '卯午', '巳申', '未戌'];
 const XING_GROUPS = [['寅', '巳', '申'], ['丑', '戌', '未'], ['子', '卯']];
+const XING_SELF = ['辰', '午', '酉', '亥'];
 
 const hasPair = (list, a, b) => list.includes(a + b) || list.includes(b + a);
 
@@ -1413,7 +1417,10 @@ function buildRelations(pillars) {
     for (let j = i + 1; j < 4; j++) {
       const a = branches[i];
       const b = branches[j];
-      if (a === b) continue;
+      if (a === b) {
+        if (XING_SELF.includes(a)) branchOut.push({ text: `${a}${b}自刑`, rank: 2 });
+        continue;
+      }
       const he = BRANCH_HE[a + b] || BRANCH_HE[b + a];
       const sh = Object.keys(SANHE).find((k) => k.includes(a) && k.includes(b));
       const hui = Object.keys(SANHUI).find((k) => k.includes(a) && k.includes(b));
@@ -1593,12 +1600,11 @@ function buildBazi(input) {
     });
   }
 
-  const weights = [1, 0.5, 0.3];
   const wuxing = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
   for (const p of Object.values(pillars)) {
     wuxing[p.stemElement] += 1;
     p.hidden.forEach((h, i) => {
-      wuxing[h.element] += weights[i] ?? 0.1;
+      wuxing[h.element] += WUXING_HIDDEN_WEIGHT[i] ?? 0.1;
     });
   }
   for (const k of Object.keys(wuxing)) wuxing[k] = Math.round(wuxing[k] * 10) / 10;
@@ -1650,15 +1656,14 @@ function buildBazi(input) {
   else if (OVERCOMES[me] === seasonEl) { monthW = 0.5; monthWord = '囚'; }
   else { monthW = 0; monthWord = '死'; }
 
-  const HID_W = [1.2, 0.6, 0.3];
   let rootScore = 0;
   const rootBranches = [];
   for (const key of ['year', 'month', 'day', 'hour']) {
     const pl = pillars[key];
     let hit = false;
     pl.hidden.forEach((h, i) => {
-      if (STEM_ELEMENT[h.stem] === me) { rootScore += HID_W[i] ?? 0.1; hit = true; }
-      else if (GENERATES[STEM_ELEMENT[h.stem]] === me) { rootScore += (HID_W[i] ?? 0.1) * 0.4; hit = true; }
+      if (STEM_ELEMENT[h.stem] === me) { rootScore += ROOT_HIDDEN_WEIGHT[i] ?? 0.1; hit = true; }
+      else if (GENERATES[STEM_ELEMENT[h.stem]] === me) { rootScore += (ROOT_HIDDEN_WEIGHT[i] ?? 0.1) * 0.4; hit = true; }
     });
     if (hit) rootBranches.push(pl.branch);
   }
@@ -1696,7 +1701,8 @@ function buildBazi(input) {
   const frame = analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing });
 
   const pairRel = (a, b) => {
-    if (!a || !b || a === b) return [];
+    if (!a || !b) return [];
+    if (a === b) return XING_SELF.includes(a) ? ['自刑'] : [];
     const out = [];
     if (BRANCH_HE[a + b] || BRANCH_HE[b + a]) out.push('合');
     if (hasPair(BRANCH_CHONG, a, b)) out.push('冲');
@@ -4863,6 +4869,7 @@ function baziInterpret(r) {
   }
 
   const ahead = idx >= 0 ? list.slice(idx + 1, idx + 4) : list.slice(0, 3);
+  const ev = (...xs) => xs.filter((x) => x != null && x !== '');
 
   const dimensions = [
     {
@@ -4871,6 +4878,13 @@ function baziInterpret(r) {
         `用神取向偏${join(favor)}，忌${join(avoid)}——往${join(favor)}的方向走会更省力${ys.tiaohou && ys.tiaohou.note ? `；调候上${ys.tiaohou.note}` : ''}。` +
         `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}为${lnTier}。`,
       advice: `大运看：${TIER_TEXT[curTier] || TIER_TEXT.平}；流年看：${TIER_ADVICE[lnTier] || TIER_ADVICE.平}。大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
+      evidence: ev(
+        `日主 ${dm.stem}${dm.element}·${level}`,
+        st && st.parts && st.parts.season ? `月令 ${st.parts.season.branch}${st.parts.season.element}` : '',
+        `喜 ${join(favor)} / 忌 ${join(avoid)}`,
+        cur ? `大运 ${cur.ganzhi}·${curTier}` : '',
+        ln && ln.ganzhi ? `流年 ${ln.year}${ln.ganzhi}·${lnTier}` : '',
+      ),
     },
     {
       key: 'work', label: '工作与职业选择',
@@ -4878,6 +4892,11 @@ function baziInterpret(r) {
         `命局主格为${primary}，这类结构的人通常${TENGOD_STYLE[godFromPattern(primary)] || '有自己稳定的节奏'}。` +
         `十神中${topName}最重（${top[0]?.[1] ?? ''}），${secondName}次之，说明你在${topName}所代表的事项上投入的精力最多。`,
       advice: `选岗位时可以偏向「${join(favor)}属性 + ${topName}对应的事务」；如果现在的工作明显偏${join(avoid)}且长期让你疲惫，可以参考上面方向做小幅试探，不必立刻大改。`,
+      evidence: ev(
+        `主格 ${primary}`,
+        `喜用五行 ${join(favor)}`,
+        top.length ? `十神 ${top.slice(0, 3).map(([k, v]) => `${k}${v}`).join(' ')}` : '',
+      ),
     },
     {
       key: 'career', label: '事业发展',
@@ -4885,6 +4904,11 @@ function baziInterpret(r) {
         `接下来几步大运依次为：${ahead.map((d) => `${d.ganzhi}（${d.luck?.tier || '平'}）`).join(' → ') || '暂未排出'}，` +
         `整体节奏是${ahead.length && ahead.filter((d) => ['吉', '大吉'].includes(d.luck?.tier)).length >= 2 ? '先抑后扬、后段更顺' : '需要一步步积累，中间偶有起伏'}。`,
       advice: `把${ahead[0]?.ganzhi || '下一步'}这一步当作铺垫期，重点补${topName === '食伤' ? '作品与专业深度' : topName === '官杀' ? '资历与组织内的信任' : '可迁移的能力与资质'}；遇到${join(avoid)}过重的年份，优先保住已有成果。`,
+      evidence: ev(
+        `格局 ${primary}`,
+        ahead.length ? `后续大运 ${ahead.map((d) => d.ganzhi).join(' → ')}` : '',
+        `当前 ${pick(cur, 'ganzhi', '—')}·${curTier}`,
+      ),
     },
     {
       key: 'love', label: '爱情与感情',
@@ -4893,6 +4917,11 @@ function baziInterpret(r) {
         `日支（配偶宫）为${pick(r.pillars?.day, 'branch', '')}，坐${pick(r.pillars?.day, 'zizuo', '')}，` +
         `这里的信号是：${Number(groups[isMale ? '财' : '官杀'] || 0) >= 2 ? '关系里你容易被主动靠近，但要留意筛选' : '感情推进偏慢，属于需要经营的类型'}。`,
       advice: `不必急着要结果，先看清自己在关系里最在意什么。${Number(groups[isMale ? '财' : '官杀'] || 0) >= 2 ? '选项多时，明确标准反而更省心' : '可以把社交圈稍微扩大一点，但别为了脱单降低底线'}；沟通上多说具体需求，少让对方猜。`,
+      evidence: ev(
+        `${isMale ? '财' : '官杀'} 权重 ${groups[isMale ? '财' : '官杀'] ?? '—'}`,
+        `日支 ${pick(r.pillars?.day, 'branch', '')}·${pick(r.pillars?.day, 'zizuo', '')}`,
+        `配偶星 ${isMale ? '财' : '官杀'}`,
+      ),
     },
     {
       key: 'health', label: '健康状况',
@@ -4900,6 +4929,11 @@ function baziInterpret(r) {
         `按五行与身体的对应，${strongest}偏旺时${WUXING_ORGAN[strongest]?.part || ''}负担相对重（${WUXING_ORGAN[strongest]?.note || ''}）；` +
         `${weakest}偏弱则${WUXING_ORGAN[weakest]?.part || ''}偏弱一些，是更值得留意的部分。这只是传统命理的取象提示，不是诊断。`,
       advice: `建议把作息规律放在第一位——尤其是睡眠时长尽量稳定；${WUXING_ORGAN[weakest]?.note ? weakest + '对应的' + WUXING_ORGAN[weakest].part + '可以按体检项目关注' : '按常规体检关注'}。任何不适请去看医生，别用命理结论替代检查。`,
+      evidence: ev(
+        `五行 ${Object.entries(wx).map(([k, v]) => `${k}${v}`).join(' ')}`,
+        `最旺 ${strongest} / 最弱 ${weakest}`,
+        missing.length ? `缺 ${join(missing)}` : '',
+      ),
     },
   ];
 
@@ -5026,12 +5060,19 @@ function ziweiInterpret(r) {
           ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
           : ''),
       advice: `这一阶段的主题更接近「${daxianPalace ? daxianPalace.palace : '命宫'}」代表的事——把它当作今年的主线，其余事围绕它安排；${S.trait}是你的优势，也是需要留意别用过头的地方。`,
+      evidence: [
+        `命宫 ${soulStar}${soulOwn ? '' : '（借对宫）'}`,
+        daxianPalace ? `大限 ${daxianPalace.palace} ${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁` : '',
+        lnMutagen ? `流年四化 ${lnMutagen}` : '',
+        `格局 ${patterns.length} 条`,
+      ].filter(Boolean),
     },
     {
       key: 'work', label: '工作与职业选择',
       text: `命宫${soulStar}给出的是底层偏好：${S.work}。官禄宫${careerStar ? `主星为${careerStar}，${ZIWEI_STARS[careerStar]?.work || '有其自身的做事方式'}` : '无正曜，工作方式更多受环境与他人影响，适合配合型岗位'}。` +
         `两者合起来看，你更适合${careerStar && careerStar !== soulStar ? `用${soulStar}的方式去做${careerStar}擅长的事` : '在稳定的框架里发挥自己的特点'}。`,
       advice: `挑工作时可以优先看岗位内容是否匹配上面这条；如果暂时不能换，试着在现有岗位里争取靠近这部分的事务，会比硬熬更容易做出成绩。`,
+      evidence: [`命宫 ${soulStar}`, `官禄 ${careerStar || '无正曜'}`, `财帛 ${wealthStar || '无正曜'}`],
     },
     {
       key: 'career', label: '事业发展',
@@ -5039,18 +5080,32 @@ function ziweiInterpret(r) {
         `${wealthStar && careerStar ? '财与事业两宫都有主星坐守，说明这两块是可以主动经营的部分' : '有一宫无主星，说明该块更容易受外部条件牵动，宜借势而非强求'}。` +
         `大限推进上，${daxianPalace ? `目前落在${daxianPalace.palace}` : '当前阶段'}，下一步会转入相邻的宫位，重心也会跟着挪。`,
       advice: `事业上建议做两件事：一是把可积累的东西（技能、资质、作品）做厚；二是${careerStar ? `发挥${careerStar}的优势——${ZIWEI_STARS[careerStar]?.trait || ''}` : '找一个能带你的前辈或平台'}。遇到四化化忌的年份，先守成再谈扩张。`,
+      evidence: [
+        `财帛 ${wealthStar || '无正曜'}`,
+        `官禄 ${careerStar || '无正曜'}`,
+        daxianPalace ? `当前大限 ${daxianPalace.palace}` : '',
+      ].filter(Boolean),
     },
     {
       key: 'love', label: '爱情与感情',
       text: `夫妻宫${spouseStar ? `主星为${spouseStar}，感情上的倾向是${ZIWEI_STARS[spouseStar]?.love || '有自己相处的节奏'}` : '无正曜，关系状态更多由对方与互动方式决定'}。` +
         `${zwSha(spouse).length ? `夫妻宫同时见${join(zwSha(spouse))}，相处中容易出现摩擦或第三者干扰的暗示，但煞星不等于定局，更多是提醒你留意沟通方式` : '夫妻宫未见明显煞星，关系的基调相对平顺'}。`,
       advice: `感情里${spouseStar ? `参考${spouseStar}的特点：${ZIWEI_STARS[spouseStar]?.love || ''}` : '可以更主动地表达自己的需求'}。有分歧时先说清事实与感受，别急着下结论；关系的好坏取决于两个人怎么做，不取决于这张盘。`,
+      evidence: [
+        `夫妻宫 ${spouseStar || '无正曜'}`,
+        `煞星 ${join(zwSha(spouse)) || '无'}`,
+        `夫妻宫支 ${spouse && spouse.branch ? spouse.branch : '—'}`,
+      ],
     },
     {
       key: 'health', label: '健康状况',
       text: `疾厄宫${healthStar ? `见${healthStar}，传统取象上${ZIWEI_STARS[healthStar]?.health || '需要留意自身的薄弱环节'}` : '无正曜，身体状态更多受生活作息直接影响'}。` +
         `${zwSha(health).length ? `同时见${join(zwSha(health))}，提示这一块值得比其他部位多一分留意。` : ''}这些都是象征性的提示，不构成任何医学判断。`,
       advice: `把${healthStar ? ZIWEI_STARS[healthStar]?.health?.replace('留意', '').replace('需要留意', '') || '常规' : '常规'}当作体检时重点关注的参考；真正管用的还是规律作息、适度运动与定期检查。身体不舒服请直接就医。`,
+      evidence: [
+        `疾厄宫 ${healthStar || '无正曜'}`,
+        `煞星 ${join(zwSha(health)) || '无'}`,
+      ],
     },
   ];
 
@@ -5757,7 +5812,8 @@ function interpretText(i) {
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   if (i.lead) out.push(i.lead);
   for (const d of i.dimensions || []) {
-    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}`);
+    const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}` : '';
+    out.push(`${d.label}：${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}`);
   }
   for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
   if (i.disclaimer) out.push(i.disclaimer);
@@ -6266,6 +6322,8 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:var(--on-accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
 .mp-it-dlabel{font-size:14.5px;font-weight:700;letter-spacing:.04em}
 .mp-it-dtext{font-size:13px;line-height:1.9;text-align:justify}
+.mp-it-dev{margin-top:7px;font-size:12px;line-height:1.75;color:var(--muted)}
+.mp-it-dev b{color:var(--label);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.1em}
 .mp-it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
 .mp-it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
 .mp-it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
@@ -7104,6 +7162,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const dims = it.dimensions.map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}</div>
       <div class="mp-it-dtext">${esc(d.text)}</div>
+      ${(d.evidence && d.evidence.length) ? `<div class="mp-it-dev"><b>依据</b>${d.evidence.map((x) => esc(x)).join('；')}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
     const secs = (it.sections && it.sections.length)

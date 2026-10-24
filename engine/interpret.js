@@ -235,6 +235,8 @@ function baziInterpret(r) {
   }
 
   const ahead = idx >= 0 ? list.slice(idx + 1, idx + 4) : list.slice(0, 3);
+  // 依据：把每个维度"凭什么这么说"的盘面事实列出来，便于用户核对，也让文案不再是空口断语
+  const ev = (...xs) => xs.filter((x) => x != null && x !== '');
 
   const dimensions = [
     {
@@ -245,6 +247,13 @@ function baziInterpret(r) {
         `目前走在${pick(cur, 'ganzhi', '当前')}大运（${curTier}），${pick(ln, 'year', '今年')}年流年${pick(ln, 'ganzhi', '')}为${lnTier}。`,
       // 大运与流年各自给建议，不再把两个档位的文案并成一句（曾出现「起伏不大」后面接「留出缓冲」）
       advice: `大运看：${TIER_TEXT[curTier] || TIER_TEXT.平}；流年看：${TIER_ADVICE[lnTier] || TIER_ADVICE.平}。大方向定在${join(favor)}相关的领域，会比硬扛${join(avoid)}顺畅一些。`,
+      evidence: ev(
+        `日主 ${dm.stem}${dm.element}·${level}`,
+        st && st.parts && st.parts.season ? `月令 ${st.parts.season.branch}${st.parts.season.element}` : '',
+        `喜 ${join(favor)} / 忌 ${join(avoid)}`,
+        cur ? `大运 ${cur.ganzhi}·${curTier}` : '',
+        ln && ln.ganzhi ? `流年 ${ln.year}${ln.ganzhi}·${lnTier}` : '',
+      ),
     },
     {
       key: 'work', label: '工作与职业选择',
@@ -252,6 +261,11 @@ function baziInterpret(r) {
         `命局主格为${primary}，这类结构的人通常${TENGOD_STYLE[godFromPattern(primary)] || '有自己稳定的节奏'}。` +
         `十神中${topName}最重（${top[0]?.[1] ?? ''}），${secondName}次之，说明你在${topName}所代表的事项上投入的精力最多。`,
       advice: `选岗位时可以偏向「${join(favor)}属性 + ${topName}对应的事务」；如果现在的工作明显偏${join(avoid)}且长期让你疲惫，可以参考上面方向做小幅试探，不必立刻大改。`,
+      evidence: ev(
+        `主格 ${primary}`,
+        `喜用五行 ${join(favor)}`,
+        top.length ? `十神 ${top.slice(0, 3).map(([k, v]) => `${k}${v}`).join(' ')}` : '',
+      ),
     },
     {
       key: 'career', label: '事业发展',
@@ -259,6 +273,11 @@ function baziInterpret(r) {
         `接下来几步大运依次为：${ahead.map((d) => `${d.ganzhi}（${d.luck?.tier || '平'}）`).join(' → ') || '暂未排出'}，` +
         `整体节奏是${ahead.length && ahead.filter((d) => ['吉', '大吉'].includes(d.luck?.tier)).length >= 2 ? '先抑后扬、后段更顺' : '需要一步步积累，中间偶有起伏'}。`,
       advice: `把${ahead[0]?.ganzhi || '下一步'}这一步当作铺垫期，重点补${topName === '食伤' ? '作品与专业深度' : topName === '官杀' ? '资历与组织内的信任' : '可迁移的能力与资质'}；遇到${join(avoid)}过重的年份，优先保住已有成果。`,
+      evidence: ev(
+        `格局 ${primary}`,
+        ahead.length ? `后续大运 ${ahead.map((d) => d.ganzhi).join(' → ')}` : '',
+        `当前 ${pick(cur, 'ganzhi', '—')}·${curTier}`,
+      ),
     },
     {
       key: 'love', label: '爱情与感情',
@@ -267,6 +286,11 @@ function baziInterpret(r) {
         `日支（配偶宫）为${pick(r.pillars?.day, 'branch', '')}，坐${pick(r.pillars?.day, 'zizuo', '')}，` +
         `这里的信号是：${Number(groups[isMale ? '财' : '官杀'] || 0) >= 2 ? '关系里你容易被主动靠近，但要留意筛选' : '感情推进偏慢，属于需要经营的类型'}。`,
       advice: `不必急着要结果，先看清自己在关系里最在意什么。${Number(groups[isMale ? '财' : '官杀'] || 0) >= 2 ? '选项多时，明确标准反而更省心' : '可以把社交圈稍微扩大一点，但别为了脱单降低底线'}；沟通上多说具体需求，少让对方猜。`,
+      evidence: ev(
+        `${isMale ? '财' : '官杀'} 权重 ${groups[isMale ? '财' : '官杀'] ?? '—'}`,
+        `日支 ${pick(r.pillars?.day, 'branch', '')}·${pick(r.pillars?.day, 'zizuo', '')}`,
+        `配偶星 ${isMale ? '财' : '官杀'}`,
+      ),
     },
     {
       key: 'health', label: '健康状况',
@@ -274,6 +298,11 @@ function baziInterpret(r) {
         `按五行与身体的对应，${strongest}偏旺时${WUXING_ORGAN[strongest]?.part || ''}负担相对重（${WUXING_ORGAN[strongest]?.note || ''}）；` +
         `${weakest}偏弱则${WUXING_ORGAN[weakest]?.part || ''}偏弱一些，是更值得留意的部分。这只是传统命理的取象提示，不是诊断。`,
       advice: `建议把作息规律放在第一位——尤其是睡眠时长尽量稳定；${WUXING_ORGAN[weakest]?.note ? weakest + '对应的' + WUXING_ORGAN[weakest].part + '可以按体检项目关注' : '按常规体检关注'}。任何不适请去看医生，别用命理结论替代检查。`,
+      evidence: ev(
+        `五行 ${Object.entries(wx).map(([k, v]) => `${k}${v}`).join(' ')}`,
+        `最旺 ${strongest} / 最弱 ${weakest}`,
+        missing.length ? `缺 ${join(missing)}` : '',
+      ),
     },
   ];
 
@@ -423,12 +452,19 @@ function ziweiInterpret(r) {
           ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
           : ''),
       advice: `这一阶段的主题更接近「${daxianPalace ? daxianPalace.palace : '命宫'}」代表的事——把它当作今年的主线，其余事围绕它安排；${S.trait}是你的优势，也是需要留意别用过头的地方。`,
+      evidence: [
+        `命宫 ${soulStar}${soulOwn ? '' : '（借对宫）'}`,
+        daxianPalace ? `大限 ${daxianPalace.palace} ${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁` : '',
+        lnMutagen ? `流年四化 ${lnMutagen}` : '',
+        `格局 ${patterns.length} 条`,
+      ].filter(Boolean),
     },
     {
       key: 'work', label: '工作与职业选择',
       text: `命宫${soulStar}给出的是底层偏好：${S.work}。官禄宫${careerStar ? `主星为${careerStar}，${ZIWEI_STARS[careerStar]?.work || '有其自身的做事方式'}` : '无正曜，工作方式更多受环境与他人影响，适合配合型岗位'}。` +
         `两者合起来看，你更适合${careerStar && careerStar !== soulStar ? `用${soulStar}的方式去做${careerStar}擅长的事` : '在稳定的框架里发挥自己的特点'}。`,
       advice: `挑工作时可以优先看岗位内容是否匹配上面这条；如果暂时不能换，试着在现有岗位里争取靠近这部分的事务，会比硬熬更容易做出成绩。`,
+      evidence: [`命宫 ${soulStar}`, `官禄 ${careerStar || '无正曜'}`, `财帛 ${wealthStar || '无正曜'}`],
     },
     {
       key: 'career', label: '事业发展',
@@ -436,18 +472,32 @@ function ziweiInterpret(r) {
         `${wealthStar && careerStar ? '财与事业两宫都有主星坐守，说明这两块是可以主动经营的部分' : '有一宫无主星，说明该块更容易受外部条件牵动，宜借势而非强求'}。` +
         `大限推进上，${daxianPalace ? `目前落在${daxianPalace.palace}` : '当前阶段'}，下一步会转入相邻的宫位，重心也会跟着挪。`,
       advice: `事业上建议做两件事：一是把可积累的东西（技能、资质、作品）做厚；二是${careerStar ? `发挥${careerStar}的优势——${ZIWEI_STARS[careerStar]?.trait || ''}` : '找一个能带你的前辈或平台'}。遇到四化化忌的年份，先守成再谈扩张。`,
+      evidence: [
+        `财帛 ${wealthStar || '无正曜'}`,
+        `官禄 ${careerStar || '无正曜'}`,
+        daxianPalace ? `当前大限 ${daxianPalace.palace}` : '',
+      ].filter(Boolean),
     },
     {
       key: 'love', label: '爱情与感情',
       text: `夫妻宫${spouseStar ? `主星为${spouseStar}，感情上的倾向是${ZIWEI_STARS[spouseStar]?.love || '有自己相处的节奏'}` : '无正曜，关系状态更多由对方与互动方式决定'}。` +
         `${zwSha(spouse).length ? `夫妻宫同时见${join(zwSha(spouse))}，相处中容易出现摩擦或第三者干扰的暗示，但煞星不等于定局，更多是提醒你留意沟通方式` : '夫妻宫未见明显煞星，关系的基调相对平顺'}。`,
       advice: `感情里${spouseStar ? `参考${spouseStar}的特点：${ZIWEI_STARS[spouseStar]?.love || ''}` : '可以更主动地表达自己的需求'}。有分歧时先说清事实与感受，别急着下结论；关系的好坏取决于两个人怎么做，不取决于这张盘。`,
+      evidence: [
+        `夫妻宫 ${spouseStar || '无正曜'}`,
+        `煞星 ${join(zwSha(spouse)) || '无'}`,
+        `夫妻宫支 ${spouse && spouse.branch ? spouse.branch : '—'}`,
+      ],
     },
     {
       key: 'health', label: '健康状况',
       text: `疾厄宫${healthStar ? `见${healthStar}，传统取象上${ZIWEI_STARS[healthStar]?.health || '需要留意自身的薄弱环节'}` : '无正曜，身体状态更多受生活作息直接影响'}。` +
         `${zwSha(health).length ? `同时见${join(zwSha(health))}，提示这一块值得比其他部位多一分留意。` : ''}这些都是象征性的提示，不构成任何医学判断。`,
       advice: `把${healthStar ? ZIWEI_STARS[healthStar]?.health?.replace('留意', '').replace('需要留意', '') || '常规' : '常规'}当作体检时重点关注的参考；真正管用的还是规律作息、适度运动与定期检查。身体不舒服请直接就医。`,
+      evidence: [
+        `疾厄宫 ${healthStar || '无正曜'}`,
+        `煞星 ${join(zwSha(health)) || '无'}`,
+      ],
     },
   ];
 

@@ -39,6 +39,12 @@ const OVERCOMES = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' }
 
 const isYangStem = (stem) => STEMS.indexOf(stem) % 2 === 0;
 
+// 两套藏干权重是不同用途，不是"同一件事写了两次"：
+//   · 五行占比——看这一行在盘里有多少，本气 1 / 中气 0.5 / 余气 0.3；
+//   · 日主通根——看这一支能不能让日主站住，本气权重更高（1.2 / 0.6 / 0.3）。
+const WUXING_HIDDEN_WEIGHT = [1, 0.5, 0.3];
+const ROOT_HIDDEN_WEIGHT = [1.2, 0.6, 0.3];
+
 const STEM_HE = { 甲己: '土', 乙庚: '金', 丙辛: '水', 丁壬: '木', 戊癸: '火' };
 const STEM_CHONG_PAIRS = ['甲庚', '乙辛', '丙壬', '丁癸'];
 const BRANCH_HE = { 子丑: '土', 寅亥: '木', 卯戌: '火', 辰酉: '金', 巳申: '水', 午未: '土' };
@@ -47,7 +53,10 @@ const SANHUI = { 寅卯辰: '木', 巳午未: '火', 申酉戌: '金', 亥子丑
 const BRANCH_CHONG = ['子午', '丑未', '寅申', '卯酉', '辰戌', '巳亥'];
 const BRANCH_HAI = ['子未', '丑午', '寅巳', '卯辰', '申亥', '酉戌'];
 const BRANCH_PO = ['子酉', '丑辰', '寅亥', '卯午', '巳申', '未戌'];
+// 三刑：寅巳申（无恩之刑）、丑戌未（恃势之刑）、子卯（无礼之刑）。
+// 另有「自刑」：辰午酉亥四支见同支即自刑（辰辰、午午、酉酉、亥亥），此前漏判。
 const XING_GROUPS = [['寅', '巳', '申'], ['丑', '戌', '未'], ['子', '卯']];
+const XING_SELF = ['辰', '午', '酉', '亥'];
 
 const hasPair = (list, a, b) => list.includes(a + b) || list.includes(b + a);
 
@@ -92,7 +101,11 @@ export function buildRelations(pillars) {
     for (let j = i + 1; j < 4; j++) {
       const a = branches[i];
       const b = branches[j];
-      if (a === b) continue;
+      if (a === b) {
+        // 同支不是"没关系"：辰午酉亥两柱同见为自刑
+        if (XING_SELF.includes(a)) branchOut.push({ text: `${a}${b}自刑`, rank: 2 });
+        continue;
+      }
       const he = BRANCH_HE[a + b] || BRANCH_HE[b + a];
       const sh = Object.keys(SANHE).find((k) => k.includes(a) && k.includes(b));
       const hui = Object.keys(SANHUI).find((k) => k.includes(a) && k.includes(b));
@@ -291,13 +304,12 @@ export function buildBazi(input) {
     });
   }
 
-  // 五行统计（天干 1.0；地支藏干按 本气1.0/中气0.5/余气0.3）
-  const weights = [1, 0.5, 0.3];
+  // 五行统计（天干 1.0；地支藏干按 WUXING_HIDDEN_WEIGHT）
   const wuxing = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
   for (const p of Object.values(pillars)) {
     wuxing[p.stemElement] += 1;
     p.hidden.forEach((h, i) => {
-      wuxing[h.element] += weights[i] ?? 0.1;
+      wuxing[h.element] += WUXING_HIDDEN_WEIGHT[i] ?? 0.1;
     });
   }
   for (const k of Object.keys(wuxing)) wuxing[k] = Math.round(wuxing[k] * 10) / 10;
@@ -354,15 +366,14 @@ export function buildBazi(input) {
   else if (OVERCOMES[me] === seasonEl) { monthW = 0.5; monthWord = '囚'; }
   else { monthW = 0; monthWord = '死'; }
 
-  const HID_W = [1.2, 0.6, 0.3];
   let rootScore = 0;
   const rootBranches = [];
   for (const key of ['year', 'month', 'day', 'hour']) {
     const pl = pillars[key];
     let hit = false;
     pl.hidden.forEach((h, i) => {
-      if (STEM_ELEMENT[h.stem] === me) { rootScore += HID_W[i] ?? 0.1; hit = true; }
-      else if (GENERATES[STEM_ELEMENT[h.stem]] === me) { rootScore += (HID_W[i] ?? 0.1) * 0.4; hit = true; }
+      if (STEM_ELEMENT[h.stem] === me) { rootScore += ROOT_HIDDEN_WEIGHT[i] ?? 0.1; hit = true; }
+      else if (GENERATES[STEM_ELEMENT[h.stem]] === me) { rootScore += (ROOT_HIDDEN_WEIGHT[i] ?? 0.1) * 0.4; hit = true; }
     });
     if (hit) rootBranches.push(pl.branch);
   }
@@ -402,7 +413,9 @@ export function buildBazi(input) {
 
   // ── 大运/流年与原局的地支关系 ──
   const pairRel = (a, b) => {
-    if (!a || !b || a === b) return [];
+    if (!a || !b) return [];
+    // 大运/流年支与原局同支：辰午酉亥为自刑，其余同支不算关系
+    if (a === b) return XING_SELF.includes(a) ? ['自刑'] : [];
     const out = [];
     if (BRANCH_HE[a + b] || BRANCH_HE[b + a]) out.push('合');
     if (hasPair(BRANCH_CHONG, a, b)) out.push('冲');
@@ -478,7 +491,8 @@ export function buildBazi(input) {
     jieqi: {
       previous: { name: prevJieTerm.name, time: formatJd(prevJieTerm.jd) },
       next: { name: nextJieTerm.name, time: formatJd(nextJieTerm.jd) },
-      // 出生时刻距「节」不足 15 分钟时提示复核：节气时刻本身有分钟级误差
+      // 距「节」的分钟数（取两侧较小值）。是否提示复核由摘要层决定，阈值 20 分钟：
+      // 与 NAOJ 历要项对拍实测节气最多偏 13.5 分钟，20 分钟留出余量。
       nearBoundaryMinutes: Math.round(Math.min(jd - prevJieTerm.jd, nextJieTerm.jd - jd) * 1440),
     },
     pillars,
