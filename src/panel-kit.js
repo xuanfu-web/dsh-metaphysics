@@ -1447,6 +1447,122 @@
   pp.resultWithInterpret = function (html, it, opt) {
     return (html || '') + pp.interpretHTML(it, opt);
   };
+
+  /**
+   * 生成「摘要卡」PNG（dataURL）。零依赖：用 Canvas 2D 画，不引第三方库、不做 DOM→SVG 截图。
+   * 内容：标题 + 一页读懂五条 + 三张表里第一张的前 6 行 + 免责声明。
+   * 浏览器不支持 canvas 时返回空串，调用方据此禁用「存为长图」。
+   * @param {object} r compute 的结果
+   * @param {object} it interpret 的结果（要 outline / tables）
+   * @returns {string} data:image/png;base64,… 或 ''
+   */
+  pp.summaryCardPNG = function (r, it) {
+    try {
+      if (typeof document === 'undefined' || !document.createElement) return '';
+      const outline = (it && it.outline) || [];
+      const tables = ((it && it.tables) || []).filter((t) => Array.isArray(t.rows) && t.rows.length);
+      const systemLabel = (it && it.systemLabel) || (r && r.system) || '命理报告';
+      const W = 900;
+      const PAD = 44;
+      const line = 26;
+      const font = (size, bold) => `${bold ? '600 ' : ''}${size}px "PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif`;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+      if (!ctx) return '';
+      const wrap = (text, maxWidth) => {
+        const out = [];
+        let cur = '';
+        for (const ch of String(text)) {
+          const test = cur + ch;
+          if (ctx.measureText(test).width > maxWidth && cur) { out.push(cur); cur = ch; } else cur = test;
+        }
+        if (cur) out.push(cur);
+        return out.length ? out : [''];
+      };
+      // 量高度：标题区 + 五条摘要（每条最多两行）+ 表（6 行）+ 页脚
+      ctx.font = font(15);
+      let bodyH = 0;
+      const outlineBlocks = outline.map((o) => {
+        const lines = wrap(o.text, W - PAD * 2 - 70);
+        bodyH += Math.min(lines.length, 2) * line + 10;
+        return { o, lines: lines.slice(0, 2) };
+      });
+      const table = tables[0] || null;
+      const tableRows = table ? table.rows.slice(0, 6) : [];
+      const tableH = table ? 54 + tableRows.length * 34 : 0;
+      const H = 150 + bodyH + (outlineBlocks.length ? 34 : 0) + tableH + 120;
+
+      canvas.width = W;
+      canvas.height = H;
+      ctx.fillStyle = 'rgb(255,255,255)';
+      ctx.fillRect(0, 0, W, H);
+      // 顶部色条
+      ctx.fillStyle = 'rgb(31,111,63)';
+      ctx.fillRect(0, 0, W, 8);
+
+      let y = 52;
+      ctx.fillStyle = 'rgb(27,27,27)';
+      ctx.font = font(28, true);
+      ctx.fillText(`${systemLabel} · 摘要`, PAD, y);
+      y += 30;
+      ctx.fillStyle = 'rgb(111,106,96)';
+      ctx.font = font(14);
+      const meta = [r && r.input && r.input.datetime ? `出生/起局：${r.input.datetime}` : '', '本地计算 · 可复现'].filter(Boolean).join('　');
+      ctx.fillText(meta, PAD, y);
+      y += 34;
+
+      if (outlineBlocks.length) {
+        ctx.fillStyle = 'rgb(31,111,63)';
+        ctx.font = font(16, true);
+        ctx.fillText('一页读懂', PAD, y);
+        y += 26;
+        for (const { o, lines } of outlineBlocks) {
+          ctx.fillStyle = 'rgb(138,131,120)';
+          ctx.font = font(14, true);
+          ctx.fillText(o.label, PAD, y);
+          ctx.fillStyle = 'rgb(63,58,51)';
+          ctx.font = font(15);
+          lines.forEach((text, i) => ctx.fillText(text, PAD + 70, y + i * line));
+          y += lines.length * line + 10;
+        }
+        y += 8;
+      }
+
+      if (table) {
+        ctx.fillStyle = 'rgb(31,111,63)';
+        ctx.font = font(16, true);
+        ctx.fillText(table.title, PAD, y);
+        y += 24;
+        ctx.fillStyle = 'rgb(138,131,120)';
+        ctx.font = font(13);
+        ctx.fillText(table.columns.join(' · '), PAD, y);
+        y += 8;
+        ctx.strokeStyle = 'rgb(229,225,216)';
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+        y += 22;
+        ctx.fillStyle = 'rgb(63,58,51)';
+        ctx.font = font(14);
+        for (const row of tableRows) {
+          const text = row.filter(Boolean).join(' · ');
+          const clipped = wrap(text, W - PAD * 2)[0];
+          ctx.fillText(clipped, PAD, y);
+          y += 34;
+        }
+      }
+
+      y = H - 62;
+      ctx.strokeStyle = 'rgb(229,225,216)';
+      ctx.beginPath(); ctx.moveTo(PAD, y - 18); ctx.lineTo(W - PAD, y - 18); ctx.stroke();
+      ctx.fillStyle = 'rgb(138,131,120)';
+      ctx.font = font(12);
+      ctx.fillText('内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。', PAD, y + 6);
+      ctx.fillText('dsh-metaphysics · 本机计算，未上传任何数据', PAD, y + 26);
+
+      return canvas.toDataURL ? canvas.toDataURL('image/png') : '';
+    } catch (e) {
+      return '';
+    }
+  };
 })();
 
 

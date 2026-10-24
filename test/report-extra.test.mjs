@@ -59,7 +59,7 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
 {
   const html = page();
   ok('方法页存在且默认隐藏', /id="method"[^>]*hidden/.test(html));
-  ok('方法页写明对拍与测试', /128 条/.test(html) && /52 个测试文件|1327 条断言/.test(html));
+  ok('方法页写明对拍与测试', /128 条/.test(html) && /52 个测试文件|1335 条断言/.test(html));
   ok('方法页写明已知边界', /已知边界/.test(html) && /应期|金额/.test(html));
   ok('有打开方法页的入口', /id="method-open"/.test(html) && /方法与验证/.test(html));
   const ui = read('src/web-ui.js');
@@ -75,4 +75,29 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
   const app = read('src/app.js');
   ok('面板有导出 .md', /downloadReport/.test(app) && /导出 \.md/.test(app));
   ok('导出文件名带体系', /命理报告-/.test(app));
+  ok('独立页有存为长图按钮', /data-act="png"/.test(ui) && /downloadCard/.test(ui));
+  ok('面板有存为长图按钮', /存为摘要长图/.test(app) && /summaryCardPNG/.test(app));
+
+  // Canvas 桩：验证 summaryCardPNG 真的画了摘要与首张表，而不是返回空
+  const drawn = [];
+  const ctx = {
+    font: '', fillStyle: '', strokeStyle: '',
+    measureText: (t) => ({ width: String(t).length * 8 }),
+    fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {},
+    fillText: (t) => { drawn.push(String(t)); },
+  };
+  const canvas = { width: 0, height: 0, getContext: () => ctx, toDataURL: () => 'data:image/png;base64,TEST' };
+  const sandbox = { window: {}, console, document: { createElement: (tag) => (tag === 'canvas' ? canvas : {}) } };
+  vm.runInNewContext(read('src/panel-kit.js'), sandbox, { filename: 'panel-kit.js' });
+  const PP = sandbox.window.__PP;
+  const url = PP.summaryCardPNG(BZ, BZ.interpret);
+  ok('摘要长图返回 PNG dataURL', url === 'data:image/png;base64,TEST', String(url).slice(0, 30));
+  ok('长图有尺寸', canvas.width > 0 && canvas.height > 0, `${canvas.width}x${canvas.height}`);
+  ok('长图画了一页读懂与摘要', drawn.some((t) => t.includes('一页读懂')) && drawn.some((t) => t.includes('摘要')));
+  ok('长图画了首张表', drawn.some((t) => t.includes('大运表')), drawn.join('|').slice(0, 60));
+  ok('长图带免责声明', drawn.some((t) => t.includes('不构成医疗')));
+  // 没有 document 时必须安全返回空串
+  const noDoc = { window: {}, console };
+  vm.runInNewContext(read('src/panel-kit.js'), noDoc, { filename: 'panel-kit.js' });
+  ok('无 canvas 环境安全降级', noDoc.window.__PP.summaryCardPNG(BZ, BZ.interpret) === '');
 }

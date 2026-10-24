@@ -136,6 +136,7 @@
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
       + followupBar()
       + exportBar();
+    last.it = it;
   }
 
   /** 追问区：只对已算好的盘发问，不重新起盘 */
@@ -164,7 +165,8 @@
       <button type="button" data-act="pdf">存为 PDF</button>
       <button type="button" data-act="print">打印</button>
       <button type="button" data-act="md">导出 .md</button>
-      <span class="hint">在打印对话框里选「另存为 PDF」，纸张 A4 纵向；.md 可直接存档或分享</span>
+      <button type="button" data-act="png">存为摘要长图</button>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表），适合直接发给别人；.md 可直接存档</span>
     </div>`;
   }
 
@@ -172,7 +174,21 @@
     const b = e.target && e.target.closest ? e.target.closest('.exp [data-act]') : null;
     if (!b) return;
     if (b.dataset.act === 'md') { downloadReport(); return; }
+    if (b.dataset.act === 'png') { downloadCard(); return; }
     window.print();
+  }
+
+  /** 存为摘要长图：Canvas 直出 PNG，零依赖；不支持时提示 */
+  function downloadCard() {
+    if (!last || !last.r) return;
+    const url = window.__PP.summaryCardPNG ? window.__PP.summaryCardPNG(last.r, last.it || null) : '';
+    if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存为 PDF」'); return; }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `命理摘要-${last.r.system}-${last.date || ''}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   /** 导出 Markdown：盘面 + 解析（含一页读懂、三张表、交叉验证）与追问 */

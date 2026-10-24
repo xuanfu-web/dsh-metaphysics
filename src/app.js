@@ -470,6 +470,23 @@ function App() {
     }
   };
 
+  /** 存为摘要长图：Canvas 直出 PNG（一页读懂 + 首张表），零依赖 */
+  const downloadCard = () => {
+    if (!result || !result.r) return;
+    try {
+      const url = PP.summaryCardPNG ? PP.summaryCardPNG(result.r, result.it) : '';
+      if (!url) { setCopied('当前环境不支持 Canvas 导出'); return; }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `命理摘要-${result.r.system}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (e) {
+      console.error('[metaphysics] 长图导出失败', e);
+    }
+  };
+
   const field = (label, node) => h('label', { className: 'mp-field' }, h('span', { className: 'mp-lbl' }, label), node);
 
   /** 点历史条目：先把参数回填到表单，再交给一个 effect 触发重排（避免闭包读到旧 state） */
@@ -668,7 +685,11 @@ function App() {
       h('button', {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: downloadReport, title: '导出盘面 + 解析（含一页读懂、三张表）为 Markdown',
-      }, '导出 .md')) : null,
+      }, '导出 .md'),
+      h('button', {
+        className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
+        onClick: downloadCard, title: '生成 PNG 摘要卡（一页读懂 + 首张表），适合直接分享',
+      }, '存为摘要长图')) : null,
 
     result ? h('div', { key: 'ask', className: 'mp-askbox' },
       h('input', {
