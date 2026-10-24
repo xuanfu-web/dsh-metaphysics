@@ -63,7 +63,7 @@ npm publish --access public
 
 - **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/8517 （`open`，单文件 `data/plugins/xuanfu-web__dsh-metaphysics.yml`）
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.15.0`（`dist-tags.latest = 0.15.0`，registry 已核对）；git tag `v0.15.0` 已打
+- **已发布**：npm `dsh-metaphysics@0.16.0`（`dist-tags.latest = 0.16.0`，registry 已核对；tarball 40 个文件）；git tag `v0.16.0` 已打
 - **已推送**：`perf/0.15-opt` 9 个提交已合入 main 并随 0.15.0 发布；tag `v0.15.0` 同批推送
 - **发版命令**（本机无 npm CLI，用 `.dsh` 自带 pnpm）：
   `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
