@@ -2,6 +2,7 @@
 import { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { applyTrueSolar } from './bazi.js';
+import { assertCivil } from './validate.js';
 import { resolveAddress } from './geo.js';
 
 const fix = (i) => ((i % 12) + 12) % 12;
@@ -204,6 +205,7 @@ export function xiaoxianAge(branchIndex, triad, gender) {
  * @param {object} input { year,month,day,hour,minute, gender, leapAsNext? }
  */
 export function buildZiwei(input) {
+  assertCivil(input);
   const { year: cy, month: cm, day: cd, hour: ch = 0, minute: cmin = 0, gender = 'male' } = input;
   const useTrueSolar = input.trueSolar !== false;
   const geo = input.geo || (input.address ? resolveAddress(input.address) : null);

@@ -3,6 +3,7 @@
 // 再把一方生年四化所化的星，找它在对方盘的位置，判断「你的某种特质会引动对方哪一宫」。
 // 这是并排对照的读法，不涉及两盘叠加安星（那是另一派做法，本文不采用）。
 import { buildZiwei } from './ziwei.js';
+import { assertCivil } from './validate.js';
 
 const NAMES = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '官禄', '田宅', '福德', '父母'];
 const MUT_MEAN = {
@@ -25,6 +26,8 @@ function landOn(host, branch) {
 }
 
 export function buildZiweiHepan(input) {
+  assertCivil(input && input.a, 'a');
+  assertCivil(input && input.b, 'b');
   const A = buildZiwei({ ...input.a });
   const B = buildZiwei({ ...input.b });
 

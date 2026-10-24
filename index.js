@@ -3,8 +3,17 @@
  * 纯计算；唯一的网络行为是按需把地址解析成经度（失败即退回内置坐标表）。
  */
 import { compute, renderText, geocodeAddress } from './engine/index.js';
+import { createLru } from './engine/lru.js';
+import { cacheMetrics } from './engine/calendar.js';
 
 export const inject = ['tools'];
+
+/** DSH_METRICS=1 时把各缓存命中率打到 stderr（不污染工具返回值） */
+function printCacheMetrics() {
+  if (!process.env || process.env.DSH_METRICS !== '1') return;
+  const rows = cacheMetrics().map((s) => `${s.name}: 命中 ${s.hits}/${s.hits + s.misses}（${(s.hitRate * 100).toFixed(1)}%），缓存 ${s.size}/${s.max}，淘汰 ${s.evictions}`);
+  console.error(`[metaphysics] 缓存命中率 ── ${rows.join(' | ')}`);
+}
 
 const TOOL_NAME = 'metaphysics_chart';
 
@@ -29,15 +38,13 @@ export function apply(ctx) {
    * 只缓存联网结果；离线查表本身是常数级开销。
    */
   const GEO_TTL_MS = 6 * 60 * 60 * 1000;
-  const geoCache = new Map();
+  const geoCache = createLru({ max: 200, ttlMs: GEO_TTL_MS, name: 'geo' });
   async function geocodeCached(address, opts) {
     const key = `${String(address).trim()}|${opts.online ? 'online' : 'offline'}`;
     const hit = geoCache.get(key);
-    const now = Date.now();
-    if (hit && now - hit.at < GEO_TTL_MS) return hit.value;
+    if (hit !== undefined) return hit;
     const value = await geocodeAddress(address, opts);
-    if (geoCache.size >= 200) geoCache.delete(geoCache.keys().next().value);
-    geoCache.set(key, { at: now, value });
+    geoCache.set(key, value);
     return value;
   }
 
@@ -190,7 +197,10 @@ export function apply(ctx) {
     },
     output: {
       schema: { type: 'object' },
-      render: (_args, value) => [{ type: 'text', text: renderText(value) }],
+      render: (_args, value) => {
+        printCacheMetrics();
+        return [{ type: 'text', text: renderText(value) }];
+      },
     },
     async execute(args) {
       try {

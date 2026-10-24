@@ -11,6 +11,13 @@
 - **卦例对拍扩容**：《卜筮正宗》从 19 条扩到 **128 条**（93 成对 + 35 静卦），
   新增核对动爻个数、缺爻（伏神）、旬空；排除的 5 条连同理由留在
   `tools/data-boshizhengzong.mjs` 的 `excluded`
+- **引擎入参守卫（P0）**：新增 `engine/validate.js` 的 `assertCivil()`，`buildBazi / buildZiwei /
+  buildDaliuren / buildQimen / buildHepan / buildZiweiHepan / buildSnapshot` 入口统一校验；
+  坏入参从裸 `TypeError` 改为 `E_INPUT`，文案写清「该传什么」（15 类坏输入有契约测试）
+  - 统一错误工厂 `engine/fail.js`；梅花的 datetime / 数字起卦错误也改为 `E_INPUT`
+- **缓存层统一（P0）**：新增 `engine/lru.js`（上限 + TTL + 命中率），节气瞬时/单年/三年窗口/
+  地址四处缓存改为同一工厂；`DSH_METRICS=1` 时 `renderText` 打印各缓存命中率
+  （实测紫微盘 `termInstant` 命中 75%）
 
 ## 0.14.3（已发布）
 

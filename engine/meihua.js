@@ -1,6 +1,7 @@
 // 梅花易数：时间/数字起卦、体用、互卦、变卦、错综卦
 import { BRANCHES } from './calendar.js';
 import { solarToLunar } from './lunar.js';
+import { fail } from './fail.js';
 import { hexagramFromBits } from './liuyao.js';
 
 // 先天八卦数：乾1 兑2 离3 震4 巽5 坎6 艮7 坤8
@@ -52,7 +53,7 @@ export function buildMeihua(input = {}) {
   if (mode === 'number') {
     const a = Number(input.upper);
     const b = Number(input.lower);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) throw new Error('数字起卦需要两个数字（upper / lower）');
+    if (!Number.isFinite(a) || !Number.isFinite(b)) throw fail('E_INPUT', '数字起卦需要两个数字（upper / lower），例如 upper=3、lower=5');
     upperNum = mod8(a);
     lowerNum = mod8(b);
     moving = Number.isFinite(Number(input.changing)) && Number(input.changing) > 0
@@ -124,9 +125,9 @@ export function buildMeihua(input = {}) {
 }
 
 function parseDateTime(text) {
-  if (typeof text !== 'string' || !text.trim()) throw new Error('时间起卦需要 datetime');
+  if (typeof text !== 'string' || !text.trim()) throw fail('E_INPUT', '时间起卦需要 datetime，例如 2026-10-24T11:43');
   const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2}))?$/);
-  if (!m) throw new Error(`无法解析 datetime：「${text}」`);
+  if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 2026-10-24T11:43 这种格式`);
   return {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
     hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),

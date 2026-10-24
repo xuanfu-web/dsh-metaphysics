@@ -12,17 +12,12 @@ import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
+import { fail } from './fail.js';
+import { assertCivil } from './validate.js';
 
 export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
 
 const pad = (n) => String(n).padStart(2, '0');
-
-/** 带错误码的参数错误：工具层据此给出可执行提示，而不是把内部异常直出给模型 */
-const fail = (code, message) => {
-  const e = new Error(message);
-  e.code = code;
-  return e;
-};
 
 const GENDERS = ['male', 'female'];
 

@@ -3,6 +3,7 @@
 // 五行互补看「一方喜用是否正是另一方所旺」。各派取法不同，这里只给通用版结论。
 import { buildBazi } from './bazi.js';
 import { STEMS, BRANCHES } from './calendar.js';
+import { assertCivil } from './validate.js';
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -47,6 +48,8 @@ function wxToMe(other, me) {
 
 /** 合盘主函数 */
 export function buildHepan(input) {
+  assertCivil(input && input.a, 'a');
+  assertCivil(input && input.b, 'b');
   const A = buildBazi({ ...input.a, gender: input.a.gender });
   const B = buildBazi({ ...input.b, gender: input.b.gender });
 

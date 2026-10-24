@@ -2,6 +2,7 @@
 // 算法移植自本地 MIT 授权插件 @dhicoc/dsh-chinese-traditional-wisdom-skill 的
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
 import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } from './calendar.js';
+import { assertCivil } from './validate.js';
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -240,6 +241,7 @@ function fanYin(ke, dayGan, dayZhi, stats, isFB) {
  * @param {object} input { year, month, day, hour, minute, lateZi? }
  */
 export function buildDaliuren(input) {
+  assertCivil(input);
   const { year, month, day, hour = 0, minute = 0 } = input;
   const lateZi = input.lateZi !== false;
   const jdnBase = toJDN(year, month, day);

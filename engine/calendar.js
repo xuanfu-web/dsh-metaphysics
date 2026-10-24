@@ -1,4 +1,5 @@
 import { earthL } from './vsop-earth.js';
+import { createLru } from './lru.js';
 // 历法底座：儒略日、干支、二十四节气、真太阳时
 // 全部为纯函数，不依赖 DOM / Node API，Host 与 Client 可共用。
 
@@ -148,8 +149,7 @@ export function localOffsetFor(jdUt) {
  * 结果按 (year, index) 缓存：农历换算一次要问几百次中气（每个候选月都要判有无中气），
  * 而 VSOP87 的 earthL 是整个引擎最贵的一段——不缓存时紫微盘 10ms 里有 8ms 花在这里。
  */
-const TERM_INSTANT_CACHE = new Map();
-const TERM_INSTANT_CACHE_MAX = 4096;
+const TERM_INSTANT_CACHE = createLru({ max: 4096, name: 'termInstant' });
 
 /**
  * 牛顿迭代收敛容差（度）。
@@ -188,9 +188,6 @@ export function termInstantJd(year, index) {
   const hit = TERM_INSTANT_CACHE.get(key);
   if (hit !== undefined) return hit;
   const jd = computeTermInstantJd(year, index);
-  if (TERM_INSTANT_CACHE.size >= TERM_INSTANT_CACHE_MAX) {
-    TERM_INSTANT_CACHE.delete(TERM_INSTANT_CACHE.keys().next().value);
-  }
   TERM_INSTANT_CACHE.set(key, jd);
   return jd;
 }
@@ -223,12 +220,10 @@ export function equationOfTime(year, month, day) {
 
 // 一次排盘要算 72 个节气（三年窗口），每次十多轮牛顿迭代 × VSOP87 105 项。
 // 同一年的盘经常连着排（面板切 tab、合盘两侧），按年缓存能把这块成本降到常数级。
-const TERM_WINDOW_CACHE = new Map();
-const TERM_WINDOW_CACHE_MAX = 8;
+const TERM_WINDOW_CACHE = createLru({ max: 8, name: 'termWindow' });
 // 单年 24 节气也单独缓存：相邻年份的窗口高度重叠（year±1），
 // 只按窗口缓存会让 1996 与 1997 各算一遍 1996 的 24 个节气。
-const TERM_YEAR_CACHE = new Map();
-const TERM_YEAR_CACHE_MAX = 32;
+const TERM_YEAR_CACHE = createLru({ max: 32, name: 'termYear' });
 const ALL_TERM_INDEXES = Array.from({ length: 24 }, (_, i) => i);
 const JIE_TERM_INDEXES = ALL_TERM_INDEXES.filter((i) => i % 2 === 0); // 节：定月柱用，气不参与
 
@@ -257,9 +252,6 @@ function termYearList(year, jieOnly) {
     list.push({ year, index: i, name: TERM_NAMES[i], jd: termInstantJd(year, i) });
   }
   list.sort((a, b) => a.jd - b.jd);
-  if (TERM_YEAR_CACHE.size >= TERM_YEAR_CACHE_MAX) {
-    TERM_YEAR_CACHE.delete(TERM_YEAR_CACHE.keys().next().value);
-  }
   TERM_YEAR_CACHE.set(key, list);
   return list;
 }
@@ -280,9 +272,6 @@ export function termWindow(year, opts = {}) {
     ...termYearList(year + 1, jieOnly),
   ];
   list.sort((a, b) => a.jd - b.jd);
-  if (TERM_WINDOW_CACHE.size >= TERM_WINDOW_CACHE_MAX) {
-    TERM_WINDOW_CACHE.delete(TERM_WINDOW_CACHE.keys().next().value);
-  }
   TERM_WINDOW_CACHE.set(cacheKey, list);
   return list;
 }
@@ -330,4 +319,7 @@ export function formatJd(jd) {
   return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}`;
 }
 
-
+/** 缓存命中率快照：DSH_METRICS=1 时由 renderText 打印，便于判断缓存是否真的有用 */
+export function cacheMetrics() {
+  return [TERM_INSTANT_CACHE.stats(), TERM_YEAR_CACHE.stats(), TERM_WINDOW_CACHE.stats()];
+}

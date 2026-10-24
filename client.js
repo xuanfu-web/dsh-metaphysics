@@ -7,6 +7,125 @@ window.__ModuleLoader__.load({
     if (!React) return { inject: [], apply() {} };
     const h = React.createElement;
     const __mods = {};
+__mods.fail = (function () {
+
+const fail = (code, message) => {
+  const e = new Error(message);
+  e.code = code;
+  return e;
+};
+
+return { fail };
+})();
+
+__mods.validate = (function () {
+const { fail } = __mods.fail;
+
+const MIN_YEAR = 1600;
+const MAX_YEAR = 2400;
+
+function isLeapYear(year) {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+function daysInMonth(year, month) {
+  if (month === 2) return isLeapYear(year) ? 29 : 28;
+  return [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] || 0;
+}
+
+const show = (v) => (typeof v === 'string' ? `「${v}」` : String(v));
+const HINT = '引擎只接受解析好的公历字段 { year, month, day, hour?, minute? }；字符串请先交给宿主层的 parseDateTime 解析';
+
+function assertCivil(input, who = '') {
+  const p = who ? `${who} 的` : '';
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    const got = input === null ? 'null' : Array.isArray(input) ? '数组' : typeof input;
+    throw fail('E_INPUT', `${p}入参必须是对象（收到 ${got}）；${HINT}`);
+  }
+  const hour = input.hour === undefined ? 0 : input.hour;
+  const minute = input.minute === undefined ? 0 : input.minute;
+  for (const [key, value] of [['year', input.year], ['month', input.month], ['day', input.day], ['hour', hour], ['minute', minute]]) {
+    if (!Number.isInteger(value)) throw fail('E_INPUT', `${p}${key} 必须是整数（收到 ${show(value)}）；${HINT}`);
+  }
+  if (input.year < MIN_YEAR || input.year > MAX_YEAR) {
+    throw fail('E_INPUT', `${p}year 超出支持范围 ${MIN_YEAR}–${MAX_YEAR}（收到 ${input.year}）；更早的年份时区与历法口径不可靠`);
+  }
+  if (input.month < 1 || input.month > 12) {
+    throw fail('E_INPUT', `${p}month 超出范围 1–12（收到 ${input.month}）`);
+  }
+  const max = daysInMonth(input.year, input.month);
+  if (input.day < 1 || input.day > max) {
+    throw fail('E_INPUT', `${p}日期不存在：${input.year}-${input.month}-${input.day}（${input.year} 年 ${input.month} 月只有 ${max} 天）`);
+  }
+  if (hour < 0 || hour > 23) throw fail('E_INPUT', `${p}hour 超出范围 0–23（收到 ${hour}）`);
+  if (minute < 0 || minute > 59) throw fail('E_INPUT', `${p}minute 超出范围 0–59（收到 ${minute}）`);
+  return input;
+}
+
+return { MIN_YEAR, MAX_YEAR, isLeapYear, daysInMonth, assertCivil };
+})();
+
+__mods.lru = (function () {
+
+function createLru({ max = 64, ttlMs = 0, name = 'lru', now = () => Date.now() } = {}) {
+  const map = new Map();
+  const stats = { name, hits: 0, misses: 0, evictions: 0, expirations: 0 };
+
+  const expired = (entry) => ttlMs > 0 && now() - entry.at > ttlMs;
+
+  return {
+    name,
+    max,
+    ttlMs,
+    get(key) {
+      const entry = map.get(key);
+      if (!entry || expired(entry)) {
+        if (entry) { map.delete(key); stats.expirations += 1; }
+        stats.misses += 1;
+        return undefined;
+      }
+      map.delete(key);
+      map.set(key, entry);
+      stats.hits += 1;
+      return entry.value;
+    },
+    set(key, value) {
+      if (map.has(key)) map.delete(key);
+      map.set(key, { value, at: now() });
+      while (map.size > max) {
+        map.delete(map.keys().next().value);
+        stats.evictions += 1;
+      }
+      return value;
+    },
+    has(key) {
+      const entry = map.get(key);
+      if (!entry) return false;
+      if (expired(entry)) { map.delete(key); stats.expirations += 1; return false; }
+      return true;
+    },
+    delete(key) { return map.delete(key); },
+    clear() { map.clear(); },
+    get size() { return map.size; },
+    stats() {
+      const total = stats.hits + stats.misses;
+      return {
+        name,
+        size: map.size,
+        max,
+        hits: stats.hits,
+        misses: stats.misses,
+        evictions: stats.evictions,
+        expirations: stats.expirations,
+        hitRate: total ? stats.hits / total : 0,
+      };
+    },
+  };
+}
+
+return { createLru };
+})();
+
 __mods['vsop-earth'] = (function () {
 const L0 = [
   [1.75347045673,0,0],[0.03341656453,4.66925680415,6283.0758499914],[0.00034894275,4.62610242189,12566.1516999828],[0.00003417572,2.82886579754,3.523118349],
@@ -49,6 +168,7 @@ return { earthL };
 
 __mods.calendar = (function () {
 const { earthL } = __mods['vsop-earth'];
+const { createLru } = __mods.lru;
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -165,8 +285,7 @@ function localOffsetFor(jdUt) {
   return jdUt < CUTOVER_JD ? OFFSET_BEIJING_LOCAL : OFFSET_MODERN;
 }
 
-const TERM_INSTANT_CACHE = new Map();
-const TERM_INSTANT_CACHE_MAX = 4096;
+const TERM_INSTANT_CACHE = createLru({ max: 4096, name: 'termInstant' });
 
 const TERM_CONVERGE_DEG = 1e-5;
 
@@ -195,9 +314,6 @@ function termInstantJd(year, index) {
   const hit = TERM_INSTANT_CACHE.get(key);
   if (hit !== undefined) return hit;
   const jd = computeTermInstantJd(year, index);
-  if (TERM_INSTANT_CACHE.size >= TERM_INSTANT_CACHE_MAX) {
-    TERM_INSTANT_CACHE.delete(TERM_INSTANT_CACHE.keys().next().value);
-  }
   TERM_INSTANT_CACHE.set(key, jd);
   return jd;
 }
@@ -226,10 +342,8 @@ function equationOfTime(year, month, day) {
   return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
 }
 
-const TERM_WINDOW_CACHE = new Map();
-const TERM_WINDOW_CACHE_MAX = 8;
-const TERM_YEAR_CACHE = new Map();
-const TERM_YEAR_CACHE_MAX = 32;
+const TERM_WINDOW_CACHE = createLru({ max: 8, name: 'termWindow' });
+const TERM_YEAR_CACHE = createLru({ max: 32, name: 'termYear' });
 const ALL_TERM_INDEXES = Array.from({ length: 24 }, (_, i) => i);
 const JIE_TERM_INDEXES = ALL_TERM_INDEXES.filter((i) => i % 2 === 0);
 
@@ -250,9 +364,6 @@ function termYearList(year, jieOnly) {
     list.push({ year, index: i, name: TERM_NAMES[i], jd: termInstantJd(year, i) });
   }
   list.sort((a, b) => a.jd - b.jd);
-  if (TERM_YEAR_CACHE.size >= TERM_YEAR_CACHE_MAX) {
-    TERM_YEAR_CACHE.delete(TERM_YEAR_CACHE.keys().next().value);
-  }
   TERM_YEAR_CACHE.set(key, list);
   return list;
 }
@@ -268,9 +379,6 @@ function termWindow(year, opts = {}) {
     ...termYearList(year + 1, jieOnly),
   ];
   list.sort((a, b) => a.jd - b.jd);
-  if (TERM_WINDOW_CACHE.size >= TERM_WINDOW_CACHE_MAX) {
-    TERM_WINDOW_CACHE.delete(TERM_WINDOW_CACHE.keys().next().value);
-  }
   TERM_WINDOW_CACHE.set(cacheKey, list);
   return list;
 }
@@ -310,7 +418,11 @@ function formatJd(jd) {
   return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}`;
 }
 
-return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryIndex, ganzhiName, dayGanzhiIndex, sunLongitude, deltaTSeconds, OFFSET_MODERN, OFFSET_BEIJING_LOCAL, CUTOVER_JD, localOffsetFor, termInstantJd, jdToParts, partsToJd, equationOfTime, termWindow, xunKongOf, previousJie, nextJie, formatJd };
+function cacheMetrics() {
+  return [TERM_INSTANT_CACHE.stats(), TERM_YEAR_CACHE.stats(), TERM_WINDOW_CACHE.stats()];
+}
+
+return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryIndex, ganzhiName, dayGanzhiIndex, sunLongitude, deltaTSeconds, OFFSET_MODERN, OFFSET_BEIJING_LOCAL, CUTOVER_JD, localOffsetFor, termInstantJd, jdToParts, partsToJd, equationOfTime, termWindow, xunKongOf, previousJie, nextJie, formatJd, cacheMetrics };
 })();
 
 __mods.lunar = (function () {
@@ -1377,6 +1489,7 @@ __mods.bazi = (function () {
 const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex, termWindow, previousJie, nextJie, equationOfTime, formatJd, xunKongOf } = __mods.calendar;
 const { resolveAddress } = __mods.geo;
 const { computeBaziShensha } = __mods.shensha;
+const { assertCivil } = __mods.validate;
 const { analyzeBaziFrame, scoreLuck } = __mods.geju;
 
 const HIDDEN_STEMS = {
@@ -1568,6 +1681,7 @@ function applyTrueSolar(jd, longitude) {
 }
 
 function buildBazi(input) {
+  assertCivil(input);
   const { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
   const lateZi = input.lateZi !== false;
   const useTrueSolar = input.trueSolar !== false;
@@ -2068,6 +2182,7 @@ __mods.ziwei = (function () {
 const { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } = __mods.calendar;
 const { solarToLunar } = __mods.lunar;
 const { applyTrueSolar } = __mods.bazi;
+const { assertCivil } = __mods.validate;
 const { resolveAddress } = __mods.geo;
 
 const fix = (i) => ((i % 12) + 12) % 12;
@@ -2243,6 +2358,7 @@ function xiaoxianAge(branchIndex, triad, gender) {
 }
 
 function buildZiwei(input) {
+  assertCivil(input);
   const { year: cy, month: cm, day: cd, hour: ch = 0, minute: cmin = 0, gender = 'male' } = input;
   const useTrueSolar = input.trueSolar !== false;
   const geo = input.geo || (input.address ? resolveAddress(input.address) : null);
@@ -3200,6 +3316,7 @@ return { MAJOR, SUITS, MINOR, ROMAN, SPREADS, tarotDeck, tarotReading, drawTarot
 __mods.meihua = (function () {
 const { BRANCHES } = __mods.calendar;
 const { solarToLunar } = __mods.lunar;
+const { fail } = __mods.fail;
 const { hexagramFromBits } = __mods.liuyao;
 
 const TRI_NAME = ['', '乾', '兑', '离', '震', '巽', '坎', '艮', '坤'];
@@ -3242,7 +3359,7 @@ function buildMeihua(input = {}) {
   if (mode === 'number') {
     const a = Number(input.upper);
     const b = Number(input.lower);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) throw new Error('数字起卦需要两个数字（upper / lower）');
+    if (!Number.isFinite(a) || !Number.isFinite(b)) throw fail('E_INPUT', '数字起卦需要两个数字（upper / lower），例如 upper=3、lower=5');
     upperNum = mod8(a);
     lowerNum = mod8(b);
     moving = Number.isFinite(Number(input.changing)) && Number(input.changing) > 0
@@ -3310,9 +3427,9 @@ function buildMeihua(input = {}) {
 }
 
 function parseDateTime(text) {
-  if (typeof text !== 'string' || !text.trim()) throw new Error('时间起卦需要 datetime');
+  if (typeof text !== 'string' || !text.trim()) throw fail('E_INPUT', '时间起卦需要 datetime，例如 2026-10-24T11:43');
   const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2}))?$/);
-  if (!m) throw new Error(`无法解析 datetime：「${text}」`);
+  if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 2026-10-24T11:43 这种格式`);
   return {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
     hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),
@@ -3324,6 +3441,7 @@ return { TRI_NAME, TRI_ELEMENT, TRI_BITS, buildMeihua };
 
 __mods.daliuren = (function () {
 const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } = __mods.calendar;
+const { assertCivil } = __mods.validate;
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -3553,6 +3671,7 @@ function fanYin(ke, dayGan, dayZhi, stats, isFB) {
 }
 
 function buildDaliuren(input) {
+  assertCivil(input);
   const { year, month, day, hour = 0, minute = 0 } = input;
   const lateZi = input.lateZi !== false;
   const jdnBase = toJDN(year, month, day);
@@ -3650,6 +3769,7 @@ return { ZHI, GAN, TIAN_JIANG, JIANG_FULL, JIEQI_YUE_JIANG, GAN_JI_GONG, calcShe
 __mods.hepan = (function () {
 const { buildBazi } = __mods.bazi;
 const { STEMS, BRANCHES } = __mods.calendar;
+const { assertCivil } = __mods.validate;
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -3691,6 +3811,8 @@ function wxToMe(other, me) {
 }
 
 function buildHepan(input) {
+  assertCivil(input && input.a, 'a');
+  assertCivil(input && input.b, 'b');
   const A = buildBazi({ ...input.a, gender: input.a.gender });
   const B = buildBazi({ ...input.b, gender: input.b.gender });
 
@@ -3786,6 +3908,7 @@ return { buildHepan };
 
 __mods['ziwei-hepan'] = (function () {
 const { buildZiwei } = __mods.ziwei;
+const { assertCivil } = __mods.validate;
 
 const NAMES = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '官禄', '田宅', '福德', '父母'];
 const MUT_MEAN = {
@@ -3806,6 +3929,8 @@ function landOn(host, branch) {
 }
 
 function buildZiweiHepan(input) {
+  assertCivil(input && input.a, 'a');
+  assertCivil(input && input.b, 'b');
   const A = buildZiwei({ ...input.a });
   const B = buildZiwei({ ...input.b });
 
@@ -3901,6 +4026,7 @@ return { buildZiweiHepan };
 __mods.qimen = (function () {
 const { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = __mods.calendar;
 const { solarToLunar } = __mods.lunar;
+const { assertCivil } = __mods.validate;
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -3936,6 +4062,7 @@ const indexOfGz = (gz) => {
 };
 
 function buildSnapshot({ year, month, day, hour, minute, lateZiHourMode = 'same-day' }) {
+  assertCivil({ year, month, day, hour, minute });
   const jd = partsToJd({ year, month, day, hour, minute });
 
   const baseJdn = partsToJd({ year, month, day, hour: 12, minute: 0 });
@@ -4190,6 +4317,7 @@ const findGong = (obj, val) =>
   Object.keys(obj).find((k) => obj[k] === val || (val === '天芮' && obj[k] === '禽芮')) || '9';
 
 function buildQimen(input) {
+  if (!input.snapshot) assertCivil(input);
   const snapshot = input.snapshot || buildSnapshot(input);
   const hourIdx = input.hourIndex != null ? input.hourIndex : Math.floor((((input.hour ?? 0) + 1) % 24) / 2);
   const hourGz = snapshot.hours[hourIdx] ? snapshot.hours[hourIdx].ganZhi : snapshot.hours[snapshot.hours.length - 1].ganZhi;
@@ -6310,14 +6438,10 @@ const { geocodeAddress, resolveAddress } = __mods.geo;
 const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
 const { randomOf, isSeed } = __mods.random;
 const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
+const { fail } = __mods.fail;
+const { assertCivil } = __mods.validate;
 
 const pad = (n) => String(n).padStart(2, '0');
-
-const fail = (code, message) => {
-  const e = new Error(message);
-  e.code = code;
-  return e;
-};
 
 const GENDERS = ['male', 'female'];
 

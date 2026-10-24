@@ -4,6 +4,7 @@
 // 只把历法层换成本插件自己的 calendar/lunar 模块——节气、干支、农历都走同一套已验证的源码。
 import { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } from './calendar.js';
 import { solarToLunar } from './lunar.js';
+import { assertCivil } from './validate.js';
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -43,6 +44,7 @@ const indexOfGz = (gz) => {
 
 /** 由公历时刻构建快照（本地民用时间轴） */
 export function buildSnapshot({ year, month, day, hour, minute, lateZiHourMode = 'same-day' }) {
+  assertCivil({ year, month, day, hour, minute });
   const jd = partsToJd({ year, month, day, hour, minute });
 
   // 日干支：晚子时按「次日」或「当日」
@@ -324,6 +326,8 @@ const findGong = (obj, val) =>
 
 /** 排盘主函数 */
 export function buildQimen(input) {
+  // snapshot 是内部快照路径（已由 buildSnapshot 校验过），不必重复校验
+  if (!input.snapshot) assertCivil(input);
   const snapshot = input.snapshot || buildSnapshot(input);
   const hourIdx = input.hourIndex != null ? input.hourIndex : Math.floor((((input.hour ?? 0) + 1) % 24) / 2);
   const hourGz = snapshot.hours[hourIdx] ? snapshot.hours[hourIdx].ganZhi : snapshot.hours[snapshot.hours.length - 1].ganZhi;

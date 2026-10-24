@@ -6,6 +6,7 @@ import {
 } from './calendar.js';
 import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
+import { assertCivil } from './validate.js';
 import { analyzeBaziFrame, scoreLuck } from './geju.js';
 
 // 地支藏干（本气 / 中气 / 余气）
@@ -216,6 +217,7 @@ export function applyTrueSolar(jd, longitude) {
  * @param {object} input { year,month,day,hour,minute, gender:'male'|'female', longitude?, lateZi?:boolean, trueSolar?:boolean }
  */
 export function buildBazi(input) {
+  assertCivil(input);
   const { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
   const lateZi = input.lateZi !== false;
   const useTrueSolar = input.trueSolar !== false;
