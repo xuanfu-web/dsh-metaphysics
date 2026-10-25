@@ -143,7 +143,7 @@ const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
 /** OpenStreetMap Nominatim：免密钥、支持中文。失败返回 null。
  *  UA 按 OSM 使用政策要求写明应用与联系方式（改版本时同步这里）。 */
-const USER_AGENT = 'dsh-metaphysics/0.17.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.17.1 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
