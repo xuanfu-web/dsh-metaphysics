@@ -539,6 +539,29 @@
 .mp-fu.miss .mp-fu-h{color:var(--red)}
 .mp-fu-ev{margin-top:5px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-quick{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px}
+.mp-cg{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-cg-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+.mp-cg-h b{font-size:13px;color:var(--ink);font-weight:600}
+.mp-cg-h span{font-size:11.5px;color:var(--muted)}
+.mp-cg-w{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.mp-cg .cg-cell{background:var(--card);padding:7px 9px}
+.mp-cg .cg-cell em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+.mp-cg .cg-cell b{font-size:13.5px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.mp-cg-tot{display:flex;align-items:baseline;gap:8px;margin:10px 0 4px}
+.mp-cg-tot em{font-style:normal;font-size:11px;color:var(--muted)}
+.mp-cg-tot b{font-size:19px;color:var(--lu);font-weight:700;letter-spacing:.02em}
+.mp-cg-tot i{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px}
+.mp-cg-song{margin-top:8px;padding:10px 12px;border-left:3px solid var(--quan);background:var(--band);border-radius:0 6px 6px 0}
+.mp-cg-song-h{font-size:11px;color:var(--muted);margin-bottom:5px}
+.mp-cg-verse{font-family:var(--kai,system-ui),serif;font-size:15px;line-height:2;color:var(--ink);letter-spacing:.03em}
+.mp-cg-verse span{display:block}
+.mp-cg-miss{color:var(--muted);font-size:12.5px}
+.mp-cg-plain{margin-top:7px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
+.mp-cg-plain em,.mp-cg-band em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px;vertical-align:1px}
+.mp-cg-band{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
+@media print{.mp-cg{break-inside:avoid}}
+@media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .mp-quick-h{font-size:13px;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
@@ -1687,6 +1710,32 @@
       ${best || worst ? `<div class="kl-hls">${best}${worst}</div>` : ''}
       ${note}
       <div class="mp-kline-tip">逐岁分数由大运与流年十神按固定表确定性计分（1–100），只表五行力量的顺逆，不预测具体事件；旺衰落在换档阈值附近时，不出高低年份结论。</div>
+    </section>`;
+  };
+
+  /** 称骨：四项骨重 + 合计 + 通行本歌诀原文 + 白话释义 */
+  pp.chengguHTML = function (r) {
+    if (!r) return '';
+    const w = r.weights || {};
+    const song = r.song || {};
+    const cells = ['year', 'month', 'day', 'hour'].map((k) => {
+      const x = w[k] || { label: '', qian: 0 };
+      const name = String(x.label || '').split(' ')[0] || '';
+      const val = String(x.label || '').split(' ')[1] || '';
+      return `<div class="cg-cell"><em>${esc(name)}</em><b>${esc(val)}</b></div>`;
+    }).join('');
+    const verse = String(song.text || '');
+    const lines = verse ? verse.replace(/[。]$/, '').split('；').map((s, i) => `<span>${esc(s)}${i === 0 ? '；' : '。'}</span>`).join('') : '';
+    const band = r.verdict && r.verdict.band ? r.verdict.band : '';
+    return `<section class="mp-cg" aria-label="称骨结果">
+      <div class="mp-cg-h"><b>称骨</b><span>${esc(r.lunar && r.lunar.text ? r.lunar.text : '')}</span></div>
+      <div class="mp-cg-w">${cells}</div>
+      <div class="mp-cg-tot"><em>骨重合计</em><b>${esc(r.total && r.total.label ? r.total.label : '')}</b>${band ? `<i>${esc(band)}</i>` : ''}</div>
+      <div class="mp-cg-song"><div class="mp-cg-song-h">称骨歌 · ${esc(r.total && r.total.label ? r.total.label : '')}</div>
+        <div class="mp-cg-verse">${lines || '<span class="mp-cg-miss">该骨重未见通行本歌诀</span>'}</div>
+        <div class="mp-cg-plain"><em>释义</em>${esc(song.plain || '')}</div></div>
+      ${r.verdict && r.verdict.text ? `<div class="mp-cg-band"><em>分档</em>${esc(r.verdict.text)}</div>` : ''}
+      <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
     </section>`;
   };
 

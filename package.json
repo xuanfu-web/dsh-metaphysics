@@ -1,6 +1,6 @@
 {
   "name": "dsh-metaphysics",
-  "version": "0.18.3",
+  "version": "0.18.4",
   "type": "module",
   "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: seventeen systems — eight chart systems (BaZi four pillars, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus nine quick references (almanac, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, life-curve, feng shui, name analysis); ask-driven interpretation, report layer with evidence and confidence, DST correction for 1986–1991. All computed locally, networking off by default — as an agent tool plus a Web panel.",
   "keywords": [

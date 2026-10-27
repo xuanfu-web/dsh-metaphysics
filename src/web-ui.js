@@ -413,8 +413,9 @@
                 : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
-                      : tab === 'trend' ? window.__PP.trendHTML(r)
-                        : window.__PP.quickHTML(r));
+                      : tab === 'chenggu' ? window.__PP.chengguHTML(r)
+                        : tab === 'trend' ? window.__PP.trendHTML(r)
+                          : window.__PP.quickHTML(r));
       last = { r, html, tab, date, time, timed, trend };
       paint();
     } catch (e) {

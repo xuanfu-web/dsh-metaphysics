@@ -107,7 +107,7 @@ export function apply(ctx) {
         system: {
           type: 'string',
           enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'],
-          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局）；name = 起名（用字五行评估与候选生成）。',
+          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局）；name = 起名（用字五行评估与候选生成）。',
         },
         datetime: {
           type: 'string',

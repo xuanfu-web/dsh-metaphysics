@@ -740,13 +740,17 @@ function zeriText(r) {
 
 /** 称骨文本 */
 function chengguText(r) {
-  return [
+  const s = r.song || {};
+  const lines = [
     `【称骨】${r.input.solar} ${r.lunar.text}`,
     `四项：${r.weights.year.label}　${r.weights.month.label}　${r.weights.day.label}　${r.weights.hour.label}`,
     `合计：${r.total.label}（${r.verdict.band}）`,
-    `批语：${r.verdict.text}`,
-    '口径：骨重为通行表口径，批语为白话自撰（非原版称骨歌诀原文）。',
-  ].join('\n');
+    `歌诀（${r.total.label}）：${s.text || '—'}`,
+    `释义：${s.plain || '—'}`,
+    `分档白话：${r.verdict.text}`,
+    '口径：骨重与歌诀为通行本口径（各版本歌诀有异文），释义为白话自撰，属民俗娱乐参考。',
+  ];
+  return lines.join('\n');
 }
 
 /** 小六壬文本 */

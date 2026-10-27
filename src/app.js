@@ -873,7 +873,8 @@ function App() {
                   : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
-                      : result.kind === 'trend' ? PP.trendHTML(result.r)
+                      : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
+                        : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },
