@@ -1,14 +1,14 @@
 # dsh-metaphysics · 命理排盘
 
-Chinese metaphysics for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): BaZi (Four Pillars), Zi Wei Dou Shu, LiuYao, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia, relationship compatibility, Tarot, plus quick-reference tools — almanac, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, life-curve, feng shui and name analysis.
+Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): BaZi (Four Pillars), Zi Wei Dou Shu, LiuYao, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia, relationship compatibility, Tarot, plus quick-reference tools — almanac, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, life-curve, feng shui and name analysis.
 
-给 DeepSeek Harness 用的命理插件：**四柱八字、紫微斗数、六爻纳甲、梅花易数、大六壬、奇门遁甲、合盘、塔罗牌**八大排盘体系，外加**黄历、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名**九套速查，同时提供 Agent 工具与 Web 面板。
+给 DeepSeek Harness 用的**玄学命理**插件：**四柱八字、紫微斗数、六爻纳甲、梅花易数、大六壬、奇门遁甲、合盘、塔罗牌**八大排盘体系，外加**黄历、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名**九套速查，同时提供 Agent 工具与 Web 面板。
 
 > 传统命理与占卜属文化娱乐用途，不构成医疗、投资、法律或生死判断的依据。
 
 ## 插件市场备注
 
-**命理排盘 · 八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗 + 黄历 / 择日 / 称骨 / 小六壬 / 星座 / 生命数字 / 人生K线 / 风水 / 起名** —— 一个插件把十七套体系装进 Harness：对话里说一句就排盘，侧栏还有可视化面板。
+**命理排盘（玄学）· 八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗 + 黄历 / 择日 / 称骨 / 小六壬 / 星座 / 生命数字 / 人生K线 / 风水 / 起名** —— 一个插件把十七套体系装进 Harness：对话里说一句就排盘，侧栏还有可视化面板。
 
 - **八字**：42 颗神煞（分吉凶七类，天干星双查年干与日干、三合星双查年支与日支，悬停看查法）、日主旺衰量化并给出依据、格局与用神（月令取格 + 化气/专旺/从格 + 十神组合，每条附判定依据）、大运流年按喜忌五行与十神打分（大吉/吉/平/忌/大忌，可看逐项理由）
 - **紫微**：十四主星与 49 星曜（主星带**庙旺得利平不陷**亮度标注）、四层十二神、生年四化与宫干自化、34 条格局（标吉/忌倾向与依据）、大限一览、流年四化落宫；本命/大限/流年三视图一键切换，命宫红框、三方四正浅底标出；竖屏与窄侧栏保持 4×4 宫盘（宫位相对位置不丢）
