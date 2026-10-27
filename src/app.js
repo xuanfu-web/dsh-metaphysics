@@ -914,6 +914,7 @@ function App() {
                       : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
                         : result.kind === 'almanac' ? PP.almanacHTML(result.r)
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
+                        : result.kind === 'name' ? PP.nameHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },

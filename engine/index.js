@@ -703,12 +703,21 @@ function computeRaw(args = {}) {
   }
   if (system === 'name') {
     const action = args.action === 'generate' ? 'generate' : 'assess';
-    const birth = args.datetime ? parseDateTime(args.datetime) : {};
+    const birth = args.datetime
+      ? parseDateTime(args.datetime)
+      : (Number.isInteger(args.year) && Number.isInteger(args.month) && Number.isInteger(args.day)
+        ? {
+          year: args.year, month: args.month, day: args.day,
+          ...(Number.isInteger(args.hour) ? { hour: args.hour } : {}),
+          ...(Number.isInteger(args.minute) ? { minute: args.minute } : {}),
+        }
+        : {});
     const result = buildName({
       action,
       surname: args.surname,
       givenName: args.givenName,
       limit: args.limit,
+      charElements: args.charElements && typeof args.charElements === 'object' ? args.charElements : undefined,
       ...birth,
       ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
       ...(args.datetime ? {
@@ -886,9 +895,18 @@ function nameText(r) {
       ...r.notes.map((n) => `※ ${n}`),
     ].join('\n');
   }
+  const srcLabel = (c) => (c.source === 'lib' ? '字库' : c.source === 'user' ? '用户指定' : '未收录');
+  const charLine = (c) => {
+    const el = c.element === '未收录' ? '未收录（不猜五行）' : `${c.element}（${srcLabel(c)}）`;
+    const fit = c.favorable === true ? '合喜用' : c.favorable === false ? '不合喜用' : '不判';
+    const sug = c.suggest && c.suggest.length
+      ? `　可换：${c.suggest.map((x) => `${x.char}（${x.element}）`).join('、')}`
+      : '';
+    return `· ${c.char}：${el}｜${fit}｜${c.meaning}${sug}`;
+  };
   return [
     `【名字评估】${r.fullName}`,
-    ...r.chars.map((c) => `· ${c.char}：五行 ${c.element}${c.element !== '未收录' ? `（喜用${c.favorable ? '中' : '外'}）` : ''}，${c.meaning}`),
+    ...r.chars.map(charLine),
     r.bazi ? `【八字】日主 ${r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : r.bazi.dayMaster}，旺衰 ${r.bazi.strength.level}（${r.bazi.strength.score}），${r.bazi.basis}` : '',
     `【结论】${r.verdict}`,
     ...r.notes.map((n) => `※ ${n}`),

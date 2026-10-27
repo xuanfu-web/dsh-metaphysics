@@ -586,7 +586,33 @@
 .mp-qt-q{margin-top:6px;font-size:12.5px;line-height:1.8;color:var(--ink2);font-family:var(--fx)}
 .mp-qt-q span{display:block;font-size:11px;color:var(--ink3);font-family:var(--sans);margin-top:2px}
 @media print{.mp-cli{break-inside:avoid}}
-@media print{.mp-cli{break-inside:avoid}}
+/* —— 起名评估卡片 —— */
+.mp-nm{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-nm-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:10px}
+.mp-nm-h b{font-size:17px;color:var(--ink);font-weight:700}
+.mp-nm-h i{font-style:normal;font-size:12px;color:var(--muted)}
+.mp-nm-row{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--hair)}
+.mp-nm-row:last-of-type{border-bottom:0}
+.mp-nm-ch{font-size:30px;line-height:1.1;font-family:var(--fx);text-align:center;color:var(--ink)}
+.mp-nm-b{min-width:0}
+.mp-nm-t{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)}
+.mp-nm-el{font-size:11.5px;border:1px solid currentColor;border-radius:999px;padding:0 7px;line-height:1.7}
+.mp-nm-fit{font-size:11px;border-radius:999px;padding:0 7px;line-height:1.7;border:1px solid var(--line);color:var(--muted)}
+.mp-nm-fit.ok{color:var(--lu);border-color:var(--lu)}
+.mp-nm-fit.no{color:var(--ji);border-color:var(--ji)}
+.mp-nm-m{margin-top:3px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.mp-nm-sug{margin-top:4px;font-size:12px;color:var(--muted)}
+.mp-nm-sug b{font-weight:600;color:var(--ink2);margin-right:4px}
+.mp-nm-sug span{white-space:nowrap;margin-right:7px}
+.mp-nm-verd{margin-top:10px;padding:8px 10px;border-left:2px solid var(--quan);background:var(--band);font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-nm-note{margin-top:8px;font-size:11.5px;line-height:1.8;color:var(--faint)}
+.mp-nm-cand{margin-top:6px;border-top:1px solid var(--hair)}
+.mp-nm-els{display:flex;gap:4px;align-items:center}
+.mp-nm-c{display:grid;grid-template-columns:104px max-content minmax(0,1fr);gap:9px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--hair);font-size:13.5px;color:var(--ink)}
+.mp-nm-c:last-child{border-bottom:0}
+.mp-nm-c b{font-family:var(--fx);font-size:16.5px;font-weight:600;white-space:nowrap;letter-spacing:.5px}
+.mp-nm-c em{font-style:normal;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:var(--sans)}
+@media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 /* —— 黄历卡片 —— */
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
@@ -1793,6 +1819,47 @@
         <div class="mp-cg-plain"><em>释义</em>${esc(song.plain || '')}</div></div>
       ${r.verdict && r.verdict.text ? `<div class="mp-cg-band"><em>分档</em>${esc(r.verdict.text)}</div>` : ''}
       <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
+    </section>`;
+  };
+
+  pp.nameHTML = function (r) {
+    if (!r) return '';
+    const ELC = { 木: 'wood', 火: 'fire', 土: 'earth', 金: 'metal', 水: 'water' };
+    const elChip = (e) => (e === '未收录'
+      ? '<span class="mp-nm-el">未收录</span>'
+      : `<span class="mp-nm-el wx-${ELC[e] || 'earth'}">${esc(e)}</span>`);
+    const head = (title, sub) => `<div class="mp-nm-h"><b>${esc(title)}</b>${sub ? `<i>${esc(sub)}</i>` : ''}</div>`;
+    if (r.action === 'generate') {
+      const fav = r.bazi && r.bazi.favorable ? r.bazi.favorable.join('、') : '';
+      const cands = (r.candidates || []).map((c) => `<div class="mp-nm-c"><b>${esc(c.name)}</b><span class="mp-nm-els">${c.chars.map((x) => elChip(x.element)).join('')}</span><em>${esc(c.chars.map((x) => x.char + '·' + x.meaning).join('　'))}</em></div>`).join('');
+      return `<section class="mp-nm" aria-label="候选名">
+        ${head('候选名', `姓 ${r.surname}（${r.gender}）${fav ? `　喜用 ${fav}` : ''}`)}
+        <div class="mp-nm-cand">${cands}</div>
+        <div class="mp-nm-note">${(r.notes || []).map((n) => '※ ' + esc(n)).join('<br>')}</div>
+      </section>`;
+    }
+    const rows = (r.chars || []).map((c) => {
+      const fit = c.favorable === true ? '<span class="mp-nm-fit ok">合喜用</span>'
+        : c.favorable === false ? '<span class="mp-nm-fit no">不合喜用</span>'
+          : '<span class="mp-nm-fit">不判</span>';
+      const src = c.source === 'user' ? '用户指定' : c.source === 'lib' ? '字库' : '未收录';
+      const sug = c.suggest && c.suggest.length
+        ? `<div class="mp-nm-sug"><b>可换</b>${c.suggest.map((x) => `<span class="wx-${ELC[x.element] || 'earth'}">${esc(x.char)}（${esc(x.element)}）</span>`).join('')}</div>`
+        : '';
+      return `<div class="mp-nm-row"><div class="mp-nm-ch">${esc(c.char)}</div>
+        <div class="mp-nm-b"><div class="mp-nm-t">${elChip(c.element)}<span>${esc(src)}</span>${fit}</div>
+        <div class="mp-nm-m">${esc(c.meaning)}</div>${sug}</div></div>`;
+    }).join('');
+    const bz = r.bazi
+      ? `<div class="mp-nm-m">八字：${esc(r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : String(r.bazi.dayMaster || ''))}　${esc(r.bazi.strength ? `${r.bazi.strength.level}（${r.bazi.strength.score}）` : '')}　喜用 ${esc((r.bazi.favorable || []).join('、'))}</div>
+         <div class="mp-nm-m">${esc(r.bazi.basis || '')}</div>`
+      : '';
+    return `<section class="mp-nm" aria-label="名字评估">
+      ${head(r.fullName || '', `字库 ${r.stats && r.stats.libSize ? r.stats.libSize : ''} 字${r.stats && r.stats.unknown ? `　未收录 ${r.stats.unknown}` : ''}`)}
+      ${rows}
+      ${bz}
+      <div class="mp-nm-verd">${esc(r.verdict || '')}</div>
+      <div class="mp-nm-note">${(r.notes || []).map((n) => '※ ' + esc(n)).join('<br>')}</div>
     </section>`;
   };
 

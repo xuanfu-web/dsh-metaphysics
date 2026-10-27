@@ -116,11 +116,138 @@ export const CHAR_LIB = [
   ['月', '木', '明月', 'f'], ['言', '木', '言语，信', 'n'],
   ['和', '水', '和顺', 'n'], ['安', '土', '安宁', 'n'],
   ['宁', '火', '安宁', 'f'],
+  // ── 扩充：木 ──
+  ['林', '木', '林木成片，茂盛有荫', 'n'], ['森', '木', '众木成林，森然', 'n'],
+  ['枝', '木', '枝条，生发', 'n'], ['果', '木', '果实，有成', 'n'],
+  ['禾', '木', '禾苗，五谷初生', 'n'], ['秀', '木', '禾吐穗，秀美出众', 'n'],
+  ['穗', '木', '谷穗，丰实', 'n'], ['稼', '木', '庄稼，耕作有成', 'm'],
+  ['颖', '木', '禾颖，聪颖', 'n'], ['苗', '木', '苗裔，初生有生机', 'n'],
+  ['菁', '木', '菁华，草木茂盛', 'f'], ['菡', '木', '荷花含苞', 'f'],
+  ['蕴', '木', '蕴积，含而不露', 'f'], ['蕾', '木', '花蕾，待放', 'f'],
+  ['薇', '木', '蔷薇，细而韧', 'f'], ['薏', '木', '薏苡，清润', 'f'],
+  ['菀', '木', '草木茂盛', 'f'], ['荷', '木', '荷花，出淤泥', 'f'],
+  ['莲', '木', '莲花，清直', 'f'], ['菱', '木', '菱角，水生', 'f'],
+  ['苇', '木', '芦苇，柔韧', 'n'], ['荻', '木', '荻草，秋声', 'n'],
+  ['筠', '木', '竹皮，竹之青', 'n'], ['笛', '木', '竹笛，清音', 'n'],
+  ['杉', '木', '杉木，挺拔', 'n'], ['柠', '木', '柠檬，清新', 'f'],
+  ['桢', '木', '桢干，栋梁材', 'm'], ['樾', '木', '树荫，庇下', 'm'],
+  ['柘', '木', '柘木，坚韧', 'n'], ['权', '木', '权衡，执中', 'm'],
+  ['材', '木', '木材，成材', 'm'], ['杭', '木', '苏杭，舟行', 'n'],
+  ['枚', '木', '衔枚，静而进', 'n'], ['梧', '木', '梧桐，栖凤', 'n'],
+  ['竹', '木', '竹，有节而虚心', 'n'], ['简', '木', '简朴，简静', 'n'],
+  ['策', '木', '策谋，鞭策', 'm'], ['筹', '木', '筹算，谋划', 'm'],
+  ['芬', '木', '芬芳', 'f'], ['芳', '木', '芳华', 'f'],
+  ['花', '木', '花，明媚', 'f'], ['菊', '木', '菊花，晚节', 'f'],
+  ['兰', '木', '兰花，幽香', 'f'], ['芝', '木', '芝兰，瑞草', 'f'],
+  ['芹', '木', '芹献，谦诚', 'f'], ['荃', '木', '荃草，香草', 'f'],
+  ['萃', '木', '荟萃，聚合', 'n'], ['蓁', '木', '蓁蓁，草木盛', 'n'],
+  ['荞', '木', '荞麦，实而不华', 'f'], ['莞', '木', '莞尔，浅笑', 'f'],
+  ['萦', '木', '萦绕，绵长', 'f'], ['蔚', '木', '蔚然，文采盛', 'n'],
+  ['芃', '木', '芃芃，草木茂', 'n'], ['芩', '木', '黄芩，草本', 'f'],
+  ['苡', '木', '薏苡，清润', 'f'], ['莱', '木', '莱草，野而秀', 'n'],
+  ['萌', '木', '萌芽，生机', 'n'], ['葆', '木', '永葆，守而不失', 'n'],
+  ['萧', '木', '萧然，清疏', 'n'], ['樟', '木', '樟木，香而久', 'n'],
+  ['樱', '木', '樱花，明丽', 'f'], ['栎', '木', '栎树，坚实', 'n'],
+  ['棹', '木', '舟棹，行水', 'n'], ['楸', '木', '楸树，高直', 'n'],
+  ['槐', '木', '槐树，三公之位', 'n'], ['橙', '木', '橙，明暖', 'n'],
+  ['檀', '木', '檀香，沉静', 'n'],
+  // ── 扩充：火 ──
+  ['丰', '火', '丰盛、丰盈（繁体豐从豆，归火）', 'n'], ['日', '火', '太阳，光明', 'm'],
+  ['阳', '火', '阳光，向阳而生', 'm'], ['光', '火', '光明', 'n'],
+  ['亮', '火', '明亮，爽朗', 'm'], ['明', '火', '光明、明理', 'n'],
+  ['晶', '火', '晶莹，三光', 'f'], ['晴', '火', '晴朗，天开', 'f'],
+  ['夏', '火', '夏天，盛大', 'n'], ['智', '火', '智慧，明达', 'm'],
+  ['卓', '火', '卓越，卓立', 'm'], ['乐', '火', '和乐', 'n'],
+  ['恺', '火', '恺悌，和乐', 'm'], ['恬', '火', '恬静', 'f'],
+  ['甜', '火', '甜美', 'f'], ['亭', '火', '亭亭，端立', 'f'],
+  ['俊', '火', '俊朗，才俊', 'm'], ['丙', '火', '天干丙，阳火', 'm'],
+  ['丁', '火', '天干丁，阴火', 'n'], ['鼎', '火', '鼎立，厚重', 'm'],
+  ['陶', '火', '陶然，自得', 'n'], ['熹', '火', '熹微，晨光', 'n'],
+  ['炀', '火', '火旺，炽盛', 'm'], ['烜', '火', '烜赫，显明', 'm'],
+  ['暻', '火', '日光', 'n'], ['晖', '火', '日晖，光彩', 'n'],
+  ['晔', '火', '光晔，明盛', 'n'], ['旻', '火', '秋天，天高', 'm'],
+  ['晏', '火', '晏然，安和', 'n'], ['晓', '火', '拂晓，天将明', 'f'],
+  ['暄', '火', '温暖，日暖', 'f'], ['昆', '火', '昆山，同也', 'm'],
+  ['伶', '火', '伶俐，聪敏', 'f'],
+  // ── 扩充：土 ──
+  ['山', '土', '山，稳重', 'm'], ['岸', '土', '岸然，独立', 'm'],
+  ['岑', '土', '小山，高而静', 'n'], ['巍', '土', '巍峨，高大', 'm'],
+  ['嵩', '土', '嵩山，高峻', 'm'], ['岭', '土', '山岭，绵延', 'n'],
+  ['奥', '土', '深奥，蕴藉', 'm'], ['宜', '土', '宜然，合度', 'n'],
+  ['容', '土', '包容，容仪', 'n'], ['意', '土', '心意，诚意', 'f'],
+  ['依', '土', '依倚，亲近', 'f'], ['悠', '土', '悠然，从容', 'f'],
+  ['维', '土', '维系，纲维', 'n'], ['纬', '土', '经纬，有条', 'n'],
+  ['永', '土', '永恒，久长', 'n'], ['远', '土', '高远', 'm'],
+  ['辰', '土', '星辰、辰时', 'm'], ['壁', '土', '壁立，端正', 'm'],
+  ['田', '土', '田野，耕获', 'm'], ['由', '土', '由来，自得', 'n'],
+  ['画', '土', '图画，文采', 'f'], ['延', '土', '延展，绵长', 'm'],
+  ['建', '土', '建立，树也', 'm'], ['音', '土', '音声，和鸣', 'f'],
+  ['韵', '土', '韵致，余响', 'f'], ['玮', '土', '美玉，珍奇', 'm'],
+  ['雍', '土', '雍容，和穆', 'm'], ['懿', '土', '懿德，美善', 'f'],
+  // ── 扩充：金 ──
+  ['金', '金', '金，坚而贵', 'm'], ['秋', '金', '秋收、成熟（秋属金，肃而收）', 'n'],
+  ['书', '金', '书卷，文墨', 'n'], ['舒', '金', '舒展，从容', 'n'],
+  ['善', '金', '善良，善成', 'n'], ['信', '金', '诚信，符信', 'm'],
+  ['修', '金', '修远，修身', 'm'], ['素', '金', '素雅，本色', 'f'],
+  ['静', '金', '安静，沉静', 'f'], ['心', '金', '心志，中藏', 'f'],
+  ['新', '金', '新意，日新', 'n'], ['正', '金', '正直，端正', 'm'],
+  ['世', '金', '世代，绵延', 'm'], ['少', '金', '少年，少壮', 'm'],
+  ['西', '金', '西方，金位', 'n'], ['白', '金', '洁白，素净', 'n'],
+  ['辛', '金', '天干辛，阴金', 'n'], ['成', '金', '成器，成事', 'm'],
+  ['利', '金', '利落，锋利', 'm'], ['剑', '金', '剑，刚锐', 'm'],
+  ['刚', '金', '刚强，不屈', 'm'], ['则', '金', '法则，有度', 'm'],
+  ['初', '金', '初心，开端', 'n'], ['硕', '金', '硕大，学殖', 'm'],
+  ['尚', '金', '崇尚，尚贤', 'n'], ['臣', '金', '臣，佐事', 'm'],
+  ['川', '金', '川流，通达', 'n'], ['舟', '金', '舟行，济渡', 'n'],
+  ['州', '金', '州，聚落', 'n'], ['祖', '金', '祖德，源远', 'm'],
+  ['祥', '金', '吉祥，祥瑞', 'n'], ['禄', '金', '福禄，俸给', 'm'],
+  ['禧', '金', '禧庆，福', 'n'], ['珍', '金', '珍宝，珍重', 'f'],
+  ['宣', '金', '宣明，布达', 'n'], ['序', '金', '秩序，庠序', 'n'],
+  ['谦', '金', '谦逊，有终', 'm'], ['赞', '金', '赞美，佐成', 'm'],
+  ['超', '金', '超越，越过', 'm'], ['锴', '金', '精铁，坚刚', 'm'],
+  // ── 扩充：水 ──
+  ['水', '水', '水，润下', 'n'], ['冰', '水', '冰清，澄澈', 'f'],
+  ['洁', '水', '洁净，洁身', 'f'], ['浩', '水', '浩大，广远', 'm'],
+  ['瀚', '水', '浩瀚，无涯', 'm'], ['渊', '水', '渊深，有本', 'm'],
+  ['澜', '水', '波澜，壮阔', 'n'], ['潮', '水', '潮涌，有信', 'n'],
+  ['溪', '水', '溪流，清浅', 'f'], ['湘', '水', '湘水，清深', 'f'],
+  ['渝', '水', '渝水，守而不变', 'n'], ['深', '水', '深厚，深藏', 'm'],
+  ['湛', '水', '湛然，清深', 'm'], ['汇', '水', '汇聚，会归', 'n'],
+  ['洲', '水', '洲渚，水中地', 'n'], ['湾', '水', '水湾，曲处', 'f'],
+  ['云', '水', '云行，舒卷', 'n'], ['风', '水', '风雅，流动', 'n'],
+  ['北', '水', '北方，水位', 'n'], ['冬', '水', '冬藏，静敛', 'f'],
+  ['玄', '水', '玄远，幽深', 'n'], ['子', '水', '子，初生', 'm'],
+  ['平', '水', '平和，坦易', 'n'], ['方', '水', '方正，有隅', 'n'],
+  ['帆', '水', '风帆，顺行', 'n'], ['航', '水', '航行，济远', 'm'],
+  ['敏', '水', '敏思，捷悟', 'f'], ['慧', '水', '慧心，明彻', 'f'],
+  ['惠', '水', '惠泽，施与', 'f'], ['霈', '水', '霈雨，丰沛', 'm'],
+  ['灏', '水', '灏气，广大', 'm'], ['湄', '水', '水湄，岸边', 'f'],
+  ['滨', '水', '水滨，近水', 'n'], ['洛', '水', '洛水，清流', 'n'],
+  ['津', '水', '津渡，要处', 'n'], ['泊', '水', '淡泊，自守', 'm'],
+  ['沧', '水', '沧海，苍茫', 'm'], ['浦', '水', '浦，水滨', 'n'],
 ];
 
 const EL_INDEX = new Map();
 for (const c of CHAR_LIB) {
   if (!EL_INDEX.has(c[0])) EL_INDEX.set(c[0], { c: c[0], el: c[1], meaning: c[2], g: c[3], order: EL_INDEX.size });
+}
+
+/** 用户可自带某字的五行（字库未收时用，按你信的那派算；传了就算「用户指定」）。 */
+function userElement(input, ch) {
+  const map = input && input.charElements;
+  if (!map || typeof map !== 'object') return null;
+  const v = map[ch];
+  return ALL.includes(v) ? v : null;
+}
+
+/** 喜用五行里挑几个可替换的常用字（同性别倾向优先），给未收录字一个落点。 */
+function suggestFor(element, genderPref, exclude, count = 3) {
+  const pool = CHAR_LIB.filter((c) => c[1] === element && !exclude.has(c[0]));
+  pool.sort((a, b) => {
+    const fit = (x) => (x[3] === genderPref || x[3] === 'n' ? 1 : 0);
+    return fit(b) - fit(a);
+  });
+  return pool.slice(0, count).map((c) => ({ char: c[0], element: c[1], meaning: c[2] }));
 }
 
 const KIND_LABEL = { m: '男', f: '女', n: '中' };
@@ -178,23 +305,44 @@ export function assessName(input) {
     baziNote = { dayMaster: r.dayMaster, solarNote: r.solarTime ? r.solarTime.note : '' };
   }
 
+  const genderPref = input.gender === 'female' ? 'f' : 'm';
+  const taken = new Set([surname, ...given]);
+  const favPool = favorable.list.length ? favorable.list : ALL.slice();
   const chars = [...given].map((ch) => {
     const info = charInfo(ch);
-    const inFav = info ? favorable.list.includes(info.el) : null;
+    const given = userElement(input, ch);
+    if (info) {
+      return {
+        char: ch, element: info.el, meaning: info.meaning,
+        genderHint: KIND_LABEL[info.g], favorable: hasBirth ? favorable.list.includes(info.el) : null,
+        source: 'lib', note: null,
+      };
+    }
+    if (given) {
+      return {
+        char: ch, element: given, meaning: '字库未收录；五行按你指定的「' + given + '」计',
+        genderHint: null, favorable: hasBirth ? favorable.list.includes(given) : null,
+        source: 'user', note: '此字五行由调用方指定，不是字库推断',
+      };
+    }
     return {
-      char: ch,
-      element: info ? info.el : '未收录',
-      meaning: info ? info.meaning : '字库未收录，未推断五行',
-      genderHint: info ? KIND_LABEL[info.g] : null,
-      favorable: inFav,
+      char: ch, element: '未收录', meaning: '字库未收录，未推断五行（不猜）',
+      genderHint: null, favorable: null, source: 'none',
+      note: hasBirth ? '若想贴合命局，可换用下面的同喜用字' : '字库未收录：给出生辰后可以看同喜用的替换字',
+      suggest: hasBirth
+        ? favPool.flatMap((el) => suggestFor(el, genderPref, taken, 2))
+        : [],
     };
   });
-  const known = chars.filter((c) => c.element !== '未收录').length;
+  const known = chars.filter((c) => c.source === 'lib').length;
+  const unknown = chars.filter((c) => c.source === 'none').length;
   const favCount = chars.filter((c) => c.favorable === true).length;
+  const judged = chars.length - unknown;
   let verdict;
   if (!hasBirth) verdict = '只做了字义与五行归类；给出生年月日才能判断用字是否合喜用。';
-  else if (favCount === chars.length && chars.length > 0) verdict = `用字都落在喜用（${favorable.list.join('、')}）上，与命局方向一致。`;
-  else if (favCount > 0) verdict = `部分用字合喜用（${favCount}/${chars.length}），其余可再斟酌；喜用为 ${favorable.list.join('、')}。`;
+  else if (unknown === chars.length) verdict = `两字都不在字库里，没法判断合不合喜用（喜用为 ${favorable.list.join('、')}）。下面给了可替换的常用字，或把你自己认定的五行传进来。`;
+  else if (favCount === judged && judged > 0) verdict = `用字都落在喜用（${favorable.list.join('、')}）上，与命局方向一致。`;
+  else if (favCount > 0) verdict = `部分用字合喜用（${favCount}/${judged}），其余可再斟酌；喜用为 ${favorable.list.join('、')}。`;
   else verdict = `用字未落在喜用（${favorable.list.join('、')}）上；不必然是坏名，但若想贴合命局可换字再看。`;
 
   return {
@@ -212,10 +360,10 @@ export function assessName(input) {
       },
     } : {}),
     chars,
-    stats: { chars: chars.length, known, favorableCount: favCount },
+    stats: { chars: chars.length, known, unknown, favorableCount: favCount, libSize: CHAR_LIB.length },
     verdict,
     notes: [
-      '字之五行按通行字义/偏旁归类，自建字库有限：未收录的字不猜五行，如实标注。',
+      `字之五行按通行字义/偏旁归类，自建字库共 ${CHAR_LIB.length} 字（常用名用字为主）；未收录的字不猜五行，如实标注，「用户指定」是你传入的归类。`,
       '不做五格剖象（需康熙字典笔画），也不做音韵格律判断——谐音、拗口请自己读三遍或用方言读一遍。',
       '起名只做用字参考，不替父母做决定。',
     ],
@@ -267,19 +415,41 @@ export function generateNames(input) {
         elements: [a[1], b[1]],
         allFavorable: fav.list.includes(a[1]) && fav.list.includes(b[1]),
         genderScore: gScore,
-        order: i * 1000 + j,
+        order: (i * 7 + j * 13) % 9973, // 打散字库顺序，避免候选清一色都是前几个字
       });
     }
   }
-  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (y.genderScore - x.genderScore) || (x.order - y.order));
+  const mixed = (c) => (c.elements[0] !== c.elements[1] ? 1 : 0); // 两字异行，比同气堆叠更有层次
+  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x)) || (y.genderScore - x.genderScore) || (x.order - y.order));
+  // 去重 + 用字轮换：先收「两个字都没出现过」的候选，再放宽——避免 20 个候选里 13 个都用同一个「梓」
   const out = [];
-  const used = new Set();
+  const usedNames = new Set();
+  const usedChars = new Set([surname]);
+  const usedPairs = new Set();
+  const take = (cand, strict, freshPair) => {
+    const key = [...cand.name].sort().join('');
+    if (usedNames.has(key)) return false;
+    if (strict && cand.chars.some((x) => usedChars.has(x.char))) return false;
+    const pair = cand.elements.join('');
+    if (freshPair && usedPairs.has(pair)) return false;
+    usedNames.add(key);
+    usedPairs.add(pair);
+    cand.chars.forEach((x) => usedChars.add(x.char));
+    out.push({ rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars });
+    return true;
+  };
+  // 三轮：①新字 + 新五行组合 ②新字 ③放开——先保证候选之间不撞字、不撞组合
   for (const cand of scored) {
     if (out.length >= limit) break;
-    const key = [...cand.name].sort().join('');
-    if (used.has(key)) continue;
-    used.add(key);
-    out.push({ rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars });
+    take(cand, true, true);
+  }
+  for (const cand of scored) {
+    if (out.length >= limit) break;
+    take(cand, true, false);
+  }
+  for (const cand of scored) {
+    if (out.length >= limit) break;
+    take(cand, false, false);
   }
   return {
     system: 'name',
@@ -289,7 +459,7 @@ export function generateNames(input) {
     bazi: { dayMaster: r.dayMaster, strength, favorable: fav.list, basis: fav.basis },
     candidates: out,
     notes: [
-      `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可手工评估。`,
+      `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可用 charElements 指定五行后评估。`,
       '候选按合喜用与性别倾向确定性排序，不是「吉名」判定；音韵与方言谐音请自行读念检查。',
       '不做五格剖象（需康熙字典笔画）。',
     ],

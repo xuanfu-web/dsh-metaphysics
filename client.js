@@ -746,7 +746,7 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-const USER_AGENT = 'dsh-metaphysics/0.21.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.22.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
@@ -5881,11 +5881,131 @@ const CHAR_LIB = [
   ['月', '木', '明月', 'f'], ['言', '木', '言语，信', 'n'],
   ['和', '水', '和顺', 'n'], ['安', '土', '安宁', 'n'],
   ['宁', '火', '安宁', 'f'],
+  ['林', '木', '林木成片，茂盛有荫', 'n'], ['森', '木', '众木成林，森然', 'n'],
+  ['枝', '木', '枝条，生发', 'n'], ['果', '木', '果实，有成', 'n'],
+  ['禾', '木', '禾苗，五谷初生', 'n'], ['秀', '木', '禾吐穗，秀美出众', 'n'],
+  ['穗', '木', '谷穗，丰实', 'n'], ['稼', '木', '庄稼，耕作有成', 'm'],
+  ['颖', '木', '禾颖，聪颖', 'n'], ['苗', '木', '苗裔，初生有生机', 'n'],
+  ['菁', '木', '菁华，草木茂盛', 'f'], ['菡', '木', '荷花含苞', 'f'],
+  ['蕴', '木', '蕴积，含而不露', 'f'], ['蕾', '木', '花蕾，待放', 'f'],
+  ['薇', '木', '蔷薇，细而韧', 'f'], ['薏', '木', '薏苡，清润', 'f'],
+  ['菀', '木', '草木茂盛', 'f'], ['荷', '木', '荷花，出淤泥', 'f'],
+  ['莲', '木', '莲花，清直', 'f'], ['菱', '木', '菱角，水生', 'f'],
+  ['苇', '木', '芦苇，柔韧', 'n'], ['荻', '木', '荻草，秋声', 'n'],
+  ['筠', '木', '竹皮，竹之青', 'n'], ['笛', '木', '竹笛，清音', 'n'],
+  ['杉', '木', '杉木，挺拔', 'n'], ['柠', '木', '柠檬，清新', 'f'],
+  ['桢', '木', '桢干，栋梁材', 'm'], ['樾', '木', '树荫，庇下', 'm'],
+  ['柘', '木', '柘木，坚韧', 'n'], ['权', '木', '权衡，执中', 'm'],
+  ['材', '木', '木材，成材', 'm'], ['杭', '木', '苏杭，舟行', 'n'],
+  ['枚', '木', '衔枚，静而进', 'n'], ['梧', '木', '梧桐，栖凤', 'n'],
+  ['竹', '木', '竹，有节而虚心', 'n'], ['简', '木', '简朴，简静', 'n'],
+  ['策', '木', '策谋，鞭策', 'm'], ['筹', '木', '筹算，谋划', 'm'],
+  ['芬', '木', '芬芳', 'f'], ['芳', '木', '芳华', 'f'],
+  ['花', '木', '花，明媚', 'f'], ['菊', '木', '菊花，晚节', 'f'],
+  ['兰', '木', '兰花，幽香', 'f'], ['芝', '木', '芝兰，瑞草', 'f'],
+  ['芹', '木', '芹献，谦诚', 'f'], ['荃', '木', '荃草，香草', 'f'],
+  ['萃', '木', '荟萃，聚合', 'n'], ['蓁', '木', '蓁蓁，草木盛', 'n'],
+  ['荞', '木', '荞麦，实而不华', 'f'], ['莞', '木', '莞尔，浅笑', 'f'],
+  ['萦', '木', '萦绕，绵长', 'f'], ['蔚', '木', '蔚然，文采盛', 'n'],
+  ['芃', '木', '芃芃，草木茂', 'n'], ['芩', '木', '黄芩，草本', 'f'],
+  ['苡', '木', '薏苡，清润', 'f'], ['莱', '木', '莱草，野而秀', 'n'],
+  ['萌', '木', '萌芽，生机', 'n'], ['葆', '木', '永葆，守而不失', 'n'],
+  ['萧', '木', '萧然，清疏', 'n'], ['樟', '木', '樟木，香而久', 'n'],
+  ['樱', '木', '樱花，明丽', 'f'], ['栎', '木', '栎树，坚实', 'n'],
+  ['棹', '木', '舟棹，行水', 'n'], ['楸', '木', '楸树，高直', 'n'],
+  ['槐', '木', '槐树，三公之位', 'n'], ['橙', '木', '橙，明暖', 'n'],
+  ['檀', '木', '檀香，沉静', 'n'],
+  ['丰', '火', '丰盛、丰盈（繁体豐从豆，归火）', 'n'], ['日', '火', '太阳，光明', 'm'],
+  ['阳', '火', '阳光，向阳而生', 'm'], ['光', '火', '光明', 'n'],
+  ['亮', '火', '明亮，爽朗', 'm'], ['明', '火', '光明、明理', 'n'],
+  ['晶', '火', '晶莹，三光', 'f'], ['晴', '火', '晴朗，天开', 'f'],
+  ['夏', '火', '夏天，盛大', 'n'], ['智', '火', '智慧，明达', 'm'],
+  ['卓', '火', '卓越，卓立', 'm'], ['乐', '火', '和乐', 'n'],
+  ['恺', '火', '恺悌，和乐', 'm'], ['恬', '火', '恬静', 'f'],
+  ['甜', '火', '甜美', 'f'], ['亭', '火', '亭亭，端立', 'f'],
+  ['俊', '火', '俊朗，才俊', 'm'], ['丙', '火', '天干丙，阳火', 'm'],
+  ['丁', '火', '天干丁，阴火', 'n'], ['鼎', '火', '鼎立，厚重', 'm'],
+  ['陶', '火', '陶然，自得', 'n'], ['熹', '火', '熹微，晨光', 'n'],
+  ['炀', '火', '火旺，炽盛', 'm'], ['烜', '火', '烜赫，显明', 'm'],
+  ['暻', '火', '日光', 'n'], ['晖', '火', '日晖，光彩', 'n'],
+  ['晔', '火', '光晔，明盛', 'n'], ['旻', '火', '秋天，天高', 'm'],
+  ['晏', '火', '晏然，安和', 'n'], ['晓', '火', '拂晓，天将明', 'f'],
+  ['暄', '火', '温暖，日暖', 'f'], ['昆', '火', '昆山，同也', 'm'],
+  ['伶', '火', '伶俐，聪敏', 'f'],
+  ['山', '土', '山，稳重', 'm'], ['岸', '土', '岸然，独立', 'm'],
+  ['岑', '土', '小山，高而静', 'n'], ['巍', '土', '巍峨，高大', 'm'],
+  ['嵩', '土', '嵩山，高峻', 'm'], ['岭', '土', '山岭，绵延', 'n'],
+  ['奥', '土', '深奥，蕴藉', 'm'], ['宜', '土', '宜然，合度', 'n'],
+  ['容', '土', '包容，容仪', 'n'], ['意', '土', '心意，诚意', 'f'],
+  ['依', '土', '依倚，亲近', 'f'], ['悠', '土', '悠然，从容', 'f'],
+  ['维', '土', '维系，纲维', 'n'], ['纬', '土', '经纬，有条', 'n'],
+  ['永', '土', '永恒，久长', 'n'], ['远', '土', '高远', 'm'],
+  ['辰', '土', '星辰、辰时', 'm'], ['壁', '土', '壁立，端正', 'm'],
+  ['田', '土', '田野，耕获', 'm'], ['由', '土', '由来，自得', 'n'],
+  ['画', '土', '图画，文采', 'f'], ['延', '土', '延展，绵长', 'm'],
+  ['建', '土', '建立，树也', 'm'], ['音', '土', '音声，和鸣', 'f'],
+  ['韵', '土', '韵致，余响', 'f'], ['玮', '土', '美玉，珍奇', 'm'],
+  ['雍', '土', '雍容，和穆', 'm'], ['懿', '土', '懿德，美善', 'f'],
+  ['金', '金', '金，坚而贵', 'm'], ['秋', '金', '秋收、成熟（秋属金，肃而收）', 'n'],
+  ['书', '金', '书卷，文墨', 'n'], ['舒', '金', '舒展，从容', 'n'],
+  ['善', '金', '善良，善成', 'n'], ['信', '金', '诚信，符信', 'm'],
+  ['修', '金', '修远，修身', 'm'], ['素', '金', '素雅，本色', 'f'],
+  ['静', '金', '安静，沉静', 'f'], ['心', '金', '心志，中藏', 'f'],
+  ['新', '金', '新意，日新', 'n'], ['正', '金', '正直，端正', 'm'],
+  ['世', '金', '世代，绵延', 'm'], ['少', '金', '少年，少壮', 'm'],
+  ['西', '金', '西方，金位', 'n'], ['白', '金', '洁白，素净', 'n'],
+  ['辛', '金', '天干辛，阴金', 'n'], ['成', '金', '成器，成事', 'm'],
+  ['利', '金', '利落，锋利', 'm'], ['剑', '金', '剑，刚锐', 'm'],
+  ['刚', '金', '刚强，不屈', 'm'], ['则', '金', '法则，有度', 'm'],
+  ['初', '金', '初心，开端', 'n'], ['硕', '金', '硕大，学殖', 'm'],
+  ['尚', '金', '崇尚，尚贤', 'n'], ['臣', '金', '臣，佐事', 'm'],
+  ['川', '金', '川流，通达', 'n'], ['舟', '金', '舟行，济渡', 'n'],
+  ['州', '金', '州，聚落', 'n'], ['祖', '金', '祖德，源远', 'm'],
+  ['祥', '金', '吉祥，祥瑞', 'n'], ['禄', '金', '福禄，俸给', 'm'],
+  ['禧', '金', '禧庆，福', 'n'], ['珍', '金', '珍宝，珍重', 'f'],
+  ['宣', '金', '宣明，布达', 'n'], ['序', '金', '秩序，庠序', 'n'],
+  ['谦', '金', '谦逊，有终', 'm'], ['赞', '金', '赞美，佐成', 'm'],
+  ['超', '金', '超越，越过', 'm'], ['锴', '金', '精铁，坚刚', 'm'],
+  ['水', '水', '水，润下', 'n'], ['冰', '水', '冰清，澄澈', 'f'],
+  ['洁', '水', '洁净，洁身', 'f'], ['浩', '水', '浩大，广远', 'm'],
+  ['瀚', '水', '浩瀚，无涯', 'm'], ['渊', '水', '渊深，有本', 'm'],
+  ['澜', '水', '波澜，壮阔', 'n'], ['潮', '水', '潮涌，有信', 'n'],
+  ['溪', '水', '溪流，清浅', 'f'], ['湘', '水', '湘水，清深', 'f'],
+  ['渝', '水', '渝水，守而不变', 'n'], ['深', '水', '深厚，深藏', 'm'],
+  ['湛', '水', '湛然，清深', 'm'], ['汇', '水', '汇聚，会归', 'n'],
+  ['洲', '水', '洲渚，水中地', 'n'], ['湾', '水', '水湾，曲处', 'f'],
+  ['云', '水', '云行，舒卷', 'n'], ['风', '水', '风雅，流动', 'n'],
+  ['北', '水', '北方，水位', 'n'], ['冬', '水', '冬藏，静敛', 'f'],
+  ['玄', '水', '玄远，幽深', 'n'], ['子', '水', '子，初生', 'm'],
+  ['平', '水', '平和，坦易', 'n'], ['方', '水', '方正，有隅', 'n'],
+  ['帆', '水', '风帆，顺行', 'n'], ['航', '水', '航行，济远', 'm'],
+  ['敏', '水', '敏思，捷悟', 'f'], ['慧', '水', '慧心，明彻', 'f'],
+  ['惠', '水', '惠泽，施与', 'f'], ['霈', '水', '霈雨，丰沛', 'm'],
+  ['灏', '水', '灏气，广大', 'm'], ['湄', '水', '水湄，岸边', 'f'],
+  ['滨', '水', '水滨，近水', 'n'], ['洛', '水', '洛水，清流', 'n'],
+  ['津', '水', '津渡，要处', 'n'], ['泊', '水', '淡泊，自守', 'm'],
+  ['沧', '水', '沧海，苍茫', 'm'], ['浦', '水', '浦，水滨', 'n'],
 ];
 
 const EL_INDEX = new Map();
 for (const c of CHAR_LIB) {
   if (!EL_INDEX.has(c[0])) EL_INDEX.set(c[0], { c: c[0], el: c[1], meaning: c[2], g: c[3], order: EL_INDEX.size });
+}
+
+function userElement(input, ch) {
+  const map = input && input.charElements;
+  if (!map || typeof map !== 'object') return null;
+  const v = map[ch];
+  return ALL.includes(v) ? v : null;
+}
+
+function suggestFor(element, genderPref, exclude, count = 3) {
+  const pool = CHAR_LIB.filter((c) => c[1] === element && !exclude.has(c[0]));
+  pool.sort((a, b) => {
+    const fit = (x) => (x[3] === genderPref || x[3] === 'n' ? 1 : 0);
+    return fit(b) - fit(a);
+  });
+  return pool.slice(0, count).map((c) => ({ char: c[0], element: c[1], meaning: c[2] }));
 }
 
 const KIND_LABEL = { m: '男', f: '女', n: '中' };
@@ -5941,23 +6061,44 @@ function assessName(input) {
     baziNote = { dayMaster: r.dayMaster, solarNote: r.solarTime ? r.solarTime.note : '' };
   }
 
+  const genderPref = input.gender === 'female' ? 'f' : 'm';
+  const taken = new Set([surname, ...given]);
+  const favPool = favorable.list.length ? favorable.list : ALL.slice();
   const chars = [...given].map((ch) => {
     const info = charInfo(ch);
-    const inFav = info ? favorable.list.includes(info.el) : null;
+    const given = userElement(input, ch);
+    if (info) {
+      return {
+        char: ch, element: info.el, meaning: info.meaning,
+        genderHint: KIND_LABEL[info.g], favorable: hasBirth ? favorable.list.includes(info.el) : null,
+        source: 'lib', note: null,
+      };
+    }
+    if (given) {
+      return {
+        char: ch, element: given, meaning: '字库未收录；五行按你指定的「' + given + '」计',
+        genderHint: null, favorable: hasBirth ? favorable.list.includes(given) : null,
+        source: 'user', note: '此字五行由调用方指定，不是字库推断',
+      };
+    }
     return {
-      char: ch,
-      element: info ? info.el : '未收录',
-      meaning: info ? info.meaning : '字库未收录，未推断五行',
-      genderHint: info ? KIND_LABEL[info.g] : null,
-      favorable: inFav,
+      char: ch, element: '未收录', meaning: '字库未收录，未推断五行（不猜）',
+      genderHint: null, favorable: null, source: 'none',
+      note: hasBirth ? '若想贴合命局，可换用下面的同喜用字' : '字库未收录：给出生辰后可以看同喜用的替换字',
+      suggest: hasBirth
+        ? favPool.flatMap((el) => suggestFor(el, genderPref, taken, 2))
+        : [],
     };
   });
-  const known = chars.filter((c) => c.element !== '未收录').length;
+  const known = chars.filter((c) => c.source === 'lib').length;
+  const unknown = chars.filter((c) => c.source === 'none').length;
   const favCount = chars.filter((c) => c.favorable === true).length;
+  const judged = chars.length - unknown;
   let verdict;
   if (!hasBirth) verdict = '只做了字义与五行归类；给出生年月日才能判断用字是否合喜用。';
-  else if (favCount === chars.length && chars.length > 0) verdict = `用字都落在喜用（${favorable.list.join('、')}）上，与命局方向一致。`;
-  else if (favCount > 0) verdict = `部分用字合喜用（${favCount}/${chars.length}），其余可再斟酌；喜用为 ${favorable.list.join('、')}。`;
+  else if (unknown === chars.length) verdict = `两字都不在字库里，没法判断合不合喜用（喜用为 ${favorable.list.join('、')}）。下面给了可替换的常用字，或把你自己认定的五行传进来。`;
+  else if (favCount === judged && judged > 0) verdict = `用字都落在喜用（${favorable.list.join('、')}）上，与命局方向一致。`;
+  else if (favCount > 0) verdict = `部分用字合喜用（${favCount}/${judged}），其余可再斟酌；喜用为 ${favorable.list.join('、')}。`;
   else verdict = `用字未落在喜用（${favorable.list.join('、')}）上；不必然是坏名，但若想贴合命局可换字再看。`;
 
   return {
@@ -5975,10 +6116,10 @@ function assessName(input) {
       },
     } : {}),
     chars,
-    stats: { chars: chars.length, known, favorableCount: favCount },
+    stats: { chars: chars.length, known, unknown, favorableCount: favCount, libSize: CHAR_LIB.length },
     verdict,
     notes: [
-      '字之五行按通行字义/偏旁归类，自建字库有限：未收录的字不猜五行，如实标注。',
+      `字之五行按通行字义/偏旁归类，自建字库共 ${CHAR_LIB.length} 字（常用名用字为主）；未收录的字不猜五行，如实标注，「用户指定」是你传入的归类。`,
       '不做五格剖象（需康熙字典笔画），也不做音韵格律判断——谐音、拗口请自己读三遍或用方言读一遍。',
       '起名只做用字参考，不替父母做决定。',
     ],
@@ -6025,19 +6166,39 @@ function generateNames(input) {
         elements: [a[1], b[1]],
         allFavorable: fav.list.includes(a[1]) && fav.list.includes(b[1]),
         genderScore: gScore,
-        order: i * 1000 + j,
+        order: (i * 7 + j * 13) % 9973,
       });
     }
   }
-  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (y.genderScore - x.genderScore) || (x.order - y.order));
+  const mixed = (c) => (c.elements[0] !== c.elements[1] ? 1 : 0);
+  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x)) || (y.genderScore - x.genderScore) || (x.order - y.order));
   const out = [];
-  const used = new Set();
+  const usedNames = new Set();
+  const usedChars = new Set([surname]);
+  const usedPairs = new Set();
+  const take = (cand, strict, freshPair) => {
+    const key = [...cand.name].sort().join('');
+    if (usedNames.has(key)) return false;
+    if (strict && cand.chars.some((x) => usedChars.has(x.char))) return false;
+    const pair = cand.elements.join('');
+    if (freshPair && usedPairs.has(pair)) return false;
+    usedNames.add(key);
+    usedPairs.add(pair);
+    cand.chars.forEach((x) => usedChars.add(x.char));
+    out.push({ rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars });
+    return true;
+  };
   for (const cand of scored) {
     if (out.length >= limit) break;
-    const key = [...cand.name].sort().join('');
-    if (used.has(key)) continue;
-    used.add(key);
-    out.push({ rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars });
+    take(cand, true, true);
+  }
+  for (const cand of scored) {
+    if (out.length >= limit) break;
+    take(cand, true, false);
+  }
+  for (const cand of scored) {
+    if (out.length >= limit) break;
+    take(cand, false, false);
   }
   return {
     system: 'name',
@@ -6047,7 +6208,7 @@ function generateNames(input) {
     bazi: { dayMaster: r.dayMaster, strength, favorable: fav.list, basis: fav.basis },
     candidates: out,
     notes: [
-      `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可手工评估。`,
+      `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可用 charElements 指定五行后评估。`,
       '候选按合喜用与性别倾向确定性排序，不是「吉名」判定；音韵与方言谐音请自行读念检查。',
       '不做五格剖象（需康熙字典笔画）。',
     ],
@@ -10781,12 +10942,21 @@ function computeRaw(args = {}) {
   }
   if (system === 'name') {
     const action = args.action === 'generate' ? 'generate' : 'assess';
-    const birth = args.datetime ? parseDateTime(args.datetime) : {};
+    const birth = args.datetime
+      ? parseDateTime(args.datetime)
+      : (Number.isInteger(args.year) && Number.isInteger(args.month) && Number.isInteger(args.day)
+        ? {
+          year: args.year, month: args.month, day: args.day,
+          ...(Number.isInteger(args.hour) ? { hour: args.hour } : {}),
+          ...(Number.isInteger(args.minute) ? { minute: args.minute } : {}),
+        }
+        : {});
     const result = buildName({
       action,
       surname: args.surname,
       givenName: args.givenName,
       limit: args.limit,
+      charElements: args.charElements && typeof args.charElements === 'object' ? args.charElements : undefined,
       ...birth,
       ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
       ...(args.datetime ? {
@@ -10954,9 +11124,18 @@ function nameText(r) {
       ...r.notes.map((n) => `※ ${n}`),
     ].join('\n');
   }
+  const srcLabel = (c) => (c.source === 'lib' ? '字库' : c.source === 'user' ? '用户指定' : '未收录');
+  const charLine = (c) => {
+    const el = c.element === '未收录' ? '未收录（不猜五行）' : `${c.element}（${srcLabel(c)}）`;
+    const fit = c.favorable === true ? '合喜用' : c.favorable === false ? '不合喜用' : '不判';
+    const sug = c.suggest && c.suggest.length
+      ? `　可换：${c.suggest.map((x) => `${x.char}（${x.element}）`).join('、')}`
+      : '';
+    return `· ${c.char}：${el}｜${fit}｜${c.meaning}${sug}`;
+  };
   return [
     `【名字评估】${r.fullName}`,
-    ...r.chars.map((c) => `· ${c.char}：五行 ${c.element}${c.element !== '未收录' ? `（喜用${c.favorable ? '中' : '外'}）` : ''}，${c.meaning}`),
+    ...r.chars.map(charLine),
     r.bazi ? `【八字】日主 ${r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : r.bazi.dayMaster}，旺衰 ${r.bazi.strength.level}（${r.bazi.strength.score}），${r.bazi.basis}` : '',
     `【结论】${r.verdict}`,
     ...r.notes.map((n) => `※ ${n}`),
@@ -11542,7 +11721,32 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-qt-q{margin-top:6px;font-size:12.5px;line-height:1.8;color:var(--ink2);font-family:var(--fx)}
 .mp-qt-q span{display:block;font-size:11px;color:var(--ink3);font-family:var(--sans);margin-top:2px}
 @media print{.mp-cli{break-inside:avoid}}
-@media print{.mp-cli{break-inside:avoid}}
+.mp-nm{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-nm-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:10px}
+.mp-nm-h b{font-size:17px;color:var(--ink);font-weight:700}
+.mp-nm-h i{font-style:normal;font-size:12px;color:var(--muted)}
+.mp-nm-row{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:start;padding:8px 0;border-bottom:1px dashed var(--hair)}
+.mp-nm-row:last-of-type{border-bottom:0}
+.mp-nm-ch{font-size:30px;line-height:1.1;font-family:var(--fx);text-align:center;color:var(--ink)}
+.mp-nm-b{min-width:0}
+.mp-nm-t{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)}
+.mp-nm-el{font-size:11.5px;border:1px solid currentColor;border-radius:999px;padding:0 7px;line-height:1.7}
+.mp-nm-fit{font-size:11px;border-radius:999px;padding:0 7px;line-height:1.7;border:1px solid var(--line);color:var(--muted)}
+.mp-nm-fit.ok{color:var(--lu);border-color:var(--lu)}
+.mp-nm-fit.no{color:var(--ji);border-color:var(--ji)}
+.mp-nm-m{margin-top:3px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.mp-nm-sug{margin-top:4px;font-size:12px;color:var(--muted)}
+.mp-nm-sug b{font-weight:600;color:var(--ink2);margin-right:4px}
+.mp-nm-sug span{white-space:nowrap;margin-right:7px}
+.mp-nm-verd{margin-top:10px;padding:8px 10px;border-left:2px solid var(--quan);background:var(--band);font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-nm-note{margin-top:8px;font-size:11.5px;line-height:1.8;color:var(--faint)}
+.mp-nm-cand{margin-top:6px;border-top:1px solid var(--hair)}
+.mp-nm-els{display:flex;gap:4px;align-items:center}
+.mp-nm-c{display:grid;grid-template-columns:104px max-content minmax(0,1fr);gap:9px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--hair);font-size:13.5px;color:var(--ink)}
+.mp-nm-c:last-child{border-bottom:0}
+.mp-nm-c b{font-family:var(--fx);font-size:16.5px;font-weight:600;white-space:nowrap;letter-spacing:.5px}
+.mp-nm-c em{font-style:normal;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:var(--sans)}
+@media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-al-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
@@ -12648,6 +12852,47 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         <div class="mp-cg-plain"><em>释义</em>${esc(song.plain || '')}</div></div>
       ${r.verdict && r.verdict.text ? `<div class="mp-cg-band"><em>分档</em>${esc(r.verdict.text)}</div>` : ''}
       <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
+    </section>`;
+  };
+
+  pp.nameHTML = function (r) {
+    if (!r) return '';
+    const ELC = { 木: 'wood', 火: 'fire', 土: 'earth', 金: 'metal', 水: 'water' };
+    const elChip = (e) => (e === '未收录'
+      ? '<span class="mp-nm-el">未收录</span>'
+      : `<span class="mp-nm-el wx-${ELC[e] || 'earth'}">${esc(e)}</span>`);
+    const head = (title, sub) => `<div class="mp-nm-h"><b>${esc(title)}</b>${sub ? `<i>${esc(sub)}</i>` : ''}</div>`;
+    if (r.action === 'generate') {
+      const fav = r.bazi && r.bazi.favorable ? r.bazi.favorable.join('、') : '';
+      const cands = (r.candidates || []).map((c) => `<div class="mp-nm-c"><b>${esc(c.name)}</b><span class="mp-nm-els">${c.chars.map((x) => elChip(x.element)).join('')}</span><em>${esc(c.chars.map((x) => x.char + '·' + x.meaning).join('　'))}</em></div>`).join('');
+      return `<section class="mp-nm" aria-label="候选名">
+        ${head('候选名', `姓 ${r.surname}（${r.gender}）${fav ? `　喜用 ${fav}` : ''}`)}
+        <div class="mp-nm-cand">${cands}</div>
+        <div class="mp-nm-note">${(r.notes || []).map((n) => '※ ' + esc(n)).join('<br>')}</div>
+      </section>`;
+    }
+    const rows = (r.chars || []).map((c) => {
+      const fit = c.favorable === true ? '<span class="mp-nm-fit ok">合喜用</span>'
+        : c.favorable === false ? '<span class="mp-nm-fit no">不合喜用</span>'
+          : '<span class="mp-nm-fit">不判</span>';
+      const src = c.source === 'user' ? '用户指定' : c.source === 'lib' ? '字库' : '未收录';
+      const sug = c.suggest && c.suggest.length
+        ? `<div class="mp-nm-sug"><b>可换</b>${c.suggest.map((x) => `<span class="wx-${ELC[x.element] || 'earth'}">${esc(x.char)}（${esc(x.element)}）</span>`).join('')}</div>`
+        : '';
+      return `<div class="mp-nm-row"><div class="mp-nm-ch">${esc(c.char)}</div>
+        <div class="mp-nm-b"><div class="mp-nm-t">${elChip(c.element)}<span>${esc(src)}</span>${fit}</div>
+        <div class="mp-nm-m">${esc(c.meaning)}</div>${sug}</div></div>`;
+    }).join('');
+    const bz = r.bazi
+      ? `<div class="mp-nm-m">八字：${esc(r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : String(r.bazi.dayMaster || ''))}　${esc(r.bazi.strength ? `${r.bazi.strength.level}（${r.bazi.strength.score}）` : '')}　喜用 ${esc((r.bazi.favorable || []).join('、'))}</div>
+         <div class="mp-nm-m">${esc(r.bazi.basis || '')}</div>`
+      : '';
+    return `<section class="mp-nm" aria-label="名字评估">
+      ${head(r.fullName || '', `字库 ${r.stats && r.stats.libSize ? r.stats.libSize : ''} 字${r.stats && r.stats.unknown ? `　未收录 ${r.stats.unknown}` : ''}`)}
+      ${rows}
+      ${bz}
+      <div class="mp-nm-verd">${esc(r.verdict || '')}</div>
+      <div class="mp-nm-note">${(r.notes || []).map((n) => '※ ' + esc(n)).join('<br>')}</div>
     </section>`;
   };
 
@@ -13863,6 +14108,7 @@ function App() {
                       : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
                         : result.kind === 'almanac' ? PP.almanacHTML(result.r)
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
+                        : result.kind === 'name' ? PP.nameHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },

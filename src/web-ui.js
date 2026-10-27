@@ -427,6 +427,7 @@
                       : tab === 'almanac' ? window.__PP.almanacHTML(r)
                       : tab === 'chenggu' ? window.__PP.chengguHTML(r)
                         : tab === 'trend' ? window.__PP.trendHTML(r)
+                          : tab === 'name' ? window.__PP.nameHTML(r)
                           : window.__PP.quickHTML(r));
       last = { r, html, tab, date, time, timed, trend };
       paint();
