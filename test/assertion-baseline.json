@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 1668,
+  "total": 1682,
   "files": {
     "args.test.mjs": {
       "pass": 40,
@@ -216,6 +216,10 @@
     },
     "tools2.test.mjs": {
       "pass": 68,
+      "fail": 0
+    },
+    "tools3.test.mjs": {
+      "pass": 14,
       "fail": 0
     },
     "upgrade.test.mjs": {

@@ -199,6 +199,7 @@ function page() {
       <button class="tab" data-tab="hepan">合盘</button>
       <button class="tab" data-tab="tarot">塔罗</button>
       <button class="tab" data-tab="almanac">黄历</button>
+      <button class="tab" data-tab="convert">农历</button>
       <button class="tab" data-tab="zeri">择日</button>
       <button class="tab" data-tab="chenggu">称骨</button>
       <button class="tab" data-tab="xiaoliuren">小六壬</button>
@@ -295,9 +296,11 @@ function page() {
       <div id="qk-zeri" style="display:none">
         <label class="field">所办事项
           <select id="ztask">
-            <option>开业</option><option>嫁娶</option><option>订婚</option><option>入宅</option><option>搬家</option>
-            <option>动土</option><option>装修</option><option>安葬</option><option>出行</option><option>祭祀</option>
-            <option>签约</option><option>求医</option><option>纳财</option>
+            <optgroup label="常用"><option>开业</option><option>嫁娶</option><option>搬家入宅</option><option>出行</option><option>签订合同</option><option>祭祀</option></optgroup>
+            <optgroup label="婚嫁"><option>领证</option><option>订婚</option><option>提亲</option><option>收送聘金</option><option>满月酒</option></optgroup>
+            <optgroup label="生活"><option>搬家</option><option>入宅</option><option>旅行</option><option>访亲友</option><option>入学</option><option>求医</option></optgroup>
+            <optgroup label="建造"><option>动土</option><option>装修</option><option>装修建造</option><option>安葬</option><option>试车买车</option></optgroup>
+            <optgroup label="工商"><option>交易</option><option>投资</option><option>签约</option><option>纳财</option><option>赴任</option></optgroup>
           </select>
         </label>
         <label class="field">看多少天<input id="zdays" type="number" min="1" max="60" value="30"></label>
@@ -308,6 +311,20 @@ function page() {
             <option>马</option><option>羊</option><option>猴</option><option>鸡</option><option>狗</option><option>猪</option>
           </select>
         </label>
+      </div>
+      <div id="qk-convert" style="display:none">
+        <div class="field">转换方向
+          <div class="seg" id="convertmode">
+            <button data-mode="solar2lunar" class="on">公历 → 农历</button>
+            <button data-mode="lunar2solar">农历 → 公历</button>
+          </div>
+        </div>
+        <div id="qk-convert-lunar" style="display:none">
+          <label class="field">农历日期<input id="lunardate" placeholder="如 2026-9-17"></label>
+          <label class="field" style="flex-direction:row;gap:6px;align-items:center">
+            <input id="leapm" type="checkbox"> 闰月
+          </label>
+        </div>
       </div>
       <div id="qk-xiaoliuren" style="display:none">
         <div class="field">起课方式

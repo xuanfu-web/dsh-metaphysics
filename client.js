@@ -746,7 +746,7 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-const USER_AGENT = 'dsh-metaphysics/0.18.4 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.19.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
@@ -5732,6 +5732,7 @@ return { TRIGRAM, YAO_POSITION, MOVING_NATURE, HEX64, HEX_BY_CORE, ZIWEI_STARS, 
 
 __mods.almanac = (function () {
 const { solarToLunar } = __mods.lunar;
+const { nayinOf } = __mods.nayin;
 const { toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES } = __mods.calendar;
 const { HEX64 } = __mods['interpret-data'];
 const { assertCivil, daysInMonth } = __mods.validate;
@@ -5803,6 +5804,80 @@ function lunarMonthText(month, isLeap = false) {
   return `${isLeap ? '闰' : ''}${MONTH_TEXT[month - 1] || month}月`;
 }
 
+const TIAN_SHEN = ['青龙', '明堂', '天刑', '朱雀', '金匮', '天德', '白虎', '玉堂', '天牢', '玄武', '司命', '勾陈'];
+const TIAN_SHEN_TYPE = {
+  青龙: '黄道', 明堂: '黄道', 金匮: '黄道', 天德: '黄道', 玉堂: '黄道', 司命: '黄道',
+  天刑: '黑道', 朱雀: '黑道', 白虎: '黑道', 天牢: '黑道', 玄武: '黑道', 勾陈: '黑道',
+};
+const TIAN_SHEN_OFFSET = { 子: 4, 丑: 2, 寅: 0, 卯: 10, 辰: 8, 巳: 6, 午: 4, 未: 2, 申: 0, 酉: 10, 戌: 8, 亥: 6 };
+
+function tianShenOf(branch, anchorBranch) {
+  const b = BRANCHES.indexOf(branch);
+  const off = TIAN_SHEN_OFFSET[anchorBranch];
+  if (b < 0 || off == null) return null;
+  const name = TIAN_SHEN[(b + off) % 12];
+  const type = TIAN_SHEN_TYPE[name];
+  return { name, type, luck: type === '黄道' ? '吉' : '凶' };
+}
+
+const MANSIONS = {
+  角: { luck: '吉', zheng: '木', animal: '蛟', gong: '东' }, 亢: { luck: '凶', zheng: '金', animal: '龙', gong: '东' },
+  氐: { luck: '凶', zheng: '土', animal: '貉', gong: '东' }, 房: { luck: '吉', zheng: '日', animal: '兔', gong: '东' },
+  心: { luck: '凶', zheng: '月', animal: '狐', gong: '东' }, 尾: { luck: '吉', zheng: '火', animal: '虎', gong: '东' },
+  箕: { luck: '吉', zheng: '水', animal: '豹', gong: '东' }, 斗: { luck: '吉', zheng: '木', animal: '獬', gong: '北' },
+  牛: { luck: '凶', zheng: '金', animal: '牛', gong: '北' }, 女: { luck: '凶', zheng: '土', animal: '蝠', gong: '北' },
+  虚: { luck: '凶', zheng: '日', animal: '鼠', gong: '北' }, 危: { luck: '凶', zheng: '月', animal: '燕', gong: '北' },
+  室: { luck: '吉', zheng: '火', animal: '猪', gong: '北' }, 壁: { luck: '吉', zheng: '水', animal: '獝', gong: '北' },
+  奎: { luck: '凶', zheng: '木', animal: '狼', gong: '西' }, 娄: { luck: '吉', zheng: '金', animal: '狗', gong: '西' },
+  胃: { luck: '吉', zheng: '土', animal: '彘', gong: '西' }, 昴: { luck: '凶', zheng: '日', animal: '鸡', gong: '西' },
+  毕: { luck: '吉', zheng: '月', animal: '乌', gong: '西' }, 觜: { luck: '凶', zheng: '火', animal: '猴', gong: '西' },
+  参: { luck: '吉', zheng: '水', animal: '猿', gong: '西' }, 井: { luck: '吉', zheng: '木', animal: '犴', gong: '南' },
+  鬼: { luck: '凶', zheng: '金', animal: '羊', gong: '南' }, 柳: { luck: '凶', zheng: '土', animal: '獐', gong: '南' },
+  星: { luck: '凶', zheng: '日', animal: '马', gong: '南' }, 张: { luck: '吉', zheng: '月', animal: '鹿', gong: '南' },
+  翼: { luck: '凶', zheng: '火', animal: '蛇', gong: '南' }, 轸: { luck: '吉', zheng: '水', animal: '蚓', gong: '南' },
+};
+const XIU_GROUPS = {
+  A: ['虚', '毕', '翼', '箕', '奎', '鬼', '氐'],
+  B: ['房', '危', '觜', '轸', '斗', '娄', '柳'],
+  C: ['星', '心', '室', '参', '角', '牛', '胃'],
+  D: ['昴', '张', '尾', '壁', '井', '亢', '女'],
+};
+const XIU_GROUP_OF = { 子: 'A', 辰: 'A', 申: 'A', 丑: 'B', 巳: 'B', 酉: 'B', 寅: 'C', 午: 'C', 戌: 'C', 卯: 'D', 未: 'D', 亥: 'D' };
+
+function xiuOf(dayBranch, weekdayIndex) {
+  const g = XIU_GROUP_OF[dayBranch];
+  if (!g) return null;
+  const name = XIU_GROUPS[g][weekdayIndex];
+  const info = MANSIONS[name];
+  return info ? { name, ...info } : null;
+}
+
+const DIR_OF = { 坎: '正北', 艮: '东北', 震: '正东', 巽: '东南', 离: '正南', 坤: '西南', 兑: '正西', 乾: '西北' };
+const POS_XI = { 甲: '艮', 乙: '乾', 丙: '坤', 丁: '离', 戊: '巽', 己: '艮', 庚: '乾', 辛: '坤', 壬: '离', 癸: '巽' };
+const POS_CAI = { 甲: '艮', 乙: '艮', 丙: '坤', 丁: '坤', 戊: '坎', 己: '坎', 庚: '震', 辛: '震', 壬: '离', 癸: '离' };
+const POS_FU = { 甲: '坎', 乙: '坤', 丙: '乾', 丁: '巽', 戊: '艮', 己: '坎', 庚: '坤', 辛: '乾', 壬: '巽', 癸: '艮' };
+const POS_YANG_GUI = { 甲: '坤', 乙: '坤', 丙: '兑', 丁: '乾', 戊: '艮', 己: '坎', 庚: '离', 辛: '艮', 壬: '震', 癸: '巽' };
+const POS_YIN_GUI = { 甲: '艮', 乙: '坎', 丙: '乾', 丁: '兑', 戊: '坤', 己: '坤', 庚: '艮', 辛: '离', 壬: '巽', 癸: '震' };
+const posOf = (map, stem) => (map[stem] ? { gua: map[stem], dir: DIR_OF[map[stem]] } : null);
+
+const TAI_SHEN = {
+  甲子: '占门碓 外东南', 乙丑: '碓磨厕 外东南', 丙寅: '厨灶炉 外正南', 丁卯: '仓库门 外正南', 戊辰: '房床栖 外正南',
+  己巳: '占门床 外正南', 庚午: '占碓磨 外正南', 辛未: '厨灶厕 外西南', 壬申: '仓库炉 外西南', 癸酉: '房床门 外西南',
+  甲戌: '占门栖 外西南', 乙亥: '碓磨床 外西南', 丙子: '厨灶碓 外西南', 丁丑: '仓库厕 外正西', 戊寅: '房床炉 外正西',
+  己卯: '占大门 外正西', 庚辰: '碓磨栖 外正西', 辛巳: '厨灶床 外正西', 壬午: '仓库碓 外西北', 癸未: '房床厕 外西北',
+  甲申: '占门炉 外西北', 乙酉: '碓磨门 外西北', 丙戌: '厨灶栖 外西北', 丁亥: '仓库床 外西北', 戊子: '房床碓 外正北',
+  己丑: '占门厕 外正北', 庚寅: '碓磨炉 外正北', 辛卯: '厨灶门 外正北', 壬辰: '仓库栖 外正北', 癸巳: '占房床 房内北',
+  甲午: '占门碓 房内北', 乙未: '碓磨厕 房内北', 丙申: '厨灶炉 房内北', 丁酉: '仓库门 房内北', 戊戌: '房床栖 房内中',
+  己亥: '占门床 房内中', 庚子: '占碓磨 房内南', 辛丑: '厨灶厕 房内南', 壬寅: '仓库炉 房内南', 癸卯: '房床门 房内西',
+  甲辰: '占门栖 房内东', 乙巳: '碓磨床 房内东', 丙午: '厨灶碓 房内东', 丁未: '仓库厕 房内东', 戊申: '房床炉 房内中',
+  己酉: '占大门 外东北', 庚戌: '碓磨栖 外东北', 辛亥: '厨灶床 外东北', 壬子: '仓库碓 外东北', 癸丑: '房床厕 外东北',
+  甲寅: '占门炉 外东北', 乙卯: '碓磨门 外正东', 丙辰: '厨灶栖 外正东', 丁巳: '仓库床 外正东', 戊午: '房床碓 外正东',
+  己未: '占门厕 外正东', 庚申: '碓磨炉 外东南', 辛酉: '厨灶门 外东南', 壬戌: '仓库栖 外东南', 癸亥: '占房床 外东南',
+};
+
+const LIUHE = { 子: '丑', 丑: '子', 寅: '亥', 亥: '寅', 卯: '戌', 戌: '卯', 辰: '酉', 酉: '辰', 巳: '申', 申: '巳', 午: '未', 未: '午' };
+const SANHE = { 申: '申子辰', 子: '申子辰', 辰: '申子辰', 亥: '亥卯未', 卯: '亥卯未', 未: '亥卯未', 寅: '寅午戌', 午: '寅午戌', 戌: '寅午戌', 巳: '巳酉丑', 酉: '巳酉丑', 丑: '巳酉丑' };
+
 function dailyHexagram(year, month, day) {
   const names = Object.keys(HEX64);
   if (!names.length) return null;
@@ -5858,7 +5933,41 @@ function buildAlmanac(input) {
     return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
   };
 
-  const weekday = ['日', '一', '二', '三', '四', '五', '六'][(jdn + 1) % 7];
+  const weekdayIdx = (jdn + 1) % 7;
+  const weekday = ['日', '一', '二', '三', '四', '五', '六'][weekdayIdx];
+  const dayGod = tianShenOf(dayBranch, BRANCHES[monthBranchIdx]);
+  const xiu = xiuOf(dayBranch, weekdayIdx);
+  const taiShen = TAI_SHEN[dayGz.name] || null;
+  const hourBase = (STEMS.indexOf(dayGz.stem) % 5) * 2;
+  const hours = BRANCHES.map((zhi, i) => {
+    const gan = STEMS[(hourBase + i) % 10];
+    const gz = ganzhiName(hourComposite((hourBase + i) % 10, i));
+    const shen = tianShenOf(zhi, dayBranch);
+    return {
+      zhi,
+      name: `${zhi}时`,
+      ganZhi: gz.name,
+      gan,
+      shen: shen ? shen.name : null,
+      type: shen ? shen.type : null,
+      luck: shen ? shen.luck : null,
+    };
+  });
+  const sanheGroup = SANHE[dayBranch] || '';
+  const liuheBranch = LIUHE[dayBranch] || null;
+  const lucky = {
+    liuhe: liuheBranch ? SHENGXIAO[BRANCHES.indexOf(liuheBranch)] : null,
+    sanhe: [...sanheGroup].filter((b) => b !== dayBranch).map((b) => SHENGXIAO[BRANCHES.indexOf(b)]),
+  };
+  const positions = {
+    caiShen: CAI_SHEN[dayGz.stem] || null,
+    xiShen: XI_SHEN[dayGz.stem] || null,
+    fuShen: posOf(POS_FU, dayGz.stem),
+    yangGui: posOf(POS_YANG_GUI, dayGz.stem),
+    yinGui: posOf(POS_YIN_GUI, dayGz.stem),
+    xiShenFull: posOf(POS_XI, dayGz.stem),
+    caiShenFull: posOf(POS_CAI, dayGz.stem),
+  };
   const lunarText = `农历${springGz.name}年${lunarMonthText(lunar.month, lunar.isLeap)}${dayText(lunar.day)}`;
   const boundaryNote = yearGz.name !== springGz.name
     ? `年界：本条按立春界作${yearGz.name}年·属${SHENGXIAO[BRANCHES.indexOf(yearGz.branch)]}（命理排盘用）；春节界为${springGz.name}年·属${SHENGXIAO[BRANCHES.indexOf(springGz.branch)]}，两种都对，取用场合不同`
@@ -5870,7 +5979,7 @@ function buildAlmanac(input) {
       date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
       weekday: `星期${weekday}`,
       ...(boundaryNote ? { boundaryNote } : {}),
-      scope: '通行简表口径：宜忌只按建除十二神；逐日神煞/二十八宿/彭祖百忌/胎神等全量黄历数据未收录',
+      scope: '通行口径：宜忌按建除十二神简表；已收录值日十二神（黄道/黑道）、时辰吉凶、二十八宿、胎神、吉神方位、纳音、六合三合吉配；逐日全量吉神凶煞与彭祖百忌未收录',
     },
     lunar: {
       year: springYear,
@@ -5891,7 +6000,13 @@ function buildAlmanac(input) {
       prev: prevTerm ? { name: termName(prevTerm), date: fmtJdDate(prevTerm.jd) } : null,
       next: nextTerm ? { name: termName(nextTerm), date: fmtJdDate(nextTerm.jd) } : null,
     },
-    positions: { caiShen: CAI_SHEN[dayGz.stem] || null, xiShen: XI_SHEN[dayGz.stem] || null },
+    positions,
+    dayGod,
+    xiu,
+    taiShen,
+    nayin: { day: nayinOf(dayGanzhiIndex(jdn)) },
+    lucky,
+    hours,
     zhiXing,
     yi: ZHIXING_YI[zhiXing].slice(),
     ji: ZHIXING_JI[zhiXing].slice(),
@@ -5904,6 +6019,7 @@ function buildAlmanac(input) {
     sources: [
       '农历与节气：本地天文历法（定朔 + 节气黄经）',
       '建除十二神与冲煞：传统通行口径',
+      '值日/时家十二神（青龙…勾陈）、二十八宿、胎神、吉神方位：通行表',
       '宜忌：建除十二神通行简表（非逐日全量黄历）',
       '每日一卦：按公历日期确定性取卦（同日同卦）',
     ],
@@ -5918,7 +6034,14 @@ function monthComposite(stemIdx, branchIdx) {
   return 0;
 }
 
-return { ZHIXING, ZHIXING_YI, ZHIXING_JI, SHENGXIAO, hourToBranch, zhixingOf, lunarMonthText, dailyHexagram, buildAlmanac };
+function hourComposite(stemIdx, branchIdx) {
+  for (let i = 0; i < 60; i++) {
+    if (i % 10 === stemIdx && i % 12 === branchIdx) return i;
+  }
+  return 0;
+}
+
+return { ZHIXING, ZHIXING_YI, ZHIXING_JI, SHENGXIAO, hourToBranch, zhixingOf, lunarMonthText, TIAN_SHEN, TIAN_SHEN_TYPE, tianShenOf, MANSIONS, xiuOf, dailyHexagram, buildAlmanac };
 })();
 
 __mods.star = (function () {
@@ -6304,26 +6427,52 @@ const { buildAlmanac, SHENGXIAO } = __mods.almanac;
 const TASKS = {
   嫁娶: { yi: ['嫁娶', '结亲', '订盟', '纳采'], related: ['会亲友', '裁衣'], category: 'marriage' },
   订婚: { yi: ['订盟', '纳采'], related: ['嫁娶', '会亲友'], category: 'marriage' },
+  领证: { yi: ['嫁娶', '纳采'], related: ['订盟', '会亲友'], category: 'marriage' },
+  提亲: { yi: ['纳采', '订盟'], related: ['会亲友'], category: 'marriage' },
+  收送聘金: { yi: ['纳采', '订盟'], related: ['嫁娶'], category: 'marriage' },
+  满月酒: { yi: ['祭祀', '祈福'], related: ['会亲友'], category: 'celebration' },
   开业: { yi: ['开市', '立券', '交易'], related: ['纳财', '挂匾'], category: 'business' },
+  交易: { yi: ['交易', '立券'], related: ['开市', '纳财'], category: 'business' },
+  投资: { yi: ['纳财', '交易'], related: ['立券'], category: 'business' },
+  签订合同: { yi: ['立券', '交易'], related: ['纳财', '开市'], category: 'contract' },
+  签约: { yi: ['立券', '交易'], related: ['纳财', '开市'], category: 'contract' },
+  纳财: { yi: ['纳财', '收账'], related: ['开市', '立券'], category: 'contract' },
   入宅: { yi: ['入宅', '移徙'], related: ['安床', '修造', '扫舍'], category: 'move' },
   搬家: { yi: ['移徙', '入宅'], related: ['安床', '修造'], category: 'move' },
+  搬家入宅: { yi: ['入宅', '移徙'], related: ['安床', '扫舍'], category: 'move' },
   动土: { yi: ['动土', '修造'], related: ['竖柱', '上梁'], category: 'construction' },
   装修: { yi: ['修造', '修饰垣墙'], related: ['动土'], category: 'construction' },
+  装修建造: { yi: ['修造', '动土'], related: ['竖柱', '上梁'], category: 'construction' },
+  试车买车: { yi: ['交易', '纳财'], related: ['出行'], category: 'purchase' },
   安葬: { yi: ['安葬', '破土'], related: ['立碑', '埋穴'], category: 'burial' },
   出行: { yi: ['出行'], related: ['上任', '赴任'], category: 'travel' },
+  旅行: { yi: ['出行'], related: ['上任', '赴任'], category: 'travel' },
+  赴任: { yi: ['上任', '赴任'], related: ['出行'], category: 'travel' },
+  访亲友: { yi: ['会亲友'], related: ['出行'], category: 'visit' },
+  入学: { yi: ['入学'], related: ['开市', '修造'], category: 'study' },
   祭祀: { yi: ['祭祀'], related: ['祈福', '求嗣'], category: 'worship' },
-  签约: { yi: ['立券', '交易'], related: ['纳财', '开市'], category: 'contract' },
   求医: { yi: ['求医', '疗病'], related: ['针灸'], category: 'medical' },
-  纳财: { yi: ['纳财', '收账'], related: ['开市', '立券'], category: 'contract' },
+};
+
+const TASK_GROUPS = {
+  常用: ['嫁娶', '搬家入宅', '出行', '开业', '签订合同', '祭祀'],
+  婚嫁: ['嫁娶', '订婚', '领证', '提亲', '收送聘金', '满月酒'],
+  生活: ['搬家', '入宅', '旅行', '访亲友', '入学', '求医', '祭祀'],
+  建造: ['动土', '装修', '装修建造', '安葬', '试车买车'],
+  工商: ['开业', '交易', '投资', '签订合同', '签约', '纳财', '赴任'],
 };
 
 const ZHIXING_FAVOR = {
   marriage: ['满', '定', '成', '开'],
+  celebration: ['满', '成', '开', '平'],
   business: ['开', '成', '满', '收'],
   move: ['定', '成', '开', '除'],
   construction: ['建', '除', '成', '开'],
+  purchase: ['成', '开', '满'],
   burial: ['除', '定', '闭', '破'],
   travel: ['建', '成', '开', '除'],
+  visit: ['满', '平', '定', '成'],
+  study: ['成', '开', '建'],
   worship: ['除', '满', '平', '定', '执', '成', '开'],
   contract: ['定', '成', '收', '开'],
   medical: ['除', '开'],
@@ -6417,7 +6566,133 @@ function buildZeri(input) {
   };
 }
 
-return { TASKS, buildZeri };
+return { TASKS, TASK_GROUPS, buildZeri };
+})();
+
+__mods.convert = (function () {
+const { solarToLunar } = __mods.lunar;
+const { fromJDN, toJDN } = __mods.calendar;
+const { buildAlmanac } = __mods.almanac;
+const { assertCivil, daysInMonth } = __mods.validate;
+
+const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+const MONTH_TEXT = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+const DAY_TENS = ['初', '十', '廿'];
+const DAY_UNITS = ['十', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+function dayText(day) {
+  if (day === 10) return '初十';
+  if (day === 20) return '二十';
+  if (day === 30) return '三十';
+  return `${DAY_TENS[Math.floor(day / 10)]}${DAY_UNITS[day % 10]}`;
+}
+
+function lunarText(year, month, day, isLeap) {
+  return `农历${year}年${isLeap ? '闰' : ''}${MONTH_TEXT[month - 1] || month}月${dayText(day)}`;
+}
+
+function lunarNewYearJdn(lunarYear) {
+  const from = toJDN(lunarYear, 1, 20);
+  const to = toJDN(lunarYear, 2, 25);
+  for (let jdn = from; jdn <= to; jdn++) {
+    const p = fromJDN(jdn);
+    const l = solarToLunar(p.year, p.month, p.day);
+    if (l.lunarYear === lunarYear && l.month === 1 && l.day === 1) return jdn;
+  }
+  return null;
+}
+
+function lunarMonths(lunarYear) {
+  const first = lunarNewYearJdn(lunarYear);
+  if (first == null) return [];
+  const out = [];
+  let cur = first;
+  for (let i = 0; i < 14; i++) {
+    const p = fromJDN(cur);
+    const l = solarToLunar(p.year, p.month, p.day);
+    if (i > 0 && l.month === 1 && !l.isLeap) break;
+    let next = null;
+    for (let k = 29; k <= 31; k++) {
+      const d = fromJDN(cur + k);
+      const l2 = solarToLunar(d.year, d.month, d.day);
+      if (l2.day === 1) { next = cur + k; break; }
+    }
+    if (next == null) break;
+    out.push({ month: l.month, isLeap: l.isLeap, startJdn: cur, length: next - cur });
+    cur = next;
+  }
+  return out;
+}
+
+function buildConvert(input) {
+  const mode = input.mode === 'lunar2solar' ? 'lunar2solar' : 'solar2lunar';
+  let solar;
+  let lunar;
+  let note = null;
+  if (mode === 'solar2lunar') {
+    solar = { year: input.year, month: input.month, day: input.day };
+    assertCivil(solar, '公农历转换');
+    if (solar.day > daysInMonth(solar.year, solar.month)) {
+      throw new Error(`非法日期：${solar.year} 年 ${solar.month} 月没有 ${solar.day} 日`);
+    }
+    lunar = solarToLunar(solar.year, solar.month, solar.day);
+  } else {
+    const y = Number(input.lunarYear);
+    const m = Number(input.lunarMonth);
+    const d = Number(input.lunarDay);
+    if (![y, m, d].every(Number.isInteger)) throw new Error('农历转换需要 lunarYear / lunarMonth / lunarDay');
+    if (m < 1 || m > 12) throw new Error('农历月份须在 1–12');
+    const months = lunarMonths(y);
+    if (!months.length) throw new Error(`农历 ${y} 年超出本地历法覆盖范围（1900–2100）`);
+    const isLeap = input.isLeapMonth === true;
+    const hit = months.find((x) => x.month === m && x.isLeap === isLeap);
+    if (!hit) {
+      const leapMonths = months.filter((x) => x.isLeap).map((x) => `闰${MONTH_TEXT[x.month - 1]}月`);
+      throw new Error(`农历 ${y} 年没有${leapMonths.length ? `该月（该年闰月为 ${leapMonths.join('、')}）` : '闰月'}：${isLeap ? '请确认闰月标记' : '请确认月份'}`);
+    }
+    if (d < 1 || d > hit.length) throw new Error(`农历 ${y} 年${isLeap ? '闰' : ''}${MONTH_TEXT[m - 1]}月只有 ${hit.length} 天，没有 ${d} 日`);
+    const p = fromJDN(hit.startJdn + d - 1);
+    solar = { year: p.year, month: p.month, day: p.day };
+    const check = solarToLunar(p.year, p.month, p.day);
+    if (check.month !== m || check.day !== d || check.isLeap !== isLeap) {
+      note = '反查结果与目标农历日不完全一致，已按本地历法实际月首回推';
+    }
+    lunar = check;
+  }
+
+  const a = buildAlmanac(solar);
+  const jdn = toJDN(solar.year, solar.month, solar.day);
+  const solarText = `${solar.year}-${String(solar.month).padStart(2, '0')}-${String(solar.day).padStart(2, '0')}`;
+  return {
+    system: 'convert',
+    meta: {
+      mode,
+      solarDate: solarText,
+      weekday: `星期${WEEK[(jdn + 1) % 7]}`,
+      ...(note ? { note } : {}),
+      scope: '公农历互转按本地定朔历（1900–2100）；农历闰月须显式指定，不自动猜同名月',
+    },
+    solar: { year: solar.year, month: solar.month, day: solar.day, text: solarText },
+    lunar: {
+      year: lunar.lunarYear,
+      month: lunar.month,
+      day: lunar.day,
+      isLeap: lunar.isLeap,
+      text: lunarText(lunar.lunarYear, lunar.month, lunar.day, lunar.isLeap),
+    },
+    ganzhi: {
+      year: a.ganzhi.year,
+      month: a.ganzhi.month,
+      day: a.ganzhi.day,
+      shengXiao: a.ganzhi.shengXiao,
+      springYear: a.ganzhi.springYear,
+    },
+    sources: ['农历：本地定朔 + 节气黄经历法（engine/lunar.js）', '干支与生肖：与黄历同口径（年按立春界，另列春节界）'],
+    disclaimer: '历法换算为确定性计算；民俗历法各版本在极少数日期（交节当日、闰月边界）存在日界差异，已注明口径。',
+  };
+}
+
+return { buildConvert };
 })();
 
 __mods['interpret-plain'] = (function () {
@@ -8590,6 +8865,7 @@ const { buildChenggu } = __mods.chenggu;
 const { buildXiaoliuren } = __mods.xiaoliuren;
 const { buildStar } = __mods.star;
 const { buildNumerology } = __mods.numerology;
+const { buildConvert } = __mods.convert;
 const { buildTrend } = __mods.trend;
 const { buildFengshui } = __mods.fengshui;
 const { buildName } = __mods.name;
@@ -9144,6 +9420,26 @@ function computeRaw(args = {}) {
     const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0 });
     return { ...result, summary: chengguText(result) };
   }
+  if (system === 'convert') {
+    const mode = args.mode === 'lunar2solar' ? 'lunar2solar' : 'solar2lunar';
+    let result;
+    if (mode === 'lunar2solar') {
+      if (args.lunarYear == null || args.lunarMonth == null || args.lunarDay == null) {
+        throw fail('E_INPUT', '农历转公历需要 lunarYear / lunarMonth / lunarDay（闰月另加 isLeapMonth: true）');
+      }
+      result = buildConvert({
+        mode,
+        lunarYear: Number(args.lunarYear),
+        lunarMonth: Number(args.lunarMonth),
+        lunarDay: Number(args.lunarDay),
+        isLeapMonth: args.isLeapMonth === true,
+      });
+    } else {
+      const dt = parseDateTime(args.datetime);
+      result = buildConvert({ mode, year: dt.year, month: dt.month, day: dt.day });
+    }
+    return { ...result, summary: convertText(result) };
+  }
   if (system === 'xiaoliuren') {
     const dt = args.datetime ? parseDateTime(args.datetime) : null;
     const result = buildXiaoliuren({
@@ -9227,21 +9523,34 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。`);
 }
 
 function almanacText(r) {
   const g = r.ganzhi;
   const jq = r.jieQi && r.jieQi.next ? `　下一节：${r.jieQi.next.name} ${r.jieQi.next.date}` : '';
+  const god = r.dayGod ? `值日：${r.dayGod.name}（${r.dayGod.type}·${r.dayGod.luck}）` : '';
+  const xiu = r.xiu ? `二十八宿：${r.xiu.name}宿（${r.xiu.luck}·${r.xiu.zheng}·${r.xiu.animal}）` : '';
+  const tai = r.taiShen ? `胎神：${r.taiShen}` : '';
+  const pos = r.positions
+    ? `吉神方位：喜神${r.positions.xiShen || '—'}　财神${r.positions.caiShen || '—'}　福神${r.positions.fuShen ? r.positions.fuShen.dir : '—'}　阳贵${r.positions.yangGui ? r.positions.yangGui.dir : '—'}　阴贵${r.positions.yinGui ? r.positions.yinGui.dir : '—'}`
+    : '';
+  const lucky = r.lucky ? `吉配生肖：六合${r.lucky.liuhe || '—'}　三合${(r.lucky.sanhe || []).join('、') || '—'}` : '';
+  const nayin = r.nayin && r.nayin.day ? `日柱纳音：${r.nayin.day.name}` : '';
+  const hours = (r.hours || []).map((h) => `${h.zhi}${h.ganZhi.slice(0, 1)}·${h.shen}${h.luck === '吉' ? '吉' : '凶'}`).join(' ');
   return [
     `【黄历】${r.meta.date} ${r.meta.weekday}　${r.lunar.text}`,
     `干支：${g.year}年　${g.month}月　${g.day}日　属${g.shengXiao}`,
     ...(r.meta.boundaryNote ? [`　${r.meta.boundaryNote}`] : []),
-    `建除：${r.zhiXing}日　冲：${r.chong.text}${r.chong.sha ? `（${r.chong.sha}）` : ''}　财神：${r.positions.caiShen || '—'}　喜神：${r.positions.xiShen || '—'}`,
+    `建除：${r.zhiXing}日　冲：${r.chong.text}${r.chong.sha ? `（${r.chong.sha}）` : ''}　${god}`,
+    [xiu, nayin, tai].filter(Boolean).join('　'),
     `宜：${r.yi.join('、')}`,
     `忌：${r.ji.join('、')}`,
+    pos,
+    lucky,
+    hours ? `时辰吉凶：${hours}` : '',
     `节气：上一节 ${r.jieQi.prev ? `${r.jieQi.prev.name} ${r.jieQi.prev.date}` : '—'}${jq}`,
     r.dailyHexagram ? `每日一卦：${r.dailyHexagram.name}　${r.dailyHexagram.meaning || ''}` : '',
     `口径：${r.meta.scope}`,
@@ -9294,6 +9603,17 @@ function starText(r) {
     r.daily.dims.map((d) => `· ${d.name}：${'★'.repeat(d.stars)}${'☆'.repeat(5 - d.stars)}　${d.text}`).join('\n'),
     `幸运色：${r.daily.luckyColor}　幸运数字：${r.daily.luckyNumber}`,
     '口径：当日基调由日期哈希确定性生成（同日同结果），纯娱乐向。',
+  ].join('\n');
+}
+
+function convertText(r) {
+  const g = r.ganzhi;
+  const dir = r.meta.mode === 'lunar2solar' ? '农历 → 公历' : '公历 → 农历';
+  return [
+    `【公农历转换·${dir}】${r.lunar.text} ⇄ ${r.solar.text} ${r.meta.weekday}`,
+    `干支：${g.year}年　${g.month}月　${g.day}日　属${g.shengXiao}${g.springYear && g.springYear !== g.year ? `（春节界为${g.springYear}年）` : ''}`,
+    ...(r.meta.note ? [`注：${r.meta.note}`] : []),
+    `口径：${r.meta.scope}`,
   ].join('\n');
 }
 
@@ -9391,7 +9711,7 @@ function renderText(result) {
   return parts.filter(Boolean).join('\n\n');
 }
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, renderText };
 })();
 
     const Engine = __mods.index;
@@ -9922,6 +10242,38 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .mp-quick-h{font-size:13px;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
+.mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-al-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
+.mp-al-h b{font-size:18px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.mp-al-h i{font-style:normal;font-size:12px;color:var(--muted)}
+.mp-al-gz{font-size:12.5px;color:var(--ink2);margin-bottom:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-al-badge{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.mp-al-badge.good{color:var(--lu);border-color:var(--lu)}
+.mp-al-badge.bad{color:var(--ji);border-color:var(--ji)}
+.mp-al-yiji{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 9px}
+.mp-al-col em,.mp-al-row>em{font-style:normal;font-size:10.5px;color:var(--muted);display:block;margin-bottom:4px}
+.mp-al-chips{display:flex;flex-wrap:wrap;gap:4px}
+.mp-al-chip{font-size:11.5px;padding:1px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink2);white-space:nowrap}
+.mp-al-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
+.mp-al-cell{background:var(--card);padding:6px 8px;min-width:0}
+.mp-al-cell em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+.mp-al-cell b{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.45;display:block}
+.mp-al-row{margin:9px 0}
+.mp-al-hours{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.mp-al-hour{display:flex;align-items:baseline;gap:3px;border:1px solid var(--hair);border-radius:5px;padding:3px 6px;font-size:11px;color:var(--ink2);background:var(--band)}
+.mp-al-hour i{font-style:normal;font-weight:600;color:var(--ink)}
+.mp-al-hour em{font-style:normal;color:var(--muted)}
+.mp-al-hour b{font-weight:500}
+.mp-al-hour u{text-decoration:none;margin-left:auto;font-size:10.5px}
+.mp-al-hour.good{border-color:var(--lu);color:var(--lu)}
+.mp-al-hour.good i{color:var(--lu)}
+.mp-al-hour.bad{border-color:var(--hair)}
+.mp-al-hour.bad u{color:var(--ji)}
+.mp-al-hex{margin-top:8px;font-size:12px;color:var(--ink2)}
+.mp-al-hex b{color:var(--quan)}
+.mp-al-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
+@media print{.mp-al{break-inside:avoid}}
+@media (max-width:640px){.mp-al{margin:10px;padding:10px}.mp-al-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-al-yiji{grid-template-columns:1fr}}.mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 @media (max-width:640px){
@@ -11183,11 +11535,43 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     return (html || '') + pp.interpretHTML(it, opt);
   };
 
+  pp.almanacHTML = function (r) {
+    if (!r || !r.meta) return pp.quickHTML(r);
+    const g = r.ganzhi || {};
+    const god = r.dayGod || null;
+    const chips = (list, cls) => (list || []).map((x) => `<span class="mp-al-chip${cls ? ` ${cls}` : ''}">${esc(x)}</span>`).join('');
+    const cell = (k, v) => (v ? `<div class="mp-al-cell"><em>${esc(k)}</em><b>${esc(v)}</b></div>` : '');
+    const xiu = r.xiu ? `${r.xiu.name}宿（${r.xiu.luck}·${r.xiu.zheng}·${r.xiu.animal}）` : '';
+    const nayin = r.nayin && r.nayin.day ? r.nayin.day.name : '';
+    const chong = r.chong ? `${r.chong.text}${r.chong.sha ? ` ${r.chong.sha}` : ''}` : '';
+    const hours = (r.hours || []).map((h) => `<span class="mp-al-hour ${h.luck === '吉' ? 'good' : 'bad'}">`
+      + `<i>${esc(h.zhi)}</i><em>${esc((h.ganZhi || '').slice(0, 1))}</em><b>${esc(h.shen || '')}</b>`
+      + `<u>${esc(h.luck || '')}</u></span>`).join('');
+    const pos = r.positions || {};
+    const posRow = (k, v) => (v ? `<span class="mp-al-chip">${esc(k)}·${esc(typeof v === 'string' ? v : v.dir || '')}</span>` : '');
+    const lucky = r.lucky || {};
+    const godBadge = god ? `<span class="mp-al-badge ${god.luck === '吉' ? 'good' : 'bad'}">${esc(god.name)}·${esc(god.type)}·${esc(god.luck)}</span>` : '';
+    return `<section class="mp-al" aria-label="黄历">
+      <div class="mp-al-h"><b>${esc(r.meta.date || '')}</b><i>${esc(r.meta.weekday || '')}　${esc((r.lunar || {}).text || '')}</i></div>
+      <div class="mp-al-gz">${esc(g.year || '')}年　${esc(g.month || '')}月　${esc(g.day || '')}日　属${esc(g.shengXiao || '')}　建除 ${esc(r.zhiXing || '')}日　${godBadge}</div>
+      <div class="mp-al-yiji">
+        <div class="mp-al-col"><em>宜</em><div class="mp-al-chips">${chips(r.yi)}</div></div>
+        <div class="mp-al-col"><em>忌</em><div class="mp-al-chips">${chips(r.ji)}</div></div>
+      </div>
+      <div class="mp-al-grid">${cell('二十八宿', xiu)}${cell('日柱纳音', nayin)}${cell('胎神', r.taiShen)}${cell('冲煞', chong)}</div>
+      <div class="mp-al-row"><em>吉神方位</em><div class="mp-al-chips">${posRow('喜神', pos.xiShen)}${posRow('财神', pos.caiShen)}${posRow('福神', pos.fuShen)}${posRow('阳贵', pos.yangGui)}${posRow('阴贵', pos.yinGui)}</div></div>
+      <div class="mp-al-row"><em>时刻吉凶</em><div class="mp-al-hours">${hours}</div></div>
+      <div class="mp-al-row"><em>吉配生肖</em><div class="mp-al-chips">${lucky.liuhe ? `<span class="mp-al-chip">六合·${esc(lucky.liuhe)}</span>` : ''}${chips(lucky.sanhe || [])}</div></div>
+      ${r.dailyHexagram ? `<div class="mp-al-hex">每日一卦：<b>${esc(r.dailyHexagram.name)}</b>　${esc(r.dailyHexagram.meaning || '')}</div>` : ''}
+      <div class="mp-al-note">${esc((r.meta && r.meta.scope) || '')}</div>
+    </section>`;
+  };
+
   pp.quickHTML = function (r) {
     if (!r) return '';
     const LABEL = {
       almanac: '黄历', zeri: '择日', chenggu: '称骨', xiaoliuren: '小六壬',
-      star: '星座', numerology: '生命数字', trend: '人生 K 线', fengshui: '风水', name: '起名',
+      star: '星座', numerology: '生命数字', trend: '人生 K 线', fengshui: '风水', name: '起名', convert: '公农历转换',
     };
     const title = LABEL[r.system] || '速查';
     const text = r.summary || '';
@@ -11457,7 +11841,8 @@ const TABS = [
   { k: 'qimen', label: '奇门', timeLabel: '起局时刻', hint: '奇门时家转盘：用起局时刻定节气、三元与局数；换局规则决定符头与节气如何对齐。' },
   { k: 'hepan', label: '合盘', timeLabel: '你的出生时刻', hint: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。' },
     { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
-  { k: 'almanac', label: '黄历', timeLabel: '', hint: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。' },
+  { k: 'almanac', label: '黄历', timeLabel: '', hint: '黄历按公历日期查农历、干支、宜忌、时辰吉凶、二十八宿与吉神方位；只做本地计算。' },
+  { k: 'convert', label: '农历', timeLabel: '', hint: '公农历互转：公历生日可反查农历；只知道农历生日时，可转成公历再排盘。' },
   { k: 'zeri', label: '择日', timeLabel: '', hint: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。' },
   { k: 'chenggu', label: '称骨', timeLabel: '出生时刻', hint: '称骨按农历年、月、日、时的骨重求和；时辰必填。' },
   { k: 'xiaoliuren', label: '小六壬', timeLabel: '起课时刻', hint: '小六壬用农历月/日/时掐指，也可用三个随机数起课。' },
@@ -11479,7 +11864,7 @@ const TIME_KIND = {
   ziwei: 'birth', bazi: 'birth', hepan: 'birth',
   liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
   tarot: 'none',
-  almanac: 'date', zeri: 'date', star: 'date', numerology: 'date',
+  almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
   chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
   xiaoliuren: 'cast',
 };
@@ -11514,6 +11899,9 @@ function App() {
   const [task, setTask] = useState('开业');
   const [days, setDays] = useState('30');
   const [shengXiao, setShengXiao] = useState('');
+  const [convMode, setConvMode] = useState('solar2lunar');
+  const [lunarDate, setLunarDate] = useState('');
+  const [leapMonth, setLeapMonth] = useState(false);
   const [xlrMode, setXlrMode] = useState('time');
   const [num1, setNum1] = useState(''); const [num2, setNum2] = useState(''); const [num3, setNum3] = useState('');
   const [toAge, setToAge] = useState('60');
@@ -11617,6 +12005,24 @@ function App() {
         } else {
           args.givenName = givenName.trim();
           delete args.datetime;
+        }
+      }
+      if (k === 'convert') {
+        args.system = 'convert';
+        if (convMode === 'lunar2solar') {
+          const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(lunarDate).trim());
+          if (!m) {
+            setError('农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。');
+            return;
+          }
+          args.mode = 'lunar2solar';
+          args.lunarYear = Number(m[1]);
+          args.lunarMonth = Number(m[2]);
+          args.lunarDay = Number(m[3]);
+          args.isLeapMonth = leapMonth;
+          delete args.datetime;
+        } else {
+          args.mode = 'solar2lunar';
         }
       }
       if (k === 'tarot') args.count = Number(count);
@@ -11987,8 +12393,24 @@ function App() {
         })) : null,
         tab === 'zeri' ? field('所办事项', h('select', {
           className: 'mp-input', value: task, onChange: (e) => setTask(e.target.value),
-        }, ['嫁娶', '订婚', '开业', '入宅', '搬家', '动土', '装修', '安葬', '出行', '祭祀', '签约', '求医', '纳财']
-          .map((t) => h('option', { key: t, value: t }, t)))) : null,
+        }, [
+          ['常用', ['嫁娶', '搬家入宅', '出行', '开业', '签订合同', '祭祀']],
+          ['婚嫁', ['嫁娶', '订婚', '领证', '提亲', '收送聘金', '满月酒']],
+          ['生活', ['搬家', '入宅', '旅行', '访亲友', '入学', '求医', '祭祀']],
+          ['建造', ['动土', '装修', '装修建造', '安葬', '试车买车']],
+          ['工商', ['开业', '交易', '投资', '签订合同', '签约', '纳财', '赴任']],
+        ].map(([g, items]) => h('optgroup', { key: g, label: g },
+          items.map((t) => h('option', { key: `${g}-${t}`, value: t }, t)))))) : null,
+        tab === 'convert' ? field('转换方向', h('div', { className: 'mp-seg' },
+          h('button', { className: convMode === 'solar2lunar' ? 'on' : '', onClick: () => setConvMode('solar2lunar') }, '公历 → 农历'),
+          h('button', { className: convMode === 'lunar2solar' ? 'on' : '', onClick: () => setConvMode('lunar2solar') }, '农历 → 公历'))) : null,
+        (tab === 'convert' && convMode === 'lunar2solar') ? field('农历日期', h('input', {
+          className: 'mp-input', value: lunarDate, placeholder: '如 2026-9-17',
+          onChange: (e) => setLunarDate(e.target.value),
+        })) : null,
+        (tab === 'convert' && convMode === 'lunar2solar') ? h('label', {
+          className: 'mp-check',
+        }, h('input', { type: 'checkbox', checked: leapMonth, onChange: (e) => setLeapMonth(e.target.checked) }), ' 闰月') : null,
         tab === 'zeri' ? field('看多少天', h('input', {
           className: 'mp-input', type: 'number', min: 1, max: 60, value: days,
           onChange: (e) => setDays(e.target.value),
@@ -12114,6 +12536,7 @@ function App() {
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
                       : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
+                        : result.kind === 'almanac' ? PP.almanacHTML(result.r)
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,

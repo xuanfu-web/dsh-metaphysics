@@ -10,7 +10,7 @@ const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
 
 // ── ① 八个 tab ─────────────────────────────────────────────
 const tabs = [...html.matchAll(/<button class="tab" data-tab="([a-z]+)"/g)].map((m) => m[1]);
-ok('十七个 tab 齐全（八体系 + 九速查）', tabs.join(',') === 'ziwei,bazi,liuyao,meihua,daliuren,qimen,hepan,tarot,almanac,zeri,chenggu,xiaoliuren,star,numerology,trend,fengshui,name', tabs.join(','));
+ok('十八个 tab 齐全（八体系 + 十速查）', tabs.join(',') === 'ziwei,bazi,liuyao,meihua,daliuren,qimen,hepan,tarot,almanac,convert,zeri,chenggu,xiaoliuren,star,numerology,trend,fengshui,name', tabs.join(','));
 ok('标题栏写明八体系', /奇门 · 合盘/.test(html));
 ok('速查块存在', html.includes('id="for-quick"'));
 for (const id of ['ztask', 'zdays', 'zsheng', 'num1', 'toage', 'sitting', 'facing', 'surname', 'givenname']) {

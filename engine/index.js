@@ -22,6 +22,7 @@ import { buildChenggu } from './chenggu.js';
 import { buildXiaoliuren } from './xiaoliuren.js';
 import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
+import { buildConvert } from './convert.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
@@ -617,6 +618,26 @@ function computeRaw(args = {}) {
     const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0 });
     return { ...result, summary: chengguText(result) };
   }
+  if (system === 'convert') {
+    const mode = args.mode === 'lunar2solar' ? 'lunar2solar' : 'solar2lunar';
+    let result;
+    if (mode === 'lunar2solar') {
+      if (args.lunarYear == null || args.lunarMonth == null || args.lunarDay == null) {
+        throw fail('E_INPUT', '农历转公历需要 lunarYear / lunarMonth / lunarDay（闰月另加 isLeapMonth: true）');
+      }
+      result = buildConvert({
+        mode,
+        lunarYear: Number(args.lunarYear),
+        lunarMonth: Number(args.lunarMonth),
+        lunarDay: Number(args.lunarDay),
+        isLeapMonth: args.isLeapMonth === true,
+      });
+    } else {
+      const dt = parseDateTime(args.datetime);
+      result = buildConvert({ mode, year: dt.year, month: dt.month, day: dt.day });
+    }
+    return { ...result, summary: convertText(result) };
+  }
   if (system === 'xiaoliuren') {
     const dt = args.datetime ? parseDateTime(args.datetime) : null;
     const result = buildXiaoliuren({
@@ -700,22 +721,35 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。`);
 }
 
 /** 黄历文本 */
 function almanacText(r) {
   const g = r.ganzhi;
   const jq = r.jieQi && r.jieQi.next ? `　下一节：${r.jieQi.next.name} ${r.jieQi.next.date}` : '';
+  const god = r.dayGod ? `值日：${r.dayGod.name}（${r.dayGod.type}·${r.dayGod.luck}）` : '';
+  const xiu = r.xiu ? `二十八宿：${r.xiu.name}宿（${r.xiu.luck}·${r.xiu.zheng}·${r.xiu.animal}）` : '';
+  const tai = r.taiShen ? `胎神：${r.taiShen}` : '';
+  const pos = r.positions
+    ? `吉神方位：喜神${r.positions.xiShen || '—'}　财神${r.positions.caiShen || '—'}　福神${r.positions.fuShen ? r.positions.fuShen.dir : '—'}　阳贵${r.positions.yangGui ? r.positions.yangGui.dir : '—'}　阴贵${r.positions.yinGui ? r.positions.yinGui.dir : '—'}`
+    : '';
+  const lucky = r.lucky ? `吉配生肖：六合${r.lucky.liuhe || '—'}　三合${(r.lucky.sanhe || []).join('、') || '—'}` : '';
+  const nayin = r.nayin && r.nayin.day ? `日柱纳音：${r.nayin.day.name}` : '';
+  const hours = (r.hours || []).map((h) => `${h.zhi}${h.ganZhi.slice(0, 1)}·${h.shen}${h.luck === '吉' ? '吉' : '凶'}`).join(' ');
   return [
     `【黄历】${r.meta.date} ${r.meta.weekday}　${r.lunar.text}`,
     `干支：${g.year}年　${g.month}月　${g.day}日　属${g.shengXiao}`,
     ...(r.meta.boundaryNote ? [`　${r.meta.boundaryNote}`] : []),
-    `建除：${r.zhiXing}日　冲：${r.chong.text}${r.chong.sha ? `（${r.chong.sha}）` : ''}　财神：${r.positions.caiShen || '—'}　喜神：${r.positions.xiShen || '—'}`,
+    `建除：${r.zhiXing}日　冲：${r.chong.text}${r.chong.sha ? `（${r.chong.sha}）` : ''}　${god}`,
+    [xiu, nayin, tai].filter(Boolean).join('　'),
     `宜：${r.yi.join('、')}`,
     `忌：${r.ji.join('、')}`,
+    pos,
+    lucky,
+    hours ? `时辰吉凶：${hours}` : '',
     `节气：上一节 ${r.jieQi.prev ? `${r.jieQi.prev.name} ${r.jieQi.prev.date}` : '—'}${jq}`,
     r.dailyHexagram ? `每日一卦：${r.dailyHexagram.name}　${r.dailyHexagram.meaning || ''}` : '',
     `口径：${r.meta.scope}`,
@@ -772,6 +806,18 @@ function starText(r) {
     r.daily.dims.map((d) => `· ${d.name}：${'★'.repeat(d.stars)}${'☆'.repeat(5 - d.stars)}　${d.text}`).join('\n'),
     `幸运色：${r.daily.luckyColor}　幸运数字：${r.daily.luckyNumber}`,
     '口径：当日基调由日期哈希确定性生成（同日同结果），纯娱乐向。',
+  ].join('\n');
+}
+
+/** 公农历互转文本 */
+function convertText(r) {
+  const g = r.ganzhi;
+  const dir = r.meta.mode === 'lunar2solar' ? '农历 → 公历' : '公历 → 农历';
+  return [
+    `【公农历转换·${dir}】${r.lunar.text} ⇄ ${r.solar.text} ${r.meta.weekday}`,
+    `干支：${g.year}年　${g.month}月　${g.day}日　属${g.shengXiao}${g.springYear && g.springYear !== g.year ? `（春节界为${g.springYear}年）` : ''}`,
+    ...(r.meta.note ? [`注：${r.meta.note}`] : []),
+    `口径：${r.meta.scope}`,
   ].join('\n');
 }
 
@@ -883,7 +929,7 @@ export { buildBazi, buildLiuyao, tossLines };
 export { followup };
 export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText };
-export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology };
+export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName };
 
 

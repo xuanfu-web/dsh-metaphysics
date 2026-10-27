@@ -6,6 +6,7 @@
   let xlrMode = 'time';
   let fsMode = 'natal';
   let nnMode = 'assess';
+  let convMode = 'solar2lunar';
 
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
@@ -18,7 +19,7 @@
     ziwei: 'birth', bazi: 'birth', hepan: 'birth',
     liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
     tarot: 'none',
-    almanac: 'date', zeri: 'date', star: 'date', numerology: 'date',
+    almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
     chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
   };
@@ -371,6 +372,16 @@
         args.hour = Number.isFinite(hh) ? hh : 12;
       }
     }
+    if (tab === 'convert') {
+      args.mode = convMode;
+      if (convMode === 'lunar2solar') {
+        const m = /^(d{4})-(d{1,2})-(d{1,2})$/.exec(String(el('lunardate').value).trim());
+        if (!m) { el('out').innerHTML = '<div class="err">农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。</div>'; return; }
+        args.lunarYear = Number(m[1]); args.lunarMonth = Number(m[2]); args.lunarDay = Number(m[3]);
+        args.isLeapMonth = !!(el('leapm') && el('leapm').checked);
+        delete args.datetime;
+      }
+    }
     if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
     if (tab === 'fengshui') {
       args.action = fsMode;
@@ -413,6 +424,7 @@
                 : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
+                      : tab === 'almanac' ? window.__PP.almanacHTML(r)
                       : tab === 'chenggu' ? window.__PP.chengguHTML(r)
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : window.__PP.quickHTML(r));
@@ -457,7 +469,7 @@
     }
   }
 
-  const QUICK = ['almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
 
   function setTab(next) {
     tab = next;
@@ -521,6 +533,8 @@
     document.querySelectorAll('#nnmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === nnMode));
     el('nn-assess').style.display = nnMode === 'assess' ? '' : 'none';
     el('nn-generate').style.display = nnMode === 'generate' ? '' : 'none';
+    document.querySelectorAll('#convertmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === convMode));
+    if (el('qk-convert-lunar')) el('qk-convert-lunar').style.display = convMode === 'lunar2solar' ? '' : 'none';
   }
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -575,7 +589,8 @@
     seg('#xlrmode button', (v) => { xlrMode = v; });
     seg('#fsmode button', (v) => { fsMode = v; });
     seg('#nnmode button', (v) => { nnMode = v; });
-    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'surname', 'givenname', 'nlimit']
+    seg('#convertmode button', (v) => { convMode = v; syncQuick(); run(); });
+    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
       .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', run); });
     // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');

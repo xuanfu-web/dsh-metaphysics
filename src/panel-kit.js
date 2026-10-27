@@ -564,6 +564,39 @@
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .mp-quick-h{font-size:13px;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
+/* —— 黄历卡片 —— */
+.mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-al-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
+.mp-al-h b{font-size:18px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.mp-al-h i{font-style:normal;font-size:12px;color:var(--muted)}
+.mp-al-gz{font-size:12.5px;color:var(--ink2);margin-bottom:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-al-badge{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.mp-al-badge.good{color:var(--lu);border-color:var(--lu)}
+.mp-al-badge.bad{color:var(--ji);border-color:var(--ji)}
+.mp-al-yiji{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 9px}
+.mp-al-col em,.mp-al-row>em{font-style:normal;font-size:10.5px;color:var(--muted);display:block;margin-bottom:4px}
+.mp-al-chips{display:flex;flex-wrap:wrap;gap:4px}
+.mp-al-chip{font-size:11.5px;padding:1px 7px;border:1px solid var(--line);border-radius:999px;color:var(--ink2);white-space:nowrap}
+.mp-al-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
+.mp-al-cell{background:var(--card);padding:6px 8px;min-width:0}
+.mp-al-cell em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+.mp-al-cell b{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.45;display:block}
+.mp-al-row{margin:9px 0}
+.mp-al-hours{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.mp-al-hour{display:flex;align-items:baseline;gap:3px;border:1px solid var(--hair);border-radius:5px;padding:3px 6px;font-size:11px;color:var(--ink2);background:var(--band)}
+.mp-al-hour i{font-style:normal;font-weight:600;color:var(--ink)}
+.mp-al-hour em{font-style:normal;color:var(--muted)}
+.mp-al-hour b{font-weight:500}
+.mp-al-hour u{text-decoration:none;margin-left:auto;font-size:10.5px}
+.mp-al-hour.good{border-color:var(--lu);color:var(--lu)}
+.mp-al-hour.good i{color:var(--lu)}
+.mp-al-hour.bad{border-color:var(--hair)}
+.mp-al-hour.bad u{color:var(--ji)}
+.mp-al-hex{margin-top:8px;font-size:12px;color:var(--ink2)}
+.mp-al-hex b{color:var(--quan)}
+.mp-al-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
+@media print{.mp-al{break-inside:avoid}}
+@media (max-width:640px){.mp-al{margin:10px;padding:10px}.mp-al-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-al-yiji{grid-template-columns:1fr}}.mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 /* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
@@ -1947,14 +1980,50 @@
   };
 
   /**
-   * 速查类（黄历/择日/称骨/小六壬/星座/生命数字/人生K线/风水/起名）的通用渲染：
+   * 黄历卡片：日期/农历 + 干支值日 + 宜忌 + 四格（二十八宿/胎神/纳音/冲煞）
+   * + 吉神方位 + 时辰吉凶 + 吉配生肖 + 每日一卦。数据全由引擎给，渲染只做排版。
+   */
+  pp.almanacHTML = function (r) {
+    if (!r || !r.meta) return pp.quickHTML(r);
+    const g = r.ganzhi || {};
+    const god = r.dayGod || null;
+    const chips = (list, cls) => (list || []).map((x) => `<span class="mp-al-chip${cls ? ` ${cls}` : ''}">${esc(x)}</span>`).join('');
+    const cell = (k, v) => (v ? `<div class="mp-al-cell"><em>${esc(k)}</em><b>${esc(v)}</b></div>` : '');
+    const xiu = r.xiu ? `${r.xiu.name}宿（${r.xiu.luck}·${r.xiu.zheng}·${r.xiu.animal}）` : '';
+    const nayin = r.nayin && r.nayin.day ? r.nayin.day.name : '';
+    const chong = r.chong ? `${r.chong.text}${r.chong.sha ? ` ${r.chong.sha}` : ''}` : '';
+    const hours = (r.hours || []).map((h) => `<span class="mp-al-hour ${h.luck === '吉' ? 'good' : 'bad'}">`
+      + `<i>${esc(h.zhi)}</i><em>${esc((h.ganZhi || '').slice(0, 1))}</em><b>${esc(h.shen || '')}</b>`
+      + `<u>${esc(h.luck || '')}</u></span>`).join('');
+    const pos = r.positions || {};
+    const posRow = (k, v) => (v ? `<span class="mp-al-chip">${esc(k)}·${esc(typeof v === 'string' ? v : v.dir || '')}</span>` : '');
+    const lucky = r.lucky || {};
+    const godBadge = god ? `<span class="mp-al-badge ${god.luck === '吉' ? 'good' : 'bad'}">${esc(god.name)}·${esc(god.type)}·${esc(god.luck)}</span>` : '';
+    return `<section class="mp-al" aria-label="黄历">
+      <div class="mp-al-h"><b>${esc(r.meta.date || '')}</b><i>${esc(r.meta.weekday || '')}　${esc((r.lunar || {}).text || '')}</i></div>
+      <div class="mp-al-gz">${esc(g.year || '')}年　${esc(g.month || '')}月　${esc(g.day || '')}日　属${esc(g.shengXiao || '')}　建除 ${esc(r.zhiXing || '')}日　${godBadge}</div>
+      <div class="mp-al-yiji">
+        <div class="mp-al-col"><em>宜</em><div class="mp-al-chips">${chips(r.yi)}</div></div>
+        <div class="mp-al-col"><em>忌</em><div class="mp-al-chips">${chips(r.ji)}</div></div>
+      </div>
+      <div class="mp-al-grid">${cell('二十八宿', xiu)}${cell('日柱纳音', nayin)}${cell('胎神', r.taiShen)}${cell('冲煞', chong)}</div>
+      <div class="mp-al-row"><em>吉神方位</em><div class="mp-al-chips">${posRow('喜神', pos.xiShen)}${posRow('财神', pos.caiShen)}${posRow('福神', pos.fuShen)}${posRow('阳贵', pos.yangGui)}${posRow('阴贵', pos.yinGui)}</div></div>
+      <div class="mp-al-row"><em>时刻吉凶</em><div class="mp-al-hours">${hours}</div></div>
+      <div class="mp-al-row"><em>吉配生肖</em><div class="mp-al-chips">${lucky.liuhe ? `<span class="mp-al-chip">六合·${esc(lucky.liuhe)}</span>` : ''}${chips(lucky.sanhe || [])}</div></div>
+      ${r.dailyHexagram ? `<div class="mp-al-hex">每日一卦：<b>${esc(r.dailyHexagram.name)}</b>　${esc(r.dailyHexagram.meaning || '')}</div>` : ''}
+      <div class="mp-al-note">${esc((r.meta && r.meta.scope) || '')}</div>
+    </section>`;
+  };
+
+  /**
+   * 速查类（择日/称骨/小六壬/星座/生命数字/人生K线/风水/起名/公农历）的通用渲染：
    * 这些体系给的是确定性结果，不做命盘式解读，直接把引擎摘要按等宽文本呈现。
    */
   pp.quickHTML = function (r) {
     if (!r) return '';
     const LABEL = {
       almanac: '黄历', zeri: '择日', chenggu: '称骨', xiaoliuren: '小六壬',
-      star: '星座', numerology: '生命数字', trend: '人生 K 线', fengshui: '风水', name: '起名',
+      star: '星座', numerology: '生命数字', trend: '人生 K 线', fengshui: '风水', name: '起名', convert: '公农历转换',
     };
     const title = LABEL[r.system] || '速查';
     const text = r.summary || '';

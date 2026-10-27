@@ -19,7 +19,7 @@ const TOOL_NAME = 'metaphysics_chart';
 
 const DESCRIPTION = [
   '排中国传统命理盘（玄学·命理·占卜，用户说「玄学」「算命」「占卜」时也用本工具）与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）、奇门遁甲（qimen）、合盘（hepan）或塔罗抽牌（tarot）。',
-  '另有速查类：黄历（almanac）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、人生 K 线（trend）、风水（fengshui）、起名（name）。',
+  '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
   '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬”时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦；meihua 可按时间或数字起卦；tarot 可指定张数与问题。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
@@ -86,6 +86,7 @@ export function apply(ctx) {
     const pad = (n) => String(n).padStart(2, '0');
     const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const DATE_ONLY = { almanac: 1, star: 1, numerology: 1 };
+    if (next.system === 'convert' && next.mode !== 'lunar2solar' && !next.datetime) next.datetime = today;
     if (DATE_ONLY[next.system] && !next.datetime) next.datetime = today;
     if (next.system === 'zeri' && !next.startDate) next.startDate = today;
     if (next.system === 'xiaoliuren' && next.mode !== 'number' && !next.datetime && !next.date) {
@@ -106,8 +107,8 @@ export function apply(ctx) {
       properties: {
         system: {
           type: 'string',
-          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'],
-          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局）；name = 起名（用字五行评估与候选生成）。',
+          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'convert'],
+          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局）；name = 起名（用字五行评估与候选生成）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
         },
         datetime: {
           type: 'string',
@@ -168,7 +169,7 @@ export function apply(ctx) {
         },
         task: {
           type: 'string',
-          enum: ['嫁娶', '订婚', '开业', '入宅', '搬家', '动土', '装修', '安葬', '出行', '祭祀', '签约', '求医', '纳财'],
+          enum: ['嫁娶', '订婚', '领证', '提亲', '收送聘金', '满月酒', '开业', '交易', '投资', '签订合同', '签约', '纳财', '入宅', '搬家', '搬家入宅', '动土', '装修', '装修建造', '安葬', '出行', '旅行', '赴任', '访亲友', '祭祀', '求医', '入学', '试车买车'],
           description: '仅 zeri 使用：要挑的事项。',
         },
         startDate: {
@@ -184,6 +185,15 @@ export function apply(ctx) {
           enum: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
           description: '仅 zeri 使用：当事人属相，用于排除冲煞日（不给则不排除）。',
         },
+        mode: {
+          type: 'string',
+          enum: ['solar2lunar', 'lunar2solar'],
+          description: '仅 convert 使用：转换方向，默认 solar2lunar（公历转农历）；lunar2solar 需同时给 lunarYear/lunarMonth/lunarDay。',
+        },
+        lunarYear: { type: 'integer', description: '仅 convert 的 lunar2solar：农历年份，如 2026。' },
+        lunarMonth: { type: 'integer', description: '仅 convert 的 lunar2solar：农历月份 1–12。' },
+        lunarDay: { type: 'integer', description: '仅 convert 的 lunar2solar：农历日 1–30（小月无三十）。' },
+        isLeapMonth: { type: 'boolean', description: '仅 convert 的 lunar2solar：该月是否为闰月。' },
         num1: { type: 'number', description: '仅 xiaoliuren 报数模式：第一个数（1–99）。' },
         num2: { type: 'number', description: '仅 xiaoliuren 报数模式：第二个数（1–99）。' },
         num3: { type: 'number', description: '仅 xiaoliuren 报数模式：第三个数（1–99）。' },

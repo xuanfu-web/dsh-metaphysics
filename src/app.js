@@ -165,7 +165,8 @@ const TABS = [
   { k: 'hepan', label: '合盘', timeLabel: '你的出生时刻', hint: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。' },
     { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
   // 速查类：不做完整报告，只给当日/当天的确定性结果
-  { k: 'almanac', label: '黄历', timeLabel: '', hint: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。' },
+  { k: 'almanac', label: '黄历', timeLabel: '', hint: '黄历按公历日期查农历、干支、宜忌、时辰吉凶、二十八宿与吉神方位；只做本地计算。' },
+  { k: 'convert', label: '农历', timeLabel: '', hint: '公农历互转：公历生日可反查农历；只知道农历生日时，可转成公历再排盘。' },
   { k: 'zeri', label: '择日', timeLabel: '', hint: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。' },
   { k: 'chenggu', label: '称骨', timeLabel: '出生时刻', hint: '称骨按农历年、月、日、时的骨重求和；时辰必填。' },
   { k: 'xiaoliuren', label: '小六壬', timeLabel: '起课时刻', hint: '小六壬用农历月/日/时掐指，也可用三个随机数起课。' },
@@ -192,7 +193,7 @@ const TIME_KIND = {
   liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
   tarot: 'none',
   // 速查类：date=只用日期；birth=出生信息；cast=起课时刻
-  almanac: 'date', zeri: 'date', star: 'date', numerology: 'date',
+  almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
   chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
   xiaoliuren: 'cast',
 };
@@ -235,6 +236,9 @@ function App() {
   const [task, setTask] = useState('开业');
   const [days, setDays] = useState('30');
   const [shengXiao, setShengXiao] = useState('');
+  const [convMode, setConvMode] = useState('solar2lunar');
+  const [lunarDate, setLunarDate] = useState('');
+  const [leapMonth, setLeapMonth] = useState(false);
   const [xlrMode, setXlrMode] = useState('time');
   const [num1, setNum1] = useState(''); const [num2, setNum2] = useState(''); const [num3, setNum3] = useState('');
   const [toAge, setToAge] = useState('60');
@@ -349,6 +353,24 @@ function App() {
         } else {
           args.givenName = givenName.trim();
           delete args.datetime; // 评估名字时生辰可空：空着只评字面五行
+        }
+      }
+      if (k === 'convert') {
+        args.system = 'convert';
+        if (convMode === 'lunar2solar') {
+          const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(lunarDate).trim());
+          if (!m) {
+            setError('农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。');
+            return;
+          }
+          args.mode = 'lunar2solar';
+          args.lunarYear = Number(m[1]);
+          args.lunarMonth = Number(m[2]);
+          args.lunarDay = Number(m[3]);
+          args.isLeapMonth = leapMonth;
+          delete args.datetime;
+        } else {
+          args.mode = 'solar2lunar';
         }
       }
       if (k === 'tarot') args.count = Number(count);
@@ -745,8 +767,24 @@ function App() {
         })) : null,
         tab === 'zeri' ? field('所办事项', h('select', {
           className: 'mp-input', value: task, onChange: (e) => setTask(e.target.value),
-        }, ['嫁娶', '订婚', '开业', '入宅', '搬家', '动土', '装修', '安葬', '出行', '祭祀', '签约', '求医', '纳财']
-          .map((t) => h('option', { key: t, value: t }, t)))) : null,
+        }, [
+          ['常用', ['嫁娶', '搬家入宅', '出行', '开业', '签订合同', '祭祀']],
+          ['婚嫁', ['嫁娶', '订婚', '领证', '提亲', '收送聘金', '满月酒']],
+          ['生活', ['搬家', '入宅', '旅行', '访亲友', '入学', '求医', '祭祀']],
+          ['建造', ['动土', '装修', '装修建造', '安葬', '试车买车']],
+          ['工商', ['开业', '交易', '投资', '签订合同', '签约', '纳财', '赴任']],
+        ].map(([g, items]) => h('optgroup', { key: g, label: g },
+          items.map((t) => h('option', { key: `${g}-${t}`, value: t }, t)))))) : null,
+        tab === 'convert' ? field('转换方向', h('div', { className: 'mp-seg' },
+          h('button', { className: convMode === 'solar2lunar' ? 'on' : '', onClick: () => setConvMode('solar2lunar') }, '公历 → 农历'),
+          h('button', { className: convMode === 'lunar2solar' ? 'on' : '', onClick: () => setConvMode('lunar2solar') }, '农历 → 公历'))) : null,
+        (tab === 'convert' && convMode === 'lunar2solar') ? field('农历日期', h('input', {
+          className: 'mp-input', value: lunarDate, placeholder: '如 2026-9-17',
+          onChange: (e) => setLunarDate(e.target.value),
+        })) : null,
+        (tab === 'convert' && convMode === 'lunar2solar') ? h('label', {
+          className: 'mp-check',
+        }, h('input', { type: 'checkbox', checked: leapMonth, onChange: (e) => setLeapMonth(e.target.checked) }), ' 闰月') : null,
         tab === 'zeri' ? field('看多少天', h('input', {
           className: 'mp-input', type: 'number', min: 1, max: 60, value: days,
           onChange: (e) => setDays(e.target.value),
@@ -874,6 +912,7 @@ function App() {
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
                       : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
+                        : result.kind === 'almanac' ? PP.almanacHTML(result.r)
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
