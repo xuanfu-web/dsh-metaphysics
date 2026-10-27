@@ -59,11 +59,11 @@ PR 合并后站点与 dsh-market 会自动重建，通常一天内可见。
 npm publish --access public
 ```
 
-## 四、提交状态（2026-10-24 更新）
+## 四、提交状态（2026-10-27 更新）
 
 - **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/9854 （open，把条目描述更新为十八套体系并加上「玄学」关键词；原 PR #8517 已于 2026-10-22 合并；0.19.0 发布后条目描述已含公农历互转）
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.20.0`（`dist-tags.latest = 0.20.0`，registry 已核对；git tag `v0.20.0`、GitHub Release latest `v0.20.0`、CI success：
+- **已发布**：npm `dsh-metaphysics@0.21.0`（`dist-tags.latest = 0.21.0`，registry 已核对；git tag `v0.21.0`、GitHub Release latest `v0.21.0`、桌面 profile 已升到 0.21.0；0.21.0 新增《穷通宝鉴》120 格用神与原文摘句）；发布命令：
   `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
   token 走临时 `.npmrc`（0600），发布后立即删除
 - **历史卡点**：建仓用的临时令牌已删除（API 401）；`github.com:443` 曾间歇失败，重试后可推
