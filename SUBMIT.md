@@ -61,9 +61,9 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-24 更新）
 
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/9854 （，把条目描述更新为十七套体系并加上「玄学」关键词；原 PR #8517 已于 2026-10-22 合并）
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/9854 （open，把条目描述更新为十七套体系并加上「玄学」关键词；原 PR #8517 已于 2026-10-22 合并）
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.18.1`（`dist-tags.latest = 0.18.1`，registry 已核对；git tag `v0.18.0`、GitHub Release latest `v0.18.0`、CI success
+- **已发布**：npm `dsh-metaphysics@0.18.1`（`dist-tags.latest = 0.18.1`，registry 已核对；git tag `v0.18.1`、GitHub Release latest `v0.18.1`、CI success
 - **已推送**：`perf/0.15-opt` 9 个提交已合入 main 并随 0.15.0 发布；tag `v0.15.0` 同批推送
 - **发版命令**（本机无 npm CLI，用 `.dsh` 自带 pnpm）：
   `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
