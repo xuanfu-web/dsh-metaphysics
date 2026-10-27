@@ -22,10 +22,14 @@ ok('带 5 年与 10 年均线', C.includes('kl-ma m5') && C.includes('kl-ma m10'
 ok('带高低年份标记', C.includes('kl-mark hi') && C.includes('kl-mark lo'));
 ok('带图例', C.includes('kl-legend') && C.includes('虚线＝大运交界'));
 ok('带年龄刻度', (C.match(/class="kl-lbl age"/g) || []).length >= 3);
+ok('段名在底部条纹里，不压顶部标记', C.includes('kl-stripband') && /class="kl-seg"[^>]*text-anchor="middle"/.test(C));
+ok('5/10 年均线末端值标注', (C.match(/kl-ma-lbl m5/g) || []).length === 1 && (C.match(/kl-ma-lbl m10/g) || []).length === 1);
+ok('纵轴 0–100 固定量程刻度', ['>0</text>', '>25</text>', '>50</text>', '>75</text>', '>100</text>'].every((s) => C.includes(s)));
+ok('横轴轴名与刻度说明', C.includes('年龄（岁）') && C.includes('满分 100'));
 
 // ── 二、几何不能画飞 ────────────────────────────────────────
 {
-  const W = 720, H = 300;
+  const W = 720, H = 322;
   let checked = 0, out = 0;
   for (const m of C.matchAll(/<rect[^>]*x="([-\d.]+)"[^>]*y="([-\d.]+)"[^>]*width="([\d.]+)"[^>]*height="([\d.]+)"/g)) {
     const [x, y, w, h] = m.slice(1).map(Number);
@@ -50,6 +54,12 @@ ok('单点不画（画不出涨跌）', PP.trendChart({ points: [{ age: 1, score
 // ── 四、整块渲染与口径 ──────────────────────────────────────
 const H2 = PP.trendHTML(R);
 ok('整块含标题与图', H2.includes('mp-kline') && H2.includes('人生 K 线'));
+ok('统计条：全段均值 + 波动幅度', H2.includes('kl-stats') && H2.includes('全段均值') && H2.includes('波动幅度'));
+ok('统计条给出最好/最差大运', (() => {
+  const B = compute({ system: 'trend', datetime: '1990-05-12T14:30', gender: 'female', toAge: 100, address: '河北石家庄' });
+  const HH = PP.trendHTML(B);
+  return HH.includes('最好大运') && HH.includes('最差大运');
+})());
 ok('大运 chips 与分段数一致', (H2.match(/kl-chip/g) || []).length === R.segments.length, String((H2.match(/kl-chip/g) || []).length));
 ok('含口径说明（不预测具体事件）', H2.includes('不预测具体事件'));
 ok('旺衰边界时不给高低结论', (() => {

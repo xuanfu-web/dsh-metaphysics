@@ -359,6 +359,17 @@
 .mp-kline .kl-seg{fill:var(--label);font-size:8.5px;font-family:system-ui,sans-serif;paint-order:stroke;stroke:var(--card);stroke-width:2.2px;stroke-linejoin:round}
 .mp-kline .kl-lbl{fill:var(--muted);font-size:8px;font-family:system-ui,sans-serif}
 .mp-kline .kl-lbl.age{font-size:8.5px}
+.mp-kline .kl-lbl.axis{font-size:8px;letter-spacing:.02em;opacity:.85}
+.mp-kline .kl-stripband{fill:var(--ink);opacity:.06;rx:2}
+.mp-kline .kl-ma-lbl{font-size:8.5px;font-family:system-ui,sans-serif;paint-order:stroke;stroke:var(--card);stroke-width:2.4px;stroke-linejoin:round;fill:var(--muted)}
+.mp-kline .kl-ma-lbl.m5{fill:var(--quan)}
+.mp-kline .kl-ma-lbl.m10{fill:var(--ke);opacity:.9}
+.mp-kline .kl-stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-kline .kl-stats span{display:inline-flex;align-items:baseline;gap:5px}
+.mp-kline .kl-stats em{font-style:normal;font-size:10.5px;color:var(--dim)}
+.mp-kline .kl-stats b{font-size:12px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
+.mp-kline .kl-stats b.hi{color:var(--ji)}
+.mp-kline .kl-stats b.lo{color:var(--lu)}
 .mp-kline .kl-c.up line{stroke:var(--ji);stroke-width:.8;opacity:.8}
 .mp-kline .kl-c.up rect{fill:var(--ji);opacity:.92}
 .mp-kline .kl-c.down line{stroke:var(--lu);stroke-width:.8;opacity:.8}
@@ -1505,13 +1516,14 @@
    * 与 curveHTML 的分工：curveHTML 是八字里的「大运阶梯 + 流年折线」；这张是同一批
    * 评分的 K 线形态，单独成块可直接截图，也嵌在八字结果底部。
    */
+  let klineSeq = 0;
   pp.trendChart = function (r) {
     const pts = r && Array.isArray(r.points) ? r.points : [];
     if (pts.length < 2) return '';
     const segs = r && Array.isArray(r.segments) ? r.segments : [];
     const num = (v) => (typeof v === 'number' && isFinite(v) ? v : 0);
-    const W = 720, H = 300;
-    const M = { t: 36, r: 14, b: 30, l: 34 };
+    const W = 720, H = 322;
+    const M = { t: 34, r: 46, b: 66, l: 36 };
     const pw = W - M.l - M.r, ph = H - M.t - M.b;
     const n = pts.length;
     const step = pw / n;
@@ -1519,19 +1531,26 @@
     const Y = (v) => M.t + ph - (Math.max(0, Math.min(100, v)) / 100) * ph;
     const bodyW = Math.max(1.1, Math.min(10, step * 0.62));
     const sc = (p) => num(p.score);
+    const yb = M.t + ph;
+    const stripTop = yb + 20, stripH = 22;
+    const clipId = `klclip${(klineSeq += 1)}`;
 
-    // 大运交替底色 + 分界虚线 + 段名（先画底，再压线）
+    // 大运交替底色 + 分界虚线 + 底部段名条（段名放条纹里，避开顶部高低岁标记）
     const bands = segs.map((s, i) => {
       const i0 = Math.max(0, s.startAge - 1);
       const i1 = Math.min(n - 1, s.endAge - 1);
       if (i1 < i0) return '';
       const x = M.l + i0 * step;
       const w = Math.max(0.6, (i1 - i0 + 1) * step);
-      const rect = i % 2 === 1
-        ? `<rect class="kl-band" x="${x.toFixed(1)}" y="${M.t}" width="${w.toFixed(1)}" height="${ph}"/>` : '';
+      const tint = i % 2 === 1;
+      const rect = tint
+        ? `<rect class="kl-band" x="${x.toFixed(1)}" y="${M.t}" width="${w.toFixed(1)}" height="${ph}"/>`
+        + `<rect class="kl-stripband" x="${x.toFixed(1)}" y="${stripTop}" width="${w.toFixed(1)}" height="${stripH}"/>` : '';
       const line = i === 0 ? ''
-        : `<line class="kl-segline" x1="${x.toFixed(1)}" y1="${M.t}" x2="${x.toFixed(1)}" y2="${M.t + ph}"/>`;
-      return rect + line + `<text class="kl-seg" x="${(x + 3).toFixed(1)}" y="${M.t - 8}">${esc(s.ganZhi)}</text>`;
+        : `<line class="kl-segline" x1="${x.toFixed(1)}" y1="${M.t}" x2="${x.toFixed(1)}" y2="${yb}"/>`;
+      const cx = Math.min(Math.max(M.l + ((i0 + i1 + 1) / 2) * step, M.l + 22), M.l + pw - 22);
+      return rect + line
+        + `<text class="kl-seg" x="${cx.toFixed(1)}" y="${(stripTop + 15).toFixed(1)}" text-anchor="middle">${esc(s.ganZhi)}</text>`;
     }).join('');
 
     // 网格与纵轴刻度（0–100 固定量程，跨盘可比）
@@ -1539,10 +1558,10 @@
       `<line class="kl-grid${v === 50 ? ' mid' : ''}" x1="${M.l}" y1="${Y(v).toFixed(1)}" x2="${M.l + pw}" y2="${Y(v).toFixed(1)}"/>`
       + `<text class="kl-lbl" x="${M.l - 6}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end">${v}</text>`).join('');
 
-    // 蜡烛：影线 + 实体
+    // 蜡烛：影线 + 实体（影线夹在绘图区内，避免贴边溢出）
     const candles = pts.map((p, i) => {
       const k = p.kline || {};
-      const o = num(k.open), c = num(k.close), hi = num(k.high), lo = num(k.low);
+      const o = num(k.open), c = num(k.close), hi = Math.min(100, num(k.high)), lo = Math.max(0, num(k.low));
       const up = c >= o;
       const yO = Y(o), yC = Y(c);
       const top = Math.min(yO, yC);
@@ -1554,17 +1573,36 @@
         + `<rect x="${(x - bodyW / 2).toFixed(2)}" y="${top.toFixed(1)}" width="${bodyW.toFixed(2)}" height="${h.toFixed(1)}" rx="0.7"/></g>`;
     }).join('');
 
-    // 均线（5 / 10 年）
-    const maPath = (win) => {
-      const seg = [];
+    // 均线（5 / 10 年）：路径 + 末端数值标注（右端对齐，避免互相压字）
+    const maSeries = (win) => {
+      const out = [];
       for (let i = 0; i < n; i++) {
         if (i + 1 < win) continue;
         let sum = 0;
         for (let j = i + 1 - win; j <= i; j++) sum += sc(pts[j]);
-        seg.push(`${seg.length ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(sum / win).toFixed(1)}`);
+        out.push({ i, v: sum / win });
       }
-      return seg.join(' ');
+      return out;
     };
+    const maPath = (win) => maSeries(win)
+      .map((q, k) => `${k ? 'L' : 'M'}${X(q.i).toFixed(1)} ${Y(q.v).toFixed(1)}`).join(' ');
+    const maLabel = (win, cls) => {
+      const s = maSeries(win);
+      if (!s.length) return '';
+      const last = s[s.length - 1];
+      return { cls, y: Y(last.v), text: `<text class="kl-ma-lbl ${cls}" x="${M.l + pw + 5}" y="${Y(last.v).toFixed(1)}" text-anchor="start">${last.v.toFixed(0)}</text>` };
+    };
+    const lab10 = maLabel(10, 'm10'), lab5 = maLabel(5, 'm5');
+    const maLabels = (() => {
+      if (!lab5 || !lab10) return `${lab10 ? lab10.text : ''}${lab5 ? lab5.text : ''}`;
+      let y5 = lab5.y, y10 = lab10.y;
+      if (Math.abs(y5 - y10) < 10) {
+        const top = Math.min(y5, y10), bot = Math.max(y5, y10);
+        y5 = top - 6; y10 = bot + 6;
+      }
+      return `<text class="kl-ma-lbl m10" x="${M.l + pw + 5}" y="${y10.toFixed(1)}" text-anchor="start">${maSeries(10).slice(-1)[0].v.toFixed(0)}</text>`
+        + `<text class="kl-ma-lbl m5" x="${M.l + pw + 5}" y="${y5.toFixed(1)}" text-anchor="start">${maSeries(5).slice(-1)[0].v.toFixed(0)}</text>`;
+    })();
 
     // 最高 / 最低岁
     let hiP = pts[0], loP = pts[0];
@@ -1583,11 +1621,12 @@
         + `<text x="${tx.toFixed(1)}" y="${(y + d).toFixed(1)}" text-anchor="middle">${p.age}岁 ${sc(p)}</text></g>`;
     };
 
-    // 年龄刻度：跨度大时 10 岁一格，否则 5 岁
+    // 年龄刻度：跨度大时 10 岁一格，否则 5 岁；轴名放最底行，避免和刻度过早挤在一起
     const tickStep = n > 60 ? 10 : 5;
     const ages = pts.filter((p) => p.age % tickStep === 0).map((p) =>
-      `<text class="kl-lbl age" x="${X(pts.indexOf(p)).toFixed(1)}" y="${M.t + ph + 14}" text-anchor="middle">${p.age}</text>`).join('');
-    const xNote = `<text class="kl-lbl" x="${M.l + pw / 2}" y="${H - 4}" text-anchor="middle">年龄（岁）</text>`;
+      `<text class="kl-lbl age" x="${X(pts.indexOf(p)).toFixed(1)}" y="${(yb + 14).toFixed(1)}" text-anchor="middle">${p.age}</text>`).join('');
+    const xNote = `<text class="kl-lbl axis" x="${M.l}" y="${(H - 6).toFixed(1)}">年龄（岁）</text>`
+      + `<text class="kl-lbl axis" x="${M.l + pw}" y="${(H - 6).toFixed(1)}" text-anchor="end">每岁一分 · 满分 100</text>`;
 
     const legend = `<div class="kl-legend"><span><i class="up"></i>阳线：比上一岁高</span>`
       + `<span><i class="down"></i>阴线：比上一岁低</span>`
@@ -1596,8 +1635,13 @@
 
     return `<div class="mp-kline-fig">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="人生K线：1 到 ${n} 岁的逐年评分蜡烛图">
-        ${bands}${grid}${candles}
-        <path class="kl-ma m10" d="${maPath(10)}"/><path class="kl-ma m5" d="${maPath(5)}"/>
+        <defs><clipPath id="${clipId}"><rect x="${M.l}" y="${M.t}" width="${pw}" height="${ph}"/></clipPath></defs>
+        ${bands}${grid}
+        <g clip-path="url(#${clipId})">
+          ${candles}
+          <path class="kl-ma m10" d="${maPath(10)}"/><path class="kl-ma m5" d="${maPath(5)}"/>
+        </g>
+        ${maLabels}
         ${mark(hiP, 'hi', -8)}${mark(loP, 'lo', 12)}
         ${ages}${xNote}
       </svg>${legend}</div>`;
@@ -1617,9 +1661,28 @@
     const worst = (Array.isArray(hl.worst) ? hl.worst : []).map((x) => `<div class="kl-hl lo">${esc(x)}</div>`).join('');
     const note = meta.boundaryNote ? `<div class="mp-kline-note">${esc(meta.boundaryNote)}</div>`
       : (hl.suppressed ? `<div class="mp-kline-note">${esc(hl.suppressed)}</div>` : '');
+    // 统计条：全段均值 / 最好大运 / 最差大运 / 波动幅度。旺衰贴阈值时不给「最好/最差大运」顺位
+    const pts = Array.isArray(r.points) ? r.points : [];
+    const scoreOf = (p) => (typeof p.score === 'number' && isFinite(p.score) ? p.score : 0);
+    const scores = pts.map(scoreOf);
+    const mean = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    const span = scores.length ? Math.max(...scores) - Math.min(...scores) : 0;
+    const segAvg = segs.map((s) => {
+      const inside = pts.filter((p) => p.age >= s.startAge && p.age <= s.endAge).map(scoreOf);
+      return { ganZhi: s.ganZhi, v: inside.length ? inside.reduce((a, b) => a + b, 0) / inside.length : 0 };
+    }).filter((x) => x.v > 0).sort((a, b) => b.v - a.v);
+    const blocked = !!(st.boundary || hl.suppressed);
+    const statCells = [`<span><em>全段均值</em><b>${mean.toFixed(0)}</b></span>`];
+    if (!blocked && segAvg.length) {
+      statCells.push(`<span><em>最好大运</em><b class="hi">${esc(segAvg[0].ganZhi)} ${segAvg[0].v.toFixed(0)}</b></span>`);
+      statCells.push(`<span><em>最差大运</em><b class="lo">${esc(segAvg[segAvg.length - 1].ganZhi)} ${segAvg[segAvg.length - 1].v.toFixed(0)}</b></span>`);
+    }
+    statCells.push(`<span><em>波动幅度</em><b>${span.toFixed(0)}</b></span>`);
+    const stats = `<div class="kl-stats">${statCells.join('')}</div>`;
     return `<section class="mp-kline" aria-label="人生K线结果">
       <div class="mp-kline-h"><b>人生 K 线</b><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
       ${chart}
+      ${stats}
       ${chips ? `<div class="kl-segs">${chips}</div>` : ''}
       ${best || worst ? `<div class="kl-hls">${best}${worst}</div>` : ''}
       ${note}
