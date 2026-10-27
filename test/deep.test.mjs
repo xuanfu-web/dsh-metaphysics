@@ -31,7 +31,7 @@ ok('流年带档位与理由', /大忌|大吉|吉|平|忌/.test(bzTime) && /（.
 const bzChecks = sec(BZ, 'checks').text;
 ok('交叉校验含喜忌合计', /喜用合计/.test(bzChecks));
 ok('交叉校验含运年同向判断', /大运.*流年|运年/.test(bzChecks), bzChecks.slice(0, 40));
-ok('交叉校验含调候一致性', /调候喜/.test(bzChecks));
+ok('交叉校验含调候一致性', /调候喜|调候要/.test(bzChecks));
 
 ok('八字有「未纳入」并说明流派边界', /未纳入|没有计算/.test(sec(BZ, 'limits').text) && /扶抑|调候/.test(sec(BZ, 'limits').text));
 

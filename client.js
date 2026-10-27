@@ -746,7 +746,7 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-const USER_AGENT = 'dsh-metaphysics/0.19.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.20.0 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
@@ -1280,7 +1280,215 @@ const RULE_TABLE = RULES.reduce((acc, r) => { acc[r.name] = { cat: r.cat, luck: 
 return { PILLAR_KEYS, PILLAR_LABEL, CATEGORY_ORDER, computeBaziShensha, RULE_TABLE };
 })();
 
+__mods.tiaohou = (function () {
+
+const STEM_ELEMENT = {
+  甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
+  己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水',
+};
+
+const SEASON_TEMP = {
+  亥: -1.8, 子: -2, 丑: -1.5,
+  寅: -0.4, 卯: 0.2, 辰: 0.5,
+  巳: 1.3, 午: 2, 未: 1.5,
+  申: 0.6, 酉: 0.2, 戌: -0.2,
+};
+
+const SEASON_NAME = {
+  亥: '初冬', 子: '仲冬', 丑: '季冬',
+  寅: '初春', 卯: '仲春', 辰: '季春',
+  巳: '初夏', 午: '仲夏', 未: '季夏',
+  申: '初秋', 酉: '仲秋', 戌: '季秋',
+};
+
+const WET_BRANCH = { 丑: 1, 辰: 1, 子: 0.6, 亥: 0.5 };
+const DRY_BRANCH = { 未: 1, 戌: 1, 午: 0.4, 巳: 0.4 };
+
+const NEED = {
+  寒湿: { element: '火', stem: '丙', avoid: '水', why: '冻土要太阳来解，水再多只会更冷' },
+  寒燥: { element: '火', stem: '丙', avoid: '水', why: '天寒地干，先要一点阳和之气' },
+  寒: { element: '火', stem: '丙', avoid: '水', why: '冬令气寒，非火不暖' },
+  温热: { element: '水', stem: '壬', avoid: '火', why: '火气初旺，得水润泽才好用' },
+  燥热: { element: '水', stem: '壬', avoid: '火', why: '火炎土燥，非水不润' },
+  热: { element: '水', stem: '壬', avoid: '火', why: '夏令炎威，先求一泓清水' },
+  湿滞: { element: '火', stem: '丙', avoid: '水', why: '湿气郁结，要火来蒸腾' },
+  燥: { element: '水', stem: '壬', avoid: '火', why: '气燥不润，得水则舒' },
+  平和: { element: null, stem: null, avoid: null, why: '寒暖相济，气候不是这一盘的主要矛盾' },
+};
+
+const KIND_NAME = {
+  寒湿: '寒湿', 寒燥: '寒燥', 寒: '寒',
+  温热: '温热', 燥热: '燥热', 热: '热',
+  湿滞: '湿滞', 燥: '燥', 平和: '平和',
+};
+
+const DAY_FEEL = {
+  寒湿: {
+    木: '木是花草藤萝，冰封的土里抽不出芽——它不缺雨水，缺的是一轮太阳',
+    火: '火在冬天最怕被水浇，一点火苗要护住，才谈得上发光',
+    土: '土冻成一块，再厚也长不出东西，得先晒透',
+    金: '金在寒水里泡久了，锋刃会发滞，要火来炼一炼',
+    水: '水本就冷，再加寒就是死水；要火把它烧活',
+  },
+  寒燥: {
+    木: '木在干冷里最难熬，既缺暖气，又缺一点滋润',
+    火: '火在寒天里要先活下来，才有余力照别人',
+    土: '土冷而干，板结着，得暖气与一点水汽一起松',
+    金: '金寒则脆，得火炼、得土养，才成器',
+    水: '水在寒天里收得太紧，要一点火气化开',
+  },
+  寒: {
+    木: '冬木先要暖，暖了才谈得上发荣',
+    火: '火在冬天要护住，别被冷风吹散',
+    土: '土寒不生物，先暖后养',
+    金: '金寒则钝，得火则利',
+    水: '水寒则滞，得火则行',
+  },
+  温热: {
+    木: '木在暖和里长得快，但要防长得太急、根扎不深',
+    火: '火得时令，容易旺过头，要留一点水来收',
+    土: '土被火烤着，容易燥，得水润一润',
+    金: '金在暖处容易软，需要一点水土把它养住',
+    水: '水在暖处容易蒸干，要源头不断',
+  },
+  燥热: {
+    木: '木被火烤着，叶子先焦，得先补水',
+    火: '火已经够旺了，再添柴只会烧到自己',
+    土: '土燥则裂，得水润、得木疏',
+    金: '金在燥热里容易发烫变形，要水来淬',
+    水: '水在燥热里最珍贵，一滴都不能浪费',
+  },
+  热: {
+    木: '木在暑天要水，不然只长叶不结果',
+    火: '火已经当令，收着用比放出去更划算',
+    土: '土热则燥，得水则安',
+    金: '金在暑天要水来洗，才见光泽',
+    水: '水在暑天是命脉，要保住源头',
+  },
+  湿滞: {
+    木: '木泡在水里会烂根，先要疏土透气',
+    火: '火在湿气里点不着，得先除湿',
+    土: '土湿成泥，得火蒸腾、得木来疏',
+    金: '金埋在湿土里会生锈，要见火见光',
+    水: '水已经太多，再添就是泛滥',
+  },
+  燥: {
+    木: '木在燥气里容易枯，先要一点水',
+    火: '火在燥处容易失控，要收',
+    土: '土燥不毛，得水润、得木疏',
+    金: '金在燥处要水来洗，才不刺手',
+    水: '水在燥处最容易被耗干，要护住',
+  },
+  平和: {
+    木: '寒暖还算相济，木有生长的余地',
+    火: '气候不偏，火可以按自己的节奏用',
+    土: '土不燥不湿，能养也能载',
+    金: '金不寒不燥，成器只差打磨',
+    水: '水不冰不涸，能流得动',
+  },
+};
+
+const round2 = (n) => Math.round(n * 100) / 100;
+
+function judgeClimate({ monthBranch, dayStem, wuxing = {}, branches = [] }) {
+  const fire = Number(wuxing['火'] || 0);
+  const water = Number(wuxing['水'] || 0);
+  let wet = 0;
+  let dry = 0;
+  let wetCount = 0;
+  let dryCount = 0;
+  for (const b of branches) {
+    if (WET_BRANCH[b]) { wet += WET_BRANCH[b]; if (b === '丑' || b === '辰') wetCount += 1; }
+    if (DRY_BRANCH[b]) { dry += DRY_BRANCH[b]; if (b === '未' || b === '戌') dryCount += 1; }
+  }
+  const seasonT = SEASON_TEMP[monthBranch] ?? 0;
+  const temp = round2(seasonT + 0.45 * fire - 0.4 * water);
+  const damp = round2(wet - dry + 0.25 * water - 0.25 * fire);
+
+  const cold = temp <= -0.8;
+  const hot = temp >= 0.9;
+  const wetSide = damp >= 0.8;
+  const drySide = damp <= -0.8;
+
+  let kind = '平和';
+  if (cold && wetSide) kind = '寒湿';
+  else if (cold && drySide) kind = '寒燥';
+  else if (cold) kind = '寒';
+  else if (hot && drySide) kind = '燥热';
+  else if (hot) kind = '温热';
+  else if (hot && damp >= 0.8) kind = '湿滞';
+  else if (drySide) kind = '燥';
+  else if (wetSide) kind = '湿滞';
+
+  const need = NEED[kind] || NEED.平和;
+  const dayElement = STEM_ELEMENT[dayStem] || '土';
+  const evidence = [
+    `${SEASON_NAME[monthBranch] || monthBranch}${monthBranch}月`,
+    `火${fire}`,
+    `水${water}`,
+    wetCount ? `湿土${wetCount}处` : '',
+    dryCount ? `燥土${dryCount}处` : '',
+  ].filter(Boolean);
+
+  const priority = Math.abs(temp) >= 1.2 || Math.abs(damp) >= 1.2 ? '调候优先' : '扶抑为主';
+  const narration = buildNarration({ kind, monthBranch, dayElement, need, temp, damp, fire, water });
+
+  return {
+    kind,
+    label: KIND_NAME[kind] || kind,
+    temp,
+    damp,
+    cold,
+    hot,
+    wet: wetSide,
+    dry: drySide,
+    need: need.element ? { element: need.element, stem: need.stem, why: need.why } : null,
+    avoidElement: need.avoid,
+    dayElement,
+    priority,
+    evidence,
+    narration,
+  };
+}
+
+function buildNarration({ kind, monthBranch, dayElement, need, fire, water }) {
+  const feel = (DAY_FEEL[kind] || DAY_FEEL.平和)[dayElement] || '';
+  const season = SEASON_NAME[monthBranch] || '';
+  const head = `${season ? season : ''}${monthBranch}月出生，全局火${fire}、水${water}，这一盘的气候是「${KIND_NAME[kind] || kind}」`;
+  if (!need.element) {
+    return `${head}。${feel}。调候不是这一盘的主要矛盾，取用仍以扶抑为主，寒暖只作微调。`;
+  }
+  return `${head}。${feel}。所以这一局要的不是更多的${kind.includes('寒') ? '水' : '火'}，而是${need.stem}${need.element}——${need.why}。`;
+}
+
+function arbitrate(climate, favors = [], avoids = []) {
+  if (!climate || !climate.need) return { clash: false, text: '气候平和，按扶抑取用即可。' };
+  const needEl = climate.need.element;
+  const inFavor = favors.includes(needEl);
+  const inAvoid = avoids.includes(needEl);
+  const same = inFavor && !inAvoid;
+  if (same) return { clash: false, text: `调候要${climate.need.stem}${needEl}，扶抑也以${needEl}为喜——两套取法同向，不必取舍。` };
+  return {
+    clash: true,
+    text: `调候要${climate.need.stem}${needEl}，扶抑却把${needEl}列为${inAvoid ? '忌' : '闲'}；两者不一致，本盘按调候优先取${needEl}，扶抑次之——因为寒暖失衡时，再补强弱也难受。`,
+  };
+}
+
+function climateText(climate) {
+  if (!climate) return '';
+  const ev = (climate.evidence || []).join('、');
+  const arb = climate.need
+    ? `调候取${climate.need.stem}${climate.need.element}（${climate.need.why}），忌${climate.avoidElement}。`
+    : '气候平和，调候不作主取。';
+  return `${climate.label}（${ev}）。${climate.narration}${arb}${climate.priority === '调候优先' ? ' 本盘调候优先于扶抑。' : ''}`;
+}
+
+return { judgeClimate, arbitrate, climateText };
+})();
+
 __mods.geju = (function () {
+
+const { judgeClimate, arbitrate } = __mods.tiaohou;
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -1459,38 +1667,35 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
   return out;
 }
 
-const TIAOHOU = {
-  亥: ['火', '冬月寒水当令，最喜火暖局'],
-  子: ['火', '仲冬水旺，最喜火暖局'],
-  丑: ['火', '季冬湿寒，喜火解冻'],
-  巳: ['水', '初夏火旺，喜水制衡'],
-  午: ['水', '仲夏火炎，最喜水调候'],
-  未: ['水', '季夏燥土，喜水润局'],
-  寅: ['火', '初春尚寒，得火而发'],
-  卯: ['火', '仲春木旺，喜火吐秀'],
-  辰: ['金', '季春湿土，喜金水疏泄'],
-  申: ['火', '初秋金旺，喜火炼金'],
-  酉: ['火', '仲秋金锐，喜火制'],
-  戌: ['水', '季秋燥土，喜水润泽'],
-};
-
-function yongshenOf(dayStem, monthBranch, strength, wuxing) {
+function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const roles = elementRoles(dayStem);
   const me = roles.me;
   const weak = strength.level === '身弱' || strength.level === '偏弱';
   const strong = strength.level === '身强' || strength.level === '偏强';
 
-  const favor = weak ? [roles.inMe, me] : strong ? [roles.shi, roles.cai, roles.guan] : [roles.inMe, me, roles.shi];
-  const avoid = weak ? [roles.shi, roles.cai, roles.guan] : strong ? [me, roles.inMe] : [roles.guan, roles.cai];
-  const favorableTenGods = weak ? ['正印', '偏印', '比肩', '劫财'] : strong
-    ? ['食神', '伤官', '正财', '偏财', '正官', '七杀']
-    : ['正印', '偏印', '食神', '伤官'];
+  const baseFavor = weak ? [roles.inMe, me] : strong ? [roles.shi, roles.cai, roles.guan] : [roles.inMe, me, roles.shi];
+  const baseAvoid = weak ? [roles.shi, roles.cai, roles.guan] : strong ? [me, roles.inMe] : [roles.guan, roles.cai];
+  let favor = baseFavor.slice();
+  let avoid = baseAvoid.slice();
 
-  const th = TIAOHOU[monthBranch];
-  const tiaohou = th ? { element: th[0], note: th[1] } : null;
+  const climate = judgeClimate({ monthBranch, dayStem, wuxing, branches });
+  const arb = arbitrate(climate, baseFavor, baseAvoid);
+  if (climate.need && climate.priority === '调候优先') {
+    const needEl = climate.need.element;
+    if (!favor.includes(needEl)) favor.unshift(needEl);
+    avoid = avoid.filter((e) => e !== needEl);
+    if (climate.avoidElement && !avoid.includes(climate.avoidElement)) avoid.unshift(climate.avoidElement);
+  }
 
   const roleName = (el) => (el === me ? '比劫' : el === roles.inMe ? '印'
     : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
+  const expand = {
+    比劫: ['比肩', '劫财'], 印: ['正印', '偏印'], 食伤: ['食神', '伤官'],
+    财: ['正财', '偏财'], 官杀: ['正官', '七杀'],
+  };
+  const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
+  const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
+
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
     weak
@@ -1498,24 +1703,22 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing) {
       : strong
         ? `喜${roles.shi}（食伤）泄秀、${roles.cai}（财）耗、${roles.guan}（官杀）制；忌${me}（比劫）与${roles.inMe}（印）再助。`
         : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
-    tiaohou ? `调候（简化）：${tiaohou.note}，宜${tiaohou.element}。` : '',
-    '扶抑法为主；调候未用穷通宝鉴全表，各派取用不同，仅作方向提示。',
+    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
+    arb.text,
+    arb.clash ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。' : '',
   ].filter(Boolean).join('');
 
   return {
-    method: '扶抑为主 + 调候简化提示',
+    method: climate.priority === '调候优先' ? '调候优先 + 扶抑校验' : '扶抑为主 + 调候校验',
     level: strength.level,
     favor,
     avoid,
     favorRoles: favor.map(roleName),
     avoidRoles: avoid.map(roleName),
-    favorTenGods: favorableTenGods,
-    avoidTenGods: weak
-      ? ['食神', '伤官', '正财', '偏财', '正官', '七杀']
-      : strong
-        ? ['比肩', '劫财', '正印', '偏印']
-        : ['正官', '七杀', '正财', '偏财'],
-    tiaohou,
+    favorTenGods,
+    avoidTenGods,
+    tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
+    climate,
     detail,
   };
 }
@@ -1534,33 +1737,54 @@ function scoreLuck(ganzhi, frame) {
   const branch = ganzhi[1];
   const stemEl = STEM_ELEMENT[stem];
   const branchEl = BRANCH_ELEMENT[branch];
+  const th = ys.tiaohou || ys.climate || null;
   const scoreEl = (el) => {
     let s = 0;
     if (ys.favor.includes(el)) s += 1;
     if (ys.avoid.includes(el)) s -= 1;
-    if (ys.tiaohou && el === ys.tiaohou.element) s += 0.4;
     return s;
   };
   let score = scoreEl(stemEl) * 1.0 + scoreEl(branchEl) * 0.8;
   for (const h of (HIDDEN[branch] || []).slice(1)) {
     score += scoreEl(STEM_ELEMENT[h]) * 0.2;
   }
-  score = Math.round(score * 10) / 10;
 
-  const godStem = tenGod(frame.dayStem, stem);
-  const bonus = ys.favorTenGods.includes(godStem) ? 0.3 : 0;
-  const total = Math.round((score + bonus) * 10) / 10;
-
-  const tier = TIERS.find(([min]) => total >= min)[1];
   const reasons = [];
   if (ys.favor.includes(stemEl)) reasons.push(`天干${stem}${stemEl}为用神`);
   else if (ys.avoid.includes(stemEl)) reasons.push(`天干${stem}${stemEl}为忌神`);
   else reasons.push(`天干${stem}${stemEl}不喜不忌`);
   if (ys.favor.includes(branchEl)) reasons.push(`地支${branch}${branchEl}助用`);
   else if (ys.avoid.includes(branchEl)) reasons.push(`地支${branch}${branchEl}助忌`);
-  if (ys.tiaohou && (stemEl === ys.tiaohou.element || branchEl === ys.tiaohou.element)) {
-    reasons.push(`合调候（${ys.tiaohou.element}）`);
+
+  if (th && th.need && th.priority === '调候优先') {
+    const needEl = th.need.element;
+    const oppEl = th.avoidElement;
+    const cold = String(th.kind).includes('寒');
+    if (stemEl === needEl) {
+      score += 1.1;
+      reasons.push(`${th.label}之局得${stem}${stemEl}，${cold ? '解冻' : '得润'}`);
+    } else if (stemEl === oppEl) {
+      score -= 0.9;
+      reasons.push(`${th.label}之局再逢${stem}${stemEl}，${cold ? '冻木难生' : '燥上加燥'}`);
+    }
+    if (branchEl === needEl) {
+      score += 0.9;
+      reasons.push(`地支${branch}${branchEl}合调候`);
+    } else if (branchEl === oppEl) {
+      score -= 1.0;
+      reasons.push(`地支${branch}${branchEl}加重${th.label}`);
+    }
+    if (cold && (stemEl === '水' || branchEl === '水')) score -= 0.3;
+  } else if (th && th.need && (stemEl === th.need.element || branchEl === th.need.element)) {
+    reasons.push(`合调候（${th.need.element}）`);
   }
+
+  const godStem = tenGod(frame.dayStem, stem);
+  const bonus = ys.favorTenGods.includes(godStem) ? 0.3 : 0;
+  let total = Math.round((score + bonus) * 10) / 10;
+  total = Math.max(-4, Math.min(4, total));
+
+  const tier = TIERS.find(([min]) => total >= min)[1];
   return { ganzhi, score: total, tier, stemTenGod: godStem, reasons, note: `${godStem}运，${tier}（${total}）` };
 }
 
@@ -1569,7 +1793,7 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   const month = monthPattern(pillars, dayStem, monthBranch);
   const special = specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods);
   const geju = [month, ...special];
-  const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing);
+  const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing, Object.values(pillars).map((p) => p.branch));
   return {
     geju,
     primary: month,
@@ -2042,6 +2266,7 @@ function buildBazi(input) {
     },
     strength,
     frame,
+    climate: frame.yongshen.climate || frame.yongshen.tiaohou || null,
     liunian,
     liunianFrom: thisYear,
   };
@@ -7276,6 +7501,7 @@ function baziInterpret(r) {
   const st = isObj(r.strength) ? r.strength : {};
   const frame = isObj(r.frame) ? r.frame : {};
   const ys = isObj(frame.yongshen) ? frame.yongshen : {};
+  const cli = r.climate || (isObj(ys.climate) ? ys.climate : (isObj(ys.tiaohou) ? ys.tiaohou : null));
   const wx = isObj(r.wuxing) ? r.wuxing : {};
   const level = pick(st, 'level', '中和');
   const favor = Array.isArray(ys.favor) ? ys.favor : [];
@@ -7459,10 +7685,12 @@ function baziInterpret(r) {
           else if (!good.includes(curTier) && !good.includes(lnTier)) out.push('大运与流年都偏逆：以守住基本盘为主，减少新增承诺。');
           else out.push('大运与流年同向偏顺：可以把想做但一直拖着的事排上日程。');
         }
-        const tiao = ys.tiaohou && ys.tiaohou.element;
-        if (tiao) out.push(favor.includes(tiao)
-          ? `调候喜${tiao}，与扶抑用神同向：取用上不打架，${tiao}相关的行业与环境优先。`
-          : `调候喜${tiao}，不在扶抑的喜用里：两套取法有分歧，这里以扶抑为主，${tiao}只作环境上的小幅偏好。`);
+        const th = ys.tiaohou && ys.tiaohou.need ? ys.tiaohou : null;
+        if (th) {
+          out.push(th.clash
+            ? `调候要${th.need.stem}${th.need.element}，扶抑不在喜用里：两套取法有分歧，本盘按调候优先——寒暖失衡时，再补强弱也难受。`
+            : `调候要${th.need.stem}${th.need.element}，与扶抑用神同向：取用上不打架，${th.need.element}相关的行业与环境优先。`);
+        }
         return out.join('　');
       })(),
     },
@@ -7471,6 +7699,12 @@ function baziInterpret(r) {
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
         `${pick(ys, 'detail', '')}`,
     },
+    ...(cli ? [{
+      key: 'climate', label: '寒暖燥湿',
+      text: `${cli.narration}${cli.need
+        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : '与扶抑同向'}`
+        : '气候平和，调候不作主取'}。`,
+    }] : []),
     {
       key: 'geju', label: '格局依据',
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
@@ -7481,7 +7715,7 @@ function baziInterpret(r) {
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用以扶抑为主、调候只做简化提示，各派取法不同；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
+      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，未逐条录入穷通宝鉴 120 条，各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 
@@ -8943,6 +9177,7 @@ function baziText(r) {
     `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}]`).join('　')}`,
     `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）　${r.frame.yongshen.method}`,
     `　　　${r.frame.yongshen.detail}`,
+    `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}` : ''}` : '—'}`,
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
   return [
@@ -10241,6 +10476,19 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 @media print{.mp-cg{break-inside:avoid}}
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .mp-quick-h{font-size:13px;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
+.mp-cli{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.mp-cli-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+.mp-cli-h b{font-size:13px}
+.mp-cli-k{font-weight:700;color:var(--lu)}
+.mp-cli-p{margin-left:auto;font-size:11.5px;color:var(--quan);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.mp-cli-bar{position:relative;margin:9px 0 4px;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--quan) 0%,var(--line) 50%,var(--ji) 100%)}
+.mp-cli-bar i{position:absolute;top:-3px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--card);border:2px solid var(--ink);box-shadow:0 0 0 2px var(--card)}
+.mp-cli-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:8px}
+.mp-cli-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--ink2)}
+.mp-cli-row em{font-style:normal;color:var(--ink3)}
+.mp-cli-row b{color:var(--ink)}
+.mp-cli-narr{margin-top:8px;font-size:13px;line-height:1.85;color:var(--ink2);border-left:2px solid var(--quan);padding-left:9px}
+@media print{.mp-cli{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-al-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
@@ -11067,7 +11315,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const num = (v) => (typeof v === 'number' && isFinite(v) ? v : 0);
     const dyScore = (d) => (d.luck ? num(d.luck.score) : 0);
 
-    const VMAX = 3.2;
+    const VMAX = 4.2;
     const VMIN = -2.2;
     const startAge = num(r.dayun.startAge && r.dayun.startAge.years);
     const dyEnd = dyList.length
@@ -11083,7 +11331,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const pw = W - M.l - M.r;
     const ph = H - M.t - M.b;
     const X = (age) => M.l + ((age - a0) / span) * pw;
-    const Y = (v) => M.t + ph - ((v - VMIN) / (VMAX - VMIN)) * ph;
+    const Y = (v) => M.t + ph - ((Math.max(VMIN, Math.min(VMAX, v)) - VMIN) / (VMAX - VMIN)) * ph;
 
     const BANDS = [
       { from: 1.2, to: VMAX, cls: 'b-good' },
@@ -11408,6 +11656,21 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
       <div class="pp-tl pp-dim">${esc(fr.yongshen.detail)}</div>` : '';
+    const cli = r.climate || (fr.yongshen && fr.yongshen.climate) || null;
+    const cliCard = cli ? (() => {
+      const pct = Math.max(2, Math.min(98, Math.round(((Number(cli.temp) || 0) + 3) / 6 * 100)));
+      const need = cli.need ? `<em>调候取</em><b>${esc(cli.need.stem + cli.need.element)}</b>` : '<em>气候平和</em>';
+      const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>` : '';
+      const ev = (cli.evidence || []).length ? `<em>依据</em><span>${esc(cli.evidence.join('、'))}</span>` : '';
+      const pri = cli.priority === '调候优先' ? '<span class="mp-cli-p">调候优先</span>' : '<span class="mp-cli-p">扶抑为主</span>';
+      return `<section class="mp-cli" aria-label="寒暖燥湿">
+        <div class="mp-cli-h"><b>寒暖燥湿</b><span class="mp-cli-k">${esc(cli.label || '')}</span>${pri}</div>
+        <div class="mp-cli-bar" title="寒 ← → 热"><i style="left:${pct}%"></i></div>
+        <div class="mp-cli-axis"><span>寒</span><span>平</span><span>热</span></div>
+        <div class="mp-cli-row">${need}${avoid}${ev}</div>
+        <div class="mp-cli-narr">${esc(cli.narration || '')}</div>
+      </section>`;
+    })() : '';
     const gods = fr.godStats ? `<div class="pp-chips">${Object.entries(fr.godStats.groups).map(([k, v]) => `<span class="pp-chip">${k} ${v}</span>`).join('')}</div>` : '';
 
     const dy = r.dayun.list.map((d) => {
@@ -11433,6 +11696,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       ${str}
       ${sect('格局', gj)}
       ${sect('用神', ys)}
+      ${cliCard}
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln) : ''}

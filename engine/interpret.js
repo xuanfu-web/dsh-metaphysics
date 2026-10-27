@@ -155,6 +155,7 @@ function baziInterpret(r) {
   const st = isObj(r.strength) ? r.strength : {};
   const frame = isObj(r.frame) ? r.frame : {};
   const ys = isObj(frame.yongshen) ? frame.yongshen : {};
+  const cli = r.climate || (isObj(ys.climate) ? ys.climate : (isObj(ys.tiaohou) ? ys.tiaohou : null));
   const wx = isObj(r.wuxing) ? r.wuxing : {};
   const level = pick(st, 'level', '中和');
   const favor = Array.isArray(ys.favor) ? ys.favor : [];
@@ -352,10 +353,12 @@ function baziInterpret(r) {
           else if (!good.includes(curTier) && !good.includes(lnTier)) out.push('大运与流年都偏逆：以守住基本盘为主，减少新增承诺。');
           else out.push('大运与流年同向偏顺：可以把想做但一直拖着的事排上日程。');
         }
-        const tiao = ys.tiaohou && ys.tiaohou.element;
-        if (tiao) out.push(favor.includes(tiao)
-          ? `调候喜${tiao}，与扶抑用神同向：取用上不打架，${tiao}相关的行业与环境优先。`
-          : `调候喜${tiao}，不在扶抑的喜用里：两套取法有分歧，这里以扶抑为主，${tiao}只作环境上的小幅偏好。`);
+        const th = ys.tiaohou && ys.tiaohou.need ? ys.tiaohou : null;
+        if (th) {
+          out.push(th.clash
+            ? `调候要${th.need.stem}${th.need.element}，扶抑不在喜用里：两套取法有分歧，本盘按调候优先——寒暖失衡时，再补强弱也难受。`
+            : `调候要${th.need.stem}${th.need.element}，与扶抑用神同向：取用上不打架，${th.need.element}相关的行业与环境优先。`);
+        }
         return out.join('　');
       })(),
     },
@@ -365,6 +368,12 @@ function baziInterpret(r) {
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
         `${pick(ys, 'detail', '')}`,
     },
+    ...(cli ? [{
+      key: 'climate', label: '寒暖燥湿',
+      text: `${cli.narration}${cli.need
+        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : '与扶抑同向'}`
+        : '气候平和，调候不作主取'}。`,
+    }] : []),
     {
       key: 'geju', label: '格局依据',
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
@@ -375,7 +384,7 @@ function baziInterpret(r) {
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用以扶抑为主、调候只做简化提示，各派取法不同；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
+      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，未逐条录入穷通宝鉴 120 条，各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 

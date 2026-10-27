@@ -563,6 +563,19 @@
 @media print{.mp-cg{break-inside:avoid}}
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .mp-quick-h{font-size:13px;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
+.mp-cli{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.mp-cli-h{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+.mp-cli-h b{font-size:13px}
+.mp-cli-k{font-weight:700;color:var(--lu)}
+.mp-cli-p{margin-left:auto;font-size:11.5px;color:var(--quan);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.mp-cli-bar{position:relative;margin:9px 0 4px;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--quan) 0%,var(--line) 50%,var(--ji) 100%)}
+.mp-cli-bar i{position:absolute;top:-3px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--card);border:2px solid var(--ink);box-shadow:0 0 0 2px var(--card)}
+.mp-cli-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:8px}
+.mp-cli-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--ink2)}
+.mp-cli-row em{font-style:normal;color:var(--ink3)}
+.mp-cli-row b{color:var(--ink)}
+.mp-cli-narr{margin-top:8px;font-size:13px;line-height:1.85;color:var(--ink2);border-left:2px solid var(--quan);padding-left:9px}
+@media print{.mp-cli{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 /* —— 黄历卡片 —— */
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
@@ -1461,9 +1474,9 @@
     const dyScore = (d) => (d.luck ? num(d.luck.score) : 0);
 
     // ── 坐标范围 ──
-    // 量程固定 ±3：引擎实测 score ∈ [-2, 3.2]，固定量程才能让不同盘之间可比
+    // 量程固定：引擎实测 score ∈ [-2, 4]（含调候修正），固定量程才能让不同盘之间可比
     // （若按各自极值自适应，每个盘的「平」位置都不一样，反而失去参照）
-    const VMAX = 3.2;
+    const VMAX = 4.2;
     const VMIN = -2.2;
     // 起运年龄 → 覆盖到最后一运结束；流年可能超出大运末端，取并集
     const startAge = num(r.dayun.startAge && r.dayun.startAge.years);
@@ -1481,7 +1494,7 @@
     const pw = W - M.l - M.r;
     const ph = H - M.t - M.b;
     const X = (age) => M.l + ((age - a0) / span) * pw;
-    const Y = (v) => M.t + ph - ((v - VMIN) / (VMAX - VMIN)) * ph;
+    const Y = (v) => M.t + ph - ((Math.max(VMIN, Math.min(VMAX, v)) - VMIN) / (VMAX - VMIN)) * ph;
 
     // ── 档位色带（背景）：大吉/吉 绿，大忌/忌 红，平 灰 ──
     // 档位实测区间：大吉 1.4~3.2｜吉 0.6~1.1｜平 -0.6~0.5｜忌 -1.3~-1.0｜大忌 -2.0~-1.6
@@ -1837,6 +1850,21 @@
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
       <div class="pp-tl pp-dim">${esc(fr.yongshen.detail)}</div>` : '';
+    const cli = r.climate || (fr.yongshen && fr.yongshen.climate) || null;
+    const cliCard = cli ? (() => {
+      const pct = Math.max(2, Math.min(98, Math.round(((Number(cli.temp) || 0) + 3) / 6 * 100)));
+      const need = cli.need ? `<em>调候取</em><b>${esc(cli.need.stem + cli.need.element)}</b>` : '<em>气候平和</em>';
+      const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>` : '';
+      const ev = (cli.evidence || []).length ? `<em>依据</em><span>${esc(cli.evidence.join('、'))}</span>` : '';
+      const pri = cli.priority === '调候优先' ? '<span class="mp-cli-p">调候优先</span>' : '<span class="mp-cli-p">扶抑为主</span>';
+      return `<section class="mp-cli" aria-label="寒暖燥湿">
+        <div class="mp-cli-h"><b>寒暖燥湿</b><span class="mp-cli-k">${esc(cli.label || '')}</span>${pri}</div>
+        <div class="mp-cli-bar" title="寒 ← → 热"><i style="left:${pct}%"></i></div>
+        <div class="mp-cli-axis"><span>寒</span><span>平</span><span>热</span></div>
+        <div class="mp-cli-row">${need}${avoid}${ev}</div>
+        <div class="mp-cli-narr">${esc(cli.narration || '')}</div>
+      </section>`;
+    })() : '';
     const gods = fr.godStats ? `<div class="pp-chips">${Object.entries(fr.godStats.groups).map(([k, v]) => `<span class="pp-chip">${k} ${v}</span>`).join('')}</div>` : '';
 
     // 行运
@@ -1863,6 +1891,7 @@
       ${str}
       ${sect('格局', gj)}
       ${sect('用神', ys)}
+      ${cliCard}
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln) : ''}

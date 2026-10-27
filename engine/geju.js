@@ -2,10 +2,12 @@
 //
 // 定位：在 bazi.js 算出四柱、五行、旺衰之后，给出
 //   1) 格局（月令格 + 特殊格 + 常见组合）；
-//   2) 用神 / 喜忌（扶抑为主，调候作简化提示）；
-//   3) 大运、流年的吉凶倾向评分。
+//   2) 用神 / 喜忌（调候优先 + 扶抑校验；气候平和时仍以扶抑为主）；
+//   3) 大运、流年的吉凶倾向评分（含调候修正项）。
 // 取舍：格局派别差异极大，这里只给「规则可复核」的判定，evidence 写明依据；
-// 调候未做穷通宝鉴 120 条全表，只按寒暖燥湿给方向，并在 detail 里注明。
+// 调候由 tiaohou.js 独立判定，与扶抑冲突时显式裁决并写明理由，不静默取用。
+
+import { judgeClimate, arbitrate } from './tiaohou.js';
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -197,38 +199,37 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
 
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
 
-const TIAOHOU = {
-  亥: ['火', '冬月寒水当令，最喜火暖局'],
-  子: ['火', '仲冬水旺，最喜火暖局'],
-  丑: ['火', '季冬湿寒，喜火解冻'],
-  巳: ['水', '初夏火旺，喜水制衡'],
-  午: ['水', '仲夏火炎，最喜水调候'],
-  未: ['水', '季夏燥土，喜水润局'],
-  寅: ['火', '初春尚寒，得火而发'],
-  卯: ['火', '仲春木旺，喜火吐秀'],
-  辰: ['金', '季春湿土，喜金水疏泄'],
-  申: ['火', '初秋金旺，喜火炼金'],
-  酉: ['火', '仲秋金锐，喜火制'],
-  戌: ['水', '季秋燥土，喜水润泽'],
-};
 
-function yongshenOf(dayStem, monthBranch, strength, wuxing) {
+function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const roles = elementRoles(dayStem);
   const me = roles.me;
   const weak = strength.level === '身弱' || strength.level === '偏弱';
   const strong = strength.level === '身强' || strength.level === '偏强';
 
-  const favor = weak ? [roles.inMe, me] : strong ? [roles.shi, roles.cai, roles.guan] : [roles.inMe, me, roles.shi];
-  const avoid = weak ? [roles.shi, roles.cai, roles.guan] : strong ? [me, roles.inMe] : [roles.guan, roles.cai];
-  const favorableTenGods = weak ? ['正印', '偏印', '比肩', '劫财'] : strong
-    ? ['食神', '伤官', '正财', '偏财', '正官', '七杀']
-    : ['正印', '偏印', '食神', '伤官'];
+  const baseFavor = weak ? [roles.inMe, me] : strong ? [roles.shi, roles.cai, roles.guan] : [roles.inMe, me, roles.shi];
+  const baseAvoid = weak ? [roles.shi, roles.cai, roles.guan] : strong ? [me, roles.inMe] : [roles.guan, roles.cai];
+  let favor = baseFavor.slice();
+  let avoid = baseAvoid.slice();
 
-  const th = TIAOHOU[monthBranch];
-  const tiaohou = th ? { element: th[0], note: th[1] } : null;
+  // 先判气候，再决定要不要让调候压过扶抑
+  const climate = judgeClimate({ monthBranch, dayStem, wuxing, branches });
+  const arb = arbitrate(climate, baseFavor, baseAvoid);
+  if (climate.need && climate.priority === '调候优先') {
+    const needEl = climate.need.element;
+    if (!favor.includes(needEl)) favor.unshift(needEl);
+    avoid = avoid.filter((e) => e !== needEl);
+    if (climate.avoidElement && !avoid.includes(climate.avoidElement)) avoid.unshift(climate.avoidElement);
+  }
 
   const roleName = (el) => (el === me ? '比劫' : el === roles.inMe ? '印'
     : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
+  const expand = {
+    比劫: ['比肩', '劫财'], 印: ['正印', '偏印'], 食伤: ['食神', '伤官'],
+    财: ['正财', '偏财'], 官杀: ['正官', '七杀'],
+  };
+  const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
+  const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
+
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
     weak
@@ -236,24 +237,22 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing) {
       : strong
         ? `喜${roles.shi}（食伤）泄秀、${roles.cai}（财）耗、${roles.guan}（官杀）制；忌${me}（比劫）与${roles.inMe}（印）再助。`
         : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
-    tiaohou ? `调候（简化）：${tiaohou.note}，宜${tiaohou.element}。` : '',
-    '扶抑法为主；调候未用穷通宝鉴全表，各派取用不同，仅作方向提示。',
+    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
+    arb.text,
+    arb.clash ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。' : '',
   ].filter(Boolean).join('');
 
   return {
-    method: '扶抑为主 + 调候简化提示',
+    method: climate.priority === '调候优先' ? '调候优先 + 扶抑校验' : '扶抑为主 + 调候校验',
     level: strength.level,
     favor,
     avoid,
     favorRoles: favor.map(roleName),
     avoidRoles: avoid.map(roleName),
-    favorTenGods: favorableTenGods,
-    avoidTenGods: weak
-      ? ['食神', '伤官', '正财', '偏财', '正官', '七杀']
-      : strong
-        ? ['比肩', '劫财', '正印', '偏印']
-        : ['正官', '七杀', '正财', '偏财'],
-    tiaohou,
+    favorTenGods,
+    avoidTenGods,
+    tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
+    climate,
     detail,
   };
 }
@@ -274,33 +273,55 @@ export function scoreLuck(ganzhi, frame) {
   const branch = ganzhi[1];
   const stemEl = STEM_ELEMENT[stem];
   const branchEl = BRANCH_ELEMENT[branch];
+  const th = ys.tiaohou || ys.climate || null;
   const scoreEl = (el) => {
     let s = 0;
     if (ys.favor.includes(el)) s += 1;
     if (ys.avoid.includes(el)) s -= 1;
-    if (ys.tiaohou && el === ys.tiaohou.element) s += 0.4;
     return s;
   };
   let score = scoreEl(stemEl) * 1.0 + scoreEl(branchEl) * 0.8;
   for (const h of (HIDDEN[branch] || []).slice(1)) {
     score += scoreEl(STEM_ELEMENT[h]) * 0.2;
   }
-  score = Math.round(score * 10) / 10;
 
-  const godStem = tenGod(frame.dayStem, stem);
-  const bonus = ys.favorTenGods.includes(godStem) ? 0.3 : 0;
-  const total = Math.round((score + bonus) * 10) / 10;
-
-  const tier = TIERS.find(([min]) => total >= min)[1];
   const reasons = [];
   if (ys.favor.includes(stemEl)) reasons.push(`天干${stem}${stemEl}为用神`);
   else if (ys.avoid.includes(stemEl)) reasons.push(`天干${stem}${stemEl}为忌神`);
   else reasons.push(`天干${stem}${stemEl}不喜不忌`);
   if (ys.favor.includes(branchEl)) reasons.push(`地支${branch}${branchEl}助用`);
   else if (ys.avoid.includes(branchEl)) reasons.push(`地支${branch}${branchEl}助忌`);
-  if (ys.tiaohou && (stemEl === ys.tiaohou.element || branchEl === ys.tiaohou.element)) {
-    reasons.push(`合调候（${ys.tiaohou.element}）`);
+
+  // 调候修正：不是"有没有这个五行"，而是"这一年是给命局添了一把火，还是泼了一盆水"
+  if (th && th.need && th.priority === '调候优先') {
+    const needEl = th.need.element;
+    const oppEl = th.avoidElement;
+    const cold = String(th.kind).includes('寒');
+    if (stemEl === needEl) {
+      score += 1.1;
+      reasons.push(`${th.label}之局得${stem}${stemEl}，${cold ? '解冻' : '得润'}`);
+    } else if (stemEl === oppEl) {
+      score -= 0.9;
+      reasons.push(`${th.label}之局再逢${stem}${stemEl}，${cold ? '冻木难生' : '燥上加燥'}`);
+    }
+    if (branchEl === needEl) {
+      score += 0.9;
+      reasons.push(`地支${branch}${branchEl}合调候`);
+    } else if (branchEl === oppEl) {
+      score -= 1.0;
+      reasons.push(`地支${branch}${branchEl}加重${th.label}`);
+    }
+    if (cold && (stemEl === '水' || branchEl === '水')) score -= 0.3;
+  } else if (th && th.need && (stemEl === th.need.element || branchEl === th.need.element)) {
+    reasons.push(`合调候（${th.need.element}）`);
   }
+
+  const godStem = tenGod(frame.dayStem, stem);
+  const bonus = ys.favorTenGods.includes(godStem) ? 0.3 : 0;
+  let total = Math.round((score + bonus) * 10) / 10;
+  total = Math.max(-4, Math.min(4, total));
+
+  const tier = TIERS.find(([min]) => total >= min)[1];
   return { ganzhi, score: total, tier, stemTenGod: godStem, reasons, note: `${godStem}运，${tier}（${total}）` };
 }
 
@@ -319,7 +340,7 @@ export function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxi
   const month = monthPattern(pillars, dayStem, monthBranch);
   const special = specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods);
   const geju = [month, ...special];
-  const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing);
+  const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing, Object.values(pillars).map((p) => p.branch));
   return {
     geju,
     primary: month,

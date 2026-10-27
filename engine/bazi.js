@@ -507,6 +507,7 @@ export function buildBazi(input) {
     },
     strength,
     frame,
+    climate: frame.yongshen.climate || frame.yongshen.tiaohou || null,
     liunian,
     liunianFrom: thisYear,
   };
