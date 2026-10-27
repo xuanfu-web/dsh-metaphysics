@@ -575,6 +575,17 @@
 .mp-cli-row em{font-style:normal;color:var(--ink3)}
 .mp-cli-row b{color:var(--ink)}
 .mp-cli-narr{margin-top:8px;font-size:13px;line-height:1.85;color:var(--ink2);border-left:2px solid var(--quan);padding-left:9px}
+.mp-qt{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
+.mp-qt-h{display:flex;gap:8px;align-items:baseline;font-size:12.5px}
+.mp-qt-h b{color:var(--ink);letter-spacing:.02em}
+.mp-qt-h span{color:var(--ink2)}
+.mp-qt-y{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12.5px;color:var(--ink2);flex-wrap:wrap}
+.mp-qt-y em{font-style:normal;color:var(--ink3)}
+.mp-qt-y b{font-family:var(--fx);font-size:15px;color:var(--lu);font-weight:600;line-height:1.1}
+.mp-qt-y b.first{color:var(--ji);border-bottom:2px solid var(--ji);padding-bottom:1px}
+.mp-qt-q{margin-top:6px;font-size:12.5px;line-height:1.8;color:var(--ink2);font-family:var(--fx)}
+.mp-qt-q span{display:block;font-size:11px;color:var(--ink3);font-family:var(--sans);margin-top:2px}
+@media print{.mp-cli{break-inside:avoid}}
 @media print{.mp-cli{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 /* —— 黄历卡片 —— */
@@ -1857,12 +1868,19 @@
       const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>` : '';
       const ev = (cli.evidence || []).length ? `<em>依据</em><span>${esc(cli.evidence.join('、'))}</span>` : '';
       const pri = cli.priority === '调候优先' ? '<span class="mp-cli-p">调候优先</span>' : '<span class="mp-cli-p">扶抑为主</span>';
+      const qt = r.frame && r.frame.yongshen && r.frame.yongshen.qt;
+      const qtCard = qt ? `<div class="mp-qt">
+          <div class="mp-qt-h"><b>穷通宝鉴</b><span>${esc(qt.label)}</span></div>
+          <div class="mp-qt-y"><em>用神</em>${qt.yong.map((y, i) => `<b class="${i === 0 ? 'first' : ''}">${esc(y)}</b>`).join('')}<em>首取 ${esc(qt.primary)}</em></div>
+          <div class="mp-qt-q" title="${esc(qt.quote)}">「${esc(qt.quote)}」<span>第 ${qt.chapter} 章${qt.note ? ' · ' + esc(qt.note) : ''}</span></div>
+        </div>` : '';
       return `<section class="mp-cli" aria-label="寒暖燥湿">
         <div class="mp-cli-h"><b>寒暖燥湿</b><span class="mp-cli-k">${esc(cli.label || '')}</span>${pri}</div>
         <div class="mp-cli-bar" title="寒 ← → 热"><i style="left:${pct}%"></i></div>
         <div class="mp-cli-axis"><span>寒</span><span>平</span><span>热</span></div>
         <div class="mp-cli-row">${need}${avoid}${ev}</div>
         <div class="mp-cli-narr">${esc(cli.narration || '')}</div>
+        ${qtCard}
       </section>`;
     })() : '';
     const gods = fr.godStats ? `<div class="pp-chips">${Object.entries(fr.godStats.groups).map(([k, v]) => `<span class="pp-chip">${k} ${v}</span>`).join('')}</div>` : '';

@@ -6,3 +6,6 @@ test/_*.mjs
 !test/_harness.mjs
 .DS_Store
 fork.json
+
+# 穷通宝鉴抓取缓存（tools/qiongtong-scrape.mjs 生成，不入库）
+tools/_qt2.json

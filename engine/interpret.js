@@ -374,6 +374,11 @@ function baziInterpret(r) {
         ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : '与扶抑同向'}`
         : '气候平和，调候不作主取'}。`,
     }] : []),
+    ...(ys.qt ? [{
+      key: 'qiongtong', label: '穷通宝鉴',
+      text: `${ys.qt.label}：用神 ${ys.qt.yong.join('、')}（首取 ${ys.qt.primary}）。原文：「${ys.qt.quote}」` +
+        `（《穷通宝鉴》第 ${ys.qt.chapter} 章${ys.qt.note ? '；' + ys.qt.note : ''}）`,
+    }] : []),
     {
       key: 'geju', label: '格局依据',
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
@@ -384,7 +389,7 @@ function baziInterpret(r) {
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，未逐条录入穷通宝鉴 120 条，各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
+      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，并按《穷通宝鉴》120 格给出用神顺序（整理表口径，原文摘句照录，异文处已标 note）；各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 

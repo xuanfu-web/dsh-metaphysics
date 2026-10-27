@@ -8,6 +8,7 @@
 // 调候由 tiaohou.js 独立判定，与扶抑冲突时显式裁决并写明理由，不静默取用。
 
 import { judgeClimate, arbitrate } from './tiaohou.js';
+import { qtOf } from './qiongtong.js';
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -213,6 +214,8 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
 
   // 先判气候，再决定要不要让调候压过扶抑
   const climate = judgeClimate({ monthBranch, dayStem, wuxing, branches });
+  // 《穷通宝鉴》120 格：同一「日主 + 月令」的取用顺序。只作展示与加权，不覆盖气候调候
+  const qt = qtOf(dayStem, monthBranch);
   const arb = arbitrate(climate, baseFavor, baseAvoid);
   if (climate.need && climate.priority === '调候优先') {
     const needEl = climate.need.element;
@@ -238,6 +241,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
         ? `喜${roles.shi}（食伤）泄秀、${roles.cai}（财）耗、${roles.guan}（官杀）制；忌${me}（比劫）与${roles.inMe}（印）再助。`
         : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
     `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
+    qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
     arb.text,
     arb.clash ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。' : '',
   ].filter(Boolean).join('');
@@ -253,6 +257,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     avoidTenGods,
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
+    qt,
     detail,
   };
 }
@@ -318,6 +323,18 @@ export function scoreLuck(ganzhi, frame) {
 
   const godStem = tenGod(frame.dayStem, stem);
   const bonus = ys.favorTenGods.includes(godStem) ? 0.3 : 0;
+  // 穷通宝鉴：天干正好是这一格的首取/次取时，再给一点「按书取用」的分
+  // 只在该干不属于忌神时加分——书里的取用与气候调候不同向时，以调候为先
+  const qt = ys.qt || null;
+  if (qt && qt.primary && !ys.avoid.includes(STEM_ELEMENT[qt.primary])) {
+    if (stem === qt.primary) {
+      score += 0.3;
+      reasons.push(`天干${stem}正是${qt.branch}月${qt.stem}日的首取（穷通宝鉴）`);
+    } else if (qt.yong.includes(stem) && !ys.avoid.includes(STEM_ELEMENT[stem])) {
+      score += 0.15;
+      reasons.push(`天干${stem}为穷通宝鉴次取`);
+    }
+  }
   let total = Math.round((score + bonus) * 10) / 10;
   total = Math.max(-4, Math.min(4, total));
 
