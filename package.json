@@ -1,8 +1,8 @@
 {
   "name": "dsh-metaphysics",
-  "version": "0.17.1",
+  "version": "0.18.0",
   "type": "module",
-  "description": "命理排盘 for DeepSeek Harness: eight systems — BaZi four pillars (42 shensha, pattern / useful-god / luck scoring), Zi Wei Dou Shu (34 patterns, 大限, 流年/流月/流日/流时四化), LiuYao with real line rendering, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia (chaibu / chaoshen / zhirun), compatibility charts (BaZi + Zi Wei) and Tarot; Ask（所问之事 + 询问方向）driven interpretation, plus a plain-language 解析与详解 module. Reproducible via seed/asOf. All computed locally, networking off by default — as an agent tool plus a Web panel.",
+  "description": "命理排盘 for DeepSeek Harness: seventeen systems — eight chart systems (BaZi four pillars, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus nine quick references (almanac, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, life-curve, feng shui, name analysis); ask-driven interpretation, report layer with evidence and confidence, DST correction for 1986–1991. All computed locally, networking off by default — as an agent tool plus a Web panel.",
   "keywords": [
     "dsh-plugin",
     "dsh-bundle",
@@ -26,7 +26,19 @@
     "meihua-yishu",
     "da-liu-ren",
     "大六壬",
-    "梅花易数"
+    "梅花易数",
+    "almanac",
+    "黄历",
+    "择日",
+    "称骨",
+    "小六壬",
+    "feng-shui",
+    "风水",
+    "起名",
+    "numerology",
+    "生命数字",
+    "horoscope",
+    "星座"
   ],
   "license": "MIT",
   "author": "xuanfu-web",

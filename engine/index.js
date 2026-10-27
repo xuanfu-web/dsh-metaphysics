@@ -16,6 +16,15 @@ import { followup } from './followup.js';
 import { crossCheck, crossText } from './crosscheck.js';
 import { pastSignals, verifyFit } from './verify.js';
 import { rectifyBirth } from './rectify.js';
+import { buildAlmanac } from './almanac.js';
+import { buildZeri } from './zeri.js';
+import { buildChenggu } from './chenggu.js';
+import { buildXiaoliuren } from './xiaoliuren.js';
+import { buildStar } from './star.js';
+import { buildNumerology } from './numerology.js';
+import { buildTrend } from './trend.js';
+import { buildFengshui } from './fengshui.js';
+import { buildName } from './name.js';
 import { fail } from './fail.js';
 import { assertCivil } from './validate.js';
 
@@ -201,6 +210,15 @@ function hepanText(r) {
     `对方 ${r.b.pillars.join(' ')}　日主 ${r.b.dayMaster}　日支 ${r.b.dayBranch}　${r.b.strength || ''}`,
     `真太阳时：你 ${solarLine(r.a)}；对方 ${solarLine(r.b)}`,
     ...r.dimensions.map(d),
+    ...(r.detail ? [
+      `属相：${r.detail.yearRelation.label}——${r.detail.yearRelation.text}`,
+      `日干：${r.detail.stems.text}`,
+      ...(r.detail.crossBranches && r.detail.crossBranches.length
+        ? [`跨盘地支：${r.detail.crossBranches.map((c) => `${c.name}（${c.a}${c.b}）`).join('、')}`]
+        : []),
+      `年命纳音：${r.detail.nayin.a} / ${r.detail.nayin.b}（${r.detail.nayin.label}）——${r.detail.nayin.text}`,
+      `吉凶象：吉 ${r.detail.tally.good} / 凶 ${r.detail.tally.bad}（${r.detail.tally.lean}；分档只数象，总分以上面三维度为准）`,
+    ] : []),
     ...r.notes.map((n) => `※ ${n}`),
   ].join('\n');
 }
@@ -305,6 +323,7 @@ export function compute(args = {}) {
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       trueSolar: args.trueSolar !== false,
+      dst: args.dst !== false,
     };
     const asOf = checkAsOf(args.asOf);
     const other = r.system === 'bazi'
@@ -327,6 +346,7 @@ export function compute(args = {}) {
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      dst: args.dst !== false,
       nowYear: from,
     });
     r.past = {
@@ -345,6 +365,7 @@ export function compute(args = {}) {
       hours: Array.isArray(args.rectifyHours) ? args.rectifyHours : undefined,
       lateZi: args.lateZi !== false,
       trueSolar: args.trueSolar !== false,
+      dst: args.dst !== false,
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
@@ -424,6 +445,7 @@ function computeRaw(args = {}) {
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       lateZi: args.lateZi !== false,
       trueSolar: args.trueSolar !== false,
+      dst: args.dst !== false,
       // 流年表默认从「今年」起排；要复现历史结论就把基准年钉死
       nowYear: asOf ? asOf.year : undefined,
     });
@@ -440,6 +462,7 @@ function computeRaw(args = {}) {
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
       trueSolar: args.trueSolar,
+      dst: args.dst !== false,
       // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
       asOf,
     });
@@ -499,6 +522,7 @@ function computeRaw(args = {}) {
       gender: requireGender(args.gender, '你（主方）'),
       trueSolar: args.trueSolar,
       lateZi: args.lateZi,
+      dst: args.dst !== false,
       address: typeof args.address === 'string' ? args.address : undefined,
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
@@ -508,6 +532,7 @@ function computeRaw(args = {}) {
       gender: requireGender(partner.gender, '对方'),
       trueSolar: partner.trueSolar,
       lateZi: partner.lateZi,
+      dst: partner.dst !== false,
       address: typeof partner.address === 'string' ? partner.address : undefined,
       longitude: typeof partner.longitude === 'number' ? partner.longitude : undefined,
       geo: partner.geo && typeof partner.geo === 'object' ? partner.geo : undefined,
@@ -564,10 +589,258 @@ function computeRaw(args = {}) {
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
   }
-  if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）。');
+  if (system === 'almanac') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildAlmanac({ year: dt.year, month: dt.month, day: dt.day });
+    return { ...result, summary: almanacText(result) };
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）。`);
+  if (system === 'zeri') {
+    // startDate 必须显式：择日要「从哪天起看」，缺了不能拿本机今天静默代填
+    if (typeof args.startDate !== 'string' || !args.startDate.trim()) {
+      throw fail('E_INPUT', '择日需要 startDate（公历 YYYY-MM-DD，起算日）；可另给 days（1–60，默认 30）与 shengXiao（当事人属相）');
+    }
+    const result = buildZeri({
+      task: args.task,
+      startDate: args.startDate,
+      days: args.days,
+      shengXiao: args.shengXiao,
+    });
+    return { ...result, summary: zeriText(result) };
+  }
+  if (system === 'chenggu') {
+    const dt = parseDateTime(args.datetime);
+    const hasTime = /[T\s]\d{1,2}:\d{1,2}/.test(String(args.datetime));
+    const hour = Number.isInteger(args.hour) ? args.hour : hasTime ? dt.hour : null;
+    if (hour === null || hour < 0 || hour > 23) {
+      throw fail('E_INPUT', '称骨必须给时辰：datetime 带时分（如 1990-08-15T10:00），或额外给 hour（0–23）——缺时辰四柱不齐');
+    }
+    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0 });
+    return { ...result, summary: chengguText(result) };
+  }
+  if (system === 'xiaoliuren') {
+    const dt = args.datetime ? parseDateTime(args.datetime) : null;
+    const result = buildXiaoliuren({
+      mode: args.mode === 'number' ? 'number' : 'time',
+      date: typeof args.date === 'string' && args.date.trim() ? args.date : dt ? `${dt.year}-${dt.month}-${dt.day}` : undefined,
+      hour: Number.isInteger(args.hour) ? args.hour : dt && /[T\s]\d{1,2}:\d{1,2}/.test(String(args.datetime)) ? dt.hour : undefined,
+      num1: args.num1,
+      num2: args.num2,
+      num3: args.num3,
+      question: args.question,
+    });
+    return { ...result, summary: xiaoliurenText(result) };
+  }
+  if (system === 'star') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildStar({ year: dt.year, month: dt.month, day: dt.day });
+    return { ...result, summary: starText(result) };
+  }
+  if (system === 'numerology') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildNumerology({ year: dt.year, month: dt.month, day: dt.day });
+    return { ...result, summary: numerologyText(result) };
+  }
+  if (system === 'trend') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildTrend({
+      ...dt,
+      gender: requireGender(args.gender),
+      toAge: args.toAge,
+      lateZi: args.lateZi !== false,
+      trueSolar: args.trueSolar !== false,
+      dst: args.dst !== false,
+      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+      address: typeof args.address === 'string' ? args.address : undefined,
+      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+    });
+    return { ...result, precision: dt.precision, summary: trendText(result) };
+  }
+  if (system === 'fengshui') {
+    const action = args.action === 'advise' ? 'advise' : 'natal';
+    if (action === 'advise') {
+      const result = buildFengshui({
+        action,
+        sitting: args.sitting,
+        facing: args.facing,
+        ...(args.datetime ? parseDateTime(args.datetime) : {}),
+        ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
+        dst: args.dst !== false,
+      });
+      return { ...result, summary: fengshuiText(result) };
+    }
+    const dt = parseDateTime(args.datetime);
+    const result = buildFengshui({
+      action: 'natal',
+      year: dt.year, month: dt.month, day: dt.day,
+      gender: requireGender(args.gender),
+      fortuneYear: Number.isInteger(args.fortuneYear) ? args.fortuneYear : undefined,
+      dst: args.dst !== false,
+    });
+    return { ...result, summary: fengshuiText(result) };
+  }
+  if (system === 'name') {
+    const action = args.action === 'generate' ? 'generate' : 'assess';
+    const birth = args.datetime ? parseDateTime(args.datetime) : {};
+    const result = buildName({
+      action,
+      surname: args.surname,
+      givenName: args.givenName,
+      limit: args.limit,
+      ...birth,
+      ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
+      ...(args.datetime ? {
+        lateZi: args.lateZi !== false,
+        trueSolar: args.trueSolar !== false,
+        dst: args.dst !== false,
+        longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
+        address: typeof args.address === 'string' ? args.address : undefined,
+        geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      } : {}),
+    });
+    return { ...result, summary: nameText(result) };
+  }
+  if (!system) {
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）。');
+  }
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）。`);
+}
+
+/** 黄历文本 */
+function almanacText(r) {
+  const g = r.ganzhi;
+  const jq = r.jieQi && r.jieQi.next ? `　下一节：${r.jieQi.next.name} ${r.jieQi.next.date}` : '';
+  return [
+    `【黄历】${r.meta.date} ${r.meta.weekday}　${r.lunar.text}`,
+    `干支：${g.year}年　${g.month}月　${g.day}日　属${g.shengXiao}`,
+    ...(r.meta.boundaryNote ? [`　${r.meta.boundaryNote}`] : []),
+    `建除：${r.zhiXing}日　冲：${r.chong.text}${r.chong.sha ? `（${r.chong.sha}）` : ''}　财神：${r.positions.caiShen || '—'}　喜神：${r.positions.xiShen || '—'}`,
+    `宜：${r.yi.join('、')}`,
+    `忌：${r.ji.join('、')}`,
+    `节气：上一节 ${r.jieQi.prev ? `${r.jieQi.prev.name} ${r.jieQi.prev.date}` : '—'}${jq}`,
+    r.dailyHexagram ? `每日一卦：${r.dailyHexagram.name}　${r.dailyHexagram.meaning || ''}` : '',
+    `口径：${r.meta.scope}`,
+  ].filter(Boolean).join('\n');
+}
+
+/** 择日文本 */
+function zeriText(r) {
+  const head = `【择日·${r.meta.task}】${r.meta.startDate} 起 ${r.meta.days} 天${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`;
+  const top = r.days.slice().sort((a, b) => b.score - a.score).slice(0, 5)
+    .map((d) => `· ${d.date} ${d.weekday}　${d.verdict}（${d.score}分）　宜${d.yi.slice(0, 3).join('/')}　${d.reasons.join('；') || '无特别加减分'}`);
+  return [
+    head,
+    `推荐日：${r.best.length ? r.best.join('、') : '本期无（都不够推荐分）'}`,
+    `可用日：${r.usable.length ? r.usable.join('、') : '无'}`,
+    `回避日：${r.avoid.length ? r.avoid.slice(0, 6).join('、') : '无'}`,
+    '逐日排序：',
+    ...top,
+    `口径：${r.meta.scope}`,
+  ].join('\n');
+}
+
+/** 称骨文本 */
+function chengguText(r) {
+  return [
+    `【称骨】${r.input.solar} ${r.lunar.text}`,
+    `四项：${r.weights.year.label}　${r.weights.month.label}　${r.weights.day.label}　${r.weights.hour.label}`,
+    `合计：${r.total.label}（${r.verdict.band}）`,
+    `批语：${r.verdict.text}`,
+    '口径：骨重为通行表口径，批语为白话自撰（非原版称骨歌诀原文）。',
+  ].join('\n');
+}
+
+/** 小六壬文本 */
+function xiaoliurenText(r) {
+  return [
+    `【小六壬·${r.meta.mode}】${r.meta.question ? `所问：${r.meta.question}` : ''}`,
+    r.meta.originText,
+    `落宫：${r.steps.join(' → ')}`,
+    `断语：${r.result.palace}（${r.result.luck}）　${r.result.text}`,
+  ].join('\n');
+}
+
+/** 星座文本 */
+function starText(r) {
+  return [
+    `【星座】${r.meta.date}　${r.sign.name}（${r.sign.element}·守护星${r.sign.planet}）`,
+    `区间：${r.sign.range}　关键词：${r.sign.keywords}　契合：${r.sign.compatible}`,
+    `当日基调：${r.daily.tone}`,
+    r.daily.dims.map((d) => `· ${d.name}：${'★'.repeat(d.stars)}${'☆'.repeat(5 - d.stars)}　${d.text}`).join('\n'),
+    `幸运色：${r.daily.luckyColor}　幸运数字：${r.daily.luckyNumber}`,
+    '口径：当日基调由日期哈希确定性生成（同日同结果），纯娱乐向。',
+  ].join('\n');
+}
+
+/** 生命数字文本 */
+function numerologyText(r) {
+  return [
+    `【生命数字】${r.meta.date}（西方数字学，与八字/紫微不可互证）`,
+    ...r.parts.map((p) => `${p.name}：${p.number}（${p.meaning.title}）　${p.meaning.keywords}\n　倾向：${p.meaning.tendency}\n　课题：${p.meaning.lesson}`),
+  ].join('\n');
+}
+
+/** 人生 K 线文本 */
+function trendText(r) {
+  const s = r.meta.strength;
+  const dm = r.meta.dayMaster;
+  const dmText = dm && typeof dm === 'object' ? `${dm.stem}（${dm.element}）` : String(dm || '');
+  return [
+    `【人生 K 线】${r.meta.birth}　${r.meta.gender}　日主 ${dmText}　旺衰 ${s.level}（${s.score}）`,
+    r.meta.boundaryNote ? `※ ${r.meta.boundaryNote}` : '',
+    `【大运分段】${r.segments.map((g) => `${g.ganZhi} ${g.startAge}-${g.endAge}岁`).join('　')}`,
+    `【走势】${Array.isArray(r.sparkline) ? r.sparkline.join('　') : r.sparkline}`,
+    ...(r.highlights && r.highlights.best && r.highlights.best.length
+      ? [`【关键年】最佳 ${r.highlights.best.join('；')}${r.highlights.worst && r.highlights.worst.length ? `\n最需留意 ${r.highlights.worst.join('；')}` : ''}`]
+      : []),
+    `※ ${r.disclaimer}`,
+  ].filter(Boolean).join('\n');
+}
+
+/** 风水文本 */
+function fengshuiText(r) {
+  if (r.meta.action === 'advise') {
+    const match = r.mingMatch
+      ? [`【命宅配】${r.mingMatch.text}`]
+      : [`※ ${r.meta.birthNote || '未提供生辰，未做命宅配。'}`];
+    return [
+      `【宅卦】坐 ${r.meta.sitting}　向 ${r.meta.facing}　${r.meta.houseGua}宅（${r.meta.houseGroup}）`,
+      `【八星】${r.houseStars.map((x) => `${x.star}·${x.direction}${x.palace ? `（${x.palace}）` : ''}`).join('　')}`,
+      `【门】${r.layout.door}`,
+      `【灶】${r.layout.stove}`,
+      `【床】${r.layout.bed}`,
+      `【厕】${r.layout.toilet}`,
+      ...match,
+      `※ ${r.disclaimer}`,
+    ].join('\n');
+  }
+  const g = r.mingGua;
+  return [
+    `【命卦】${g.num}${g.gua}（${g.group}）　方位 ${g.direction}`,
+    `【四吉】${r.luckyDirections.map((x) => `${x.star}·${x.direction}${x.palace ? `（${x.palace}）` : ''}`).join('　')}`,
+    `【四凶】${r.unluckyDirections.map((x) => `${x.star}·${x.direction}`).join('　')}`,
+    ...(r.yearlyFlying
+      ? [`【${r.meta.fortuneYear} 年九宫飞星】中宫 ${r.yearlyFlying.centerName}；${r.yearlyFlying.palaces.filter((p) => p.palace !== '中').map((p) => `${p.palace}${p.name}`).join('　')}`]
+      : [`※ ${r.meta.note || ''}`]),
+    `※ ${r.disclaimer}`,
+  ].filter(Boolean).join('\n');
+}
+
+/** 起名文本 */
+function nameText(r) {
+  if (r.action === 'generate') {
+    return [
+      `【候选名】姓 ${r.surname}（${r.gender}，喜用 ${r.bazi.favorable.join('、')}）${r.bazi.basis}`,
+      ...r.candidates.map((c) => `${c.rank}. ${c.name}　${c.chars.map((x) => `${x.char}(${x.element})${x.meaning}`).join('　')}`),
+      ...r.notes.map((n) => `※ ${n}`),
+    ].join('\n');
+  }
+  return [
+    `【名字评估】${r.fullName}`,
+    ...r.chars.map((c) => `· ${c.char}：五行 ${c.element}${c.element !== '未收录' ? `（喜用${c.favorable ? '中' : '外'}）` : ''}，${c.meaning}`),
+    r.bazi ? `【八字】日主 ${r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : r.bazi.dayMaster}，旺衰 ${r.bazi.strength.level}（${r.bazi.strength.score}），${r.bazi.basis}` : '',
+    `【结论】${r.verdict}`,
+    ...r.notes.map((n) => `※ ${n}`),
+  ].filter(Boolean).join('\n');
 }
 
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
@@ -606,6 +879,8 @@ export { buildBazi, buildLiuyao, tossLines };
 export { followup };
 export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText };
+export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology };
+export { buildTrend, buildFengshui, buildName };
 
 
 

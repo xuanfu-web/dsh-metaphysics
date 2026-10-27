@@ -3,6 +3,9 @@
   const MUT_CLASS = { 禄: 'm-lu', 权: 'm-quan', 科: 'm-ke', 忌: 'm-ji' };
   let tab = 'ziwei';
   let mhMode = 'time';
+  let xlrMode = 'time';
+  let fsMode = 'natal';
+  let nnMode = 'assess';
 
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
@@ -15,6 +18,9 @@
     ziwei: 'birth', bazi: 'birth', hepan: 'birth',
     liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
     tarot: 'none',
+    almanac: 'date', zeri: 'date', star: 'date', numerology: 'date',
+    chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
+    xiaoliuren: 'cast',
   };
   const SAMPLE = { date: '1990-05-12', time: '14:30' };
   const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -40,6 +46,15 @@
     qimen: '奇门时家转盘：用起局时刻定节气、三元与局数；「换局规则」决定符头与节气如何对齐。',
     hepan: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。',
     tarot: '塔罗不看时间，只记录抽牌时刻与你的提问。',
+    almanac: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。',
+    zeri: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。',
+    chenggu: '称骨按农历年、月、日、时的骨重求和；时辰必填。',
+    xiaoliuren: '小六壬用农历月/日/时掐指，也可用三个随机数起课。',
+    star: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。',
+    numerology: '生命数字按公历生日归约出生命路径数、生日数与态度数。',
+    trend: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。',
+    fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。',
+    name: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。',
   };
 
   // 问事的体系必须写清「所问之事」，解读才有落点；命盘类（八字/紫微）不问事，不显示这两项
@@ -77,6 +92,7 @@
 
   /** 某类时间的自动默认值：起卦类 = 当前时刻；命盘类 = 示例默认 */
   function defaultFor(k) {
+    if (k === 'date') return nowParts();
     return k === 'cast' ? nowParts() : { date: SAMPLE.date, time: SAMPLE.time };
   }
 
@@ -336,6 +352,42 @@
       }
     }
     if (tab === 'tarot') args.count = Number(el('tcount') ? el('tcount').value : 3) || 3;
+    // 速查类：各体系自己的最小输入
+    if (tab === 'zeri') {
+      args.startDate = date;
+      args.task = el('ztask').value;
+      args.days = Number(el('zdays').value) || 30;
+      if (el('zsheng').value) args.shengXiao = el('zsheng').value;
+    }
+    if (tab === 'xiaoliuren') {
+      args.mode = xlrMode;
+      if (xlrMode === 'number') {
+        args.num1 = Number(el('num1').value) || undefined;
+        args.num2 = Number(el('num2').value) || undefined;
+        args.num3 = Number(el('num3').value) || undefined;
+      } else {
+        args.date = date;
+        const hh = Number(String(time).split(':')[0]);
+        args.hour = Number.isFinite(hh) ? hh : 12;
+      }
+    }
+    if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
+    if (tab === 'fengshui') {
+      args.action = fsMode;
+      if (fsMode === 'advise') { args.sitting = el('sitting').value.trim(); args.facing = el('facing').value.trim(); delete args.datetime; }
+      else { args.gender = el('gender').value; }
+    }
+    if (tab === 'name') {
+      args.action = nnMode;
+      args.surname = el('surname').value.trim();
+      if (nnMode === 'generate') {
+        args.gender = el('gender').value; args.limit = Number(el('nlimit').value) || 6;
+        args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true;
+      } else {
+        args.givenName = el('givenname').value.trim();
+        delete args.datetime;
+      }
+    }
     // 问题与卦象一起交给解读：解读按它展开，并在开头回显供你确认
     if (needAsk(tab)) args.question = el('question').value.trim();
     try {
@@ -347,7 +399,8 @@
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
                 : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
-                    : window.__PP.liuyaoHTML(r));
+                    : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
+                      : window.__PP.quickHTML(r));
       last = { r, html, tab, date, time, timed };
       paint();
     } catch (e) {
@@ -389,6 +442,8 @@
     }
   }
 
+  const QUICK = ['almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
+
   function setTab(next) {
     tab = next;
     const k = kindOf(tab);
@@ -400,17 +455,30 @@
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';
     el('for-hepan').style.display = tab === 'hepan' ? '' : 'none';
     el('for-qimen').style.display = tab === 'qimen' ? '' : 'none';
+    const fq = el('for-quick');
+    if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
     el('for-ask').style.display = needAsk(tab) ? '' : 'none';
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
     const castLabel = tab === 'qimen';
-    el('lbl-date').textContent = birth ? '出生日期（公历）' : (castLabel ? '起局日期（公历）' : '起卦日期（公历）');
+    const dateLabel = tab === 'almanac' || tab === 'zeri' || tab === 'star' || tab === 'numerology';
+    el('lbl-date').textContent = birth ? '出生日期（公历）' : dateLabel ? '日期（公历）' : (castLabel ? '起局日期（公历）' : '起卦日期（公历）');
     el('lbl-time').textContent = birth ? '出生时刻' : (castLabel ? '起局时刻' : '起卦时刻');
+    const qk = el('for-quick');
+    if (qk) {
+      el('qk-zeri').style.display = tab === 'zeri' ? '' : 'none';
+      el('qk-xiaoliuren').style.display = tab === 'xiaoliuren' ? '' : 'none';
+      el('qk-trend').style.display = tab === 'trend' ? '' : 'none';
+      el('qk-fengshui').style.display = tab === 'fengshui' ? '' : 'none';
+      el('qk-name').style.display = tab === 'name' ? '' : 'none';
+    }
+    syncQuick();
     el('go').textContent = tab === 'tarot' ? '抽牌'
       : tab === 'hepan' ? '合盘'
         : tab === 'qimen' ? '起局'
-          : birth ? '排盘' : '起卦';
+          : QUICK.indexOf(tab) >= 0 ? '看结果'
+            : birth ? '排盘' : '起卦';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
@@ -424,7 +492,20 @@
     // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导
     const showDT = tab !== 'tarot' && !mhNum;
     el('for-date').style.display = showDT ? '' : 'none';
-    el('for-time').style.display = showDT ? '' : 'none';
+    el('for-time').style.display = showDT && kindOf(tab) !== 'date' ? '' : 'none';
+  }
+
+  /** 速查类子表单：择日/小六壬/人生K/风水/起名各自的小块与分段按钮 */
+  function syncQuick() {
+    if (!el('qk-xiaoliuren')) return;
+    document.querySelectorAll('#xlrmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === xlrMode));
+    el('xlr-num').style.display = xlrMode === 'number' ? '' : 'none';
+    document.querySelectorAll('#fsmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === fsMode));
+    el('fs-advise').style.display = fsMode === 'advise' ? '' : 'none';
+    el('fs-advise2').style.display = fsMode === 'advise' ? '' : 'none';
+    document.querySelectorAll('#nnmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === nnMode));
+    el('nn-assess').style.display = nnMode === 'assess' ? '' : 'none';
+    el('nn-generate').style.display = nnMode === 'generate' ? '' : 'none';
   }
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -472,7 +553,16 @@
     document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
     const qdir = el('qdir');
     if (qdir) qdir.addEventListener('change', () => { if (tab === 'qimen') paint(); });
-    // 方法与验证页：按钮开合（静态内容，无网络）
+    // 速查类：分段按钮与输入改动都直接重算
+    const seg = (sel, set) => document.querySelectorAll(sel).forEach((b) => b.addEventListener('click', () => {
+      set(b.dataset.mode); syncQuick(); run();
+    }));
+    seg('#xlrmode button', (v) => { xlrMode = v; });
+    seg('#fsmode button', (v) => { fsMode = v; });
+    seg('#nnmode button', (v) => { nnMode = v; });
+    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'surname', 'givenname', 'nlimit']
+      .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', run); });
+    // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');
     const mClose = el('method-close');
     const mSec = el('method');

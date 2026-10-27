@@ -1,7 +1,7 @@
 // 合盘（合婚）：日主关系 + 夫妻宫关系 + 五行互补。
 // 口径：日主取五行生克（双向平均），夫妻宫取日支的六合/三合/冲/害/刑/破，
 // 五行互补看「一方喜用是否正是另一方所旺」。各派取法不同，这里只给通用版结论。
-import { buildBazi } from './bazi.js';
+import { buildBazi, tenGod } from './bazi.js';
 import { STEMS, BRANCHES } from './calendar.js';
 import { assertCivil } from './validate.js';
 import { SANHE_GROUPS } from './sanhe.js';
@@ -44,6 +44,21 @@ function wxToMe(other, me) {
   if (SHENG[me] === other) return { name: '我生', score: 10, text: '我生对方，多为付出的一方，久了要留意消耗' };
   if (KE[me] === other) return { name: '我克', score: 5, text: '我克对方，主导感较强，需留意对方的空间' };
   return { name: '克我', score: -12, text: '对方克我，压力感偏重，宜把话说开' };
+}
+
+/** 年支（属相）关系：六合、三合、六冲、六害、相刑、自刑，其余为无直接关系。 */
+function yearBranchRelation(a, b) {
+  if (a === b) return { name: '同属相（自刑之一）', score: -3, text: '属相相同，传统称「自刑」，容易互相较劲、谁也不让谁' };
+  if (pairIn(LIU_HE, a, b)) return { name: '六合', score: 3, text: '属相六合，初印象与长辈缘通常不错' };
+  if (SANHE_GROUPS.some((g) => g.branches.includes(a) && g.branches.includes(b))) {
+    return { name: '三合', score: 3, text: '属相三合，容易有共同话题与共同朋友' };
+  }
+  if (pairIn(CHONG, a, b)) return { name: '六冲', score: -3, text: '属相六冲，节奏与立场容易相反，重大决定前宜多对一遍' };
+  if (pairIn(HAI, a, b)) return { name: '相害', score: -2, text: '属相相害，容易因第三方或误会生嫌隙' };
+  for (const g of XING) {
+    if (g.includes(a) && g.includes(b)) return { name: '相刑', score: -2, text: '属相相刑，摩擦多起于相处细节' };
+  }
+  return { name: '无直接关系', score: 0, text: '属相之间没有合冲刑害，表层影响小，以日柱为主' };
 }
 
 /** 合盘主函数 */
@@ -102,6 +117,71 @@ export function buildHepan(input) {
   const pct = Math.max(0, Math.min(100, Math.round(((raw + 27) / 83) * 100)));
   const level = pct >= 75 ? '契合度较高' : pct >= 55 ? '中等偏顺' : pct >= 40 ? '需要磨合' : '差异较大';
 
+  // ⑤ 细化层（对齐传统合婚口径）：属相（年支）关系、天干五合、双向十神、
+  //    跨盘地支关系、年命纳音生克、吉凶象计数。只增加明细，不改动上面的总分与三维度。
+  const aYear = A.pillars.year;
+  const bYear = B.pillars.year;
+  const yearRel = yearBranchRelation(aYear.branch, bYear.branch);
+  const HE5 = [['甲', '己'], ['乙', '庚'], ['丙', '辛'], ['丁', '壬'], ['戊', '癸']];
+  const he5 = HE5.some((p) => p.includes(aStem) && p.includes(bStem) && aStem !== bStem);
+  const godA = tenGod(aStem, bStem); // 对方日干在我盘中为
+  const godB = tenGod(bStem, aStem);
+  const A_BR = ['year', 'month', 'day', 'hour'].map((k) => A.pillars[k].branch);
+  const B_BR = ['year', 'month', 'day', 'hour'].map((k) => B.pillars[k].branch);
+  const cross = [];
+  for (const x of A_BR) {
+    for (const y of B_BR) {
+      if (pairIn(LIU_HE, x, y)) cross.push({ a: x, b: y, name: '六合', score: 1, text: '跨盘六合，易有自然的亲近与默契' });
+      else if (SANHE_GROUPS.some((g) => g.branches.includes(x) && g.branches.includes(y))) {
+        cross.push({ a: x, b: y, name: '半合', score: 1, text: '跨盘半合，某些事上容易一拍即合' });
+      } else if (pairIn(CHONG, x, y)) cross.push({ a: x, b: y, name: '相冲', score: -1, text: '跨盘相冲，某些领域节奏相反，需要分工' });
+      else if (pairIn(HAI, x, y)) cross.push({ a: x, b: y, name: '相害', score: -1, text: '跨盘相害，容易在第三方或琐事上起误会' });
+    }
+  }
+  const uniqCross = [];
+  const seen = new Set();
+  for (const c of cross) {
+    const k = `${c.name}${[c.a, c.b].sort().join('')}`;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    uniqCross.push(c);
+  }
+  // 年命纳音：纳音名末字即五行（如「大林木」→ 木）
+  const nyA = aYear.nayin;
+  const nyB = bYear.nayin;
+  const naEl = nyA[nyA.length - 1];
+  const nbEl = nyB[nyB.length - 1];
+  const nayinRel = naEl === nbEl
+    ? { name: '纳音比和', score: 0, text: '两人年命纳音同五行，底色相近' }
+    : SHENG[naEl] === nbEl
+      ? { name: '纳音相生', score: 1, text: `你的年命纳音属${naEl}生对方${nbEl}，你多是先付出的一方` }
+      : SHENG[nbEl] === naEl
+        ? { name: '纳音相生', score: 1, text: `对方年命纳音属${nbEl}生你${naEl}，你容易得到照应` }
+        : KE[naEl] === nbEl
+          ? { name: '纳音相克', score: -1, text: `你的年命纳音属${naEl}克对方${nbEl}，主导感偏强` }
+          : { name: '纳音相克', score: -1, text: `对方年命纳音属${nbEl}克你${naEl}，压力感偏重` };
+  const good = (yearRel.score > 0 ? 1 : 0) + (he5 ? 1 : 0) + (gong.score > 5 ? 1 : 0)
+    + uniqCross.filter((c) => c.score > 0).length + (nayinRel.score > 0 ? 1 : 0);
+  const bad = (yearRel.score < 0 ? 1 : 0) + (gong.score < 0 ? 1 : 0)
+    + uniqCross.filter((c) => c.score < 0).length + (nayinRel.score < 0 ? 1 : 0);
+  const lean = good - bad >= 3 ? '吉象偏多' : good - bad >= 1 ? '吉略多于凶' : good - bad === 0 ? '吉凶相当' : '凶象偏多';
+
+  const detail = {
+    yearRelation: { label: yearRel.name, text: `属相：你${aYear.branch}（${aYear.ganzhi}），对方${bYear.branch}（${bYear.ganzhi}）。${yearRel.text}。` },
+    stems: {
+      he5,
+      tenGodToB: godA,
+      tenGodToA: godB,
+      text: he5
+        ? `日干五合（${aStem}${bStem}），传统称「天干五合」，主彼此吸引强，也容易黏在一起分不开。`
+        : `日干无五合：你在对方盘里是「${godA}」，对方在你盘里是「${godB}」。`,
+    },
+    crossBranches: uniqCross.slice(0, 8),
+    nayin: { a: nyA, b: nyB, label: nayinRel.name, text: nayinRel.text },
+    tally: { good, bad, lean },
+    framing: '属相（年支）只影响表层印象，传统合婚以日柱为主；分档只说明吉凶象多少，不作「必配/必离」断言。',
+  };
+
   const dim = (key, label, score, text, extra) => ({ key, label, score: Math.round(score), text, ...(extra || {}) });
 
   return {
@@ -134,6 +214,7 @@ export function buildHepan(input) {
       summary: B.summary,
     },
     score: { total: pct, level },
+    detail,
     dimensions: [
       dim('stem', '日主关系', stemScore, `你的日主 ${aStem}${aWx}，对方 ${bStem}${bWx}。${aToB.text}；${bToA.text}。`),
       dim('gong', '夫妻宫（日支）', gong.score, `${gong.name}：${gong.text}。你日支 ${aZhi}，对方日支 ${bZhi}。`),

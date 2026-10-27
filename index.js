@@ -19,7 +19,8 @@ const TOOL_NAME = 'metaphysics_chart';
 
 const DESCRIPTION = [
   '排中国传统命理盘与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）、奇门遁甲（qimen）、合盘（hepan）或塔罗抽牌（tarot）。',
-  '当用户明确要求“排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘”时调用。',
+  '另有速查类：黄历（almanac）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、人生 K 线（trend）、风水（fengshui）、起名（name）。',
+  '当用户明确要求“排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬”时调用。',
   'bazi 与 ziwei 需要公历出生时间与性别；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦；meihua 可按时间或数字起卦；tarot 可指定张数与问题。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
   '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。',
@@ -71,12 +72,28 @@ export function apply(ctx) {
         // 联网失败不影响排盘，退回内置表
       }
     };
-    if (next.system === 'bazi' || next.system === 'ziwei' || next.system === 'hepan') {
+    if (next.system === 'bazi' || next.system === 'ziwei' || next.system === 'hepan'
+      || next.system === 'trend' || next.system === 'fengshui' || next.system === 'name') {
       await resolveGeo(next);
     }
     if (next.system === 'hepan' && next.partner && typeof next.partner === 'object') {
       next.partner = { ...next.partner }; // 不改调用方传进来的对象
       await resolveGeo(next.partner);
+    }
+    // 宿主有时钟：日期类体系缺日期时补「今天」，免得模型自己猜日期；
+    // 择日与此刻起课同理——补上后仍会把实际采用的日期写进结果，可回溯。
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const DATE_ONLY = { almanac: 1, star: 1, numerology: 1 };
+    if (DATE_ONLY[next.system] && !next.datetime) next.datetime = today;
+    if (next.system === 'zeri' && !next.startDate) next.startDate = today;
+    if (next.system === 'xiaoliuren' && next.mode !== 'number' && !next.datetime && !next.date) {
+      next.datetime = `${today}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    }
+    // 风水 natal 的流年飞星默认看今年；显式给了 fortuneYear 就按给的算
+    if (next.system === 'fengshui' && next.action !== 'advise' && next.fortuneYear === undefined) {
+      next.fortuneYear = now.getFullYear();
     }
     return compute(next);
   }
@@ -89,13 +106,25 @@ export function apply(ctx) {
       properties: {
         system: {
           type: 'string',
-          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen'],
-          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）。',
+          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'],
+          description: 'bazi = 四柱八字；ziwei = 紫微斗数；liuyao = 六爻；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局）；name = 起名（用字五行评估与候选生成）。',
         },
         datetime: {
           type: 'string',
           description:
-            '公历本地时间，如 1990-05-12T14:30。bazi / ziwei 必填；liuyao 可选，仅用于取日辰定六神。',
+            '公历本地时间，如 1990-05-12T14:30。bazi / ziwei 必填；liuyao 可选，仅用于取日辰定六神。almanac / star / numerology 只需要日期（可省略，省略则取今天）；chenggu 需要带时分或用 hour 补时辰；xiaoliuren 时间起课用它的日期与时分。',
+        },
+        date: {
+          type: 'string',
+          description: '仅 xiaoliuren 时间起课用：公历日期 YYYY-MM-DD（与 hour 成对）；省略则取 datetime 的日期。',
+        },
+        hour: {
+          type: 'integer',
+          description: '时辰小时（0–23）。chenggu 用它补时辰（datetime 不带时分时必填）；xiaoliuren 时间起课用它代替 datetime 的时分。',
+        },
+        dst: {
+          type: 'boolean',
+          description: '是否自动校正 1986–1991 年中国夏令时（默认 true）。出生证时间是真实太阳口径、或想复现旧结果时传 false。',
         },
         gender: {
           type: 'string',
@@ -137,6 +166,27 @@ export function apply(ctx) {
           type: 'string',
           description: '所问之事。六爻、塔罗、梅花会直接用于取象；配合 withInterpret 时也会写进解析的引语。',
         },
+        task: {
+          type: 'string',
+          enum: ['嫁娶', '订婚', '开业', '入宅', '搬家', '动土', '装修', '安葬', '出行', '祭祀', '签约', '求医', '纳财'],
+          description: '仅 zeri 使用：要挑的事项。',
+        },
+        startDate: {
+          type: 'string',
+          description: '仅 zeri 使用：起算日（公历 YYYY-MM-DD）。省略则由宿主补今天。',
+        },
+        days: {
+          type: 'number',
+          description: '仅 zeri 使用：往后考察天数，1–60，默认 30。',
+        },
+        shengXiao: {
+          type: 'string',
+          enum: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
+          description: '仅 zeri 使用：当事人属相，用于排除冲煞日（不给则不排除）。',
+        },
+        num1: { type: 'number', description: '仅 xiaoliuren 报数模式：第一个数（1–99）。' },
+        num2: { type: 'number', description: '仅 xiaoliuren 报数模式：第二个数（1–99）。' },
+        num3: { type: 'number', description: '仅 xiaoliuren 报数模式：第三个数（1–99）。' },
         direction: {
           type: 'string',
           enum: ['general', 'wealth', 'career', 'love', 'health', 'study', 'travel'],
@@ -219,6 +269,24 @@ export function apply(ctx) {
           type: 'boolean',
           description: '紫微斗数：闰月是否按次月起盘（默认按本月起盘）。',
         },
+        action: {
+          type: 'string',
+          enum: ['natal', 'advise', 'assess', 'generate'],
+          description: '子动作。fengshui：natal（默认，算八宅命卦+流年飞星，需生日与性别）、advise（算宅卦门主灶布局，需 sitting 或 facing，出生信息可选）；name：assess（默认，评估已有名字，需 surname + givenName）、generate（生成候选名，需生辰，可选 surname / limit）。',
+        },
+        toAge: {
+          type: 'number',
+          description: '仅 trend 使用：算到几岁（10–100，默认 100）。',
+        },
+        sitting: { type: 'string', description: '仅 fengshui advise：坐山（24 山之一，如 子/午/乾）。与 facing 至少给一个。' },
+        facing: { type: 'string', description: '仅 fengshui advise：向山（24 山之一）。缺 sitting 时按对宫反推。' },
+        fortuneYear: {
+          type: 'number',
+          description: '仅 fengshui natal：流年九宫飞星的目标年份，省略则不算飞星（只算命卦与八星）。',
+        },
+        surname: { type: 'string', description: '仅 name 使用：姓氏，如「李」（复姓整体写，如「欧阳」）。' },
+        givenName: { type: 'string', description: '仅 name assess 使用：名（1–2 个汉字）。' },
+        limit: { type: 'number', description: '仅 name generate 使用：候选个数（1–20，默认 10）。' },
       },
       required: ['system'],
     },

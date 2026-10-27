@@ -80,6 +80,7 @@ export function rectifyBirth(opts) {
       gender,
       lateZi: opts.lateZi !== false,
       trueSolar: opts.trueSolar !== false,
+      dst: opts.dst !== false,
       address: typeof opts.address === 'string' ? opts.address : undefined,
       longitude: typeof opts.longitude === 'number' ? opts.longitude : undefined,
       geo: opts.geo && typeof opts.geo === 'object' ? opts.geo : undefined,

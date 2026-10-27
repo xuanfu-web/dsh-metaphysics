@@ -97,9 +97,9 @@ notThrows('奇门三派取局正常', () => {
 
 // ── ⑧ 体系名 ─────────────────────────────────────────────────
 throws('缺 system 报错', () => compute({}), 'E_INPUT');
-throws('未知体系报错', () => compute({ system: 'fengshui' }), 'E_SYSTEM');
-const unknown = (() => { try { compute({ system: 'fengshui' }); } catch (e) { return e.message; } return ''; })();
-ok('未知体系提示列出八种', ['bazi', 'ziwei', 'qimen', 'tarot'].every((k) => unknown.includes(k)), unknown);
+throws('未知体系报错', () => compute({ system: 'nope' }), 'E_SYSTEM');
+const unknown = (() => { try { compute({ system: 'nope' }); } catch (e) { return e.message; } return ''; })();
+ok('未知体系提示列出可选体系', ['bazi', 'ziwei', 'qimen', 'tarot', 'fengshui', 'name'].every((k) => unknown.includes(k)), unknown);
 
 // ── ⑨ 梅花起卦参数 ───────────────────────────────────────────
 throws('梅花数字起卦缺数字报错', () => compute({ system: 'meihua', mode: 'number' }), 'E_INPUT');

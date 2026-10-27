@@ -198,6 +198,15 @@ function page() {
       <button class="tab" data-tab="qimen">奇门</button>
       <button class="tab" data-tab="hepan">合盘</button>
       <button class="tab" data-tab="tarot">塔罗</button>
+      <button class="tab" data-tab="almanac">黄历</button>
+      <button class="tab" data-tab="zeri">择日</button>
+      <button class="tab" data-tab="chenggu">称骨</button>
+      <button class="tab" data-tab="xiaoliuren">小六壬</button>
+      <button class="tab" data-tab="star">星座</button>
+      <button class="tab" data-tab="numerology">数字</button>
+      <button class="tab" data-tab="trend">人生K</button>
+      <button class="tab" data-tab="fengshui">风水</button>
+      <button class="tab" data-tab="name">起名</button>
     </div>
   </header>
 
@@ -279,6 +288,64 @@ function page() {
           <option value="5">5 张（现状·阻碍·建议·结果·潜在）</option>
         </select>
       </label>
+    </div>
+    <!-- 速查类：黄历/择日/称骨/小六壬/星座/生命数字/人生K线/风水/起名。
+         每个体系自己的最小输入；日期/时刻仍用上面的两个框。 -->
+    <div class="grp" id="for-quick" style="display:none">
+      <div id="qk-zeri" style="display:none">
+        <label class="field">所办事项
+          <select id="ztask">
+            <option>开业</option><option>嫁娶</option><option>订婚</option><option>入宅</option><option>搬家</option>
+            <option>动土</option><option>装修</option><option>安葬</option><option>出行</option><option>祭祀</option>
+            <option>签约</option><option>求医</option><option>纳财</option>
+          </select>
+        </label>
+        <label class="field">看多少天<input id="zdays" type="number" min="1" max="60" value="30"></label>
+        <label class="field">当事人属相（可空）
+          <select id="zsheng">
+            <option value="">不排除</option>
+            <option>鼠</option><option>牛</option><option>虎</option><option>兔</option><option>龙</option><option>蛇</option>
+            <option>马</option><option>羊</option><option>猴</option><option>鸡</option><option>狗</option><option>猪</option>
+          </select>
+        </label>
+      </div>
+      <div id="qk-xiaoliuren" style="display:none">
+        <div class="field">起课方式
+          <div class="seg" id="xlrmode">
+            <button data-mode="time" class="on">时间起课</button>
+            <button data-mode="number">报数起课</button>
+          </div>
+        </div>
+        <label class="field" id="xlr-num" style="display:none;flex-direction:row;gap:8px">
+          <input id="num1" type="number" min="1" max="99" placeholder="第一个数" style="min-width:96px">
+          <input id="num2" type="number" min="1" max="99" placeholder="第二个数" style="min-width:96px">
+          <input id="num3" type="number" min="1" max="99" placeholder="第三个数" style="min-width:96px">
+        </label>
+      </div>
+      <div id="qk-trend" style="display:none">
+        <label class="field">算到几岁<input id="toage" type="number" min="10" max="100" value="60"></label>
+      </div>
+      <div id="qk-fengshui" style="display:none">
+        <div class="field">看什么
+          <div class="seg" id="fsmode">
+            <button data-mode="natal" class="on">命卦</button>
+            <button data-mode="advise">门主灶</button>
+          </div>
+        </div>
+        <label class="field" id="fs-advise" style="display:none">坐山<input id="sitting" placeholder="如 子 / 乾" value="子"></label>
+        <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
+      </div>
+      <div id="qk-name" style="display:none">
+        <div class="field">看什么
+          <div class="seg" id="nnmode">
+            <button data-mode="assess" class="on">评名字</button>
+            <button data-mode="generate">生成候选</button>
+          </div>
+        </div>
+        <label class="field">姓<input id="surname" placeholder="如 李" value="李"></label>
+        <label class="field" id="nn-assess">名字<input id="givenname" placeholder="如 沐宸"></label>
+        <label class="field" id="nn-generate" style="display:none">候选个数<input id="nlimit" type="number" min="1" max="20" value="6"></label>
+      </div>
     </div>
     <button id="sample" class="go ghost" title="用固定示例盘看完整报告">看示例</button>
     <button id="go" class="go">排盘</button>

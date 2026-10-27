@@ -2,9 +2,11 @@
 (function () {
   const CSS = `
 .pp,.mp-it{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
-  --line:#c8c1b2;--dimline:#b9b2a4;--hair:#efe9dc;
-  --bg:#fffdf8;--card:#fffefb;--band:#f7f3ea;--hover:#f7f2e5;--hover2:#f2ece0;
-  --tri:#f9f3e6;--soul:#fdf3f1;--sel:#fff5f2;--link:#fbeee9;
+  --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
+  /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
+     同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
+  --bg:#f6f1e6;--card:#fffdf8;--band:#fbf7ee;--hover:#f3ede1;--hover2:#ece5d6;
+  --tri:#f3e8cd;--soul:#fae4dc;--sel:#fceee7;--link:#f9ece0;
   --red:#b3261e;--red-rgb:179,38,30;--lu:#1f6f3f;--lu-rgb:31,111,63;
   --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
@@ -18,8 +20,9 @@
 @media screen and (prefers-color-scheme:dark){
   .pp,.mp-it{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
-    --bg:#15140f;--card:#1e1c16;--band:#262218;--hover:#2a251b;--hover2:#312c21;
-    --tri:#231f16;--soul:#2e1e1a;--sel:#3a231d;--link:#2e211b;
+  /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
+    --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
+    --tri:#332913;--soul:#3a231c;--sel:#43271f;--link:#33241c;
     --red:#f08569;--red-rgb:240,133,105;--lu:#74c795;--lu-rgb:116,199,149;
     --quan:#e2a95c;--quan-rgb:226,169,92;--ke:#86bcea;--ke-rgb:134,188,234;--ji:#f08569;
     --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
@@ -178,13 +181,21 @@
 .pp-ssi em{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 
 /* —— 爻线：真线，阳为整条、阴为断开、动爻描红 —— */
-.mp-hex{display:flex;gap:16%;height:11px;width:104px;flex:0 0 auto;color:var(--ink);align-items:stretch}
-.mp-hex i{flex:1;background:currentColor;border-radius:1.5px}
-.mp-hex.yin{gap:18%}
+/* 爻线改用内联 SVG：缩放不糊、阴爻两段的间隙按画布等比给出（原先靠 flex gap 百分比，
+   字宽一变间隙就飘）。preserveAspectRatio:none 让宽高各自受 CSS 控制，
+   圆角在窄屏被横向压扁的幅度只有半像素，肉眼不可见。 */
+.mp-hex{display:block;width:104px;height:12px;flex:0 0 auto;color:var(--ink);overflow:visible}
 .mp-hex.hex-on{color:var(--red)}
 .mp-hex.dim{color:var(--dimline)}
 .mp-hex.sm{width:74px;height:9px}
 .mp-hex.md{width:88px;height:10px}
+/* 动爻标记：老阳 ○ / 老阴 ×，与爻线同格右侧。非动爻留空位，保证六列对齐不抖 */
+.mp-hy-ln{display:flex;align-items:center;gap:4px;min-width:0}
+.mp-hy-mv{flex:0 0 10px;font-style:normal;font-size:11px;line-height:1;color:var(--red);text-align:center}
+/* 五行符号：12×12 描边图标，取 currentColor，跟着 --wx-* 自动上色 */
+.mp-wxi{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:3px;flex:0 0 auto}
+/* 八卦小象：14×10 三爻，用于上下卦标题 */
+.mp-trig{display:inline-block;width:14px;height:10px;vertical-align:-1px;margin-right:4px;color:currentColor}
 
 /* —— 六爻 —— */
 .mp-hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
@@ -193,7 +204,7 @@
 .mp-hy-h b{color:var(--red);font-size:14px}
 .mp-hy-h span{color:var(--muted);font-size:12px}
 .mp-hy{display:flex;flex-direction:column;gap:6px}
-.mp-hy-row{display:grid;grid-template-columns:18px 30px 112px 60px 54px 40px;gap:8px;align-items:center;font-size:13px;font-family:system-ui,sans-serif;padding:1px 0}
+.mp-hy-row{display:grid;grid-template-columns:18px 30px 128px 60px 54px 40px;gap:8px;align-items:center;font-size:13px;font-family:system-ui,sans-serif;padding:1px 0}
 .mp-hy-sy{color:var(--red);font-size:12px;font-weight:700}
 .mp-hy-nm{color:var(--muted);font-size:12px}
 .mp-hy-gz{letter-spacing:.04em}
@@ -304,6 +315,34 @@
 .mp-dl-legend{display:flex;gap:12px;justify-content:center;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
 
 /* —— 塔罗 —— */
+/* ── 人生运势曲线 ──
+   大运是阶梯（每步十年），流年是折线；两条叠在一张图上，
+   一眼看出「哪段高、哪段低、现在在哪」——这类图是命理产品里最容易被截图传播的一张。
+   纯内联 SVG，零依赖；颜色全部走 CSS 变量，深浅色自动跟随。 */
+.mp-curve{margin-top:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:10px 12px 8px}
+.mp-curve-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--label);font-family:system-ui,sans-serif;margin-bottom:4px}
+.mp-curve-h b{font-size:12.5px;color:var(--ink);font-weight:600}
+.mp-curve-h span{font-size:11.5px;color:var(--muted)}
+.mp-curve svg{display:block;width:100%;height:auto;overflow:visible}
+/* 档位色带：五个档各一条横向参考区，落在带内即该档 */
+.mp-curve .cv-band{opacity:.09}
+.mp-curve .cv-band.b-good{fill:var(--lu)}
+.mp-curve .cv-band.b-bad{fill:var(--red)}
+.mp-curve .cv-band.b-flat{fill:var(--muted)}
+.mp-curve .cv-ax{stroke:var(--dimline);stroke-width:.6}
+.mp-curve .cv-ax.zero{stroke:var(--line);stroke-width:.9}
+.mp-curve .cv-lbl{fill:var(--muted);font-size:8px;font-family:system-ui,sans-serif}
+.mp-curve .cv-lbl.age{font-size:8.5px}
+.mp-curve .cv-dy{fill:none;stroke:var(--quan);stroke-width:1.6;stroke-linejoin:round}
+.mp-curve .cv-dyfill{fill:var(--quan);opacity:.10}
+.mp-curve .cv-ln{fill:none;stroke:var(--ke);stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
+.mp-curve .cv-dot{r:2}
+.mp-curve .cv-dot.now{r:3.4;stroke:var(--card);stroke-width:1.2}
+.mp-curve .cv-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-curve .cv-legend i{display:inline-block;width:14px;height:2px;vertical-align:3px;margin-right:4px}
+.mp-curve .cv-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:4px}
+/* 窄屏：轴标签更稀，避免挤成一团 */
+@media (max-width:520px){.mp-curve .cv-lbl.age{font-size:9px}}
 .mp-tt{padding:16px}
 .mp-tt-head{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
 .mp-tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
@@ -444,6 +483,9 @@
 .mp-fu-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--lu);margin-bottom:4px;font-family:system-ui,sans-serif}
 .mp-fu.miss .mp-fu-h{color:var(--red)}
 .mp-fu-ev{margin-top:5px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-quick{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px}
+.mp-quick-h{font-size:13px;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
+.mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
 /* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
@@ -497,9 +539,10 @@
   .mp-hy-box{min-width:0;width:100%}
   .mp-hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
   .mp-hy-row.hy-plain{grid-template-columns:32px minmax(72px,1fr)}
-  .mp-hex{width:auto;min-width:64px;height:12px}
-  .mp-hex.sm{min-width:56px;height:10px}
-  .mp-hex.md{min-width:60px;height:11px}
+  /* 爻线是 SVG：宽度交给容器（flex:1），高度仍由尺寸类决定 */
+  .mp-hex{width:100%;max-width:104px;min-width:56px;height:12px;flex:1 1 auto}
+  .mp-hex.sm{max-width:74px;min-width:52px;height:10px}
+  .mp-hex.md{max-width:88px;min-width:56px;height:11px}
   /* 梅花 */
   .mp-mh{padding:10px}
   .mp-mh-main{gap:12px}
@@ -571,9 +614,10 @@
   .mp-hy-box{min-width:0;width:100%}
   .mp-hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
   .mp-hy-row.hy-plain{grid-template-columns:32px minmax(72px,1fr)}
-  .mp-hex{width:auto;min-width:64px;height:12px}
-  .mp-hex.sm{min-width:56px;height:10px}
-  .mp-hex.md{min-width:60px;height:11px}
+  /* 爻线是 SVG：宽度交给容器（flex:1），高度仍由尺寸类决定 */
+  .mp-hex{width:100%;max-width:104px;min-width:56px;height:12px;flex:1 1 auto}
+  .mp-hex.sm{max-width:74px;min-width:52px;height:10px}
+  .mp-hex.md{max-width:88px;min-width:56px;height:11px}
   .mp-mh{padding:10px}
   .mp-mh-main{gap:12px}
   .mp-hexbox.hb-mini{min-width:100px}
@@ -647,8 +691,53 @@
 
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-  /** 单爻线：阳一整条，阴两段；动爻描红 */
-  const hexBar = (yang, moving, size) => `<span class="mp-hex${yang ? '' : ' yin'}${moving ? ' on' : ''}${size ? ' ' + size : ''}">${yang ? '<i></i>' : '<i></i><i></i>'}</span>`;
+  /**
+   * 单爻线：阳一整条，阴两段；动爻描红。
+   * 用内联 SVG 而非 span+background：缩放不糊，阴爻间隙按画布坐标等比给出。
+   * 画布固定 104×12，靠 CSS 控宽高（preserveAspectRatio:none），三种尺寸共用一份几何。
+   */
+  const hexBar = (yang, moving, size) => {
+    const W = 104, H = 12, bh = 7, y = (H - bh) / 2, r = 1.6;
+    const gap = 18, seg = Math.round((W - gap) / 2);
+    const bars = yang
+      ? `<rect x="0" y="${y}" width="${W}" height="${bh}" rx="${r}" fill="currentColor"/>`
+      : `<rect x="0" y="${y}" width="${seg}" height="${bh}" rx="${r}" fill="currentColor"/>`
+        + `<rect x="${seg + gap}" y="${y}" width="${W - seg - gap}" height="${bh}" rx="${r}" fill="currentColor"/>`;
+    return `<svg class="mp-hex${moving ? ' hex-on' : ''}${size ? ' ' + size : ''}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${bars}</svg>`;
+  };
+
+  // 五行符号：描边取 currentColor，跟着 --wx-* 上色。形状取各元素最易辨识的意象
+  // （木＝树 / 火＝焰 / 土＝「土」字骨 / 金＝菱形 / 水＝波纹），12×12 画布。
+  const WX_ICON = {
+    木: 'M6 1.6V10.8M6 5.2 2.6 2.2M6 7.4 9.4 4.4',
+    火: 'M6 1.4C7.6 3.6 9.2 5.4 9.2 7.6A3.2 3.2 0 0 1 2.8 7.6C2.8 5.4 4.4 3.6 6 1.4Z',
+    土: 'M1.6 9.6h8.8M6 2.4v7.2M3.4 5.6h5.2',
+    金: 'M6 1.2 10.6 6 6 10.8 1.4 6Z',
+    水: 'M1.4 7.2C2.9 4.2 4.5 10.2 6 7.2 7.5 4.2 9.1 10.2 10.6 7.2',
+  };
+  const wxIcon = (el) => {
+    const d = WX_ICON[el];
+    if (!d) return '';
+    return `<svg class="mp-wxi" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  };
+
+  /** 八卦小象：14×10 三爻，自上而下。TRI_BITS 自下而上存，这里翻过来 */
+  const triGlyph = (name) => {
+    const bits = (TRI_BITS[name] || [0, 0, 0]).slice().reverse();
+    const rows = bits.map((b, i) => {
+      const y = i * 4;
+      return b
+        ? `<rect x="0" y="${y}" width="14" height="2" rx="0.6" fill="currentColor"/>`
+        : `<rect x="0" y="${y}" width="5.6" height="2" rx="0.6" fill="currentColor"/>`
+          + `<rect x="8.4" y="${y}" width="5.6" height="2" rx="0.6" fill="currentColor"/>`;
+    }).join('');
+    return `<svg class="mp-trig" viewBox="0 0 14 10" aria-hidden="true" focusable="false">${rows}</svg>`;
+  };
+
+  // 供测试直接调（同 _palaceDetailHTML 的约定）：符号生成器是纯函数，单独验比从整盘反推更可靠
+  pp._hexBar = hexBar;
+  pp._wxIcon = wxIcon;
+  pp._triGlyph = triGlyph;
 
   function starsHTML(stars, viewHua) {
     if (!stars || !stars.length) return '';
@@ -966,10 +1055,14 @@
       const sh = o.shiYing
         ? (l.position === o.shi ? '<span class="mp-hy-sy">世</span>' : l.position === o.ying ? '<span class="mp-hy-sy">应</span>' : '<span></span>')
         : '<span></span>';
+      // 动爻标记沿用传统：老阳 ○ / 老阴 ×。非动爻留同宽空位，六列不抖
+      const mv = l.moving
+        ? `<i class="mp-hy-mv" title="动爻">${yang ? '○' : '×'}</i>`
+        : '<i class="mp-hy-mv"></i>';
       return `<div class="mp-hy-row">
         ${sh}
         <span class="mp-hy-nm">${l.name || POS_NAME[l.position - 1]}</span>
-        ${hexBar(yang, l.moving)}
+        <span class="mp-hy-ln">${hexBar(yang, l.moving)}${mv}</span>
         <span class="mp-hy-gz">${esc(l.ganzhi || '')}</span>
         <span class="mp-hy-lq">${esc(l.liuqin || '')}</span>
         <span class="mp-hy-ls">${esc(l.liushen || '')}</span>
@@ -1011,7 +1104,7 @@
     const lowerLines = benBits.slice(3);
     const movingInUpper = r.moving >= 4;
     const trib = (label, tri, lines, isBody) => `<div class="mp-trib">
-      <div class="mp-trib-h">${label} ${tri}${TRI_EL(tri)}<span class="mp-tritag ${isBody ? 'tritag-ti' : 'tritag-yong'}">${isBody ? '体' : '用'}</span></div>
+      <div class="mp-trib-h">${label} ${triGlyph(tri)}${tri}${TRI_EL(tri)}<span class="mp-tritag ${isBody ? 'tritag-ti' : 'tritag-yong'}">${isBody ? '体' : '用'}</span></div>
       <div class="mp-hy" style="gap:5px">${hexRows(lines, { plain: true })}</div>
     </div>`;
     const mainBox = `<div class="mp-hexbox">
@@ -1241,6 +1334,128 @@
     </div>`;
   };
 
+  /**
+   * 人生运势曲线：大运作阶梯（一步十年），流年作折线，叠在同一坐标系。
+   * 只吃引擎已算好的 luck.score / luck.tier，不新增任何判断。
+   * @param {object} r compute('bazi') 的结果
+   * @returns {string} 内联 SVG 区块；数据不足时返回空串（不画半张图）
+   */
+  pp.curveHTML = function (r) {
+    const dyList = (r && r.dayun && Array.isArray(r.dayun.list)) ? r.dayun.list : [];
+    const lnList = (r && Array.isArray(r.liunian)) ? r.liunian : [];
+    // 至少要两步大运才画得出形状；流年可以有可以没有
+    if (dyList.length < 2) return '';
+
+    const num = (v) => (typeof v === 'number' && isFinite(v) ? v : 0);
+    const dyScore = (d) => (d.luck ? num(d.luck.score) : 0);
+
+    // ── 坐标范围 ──
+    // 量程固定 ±3：引擎实测 score ∈ [-2, 3.2]，固定量程才能让不同盘之间可比
+    // （若按各自极值自适应，每个盘的「平」位置都不一样，反而失去参照）
+    const VMAX = 3.2;
+    const VMIN = -2.2;
+    // 起运年龄 → 覆盖到最后一运结束；流年可能超出大运末端，取并集
+    const startAge = num(r.dayun.startAge && r.dayun.startAge.years);
+    const dyEnd = dyList.length
+      ? dyList[dyList.length - 1].startAge + 10
+      : startAge + 80;
+    const lnAges = lnList.map((l) => num(l.age)).filter((a) => a > 0);
+    const a0 = Math.min(startAge, ...(lnAges.length ? lnAges : [startAge]));
+    const a1 = Math.max(dyEnd, ...(lnAges.length ? lnAges : [dyEnd]));
+    const span = Math.max(1, a1 - a0);
+
+    // ── 画布 ──
+    const W = 640, H = 190;
+    const M = { t: 14, r: 16, b: 26, l: 30 };
+    const pw = W - M.l - M.r;
+    const ph = H - M.t - M.b;
+    const X = (age) => M.l + ((age - a0) / span) * pw;
+    const Y = (v) => M.t + ph - ((v - VMIN) / (VMAX - VMIN)) * ph;
+
+    // ── 档位色带（背景）：大吉/吉 绿，大忌/忌 红，平 灰 ──
+    // 档位实测区间：大吉 1.4~3.2｜吉 0.6~1.1｜平 -0.6~0.5｜忌 -1.3~-1.0｜大忌 -2.0~-1.6
+    const BANDS = [
+      { from: 1.2, to: VMAX, cls: 'b-good' },
+      { from: 0.55, to: 1.2, cls: 'b-good' },
+      { from: -0.8, to: 0.55, cls: 'b-flat' },
+      { from: -1.45, to: -0.8, cls: 'b-bad' },
+      { from: VMIN, to: -1.45, cls: 'b-bad' },
+    ];
+    const bands = BANDS.map((b) =>
+      `<rect class="cv-band ${b.cls}" x="${M.l}" y="${Y(b.to).toFixed(1)}" width="${pw}" height="${(Y(b.from) - Y(b.to)).toFixed(1)}"/>`).join('');
+
+    // ── 大运阶梯：每步占十年，起运点为阶跃左端 ──
+    const stepW = (10 / span) * pw;
+    const dyPts = [];
+    dyList.forEach((d, i) => {
+      const a = num(d.startAge);
+      const v = dyScore(d);
+      const xL = Math.max(M.l, X(a));
+      const xR = Math.min(M.l + pw, X(a + 10));
+      dyPts.push(`${xL.toFixed(1)},${Y(v).toFixed(1)}`);
+      dyPts.push(`${xR.toFixed(1)},${Y(v).toFixed(1)}`);
+    });
+    // 阶梯折线 + 底部填充
+    const dyLine = dyPts.length
+      ? `<polyline class="cv-dy" points="${dyPts.join(' ')}"/>` : '';
+    const dyFill = dyPts.length
+      ? `<polygon class="cv-dyfill" points="${M.l},${(M.t + ph).toFixed(1)} ${dyPts.join(' ')} ${(M.l + pw).toFixed(1)},${(M.t + ph).toFixed(1)}"/>` : '';
+
+    // ── 流年折线 ──
+    const lnPts = lnList
+      .filter((l) => l.luck && typeof l.luck.score === 'number')
+      .map((l) => ({ x: X(num(l.age)), y: Y(num(l.luck.score)), y0: num(l.year), gz: l.ganzhi, tier: l.luck.tier, v: num(l.luck.score), age: num(l.age) }));
+    const lnLine = lnPts.length > 1
+      ? `<polyline class="cv-ln" points="${lnPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}"/>` : '';
+
+    // 流年点：今年（最小年份）加粗描边，其余小点；每点带 tooltip
+    const TIER_FILL = { 大吉: 'var(--lu)', 吉: 'var(--lu)', 平: 'var(--muted)', 忌: 'var(--red)', 大忌: 'var(--red)' };
+    const curYear = lnPts.length ? Math.min(...lnPts.map((p) => p.y0)) : null;
+    const dots = lnPts.map((p) => {
+      const isNow = p.y0 === curYear;
+      return `<circle class="cv-dot${isNow ? ' now' : ''}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" fill="${TIER_FILL[p.tier] || 'var(--muted)'}"><title>${esc(`${p.y0}年（${p.age}岁）${p.gz}　${p.tier} ${p.v}`)}</title></circle>`;
+    }).join('');
+
+    // ── 轴 ──
+    const axes = `<line class="cv-ax zero" x1="${M.l}" y1="${Y(0).toFixed(1)}" x2="${M.l + pw}" y2="${Y(0).toFixed(1)}"/>`
+      + `<line class="cv-ax" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t + ph}"/>`;
+    // 年龄刻度：控制在 8 个以内，避免标签重叠
+    const tickStep = span > 60 ? 10 : 5;
+    const ticks = [];
+    for (let a = Math.ceil(a0 / tickStep) * tickStep; a <= a1; a += tickStep) {
+      ticks.push(`<text class="cv-lbl age" x="${X(a).toFixed(1)}" y="${(M.t + ph + 13).toFixed(1)}" text-anchor="middle">${a}岁</text>`);
+    }
+    // 纵轴刻度只标三个：好 / 平 / 差
+    const yLabels = `<text class="cv-lbl" x="${(M.l - 5).toFixed(1)}" y="${(Y(2.4) + 3).toFixed(1)}" text-anchor="end">吉</text>`
+      + `<text class="cv-lbl" x="${(M.l - 5).toFixed(1)}" y="${(Y(0) + 3).toFixed(1)}" text-anchor="end">平</text>`
+      + `<text class="cv-lbl" x="${(M.l - 5).toFixed(1)}" y="${(Y(-1.8) + 3).toFixed(1)}" text-anchor="end">忌</text>`;
+
+    // 峰值/谷值标注：取自引擎已有 tier，不另算
+    const sorted = dyList.slice().sort((a, b) => dyScore(b) - dyScore(a));
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    const mark = best && dyScore(best) > 0.55
+      ? `<text class="cv-lbl" x="${X(num(best.startAge) + 5).toFixed(1)}" y="${(Y(dyScore(best)) - 5).toFixed(1)}" text-anchor="middle">▲${best.startAge}岁 ${best.luck.tier}</text>` : '';
+    const markLo = worst && dyScore(worst) < -0.8
+      ? `<text class="cv-lbl" x="${X(num(worst.startAge) + 5).toFixed(1)}" y="${(Y(dyScore(worst)) + 11).toFixed(1)}" text-anchor="middle">▼${worst.startAge}岁 ${worst.luck.tier}</text>` : '';
+
+    const legend = `<div class="cv-legend">
+      <span><i style="background:var(--quan)"></i>大运（阶梯，一步十年）</span>
+      <span><i style="background:var(--ke)"></i>流年（逐年折线）</span>
+      <span>绿带＝吉　灰带＝平　红带＝忌</span>
+    </div>`;
+
+    const tip = `<div class="cv-tip">曲线只呈现引擎已给出的行运评分（${VMIN} ~ ${VMAX}），不预测具体事件；档位与依据见下方「大运 / 流年」各节。悬停看逐年详情。</div>`;
+
+    return `<div class="mp-curve">
+      <div class="mp-curve-h"><b>人生运势曲线</b><span>${a0}–${a1} 岁　${r.dayun.rule}，${startAge} 岁起运</span></div>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="人生运势曲线：${a0} 到 ${a1} 岁的大运与流年评分走势">
+        ${bands}${axes}${dyFill}${dyLine}${lnLine}${dots}${ticks.join('')}${yLabels}${mark}${markLo}
+      </svg>
+      ${legend}${tip}
+    </div>`;
+  };
+
   pp.baziHTML = function (r) {
     const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']];
     const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
@@ -1254,7 +1469,7 @@
       偏印: 'tg-yin', 正印: 'tg-yin',
     };
     const tg = (name) => `<span class="tg ${TG[name] || ''}">${name}</span>`;
-    const el = (e) => `<span class="wx-${ELC[e] || 'earth'}">${e}</span>`;
+    const el = (e) => `<span class="wx-${ELC[e] || 'earth'}">${wxIcon(e)}${e}</span>`;
     // 神煞：悬停显示「类别·查法来源查目标｜查法口诀」
     const ssTag = (x) => `<span class="ss-s ${x.luck || 'neutral'}" title="${esc(`${x.cat} · ${x.via}查${x.target} ｜ ${x.rule}`)}">${x.name}</span>`;
     // data-c：竖屏 2×2 重排时每格左上角标注柱名（桌面端不显示）
@@ -1293,7 +1508,7 @@
         : '<span class="pp-dim">—</span>')),
       wxRow,
     ].join('');
-    const wx = Object.entries(r.wuxing).map(([k, v]) => `<span class="pp-chip wx-${ELC[k]}">${k} ${v}</span>`).join('');
+    const wx = Object.entries(r.wuxing).map(([k, v]) => `<span class="pp-chip wx-${ELC[k]}">${wxIcon(k)}${k} ${v}</span>`).join('');
 
     // 格局 / 用神 / 十神
     const fr = r.frame || {};
@@ -1333,7 +1548,7 @@
       ${sect('格局', gj)}
       ${sect('用神', ys)}
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
-      ${sect('大运', `<div class="pp-chips">${dy}</div>`)}
+      ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln) : ''}
       ${r.palaces ? sect('胎元与命身宫', `<div class="pp-chips">
         <span class="pp-chip" title="${r.palaces.taiyuan.note}">胎元 ${r.palaces.taiyuan.ganzhi}</span>
@@ -1446,6 +1661,25 @@
   /** 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态） */
   pp.resultWithInterpret = function (html, it, opt) {
     return (html || '') + pp.interpretHTML(it, opt);
+  };
+
+  /**
+   * 速查类（黄历/择日/称骨/小六壬/星座/生命数字/人生K线/风水/起名）的通用渲染：
+   * 这些体系给的是确定性结果，不做命盘式解读，直接把引擎摘要按等宽文本呈现。
+   */
+  pp.quickHTML = function (r) {
+    if (!r) return '';
+    const LABEL = {
+      almanac: '黄历', zeri: '择日', chenggu: '称骨', xiaoliuren: '小六壬',
+      star: '星座', numerology: '生命数字', trend: '人生 K 线', fengshui: '风水', name: '起名',
+    };
+    const title = LABEL[r.system] || '速查';
+    const text = r.summary || '';
+    const body = text ? `<pre class="mp-quick-pre">${esc(text)}</pre>` : '';
+    return `<section class="mp-quick" aria-label="${esc(title)}结果">
+      <div class="mp-quick-h"><b>${esc(title)}</b></div>
+      ${body}
+    </section>`;
   };
 
   /**

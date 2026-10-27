@@ -7,6 +7,7 @@ import {
 import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
 import { assertCivil } from './validate.js';
+import { applyDst } from './dst.js';
 import { nayinOf } from './nayin.js';
 import { SANHE } from './sanhe.js';
 import { analyzeBaziFrame, scoreLuck } from './geju.js';
@@ -209,9 +210,15 @@ export function applyTrueSolar(jd, longitude) {
  */
 export function buildBazi(input) {
   assertCivil(input);
-  const { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
+  let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
   const lateZi = input.lateZi !== false;
   const useTrueSolar = input.trueSolar !== false;
+  // 1986–1991 中国夏令时：出生证钟面时间普遍是「拨快 1 小时」的钟面时间，
+  // 不校正会让时柱（乃至跨 23:00 的日柱）整档偏；显式传 dst:false 可关闭。
+  const dst = input.dst === false ? { applied: false, note: null } : applyDst({ year, month, day, hour, minute });
+  if (dst.applied) {
+    year = dst.year; month = dst.month; day = dst.day; hour = dst.hour; minute = dst.minute;
+  }
 
   const civilJd = partsToJd({ year, month, day, hour, minute });
   // 地址 -> 经度：手填的 longitude 优先，其次按地址查表
@@ -470,12 +477,13 @@ export function buildBazi(input) {
       geo,
       lateZi,
       trueSolar: useTrueSolar,
+      dst: { applied: !!dst.applied, note: dst.note || null },
     },
     solarTime: {
       civilText: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
       trueSolarText: formatJd(jd),
       offsetMinutes: solar.offsetMinutes,
-      note: solar.note,
+      note: dst.applied ? `${dst.note}；${solar.note}` : solar.note,
       lunarYearForPillar: solarYear,
     },
     jieqi: {

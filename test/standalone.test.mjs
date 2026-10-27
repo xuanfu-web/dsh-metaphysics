@@ -10,8 +10,13 @@ const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
 
 // ── ① 八个 tab ─────────────────────────────────────────────
 const tabs = [...html.matchAll(/<button class="tab" data-tab="([a-z]+)"/g)].map((m) => m[1]);
-ok('八个 tab 齐全', tabs.join(',') === 'ziwei,bazi,liuyao,meihua,daliuren,qimen,hepan,tarot', tabs.join(','));
+ok('十七个 tab 齐全（八体系 + 九速查）', tabs.join(',') === 'ziwei,bazi,liuyao,meihua,daliuren,qimen,hepan,tarot,almanac,zeri,chenggu,xiaoliuren,star,numerology,trend,fengshui,name', tabs.join(','));
 ok('标题栏写明八体系', /奇门 · 合盘/.test(html));
+ok('速查块存在', html.includes('id="for-quick"'));
+for (const id of ['ztask', 'zdays', 'zsheng', 'num1', 'toage', 'sitting', 'facing', 'surname', 'givenname']) {
+  ok('速查字段 ' + id, new RegExp('id="' + id + '"').test(html));
+}
+ok('页面渲染有速查回退', ui.includes('quickHTML'));
 
 // ── ② 合盘字段 ─────────────────────────────────────────────
 ok('合盘块存在', html.includes('id="for-hepan"'));

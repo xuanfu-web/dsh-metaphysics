@@ -10,8 +10,9 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
 
 // ── ① 晚子时开关 ───────────────────────────────────────────
 {
-  const late = compute({ system: 'bazi', datetime: '1990-05-12T23:30', gender: 'male', lateZi: true, trueSolar: false });
-  const same = compute({ system: 'bazi', datetime: '1990-05-12T23:30', gender: 'male', lateZi: false, trueSolar: false });
+  // 用非夏令时日期：1986–1991 夏季会被 DST 校正掉一小时，23:30 变 22:30
+  const late = compute({ system: 'bazi', datetime: '1990-12-12T23:30', gender: 'male', lateZi: true, trueSolar: false });
+  const same = compute({ system: 'bazi', datetime: '1990-12-12T23:30', gender: 'male', lateZi: false, trueSolar: false });
   ok('晚子时换日会改变日柱', late.pillars.day.ganzhi !== same.pillars.day.ganzhi, `${late.pillars.day.ganzhi} vs ${same.pillars.day.ganzhi}`);
   ok('晚子时不换日保持当日', /1990/.test(String(late.input && late.input.datetime || '')) || true);
 

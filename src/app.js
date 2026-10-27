@@ -164,6 +164,16 @@ const TABS = [
   { k: 'qimen', label: '奇门', timeLabel: '起局时刻', hint: '奇门时家转盘：用起局时刻定节气、三元与局数；换局规则决定符头与节气如何对齐。' },
   { k: 'hepan', label: '合盘', timeLabel: '你的出生时刻', hint: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。' },
     { k: 'tarot', label: '塔罗', timeLabel: '', hint: '塔罗不看时间，只记录抽牌时刻与你的提问。' },
+  // 速查类：不做完整报告，只给当日/当天的确定性结果
+  { k: 'almanac', label: '黄历', timeLabel: '', hint: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。' },
+  { k: 'zeri', label: '择日', timeLabel: '', hint: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。' },
+  { k: 'chenggu', label: '称骨', timeLabel: '出生时刻', hint: '称骨按农历年、月、日、时的骨重求和；时辰必填。' },
+  { k: 'xiaoliuren', label: '小六壬', timeLabel: '起课时刻', hint: '小六壬用农历月/日/时掐指，也可用三个随机数起课。' },
+  { k: 'star', label: '星座', timeLabel: '', hint: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。' },
+  { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
+  { k: 'trend', label: '人生K线', timeLabel: '出生时刻', hint: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。' },
+  { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。' },
+  { k: 'name', label: '起名', timeLabel: '', hint: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。' },
 ];
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -181,6 +191,10 @@ const TIME_KIND = {
   ziwei: 'birth', bazi: 'birth', hepan: 'birth',
   liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
   tarot: 'none',
+  // 速查类：date=只用日期；birth=出生信息；cast=起课时刻
+  almanac: 'date', zeri: 'date', star: 'date', numerology: 'date',
+  chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
+  xiaoliuren: 'cast',
 };
 const SAMPLE = { date: '1990-05-12', time: '14:30' };
 const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -217,6 +231,20 @@ function App() {
   const [fit, setFit] = useState(null);
   const [rectEvents, setRectEvents] = useState([{ year: '2019', kind: 'career' }, { year: '2022', kind: 'love' }]);
   const [rectRes, setRectRes] = useState(null);
+  // 速查类（黄历/择日/称骨/小六壬/星座/生命数字/人生K线/风水/起名）专用输入
+  const [task, setTask] = useState('开业');
+  const [days, setDays] = useState('30');
+  const [shengXiao, setShengXiao] = useState('');
+  const [xlrMode, setXlrMode] = useState('time');
+  const [num1, setNum1] = useState(''); const [num2, setNum2] = useState(''); const [num3, setNum3] = useState('');
+  const [toAge, setToAge] = useState('60');
+  const [fsMode, setFsMode] = useState('natal');
+  const [sitting, setSitting] = useState('子');
+  const [facing, setFacing] = useState('午');
+  const [nnMode, setNnMode] = useState('assess');
+  const [surname, setSurname] = useState('李');
+  const [givenName, setGivenName] = useState('');
+  const [limitN, setLimitN] = useState('6');
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
@@ -242,10 +270,13 @@ function App() {
   const [manual, setManual] = useState({ birth: null, cast: null });
 
   const meta = TABS.find((t) => t.k === tab) || TABS[0];
-  const isBirth = tab === 'bazi' || tab === 'ziwei' || tab === 'hepan';
+  const isBirth = tab === 'bazi' || tab === 'ziwei' || tab === 'hepan'
+    || tab === 'chenggu' || tab === 'trend' || tab === 'fengshui' || tab === 'name';
   const timeKind = kindOf(tab);
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
-  const showDT = tab !== 'tarot' && usesTimeInput;
+  const showDate = tab !== 'tarot' && usesTimeInput;
+  const showTime = showDate && timeKind !== 'date';
+  const showDT = showTime;
 
   const run = async (kind, override, modeOverride, over) => {
     const k = kind || tab;
@@ -282,6 +313,44 @@ function App() {
         else if (parsed.warning) setNotice(parsed.warning);
       }
       if (k === 'qimen') { args.juMethod = qimenRule; args.lateZiHourMode = qLateZi; }
+      // 八字：验前事只读信号随盘一起算（不改盘）
+      if (k === 'bazi') args.verifyPast = 6;
+      // 速查类：各体系自己的最小输入
+      if (k === 'zeri') {
+        args.startDate = dt.date;
+        args.task = task;
+        args.days = Number(days) || 30;
+        if (shengXiao) args.shengXiao = shengXiao;
+      }
+      if (k === 'xiaoliuren') {
+        args.mode = xlrMode;
+        if (xlrMode === 'number') {
+          args.num1 = Number(num1) || undefined;
+          args.num2 = Number(num2) || undefined;
+          args.num3 = Number(num3) || undefined;
+        } else {
+          args.date = dt.date;
+          const hh = Number(String(dt.time).split(':')[0]);
+          args.hour = Number.isFinite(hh) ? hh : 12;
+        }
+      }
+      if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = trueSolar; args.lateZi = lateZi; }
+      if (k === 'fengshui') {
+        args.action = fsMode;
+        if (fsMode === 'advise') { args.sitting = sitting; args.facing = facing; delete args.datetime; }
+        else { args.gender = genderV; }
+      }
+      if (k === 'name') {
+        args.action = nnMode;
+        args.surname = surname.trim();
+        if (nnMode === 'generate') {
+          args.gender = genderV; args.limit = Number(limitN) || 6;
+          args.trueSolar = trueSolar; args.lateZi = lateZi;
+        } else {
+          args.givenName = givenName.trim();
+          delete args.datetime; // 评估名字时生辰可空：空着只评字面五行
+        }
+      }
       if (k === 'tarot') args.count = Number(count);
       if (k === 'hepan') {
         args.chart = hpChart;
@@ -583,9 +652,9 @@ function App() {
 
     h('div', { key: 'head', className: 'mp-panel' },
       h('div', { className: 'mp-row' },
-        showDT ? field(isBirth ? '出生日期（公历）' : '起卦日期（公历）',
+        showDate ? field(isBirth ? '出生日期（公历）' : timeKind === 'date' ? '日期（公历）' : '起卦日期（公历）',
           h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
-        showDT ? field(isBirth ? '出生时刻' : '起卦时刻',
+        showTime ? field(isBirth ? '出生时刻' : '起卦时刻',
           h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => editTime(e.target.value) })) : null,
         isBirth ? field('性别', h('select', {
           className: 'mp-input', value: gender, onChange: (e) => setGender(e.target.value),
@@ -660,6 +729,63 @@ function App() {
           className: 'mp-input', value: changing, placeholder: '1-6',
           onChange: (e) => setChanging(e.target.value),
         })) : null,
+        tab === 'zeri' ? field('所办事项', h('select', {
+          className: 'mp-input', value: task, onChange: (e) => setTask(e.target.value),
+        }, ['嫁娶', '订婚', '开业', '入宅', '搬家', '动土', '装修', '安葬', '出行', '祭祀', '签约', '求医', '纳财']
+          .map((t) => h('option', { key: t, value: t }, t)))) : null,
+        tab === 'zeri' ? field('看多少天', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 60, value: days,
+          onChange: (e) => setDays(e.target.value),
+        })) : null,
+        tab === 'zeri' ? field('当事人属相（可空）', h('select', {
+          className: 'mp-input', value: shengXiao, onChange: (e) => setShengXiao(e.target.value),
+        }, h('option', { value: '' }, '不排除'), ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+          .map((s) => h('option', { key: s, value: s }, s)))) : null,
+        tab === 'xiaoliuren' ? field('起课方式', h('div', { className: 'mp-seg' },
+          h('button', { className: xlrMode === 'time' ? 'on' : '', onClick: () => setXlrMode('time') }, '时间'),
+          h('button', { className: xlrMode === 'number' ? 'on' : '', onClick: () => setXlrMode('number') }, '报数'))) : null,
+        (tab === 'xiaoliuren' && xlrMode === 'number') ? field('第一个数', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 99, value: num1,
+          onChange: (e) => setNum1(e.target.value),
+        })) : null,
+        (tab === 'xiaoliuren' && xlrMode === 'number') ? field('第二个数', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 99, value: num2,
+          onChange: (e) => setNum2(e.target.value),
+        })) : null,
+        (tab === 'xiaoliuren' && xlrMode === 'number') ? field('第三个数', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 99, value: num3,
+          onChange: (e) => setNum3(e.target.value),
+        })) : null,
+        tab === 'trend' ? field('算到几岁', h('input', {
+          className: 'mp-input', type: 'number', min: 10, max: 100, value: toAge,
+          onChange: (e) => setToAge(e.target.value),
+        })) : null,
+        tab === 'fengshui' ? field('看什么', h('div', { className: 'mp-seg' },
+          h('button', { className: fsMode === 'natal' ? 'on' : '', onClick: () => setFsMode('natal') }, '命卦'),
+          h('button', { className: fsMode === 'advise' ? 'on' : '', onClick: () => setFsMode('advise') }, '门主灶'))) : null,
+        (tab === 'fengshui' && fsMode === 'advise') ? field('坐山（24 山）', h('input', {
+          className: 'mp-input', value: sitting, placeholder: '如 子 / 乾',
+          onChange: (e) => setSitting(e.target.value),
+        })) : null,
+        (tab === 'fengshui' && fsMode === 'advise') ? field('朝向（24 山）', h('input', {
+          className: 'mp-input', value: facing, placeholder: '如 午 / 巽',
+          onChange: (e) => setFacing(e.target.value),
+        })) : null,
+        tab === 'name' ? field('看什么', h('div', { className: 'mp-seg' },
+          h('button', { className: nnMode === 'assess' ? 'on' : '', onClick: () => setNnMode('assess') }, '评名字'),
+          h('button', { className: nnMode === 'generate' ? 'on' : '', onClick: () => setNnMode('generate') }, '生成候选'))) : null,
+        tab === 'name' ? field('姓', h('input', {
+          className: 'mp-input', value: surname, placeholder: '如 李',
+          onChange: (e) => setSurname(e.target.value),
+        })) : null,
+        (tab === 'name' && nnMode === 'assess') ? field('名字', h('input', {
+          className: 'mp-input', value: givenName, placeholder: '如 沐宸',
+          onChange: (e) => setGivenName(e.target.value),
+        })) : null,
+        (tab === 'name' && nnMode === 'generate') ? field('候选个数', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 20, value: limitN,
+          onChange: (e) => setLimitN(e.target.value),
+        })) : null,
       ),
       isBirth ? h('div', { className: 'mp-checks' },
         h('label', { title: '按出生地经度把钟表时间换算成真太阳时' },
@@ -732,7 +858,8 @@ function App() {
                   : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
                   : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
-                    : PP.liuyaoHTML(result.r),
+                    : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
+                      : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },
         ),

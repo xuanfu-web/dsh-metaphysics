@@ -8,8 +8,9 @@ import { ok } from './_harness.mjs';
 const day = (r) => (r.pillars ? r.pillars.day.ganzhi : r.siZhu ? r.siZhu.day : r.dayGanZhi);
 
 // ── ① 八字：晚子时开关与声明 ─────────────────────────────────
-const late = compute({ system: 'bazi', datetime: '1990-05-12T23:30', gender: 'male', trueSolar: false });
-const same = compute({ system: 'bazi', datetime: '1990-05-12T23:30', gender: 'male', trueSolar: false, lateZi: false });
+// 用非夏令时日期：1986–1991 夏季钟面时间会先被 DST 校正掉一小时
+const late = compute({ system: 'bazi', datetime: '1990-12-12T23:30', gender: 'male', trueSolar: false });
+const same = compute({ system: 'bazi', datetime: '1990-12-12T23:30', gender: 'male', trueSolar: false, lateZi: false });
 ok('八字：默认换日并写明', /晚子时：23:00 后算次日/.test(late.summary));
 ok('八字：关闭后写明不换日', /晚子时：23:00 后仍算当日/.test(same.summary));
 ok('八字：换日与否会改变日柱', day(late) !== day(same), `${day(late)} vs ${day(same)}`);

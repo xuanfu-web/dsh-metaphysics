@@ -2,6 +2,7 @@
 import { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { applyTrueSolar } from './bazi.js';
+import { applyDst } from './dst.js';
 import { assertCivil } from './validate.js';
 import { nayinOf } from './nayin.js';
 import { resolveAddress } from './geo.js';
@@ -203,7 +204,10 @@ export function buildZiwei(input) {
   const longitude = typeof input.longitude === 'number'
     ? input.longitude
     : (geo && typeof geo.lon === 'number' ? geo.lon : undefined);
-  const civilJd = partsToJd({ year: cy, month: cm, day: cd, hour: ch, minute: cmin });
+  const civilJdRaw = partsToJd({ year: cy, month: cm, day: cd, hour: ch, minute: cmin });
+  // 1986–1991 中国夏令时：先按钟面时间校正，再叠加真太阳时
+  const dst = input.dst === false ? { applied: false, note: null } : applyDst({ year: cy, month: cm, day: cd, hour: ch, minute: cmin });
+  const civilJd = dst.applied ? partsToJd({ year: dst.year, month: dst.month, day: dst.day, hour: dst.hour, minute: dst.minute }) : civilJdRaw;
   const solar = useTrueSolar
     ? applyTrueSolar(civilJd, longitude)
     : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
@@ -458,12 +462,13 @@ export function buildZiwei(input) {
       address: input.address || null,
       geo,
       trueSolar: useTrueSolar,
+      dst: { applied: !!dst.applied, note: dst.note || null },
     },
     solarTime: {
       civilText: `${cy}-${String(cm).padStart(2, '0')}-${String(cd).padStart(2, '0')} ${String(ch).padStart(2, '0')}:${String(cmin).padStart(2, '0')}`,
       trueSolarText: formatJd(solar.jd),
       offsetMinutes: solar.offsetMinutes,
-      note: solar.note,
+      note: dst.applied ? `${dst.note}；${solar.note}` : solar.note,
     },
     lunar: {
       year: lunarRaw.lunarYear,

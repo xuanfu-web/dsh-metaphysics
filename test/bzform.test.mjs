@@ -36,7 +36,8 @@ const html = PP.baziHTML(r);
 {
   ok(/\.pp-bz th,\.pp-bz td\{[^}]*border:none/.test(SRC), '单元格无四边框（不用竖线切列）');
   ok(/\.pp-bz tr\+tr td\{border-top:1px solid var\(--hair\)\}/.test(SRC), '行间只用 --hair 发丝横线');
-  ok(/--hair:#efe9dc/.test(SRC) && /--hair:#2f2b23/.test(SRC), '--hair 明暗两套都在');
+  // 明暗两套都要定义（浅色值随色板调整：底色压深后发丝线需同步加深，否则与背景几乎同亮、失去分隔作用）
+  ok(/--hair:#e9e2d3/.test(SRC) && /--hair:#2f2b23/.test(SRC), '--hair 明暗两套都在');
 }
 
 // ── 三、天干地支大字：选择器必须真的命中 ───────────────────────
