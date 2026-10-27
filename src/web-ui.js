@@ -392,16 +392,30 @@
     if (needAsk(tab)) args.question = el('question').value.trim();
     try {
       const r = window.Engine.compute(args);
+      // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend（确定性、无网络）
+      let trend = null;
+      if (tab === 'bazi') {
+        try {
+          trend = window.Engine.compute({
+            system: 'trend', datetime: `${date}T${time}`, gender: args.gender, toAge: 100,
+            trueSolar: args.trueSolar, lateZi: args.lateZi !== false,
+            ...(args.address ? { address: args.address } : {}),
+            ...(typeof args.longitude === 'number' ? { longitude: args.longitude } : {}),
+            ...(args.geo ? { geo: args.geo } : {}),
+          });
+        } catch (e) { trend = null; }
+      }
       const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
-        : tab === 'bazi' ? window.__PP.baziHTML(r)
+        : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
                 : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
-                      : window.__PP.quickHTML(r));
-      last = { r, html, tab, date, time, timed };
+                      : tab === 'trend' ? window.__PP.trendHTML(r)
+                        : window.__PP.quickHTML(r));
+      last = { r, html, tab, date, time, timed, trend };
       paint();
     } catch (e) {
       last = null;

@@ -392,6 +392,20 @@ function App() {
         }
       }
       const r = Engine.compute(args);
+      // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend，确定性、无网络
+      let trend = null;
+      if (k === 'bazi') {
+        try {
+          trend = Engine.compute({
+            system: 'trend', datetime, gender: genderV, toAge: 100,
+            trueSolar, lateZi,
+            ...(args.dst !== undefined ? { dst: args.dst } : {}),
+            ...(args.address ? { address: args.address } : {}),
+            ...(typeof args.longitude === 'number' ? { longitude: args.longitude } : {}),
+            ...(args.geo ? { geo: args.geo } : {}),
+          });
+        } catch (e) { trend = null; }
+      }
       // 问题与方向一并与卦象交给解读：解读按它展开，并在开头回显供确认。
       // 奇门虽然不问事，但「询问方向」决定取哪个门/星作用神，所以也要传。
       const ask = (needAsk(k) || k === 'qimen')
@@ -404,7 +418,7 @@ function App() {
       }
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
-      setResult({ kind: k, r, it, at: dt, timed });
+      setResult({ kind: k, r, it, at: dt, timed, trend });
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌，不入历史
@@ -852,14 +866,15 @@ function App() {
       dangerouslySetInnerHTML: {
         __html: castAtHTML(result) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-            : result.kind === 'bazi' ? PP.baziHTML(result.r)
+            : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend) : ''))
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
                 : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
                   : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
                   : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
-                      : PP.quickHTML(result.r),
+                      : result.kind === 'trend' ? PP.trendHTML(result.r)
+                        : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },
         ),

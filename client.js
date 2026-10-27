@@ -746,7 +746,7 @@ function resolveAddress(input) {
 
 const DETAIL = /(区|县|镇|乡|村|小区|街道|路|号|巷|弄|组|队)/;
 
-const USER_AGENT = 'dsh-metaphysics/0.18.1 (+https://github.com/xuanfu-web/dsh-metaphysics)';
+const USER_AGENT = 'dsh-metaphysics/0.18.2 (+https://github.com/xuanfu-web/dsh-metaphysics)';
 
 async function onlineLookup(text, { timeoutMs = 2500 } = {}) {
   if (typeof fetch !== 'function') return null;
@@ -9656,6 +9656,46 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-curve .cv-legend i{display:inline-block;width:14px;height:2px;vertical-align:3px;margin-right:4px}
 .mp-curve .cv-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:4px}
 @media (max-width:520px){.mp-curve .cv-lbl.age{font-size:9px}}
+.mp-kline{margin-top:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:10px 12px 9px}
+.mp-kline-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--label);font-family:system-ui,sans-serif;margin-bottom:2px}
+.mp-kline-h b{font-size:12.5px;color:var(--ink);font-weight:600}
+.mp-kline-h span{font-size:11.5px;color:var(--muted)}
+.mp-kline-fig svg{display:block;width:100%;height:auto;overflow:visible}
+.mp-kline .kl-band{fill:var(--ink);opacity:.045}
+.mp-kline .kl-grid{stroke:var(--line);stroke-width:.5;stroke-dasharray:1 4;opacity:.7}
+.mp-kline .kl-grid.mid{stroke-width:.8;stroke-dasharray:3 3;opacity:.9}
+.mp-kline .kl-segline{stroke:var(--dimline);stroke-width:.6;stroke-dasharray:2 3;opacity:.8}
+.mp-kline .kl-seg{fill:var(--label);font-size:8.5px;font-family:system-ui,sans-serif;paint-order:stroke;stroke:var(--card);stroke-width:2.2px;stroke-linejoin:round}
+.mp-kline .kl-lbl{fill:var(--muted);font-size:8px;font-family:system-ui,sans-serif}
+.mp-kline .kl-lbl.age{font-size:8.5px}
+.mp-kline .kl-c.up line{stroke:var(--ji);stroke-width:.8;opacity:.8}
+.mp-kline .kl-c.up rect{fill:var(--ji);opacity:.92}
+.mp-kline .kl-c.down line{stroke:var(--lu);stroke-width:.8;opacity:.8}
+.mp-kline .kl-c.down rect{fill:var(--lu);opacity:.92}
+.mp-kline .kl-c:hover rect{opacity:1}
+.mp-kline .kl-ma{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.mp-kline .kl-ma.m5{stroke:var(--quan);stroke-width:1.3}
+.mp-kline .kl-ma.m10{stroke:var(--ke);stroke-width:1;opacity:.85}
+.mp-kline .kl-mark circle{fill:var(--quan)}
+.mp-kline .kl-mark.lo circle{fill:var(--ke)}
+.mp-kline .kl-mark .ring{fill:none;stroke:currentColor;stroke-width:.6;opacity:.5}
+.mp-kline .kl-mark text{fill:var(--ink2);font-size:9px;font-family:system-ui,sans-serif;paint-order:stroke;stroke:var(--card);stroke-width:2.4px;stroke-linejoin:round}
+.mp-kline .kl-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-kline .kl-legend i{display:inline-block;width:9px;height:9px;vertical-align:-1px;margin-right:4px;border-radius:1px}
+.mp-kline .kl-legend i.up{background:var(--ji)}
+.mp-kline .kl-legend i.down{background:var(--lu)}
+.mp-kline .kl-legend i.m5{height:2px;background:var(--quan);vertical-align:3px}
+.mp-kline .kl-legend i.m10{height:2px;background:var(--ke);vertical-align:3px}
+.kl-segs{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:8px;font-family:system-ui,sans-serif}
+.kl-chip{font-size:11px;color:var(--ink2);border:1px solid var(--hair);border-radius:99px;padding:1px 8px;background:var(--band)}
+.kl-chip em{font-style:normal;color:var(--muted);margin-left:5px;font-size:10.5px}
+.kl-hls{display:flex;flex-direction:column;gap:3px;margin-top:8px;font-size:11.5px;font-family:system-ui,sans-serif;color:var(--ink2)}
+.kl-hl{border-left:2px solid var(--line);padding-left:7px;line-height:1.6}
+.kl-hl.hi{border-color:var(--quan)}
+.kl-hl.lo{border-color:var(--ke)}
+.mp-kline-note{font-size:11px;color:var(--red);line-height:1.6;margin-top:6px}
+.mp-kline-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:5px}
+@media print{.mp-kline{break-inside:avoid}}
 .mp-tt{padding:16px}
 .mp-tt-head{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
 .mp-tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
@@ -10665,6 +10705,120 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     </div>`;
   };
 
+  pp.trendChart = function (r) {
+    const pts = r && Array.isArray(r.points) ? r.points : [];
+    if (pts.length < 2) return '';
+    const segs = r && Array.isArray(r.segments) ? r.segments : [];
+    const num = (v) => (typeof v === 'number' && isFinite(v) ? v : 0);
+    const W = 720, H = 300;
+    const M = { t: 36, r: 14, b: 30, l: 34 };
+    const pw = W - M.l - M.r, ph = H - M.t - M.b;
+    const n = pts.length;
+    const step = pw / n;
+    const X = (i) => M.l + (i + 0.5) * step;
+    const Y = (v) => M.t + ph - (Math.max(0, Math.min(100, v)) / 100) * ph;
+    const bodyW = Math.max(1.1, Math.min(10, step * 0.62));
+    const sc = (p) => num(p.score);
+
+    const bands = segs.map((s, i) => {
+      const i0 = Math.max(0, s.startAge - 1);
+      const i1 = Math.min(n - 1, s.endAge - 1);
+      if (i1 < i0) return '';
+      const x = M.l + i0 * step;
+      const w = Math.max(0.6, (i1 - i0 + 1) * step);
+      const rect = i % 2 === 1
+        ? `<rect class="kl-band" x="${x.toFixed(1)}" y="${M.t}" width="${w.toFixed(1)}" height="${ph}"/>` : '';
+      const line = i === 0 ? ''
+        : `<line class="kl-segline" x1="${x.toFixed(1)}" y1="${M.t}" x2="${x.toFixed(1)}" y2="${M.t + ph}"/>`;
+      return rect + line + `<text class="kl-seg" x="${(x + 3).toFixed(1)}" y="${M.t - 8}">${esc(s.ganZhi)}</text>`;
+    }).join('');
+
+    const grid = [0, 25, 50, 75, 100].map((v) =>
+      `<line class="kl-grid${v === 50 ? ' mid' : ''}" x1="${M.l}" y1="${Y(v).toFixed(1)}" x2="${M.l + pw}" y2="${Y(v).toFixed(1)}"/>`
+      + `<text class="kl-lbl" x="${M.l - 6}" y="${(Y(v) + 3).toFixed(1)}" text-anchor="end">${v}</text>`).join('');
+
+    const candles = pts.map((p, i) => {
+      const k = p.kline || {};
+      const o = num(k.open), c = num(k.close), hi = num(k.high), lo = num(k.low);
+      const up = c >= o;
+      const yO = Y(o), yC = Y(c);
+      const top = Math.min(yO, yC);
+      const h = Math.max(0.8, Math.abs(yO - yC));
+      const x = X(i);
+      const title = `${p.age}岁（${p.year}年 ${p.ganZhi}）${c}分${p.dayunGanZhi ? ` · ${p.dayunGanZhi}运` : ''}`;
+      return `<g class="kl-c${up ? ' up' : ' down'}"><title>${esc(title)}</title>`
+        + `<line x1="${x.toFixed(2)}" y1="${Y(hi).toFixed(1)}" x2="${x.toFixed(2)}" y2="${Y(lo).toFixed(1)}"/>`
+        + `<rect x="${(x - bodyW / 2).toFixed(2)}" y="${top.toFixed(1)}" width="${bodyW.toFixed(2)}" height="${h.toFixed(1)}" rx="0.7"/></g>`;
+    }).join('');
+
+    const maPath = (win) => {
+      const seg = [];
+      for (let i = 0; i < n; i++) {
+        if (i + 1 < win) continue;
+        let sum = 0;
+        for (let j = i + 1 - win; j <= i; j++) sum += sc(pts[j]);
+        seg.push(`${seg.length ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(sum / win).toFixed(1)}`);
+      }
+      return seg.join(' ');
+    };
+
+    let hiP = pts[0], loP = pts[0];
+    for (const p of pts) {
+      if (sc(p) > sc(hiP)) hiP = p;
+      if (sc(p) < sc(loP)) loP = p;
+    }
+    const mark = (p, cls, dy) => {
+      const i = pts.indexOf(p);
+      const x = X(i), y = Y(sc(p));
+      const tx = Math.min(Math.max(x, M.l + 26), M.l + pw - 26);
+      const d = cls === 'hi' ? (y - 8 < M.t + 6 ? 14 : dy) : (y + 12 > M.t + ph - 2 ? -8 : dy);
+      return `<g class="kl-mark ${cls}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2"/>`
+        + `<circle class="ring" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.6"/>`
+        + `<text x="${tx.toFixed(1)}" y="${(y + d).toFixed(1)}" text-anchor="middle">${p.age}岁 ${sc(p)}</text></g>`;
+    };
+
+    const tickStep = n > 60 ? 10 : 5;
+    const ages = pts.filter((p) => p.age % tickStep === 0).map((p) =>
+      `<text class="kl-lbl age" x="${X(pts.indexOf(p)).toFixed(1)}" y="${M.t + ph + 14}" text-anchor="middle">${p.age}</text>`).join('');
+    const xNote = `<text class="kl-lbl" x="${M.l + pw / 2}" y="${H - 4}" text-anchor="middle">年龄（岁）</text>`;
+
+    const legend = `<div class="kl-legend"><span><i class="up"></i>阳线：比上一岁高</span>`
+      + `<span><i class="down"></i>阴线：比上一岁低</span>`
+      + `<span><i class="m5"></i>5 年均线</span><span><i class="m10"></i>10 年均线</span>`
+      + '<span>虚线＝大运交界</span></div>';
+
+    return `<div class="mp-kline-fig">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="人生K线：1 到 ${n} 岁的逐年评分蜡烛图">
+        ${bands}${grid}${candles}
+        <path class="kl-ma m10" d="${maPath(10)}"/><path class="kl-ma m5" d="${maPath(5)}"/>
+        ${mark(hiP, 'hi', -8)}${mark(loP, 'lo', 12)}
+        ${ages}${xNote}
+      </svg>${legend}</div>`;
+  };
+
+  pp.trendHTML = function (r) {
+    if (!r) return '';
+    const chart = pp.trendChart(r);
+    if (!chart) return pp.quickHTML(r);
+    const segs = Array.isArray(r.segments) ? r.segments : [];
+    const hl = (r.highlights && typeof r.highlights === 'object') ? r.highlights : {};
+    const meta = r.meta || {};
+    const st = meta.strength || {};
+    const chips = segs.map((s) => `<span class="kl-chip">${esc(s.ganZhi)}<em>${s.startAge}–${s.endAge}</em></span>`).join('');
+    const best = (Array.isArray(hl.best) ? hl.best : []).map((x) => `<div class="kl-hl hi">${esc(x)}</div>`).join('');
+    const worst = (Array.isArray(hl.worst) ? hl.worst : []).map((x) => `<div class="kl-hl lo">${esc(x)}</div>`).join('');
+    const note = meta.boundaryNote ? `<div class="mp-kline-note">${esc(meta.boundaryNote)}</div>`
+      : (hl.suppressed ? `<div class="mp-kline-note">${esc(hl.suppressed)}</div>` : '');
+    return `<section class="mp-kline" aria-label="人生K线结果">
+      <div class="mp-kline-h"><b>人生 K 线</b><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
+      ${chart}
+      ${chips ? `<div class="kl-segs">${chips}</div>` : ''}
+      ${best || worst ? `<div class="kl-hls">${best}${worst}</div>` : ''}
+      ${note}
+      <div class="mp-kline-tip">逐岁分数由大运与流年十神按固定表确定性计分（1–100），只表五行力量的顺逆，不预测具体事件；旺衰落在换档阈值附近时，不出高低年份结论。</div>
+    </section>`;
+  };
+
   pp.baziHTML = function (r) {
     const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']];
     const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
@@ -11326,6 +11480,19 @@ function App() {
         }
       }
       const r = Engine.compute(args);
+      let trend = null;
+      if (k === 'bazi') {
+        try {
+          trend = Engine.compute({
+            system: 'trend', datetime, gender: genderV, toAge: 100,
+            trueSolar, lateZi,
+            ...(args.dst !== undefined ? { dst: args.dst } : {}),
+            ...(args.address ? { address: args.address } : {}),
+            ...(typeof args.longitude === 'number' ? { longitude: args.longitude } : {}),
+            ...(args.geo ? { geo: args.geo } : {}),
+          });
+        } catch (e) { trend = null; }
+      }
       const ask = (needAsk(k) || k === 'qimen')
         ? { question: needAsk(k) ? question.trim() : '', direction }
         : undefined;
@@ -11334,7 +11501,7 @@ function App() {
         it.sections = [...(it.sections || []), { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: Engine.crossText(r.cross) }];
       }
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
-      setResult({ kind: k, r, it, at: dt, timed });
+      setResult({ kind: k, r, it, at: dt, timed, trend });
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       if (k !== 'tarot') {
@@ -11761,14 +11928,15 @@ function App() {
       dangerouslySetInnerHTML: {
         __html: castAtHTML(result) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-            : result.kind === 'bazi' ? PP.baziHTML(result.r)
+            : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend) : ''))
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
                 : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
                   : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
                   : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
                   : result.kind === 'tarot' ? PP.tarotHTML(result.r)
                     : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
-                      : PP.quickHTML(result.r),
+                      : result.kind === 'trend' ? PP.trendHTML(result.r)
+                        : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },
         ),
