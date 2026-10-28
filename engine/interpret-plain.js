@@ -19,6 +19,18 @@ const STRENGTH_PLAIN = {
   身弱: '底子偏薄，先修恢复力再谈冲刺，硬撑的性价比最低',
 };
 
+// 卦体关系 → 生活化一句话（六冲六合讲聚散，伏吟讲原地，反吟讲反复）
+const PLAIN_BODY = {
+  六冲卦: '这一卦是「六冲」，事情起落快，急事反而好办，拖久了的人事容易散。',
+  六合卦: '这一卦是「六合」，容易谈成，也容易黏住不放。',
+  变六冲: '往下走会散，收尾别拖。',
+  变六合: '往下走会合，事情倾向于延续下去。',
+  内卦伏吟: '事情卡在原地打转，想动但动不了。',
+  外卦伏吟: '外面那层没变，看起来在动，其实格局照旧。',
+  内卦反吟: '反复在自己这一头，改了又改回来。',
+  外卦反吟: '外面反复，对方或环境会来回拉扯。',
+};
+
 // 询问方向 → 该往哪一节看
 const DIR_SECTION = {
   wealth: '「工作与职业选择」与「时间窗」',
@@ -76,10 +88,14 @@ export function buildAnswer(r, ask, ctx = {}) {
     const ben = r.ben || {};
     const moving = (r.cast && r.cast.movingPositions) || [];
     const bian = r.bian || {};
+    const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
+    // 六冲六合伏吟反吟里挑最贴近当下局面的一句，避免四句叠着说
+    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
     return [
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
-        `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。`,
+        `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
+        `${plainBody}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -110,8 +126,11 @@ export function buildPlain(r, ask, ctx = {}) {
   if (r.system === 'liuyao') {
     const ben = r.ben || {};
     const moving = (r.cast && r.cast.movingPositions) || [];
+    const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
+    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
-      `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}`;
+      `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
+      `${plainBody}`;
   }
   return '';
 }

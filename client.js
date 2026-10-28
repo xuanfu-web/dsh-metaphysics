@@ -3626,6 +3626,112 @@ const OVERCOMES = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' }
 const LIUSHEN = ['青龙', '朱雀', '勾陈', '螣蛇', '白虎', '玄武'];
 const LIUSHEN_START = { 甲: 0, 乙: 0, 丙: 1, 丁: 1, 戊: 2, 己: 3, 庚: 4, 辛: 4, 壬: 5, 癸: 5 };
 
+const ZHI_CHONG_PAIRS = [['子', '午'], ['丑', '未'], ['寅', '申'], ['卯', '酉'], ['辰', '戌'], ['巳', '亥']];
+const ZHI_HE_PAIRS = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], ['巳', '申'], ['午', '未']];
+const CHONG_OF = Object.fromEntries(ZHI_CHONG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
+const TRIGRAM_OPPOSITE = { 乾: '巽', 巽: '乾', 坎: '离', 离: '坎', 艮: '坤', 坤: '艮', 震: '兑', 兑: '震' };
+
+function pairThirds(branches, table) {
+  const cnt = new Map();
+  for (const b of branches) cnt.set(b, (cnt.get(b) || 0) + 1);
+  const hits = [];
+  for (const [a, b] of table) {
+    const na = cnt.get(a) || 0;
+    const nb = cnt.get(b) || 0;
+    if (!na && !nb) continue;
+    if (na !== 1 || nb !== 1) return null;
+    cnt.set(a, 0);
+    cnt.set(b, 0);
+    hits.push([a, b]);
+  }
+  return hits.length * 2 === branches.length ? hits : null;
+}
+
+function hexBranches(hex) {
+  const inner = NAJIA[hex.lower].inner.slice();
+  const outer = NAJIA[hex.upper].outer.slice();
+  return { inner, outer, all: [...inner, ...outer] };
+}
+
+function hexBody(hex) {
+  const { inner, outer, all } = hexBranches(hex);
+  const chongPairs = pairThirds(all, ZHI_CHONG_PAIRS);
+  const hePairs = pairThirds(all, ZHI_HE_PAIRS);
+  return {
+    name: hex.name,
+    upper: hex.upper,
+    lower: hex.lower,
+    inner,
+    outer,
+    chong: Boolean(chongPairs),
+    he: Boolean(hePairs),
+    chongPairs: chongPairs || [],
+    hePairs: hePairs || [],
+  };
+}
+
+function bodyRelations(ben, bian = null, moving = []) {
+  const b = hexBody(ben);
+  const out = {
+    ben: { name: b.name, chong: b.chong, he: b.he, chongPairs: b.chongPairs, hePairs: b.hePairs, inner: b.inner, outer: b.outer },
+    bian: null,
+    fuYin: { inner: false, outer: false },
+    fanYin: { inner: null, outer: null }, // null 或 { by: ['chong'|'pair'] }
+    yaoFuYin: [],
+    yaoFanYin: [],
+  };
+  if (!bian) return out;
+
+  const v = hexBody(bian);
+  out.bian = { name: v.name, chong: v.chong, he: v.he, chongPairs: v.chongPairs, hePairs: v.hePairs, inner: v.inner, outer: v.outer };
+
+  for (const side of ['inner', 'outer']) {
+    const x = b[side];
+    const y = v[side];
+    const tri = side === 'inner' ? [ben.lower, bian.lower] : [ben.upper, bian.upper];
+    const changed = tri[0] !== tri[1];
+    if (changed && x.every((z, i) => z === y[i])) {
+      out.fuYin[side] = true;
+      continue;
+    }
+    const by = [];
+    if (changed && x.every((z, i) => CHONG_OF[z] === y[i])) by.push('chong');
+    if (changed && TRIGRAM_OPPOSITE[tri[0]] === tri[1]) by.push('pair');
+    if (by.length) out.fanYin[side] = { by };
+  }
+
+  for (const p of moving) {
+    const i = p - 1;
+    if (!(i >= 0 && i < 6)) continue;
+    const x = i < 3 ? b.inner[i] : b.outer[i - 3];
+    const y = i < 3 ? v.inner[i] : v.outer[i - 3];
+    if (x === y) out.yaoFuYin.push(p);
+    else if (CHONG_OF[x] === y) out.yaoFanYin.push(p);
+  }
+  return out;
+}
+
+function bodyLabels(body) {
+  if (!body || !body.ben) return [];
+  const fuYin = body.fuYin || {};
+  const fanYin = body.fanYin || {};
+  const yaoFuYin = body.yaoFuYin || [];
+  const yaoFanYin = body.yaoFanYin || [];
+  const out = [];
+  if (body.ben.chong) out.push('六冲卦');
+  if (body.ben.he) out.push('六合卦');
+  if (body.bian) {
+    if (body.bian.chong) out.push('变六冲');
+    else if (body.bian.he) out.push('变六合');
+  }
+  const sides = [['inner', '内卦'], ['outer', '外卦']];
+  for (const [k, label] of sides) if (fuYin[k]) out.push(`${label}伏吟`);
+  for (const [k, label] of sides) if (fanYin[k]) out.push(`${label}反吟`);
+  if (yaoFuYin.length) out.push(`爻伏吟 ${yaoFuYin.join('、')}`);
+  if (yaoFanYin.length) out.push(`爻反吟 ${yaoFanYin.join('、')}`);
+  return out;
+}
+
 function liuqin(palaceElement, branchElement) {
   if (palaceElement === branchElement) return '兄弟';
   if (GENERATES[branchElement] === palaceElement) return '父母';
@@ -3795,10 +3901,15 @@ function buildLiuyao(input = {}) {
         lines: bianRows,
       }
       : null,
+    body: (() => {
+      const body = bodyRelations(ben, bian, moving.map((i) => i + 1));
+      body.labels = bodyLabels(body);
+      return body;
+    })(),
   };
 }
 
-return { HEXAGRAM_COUNT, hexagramFromBits, tossLines, buildLiuyao };
+return { hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, tossLines, buildLiuyao };
 })();
 
 __mods.ziwei = (function () {
@@ -8396,6 +8507,17 @@ const STRENGTH_PLAIN = {
   身弱: '底子偏薄，先修恢复力再谈冲刺，硬撑的性价比最低',
 };
 
+const PLAIN_BODY = {
+  六冲卦: '这一卦是「六冲」，事情起落快，急事反而好办，拖久了的人事容易散。',
+  六合卦: '这一卦是「六合」，容易谈成，也容易黏住不放。',
+  变六冲: '往下走会散，收尾别拖。',
+  变六合: '往下走会合，事情倾向于延续下去。',
+  内卦伏吟: '事情卡在原地打转，想动但动不了。',
+  外卦伏吟: '外面那层没变，看起来在动，其实格局照旧。',
+  内卦反吟: '反复在自己这一头，改了又改回来。',
+  外卦反吟: '外面反复，对方或环境会来回拉扯。',
+};
+
 const DIR_SECTION = {
   wealth: '「工作与职业选择」与「时间窗」',
   career: '「事业发展」与「时间窗」',
@@ -8450,10 +8572,13 @@ function buildAnswer(r, ask, ctx = {}) {
     const ben = r.ben || {};
     const moving = (r.cast && r.cast.movingPositions) || [];
     const bian = r.bian || {};
+    const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
+    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
     return [
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
-        `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。`,
+        `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
+        `${plainBody}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -8483,8 +8608,11 @@ function buildPlain(r, ask, ctx = {}) {
   if (r.system === 'liuyao') {
     const ben = r.ben || {};
     const moving = (r.cast && r.cast.movingPositions) || [];
+    const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
+    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
-      `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}`;
+      `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
+      `${plainBody}`;
   }
   return '';
 }
@@ -8761,6 +8889,42 @@ const KNOWLEDGE = [
   },
 
   {
+    id: 'liuyao-liuchong',
+    system: 'liuyao', dims: ['overall'],
+    gist: '六冲卦讲「散」：起落快、来去急。',
+    detail: '六冲不按「爻位相邻」判，而是看六个地支能不能正好配成子午、寅申、辰戌三组对冲。按纳甲实排，八纯卦之外天雷无妄、雷天大壮也成六冲。冲不是单纯的坏：近病逢冲主速愈、久病逢冲才忌；求财问婚，冲多主聚不住。',
+    source: '《卜筮正宗》六冲章；《增删卜易》卦体说',
+    status: 'variant',
+    note: '通行口诀多把六冲限为八纯卦，本插件按纳甲地支实配判定，故多出无妄与大壮两支；《增删卜易》卦例里这两卦确被称作六冲，可互证。',
+  },
+  {
+    id: 'liuyao-liuhe',
+    system: 'liuyao', dims: ['overall', 'love'],
+    gist: '六合卦讲「成」：容易谈拢，也容易黏住。',
+    detail: '六个地支正好配成子丑、寅亥、卯戌、辰酉、巳申、午未三组相合，即六合卦，共天地否、地天泰、地雷复、雷地豫、山火贲、水泽节、泽水困、火山旅八支。六合主和合、拖延：谈事情容易成，也容易久拖不决；问病则忌缠绵。',
+    source: '《卜筮正宗》六合章',
+    status: 'settled',
+  },
+  {
+    id: 'liuyao-fanyin',
+    system: 'liuyao', dims: ['overall', 'work'],
+    gist: '反吟主反复：去了又来、定了又改。',
+    detail: '卦反吟有两种成法：一是变卦某宫的三爻地支与本卦对应宫正好全冲；二是本卦之宫与变卦之宫在后天八卦上正对（乾巽、坎离、艮坤、震兑）。爻反吟则是动爻变出的地支回头冲本爻。无论哪种，取象都是反复、翻覆、旧事重提。',
+    source: '《增删卜易》反吟伏吟篇；《卜筮正宗》',
+    status: 'variant',
+    note: '各家对「卦反吟」是否只认地支全冲有分歧；本插件的八卦正对一路，是从《增删卜易》卦例（如山地剥之坤为地、风天小畜之乾为天）反推出来的。',
+  },
+  {
+    id: 'liuyao-fuyin',
+    system: 'liuyao', dims: ['overall'],
+    gist: '伏吟主呻吟：事情在原地打转。',
+    detail: '卦变了，纳甲地支却没变，叫卦伏吟。纳甲上只有乾与震共用子寅辰、午申戌一套地支，所以卦伏吟只会出在乾与震互换的卦上，例如天雷无妄之雷天大壮、天风姤之雷风恒。动爻变出的地支与本爻同支，则是爻伏吟。伏吟取象是欲动不动、原地反复，常指人想动而形势不许。',
+    source: '《增删卜易》伏吟篇；《卜筮正宗》',
+    status: 'variant',
+    note: '另有「伏吟以用神受困论」的说法，不限于卦体；本插件只报卦体层面的伏吟与动爻伏吟，不推断吉凶轻重。',
+  },
+
+  {
     id: 'meihua-tiyong',
     system: 'meihua', dims: ['overall'],
     gist: '动的那一卦为用，不动的那一卦为体。',
@@ -8835,6 +8999,7 @@ __mods.interpret = (function () {
 
 const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE, LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER } = __mods['interpret-data'];
 const { MUTAGEN } = __mods.ziwei;
+const { bodyLabels } = __mods.liuyao;
 
 const DIMENSIONS = [
   { key: 'overall', label: '整体运势' },
@@ -9546,6 +9711,8 @@ function liuyaoInterpret(r) {
   const movingLiuqin = moving?.liuqin || '';
   const movingLiushen = moving?.liushen || '';
   const dayGZ = pick(r.dayGanZhi, 'name', '');
+  const bd = isObj(r.body) ? r.body : {};
+  const bodyLabelList = (bd && Array.isArray(bd.labels)) ? bd.labels : bodyLabels(bd);
   const cnt = (k) => lines.filter((l) => l.liuqin === k).length;
   const lineEv = (l) => (l ? `${l.position}爻${l.liuqin}${l.liushen ? '·' + l.liushen : ''}${l.moving ? '（动）' : ''}` : '—');
   const ev = (...xs) => xs.filter((x) => x != null && x !== '');
@@ -9567,9 +9734,26 @@ function liuyaoInterpret(r) {
       `⑥ 看变卦：${bian.name ? `变出「${bian.name}」，是事情后续的走向` : '本卦无变，以静卦论'}。以上每一步都能在下方「依据」里对上号。`,
     ].join('\n'),
   });
+  if (bodyLabelList.length) {
+    const sideOf = (o) => [o && o.inner ? '内卦' : '', o && o.outer ? '外卦' : ''].filter(Boolean).join('、');
+    const fanYinSides = sideOf(bd.fanYin || {});
+    const fanYinBy = ['inner', 'outer'].map((k) => bd.fanYin && bd.fanYin[k] && bd.fanYin[k].by).filter(Boolean).flat();
+    const bodyText = [];
+    if (bd.ben && bd.ben.chong) bodyText.push('本卦是六冲卦：六爻地支正好配成子午、寅申、辰戌三组对冲，传统读作「散」——事情起落快、成得急也散得急，急事与近病反而喜欢这股冲开的力量，拖了很久的人事则不容易凝聚。');
+    if (bd.ben && bd.ben.he) bodyText.push('本卦是六合卦：六爻地支两两相合（子丑、寅亥、卯戌、辰酉、巳申、午未），传统读作「成」——容易谈拢，也容易拖住不放。');
+    if (bd.bian && bd.bian.chong) bodyText.push('变卦也是六冲：往后走偏「散」，收尾容易一拍两散，也可能是速战速决。');
+    else if (bd.bian && bd.bian.he) bodyText.push('变卦是六合：往后走偏「合」，收尾倾向于合拢、或者就这么延续下去。');
+    if (sideOf(bd.fuYin || {})) bodyText.push(`${sideOf(bd.fuYin || {})}伏吟：卦变了，纳甲地支却没变（六十四卦里只有乾与震共用子寅辰/午申戌，所以卦伏吟只会出在乾↔震互换）——传统说「伏吟主呻吟」，人想动、事情在原地打转，宜先看清楚再迈步。`);
+    if (fanYinSides) bodyText.push(`${fanYinSides}反吟：变卦与本卦相冲，来源有两种——${fanYinBy.includes('chong') ? '地支三爻全冲' : ''}${fanYinBy.includes('chong') && fanYinBy.includes('pair') ? '，或' : ''}${fanYinBy.includes('pair') ? '本卦之宫与变卦之宫在后天八卦上正对（乾巽、坎离、艮坤、震兑）' : ''}。传统说「反吟主反复」，去而复来、方案改来改去。`);
+    if (bd.yaoFanYin && bd.yaoFanYin.length) bodyText.push(`动爻反吟（第${bd.yaoFanYin.join('、')}爻）：变出的地支回头冲本爻，变化点本身在反复——动了又翻回来，等于绕一圈回到原处。`);
+    if (bd.yaoFuYin && bd.yaoFuYin.length) bodyText.push(`动爻伏吟（第${bd.yaoFuYin.join('、')}爻）：变出的地支与本爻同支，动了等于没动，想推的事会卡在同一道坎上。`);
+    bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险，差别全在用神有没有受伤。');
+    sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
+  }
+
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神与反吟伏吟的细节，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神的细微差别，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -9583,6 +9767,7 @@ function liuyaoInterpret(r) {
         moving ? `动爻 ${lineEv(moving)}` : '无动爻',
         `日辰 ${dayGZ || '—'}`,
         `卦宫 ${pick(ben, 'palace', '—')}·${palaceEl || '—'}`,
+        bodyLabelList.length ? `卦体 ${bodyLabelList.join('、')}` : '卦体 无六冲六合伏吟反吟',
       ),
     },
     {
@@ -10549,7 +10734,7 @@ return { matchEvent, rectifyBirth, RECTIFY_KINDS };
 
 __mods.index = (function () {
 const { buildBazi } = __mods.bazi;
-const { buildLiuyao, tossLines } = __mods.liuyao;
+const { buildLiuyao, tossLines, bodyLabels } = __mods.liuyao;
 const { buildZiwei, BRIGHTNESS, flowOf, asOfParts } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
@@ -10825,6 +11010,8 @@ function liuyaoText(r) {
   ];
   if (r.bian) out.push(`动爻：第 ${r.cast.movingPositions.join('、')} 爻`, '变卦（六亲以变卦自身宫论）：', fmt(r.bian));
   else out.push('六爻安静，无变卦。');
+  const body = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : bodyLabels(r.body);
+  out.push(`卦体：${body.length ? body.join(' · ') : '无六冲、六合、伏吟、反吟'}`);
   return out.filter(Boolean).join('\n');
 }
 
@@ -12603,9 +12790,17 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       ? box(`变卦 ${r.bian.name}`, `${r.bian.palace} · ${r.bian.palaceElement}`, r.bian, r.bian.lines)
       : `<div class="mp-hy-box"><div class="mp-hy-h"><b>六爻安静</b><span>无动爻，不取变卦</span></div>
           <div class="pp-dim" style="font-size:12px;line-height:1.9">断卦以本卦卦辞与世应生克为主。</div></div>`;
+    const bodyLabels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
+    const bodyRow = bodyLabels.length
+      ? `<div class="pp-chips">${bodyLabels.map((l) => {
+        const cls = /伏吟/.test(l) ? 'warn' : /反吟/.test(l) ? 'warn' : /六冲|散/.test(l) ? '' : 'ok';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : `<div class="pp-chips"><span class="pp-chip">卦体无六冲、六合、伏吟、反吟</span></div>`;
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
+      ${bodyRow}
     </div>`;
   };
 

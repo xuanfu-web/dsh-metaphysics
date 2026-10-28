@@ -1250,9 +1250,18 @@
       ? box(`变卦 ${r.bian.name}`, `${r.bian.palace} · ${r.bian.palaceElement}`, r.bian, r.bian.lines)
       : `<div class="mp-hy-box"><div class="mp-hy-h"><b>六爻安静</b><span>无动爻，不取变卦</span></div>
           <div class="pp-dim" style="font-size:12px;line-height:1.9">断卦以本卦卦辞与世应生克为主。</div></div>`;
+    // 卦体标签由引擎算好挂在 body.labels 上（六冲/六合/伏吟/反吟），这里只负责摆位置
+    const bodyLabels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
+    const bodyRow = bodyLabels.length
+      ? `<div class="pp-chips">${bodyLabels.map((l) => {
+        const cls = /伏吟/.test(l) ? 'warn' : /反吟/.test(l) ? 'warn' : /六冲|散/.test(l) ? '' : 'ok';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : `<div class="pp-chips"><span class="pp-chip">卦体无六冲、六合、伏吟、反吟</span></div>`;
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
+      ${bodyRow}
     </div>`;
   };
 

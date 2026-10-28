@@ -54,6 +54,132 @@ const LIUSHEN = ['青龙', '朱雀', '勾陈', '螣蛇', '白虎', '玄武'];
 // 日干 -> 初爻所起六神
 const LIUSHEN_START = { 甲: 0, 乙: 0, 丙: 1, 丁: 1, 戊: 2, 己: 3, 庚: 4, 辛: 4, 壬: 5, 癸: 5 };
 
+// ── 卦体关系：六冲卦 / 六合卦 / 伏吟 / 反吟 ───────────────────────────────
+// 口径来源：《增删卜易》「六冲六合」「反吟伏吟」诸章，并以
+// test/fixtures/classics.json 里 23 条带断语的卦例逐条对拍（test/liuyao-body.test.mjs）。
+//
+// 判六冲卦/六合卦不能看「相邻两爻」，要看六个地支能不能配成三组：
+//   六冲 子午·丑未·寅申·卯酉·辰戌·巳亥 → 八纯卦全中（乾为天 子寅辰午申戌 = 子午/寅申/辰戌）
+//   六合 子丑·寅亥·卯戌·辰酉·巳申·午未 → 地雷复 子寅辰丑亥酉 = 子丑/寅亥/辰酉
+// 八卦对冲（乾巽·坎离·艮坤·震兑）是「卦反」，纳甲地支并不相冲，只能按卦象判。
+const ZHI_CHONG_PAIRS = [['子', '午'], ['丑', '未'], ['寅', '申'], ['卯', '酉'], ['辰', '戌'], ['巳', '亥']];
+const ZHI_HE_PAIRS = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], ['巳', '申'], ['午', '未']];
+const CHONG_OF = Object.fromEntries(ZHI_CHONG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
+const TRIGRAM_OPPOSITE = { 乾: '巽', 巽: '乾', 坎: '离', 离: '坎', 艮: '坤', 坤: '艮', 震: '兑', 兑: '震' };
+
+/** 六个地支能否正好配成三对；配不上（含重支）返回 null */
+function pairThirds(branches, table) {
+  const cnt = new Map();
+  for (const b of branches) cnt.set(b, (cnt.get(b) || 0) + 1);
+  const hits = [];
+  for (const [a, b] of table) {
+    const na = cnt.get(a) || 0;
+    const nb = cnt.get(b) || 0;
+    if (!na && !nb) continue;
+    if (na !== 1 || nb !== 1) return null;
+    cnt.set(a, 0);
+    cnt.set(b, 0);
+    hits.push([a, b]);
+  }
+  return hits.length * 2 === branches.length ? hits : null;
+}
+
+/** 卦的纳甲地支（内卦 = 1~3 爻，外卦 = 4~6 爻） */
+function hexBranches(hex) {
+  const inner = NAJIA[hex.lower].inner.slice();
+  const outer = NAJIA[hex.upper].outer.slice();
+  return { inner, outer, all: [...inner, ...outer] };
+}
+
+/** 单个卦的卦体属性：是否六冲卦 / 六合卦，及配对明细 */
+export function hexBody(hex) {
+  const { inner, outer, all } = hexBranches(hex);
+  const chongPairs = pairThirds(all, ZHI_CHONG_PAIRS);
+  const hePairs = pairThirds(all, ZHI_HE_PAIRS);
+  return {
+    name: hex.name,
+    upper: hex.upper,
+    lower: hex.lower,
+    inner,
+    outer,
+    chong: Boolean(chongPairs),
+    he: Boolean(hePairs),
+    chongPairs: chongPairs || [],
+    hePairs: hePairs || [],
+  };
+}
+
+/**
+ * 本卦 → 变卦 的卦体关系。
+ * @param {{name:string,upper:string,lower:string}} ben 本卦
+ * @param {object|null} bian 变卦（无动爻传 null）
+ * @param {number[]} [moving] 动爻位置（1~6）
+ */
+export function bodyRelations(ben, bian = null, moving = []) {
+  const b = hexBody(ben);
+  const out = {
+    ben: { name: b.name, chong: b.chong, he: b.he, chongPairs: b.chongPairs, hePairs: b.hePairs, inner: b.inner, outer: b.outer },
+    bian: null,
+    fuYin: { inner: false, outer: false },
+    fanYin: { inner: null, outer: null }, // null 或 { by: ['chong'|'pair'] }
+    yaoFuYin: [],
+    yaoFanYin: [],
+  };
+  if (!bian) return out;
+
+  const v = hexBody(bian);
+  out.bian = { name: v.name, chong: v.chong, he: v.he, chongPairs: v.chongPairs, hePairs: v.hePairs, inner: v.inner, outer: v.outer };
+
+  for (const side of ['inner', 'outer']) {
+    const x = b[side];
+    const y = v[side];
+    const tri = side === 'inner' ? [ben.lower, bian.lower] : [ben.upper, bian.upper];
+    const changed = tri[0] !== tri[1];
+    // 伏吟必须「卦变了而地支没变」。卦没变时地支当然相同，那不是伏吟。
+    // 纳甲上乾与震共用一套地支（子寅辰/午申戌），所以卦伏吟只可能出自乾↔震互换。
+    if (changed && x.every((z, i) => z === y[i])) {
+      out.fuYin[side] = true;
+      continue;
+    }
+    const by = [];
+    if (changed && x.every((z, i) => CHONG_OF[z] === y[i])) by.push('chong');
+    if (changed && TRIGRAM_OPPOSITE[tri[0]] === tri[1]) by.push('pair');
+    if (by.length) out.fanYin[side] = { by };
+  }
+
+  for (const p of moving) {
+    const i = p - 1;
+    if (!(i >= 0 && i < 6)) continue;
+    const x = i < 3 ? b.inner[i] : b.outer[i - 3];
+    const y = i < 3 ? v.inner[i] : v.outer[i - 3];
+    if (x === y) out.yaoFuYin.push(p);
+    else if (CHONG_OF[x] === y) out.yaoFanYin.push(p);
+  }
+  return out;
+}
+
+/** 卦体关系的短标签（面板 chip / 文本摘要共用一份措辞） */
+export function bodyLabels(body) {
+  if (!body || !body.ben) return [];
+  const fuYin = body.fuYin || {};
+  const fanYin = body.fanYin || {};
+  const yaoFuYin = body.yaoFuYin || [];
+  const yaoFanYin = body.yaoFanYin || [];
+  const out = [];
+  if (body.ben.chong) out.push('六冲卦');
+  if (body.ben.he) out.push('六合卦');
+  if (body.bian) {
+    if (body.bian.chong) out.push('变六冲');
+    else if (body.bian.he) out.push('变六合');
+  }
+  const sides = [['inner', '内卦'], ['outer', '外卦']];
+  for (const [k, label] of sides) if (fuYin[k]) out.push(`${label}伏吟`);
+  for (const [k, label] of sides) if (fanYin[k]) out.push(`${label}反吟`);
+  if (yaoFuYin.length) out.push(`爻伏吟 ${yaoFuYin.join('、')}`);
+  if (yaoFanYin.length) out.push(`爻反吟 ${yaoFanYin.join('、')}`);
+  return out;
+}
+
 function liuqin(palaceElement, branchElement) {
   if (palaceElement === branchElement) return '兄弟';
   if (GENERATES[branchElement] === palaceElement) return '父母';
@@ -233,5 +359,11 @@ export function buildLiuyao(input = {}) {
         lines: bianRows,
       }
       : null,
+    body: (() => {
+      const body = bodyRelations(ben, bian, moving.map((i) => i + 1));
+      // 标签只算一次挂到结果上：面板、CLI 摘要、解析层都读这一份，避免三处措辞走散
+      body.labels = bodyLabels(body);
+      return body;
+    })(),
   };
 }

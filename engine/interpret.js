@@ -13,6 +13,8 @@ import {
 } from './interpret-data.js';
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
 import { MUTAGEN } from './ziwei.js';
+// 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
+import { bodyLabels } from './liuyao.js';
 
 // ── 固定五维度 ────────────────────────────────────────────
 export const DIMENSIONS = [
@@ -788,6 +790,9 @@ function liuyaoInterpret(r) {
   const movingLiuqin = moving?.liuqin || '';
   const movingLiushen = moving?.liushen || '';
   const dayGZ = pick(r.dayGanZhi, 'name', '');
+  // 卦体关系（六冲/六合/伏吟/反吟）：由纳甲地支推导，见 engine/liuyao.js bodyRelations
+  const bd = isObj(r.body) ? r.body : {};
+  const bodyLabelList = (bd && Array.isArray(bd.labels)) ? bd.labels : bodyLabels(bd);
   // 取象依据：卦象类的"依据"就是卦面本身，提炼成一行便于核对
   const cnt = (k) => lines.filter((l) => l.liuqin === k).length;
   const lineEv = (l) => (l ? `${l.position}爻${l.liuqin}${l.liushen ? '·' + l.liushen : ''}${l.moving ? '（动）' : ''}` : '—');
@@ -811,9 +816,27 @@ function liuyaoInterpret(r) {
       `⑥ 看变卦：${bian.name ? `变出「${bian.name}」，是事情后续的走向` : '本卦无变，以静卦论'}。以上每一步都能在下方「依据」里对上号。`,
     ].join('\n'),
   });
+  // 卦体关系：六冲/六合讲"聚散"，伏吟讲"原地"，反吟讲"反复"——只描述动势，吉凶仍归用神
+  if (bodyLabelList.length) {
+    const sideOf = (o) => [o && o.inner ? '内卦' : '', o && o.outer ? '外卦' : ''].filter(Boolean).join('、');
+    const fanYinSides = sideOf(bd.fanYin || {});
+    const fanYinBy = ['inner', 'outer'].map((k) => bd.fanYin && bd.fanYin[k] && bd.fanYin[k].by).filter(Boolean).flat();
+    const bodyText = [];
+    if (bd.ben && bd.ben.chong) bodyText.push('本卦是六冲卦：六爻地支正好配成子午、寅申、辰戌三组对冲，传统读作「散」——事情起落快、成得急也散得急，急事与近病反而喜欢这股冲开的力量，拖了很久的人事则不容易凝聚。');
+    if (bd.ben && bd.ben.he) bodyText.push('本卦是六合卦：六爻地支两两相合（子丑、寅亥、卯戌、辰酉、巳申、午未），传统读作「成」——容易谈拢，也容易拖住不放。');
+    if (bd.bian && bd.bian.chong) bodyText.push('变卦也是六冲：往后走偏「散」，收尾容易一拍两散，也可能是速战速决。');
+    else if (bd.bian && bd.bian.he) bodyText.push('变卦是六合：往后走偏「合」，收尾倾向于合拢、或者就这么延续下去。');
+    if (sideOf(bd.fuYin || {})) bodyText.push(`${sideOf(bd.fuYin || {})}伏吟：卦变了，纳甲地支却没变（六十四卦里只有乾与震共用子寅辰/午申戌，所以卦伏吟只会出在乾↔震互换）——传统说「伏吟主呻吟」，人想动、事情在原地打转，宜先看清楚再迈步。`);
+    if (fanYinSides) bodyText.push(`${fanYinSides}反吟：变卦与本卦相冲，来源有两种——${fanYinBy.includes('chong') ? '地支三爻全冲' : ''}${fanYinBy.includes('chong') && fanYinBy.includes('pair') ? '，或' : ''}${fanYinBy.includes('pair') ? '本卦之宫与变卦之宫在后天八卦上正对（乾巽、坎离、艮坤、震兑）' : ''}。传统说「反吟主反复」，去而复来、方案改来改去。`);
+    if (bd.yaoFanYin && bd.yaoFanYin.length) bodyText.push(`动爻反吟（第${bd.yaoFanYin.join('、')}爻）：变出的地支回头冲本爻，变化点本身在反复——动了又翻回来，等于绕一圈回到原处。`);
+    if (bd.yaoFuYin && bd.yaoFuYin.length) bodyText.push(`动爻伏吟（第${bd.yaoFuYin.join('、')}爻）：变出的地支与本爻同支，动了等于没动，想推的事会卡在同一道坎上。`);
+    bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险，差别全在用神有没有受伤。');
+    sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
+  }
+
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神与反吟伏吟的细节，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神的细微差别，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -827,6 +850,7 @@ function liuyaoInterpret(r) {
         moving ? `动爻 ${lineEv(moving)}` : '无动爻',
         `日辰 ${dayGZ || '—'}`,
         `卦宫 ${pick(ben, 'palace', '—')}·${palaceEl || '—'}`,
+        bodyLabelList.length ? `卦体 ${bodyLabelList.join('、')}` : '卦体 无六冲六合伏吟反吟',
       ),
     },
     {

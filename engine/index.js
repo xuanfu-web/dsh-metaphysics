@@ -1,6 +1,6 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines } from './liuyao.js';
+import { buildLiuyao, tossLines, bodyLabels } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
@@ -286,6 +286,9 @@ function liuyaoText(r) {
   ];
   if (r.bian) out.push(`动爻：第 ${r.cast.movingPositions.join('、')} 爻`, '变卦（六亲以变卦自身宫论）：', fmt(r.bian));
   else out.push('六爻安静，无变卦。');
+  // 结果里已带 labels；只有旧数据或裸对象调用时才现算一份
+  const body = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : bodyLabels(r.body);
+  out.push(`卦体：${body.length ? body.join(' · ') : '无六冲、六合、伏吟、反吟'}`);
   return out.filter(Boolean).join('\n');
 }
 
