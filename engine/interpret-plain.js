@@ -53,6 +53,19 @@ function usePlainOf(ug) {
 }
 
 /**
+ * 用神旺衰 → 一句白话。
+ */
+function useStrengthPlain(st) {
+  if (!st || !st.lines || !st.lines.length) return '';
+  const dead = st.lines.filter((l) => /死|囚/.test(l.monthState) || l.monthChong);
+  const live = st.lines.filter((l) => /旺|相/.test(l.monthState));
+  const when = st.month && st.month.branch ? `眼下这阵子（${st.month.branch}月）` : '起卦这段日子';
+  if (dead.length && !live.length) return `${when}对这件事不太帮忙，气有点被压着——先别急着硬推，等风向转。`;
+  if (live.length && !dead.length) return `${when}对这件事是帮着的，气正在往上走，能推就趁现在。`;
+  return `${when}对这件事有帮有压，一半的力要自己挣——结果更看你怎么走。`;
+}
+
+/**
  * 六爻卦体 → 一句白话。
  * 标签可能带爻位（「化进神 5」），所以按前缀匹配；
  * 主句取标签顺序里第一个能说的，化进/化退作为补充句跟在后面（它们只说某一爻，不覆盖全局）。
@@ -137,7 +150,7 @@ export function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}`,
+        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -180,7 +193,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}`;
+      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`;
   }
   return '';
 }

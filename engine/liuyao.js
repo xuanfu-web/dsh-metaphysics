@@ -577,3 +577,126 @@ export function buildLiuyao(input = {}) {
     })(),
   };
 }
+
+// ── 用神旺衰：月建主旺衰、日辰司生克 ────────────────────────────────
+// 这一层只吃「五行生克 + 地支六冲」，不引入任何需要背的断语，
+// 所以每一格都能被独立复算出来——这是它敢写进结果的前提。
+const ZHI_ELEMENT = {
+  子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火',
+  午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
+};
+const ELEMENT_SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+const ELEMENT_KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+const MONTH_STATE_ORDER = ['旺', '相', '休', '囚', '死'];
+const MONTH_STATE_SAY = {
+  旺: '与月令同气，当令得时',
+  相: '受月令之生，气有余',
+  休: '生月令而气泄，力减',
+  囚: '克月令而力困',
+  死: '被月令所克，气受制',
+};
+const DAY_RELATION_ORDER = ['日生', '日克', '比和', '泄', '耗'];
+const DAY_RELATION_SAY = {
+  日生: '日辰生扶，当天有人托着',
+  日克: '日辰克制，当天被压一头',
+  比和: '与日辰同气，当天得到同类之助',
+  泄: '生扶日辰，气往外走',
+  耗: '克制日辰，力有所耗',
+};
+
+export function zhiElementOf(branch) {
+  return ZHI_ELEMENT[branch] || null;
+}
+
+// 月令五态：同气旺、月令所生相、生月令休、克月令囚、被月令克死
+export function monthStateOf(element, monthElement) {
+  if (!element || !monthElement) return 'unknown';
+  if (element === monthElement) return '旺';
+  if (ELEMENT_SHENG[monthElement] === element) return '相';
+  if (ELEMENT_SHENG[element] === monthElement) return '休';
+  if (ELEMENT_KE[element] === monthElement) return '囚';
+  if (ELEMENT_KE[monthElement] === element) return '死';
+  return 'unknown';
+}
+
+// 日辰对爻：站在「爻」这一边说，日辰是生我、克我，还是我泄它、耗它
+export function dayRelationOf(element, dayElement) {
+  if (!element || !dayElement) return 'unknown';
+  if (element === dayElement) return '比和';
+  if (ELEMENT_SHENG[dayElement] === element) return '日生';
+  if (ELEMENT_KE[dayElement] === element) return '日克';
+  if (ELEMENT_SHENG[element] === dayElement) return '泄';
+  if (ELEMENT_KE[element] === dayElement) return '耗';
+  return 'unknown';
+}
+
+/**
+ * 用神旺衰：把月建、日辰两股外部力量落到用神那几爻上。
+ * 月建按月支、日辰按日支，各出自己的五行，再与本爻五行论生克；
+ * 地支相冲另标——月建冲爻叫月破，日辰冲静爻叫暗动、冲旬空叫冲空。
+ * @param {object} result buildLiuyao 的结果
+ * @param {object} useGod yongshenOf 的结果
+ * @param {{monthBranch?: string, dayBranch?: string}} opts
+ */
+export function yongshenStrength(result, useGod, opts = {}) {
+  if (!useGod || !Array.isArray(useGod.found) || !useGod.found.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
+  if (!monthBranch && !dayBranch) return null;
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result && result.xunKong)
+    ? result.xunKong
+    : (result && typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+
+  const lines = useGod.found.map((l) => {
+    const element = l.element || zhiElementOf(l.branch);
+    const monthChong = !!(monthBranch && CHONG_OF[l.branch] === monthBranch);
+    const dayChong = !!(dayBranch && CHONG_OF[l.branch] === dayBranch);
+    const monthState = monthStateOf(element, monthElement);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const isEmpty = kong.includes(l.branch);
+    return {
+      position: l.position,
+      branch: l.branch,
+      element,
+      monthState,
+      monthSay: MONTH_STATE_SAY[monthState] || '',
+      monthChong,
+      dayRelation,
+      daySay: DAY_RELATION_SAY[dayRelation] || '',
+      dayChong,
+      kong: isEmpty,
+      moving: !!l.moving,
+      // 冲的三种情形混在一起说不清，这里分开定名
+      chongTag: monthChong ? '月破'
+        : dayChong ? (isEmpty ? '冲空' : (l.moving ? '逢日辰冲' : '暗动')) : '',
+    };
+  });
+
+  const labels = [];
+  const states = [...new Set(lines.map((l) => l.monthState))].filter((x) => x !== 'unknown');
+  states.sort((a, b) => MONTH_STATE_ORDER.indexOf(a) - MONTH_STATE_ORDER.indexOf(b));
+  for (const st of states) labels.push(`用神月建${st}`);
+  if (lines.some((l) => l.monthChong)) labels.push('用神月破');
+  const rels = [...new Set(lines.map((l) => l.dayRelation))].filter((x) => x !== 'unknown');
+  rels.sort((a, b) => DAY_RELATION_ORDER.indexOf(a) - DAY_RELATION_ORDER.indexOf(b));
+  for (const rel of rels) {
+    labels.push(rel === '日生' ? '用神得日辰生'
+      : rel === '日克' ? '用神受日辰克'
+        : rel === '比和' ? '用神与日辰比和'
+          : rel === '泄' ? '用神泄于日辰' : '用神耗日辰');
+  }
+  for (const tag of [...new Set(lines.map((l) => l.chongTag))].filter(Boolean)) {
+    labels.push(tag === '月破' ? '' : `用神${tag}`);
+  }
+  const clean = labels.filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i);
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    lines,
+    labels: clean,
+    note: '月建主这一段的旺衰，日辰看当天是扶是克；两处都只给状态标签，不折成分数，也不单独断吉凶。',
+  };
+}

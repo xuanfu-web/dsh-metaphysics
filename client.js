@@ -4111,7 +4111,116 @@ function buildLiuyao(input = {}) {
   };
 }
 
-return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao };
+const ZHI_ELEMENT = {
+  子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火',
+  午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
+};
+const ELEMENT_SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+const ELEMENT_KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+const MONTH_STATE_ORDER = ['旺', '相', '休', '囚', '死'];
+const MONTH_STATE_SAY = {
+  旺: '与月令同气，当令得时',
+  相: '受月令之生，气有余',
+  休: '生月令而气泄，力减',
+  囚: '克月令而力困',
+  死: '被月令所克，气受制',
+};
+const DAY_RELATION_ORDER = ['日生', '日克', '比和', '泄', '耗'];
+const DAY_RELATION_SAY = {
+  日生: '日辰生扶，当天有人托着',
+  日克: '日辰克制，当天被压一头',
+  比和: '与日辰同气，当天得到同类之助',
+  泄: '生扶日辰，气往外走',
+  耗: '克制日辰，力有所耗',
+};
+
+function zhiElementOf(branch) {
+  return ZHI_ELEMENT[branch] || null;
+}
+
+function monthStateOf(element, monthElement) {
+  if (!element || !monthElement) return 'unknown';
+  if (element === monthElement) return '旺';
+  if (ELEMENT_SHENG[monthElement] === element) return '相';
+  if (ELEMENT_SHENG[element] === monthElement) return '休';
+  if (ELEMENT_KE[element] === monthElement) return '囚';
+  if (ELEMENT_KE[monthElement] === element) return '死';
+  return 'unknown';
+}
+
+function dayRelationOf(element, dayElement) {
+  if (!element || !dayElement) return 'unknown';
+  if (element === dayElement) return '比和';
+  if (ELEMENT_SHENG[dayElement] === element) return '日生';
+  if (ELEMENT_KE[dayElement] === element) return '日克';
+  if (ELEMENT_SHENG[element] === dayElement) return '泄';
+  if (ELEMENT_KE[element] === dayElement) return '耗';
+  return 'unknown';
+}
+
+function yongshenStrength(result, useGod, opts = {}) {
+  if (!useGod || !Array.isArray(useGod.found) || !useGod.found.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
+  if (!monthBranch && !dayBranch) return null;
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result && result.xunKong)
+    ? result.xunKong
+    : (result && typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+
+  const lines = useGod.found.map((l) => {
+    const element = l.element || zhiElementOf(l.branch);
+    const monthChong = !!(monthBranch && CHONG_OF[l.branch] === monthBranch);
+    const dayChong = !!(dayBranch && CHONG_OF[l.branch] === dayBranch);
+    const monthState = monthStateOf(element, monthElement);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const isEmpty = kong.includes(l.branch);
+    return {
+      position: l.position,
+      branch: l.branch,
+      element,
+      monthState,
+      monthSay: MONTH_STATE_SAY[monthState] || '',
+      monthChong,
+      dayRelation,
+      daySay: DAY_RELATION_SAY[dayRelation] || '',
+      dayChong,
+      kong: isEmpty,
+      moving: !!l.moving,
+      chongTag: monthChong ? '月破'
+        : dayChong ? (isEmpty ? '冲空' : (l.moving ? '逢日辰冲' : '暗动')) : '',
+    };
+  });
+
+  const labels = [];
+  const states = [...new Set(lines.map((l) => l.monthState))].filter((x) => x !== 'unknown');
+  states.sort((a, b) => MONTH_STATE_ORDER.indexOf(a) - MONTH_STATE_ORDER.indexOf(b));
+  for (const st of states) labels.push(`用神月建${st}`);
+  if (lines.some((l) => l.monthChong)) labels.push('用神月破');
+  const rels = [...new Set(lines.map((l) => l.dayRelation))].filter((x) => x !== 'unknown');
+  rels.sort((a, b) => DAY_RELATION_ORDER.indexOf(a) - DAY_RELATION_ORDER.indexOf(b));
+  for (const rel of rels) {
+    labels.push(rel === '日生' ? '用神得日辰生'
+      : rel === '日克' ? '用神受日辰克'
+        : rel === '比和' ? '用神与日辰比和'
+          : rel === '泄' ? '用神泄于日辰' : '用神耗日辰');
+  }
+  for (const tag of [...new Set(lines.map((l) => l.chongTag))].filter(Boolean)) {
+    labels.push(tag === '月破' ? '' : `用神${tag}`);
+  }
+  const clean = labels.filter(Boolean).filter((x, i, arr) => arr.indexOf(x) === i);
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    lines,
+    labels: clean,
+    note: '月建主这一段的旺衰，日辰看当天是扶是克；两处都只给状态标签，不折成分数，也不单独断吉凶。',
+  };
+}
+
+return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao, zhiElementOf, monthStateOf, dayRelationOf, yongshenStrength };
 })();
 
 __mods.ziwei = (function () {
@@ -9344,6 +9453,16 @@ function usePlainOf(ug) {
   return '';
 }
 
+function useStrengthPlain(st) {
+  if (!st || !st.lines || !st.lines.length) return '';
+  const dead = st.lines.filter((l) => /死|囚/.test(l.monthState) || l.monthChong);
+  const live = st.lines.filter((l) => /旺|相/.test(l.monthState));
+  const when = st.month && st.month.branch ? `眼下这阵子（${st.month.branch}月）` : '起卦这段日子';
+  if (dead.length && !live.length) return `${when}对这件事不太帮忙，气有点被压着——先别急着硬推，等风向转。`;
+  if (live.length && !dead.length) return `${when}对这件事是帮着的，气正在往上走，能推就趁现在。`;
+  return `${when}对这件事有帮有压，一半的力要自己挣——结果更看你怎么走。`;
+}
+
 function bodyPlainOf(labels) {
   const keyOf = (l) => Object.keys(PLAIN_BODY).find((k) => l === k || l.startsWith(`${k} `)) || '';
   const primary = labels.find((l) => keyOf(l));
@@ -9420,7 +9539,7 @@ function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}`,
+        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -9461,7 +9580,7 @@ function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}`;
+      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`;
   }
   return '';
 }
@@ -9737,6 +9856,15 @@ const KNOWLEDGE = [
     source: '《卜筮正宗》伏神章；《增删卜易》伏神篇',
     status: 'variant',
     note: '首卦里同一六亲也可能出现两次（如乾宫乾为天的父母在三爻与上爻），此时取哪一爻为伏神各家不一；本插件把候选都列出并标「伏神两现」，不代选。伏神出伏的应期各家分歧更大，故不输出日期。',
+  },
+  {
+    id: 'liuyao-yongshen-shuai',
+    system: 'liuyao', dims: ['overall', 'work'],
+    gist: '用神旺不旺，看月建给的气与日辰当天的扶克。',
+    detail: '月建管「这一段时令」：爻五行与月支五行同气为旺、受月令生为相、生月令为休、克月令为囚、被月令克为死。日辰管「当天这一股力」：日辰生爻为生、克爻为克、同气为比和，反过来则是爻泄日、爻耗日。此外月建冲爻叫月破，日辰冲静爻叫暗动、冲旬空之爻叫冲空。本插件把这几项折成标签逐爻列出，不折成分数。',
+    source: '《增删卜易》月建章、日辰章；《卜筮正宗》月建论',
+    status: 'variant',
+    note: '月破、暗动、冲空三者各家取法不完全一致（有派别把日冲动爻也叫暗动，有派别只认旺相之爻暗动）；本插件按「月建冲=月破、日冲静爻=暗动、日冲旬空=冲空」这一套给标签，并注明用了哪一支月建。',
   },
   {
     id: 'liuyao-yingqi',
@@ -10754,13 +10882,26 @@ function liuyaoInterpret(r, ask) {
     if (ug.found.some((f) => (bd.yaoFanYin || []).includes(f.position))) link.push('用神这一爻动而反吟：变化点本身在反复，动了又翻回来');
     if (ug.found.some((f) => (bd.yaoFuYin || []).includes(f.position))) link.push('用神这一爻动而伏吟：动了等于没动，容易卡在同一道坎上');
     if (link.length) useText.push(`与卦体对起来看：${link.join('；')}。`);
-    useText.push('这一层只把用神与卦体对起来，旺衰仍要月建日辰：同样的六冲落到用神与落到忌神，读法相反，所以这里不断成败。');
+    const strength = r.useGodStrength;
+    if (strength && strength.lines && strength.lines.length) {
+      const head = strength.month && strength.month.branch
+        ? `月建 ${strength.month.branch}（${strength.month.element}）`
+        : '没有月建（未给起卦时间），只按日辰看';
+      const body = strength.lines.map((l) => {
+        const chong = l.monthChong ? '，遭月建冲（月破）'
+          : l.dayChong ? (l.kong ? '，日辰冲空' : l.moving ? '，逢日辰冲' : '，日辰冲而暗动') : '';
+        return `${l.position}爻${l.branch}${l.element}：月建${l.monthState}（${l.monthSay}），${l.dayRelation}（${l.daySay}）${chong}`;
+      });
+      useText.push(`时令对用神：${head}，日辰 ${strength.day ? `${strength.day.branch}（${strength.day.element}）` : '—'}。${body.join('；')}。`);
+      useText.push('月建看这一段时令站在哪一边，日辰看当天那股力量是扶还是克；两处同时看，只报状态，不折成分数。');
+    }
+    useText.push('这一层只把用神、卦体与时令对起来，应期与成败还要看动爻变化与月建日辰的进退节奏，所以这里不折成分数、不断成败。');
     sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
   }
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：全卦逐爻的月建旺衰（现在只算到用神那几爻）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -11741,14 +11882,14 @@ return { matchEvent, rectifyBirth, RECTIFY_KINDS };
 
 __mods.index = (function () {
 const { buildBazi } = __mods.bazi;
-const { buildLiuyao, tossLines, bodyLabels, yongshenOf } = __mods.liuyao;
+const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength } = __mods.liuyao;
 const { buildZiwei, BRIGHTNESS, flowOf, asOfParts } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
 const { buildDaliuren } = __mods.daliuren;
 const { buildHepan } = __mods.hepan;
 const { buildZiweiHepan } = __mods['ziwei-hepan'];
-const { buildQimen } = __mods.qimen;
+const { buildQimen, buildSnapshot } = __mods.qimen;
 const { geocodeAddress, resolveAddress } = __mods.geo;
 const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
 const { randomOf, isSeed } = __mods.random;
@@ -12056,6 +12197,11 @@ function liuyaoText(r) {
     const head = ug.byShi ? '用神 世爻' : `用神 ${ug.liuqin}`;
     const extra = ug.labels.filter((x) => x !== head && !x.startsWith(head));
     if (extra.length) out.push(`用神联动：${extra.join(' · ')}`);
+    const strength = r.useGodStrength;
+    if (strength && strength.labels.length) {
+      const m = strength.month && strength.month.branch ? `月建 ${strength.month.branch}（${strength.month.element}）　` : '';
+      out.push(`用神旺衰：${m}${strength.labels.join(' · ')}`);
+    }
   } else {
     out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
   }
@@ -12339,7 +12485,20 @@ function computeRaw(args = {}) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
     const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
-    if (ug.liuqin) result.useGod = ug;
+    if (ug.liuqin) {
+      result.useGod = ug;
+      let monthBranch = null;
+      if (stamp) {
+        try {
+          const snap = buildSnapshot({ year: stamp.year, month: stamp.month, day: stamp.day, hour: stamp.hour, minute: stamp.minute });
+          monthBranch = (snap.monthGanZhi || '')[1] || null;
+        } catch {
+          monthBranch = null;
+        }
+      }
+      const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
+      if (strength) result.useGodStrength = strength;
+    }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
   }
@@ -13933,11 +14092,20 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : `<div class="pp-chips"><span class="pp-chip">用神未取（未指明所问之事）</span></div>`;
+    const st = r.useGodStrength && Array.isArray(r.useGodStrength.labels) ? r.useGodStrength : null;
+    const strengthRow = st && st.labels.length
+      ? `<div class="pp-chips">${st.labels.map((l) => {
+        const cls = /死|囚|月破|受日辰克|泄|耗/.test(l) ? 'warn'
+          : /旺|相|得日辰生|比和/.test(l) ? 'ok' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
       ${useRow}
+      ${strengthRow}
     </div>`;
   };
 

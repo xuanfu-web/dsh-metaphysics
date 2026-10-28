@@ -911,13 +911,27 @@ function liuyaoInterpret(r, ask) {
     if (ug.found.some((f) => (bd.yaoFanYin || []).includes(f.position))) link.push('用神这一爻动而反吟：变化点本身在反复，动了又翻回来');
     if (ug.found.some((f) => (bd.yaoFuYin || []).includes(f.position))) link.push('用神这一爻动而伏吟：动了等于没动，容易卡在同一道坎上');
     if (link.length) useText.push(`与卦体对起来看：${link.join('；')}。`);
-    useText.push('这一层只把用神与卦体对起来，旺衰仍要月建日辰：同样的六冲落到用神与落到忌神，读法相反，所以这里不断成败。');
+    // 旺衰：月建与日辰都从外部推得，只报状态，不折成分数
+    const strength = r.useGodStrength;
+    if (strength && strength.lines && strength.lines.length) {
+      const head = strength.month && strength.month.branch
+        ? `月建 ${strength.month.branch}（${strength.month.element}）`
+        : '没有月建（未给起卦时间），只按日辰看';
+      const body = strength.lines.map((l) => {
+        const chong = l.monthChong ? '，遭月建冲（月破）'
+          : l.dayChong ? (l.kong ? '，日辰冲空' : l.moving ? '，逢日辰冲' : '，日辰冲而暗动') : '';
+        return `${l.position}爻${l.branch}${l.element}：月建${l.monthState}（${l.monthSay}），${l.dayRelation}（${l.daySay}）${chong}`;
+      });
+      useText.push(`时令对用神：${head}，日辰 ${strength.day ? `${strength.day.branch}（${strength.day.element}）` : '—'}。${body.join('；')}。`);
+      useText.push('月建看这一段时令站在哪一边，日辰看当天那股力量是扶还是克；两处同时看，只报状态，不折成分数。');
+    }
+    useText.push('这一层只把用神、卦体与时令对起来，应期与成败还要看动爻变化与月建日辰的进退节奏，所以这里不折成分数、不断成败。');
     sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
   }
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：全卦逐爻的月建旺衰（现在只算到用神那几爻）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [

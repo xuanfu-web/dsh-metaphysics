@@ -1305,11 +1305,21 @@
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : `<div class="pp-chips"><span class="pp-chip">用神未取（未指明所问之事）</span></div>`;
+    // 旺衰：月建/日辰只给状态标签，缺月建时只有日辰那一半
+    const st = r.useGodStrength && Array.isArray(r.useGodStrength.labels) ? r.useGodStrength : null;
+    const strengthRow = st && st.labels.length
+      ? `<div class="pp-chips">${st.labels.map((l) => {
+        const cls = /死|囚|月破|受日辰克|泄|耗/.test(l) ? 'warn'
+          : /旺|相|得日辰生|比和/.test(l) ? 'ok' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
       ${useRow}
+      ${strengthRow}
     </div>`;
   };
 

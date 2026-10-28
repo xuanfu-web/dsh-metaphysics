@@ -1,13 +1,13 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines, bodyLabels, yongshenOf } from './liuyao.js';
+import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
 import { buildHepan } from './hepan.js';
 import { buildZiweiHepan } from './ziwei-hepan.js';
-import { buildQimen } from './qimen.js';
+import { buildQimen, buildSnapshot } from './qimen.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
@@ -330,6 +330,11 @@ function liuyaoText(r) {
     const head = ug.byShi ? '用神 世爻' : `用神 ${ug.liuqin}`;
     const extra = ug.labels.filter((x) => x !== head && !x.startsWith(head));
     if (extra.length) out.push(`用神联动：${extra.join(' · ')}`);
+    const strength = r.useGodStrength;
+    if (strength && strength.labels.length) {
+      const m = strength.month && strength.month.branch ? `月建 ${strength.month.branch}（${strength.month.element}）　` : '';
+      out.push(`用神旺衰：${m}${strength.labels.join(' · ')}`);
+    }
   } else {
     out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
   }
@@ -644,7 +649,21 @@ function computeRaw(args = {}) {
     }
     // 用神挂在结果上：摘要、面板、解析三层读同一份，避免各自取一次走散
     const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
-    if (ug.liuqin) result.useGod = ug;
+    if (ug.liuqin) {
+      result.useGod = ug;
+      // 月建按节气换月、与八字同源：从同一个 snapshot 取月支，取不到就只按日辰算
+      let monthBranch = null;
+      if (stamp) {
+        try {
+          const snap = buildSnapshot({ year: stamp.year, month: stamp.month, day: stamp.day, hour: stamp.hour, minute: stamp.minute });
+          monthBranch = (snap.monthGanZhi || '')[1] || null;
+        } catch {
+          monthBranch = null;
+        }
+      }
+      const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
+      if (strength) result.useGodStrength = strength;
+    }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
   }
