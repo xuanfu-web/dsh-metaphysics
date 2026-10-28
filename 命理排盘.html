@@ -4391,6 +4391,7 @@ const GENERATES = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' }
 const OVERCOMES = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
 
 const LIUSHEN = ['青龙', '朱雀', '勾陈', '螣蛇', '白虎', '玄武'];
+const LIUQIN_NAMES = ['父母', '兄弟', '子孙', '妻财', '官鬼'];
 // 日干 -> 初爻所起六神
 const LIUSHEN_START = { 甲: 0, 乙: 0, 丙: 1, 丁: 1, 戊: 2, 己: 3, 庚: 4, 辛: 4, 壬: 5, 癸: 5 };
 
@@ -4600,6 +4601,191 @@ function hexagramFromBits(bits) {
   return HEXAGRAM_INDEX.get(`${upper}|${lower}`);
 }
 
+// 八宫首卦（每宫的纯卦）：伏神要「于本宫首卦内寻之」，所以先备一张 宫 → 纯卦 的表
+const PURE_BY_PALACE = new Map();
+for (const h of HEXAGRAM_INDEX.values()) if (h.order === 0) PURE_BY_PALACE.set(h.palace, h);
+
+/**
+ * 取用神：问什么，就以哪一类六亲为用。
+ * 感情分男女（男看妻财、女看官鬼），出行以世爻为用——这两条不接受单一六亲，
+ * 所以表里 liuqin 留 null，由 yongshenOf 按 gender / 世爻决定。
+ */
+const YONGSHEN_RULES = Object.freeze({
+  wealth: { liuqin: '妻财', ask: '求财、收入、订单' },
+  career: { liuqin: '官鬼', ask: '工作、职位、考核' },
+  health: { liuqin: '官鬼', ask: '病与压力（子孙为医药）' },
+  study: { liuqin: '父母', ask: '考试、证书、文书合同' },
+  love: { liuqin: null, ask: '感情：男看妻财、女看官鬼' },
+  travel: { liuqin: null, ask: '出行以世爻为用，父母为舟车' },
+  general: { liuqin: null, ask: '未指明所问之事' },
+});
+
+const WUXING_SAY = {
+  飞生伏: '飞神生伏神，伏神借得上力',
+  伏生飞: '伏神生飞神，力气往外泄',
+  飞克伏: '飞神克伏神，伏神受压难出',
+  伏克飞: '伏神克飞神，伏神能自出',
+  比和: '飞伏比和，同气相求',
+};
+
+/** 飞伏生克在标签里的短说法（比 WUXING_SAY 更短，给 chip 行用） */
+const RELATION_LABEL = {
+  飞生伏: '伏神得飞神生',
+  伏生飞: '伏神泄气于飞神',
+  飞克伏: '伏神受飞神克',
+  伏克飞: '伏神克飞神可出',
+  比和: '飞伏比和',
+};
+
+function wuxingBetween(min, max) {
+  // min 是下面那个（伏神），max 是上面那个（飞神）；返回「谁生谁 / 谁克谁」
+  if (GENERATES[max] === min) return '飞生伏';
+  if (GENERATES[min] === max) return '伏生飞';
+  if (OVERCOMES[max] === min) return '飞克伏';
+  if (OVERCOMES[min] === max) return '伏克飞';
+  return '比和';
+}
+
+/** 用神所在爻位的内外归属（1~3 内卦，4~6 外卦） */
+const sideOf = (position) => (position <= 3 ? 'inner' : 'outer');
+
+/**
+ * 取用神并把用神与卦体、伏神、旬空、动变串起来。
+ *
+ * 三步：① 按所问之事定六亲（感情分男女、出行以世为用）；
+ * ② 在本卦里找这个六亲——找得到就用神在爻上，出现两次记「两现」；
+ * ③ 找不到（用神不上卦）就回到本宫首卦同六亲的爻位取伏神，并标飞伏生克。
+ *
+ * @param {object} result buildLiuyao 的返回
+ * @param {{direction?:string, gender?:string}} [opts]
+ */
+function yongshenOf(result, opts = {}) {
+  const r = result && typeof result === 'object' ? result : {};
+  const ben = r.ben && typeof r.ben === 'object' ? r.ben : {};
+  const lines = Array.isArray(ben.lines) ? ben.lines : [];
+  const direction = YONGSHEN_RULES[opts.direction] ? opts.direction : 'general';
+  const rule = YONGSHEN_RULES[direction];
+  const gender = opts.gender === 'female' ? 'female' : 'male';
+  const body = r.body && typeof r.body === 'object' ? r.body : {};
+  // xunKong 在结果里是数组（如 ['戌','亥']），兼容旧数据里拼成字符串的写法
+  const kongArr = Array.isArray(r.xunKong)
+    ? r.xunKong
+    : (typeof r.xunKong === 'string' ? r.xunKong.split('') : []);
+
+  // ① 定六亲 / 定「以世为用」
+  // 方向只是一层便利：调用方也可以直接给六亲（opts.liuqin），用于别的问法或对拍
+  const direct = LIUQIN_NAMES.includes(opts.liuqin) ? opts.liuqin : null;
+  const byShi = !direct && direction === 'travel';
+  const liuqinName = direct || (byShi ? '世' : (direction === 'love' ? (gender === 'female' ? '官鬼' : '妻财') : rule.liuqin));
+  const base = {
+    direction,
+    gender,
+    ask: rule.ask,
+    byShi,
+    liuqin: liuqinName,
+    found: [],
+    missing: false,
+    fushen: [],
+    labels: [],
+  };
+  if (!liuqinName) { base.labels = ['用神未取（未指明所问之事）']; return base; }
+
+  // ② 用神在爻上
+  const found = byShi
+    ? lines.filter((l) => l.position === ben.shi)
+    : lines.filter((l) => l.liuqin === liuqinName);
+  base.found = found.map((l) => ({
+    position: l.position,
+    name: l.name,
+    liuqin: l.liuqin,
+    branch: l.branch,
+    element: l.element,
+    ganzhi: l.ganzhi,
+    moving: Boolean(l.moving),
+    liushen: l.liushen,
+    shi: l.position === ben.shi,
+    ying: l.position === ben.ying,
+    kong: kongArr.includes(l.branch),
+  }));
+
+  const labels = [];
+  const label = byShi ? '用神 世爻' : `用神 ${liuqinName}`;
+  labels.push(label);
+  const jin = (body.jinTui || []).filter((x) => x.type === '进').map((x) => x.position);
+  const tui = (body.jinTui || []).filter((x) => x.type === '退').map((x) => x.position);
+  const yaoFu = body.yaoFuYin || [];
+  const yaoFan = body.yaoFanYin || [];
+
+  if (found.length) {
+    labels.push(`${label}在 ${found.map((l) => `${l.position}爻`).join('、')}`);
+    if (found.length > 1) labels.push(`用神两现 ${found.map((l) => l.position).join('、')}`);
+    if (found.some((l) => l.position === ben.shi)) labels.push('用神持世');
+    if (found.some((l) => l.position === ben.ying)) labels.push('用神临应');
+    if (found.some((l) => l.moving)) labels.push('用神发动');
+    if (found.some((l) => kongArr.includes(l.branch))) labels.push('用神空亡');
+    if (found.some((l) => jin.includes(l.position))) labels.push('用神化进神');
+    if (found.some((l) => tui.includes(l.position))) labels.push('用神化退神');
+    if (found.some((l) => yaoFu.includes(l.position))) labels.push('用神爻伏吟');
+    if (found.some((l) => yaoFan.includes(l.position))) labels.push('用神爻反吟');
+  } else {
+    // ③ 用神不上卦 → 本宫首卦同位取伏神
+    base.missing = true;
+    const palace = String(ben.palace || '').replace(/宫$/, '');
+    const pure = PURE_BY_PALACE.get(palace) || null;
+    if (pure) {
+      for (let i = 0; i < 6; i++) {
+        const isInner = i < 3;
+        const nj = NAJIA[isInner ? pure.lower : pure.upper];
+        const branch = isInner ? nj.inner[i] : nj.outer[i - 3];
+        const gan = isInner ? nj.gan[0] : nj.gan[1];
+        const element = BRANCH_ELEMENT[branch];
+        if (liuqin(pure.palaceElement, element) !== liuqinName) continue;
+        const fei = lines[i] || null;
+        const relation = fei ? wuxingBetween(element, fei.element) : null;
+        base.fushen.push({
+          position: i + 1,
+          liuqin: liuqinName,
+          branch,
+          element,
+          ganzhi: gan + branch,
+          relation,
+          fei: fei ? { position: fei.position, liuqin: fei.liuqin, branch: fei.branch, element: fei.element, ganzhi: fei.ganzhi } : null,
+        });
+      }
+    }
+    if (base.fushen.length) {
+      labels.push(`用神不上卦·伏于 ${base.fushen.map((f) => `${f.position}爻`).join('、')}`);
+      if (base.fushen.length > 1) labels.push(`伏神两现 ${base.fushen.map((f) => f.position).join('、')}`);
+      const rels = [...new Set(base.fushen.map((f) => f.relation).filter(Boolean))];
+      for (const rel of rels) labels.push(RELATION_LABEL[rel] || `伏神${rel}`);
+    } else {
+      labels.push('用神不上卦');
+    }
+  }
+
+  // ④ 与卦体联动：卦体只说动势，落到用神身上才有指向
+  const sides = found.length ? [...new Set(found.map((l) => sideOf(l.position)))] : [];
+  if (body.ben) {
+    if (body.ben.chong) labels.push('用神在六冲卦');
+    if (body.ben.he) labels.push('用神在六合卦');
+    if (body.bian && body.bian.chong) labels.push('用神逢变六冲');
+    if (body.bian && body.bian.he) labels.push('用神逢变六合');
+  }
+  for (const side of sides) {
+    if (body.fuYin && body.fuYin[side]) labels.push(`用神在${side === 'inner' ? '内' : '外'}卦伏吟`);
+    if (body.fanYin && body.fanYin[side]) {
+      const by = (body.fanYin[side].by || []).includes('chong') ? '地支全冲' : '八卦正对';
+      labels.push(`用神在${side === 'inner' ? '内' : '外'}卦反吟`);
+      labels.push(`反吟来源：${by}`);
+    }
+  }
+
+  base.labels = labels;
+  base.relationSay = base.fushen.map((f) => WUXING_SAY[f.relation]).filter(Boolean);
+  base.side = sides.length === 1 ? (sides[0] === 'inner' ? '内卦' : '外卦') : null;
+  return base;
+}
+
 /** 随机摇卦：三枚铜钱，背为阳（3），字为阴（2），合计 6/7/8/9 */
 function tossLines(random = Math.random) {
   const lines = [];
@@ -4732,7 +4918,7 @@ function buildLiuyao(input = {}) {
   };
 }
 
-return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, tossLines, buildLiuyao };
+return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao };
 })();
 
 __mods.ziwei = (function () {
@@ -9988,6 +10174,25 @@ const PLAIN_BODY = {
 };
 
 /**
+ * 用神 → 一句白话。
+ * 只说「用神落在哪、有没有动、要不要往深处找」，不替人断成败。
+ */
+function usePlainOf(ug) {
+  if (!ug || !ug.liuqin) return '';
+  if (ug.found.length) {
+    const pos = ug.found.map((f) => `第${f.position}爻`).join('、');
+    const moving = ug.found.some((f) => f.moving);
+    const who = ug.byShi ? '代表你自己' : `就是「${ug.liuqin}」这一类事`;
+    return `你问的这件事，在卦里对应${pos}${who}——${moving ? '这一爻还在动，说明事情正在推进' : '这一爻没动，先按现状看'}。`;
+  }
+  if (ug.fushen.length) {
+    const f = ug.fushen[0];
+    return `你问的这件事，卦面上没有直接露出来，得往深处找：它藏在第${f.position}爻下面（伏神），与上面的关系是「${f.relation || '—'}」，要借力才出得来。`;
+  }
+  return '';
+}
+
+/**
  * 六爻卦体 → 一句白话。
  * 标签可能带爻位（「化进神 5」），所以按前缀匹配；
  * 主句取标签顺序里第一个能说的，化进/化退作为补充句跟在后面（它们只说某一爻，不覆盖全局）。
@@ -10072,7 +10277,7 @@ function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}`,
+        `${plainBody}${usePlainOf(r.useGod)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -10115,7 +10320,7 @@ function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}`;
+      `${plainBody}${usePlainOf(r.useGod)}`;
   }
   return '';
 }
@@ -10379,10 +10584,10 @@ const KNOWLEDGE = [
   // ── 六爻 ──────────────────────────────────────────────
   {
     id: 'liuyao-yongshen',
-    system: 'liuyao', dims: ['overall'],
-    gist: '问什么，就以那一类六亲为用神。',
-    detail: '问财看妻财、问事业官位看官鬼、问文书房产看父母、问子女下属看子孙、问同辈朋友看兄弟。用神两现时，取动者、取临世者、取旺者；用神不上卦，则从本宫首卦取伏神。这一步定错，后面全盘白算。',
-    source: '《卜筮正宗》用神章；《增删卜易》同',
+    system: 'liuyao', dims: ['overall', 'work', 'wealth', 'love', 'health', 'study'],
+    gist: '问什么就以哪一类六亲为用神，这一步定错，后面全盘白算。',
+    detail: '取用按所问之事：求财与男命妻缘看妻财，工作职位考核看官鬼，文书合同学历看父母，健康以官鬼为病、子孙为医药，出行以世爻为用，感情男看妻财、女看官鬼。用神在卦上就取那一爻，出现两处记「两现」；用神不上卦，按本宫首卦同六亲的爻位取伏神，再看飞伏生克。本插件把这些位置与动变、旬空、卦体标签一一对上，但不替你选两现之中的主用。',
+    source: '《卜筮正宗》用神章、伏神章；《增删卜易》用神章',
     status: 'settled',
   },
   {
@@ -10404,10 +10609,11 @@ const KNOWLEDGE = [
   {
     id: 'liuyao-fushen',
     system: 'liuyao', dims: ['overall'],
-    gist: '伏神是藏在下面、要借力才出得来的那一爻。',
-    detail: '用神不上卦，就从本宫首卦的同位取伏神。伏神要得出——得日月生扶、或飞神生伏神、或伏神自身旺相，才有用；伏在忌神之下且被克，则虽有如无。',
-    source: '《卜筮正宗》伏神章',
-    status: 'settled',
+    gist: '用神不上卦，就去本宫首卦的同位取伏神。',
+    detail: '本卦六爻里没有用神那一类六亲，就叫用神不上卦。取法是回到本卦所属宫的首卦（八纯卦），找出该六亲所在的爻位，那一爻即伏神，本卦同一爻位上的爻叫飞神。伏神要「得出」才有用：飞神生伏神、伏神克飞神、日月生扶都算得力；飞神克伏神则受压难出。本插件给出伏神爻位、干支五行与飞伏生克关系，不出具体的出伏日期。',
+    source: '《卜筮正宗》伏神章；《增删卜易》伏神篇',
+    status: 'variant',
+    note: '首卦里同一六亲也可能出现两次（如乾宫乾为天的父母在三爻与上爻），此时取哪一爻为伏神各家不一；本插件把候选都列出并标「伏神两现」，不代选。伏神出伏的应期各家分歧更大，故不输出日期。',
   },
   {
     id: 'liuyao-yingqi',
@@ -10604,7 +10810,7 @@ const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, W
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
 const { MUTAGEN } = __mods.ziwei;
 // 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
-const { bodyLabels } = __mods.liuyao;
+const { bodyLabels, yongshenOf } = __mods.liuyao;
 
 // ── 固定五维度 ────────────────────────────────────────────
 const DIMENSIONS = [
@@ -11396,7 +11602,7 @@ const LIUQIN_USE = {
   兄弟: '同事、同行、竞争者，多与破财相关',
 };
 
-function liuyaoInterpret(r) {
+function liuyaoInterpret(r, ask) {
   const ben = isObj(r.ben) ? r.ben : {};
   const bian = isObj(r.bian) ? r.bian : {};
   const lines = Array.isArray(ben.lines) ? ben.lines : [];
@@ -11461,9 +11667,50 @@ function liuyaoInterpret(r) {
     sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
   }
 
+  // 用神与卦体联动：卦体只说动势，落到用神身上才有指向
+  const ug = yongshenOf(r, {
+    direction: (ask && ask.direction) || (r.useGod && r.useGod.direction) || 'general',
+    gender: (r.useGod && r.useGod.gender) || 'male',
+  });
+  if (ug && ug.liuqin) {
+    const useText = [];
+    useText.push(`所问方向取${ug.byShi ? '世爻' : ug.liuqin}为用神（${ug.ask}）${ug.direction === 'love' ? `；感情按${ug.gender === 'female' ? '女命看官鬼' : '男命看妻财'}取，性别未给时按男命算` : ''}。`);
+    if (ug.found.length) {
+      useText.push(`用神在卦上：${ug.found.map((f) => `${f.position}爻${f.ganzhi}${f.element}${f.liuqin}${f.liushen ? `·${f.liushen}` : ''}${f.shi ? '（持世）' : ''}${f.ying ? '（临应）' : ''}${f.moving ? '（发动）' : ''}${f.kong ? '（旬空）' : ''}`).join('、')}${ug.side ? `，落在${ug.side}` : ''}。`);
+      if (ug.found.length > 1) useText.push('用神两现：传统取动者、取持世者、取旬空待填者，各派权重不同；这里只把几处都列出来，不替你选哪一爻当主用。');
+    } else if (ug.fushen.length) {
+      useText.push(`用神不上卦：本卦六爻里没有${ug.liuqin}，按「用神不上卦则于本宫首卦内寻之」，到${String(pick(ben, 'palace', '')).replace(/宫$/, '')}宫首卦取伏神——${ug.fushen.map((f) => `${f.position}爻${f.ganzhi}${f.element}，伏于飞神${f.fei ? `${f.fei.liuqin}${f.fei.ganzhi}${f.fei.element}` : '—'}之下`).join('；')}。`);
+      if (ug.relationSay.length) useText.push(`飞伏生克：${ug.relationSay.join('；')}。伏神要得出才算有力，藏在忌神之下且被克，则虽有如无。`);
+    } else {
+      useText.push(`用神不上卦，且本宫首卦里也没找到${ug.liuqin}，这一问在卦面上没有直接对应物，只能借日月或改日再占。`);
+    }
+
+    // 卦体落在用神身上的读法：同一支卦体，落到用神与落到忌神是两个意思
+    const link = [];
+    if (bd.ben && bd.ben.chong) link.push('用神在六冲卦里：六冲主散，急事与近病借这股冲开的力量，缓事、久拖的人事则不容易凝聚');
+    if (bd.ben && bd.ben.he) link.push('用神在六合卦里：六合主成，容易谈拢，也容易黏住不放');
+    if (bd.bian && bd.bian.chong) link.push('用神逢变六冲：往后走向偏散，收尾容易一拍两散，也可能是速战速决');
+    else if (bd.bian && bd.bian.he) link.push('用神逢变六合：往后走向偏合，倾向于合拢或就这么延续');
+    for (const side of ['inner', 'outer']) {
+      const nm = side === 'inner' ? '内卦' : '外卦';
+      if (bd.fuYin && bd.fuYin[side]) link.push(`用神在${nm}伏吟：动而地支未变，想推的事卡在原地`);
+      if (bd.fanYin && bd.fanYin[side]) link.push(`用神在${nm}反吟：变卦与本卦相冲，用神这一头去而复来、定了又改`);
+    }
+    const jinYong = (bd.jinTui || []).filter((x) => x.type === '进' && ug.found.some((f) => f.position === x.position));
+    const tuiYong = (bd.jinTui || []).filter((x) => x.type === '退' && ug.found.some((f) => f.position === x.position));
+    if (jinYong.length) link.push(`用神化进神（${jinYong.map((x) => `${x.from}→${x.to}`).join('、')}）：这一爻有后劲，顺着推比退回去顺`);
+    if (tuiYong.length) link.push(`用神化退神（${tuiYong.map((x) => `${x.from}→${x.to}`).join('、')}）：这一爻渐渐退气，别按原来的势头硬推`);
+    if (ug.found.some((f) => f.kong)) link.push('用神旬空：事情先悬着，传统说空要出空、填实才算落地');
+    if (ug.found.some((f) => (bd.yaoFanYin || []).includes(f.position))) link.push('用神这一爻动而反吟：变化点本身在反复，动了又翻回来');
+    if (ug.found.some((f) => (bd.yaoFuYin || []).includes(f.position))) link.push('用神这一爻动而伏吟：动了等于没动，容易卡在同一道坎上');
+    if (link.length) useText.push(`与卦体对起来看：${link.join('；')}。`);
+    useText.push('这一层只把用神与卦体对起来，旺衰仍要月建日辰：同样的六冲落到用神与落到忌神，读法相反，所以这里不断成败。');
+    sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
+  }
+
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、化进化退叠上月建日辰之后的实际力重，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -11993,7 +12240,7 @@ function interpret(r, opts) {
   if (!fn) return null;
   let body;
   try {
-    body = fn(r);
+    body = fn(r, ask);
   } catch (e) {
     return {
       moduleType: MODULE_TYPE[r.system] || 'natal',
@@ -12545,7 +12792,7 @@ return { matchEvent, rectifyBirth, RECTIFY_KINDS };
 __mods.index = (function () {
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 const { buildBazi } = __mods.bazi;
-const { buildLiuyao, tossLines, bodyLabels } = __mods.liuyao;
+const { buildLiuyao, tossLines, bodyLabels, yongshenOf } = __mods.liuyao;
 const { buildZiwei, BRIGHTNESS, flowOf, asOfParts } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
@@ -12860,6 +13107,19 @@ function liuyaoText(r) {
   // 结果里已带 labels；只有旧数据或裸对象调用时才现算一份
   const body = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : bodyLabels(r.body);
   out.push(`卦体：${body.length ? body.join(' · ') : '无六冲、六合、伏吟、反吟'}`);
+  // 用神：按询问方向取六亲（感情分男女、出行以世为用），不上卦时给伏神
+  const ug = r.useGod || yongshenOf(r, {});
+  if (ug && ug.liuqin) {
+    const where = ug.found.length
+      ? ug.found.map((f) => `${f.position}爻${f.ganzhi}${f.element}${f.kong ? '（空）' : ''}`).join('、')
+      : (ug.fushen.length ? ug.fushen.map((f) => `伏 ${f.position}爻${f.ganzhi}${f.element}（${f.relation || '飞伏关系未知'}）`).join('、') : '不上卦');
+    out.push(`用神：${ug.byShi ? '世爻' : ug.liuqin}（${ug.ask}）→ ${where}${ug.side ? `（${ug.side}）` : ''}`);
+    const head = ug.byShi ? '用神 世爻' : `用神 ${ug.liuqin}`;
+    const extra = ug.labels.filter((x) => x !== head && !x.startsWith(head));
+    if (extra.length) out.push(`用神联动：${extra.join(' · ')}`);
+  } else {
+    out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
+  }
   return out.filter(Boolean).join('\n');
 }
 
@@ -13169,6 +13429,9 @@ function computeRaw(args = {}) {
     } catch (e) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
+    // 用神挂在结果上：摘要、面板、解析三层读同一份，避免各自取一次走散
+    const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
+    if (ug.liuqin) result.useGod = ug;
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
   }
@@ -14860,10 +15123,20 @@ window.Engine = __mods.index;
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : `<div class="pp-chips"><span class="pp-chip">卦体无六冲、六合、伏吟、反吟</span></div>`;
+    // 用神：引擎按询问方向算好挂在 useGod 上（含伏神与卦体联动标签），这里只摆位置
+    const ug = r.useGod && r.useGod.liuqin ? r.useGod : null;
+    const useRow = ug
+      ? `<div class="pp-chips">${ug.labels.map((l) => {
+        const cls = /空亡|退神|受克|泄气|不上卦/.test(l) ? 'warn'
+          : /持世|化进|六合|得飞神生/.test(l) ? 'ok' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : `<div class="pp-chips"><span class="pp-chip">用神未取（未指明所问之事）</span></div>`;
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
+      ${useRow}
     </div>`;
   };
 

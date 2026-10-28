@@ -1,8 +1,8 @@
 {
   "name": "dsh-metaphysics",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "type": "module",
-  "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: eighteen systems and ten quick references (almanac, solar–lunar conversion, …), with climate adjustment (tiaohou), the 120 Qiongtong Baojian entries, 391-char name library, classical quotes (Ziping Zhenquan / Di Tian Sui), hexagram body relations (六冲/六合/伏吟/反吟/化进神/化退神) for liuyao, palace conditions (击刑/入墓) plus month states (旺相休囚死) for qimen, flying four-transformations (四化飞星串连) for ziwei, and a bundled offline single-file page (命理排盘.html).",
+  "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: eighteen systems and ten quick references (almanac, solar–lunar conversion, …), with climate adjustment (tiaohou), the 120 Qiongtong Baojian entries, 391-char name library, classical quotes (Ziping Zhenquan / Di Tian Sui), hexagram body relations (六冲/六合/伏吟/反吟/化进神/化退神) plus yongshen placement (用神落位) for liuyao, palace conditions (击刑/入墓) plus month states (旺相休囚死) for qimen, flying four-transformations (四化飞星串连) for ziwei, and a bundled offline single-file page (命理排盘.html).",
   "keywords": [
     "玄学",
     "玄学排盘",

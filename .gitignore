@@ -9,3 +9,6 @@ fork.json
 
 # 穷通宝鉴抓取缓存（tools/qiongtong-scrape.mjs 生成，不入库）
 tools/_qt2.json
+
+# 临时日志（调试时随手重定向出来的）
+_*.log

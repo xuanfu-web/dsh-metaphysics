@@ -1,6 +1,6 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines, bodyLabels } from './liuyao.js';
+import { buildLiuyao, tossLines, bodyLabels, yongshenOf } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
@@ -315,6 +315,19 @@ function liuyaoText(r) {
   // 结果里已带 labels；只有旧数据或裸对象调用时才现算一份
   const body = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : bodyLabels(r.body);
   out.push(`卦体：${body.length ? body.join(' · ') : '无六冲、六合、伏吟、反吟'}`);
+  // 用神：按询问方向取六亲（感情分男女、出行以世为用），不上卦时给伏神
+  const ug = r.useGod || yongshenOf(r, {});
+  if (ug && ug.liuqin) {
+    const where = ug.found.length
+      ? ug.found.map((f) => `${f.position}爻${f.ganzhi}${f.element}${f.kong ? '（空）' : ''}`).join('、')
+      : (ug.fushen.length ? ug.fushen.map((f) => `伏 ${f.position}爻${f.ganzhi}${f.element}（${f.relation || '飞伏关系未知'}）`).join('、') : '不上卦');
+    out.push(`用神：${ug.byShi ? '世爻' : ug.liuqin}（${ug.ask}）→ ${where}${ug.side ? `（${ug.side}）` : ''}`);
+    const head = ug.byShi ? '用神 世爻' : `用神 ${ug.liuqin}`;
+    const extra = ug.labels.filter((x) => x !== head && !x.startsWith(head));
+    if (extra.length) out.push(`用神联动：${extra.join(' · ')}`);
+  } else {
+    out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
+  }
   return out.filter(Boolean).join('\n');
 }
 
@@ -624,6 +637,9 @@ function computeRaw(args = {}) {
     } catch (e) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
+    // 用神挂在结果上：摘要、面板、解析三层读同一份，避免各自取一次走散
+    const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
+    if (ug.liuqin) result.useGod = ug;
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
   }

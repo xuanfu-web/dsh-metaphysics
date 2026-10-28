@@ -1270,10 +1270,20 @@
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : `<div class="pp-chips"><span class="pp-chip">卦体无六冲、六合、伏吟、反吟</span></div>`;
+    // 用神：引擎按询问方向算好挂在 useGod 上（含伏神与卦体联动标签），这里只摆位置
+    const ug = r.useGod && r.useGod.liuqin ? r.useGod : null;
+    const useRow = ug
+      ? `<div class="pp-chips">${ug.labels.map((l) => {
+        const cls = /空亡|退神|受克|泄气|不上卦/.test(l) ? 'warn'
+          : /持世|化进|六合|得飞神生/.test(l) ? 'ok' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : `<div class="pp-chips"><span class="pp-chip">用神未取（未指明所问之事）</span></div>`;
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
+      ${useRow}
     </div>`;
   };
 

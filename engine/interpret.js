@@ -14,7 +14,7 @@ import {
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
 import { MUTAGEN } from './ziwei.js';
 // 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
-import { bodyLabels } from './liuyao.js';
+import { bodyLabels, yongshenOf } from './liuyao.js';
 
 // ── 固定五维度 ────────────────────────────────────────────
 export const DIMENSIONS = [
@@ -806,7 +806,7 @@ const LIUQIN_USE = {
   兄弟: '同事、同行、竞争者，多与破财相关',
 };
 
-function liuyaoInterpret(r) {
+function liuyaoInterpret(r, ask) {
   const ben = isObj(r.ben) ? r.ben : {};
   const bian = isObj(r.bian) ? r.bian : {};
   const lines = Array.isArray(ben.lines) ? ben.lines : [];
@@ -871,9 +871,50 @@ function liuyaoInterpret(r) {
     sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
   }
 
+  // 用神与卦体联动：卦体只说动势，落到用神身上才有指向
+  const ug = yongshenOf(r, {
+    direction: (ask && ask.direction) || (r.useGod && r.useGod.direction) || 'general',
+    gender: (r.useGod && r.useGod.gender) || 'male',
+  });
+  if (ug && ug.liuqin) {
+    const useText = [];
+    useText.push(`所问方向取${ug.byShi ? '世爻' : ug.liuqin}为用神（${ug.ask}）${ug.direction === 'love' ? `；感情按${ug.gender === 'female' ? '女命看官鬼' : '男命看妻财'}取，性别未给时按男命算` : ''}。`);
+    if (ug.found.length) {
+      useText.push(`用神在卦上：${ug.found.map((f) => `${f.position}爻${f.ganzhi}${f.element}${f.liuqin}${f.liushen ? `·${f.liushen}` : ''}${f.shi ? '（持世）' : ''}${f.ying ? '（临应）' : ''}${f.moving ? '（发动）' : ''}${f.kong ? '（旬空）' : ''}`).join('、')}${ug.side ? `，落在${ug.side}` : ''}。`);
+      if (ug.found.length > 1) useText.push('用神两现：传统取动者、取持世者、取旬空待填者，各派权重不同；这里只把几处都列出来，不替你选哪一爻当主用。');
+    } else if (ug.fushen.length) {
+      useText.push(`用神不上卦：本卦六爻里没有${ug.liuqin}，按「用神不上卦则于本宫首卦内寻之」，到${String(pick(ben, 'palace', '')).replace(/宫$/, '')}宫首卦取伏神——${ug.fushen.map((f) => `${f.position}爻${f.ganzhi}${f.element}，伏于飞神${f.fei ? `${f.fei.liuqin}${f.fei.ganzhi}${f.fei.element}` : '—'}之下`).join('；')}。`);
+      if (ug.relationSay.length) useText.push(`飞伏生克：${ug.relationSay.join('；')}。伏神要得出才算有力，藏在忌神之下且被克，则虽有如无。`);
+    } else {
+      useText.push(`用神不上卦，且本宫首卦里也没找到${ug.liuqin}，这一问在卦面上没有直接对应物，只能借日月或改日再占。`);
+    }
+
+    // 卦体落在用神身上的读法：同一支卦体，落到用神与落到忌神是两个意思
+    const link = [];
+    if (bd.ben && bd.ben.chong) link.push('用神在六冲卦里：六冲主散，急事与近病借这股冲开的力量，缓事、久拖的人事则不容易凝聚');
+    if (bd.ben && bd.ben.he) link.push('用神在六合卦里：六合主成，容易谈拢，也容易黏住不放');
+    if (bd.bian && bd.bian.chong) link.push('用神逢变六冲：往后走向偏散，收尾容易一拍两散，也可能是速战速决');
+    else if (bd.bian && bd.bian.he) link.push('用神逢变六合：往后走向偏合，倾向于合拢或就这么延续');
+    for (const side of ['inner', 'outer']) {
+      const nm = side === 'inner' ? '内卦' : '外卦';
+      if (bd.fuYin && bd.fuYin[side]) link.push(`用神在${nm}伏吟：动而地支未变，想推的事卡在原地`);
+      if (bd.fanYin && bd.fanYin[side]) link.push(`用神在${nm}反吟：变卦与本卦相冲，用神这一头去而复来、定了又改`);
+    }
+    const jinYong = (bd.jinTui || []).filter((x) => x.type === '进' && ug.found.some((f) => f.position === x.position));
+    const tuiYong = (bd.jinTui || []).filter((x) => x.type === '退' && ug.found.some((f) => f.position === x.position));
+    if (jinYong.length) link.push(`用神化进神（${jinYong.map((x) => `${x.from}→${x.to}`).join('、')}）：这一爻有后劲，顺着推比退回去顺`);
+    if (tuiYong.length) link.push(`用神化退神（${tuiYong.map((x) => `${x.from}→${x.to}`).join('、')}）：这一爻渐渐退气，别按原来的势头硬推`);
+    if (ug.found.some((f) => f.kong)) link.push('用神旬空：事情先悬着，传统说空要出空、填实才算落地');
+    if (ug.found.some((f) => (bd.yaoFanYin || []).includes(f.position))) link.push('用神这一爻动而反吟：变化点本身在反复，动了又翻回来');
+    if (ug.found.some((f) => (bd.yaoFuYin || []).includes(f.position))) link.push('用神这一爻动而伏吟：动了等于没动，容易卡在同一道坎上');
+    if (link.length) useText.push(`与卦体对起来看：${link.join('；')}。`);
+    useText.push('这一层只把用神与卦体对起来，旺衰仍要月建日辰：同样的六冲落到用神与落到忌神，读法相反，所以这里不断成败。');
+    sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
+  }
+
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、化进化退叠上月建日辰之后的实际力重，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -1403,7 +1444,7 @@ export function interpret(r, opts) {
   if (!fn) return null;
   let body;
   try {
-    body = fn(r);
+    body = fn(r, ask);
   } catch (e) {
     return {
       moduleType: MODULE_TYPE[r.system] || 'natal',

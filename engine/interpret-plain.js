@@ -34,6 +34,25 @@ const PLAIN_BODY = {
 };
 
 /**
+ * 用神 → 一句白话。
+ * 只说「用神落在哪、有没有动、要不要往深处找」，不替人断成败。
+ */
+function usePlainOf(ug) {
+  if (!ug || !ug.liuqin) return '';
+  if (ug.found.length) {
+    const pos = ug.found.map((f) => `第${f.position}爻`).join('、');
+    const moving = ug.found.some((f) => f.moving);
+    const who = ug.byShi ? '代表你自己' : `就是「${ug.liuqin}」这一类事`;
+    return `你问的这件事，在卦里对应${pos}${who}——${moving ? '这一爻还在动，说明事情正在推进' : '这一爻没动，先按现状看'}。`;
+  }
+  if (ug.fushen.length) {
+    const f = ug.fushen[0];
+    return `你问的这件事，卦面上没有直接露出来，得往深处找：它藏在第${f.position}爻下面（伏神），与上面的关系是「${f.relation || '—'}」，要借力才出得来。`;
+  }
+  return '';
+}
+
+/**
  * 六爻卦体 → 一句白话。
  * 标签可能带爻位（「化进神 5」），所以按前缀匹配；
  * 主句取标签顺序里第一个能说的，化进/化退作为补充句跟在后面（它们只说某一爻，不覆盖全局）。
@@ -118,7 +137,7 @@ export function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}`,
+        `${plainBody}${usePlainOf(r.useGod)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -161,7 +180,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}`;
+      `${plainBody}${usePlainOf(r.useGod)}`;
   }
   return '';
 }
