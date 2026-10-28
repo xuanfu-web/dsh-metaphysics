@@ -1445,6 +1445,10 @@
       ['驿马', r.ma && r.ma.zhi ? `${r.ma.zhi}${r.ma.gong ? `（${r.ma.gong}宫）` : ''}` : '—'],
       ['换局规则', r.juMethodNote || r.juMethod || '—'],
       ['晚子时', r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'],
+      ['击刑', (r.conditions && r.conditions.jiXing && r.conditions.jiXing.length)
+        ? r.conditions.jiXing.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
+      ['入墓', (r.conditions && r.conditions.ruMu && r.conditions.ruMu.length)
+        ? r.conditions.ruMu.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
     ];
     return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
   };

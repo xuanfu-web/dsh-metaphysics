@@ -128,13 +128,17 @@ export function interpretQimen(r, opts = {}) {
     else if (rel.type === '宫制门') controlled.push(`${p.palace}宫（宫${rel.palace}克${p.gate}${rel.gate}）`);
   }
   const kongCells = r.palaces.filter((p) => p.kong).map((p) => `${p.palace}宫`);
+  const jiXing = (r.conditions && r.conditions.jiXing) || [];
+  const ruMu = (r.conditions && r.conditions.ruMu) || [];
   sections.push({
     key: 'conditions',
     label: '宫位条件',
     text: `门迫（同宫内门克宫）：${forced.length ? forced.join('、') : '本盘无'}；`
       + `宫制门（宫克门，属「制」不为迫）：${controlled.length ? controlled.join('、') : '无'}。`
+      + `击刑（天盘六仪落刑宫）：${jiXing.length ? jiXing.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}；`
+      + `入墓（天盘三奇落墓宫）：${ruMu.length ? ruMu.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}。`
       + (kongCells.length ? `空亡：${kongCells.join('、')}——落空之宫事多不实。` : '无落空之宫。')
-      + `门迫只作宫位条件，不自动等同于用神受制。`,
+      + `这三项都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
   });
 
   // ⑥ 条件式倾向

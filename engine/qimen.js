@@ -1,4 +1,4 @@
-﻿// 时家奇门（转盘，拆补法定局）。
+// 时家奇门（转盘，拆补法定局）。
 // 算法移植自 MIT 许可的 qimendunjia-standalone@0.1.0（作者：见其 LICENSE），
 // 保留其定局/排盘口径（符头定三元、值符值使推演、天盘随值符旋转、中五宫寄坤二），
 // 只把历法层换成本插件自己的 calendar/lunar 模块——节气、干支、农历都走同一套已验证的源码。
@@ -179,6 +179,50 @@ export function gatePalaceRelation(gate, palace) {
   if (SHENG[pe] === ge) return { type: '宫生门', gate: ge, palace: pe, note: `${pe}生${ge}` };
   return { type: '比和', gate: ge, palace: pe, note: `${ge}与${pe}比和` };
 }
+
+// ── 六仪击刑 / 三奇入墓 ─────────────────────────────────────
+// 两者都是「天盘干落到某个宫就成立」的硬条件，与门迫一样只作宫位条件，不下吉凶。
+// 六仪击刑按地支相刑推：子刑卯、戌刑未、申刑寅、午自刑、辰自刑、寅刑巳；
+// 三奇入墓按五行墓库推：乙木墓未（未在坤二宫）、丙丁火墓戌（戌在乾六宫）。
+const JI_XING = {
+  戊: { palace: '3', zhi: '卯', basis: '甲子戊，子刑卯' },
+  己: { palace: '2', zhi: '未', basis: '甲戌己，戌刑未' },
+  庚: { palace: '8', zhi: '寅', basis: '甲申庚，申刑寅' },
+  辛: { palace: '9', zhi: '午', basis: '甲午辛，午自刑' },
+  壬: { palace: '4', zhi: '辰', basis: '甲辰壬，辰自刑' },
+  癸: { palace: '4', zhi: '巳', basis: '甲寅癸，寅刑巳' },
+};
+const RU_MU = {
+  乙: { palace: '2', zhi: '未', basis: '乙木墓于未，未在坤二宫' },
+  丙: { palace: '6', zhi: '戌', basis: '丙火墓于戌，戌在乾六宫' },
+  丁: { palace: '6', zhi: '戌', basis: '丁火墓于戌，戌在乾六宫' },
+};
+
+/** 天盘六仪落刑宫 → [{palace, stem, zhi, basis}] */
+export function jiXingOf(palaces) {
+  const out = [];
+  for (const p of palaces || []) {
+    const hit = JI_XING[p.tianPan];
+    if (hit && hit.palace === String(p.palace)) out.push({ palace: p.palace, stem: p.tianPan, zhi: hit.zhi, basis: hit.basis });
+  }
+  return out;
+}
+
+/** 天盘三奇入墓 → [{palace, stem, zhi, basis}] */
+export function ruMuOf(palaces) {
+  const out = [];
+  for (const p of palaces || []) {
+    const hit = RU_MU[p.tianPan];
+    if (hit && hit.palace === String(p.palace)) out.push({ palace: p.palace, stem: p.tianPan, zhi: hit.zhi, basis: hit.basis });
+  }
+  return out;
+}
+
+/** 供测试与文档引用：两张表的只读视图 */
+export const QIMEN_CONDITION_TABLES = Object.freeze({
+  jiXing: Object.freeze(Object.fromEntries(Object.entries(JI_XING).map(([k, v]) => [k, { ...v }]))),
+  ruMu: Object.freeze(Object.fromEntries(Object.entries(RU_MU).map(([k, v]) => [k, { ...v }]))),
+});
 function getDiPan(type, num) {
   const result = {};
   let gong = num;
@@ -418,6 +462,11 @@ export function buildQimen(input) {
     zhiShi: { gate: bm.zhiShiMen, gong: bm.zhiShiGong },
     kongWang: kongZhi,
     ma: { zhi: maZhi, gong: maGong },
+    // 宫位硬条件（天盘干定宫）：六仪击刑、三奇入墓。只列成立项，不排序、不打分
+    conditions: {
+      jiXing: jiXingOf(palaces),
+      ruMu: ruMuOf(palaces),
+    },
     palaces,
     centerPalace,
     rules: [

@@ -185,6 +185,7 @@ function qimenText(r) {
     `【局数】${r.ju}　节气 ${r.jieqi}（${r.jieqiTime}）`,
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
+    `【宫位条件】击刑 ${(r.conditions && r.conditions.jiXing || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　入墓 ${(r.conditions && r.conditions.ruMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}`,
     `【九宫】${P.map(cell).join('　')}`,
     `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
     `※ ${r.rules[r.rules.length - 1]}`,

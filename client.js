@@ -6869,6 +6869,43 @@ function gatePalaceRelation(gate, palace) {
   if (SHENG[pe] === ge) return { type: '宫生门', gate: ge, palace: pe, note: `${pe}生${ge}` };
   return { type: '比和', gate: ge, palace: pe, note: `${ge}与${pe}比和` };
 }
+
+const JI_XING = {
+  戊: { palace: '3', zhi: '卯', basis: '甲子戊，子刑卯' },
+  己: { palace: '2', zhi: '未', basis: '甲戌己，戌刑未' },
+  庚: { palace: '8', zhi: '寅', basis: '甲申庚，申刑寅' },
+  辛: { palace: '9', zhi: '午', basis: '甲午辛，午自刑' },
+  壬: { palace: '4', zhi: '辰', basis: '甲辰壬，辰自刑' },
+  癸: { palace: '4', zhi: '巳', basis: '甲寅癸，寅刑巳' },
+};
+const RU_MU = {
+  乙: { palace: '2', zhi: '未', basis: '乙木墓于未，未在坤二宫' },
+  丙: { palace: '6', zhi: '戌', basis: '丙火墓于戌，戌在乾六宫' },
+  丁: { palace: '6', zhi: '戌', basis: '丁火墓于戌，戌在乾六宫' },
+};
+
+function jiXingOf(palaces) {
+  const out = [];
+  for (const p of palaces || []) {
+    const hit = JI_XING[p.tianPan];
+    if (hit && hit.palace === String(p.palace)) out.push({ palace: p.palace, stem: p.tianPan, zhi: hit.zhi, basis: hit.basis });
+  }
+  return out;
+}
+
+function ruMuOf(palaces) {
+  const out = [];
+  for (const p of palaces || []) {
+    const hit = RU_MU[p.tianPan];
+    if (hit && hit.palace === String(p.palace)) out.push({ palace: p.palace, stem: p.tianPan, zhi: hit.zhi, basis: hit.basis });
+  }
+  return out;
+}
+
+const QIMEN_CONDITION_TABLES = Object.freeze({
+  jiXing: Object.freeze(Object.fromEntries(Object.entries(JI_XING).map(([k, v]) => [k, { ...v }]))),
+  ruMu: Object.freeze(Object.fromEntries(Object.entries(RU_MU).map(([k, v]) => [k, { ...v }]))),
+});
 function getDiPan(type, num) {
   const result = {};
   let gong = num;
@@ -7097,6 +7134,10 @@ function buildQimen(input) {
     zhiShi: { gate: bm.zhiShiMen, gong: bm.zhiShiGong },
     kongWang: kongZhi,
     ma: { zhi: maZhi, gong: maGong },
+    conditions: {
+      jiXing: jiXingOf(palaces),
+      ruMu: ruMuOf(palaces),
+    },
     palaces,
     centerPalace,
     rules: [
@@ -7108,7 +7149,7 @@ function buildQimen(input) {
   };
 }
 
-return { buildSnapshot, wuxingRelation, gatePalaceRelation, buildQimen };
+return { buildSnapshot, wuxingRelation, gatePalaceRelation, jiXingOf, ruMuOf, QIMEN_CONDITION_TABLES, buildQimen };
 })();
 
 __mods['qimen-interpret'] = (function () {
@@ -7234,13 +7275,17 @@ function interpretQimen(r, opts = {}) {
     else if (rel.type === '宫制门') controlled.push(`${p.palace}宫（宫${rel.palace}克${p.gate}${rel.gate}）`);
   }
   const kongCells = r.palaces.filter((p) => p.kong).map((p) => `${p.palace}宫`);
+  const jiXing = (r.conditions && r.conditions.jiXing) || [];
+  const ruMu = (r.conditions && r.conditions.ruMu) || [];
   sections.push({
     key: 'conditions',
     label: '宫位条件',
     text: `门迫（同宫内门克宫）：${forced.length ? forced.join('、') : '本盘无'}；`
       + `宫制门（宫克门，属「制」不为迫）：${controlled.length ? controlled.join('、') : '无'}。`
+      + `击刑（天盘六仪落刑宫）：${jiXing.length ? jiXing.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}；`
+      + `入墓（天盘三奇落墓宫）：${ruMu.length ? ruMu.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}。`
       + (kongCells.length ? `空亡：${kongCells.join('、')}——落空之宫事多不实。` : '无落空之宫。')
-      + `门迫只作宫位条件，不自动等同于用神受制。`,
+      + `这三项都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
   });
 
   if (unresolved.length) {
@@ -8948,6 +8993,24 @@ const KNOWLEDGE = [
     source: '《烟波钓叟歌》；拆补与置闰见《奇门遁甲统宗》',
     status: 'variant',
     note: '三种取局法在节气交接前后差异最明显，本插件同时实现三种，可在参数里指定。',
+  },
+  {
+    id: 'qimen-jixing',
+    system: 'qimen', dims: ['overall', 'work'],
+    gist: '六仪落刑宫叫击刑，是宫位条件不是判决。',
+    detail: '六仪按所配地支相刑：甲子戊落震三（子刑卯）、甲戌己落坤二（戌刑未）、甲申庚落艮八（申刑寅）、甲午辛落离九（午自刑）、甲辰壬落巽四（辰自刑）、甲寅癸落巽四（寅刑巳）。天盘六仪落到自己那一宫即击刑，取象是受制、掣肘、旧账翻出来，多用来量这个符号本身使不使得上力。',
+    source: '《烟波钓叟歌》刑格注；《奇门遁甲统宗》',
+    status: 'variant',
+    note: '有流派只论天盘六仪击刑，也有把地盘一并算的；本插件只判天盘，且只作宫位条件，不自动断用神受制。',
+  },
+  {
+    id: 'qimen-rumu',
+    system: 'qimen', dims: ['overall'],
+    gist: '三奇落墓宫叫入墓：力量收进去，不容易使出来。',
+    detail: '按五行墓库推：乙木墓在未（未属坤二宫），丙丁火墓在戌（戌属乾六宫）。天盘乙奇落坤二、丙奇或丁奇落乾六，即三奇入墓。取象是收束、藏起来、事情压住不动；好坏要看所问之事——问收藏、问了结，入墓未必是坏事。',
+    source: '《奇门遁甲统宗》三奇入墓条；五行墓库见《五行大义》',
+    status: 'variant',
+    note: '各家对入墓范围说法不一：有只论三奇，也有把六仪、八门、九星一并论墓的；本插件只判天盘三奇，其余留白。',
   },
   {
     id: 'tarot-orientation',
@@ -10909,6 +10972,7 @@ function qimenText(r) {
     `【局数】${r.ju}　节气 ${r.jieqi}（${r.jieqiTime}）`,
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
+    `【宫位条件】击刑 ${(r.conditions && r.conditions.jiXing || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　入墓 ${(r.conditions && r.conditions.ruMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}`,
     `【九宫】${P.map(cell).join('　')}`,
     `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
     `※ ${r.rules[r.rules.length - 1]}`,
@@ -12977,6 +13041,10 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       ['驿马', r.ma && r.ma.zhi ? `${r.ma.zhi}${r.ma.gong ? `（${r.ma.gong}宫）` : ''}` : '—'],
       ['换局规则', r.juMethodNote || r.juMethod || '—'],
       ['晚子时', r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'],
+      ['击刑', (r.conditions && r.conditions.jiXing && r.conditions.jiXing.length)
+        ? r.conditions.jiXing.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
+      ['入墓', (r.conditions && r.conditions.ruMu && r.conditions.ruMu.length)
+        ? r.conditions.ruMu.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
     ];
     return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
   };
