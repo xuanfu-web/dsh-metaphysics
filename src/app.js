@@ -1190,6 +1190,23 @@ function safeApply(ctx) {
     { name: 'conversation.composer.dock', id: 'metaphysics-dock', order: 60 },
     ComposerProbe,
   ));
+
+  // 兜底重试：inject 等的是「槽位声明提交」，若外壳在插件激活很久之后才声明会话视图，
+  // 或 inject 因故没触发，这里在 15 秒内每 700ms 直接试着注册一次；桥一旦拿到 actions 就停。
+  let seatTries = 0;
+  const seatRetry = () => {
+    if (COMPOSER.ref || seatTries >= 20) return;
+    seatTries += 1;
+    const tag = '-' + seatTries;
+    try {
+      slots.register({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
+    } catch (e) { /* 未声明时这里必抛，忽略 */ }
+    try {
+      slots.register({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
+    } catch (e) { /* 同上 */ }
+    setTimeout(seatRetry, 700);
+  };
+  try { setTimeout(seatRetry, 700); } catch (e) { /* 无计时器环境 */ }
 }
 
 return {

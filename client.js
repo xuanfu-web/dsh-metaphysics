@@ -16272,6 +16272,21 @@ function safeApply(ctx) {
     { name: 'conversation.composer.dock', id: 'metaphysics-dock', order: 60 },
     ComposerProbe,
   ));
+
+  let seatTries = 0;
+  const seatRetry = () => {
+    if (COMPOSER.ref || seatTries >= 20) return;
+    seatTries += 1;
+    const tag = '-' + seatTries;
+    try {
+      slots.register({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
+    } catch (e) { /* 未声明时这里必抛，忽略 */ }
+    try {
+      slots.register({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
+    } catch (e) { /* 同上 */ }
+    setTimeout(seatRetry, 700);
+  };
+  try { setTimeout(seatRetry, 700); } catch (e) { /* 无计时器环境 */ }
 }
 
 return {
