@@ -12,7 +12,7 @@ import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
-import { followup } from './followup.js';
+import { followup, askPrompt } from './followup.js';
 import { crossCheck, crossText } from './crosscheck.js';
 import { pastSignals, verifyFit } from './verify.js';
 import { rectifyBirth } from './rectify.js';
@@ -1067,7 +1067,7 @@ export function renderText(result) {
 export { geocodeAddress, resolveAddress };
 
 export { buildBazi, buildLiuyao, tossLines };
-export { followup };
+export { followup, askPrompt };
 export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };

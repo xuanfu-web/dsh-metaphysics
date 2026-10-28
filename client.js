@@ -11592,7 +11592,54 @@ function followup(r, question) {
   return { question: q, ...result };
 }
 
-return { followup };
+const SYSTEM_LABEL = {
+  bazi: '八字（四柱）',
+  ziwei: '紫微斗数',
+  liuyao: '六爻',
+  meihua: '梅花易数',
+  daliuren: '大六壬',
+  qimen: '奇门遁甲',
+  tarot: '塔罗',
+  hepan: '合盘',
+  chenggu: '称骨',
+  almanac: '黄历',
+  zeri: '择日',
+  star: '星座',
+  numerology: '生命数字',
+  mbti: '十六型人格',
+  trend: '人生 K 线',
+  fengshui: '风水',
+  name: '起名',
+  convert: '公农历互转',
+};
+
+function askPrompt(r, opts = {}) {
+  const label = SYSTEM_LABEL[r && r.system] || (r && r.system) || '未知体系';
+  const asked = String((opts && opts.question) || '').trim();
+  const question = asked || '请先总览这张盘，指出最值得注意的一两处，并说明各自的依据。';
+  const limit = Number.isFinite(opts && opts.maxChars) && opts.maxChars >= 400 ? opts.maxChars : 3000;
+  const raw = String((r && r.summary) || '').trim();
+  const truncated = raw.length > limit;
+  const summary = truncated ? `${raw.slice(0, limit)}…（摘要已截断）` : raw;
+
+  const lines = [
+    '【命理追问】下面这张盘是命理插件刚排好的，请就着它回答我的问题；不用重新排盘，盘面字段已经够用。',
+    `体系：${label}`,
+    `所问：${question}`,
+    '',
+    '——盘面摘要——',
+    summary || '（这张盘没有摘要字段，请先让我重新排一次。）',
+    '',
+    '——回答要求——',
+    '1) 尽量引用到具体的柱、宫或爻，再说判断，别只给结论；',
+    '2) 盘面里没有依据的地方直接说「这盘里看不出来」，不要补外部假设；',
+    '3) 用概率和倾向的说法，别给绝对化的断言，也别把传统说法当成事实。',
+  ];
+  const text = lines.join('\n');
+  return { text, question, system: (r && r.system) || '', label, chars: text.length, truncated };
+}
+
+return { followup, askPrompt };
 })();
 
 __mods.crosscheck = (function () {
@@ -11894,7 +11941,7 @@ const { geocodeAddress, resolveAddress } = __mods.geo;
 const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
 const { randomOf, isSeed } = __mods.random;
 const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
-const { followup } = __mods.followup;
+const { followup, askPrompt } = __mods.followup;
 const { crossCheck, crossText } = __mods.crosscheck;
 const { pastSignals, verifyFit } = __mods.verify;
 const { rectifyBirth } = __mods.rectify;
@@ -12881,7 +12928,7 @@ function renderText(result) {
   return parts.filter(Boolean).join('\n\n');
 }
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, renderText };
 })();
 
     const Engine = __mods.index;
@@ -15308,6 +15355,25 @@ const kindOf = (t) => TIME_KIND[t] || 'none';
 const Core = window.__MPCore || {};
 const needAsk = Core.needAsk || ((t) => false);
 
+const COMPOSER = { ref: null };
+
+function ComposerBridge(props) {
+  const actions = props && props.inputActions ? props.inputActions : null;
+  useEffect(() => {
+    COMPOSER.ref = actions;
+    return () => { if (COMPOSER.ref === actions) COMPOSER.ref = null; };
+  }, [actions]);
+  return null;
+}
+
+function sendToComposer(text) {
+  const ia = COMPOSER.ref;
+  if (!ia || typeof ia.setDraft !== 'function' || typeof ia.submit !== 'function') return false;
+  ia.setDraft(text);
+  ia.submit();
+  return true;
+}
+
 function App() {
   const [tab, setTab] = useState('ziwei');
   const [date, setDate] = useState('1990-05-12');
@@ -15325,6 +15391,7 @@ function App() {
   const [qLateZi, setQLateZi] = useState('same-day');
   const [crossOn, setCrossOn] = useState(false);
   const [askText, setAskText] = useState('');
+  const [chatNote, setChatNote] = useState('');
   const [fx, setFx] = useState(null);
   const [pastMarks, setPastMarks] = useState({});
   const [fit, setFit] = useState(null);
@@ -15649,6 +15716,20 @@ function App() {
     try {
       setFx(Engine.followup ? Engine.followup(result.r, askText.trim()) : null);
     } catch (e) { setFx({ question: askText.trim(), ok: false, answer: '追问失败：' + (e && e.message ? e.message : e), evidence: [], confidence: '弱' }); }
+  };
+
+  const askInChat = () => {
+    if (!result || !result.r) return;
+    try {
+      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim() }) : null;
+      const text = p && p.text ? p.text : String(result.r.summary || '');
+      if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => setChatNote('对话输入框还没就绪，已复制提问；粘进对话窗回车即可。'),
+          () => setChatNote('对话输入框还没就绪，复制也没成功；先点「复制文字结果」再贴。'));
+      } else { setChatNote('对话输入框还没就绪；先点「复制文字结果」再贴进对话窗。'); }
+    } catch (e) { setChatNote('发到对话窗失败：' + (e && e.message ? e.message : e)); }
   };
 
   const downloadReport = () => {
@@ -16003,14 +16084,19 @@ function App() {
         onClick: downloadCard, title: '生成 PNG 摘要卡（一页读懂 + 首张表），适合直接分享',
       }, '存为摘要长图')) : null,
 
-    result ? h('div', { key: 'ask', className: 'mp-askbox' },
+    result ? h('div', { key: 'ask', className: 'mp-askbox', style: { flexWrap: 'wrap' } },
       h('input', {
         className: 'mp-input', value: askText, maxLength: 120,
         placeholder: '追问：如 2027 年事业怎么样（回车提交）',
         onChange: (e) => setAskText(e.target.value),
         onKeyDown: (e) => { if (e.key === 'Enter') doAsk(); },
       }),
-      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问')) : null,
+      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问'),
+      h('button', {
+        className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
+        onClick: askInChat, title: '把这张盘的摘要和你的问题一起发进 DSH 对话窗，由对话里的模型接着答',
+      }, '问进对话'),
+      chatNote ? h('div', { key: 'chatnote', className: 'mp-note', style: { marginTop: 6, fontSize: 12, flexBasis: '100%' } }, chatNote) : null) : null,
 
     fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
 
@@ -16113,6 +16199,11 @@ function safeApply(ctx) {
   ));
 
   waitFor('main', () => slots.register({ name: 'main', key: 'metaphysics' }, App));
+
+  waitFor('conversation.input.right', () => slots.register(
+    { name: 'conversation.input.right', id: 'metaphysics-ask', order: 40 },
+    ComposerBridge,
+  ));
 }
 
 return {

@@ -207,6 +207,29 @@ const kindOf = (t) => TIME_KIND[t] || 'none';
 const Core = window.__MPCore || {};
 const needAsk = Core.needAsk || ((t) => false);
 
+// ── 对话桥：把面板里的提问送进 DSH 对话窗口 ──────────────────────
+// conversation.input.right 是会话作用域槽位，props 带 inputActions：
+// setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
+// 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
+const COMPOSER = { ref: null };
+
+function ComposerBridge(props) {
+  const actions = props && props.inputActions ? props.inputActions : null;
+  useEffect(() => {
+    COMPOSER.ref = actions;
+    return () => { if (COMPOSER.ref === actions) COMPOSER.ref = null; };
+  }, [actions]);
+  return null;
+}
+
+function sendToComposer(text) {
+  const ia = COMPOSER.ref;
+  if (!ia || typeof ia.setDraft !== 'function' || typeof ia.submit !== 'function') return false;
+  ia.setDraft(text);
+  ia.submit();
+  return true;
+}
+
 function App() {
   const [tab, setTab] = useState('ziwei');
   const [date, setDate] = useState('1990-05-12');
@@ -228,6 +251,7 @@ function App() {
   // 八字 × 紫微交叉验证；追问输入与结果
   const [crossOn, setCrossOn] = useState(false);
   const [askText, setAskText] = useState('');
+  const [chatNote, setChatNote] = useState('');
   const [fx, setFx] = useState(null);
   // 验前事 / 生时校正
   const [pastMarks, setPastMarks] = useState({});
@@ -589,6 +613,21 @@ function App() {
     } catch (e) { setFx({ question: askText.trim(), ok: false, answer: '追问失败：' + (e && e.message ? e.message : e), evidence: [], confidence: '弱' }); }
   };
 
+  /** 问进对话：把当前盘与问题整理成一段提问，写进 DSH 输入框并提交 */
+  const askInChat = () => {
+    if (!result || !result.r) return;
+    try {
+      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim() }) : null;
+      const text = p && p.text ? p.text : String(result.r.summary || '');
+      if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => setChatNote('对话输入框还没就绪，已复制提问；粘进对话窗回车即可。'),
+          () => setChatNote('对话输入框还没就绪，复制也没成功；先点「复制文字结果」再贴。'));
+      } else { setChatNote('对话输入框还没就绪；先点「复制文字结果」再贴进对话窗。'); }
+    } catch (e) { setChatNote('发到对话窗失败：' + (e && e.message ? e.message : e)); }
+  };
+
   /** 导出 Markdown：盘面 + 解析（一页读懂 / 三张表 / 交叉验证） */
   const downloadReport = () => {
     if (!result || !result.r) return;
@@ -948,14 +987,19 @@ function App() {
         onClick: downloadCard, title: '生成 PNG 摘要卡（一页读懂 + 首张表），适合直接分享',
       }, '存为摘要长图')) : null,
 
-    result ? h('div', { key: 'ask', className: 'mp-askbox' },
+    result ? h('div', { key: 'ask', className: 'mp-askbox', style: { flexWrap: 'wrap' } },
       h('input', {
         className: 'mp-input', value: askText, maxLength: 120,
         placeholder: '追问：如 2027 年事业怎么样（回车提交）',
         onChange: (e) => setAskText(e.target.value),
         onKeyDown: (e) => { if (e.key === 'Enter') doAsk(); },
       }),
-      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问')) : null,
+      h('button', { className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px' }, onClick: doAsk }, '追问'),
+      h('button', {
+        className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
+        onClick: askInChat, title: '把这张盘的摘要和你的问题一起发进 DSH 对话窗，由对话里的模型接着答',
+      }, '问进对话'),
+      chatNote ? h('div', { key: 'chatnote', className: 'mp-note', style: { marginTop: 6, fontSize: 12, flexBasis: '100%' } }, chatNote) : null) : null,
 
     fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
 
@@ -1064,6 +1108,12 @@ function safeApply(ctx) {
   ));
 
   waitFor('main', () => slots.register({ name: 'main', key: 'metaphysics' }, App));
+
+  // 会话输入框右侧的小桥：只用来拿到 inputActions，不画界面
+  waitFor('conversation.input.right', () => slots.register(
+    { name: 'conversation.input.right', id: 'metaphysics-ask', order: 40 },
+    ComposerBridge,
+  ));
 }
 
 return {

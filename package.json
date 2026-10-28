@@ -1,8 +1,8 @@
 {
   "name": "dsh-metaphysics",
-  "version": "0.34.0",
+  "version": "0.35.0",
   "type": "module",
-  "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: nineteen systems and eleven quick references (almanac, solar–lunar conversion, …), with climate adjustment (tiaohou), the 120 Qiongtong Baojian entries, 391-char name library, classical quotes (Ziping Zhenquan / Di Tian Sui), hexagram body relations (六冲/六合/伏吟/反吟/化进神/化退神) plus yongshen placement (用神落位) with month/day strength (月建日辰旺衰) for liuyao, plus an MBTI-style 16-type questionnaire and exact dayun handover dates (交运日), palace conditions (击刑/入墓), month states (旺相休囚死) and stem–palace relations (天盘干与宫生克) for qimen, flying four-transformations (四化飞星串连) for ziwei, and a bundled offline single-file page (命理排盘.html).",
+  "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: nineteen systems and eleven quick references (almanac, solar–lunar conversion, …), with climate adjustment (tiaohou), the 120 Qiongtong Baojian entries, 391-char name library, classical quotes (Ziping Zhenquan / Di Tian Sui), hexagram body relations (六冲/六合/伏吟/反吟/化进神/化退神) plus yongshen placement (用神落位) with month/day strength (月建日辰旺衰) for liuyao, plus an MBTI-style 16-type questionnaire and exact dayun handover dates (交运日), palace conditions (击刑/入墓), month states (旺相休囚死) and stem–palace relations (天盘干与宫生克) for qimen, flying four-transformations (四化飞星串连) for ziwei, and a bundled offline single-file page (命理排盘.html), and a panel-to-chat handoff that asks the Harness about a finished chart.",
   "keywords": [
     "玄学",
     "玄学排盘",

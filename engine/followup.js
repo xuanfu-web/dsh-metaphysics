@@ -170,4 +170,62 @@ export function followup(r, question) {
   return { question: q, ...result };
 }
 
+/** 体系显示名：追问提示里用，避免把 bazi 这类内部键直接给用户看。 */
+const SYSTEM_LABEL = {
+  bazi: '八字（四柱）',
+  ziwei: '紫微斗数',
+  liuyao: '六爻',
+  meihua: '梅花易数',
+  daliuren: '大六壬',
+  qimen: '奇门遁甲',
+  tarot: '塔罗',
+  hepan: '合盘',
+  chenggu: '称骨',
+  almanac: '黄历',
+  zeri: '择日',
+  star: '星座',
+  numerology: '生命数字',
+  mbti: '十六型人格',
+  trend: '人生 K 线',
+  fengshui: '风水',
+  name: '起名',
+  convert: '公农历互转',
+};
+
+/**
+ * 把「就这一盘继续问」整理成一段可以发到对话窗口的提问。
+ *
+ * 这里只做文本组装，不调用模型、不改盘：面板里点「问进对话」时，
+ * 客户端把这段文字写进对话输入框并提交，由对话里的模型基于盘面回答。
+ *
+ * @param {object} r compute 的结果（至少要带 system 与 summary）
+ * @param {{question?:string, maxChars?:number}} [opts]
+ * @returns {{text:string, question:string, system:string, label:string, chars:number, truncated:boolean}}
+ */
+export function askPrompt(r, opts = {}) {
+  const label = SYSTEM_LABEL[r && r.system] || (r && r.system) || '未知体系';
+  const asked = String((opts && opts.question) || '').trim();
+  const question = asked || '请先总览这张盘，指出最值得注意的一两处，并说明各自的依据。';
+  const limit = Number.isFinite(opts && opts.maxChars) && opts.maxChars >= 400 ? opts.maxChars : 3000;
+  const raw = String((r && r.summary) || '').trim();
+  const truncated = raw.length > limit;
+  const summary = truncated ? `${raw.slice(0, limit)}…（摘要已截断）` : raw;
+
+  const lines = [
+    '【命理追问】下面这张盘是命理插件刚排好的，请就着它回答我的问题；不用重新排盘，盘面字段已经够用。',
+    `体系：${label}`,
+    `所问：${question}`,
+    '',
+    '——盘面摘要——',
+    summary || '（这张盘没有摘要字段，请先让我重新排一次。）',
+    '',
+    '——回答要求——',
+    '1) 尽量引用到具体的柱、宫或爻，再说判断，别只给结论；',
+    '2) 盘面里没有依据的地方直接说「这盘里看不出来」，不要补外部假设；',
+    '3) 用概率和倾向的说法，别给绝对化的断言，也别把传统说法当成事实。',
+  ];
+  const text = lines.join('\n');
+  return { text, question, system: (r && r.system) || '', label, chars: text.length, truncated };
+}
+
 export default followup;
