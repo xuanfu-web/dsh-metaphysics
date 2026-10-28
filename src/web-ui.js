@@ -22,6 +22,7 @@
     almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
     chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
+    mbti: 'none',
   };
   const SAMPLE = { date: '1990-05-12', time: '14:30' };
   const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -56,6 +57,7 @@
     trend: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。',
     fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。',
     name: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。',
+    mbti: '十六型人格是一份 MBTI 风格问卷：24 题按 1（完全不像）到 5（很像我）打分，四维度各取一侧；留空先出题目。',
   };
 
   // 问事的体系必须写清「所问之事」，解读才有落点；命盘类（八字/紫微）不问事，不显示这两项
@@ -382,6 +384,12 @@
         delete args.datetime;
       }
     }
+    if (tab === 'mbti') {
+      delete args.datetime;
+      const box = el('mbtianswers');
+      const nums = box ? String(box.value).split(/[^0-9]+/).filter((x) => x !== '').map((x) => Number(x)) : [];
+      if (nums.length) args.answers = nums;
+    }
     if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
     if (tab === 'fengshui') {
       args.action = fsMode;
@@ -428,6 +436,7 @@
                       : tab === 'chenggu' ? window.__PP.chengguHTML(r)
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : tab === 'name' ? window.__PP.nameHTML(r)
+                          : tab === 'mbti' ? window.__PP.mbtiHTML(r)
                           : window.__PP.quickHTML(r));
       last = { r, html, tab, date, time, timed, trend };
       paint();
@@ -470,7 +479,7 @@
     }
   }
 
-  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti'];
 
   function setTab(next) {
     tab = next;
@@ -483,6 +492,8 @@
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';
     el('for-hepan').style.display = tab === 'hepan' ? '' : 'none';
     el('for-qimen').style.display = tab === 'qimen' ? '' : 'none';
+    const fm = el('for-mbti');
+    if (fm) fm.style.display = tab === 'mbti' ? '' : 'none';
     const fq = el('for-quick');
     if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示

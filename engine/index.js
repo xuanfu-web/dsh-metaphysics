@@ -22,6 +22,7 @@ import { buildChenggu } from './chenggu.js';
 import { buildXiaoliuren } from './xiaoliuren.js';
 import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
+import { buildMbti, mbtiPaper } from './mbti.js';
 import { buildConvert } from './convert.js';
 import { classicsFor, classicsText } from './classics.js';
 import { buildTrend } from './trend.js';
@@ -714,6 +715,15 @@ function computeRaw(args = {}) {
     const result = buildNumerology({ year: dt.year, month: dt.month, day: dt.day });
     return { ...result, summary: numerologyText(result) };
   }
+  if (system === 'mbti') {
+    // 没给答案就先发问卷：让模型把 24 题交给用户逐题打分，而不是自己编一个类型
+    if (args.answers === undefined || args.answers === null) {
+      const paper = mbtiPaper();
+      return { ...paper, summary: mbtiPaperText(paper) };
+    }
+    const result = buildMbti({ answers: args.answers });
+    return { ...result, summary: mbtiText(result) };
+  }
   if (system === 'trend') {
     const dt = parseDateTime(args.datetime);
     const result = buildTrend({
@@ -783,9 +793,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。`);
 }
 
 /** 黄历文本 */
@@ -888,6 +898,43 @@ function numerologyText(r) {
   return [
     `【生命数字】${r.meta.date}（西方数字学，与八字/紫微不可互证）`,
     ...r.parts.map((p) => `${p.name}：${p.number}（${p.meaning.title}）　${p.meaning.keywords}\n　倾向：${p.meaning.tendency}\n　课题：${p.meaning.lesson}`),
+  ].join('\n');
+}
+
+/** 十六型人格文本 */
+function mbtiText(r) {
+  const dims = r.dims.map((d) => {
+    const side = d.picked === d.left ? d.leftSay : d.rightSay;
+    const pct = Math.round(d.pct * 100);
+    return `${d.left}/${d.right} 取 ${d.picked}（${d.strength} ${pct}%，净分 ${d.sum}）　${side}`;
+  });
+  const p = r.profile;
+  const stack = Array.isArray(p.stack) && p.stack.length
+    ? p.stack.map((f, i) => `${i === 0 ? '主导 ' : ''}${f.code}`).join(' → ') + `\n　${p.stack.map((f) => `${f.code}：${f.say}`).join('\n　')}`
+    : '';
+  return [
+    `【十六型人格】${r.type}（${p.title}）· ${p.keywords}　已答 ${r.answered}/${r.total} 题`,
+    `一句：${p.oneLine}`,
+    '【四维】',
+    ...dims,
+    `【优势】${p.strengths.join('；')}`,
+    `【留意】${p.blindspots.join('；')}`,
+    `【课题】${p.growth}`,
+    `【认知功能】${stack}`,
+    `【工作】${p.work}`,
+    `【关系】${p.love}`,
+    `【学习】${p.study}`,
+    `注：${r.note}`,
+  ].join('\n');
+}
+
+/** 问卷文本（还没答题时） */
+function mbtiPaperText(paper) {
+  return [
+    `【十六型人格问卷】${paper.total} 题，每题按 1（完全不像我）到 5（很像我）打分`,
+    ...paper.questions.map((q) => `${q.no}. ${q.text}`),
+    `请把 ${paper.total} 个分数按顺序交给 answers（如 [4,2,5,3,…]）；可以跳过某些题（填 null），至少答 12 题。`,
+    `注：${paper.note}`,
   ].join('\n');
 }
 

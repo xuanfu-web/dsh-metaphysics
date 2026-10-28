@@ -208,6 +208,7 @@ function page() {
       <button class="tab" data-tab="trend">人生K</button>
       <button class="tab" data-tab="fengshui">风水</button>
       <button class="tab" data-tab="name">起名</button>
+      <button class="tab" data-tab="mbti">人格</button>
     </div>
   </header>
 
@@ -351,6 +352,12 @@ function page() {
         </div>
         <label class="field" id="fs-advise" style="display:none">坐山<input id="sitting" placeholder="如 子 / 乾" value="子"></label>
         <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
+      </div>
+      <div id="for-mbti" style="display:none">
+        <label class="field">24 题分数（1–5，空格或逗号分隔）
+          <textarea id="mbtianswers" rows="2" placeholder="如 5 4 3 2 2 5 4 3 5 4 3 2 4 5 3 2 1 2 4 3 5 4 4 2"></textarea>
+        </label>
+        <p class="note">留空先出题目；每题 1 完全不像、5 很像我。这是一份 MBTI 风格问卷，不是官方量表。</p>
       </div>
       <div id="qk-name" style="display:none">
         <div class="field">看什么

@@ -172,6 +172,7 @@ const TABS = [
   { k: 'xiaoliuren', label: '小六壬', timeLabel: '起课时刻', hint: '小六壬用农历月/日/时掐指，也可用三个随机数起课。' },
   { k: 'star', label: '星座', timeLabel: '', hint: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。' },
   { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
+  { k: 'mbti', label: '人格', timeLabel: '', hint: '十六型人格是一份 MBTI 风格问卷：24 题按 1–5 打分，四维度各取一侧；只作自我参照，不是官方量表。' },
   { k: 'trend', label: '人生K线', timeLabel: '出生时刻', hint: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。' },
   { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。' },
   { k: 'name', label: '起名', timeLabel: '', hint: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。' },
@@ -196,6 +197,7 @@ const TIME_KIND = {
   almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
   chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
   xiaoliuren: 'cast',
+  mbti: 'none',
 };
 const SAMPLE = { date: '1990-05-12', time: '14:30' };
 const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -241,6 +243,8 @@ function App() {
   const [leapMonth, setLeapMonth] = useState(false);
   const [xlrMode, setXlrMode] = useState('time');
   const [num1, setNum1] = useState(''); const [num2, setNum2] = useState(''); const [num3, setNum3] = useState('');
+  // 十六型人格：24 个 1–5 的分数（空格/逗号分隔）；留空则先发问卷
+  const [answers, setAnswers] = useState('');
   const [toAge, setToAge] = useState('60');
   const [fsMode, setFsMode] = useState('natal');
   const [sitting, setSitting] = useState('子');
@@ -337,6 +341,11 @@ function App() {
           const hh = Number(String(dt.time).split(':')[0]);
           args.hour = Number.isFinite(hh) ? hh : 12;
         }
+      }
+      if (k === 'mbti') {
+        delete args.datetime;
+        const nums = String(answers).split(/[^0-9]+/).filter((x) => x !== '').map((x) => Number(x));
+        if (nums.length) args.answers = nums;
       }
       if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = trueSolar; args.lateZi = lateZi; }
       if (k === 'fengshui') {
@@ -808,6 +817,10 @@ function App() {
           className: 'mp-input', type: 'number', min: 1, max: 99, value: num3,
           onChange: (e) => setNum3(e.target.value),
         })) : null,
+        tab === 'mbti' ? field('24 题分数（1–5，空格或逗号分隔；留空先发问卷）', h('textarea', {
+          className: 'mp-textarea', rows: 2, value: answers, placeholder: '如 5 4 3 2 2 5 4 3 5 4 3 2 4 5 3 2 1 2 4 3 5 4 4 2',
+          onChange: (e) => setAnswers(e.target.value),
+        })) : null,
         tab === 'trend' ? field('算到几岁', h('input', {
           className: 'mp-input', type: 'number', min: 10, max: 100, value: toAge,
           onChange: (e) => setToAge(e.target.value),
@@ -915,6 +928,7 @@ function App() {
                         : result.kind === 'almanac' ? PP.almanacHTML(result.r)
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : result.kind === 'name' ? PP.nameHTML(result.r)
+                        : result.kind === 'mbti' ? PP.mbtiHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },

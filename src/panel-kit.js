@@ -624,6 +624,32 @@
 .mp-nm-c em{font-style:normal;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:var(--sans)}
 @media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
+/* —— 十六型人格卡片 —— */
+.mp-mb{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-mb-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
+.mp-mb-h b{font-family:var(--fx);font-size:20px;letter-spacing:1px;color:var(--ink)}
+.mp-mb-h i{font-style:normal;font-size:12px;color:var(--muted)}
+.mp-mb-dims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin-bottom:9px}
+.mp-mb-dim{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
+.mp-mb-dim b{font-size:13px;font-weight:600;color:var(--muted);font-family:var(--fx)}
+.mp-mb-dim b.on{color:var(--ink)}
+.mp-mb-bar{position:relative;height:10px;border-radius:5px;background:var(--hair);overflow:hidden}
+.mp-mb-bar em{position:absolute;top:0;bottom:0;display:block;background:var(--line)}
+.mp-mb-bar em.on{background:var(--good)}
+.mp-mb-dim i{font-style:normal;grid-column:1/-1;font-size:11px;color:var(--muted);line-height:1.6}
+.mp-mb-sec{margin:7px 0 0;font-size:12.5px;line-height:1.85;color:var(--ink2)}
+.mp-mb-sec em{font-style:normal;color:var(--lu);margin-right:6px}
+.mp-mb-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+.mp-mb-two>div{border:1px dashed var(--hair);border-radius:6px;padding:7px 9px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-mb-two b{display:block;font-size:11.5px;color:var(--lu);font-weight:600;margin-bottom:3px}
+.mp-mb-fn{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
+.mp-mb-fn span{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--ink2)}
+.mp-mb-note{margin-top:9px;font-size:11px;line-height:1.7;color:var(--muted);border-top:1px solid var(--hair);padding-top:7px}
+.mp-mb-paper{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-mb-paper ol{margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.9;color:var(--ink2)}
+.mp-mb-paper .mp-mb-note{margin-top:8px}
+@media (max-width:640px){.mp-mb-dims,.mp-mb-two{grid-template-columns:1fr}}
+@media print{.mp-mb{break-inside:avoid}}
 /* —— 黄历卡片 —— */
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-al-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
@@ -2195,11 +2221,60 @@
    * 速查类（择日/称骨/小六壬/星座/生命数字/人生K线/风水/起名/公农历）的通用渲染：
    * 这些体系给的是确定性结果，不做命盘式解读，直接把引擎摘要按等宽文本呈现。
    */
+  /**
+   * 十六型人格：四维净分条 + 类型倾向 + 优势/留意 + 认知功能栈 + 工作/关系/学习。
+   * 未答题时（引擎回问卷）改渲染题目清单，供照着逐题打分。
+   */
+  pp.mbtiHTML = function (r) {
+    if (!r) return '';
+    if (r.needAnswers && Array.isArray(r.questions)) {
+      const items = r.questions.map((q) => `<li>${esc(q.text)}</li>`).join('');
+      return `<section class="mp-mb-paper" aria-label="十六型人格问卷">
+        <div class="mp-mb-h"><b>十六型人格问卷</b><i>${r.total} 题 · 1 完全不像 / 5 很像我</i></div>
+        <ol>${items}</ol>
+        <div class="mp-mb-note">${esc(r.note || '')}</div>
+      </section>`;
+    }
+    const dims = (r.dims || []).map((d) => {
+      const pct = Math.round((d.pct || 0) * 100);
+      const leftOn = d.picked === d.left;
+      const width = Math.max(2, pct);
+      const bar = leftOn
+        ? `<em class="on" style="left:0;width:${width}%"></em>`
+        : `<em class="on" style="right:0;width:${width}%"></em>`;
+      const say = leftOn ? d.leftSay : d.rightSay;
+      return `<div class="mp-mb-dim">
+        <b class="${leftOn ? 'on' : ''}">${esc(d.left)}</b>
+        <div class="mp-mb-bar">${bar}</div>
+        <b class="${leftOn ? '' : 'on'}">${esc(d.right)}</b>
+        <i>${esc(d.name)} · 取 ${esc(d.picked)}（${esc(d.strength)} ${pct}%）· ${esc(say)}</i>
+      </div>`;
+    }).join('');
+    const p = r.profile || {};
+    const stack = (p.stack || []).map((f) => `<span>${esc(f.code)}　${esc(f.say)}</span>`).join('');
+    return `<section class="mp-mb" aria-label="十六型人格结果">
+      <div class="mp-mb-h"><b>${esc(r.type || '')}</b><i>${esc(p.title || '')} · ${esc(p.keywords || '')}　已答 ${r.answered || 0}/${r.total || 0} 题</i></div>
+      <div class="mp-mb-dims">${dims}</div>
+      <div class="mp-mb-sec"><em>一句</em>${esc(p.oneLine || '')}</div>
+      <div class="mp-mb-two">
+        <div><b>优势</b>${(p.strengths || []).map((s) => esc(s)).join('；')}</div>
+        <div><b>留意</b>${(p.blindspots || []).map((s) => esc(s)).join('；')}</div>
+      </div>
+      ${stack ? `<div class="mp-mb-sec"><em>认知功能</em>主导 ${esc((p.stack[0] || {}).code || '')} → 依次展开</div><div class="mp-mb-fn">${stack}</div>` : ''}
+      <div class="mp-mb-sec"><em>工作</em>${esc(p.work || '')}</div>
+      <div class="mp-mb-sec"><em>关系</em>${esc(p.love || '')}</div>
+      <div class="mp-mb-sec"><em>学习</em>${esc(p.study || '')}</div>
+      <div class="mp-mb-sec"><em>课题</em>${esc(p.growth || '')}</div>
+      <div class="mp-mb-note">${esc(r.note || '')}</div>
+    </section>`;
+  };
+
   pp.quickHTML = function (r) {
     if (!r) return '';
     const LABEL = {
       almanac: '黄历', zeri: '择日', chenggu: '称骨', xiaoliuren: '小六壬',
       star: '星座', numerology: '生命数字', trend: '人生 K 线', fengshui: '风水', name: '起名', convert: '公农历转换',
+      mbti: '十六型人格',
     };
     const title = LABEL[r.system] || '速查';
     const text = r.summary || '';
