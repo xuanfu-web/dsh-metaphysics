@@ -211,19 +211,67 @@ const needAsk = Core.needAsk || ((t) => false);
 // conversation.input.right 是会话作用域槽位，props 带 inputActions：
 // setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
 // 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
-const COMPOSER = { ref: null };
+const COMPOSER = { ref: null, seats: [], keys: '' };
+const LAST = { r: null, q: '' };
 
-function ComposerBridge(props) {
-  const actions = props && props.inputActions ? props.inputActions : null;
+// 槽位给的标准 props 里，inputActions 是对象；不同版本也可能挂在 actions.input 上。
+function bridgeActions(props) {
+  if (!props) return null;
+  const a = props.inputActions;
+  if (a && typeof a.setDraft === 'function' && typeof a.submit === 'function') return a;
+  const b = props.actions && props.actions.input;
+  if (b && typeof b.setDraft === 'function' && typeof b.submit === 'function') return b;
+  return null;
+}
+
+// 记录座位与拿到的 props；挂在两个槽位（输入框右侧 + 输入区 dock），任一座位可用即可。
+function useBridge(props, name) {
+  const actions = bridgeActions(props);
   useEffect(() => {
-    COMPOSER.ref = actions;
+    if (COMPOSER.seats.indexOf(name) < 0) COMPOSER.seats.push(name);
+    COMPOSER.keys = props ? Object.keys(props).join(',') : '';
+    if (actions) {
+      COMPOSER.ref = actions;
+      // 面板与桥万一被装成两份模块实例，靠 window 兜底也能互通
+      try { window.__MPComposer = actions; } catch (e) { /* 非浏览器环境忽略 */ }
+    }
     return () => { if (COMPOSER.ref === actions) COMPOSER.ref = null; };
-  }, [actions]);
+  }, [actions, name]);
+  return actions;
+}
+
+function askTextForLast() {
+  const r = LAST.r;
+  if (!r) return '';
+  try {
+    const p = Engine.askPrompt ? Engine.askPrompt(r, { question: LAST.q }) : null;
+    return (p && p.text) || String(r.summary || '');
+  } catch (e) { return String(r.summary || ''); }
+}
+
+// 输入框右侧的可见座位：挂上了就有按钮，拿不到 inputActions 就显式说一句，
+// 这样「桥没挂上」与「挂上了但没给 actions」能一眼分开。
+function ComposerBridge(props) {
+  const actions = useBridge(props, 'input.right');
+  if (!actions) {
+    return h('span', { className: 'mp-chip warn', title: '命理：已占住输入框槽位，但没拿到 inputActions；把这句话告诉作者' }, '命理·未就绪');
+  }
+  return h('button', {
+    type: 'button', className: 'mp-chip ok',
+    title: LAST.r ? '把上一张盘的摘要和问题发进对话窗' : '先在侧栏「命理」里排一张盘',
+    onClick: () => { const t = askTextForLast(); if (t) sendToComposer(t); },
+  }, '命理·问');
+}
+
+// 输入区 dock 的安静座位：不画界面，只为在 input.right 缺席时仍能拿到 actions。
+function ComposerProbe(props) {
+  useBridge(props, 'composer.dock');
   return null;
 }
 
 function sendToComposer(text) {
-  const ia = COMPOSER.ref;
+  let ia = COMPOSER.ref;
+  if (!ia) { try { ia = window.__MPComposer || null; } catch (e) { ia = null; } }
   if (!ia || typeof ia.setDraft !== 'function' || typeof ia.submit !== 'function') return false;
   ia.setDraft(text);
   ia.submit();
@@ -252,6 +300,9 @@ function App() {
   const [crossOn, setCrossOn] = useState(false);
   const [askText, setAskText] = useState('');
   const [chatNote, setChatNote] = useState('');
+  useEffect(() => {
+    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
+  }, [result, askText]);
   const [fx, setFx] = useState(null);
   // 验前事 / 生时校正
   const [pastMarks, setPastMarks] = useState({});
@@ -620,11 +671,12 @@ function App() {
       const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim() }) : null;
       const text = p && p.text ? p.text : String(result.r.summary || '');
       if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
+      const diag = '（桥：' + (COMPOSER.ref ? '已就绪' : (COMPOSER.seats.length ? '座位 ' + COMPOSER.seats.join('/') + ' 已挂但没拿到 inputActions' : '未挂载')) + '；props ' + (COMPOSER.keys || '—') + '）';
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(
-          () => setChatNote('对话输入框还没就绪，已复制提问；粘进对话窗回车即可。'),
-          () => setChatNote('对话输入框还没就绪，复制也没成功；先点「复制文字结果」再贴。'));
-      } else { setChatNote('对话输入框还没就绪；先点「复制文字结果」再贴进对话窗。'); }
+          () => setChatNote('对话输入框还没就绪' + diag + '，已复制提问；粘进对话窗回车即可。'),
+          () => setChatNote('对话输入框还没就绪' + diag + '，复制也没成功；先点「复制文字结果」再贴。'));
+      } else { setChatNote('对话输入框还没就绪' + diag + '；先点「复制文字结果」再贴进对话窗。'); }
     } catch (e) { setChatNote('发到对话窗失败：' + (e && e.message ? e.message : e)); }
   };
 
@@ -1110,9 +1162,33 @@ function safeApply(ctx) {
   waitFor('main', () => slots.register({ name: 'main', key: 'metaphysics' }, App));
 
   // 会话输入框右侧的小桥：只用来拿到 inputActions，不画界面
-  waitFor('conversation.input.right', () => slots.register(
+  // 会话作用域槽位由会话视图声明，通常晚于插件激活：inject 内部会等声明提交并重放。
+  // 外面再套一层 ctx.effect，让「声明后重放」落在本插件的 fiber 上（卸载即回收）。
+  const sessionSeat = (key, install) => {
+    const run = () => {
+      try { slots.inject(key, install); }
+      catch (e) {
+        console.error('[metaphysics] 槽位注册失败：' + key, e);
+        try { install(); } catch (e2) { console.error('[metaphysics] 直接注册也失败：' + key, e2); }
+      }
+    };
+    try {
+      if (typeof ctx.effect === 'function') ctx.effect(run, 'metaphysics: ' + key);
+      else run();
+    } catch (e) {
+      console.error('[metaphysics] effect 包裹失败：' + key, e);
+      run();
+    }
+  };
+
+  sessionSeat('conversation.input.right', () => slots.register(
     { name: 'conversation.input.right', id: 'metaphysics-ask', order: 40 },
     ComposerBridge,
+  ));
+
+  sessionSeat('conversation.composer.dock', () => slots.register(
+    { name: 'conversation.composer.dock', id: 'metaphysics-dock', order: 60 },
+    ComposerProbe,
   ));
 }
 
