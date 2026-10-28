@@ -1254,7 +1254,7 @@
     const bodyLabels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
     const bodyRow = bodyLabels.length
       ? `<div class="pp-chips">${bodyLabels.map((l) => {
-        const cls = /伏吟/.test(l) ? 'warn' : /反吟/.test(l) ? 'warn' : /六冲|散/.test(l) ? '' : 'ok';
+        const cls = /伏吟/.test(l) ? 'warn' : /反吟/.test(l) ? 'warn' : /化退神/.test(l) ? 'warn' : /六冲|散/.test(l) ? '' : 'ok';
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : `<div class="pp-chips"><span class="pp-chip">卦体无六冲、六合、伏吟、反吟</span></div>`;

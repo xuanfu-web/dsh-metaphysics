@@ -830,13 +830,17 @@ function liuyaoInterpret(r) {
     if (fanYinSides) bodyText.push(`${fanYinSides}反吟：变卦与本卦相冲，来源有两种——${fanYinBy.includes('chong') ? '地支三爻全冲' : ''}${fanYinBy.includes('chong') && fanYinBy.includes('pair') ? '，或' : ''}${fanYinBy.includes('pair') ? '本卦之宫与变卦之宫在后天八卦上正对（乾巽、坎离、艮坤、震兑）' : ''}。传统说「反吟主反复」，去而复来、方案改来改去。`);
     if (bd.yaoFanYin && bd.yaoFanYin.length) bodyText.push(`动爻反吟（第${bd.yaoFanYin.join('、')}爻）：变出的地支回头冲本爻，变化点本身在反复——动了又翻回来，等于绕一圈回到原处。`);
     if (bd.yaoFuYin && bd.yaoFuYin.length) bodyText.push(`动爻伏吟（第${bd.yaoFuYin.join('、')}爻）：变出的地支与本爻同支，动了等于没动，想推的事会卡在同一道坎上。`);
-    bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险，差别全在用神有没有受伤。');
+    const jinYao = (bd.jinTui || []).filter((x) => x.type === '进');
+    const tuiYao = (bd.jinTui || []).filter((x) => x.type === '退');
+    if (jinYao.length) bodyText.push(`化进神（第${jinYao.map((x) => x.position).join('、')}爻：${jinYao.map((x) => `${x.from}→${x.to}`).join('、')}）：变出的地支与本爻同五行、且顺着往前一步，传统读作「进」——这一爻代表的人或事有后劲，往前走比退回去顺。`);
+    if (tuiYao.length) bodyText.push(`化退神（第${tuiYao.map((x) => x.position).join('、')}爻：${tuiYao.map((x) => `${x.from}→${x.to}`).join('、')}）：变出的地支与本爻同五行、却倒着退一步，传统读作「退」——这一爻代表的人或事渐渐退气，别按原来的势头去推。`);
+    bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险；同一爻化进，也得看用神旺不旺、有没有月建日辰托着。');
     sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
   }
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神的细微差别，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、化进化退叠上月建日辰之后的实际力重，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [

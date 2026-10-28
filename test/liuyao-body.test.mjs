@@ -148,7 +148,8 @@ for (const ex of FIX.boshizhengzong || []) {
     ok(`卦例「${ex.name}」可装卦`, false, '卦名解析失败');
     continue;
   }
-  const got = bodyLabels(r.body).join('|');
+  // 化进神/化退神 由 test/liuyao-jintui.test.mjs 单独对拍，这里只核卦体（卦/爻）标签
+  const got = bodyLabels(r.body).filter((l) => !/^化[进退]神/.test(l)).join('|');
   // 断语关键词必须全部出现在标签里，标签也必须与期望值逐字一致
   const kwOk = ['六冲', '六合', '反吟', '伏吟'].every((kw) => (quote.includes(kw) ? got.includes(kw) : true));
   const same = got === expect;

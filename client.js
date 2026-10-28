@@ -3631,6 +3631,17 @@ const ZHI_HE_PAIRS = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '�
 const CHONG_OF = Object.fromEntries(ZHI_CHONG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
 const TRIGRAM_OPPOSITE = { 乾: '巽', 巽: '乾', 坎: '离', 离: '坎', 艮: '坤', 坤: '艮', 震: '兑', 兑: '震' };
 
+const JIN_TUI_PAIRS = [['寅', '卯'], ['巳', '午'], ['申', '酉'], ['亥', '子'], ['丑', '辰'], ['辰', '未'], ['未', '戌'], ['戌', '丑']];
+const JIN_OF = new Map(JIN_TUI_PAIRS);
+const TUI_OF = new Map(JIN_TUI_PAIRS.map(([a, b]) => [b, a]));
+
+function jinTuiOf(from, to) {
+  if (!from || !to || from === to) return null;
+  if (JIN_OF.get(from) === to) return '进';
+  if (TUI_OF.get(from) === to) return '退';
+  return null;
+}
+
 function pairThirds(branches, table) {
   const cnt = new Map();
   for (const b of branches) cnt.set(b, (cnt.get(b) || 0) + 1);
@@ -3679,6 +3690,7 @@ function bodyRelations(ben, bian = null, moving = []) {
     fanYin: { inner: null, outer: null }, // null 或 { by: ['chong'|'pair'] }
     yaoFuYin: [],
     yaoFanYin: [],
+    jinTui: [], // [{ position, from, to, type: '进'|'退' }]
   };
   if (!bian) return out;
 
@@ -3707,6 +3719,8 @@ function bodyRelations(ben, bian = null, moving = []) {
     const y = i < 3 ? v.inner[i] : v.outer[i - 3];
     if (x === y) out.yaoFuYin.push(p);
     else if (CHONG_OF[x] === y) out.yaoFanYin.push(p);
+    const jt = jinTuiOf(x, y);
+    if (jt) out.jinTui.push({ position: p, from: x, to: y, type: jt });
   }
   return out;
 }
@@ -3729,6 +3743,10 @@ function bodyLabels(body) {
   for (const [k, label] of sides) if (fanYin[k]) out.push(`${label}反吟`);
   if (yaoFuYin.length) out.push(`爻伏吟 ${yaoFuYin.join('、')}`);
   if (yaoFanYin.length) out.push(`爻反吟 ${yaoFanYin.join('、')}`);
+  const jin = (body.jinTui || []).filter((x) => x.type === '进').map((x) => x.position);
+  const tui = (body.jinTui || []).filter((x) => x.type === '退').map((x) => x.position);
+  if (jin.length) out.push(`化进神 ${jin.join('、')}`);
+  if (tui.length) out.push(`化退神 ${tui.join('、')}`);
   return out;
 }
 
@@ -3909,7 +3927,7 @@ function buildLiuyao(input = {}) {
   };
 }
 
-return { hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, tossLines, buildLiuyao };
+return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, tossLines, buildLiuyao };
 })();
 
 __mods.ziwei = (function () {
@@ -8618,7 +8636,20 @@ const PLAIN_BODY = {
   外卦伏吟: '外面那层没变，看起来在动，其实格局照旧。',
   内卦反吟: '反复在自己这一头，改了又改回来。',
   外卦反吟: '外面反复，对方或环境会来回拉扯。',
+  化进神: '有一爻在往上走，顺着这股劲推比往回拉顺。',
+  化退神: '有一爻在往后退，别按原来的势头硬推。',
 };
+
+function bodyPlainOf(labels) {
+  const keyOf = (l) => Object.keys(PLAIN_BODY).find((k) => l === k || l.startsWith(`${k} `)) || '';
+  const primary = labels.find((l) => keyOf(l));
+  const main = primary ? PLAIN_BODY[keyOf(primary)] : '';
+  const extra = labels
+    .filter((l) => l !== primary && /^化[进退]神 /.test(l))
+    .map((l) => PLAIN_BODY[keyOf(l)])
+    .filter(Boolean);
+  return main + extra.join('');
+}
 
 const DIR_SECTION = {
   wealth: '「工作与职业选择」与「时间窗」',
@@ -8675,7 +8706,7 @@ function buildAnswer(r, ask, ctx = {}) {
     const moving = (r.cast && r.cast.movingPositions) || [];
     const bian = r.bian || {};
     const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
-    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
+    const plainBody = bodyPlainOf(labels);
     return [
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
@@ -8711,7 +8742,7 @@ function buildPlain(r, ask, ctx = {}) {
     const ben = r.ben || {};
     const moving = (r.cast && r.cast.movingPositions) || [];
     const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
-    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
+    const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
       `${plainBody}`;
@@ -9024,6 +9055,23 @@ const KNOWLEDGE = [
     source: '《增删卜易》伏吟篇；《卜筮正宗》',
     status: 'variant',
     note: '另有「伏吟以用神受困论」的说法，不限于卦体；本插件只报卦体层面的伏吟与动爻伏吟，不推断吉凶轻重。',
+  },
+  {
+    id: 'liuyao-jintui',
+    system: 'liuyao', dims: ['overall'],
+    gist: '动爻变出同五行顺次之支，为化进神；反向为化退神。',
+    detail: '动爻变出的地支与本爻同五行、且在顺次上往前一步，叫化进神；倒退一步叫化退神。八对是：寅→卯（木）、巳→午（火）、申→酉（金）、亥→子（水），土一支成环，丑→辰→未→戌→丑。同五行但不相邻（如寅→辰）不算。进神取象是这一爻代表的人或事有后劲、势在往前；退神取象是渐渐退气、按原势头推会落空。',
+    source: '《增删卜易》进神退神章',
+    status: 'settled',
+  },
+  {
+    id: 'liuyao-jintui-yong',
+    system: 'liuyao', dims: ['overall', 'work'],
+    gist: '化进化退要看是用神还是忌神，还要叠月建日辰。',
+    detail: '进神退神本身只说明这一爻的向外趋势：用神化进为得力，忌神化进则为患加剧；用神化退是力衰，忌神化退反而是解脱。传统还要看它在本月令衰旺、有没有日辰生扶，空亡或受克时进者未必能进。所以本插件只标出化进/化退与爻位，力重与吉凶仍留给用神一节判断。',
+    source: '《增删卜易》进神退神章、用神章',
+    status: 'variant',
+    note: '土之进退次序各家说法不完全一致，有以丑→辰→未→戌为进、也有只取辰戌丑未相对者；本插件按丑辰未戌成环处理，并用《增删卜易》卦例中「未土化戌土为进」「戌土化未土为退」对拍。',
   },
 
   {
@@ -9884,13 +9932,17 @@ function liuyaoInterpret(r) {
     if (fanYinSides) bodyText.push(`${fanYinSides}反吟：变卦与本卦相冲，来源有两种——${fanYinBy.includes('chong') ? '地支三爻全冲' : ''}${fanYinBy.includes('chong') && fanYinBy.includes('pair') ? '，或' : ''}${fanYinBy.includes('pair') ? '本卦之宫与变卦之宫在后天八卦上正对（乾巽、坎离、艮坤、震兑）' : ''}。传统说「反吟主反复」，去而复来、方案改来改去。`);
     if (bd.yaoFanYin && bd.yaoFanYin.length) bodyText.push(`动爻反吟（第${bd.yaoFanYin.join('、')}爻）：变出的地支回头冲本爻，变化点本身在反复——动了又翻回来，等于绕一圈回到原处。`);
     if (bd.yaoFuYin && bd.yaoFuYin.length) bodyText.push(`动爻伏吟（第${bd.yaoFuYin.join('、')}爻）：变出的地支与本爻同支，动了等于没动，想推的事会卡在同一道坎上。`);
-    bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险，差别全在用神有没有受伤。');
+    const jinYao = (bd.jinTui || []).filter((x) => x.type === '进');
+    const tuiYao = (bd.jinTui || []).filter((x) => x.type === '退');
+    if (jinYao.length) bodyText.push(`化进神（第${jinYao.map((x) => x.position).join('、')}爻：${jinYao.map((x) => `${x.from}→${x.to}`).join('、')}）：变出的地支与本爻同五行、且顺着往前一步，传统读作「进」——这一爻代表的人或事有后劲，往前走比退回去顺。`);
+    if (tuiYao.length) bodyText.push(`化退神（第${tuiYao.map((x) => x.position).join('、')}爻：${tuiYao.map((x) => `${x.from}→${x.to}`).join('、')}）：变出的地支与本爻同五行、却倒着退一步，传统读作「退」——这一爻代表的人或事渐渐退气，别按原来的势头去推。`);
+    bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险；同一爻化进，也得看用神旺不旺、有没有月建日辰托着。');
     sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
   }
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、进神退神的细微差别，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：月建对爻的旺衰（只用了日辰）、伏神与飞神的完整生克链、化进化退叠上月建日辰之后的实际力重，以及用神多重时的取舍权重。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -12942,7 +12994,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const bodyLabels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
     const bodyRow = bodyLabels.length
       ? `<div class="pp-chips">${bodyLabels.map((l) => {
-        const cls = /伏吟/.test(l) ? 'warn' : /反吟/.test(l) ? 'warn' : /六冲|散/.test(l) ? '' : 'ok';
+        const cls = /伏吟/.test(l) ? 'warn' : /反吟/.test(l) ? 'warn' : /化退神/.test(l) ? 'warn' : /六冲|散/.test(l) ? '' : 'ok';
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : `<div class="pp-chips"><span class="pp-chip">卦体无六冲、六合、伏吟、反吟</span></div>`;

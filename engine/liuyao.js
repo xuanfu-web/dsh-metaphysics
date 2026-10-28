@@ -67,6 +67,23 @@ const ZHI_HE_PAIRS = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '�
 const CHONG_OF = Object.fromEntries(ZHI_CHONG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
 const TRIGRAM_OPPOSITE = { 乾: '巽', 巽: '乾', 坎: '离', 离: '坎', 艮: '坤', 坤: '艮', 震: '兑', 兑: '震' };
 
+// ── 化进神 / 化退神 ────────────────────────────────────────────────
+// 动爻变出的地支与本支同五行、且在同五行的「顺次」上相邻，即化进神；反向为化退神。
+//   木 寅→卯　火 巳→午　金 申→酉　水 亥→子　土 丑→辰→未→戌→丑
+// 口径见《增删卜易》进神退神章；用 test/fixtures/classics.json 里 12 条带「化进/化退」
+// 断语的卦例对拍（test/liuyao-jintui.test.mjs）。同五行但不相邻（如 寅→辰）不算。
+const JIN_TUI_PAIRS = [['寅', '卯'], ['巳', '午'], ['申', '酉'], ['亥', '子'], ['丑', '辰'], ['辰', '未'], ['未', '戌'], ['戌', '丑']];
+const JIN_OF = new Map(JIN_TUI_PAIRS);
+const TUI_OF = new Map(JIN_TUI_PAIRS.map(([a, b]) => [b, a]));
+
+/** 本支 → 变支：'进' / '退' / null */
+export function jinTuiOf(from, to) {
+  if (!from || !to || from === to) return null;
+  if (JIN_OF.get(from) === to) return '进';
+  if (TUI_OF.get(from) === to) return '退';
+  return null;
+}
+
 /** 六个地支能否正好配成三对；配不上（含重支）返回 null */
 function pairThirds(branches, table) {
   const cnt = new Map();
@@ -124,6 +141,7 @@ export function bodyRelations(ben, bian = null, moving = []) {
     fanYin: { inner: null, outer: null }, // null 或 { by: ['chong'|'pair'] }
     yaoFuYin: [],
     yaoFanYin: [],
+    jinTui: [], // [{ position, from, to, type: '进'|'退' }]
   };
   if (!bian) return out;
 
@@ -154,6 +172,8 @@ export function bodyRelations(ben, bian = null, moving = []) {
     const y = i < 3 ? v.inner[i] : v.outer[i - 3];
     if (x === y) out.yaoFuYin.push(p);
     else if (CHONG_OF[x] === y) out.yaoFanYin.push(p);
+    const jt = jinTuiOf(x, y);
+    if (jt) out.jinTui.push({ position: p, from: x, to: y, type: jt });
   }
   return out;
 }
@@ -177,6 +197,10 @@ export function bodyLabels(body) {
   for (const [k, label] of sides) if (fanYin[k]) out.push(`${label}反吟`);
   if (yaoFuYin.length) out.push(`爻伏吟 ${yaoFuYin.join('、')}`);
   if (yaoFanYin.length) out.push(`爻反吟 ${yaoFanYin.join('、')}`);
+  const jin = (body.jinTui || []).filter((x) => x.type === '进').map((x) => x.position);
+  const tui = (body.jinTui || []).filter((x) => x.type === '退').map((x) => x.position);
+  if (jin.length) out.push(`化进神 ${jin.join('、')}`);
+  if (tui.length) out.push(`化退神 ${tui.join('、')}`);
   return out;
 }
 

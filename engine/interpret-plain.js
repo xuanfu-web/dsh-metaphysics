@@ -29,7 +29,25 @@ const PLAIN_BODY = {
   外卦伏吟: '外面那层没变，看起来在动，其实格局照旧。',
   内卦反吟: '反复在自己这一头，改了又改回来。',
   外卦反吟: '外面反复，对方或环境会来回拉扯。',
+  化进神: '有一爻在往上走，顺着这股劲推比往回拉顺。',
+  化退神: '有一爻在往后退，别按原来的势头硬推。',
 };
+
+/**
+ * 六爻卦体 → 一句白话。
+ * 标签可能带爻位（「化进神 5」），所以按前缀匹配；
+ * 主句取标签顺序里第一个能说的，化进/化退作为补充句跟在后面（它们只说某一爻，不覆盖全局）。
+ */
+function bodyPlainOf(labels) {
+  const keyOf = (l) => Object.keys(PLAIN_BODY).find((k) => l === k || l.startsWith(`${k} `)) || '';
+  const primary = labels.find((l) => keyOf(l));
+  const main = primary ? PLAIN_BODY[keyOf(primary)] : '';
+  const extra = labels
+    .filter((l) => l !== primary && /^化[进退]神 /.test(l))
+    .map((l) => PLAIN_BODY[keyOf(l)])
+    .filter(Boolean);
+  return main + extra.join('');
+}
 
 // 询问方向 → 该往哪一节看
 const DIR_SECTION = {
@@ -90,7 +108,7 @@ export function buildAnswer(r, ask, ctx = {}) {
     const bian = r.bian || {};
     const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
     // 六冲六合伏吟反吟里挑最贴近当下局面的一句，避免四句叠着说
-    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
+    const plainBody = bodyPlainOf(labels);
     return [
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
@@ -127,7 +145,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const ben = r.ben || {};
     const moving = (r.cast && r.cast.movingPositions) || [];
     const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
-    const plainBody = PLAIN_BODY[labels.find((l) => PLAIN_BODY[l])] || '';
+    const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
       `${plainBody}`;
