@@ -6906,6 +6906,36 @@ const QIMEN_CONDITION_TABLES = Object.freeze({
   jiXing: Object.freeze(Object.fromEntries(Object.entries(JI_XING).map(([k, v]) => [k, { ...v }]))),
   ruMu: Object.freeze(Object.fromEntries(Object.entries(RU_MU).map(([k, v]) => [k, { ...v }]))),
 });
+
+const BRANCH_ELEMENT = {
+  子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火',
+  午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
+};
+function monthState(element, monthElement) {
+  if (!element || !monthElement) return 'unknown';
+  if (element === monthElement) return '旺';
+  if (SHENG[monthElement] === element) return '相';
+  if (SHENG[element] === monthElement) return '休';
+  if (KE[element] === monthElement) return '囚';
+  if (KE[monthElement] === element) return '死';
+  return 'unknown';
+}
+function monthElementOf(branch) {
+  return BRANCH_ELEMENT[branch] || null;
+}
+function groupByState(items, monthElement) {
+  const out = { 旺: [], 相: [], 休: [], 囚: [], 死: [] };
+  for (const it of items || []) {
+    const st = monthState(it.element, monthElement);
+    if (out[st]) out[st].push(it.name);
+  }
+  return out;
+}
+const QIMEN_STATE_TABLES = Object.freeze({
+  gate: Object.freeze({ ...GATE_ELEMENT }),
+  star: Object.freeze({ ...STAR_ELEMENT }),
+  branch: Object.freeze({ ...BRANCH_ELEMENT }),
+});
 function getDiPan(type, num) {
   const result = {};
   let gong = num;
@@ -7078,6 +7108,9 @@ function buildQimen(input) {
   const maZhi = maMap[hourGz[1]] || '';
   const maGong = ZHI_TO_GONG[maZhi] || '';
 
+  const monthBranch = (snapshot.monthGanZhi || '')[1] || '';
+  const monthElement = BRANCH_ELEMENT[monthBranch] || null;
+
   const centerPalace = {
     palace: '5',
     diPan: diPan['5'] || '',
@@ -7090,6 +7123,7 @@ function buildQimen(input) {
     gateElement: null,
     starElement: STAR_ELEMENT['天禽'],
     gateRelation: { type: 'unknown', note: '中宫无门，不参与门宫关系' },
+    starState: monthState(STAR_ELEMENT['天禽'], monthElement),
     kong: false,
     ma: false,
     center: true,
@@ -7107,6 +7141,8 @@ function buildQimen(input) {
     gateElement: GATE_ELEMENT[bm.baMen[gong]] || null,
     starElement: STAR_ELEMENT[jx.jiuXing[gong]] || null,
     gateRelation: gatePalaceRelation(bm.baMen[gong], gong),
+    gateState: monthState(GATE_ELEMENT[bm.baMen[gong]], monthElement),
+    starState: monthState(STAR_ELEMENT[jx.jiuXing[gong]], monthElement),
     kong: kongGong.includes(gong),
     ma: maGong === gong,
   }));
@@ -7138,6 +7174,11 @@ function buildQimen(input) {
       jiXing: jiXingOf(palaces),
       ruMu: ruMuOf(palaces),
     },
+    month: { branch: monthBranch, element: monthElement },
+    states: {
+      gate: groupByState(palaces.filter((p) => p.gate).map((p) => ({ name: p.gate, element: p.gateElement })), monthElement),
+      star: groupByState(palaces.map((p) => ({ name: p.star, element: p.starElement })), monthElement),
+    },
     palaces,
     centerPalace,
     rules: [
@@ -7149,7 +7190,7 @@ function buildQimen(input) {
   };
 }
 
-return { buildSnapshot, wuxingRelation, gatePalaceRelation, jiXingOf, ruMuOf, QIMEN_CONDITION_TABLES, buildQimen };
+return { buildSnapshot, wuxingRelation, gatePalaceRelation, jiXingOf, ruMuOf, QIMEN_CONDITION_TABLES, monthState, monthElementOf, groupByState, QIMEN_STATE_TABLES, buildQimen };
 })();
 
 __mods['qimen-interpret'] = (function () {
@@ -7288,6 +7329,22 @@ function interpretQimen(r, opts = {}) {
       + `这三项都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
   });
 
+  const mo = r.month || null;
+  const st = r.states || null;
+  if (mo && st) {
+    const order = ['旺', '相', '休', '囚', '死'];
+    const line = (g) => order.filter((k) => g && Array.isArray(g[k]) && g[k].length)
+      .map((k) => `${k} ${g[k].join('、')}`).join('；') || '—';
+    sections.push({
+      key: 'states',
+      label: '月令旺衰',
+      text: `月令 ${mo.branch}（${mo.element}）：`
+        + `门 ${line(st.gate)}。星 ${line(st.star)}。`
+        + `旺为同月令之气，相为月令所生，休为生月令，囚为克月令，死为月令所克。`
+        + `这一层只说明门与星自身力量强弱，不合吉凶：门旺而宫克门，仍受宫制；星旺而落宫死地，也难全其用。`,
+    });
+  }
+
   if (unresolved.length) {
     sections.push({
       key: 'tendency',
@@ -7301,7 +7358,7 @@ function interpretQimen(r, opts = {}) {
       key: 'tendency',
       label: '最终倾向',
       text: `在当前输入、规则集与所问之事下：若以「${primary.key}」为用神，用神宫对值符宫为「${rel}」，整体${tone}；`
-        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：月令旺衰未纳入本规则集。`,
+        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：月令旺衰只算到门与星，天盘干的旺衰未纳入本规则集。`,
     });
   }
 
@@ -9011,6 +9068,23 @@ const KNOWLEDGE = [
     source: '《奇门遁甲统宗》三奇入墓条；五行墓库见《五行大义》',
     status: 'variant',
     note: '各家对入墓范围说法不一：有只论三奇，也有把六仪、八门、九星一并论墓的；本插件只判天盘三奇，其余留白。',
+  },
+  {
+    id: 'qimen-wangshuai',
+    system: 'qimen', dims: ['overall', 'work'],
+    gist: '门与星按月令分旺相休囚死，只说明力量强弱。',
+    detail: '旺相休囚死以月支五行为尺：与月令同气为旺，月令所生为相，生月令为休，克月令为囚，被月令所克为死。八门与九星各按自身五行对月令，得出该门该星当下「使不使得上力」。比如午月火旺，景门（火）旺、生门死门（土）相、休门（水）囚、开门惊门（金）死。',
+    source: '《奇门遁甲统宗》门星旺衰条；五行旺相休囚死见《五行大义》',
+    status: 'settled',
+  },
+  {
+    id: 'qimen-wangshuai-yong',
+    system: 'qimen', dims: ['overall', 'work'],
+    gist: '旺衰是助力，不单独定吉凶：门旺而宫克门仍受制。',
+    detail: '月令旺衰只回答「这个符号自身有多少气」，不回答「事情成不成」。取象时要和宫位关系叠起来看：门旺但同宫门克宫（门迫），力量被宫位掣肘；门囚但宫生门，仍得宫助。星同理，旺星落宫若被克，也难全其用。',
+    source: '《奇门遁甲统宗》；《烟波钓叟歌》门宫生克注',
+    status: 'variant',
+    note: '有流派按时令而非月令论门星旺衰，也有以落宫五行当令者；本插件统一按月支五行判，并在解读里明确只作强度参考。',
   },
   {
     id: 'tarot-orientation',
@@ -10964,6 +11038,16 @@ function ziweiText(r) {
   ].filter(Boolean).join('\n');
 }
 
+const STATE_ORDER = ['旺', '相', '休', '囚', '死'];
+function stateLine(r) {
+  const st = r.states;
+  const mo = r.month;
+  if (!st || !mo) return '无月令数据';
+  const fmt = (g) => STATE_ORDER.filter((k) => g && Array.isArray(g[k]) && g[k].length)
+    .map((k) => `${k} ${g[k].join('/')}`).join('　');
+  return `月令 ${mo.branch}（${mo.element}）　门 ${fmt(st.gate) || '—'}　星 ${fmt(st.star) || '—'}`;
+}
+
 function qimenText(r) {
   const P = r.palaces;
   const cell = (x) => `${x.palace}宫 ${x.star || '—'}／${x.gate || '—'}／${x.god || '—'}${x.kong ? ' 空' : ''}${x.ma ? ' 马' : ''}`;
@@ -10973,6 +11057,7 @@ function qimenText(r) {
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
     `【宫位条件】击刑 ${(r.conditions && r.conditions.jiXing || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　入墓 ${(r.conditions && r.conditions.ruMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}`,
+    `【旺衰】${stateLine(r)}`,
     `【九宫】${P.map(cell).join('　')}`,
     `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
     `※ ${r.rules[r.rules.length - 1]}`,
@@ -13030,6 +13115,12 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
   pp.qimenFactsHTML = function (r) {
     if (!r || !r.palaces) return '';
     const row = (k, v) => `<div class="relation__row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`;
+    const stateCell = (g) => {
+      if (!g) return '—';
+      const parts = ['旺', '相', '休', '囚', '死'].filter((k) => Array.isArray(g[k]) && g[k].length)
+        .map((k) => `${k} ${g[k].join('、')}`);
+      return parts.join('；') || '—';
+    };
     const rows = [
       ['局数', `${r.ju}${r.yuan ? `（${r.yuan}）` : ''}`],
       ['节气', `${r.jieqi || '—'}${r.jieqiTime ? `（${r.jieqiTime}）` : ''}`],
@@ -13045,6 +13136,9 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         ? r.conditions.jiXing.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
       ['入墓', (r.conditions && r.conditions.ruMu && r.conditions.ruMu.length)
         ? r.conditions.ruMu.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
+      ['月令', r.month && r.month.branch ? `${r.month.branch}（${r.month.element}）` : '—'],
+      ['门旺衰', stateCell(r.states && r.states.gate)],
+      ['星旺衰', stateCell(r.states && r.states.star)],
     ];
     return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
   };

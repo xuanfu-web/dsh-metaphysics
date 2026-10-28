@@ -20,7 +20,7 @@ ok('事实区是 dl', /^<dl class="relation[^"]*"[^>]*>/.test(html), html.slice(
 ok('事实区带 aria-label', /aria-label="奇门盘面事实"/.test(html));
 ok('事实行是 div 包裹的 dt/dd', (html.match(/<div class="relation__row"><dt>/g) || []).length >= 8,
   String((html.match(/<div class="relation__row"><dt>/g) || []).length));
-for (const label of ['局数', '节气', '值符', '值使', '空亡', '驿马', '换局规则', '晚子时']) {
+for (const label of ['局数', '节气', '值符', '值使', '空亡', '驿马', '换局规则', '晚子时', '月令', '门旺衰', '星旺衰']) {
   ok(`事实含「${label}」`, html.includes(`<dt>${label}</dt>`));
 }
 // 值必须来自盘面数据，不是空的

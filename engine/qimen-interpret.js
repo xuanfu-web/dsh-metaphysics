@@ -141,6 +141,23 @@ export function interpretQimen(r, opts = {}) {
       + `这三项都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
   });
 
+  // ⑤b 月令旺衰：门与星按月支五行判五态（与门迫这类宫位关系分开）
+  const mo = r.month || null;
+  const st = r.states || null;
+  if (mo && st) {
+    const order = ['旺', '相', '休', '囚', '死'];
+    const line = (g) => order.filter((k) => g && Array.isArray(g[k]) && g[k].length)
+      .map((k) => `${k} ${g[k].join('、')}`).join('；') || '—';
+    sections.push({
+      key: 'states',
+      label: '月令旺衰',
+      text: `月令 ${mo.branch}（${mo.element}）：`
+        + `门 ${line(st.gate)}。星 ${line(st.star)}。`
+        + `旺为同月令之气，相为月令所生，休为生月令，囚为克月令，死为月令所克。`
+        + `这一层只说明门与星自身力量强弱，不合吉凶：门旺而宫克门，仍受宫制；星旺而落宫死地，也难全其用。`,
+    });
+  }
+
   // ⑥ 条件式倾向
   if (unresolved.length) {
     sections.push({
@@ -155,7 +172,7 @@ export function interpretQimen(r, opts = {}) {
       key: 'tendency',
       label: '最终倾向',
       text: `在当前输入、规则集与所问之事下：若以「${primary.key}」为用神，用神宫对值符宫为「${rel}」，整体${tone}；`
-        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：月令旺衰未纳入本规则集。`,
+        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：月令旺衰只算到门与星，天盘干的旺衰未纳入本规则集。`,
     });
   }
 

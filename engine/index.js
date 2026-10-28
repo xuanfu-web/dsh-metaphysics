@@ -177,6 +177,17 @@ function ziweiText(r) {
   ].filter(Boolean).join('\n');
 }
 
+const STATE_ORDER = ['旺', '相', '休', '囚', '死'];
+/** 门/星的月令五态，按 旺相休囚死 顺序拼成一行 */
+function stateLine(r) {
+  const st = r.states;
+  const mo = r.month;
+  if (!st || !mo) return '无月令数据';
+  const fmt = (g) => STATE_ORDER.filter((k) => g && Array.isArray(g[k]) && g[k].length)
+    .map((k) => `${k} ${g[k].join('/')}`).join('　');
+  return `月令 ${mo.branch}（${mo.element}）　门 ${fmt(st.gate) || '—'}　星 ${fmt(st.star) || '—'}`;
+}
+
 function qimenText(r) {
   const P = r.palaces;
   const cell = (x) => `${x.palace}宫 ${x.star || '—'}／${x.gate || '—'}／${x.god || '—'}${x.kong ? ' 空' : ''}${x.ma ? ' 马' : ''}`;
@@ -186,6 +197,7 @@ function qimenText(r) {
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
     `【宫位条件】击刑 ${(r.conditions && r.conditions.jiXing || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　入墓 ${(r.conditions && r.conditions.ruMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}`,
+    `【旺衰】${stateLine(r)}`,
     `【九宫】${P.map(cell).join('　')}`,
     `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
     `※ ${r.rules[r.rules.length - 1]}`,

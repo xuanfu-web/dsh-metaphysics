@@ -223,6 +223,43 @@ export const QIMEN_CONDITION_TABLES = Object.freeze({
   jiXing: Object.freeze(Object.fromEntries(Object.entries(JI_XING).map(([k, v]) => [k, { ...v }]))),
   ruMu: Object.freeze(Object.fromEntries(Object.entries(RU_MU).map(([k, v]) => [k, { ...v }]))),
 });
+
+// ── 月令旺衰：门与星对月令的五态 ─────────────────────────────
+// 五行在月令的旺相休囚死：与月令同气为旺，月令生之为相，生月令为休，
+// 克月令为囚，被月令克为死。只作「力量强弱」的事实，不折成吉凶。
+const BRANCH_ELEMENT = {
+  子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火',
+  午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
+};
+/** 旺相休囚死：element 在 monthElement 月令中的状态 */
+export function monthState(element, monthElement) {
+  if (!element || !monthElement) return 'unknown';
+  if (element === monthElement) return '旺';
+  if (SHENG[monthElement] === element) return '相';
+  if (SHENG[element] === monthElement) return '休';
+  if (KE[element] === monthElement) return '囚';
+  if (KE[monthElement] === element) return '死';
+  return 'unknown';
+}
+/** 月支 → 月令五行 */
+export function monthElementOf(branch) {
+  return BRANCH_ELEMENT[branch] || null;
+}
+/** 把一组 {name, element} 按状态归堆 → {旺:[…],相:[…],休:[…],囚:[…],死:[…]} */
+export function groupByState(items, monthElement) {
+  const out = { 旺: [], 相: [], 休: [], 囚: [], 死: [] };
+  for (const it of items || []) {
+    const st = monthState(it.element, monthElement);
+    if (out[st]) out[st].push(it.name);
+  }
+  return out;
+}
+/** 供测试与文档引用：门/星五行与月支五行的只读视图 */
+export const QIMEN_STATE_TABLES = Object.freeze({
+  gate: Object.freeze({ ...GATE_ELEMENT }),
+  star: Object.freeze({ ...STAR_ELEMENT }),
+  branch: Object.freeze({ ...BRANCH_ELEMENT }),
+});
 function getDiPan(type, num) {
   const result = {};
   let gong = num;
@@ -404,6 +441,10 @@ export function buildQimen(input) {
   const maZhi = maMap[hourGz[1]] || '';
   const maGong = ZHI_TO_GONG[maZhi] || '';
 
+  // 月令：门与星的力量强弱都按月支五行判，与局数、宫位分开记
+  const monthBranch = (snapshot.monthGanZhi || '')[1] || '';
+  const monthElement = BRANCH_ELEMENT[monthBranch] || null;
+
   // 中五宫单列（天禽寄坤二，门神为空），与参照实现的九宫结构对齐
   const centerPalace = {
     palace: '5',
@@ -417,6 +458,7 @@ export function buildQimen(input) {
     gateElement: null,
     starElement: STAR_ELEMENT['天禽'],
     gateRelation: { type: 'unknown', note: '中宫无门，不参与门宫关系' },
+    starState: monthState(STAR_ELEMENT['天禽'], monthElement),
     kong: false,
     ma: false,
     center: true,
@@ -434,6 +476,8 @@ export function buildQimen(input) {
     gateElement: GATE_ELEMENT[bm.baMen[gong]] || null,
     starElement: STAR_ELEMENT[jx.jiuXing[gong]] || null,
     gateRelation: gatePalaceRelation(bm.baMen[gong], gong),
+    gateState: monthState(GATE_ELEMENT[bm.baMen[gong]], monthElement),
+    starState: monthState(STAR_ELEMENT[jx.jiuXing[gong]], monthElement),
     kong: kongGong.includes(gong),
     ma: maGong === gong,
   }));
@@ -466,6 +510,12 @@ export function buildQimen(input) {
     conditions: {
       jiXing: jiXingOf(palaces),
       ruMu: ruMuOf(palaces),
+    },
+    // 月令与门/星旺衰：按月支五行判旺相休囚死，只报强弱、不折吉凶
+    month: { branch: monthBranch, element: monthElement },
+    states: {
+      gate: groupByState(palaces.filter((p) => p.gate).map((p) => ({ name: p.gate, element: p.gateElement })), monthElement),
+      star: groupByState(palaces.map((p) => ({ name: p.star, element: p.starElement })), monthElement),
     },
     palaces,
     centerPalace,

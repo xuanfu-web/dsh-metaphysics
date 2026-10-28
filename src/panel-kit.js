@@ -1434,6 +1434,13 @@
   pp.qimenFactsHTML = function (r) {
     if (!r || !r.palaces) return '';
     const row = (k, v) => `<div class="relation__row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`;
+    // 门/星按月令的五态：旺 景门；相 死门、生门；…
+    const stateCell = (g) => {
+      if (!g) return '—';
+      const parts = ['旺', '相', '休', '囚', '死'].filter((k) => Array.isArray(g[k]) && g[k].length)
+        .map((k) => `${k} ${g[k].join('、')}`);
+      return parts.join('；') || '—';
+    };
     const rows = [
       ['局数', `${r.ju}${r.yuan ? `（${r.yuan}）` : ''}`],
       ['节气', `${r.jieqi || '—'}${r.jieqiTime ? `（${r.jieqiTime}）` : ''}`],
@@ -1449,6 +1456,9 @@
         ? r.conditions.jiXing.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
       ['入墓', (r.conditions && r.conditions.ruMu && r.conditions.ruMu.length)
         ? r.conditions.ruMu.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
+      ['月令', r.month && r.month.branch ? `${r.month.branch}（${r.month.element}）` : '—'],
+      ['门旺衰', stateCell(r.states && r.states.gate)],
+      ['星旺衰', stateCell(r.states && r.states.star)],
     ];
     return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
   };
