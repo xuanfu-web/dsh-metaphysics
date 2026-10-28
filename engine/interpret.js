@@ -645,7 +645,7 @@ function ziweiInterpret(r) {
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：飞星四化（宫干引发的连锁）、小限与大限的加权、流日流时的具体事项定位，以及双星组合的强弱细分。四化表取中州派常用口径，其他流派（如飞星派）结论会不同；这些不改变盘面事实，只影响轻重，所以只作方向参考。',
+      text: '本盘没有计算：小限与大限的加权、流日流时的具体事项定位、双星组合的强弱细分，以及「三方四正一起飞」的复合飞化（这里只跟单一支化逐宫串连）。四化表取中州派常用口径，其他流派（如飞星派）结论会不同；这些不改变盘面事实，只影响轻重，所以只作方向参考。',
     },
   ];
   if (natalSihua.length) {
@@ -661,6 +661,39 @@ function ziweiInterpret(r) {
         `读法上，化禄的宫位做起来比较顺手、也容易有人帮忙；化权的宫位偏向由你拿主意、但也更容易用力过猛；化科的宫位自带一层体面与贵人缘，遇到事多半能体面收场；化忌的宫位是你容易在意、也容易反复的地方。` +
         `${kePart}这几处只是长期倾向，落到具体某一年还要配上流年四化一起看，不必把它当成结论。`,
     });
+  }
+
+  // 飞星四化：宫干定星、星定落宫，跟着同一支化一路串到成环
+  {
+    const fc = r.flyChains;
+    const word = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+    if (fc) {
+      const chainOf = (t) => {
+        const ch = fc[t];
+        if (!ch || !ch.steps.length) return `${t}：命宫这一干不化${t}星`;
+        const hops = ch.steps
+          .map((s) => `${word(s.from)}（${s.fromStem}）化${t}${s.star}→${word(s.to)}（${s.toBranch}）`)
+          .join('；');
+        return `${t}：${hops}${ch.closed ? `，绕回${word(ch.path[ch.path.length - 1])}成环` : ''}`;
+      };
+      const selfs = (r.fly || []).flatMap((p) => (p.flies || [])
+        .filter((f) => f.self)
+        .map((f) => `${word(p.palace)}（${p.stem}）化${f.type}${f.star}落回本宫`));
+      const ji = fc.忌;
+      const jiRead = ji && ji.steps.length
+        ? `忌这一条最值得盯：${word(ji.from)}化忌入${word(ji.steps[0].to)}，${word(ji.steps[0].to)}的宫干再化忌往下一宫去，${ji.closed ? `最后绕回${word(ji.path[ji.path.length - 1])}` : '走到没有可落的星就停下'}——` +
+          `这条线就是你反复着力的那一圈，` +
+          `${ji.closed ? '环越短越容易在同一组宫位上打转（传统说「忌出不去」）' : '没成环表示这条力还有落点没走完'}。`
+        : '命宫这一干化忌未上盘，忌线不成立。';
+      sections.push({
+        key: 'fly', label: '四化飞星',
+        text: `生年四化说的是「一出场就带着什么」，飞星四化说的是「这一宫自己会去找谁」：宫干定出四颗化星，星落到哪一宫，这一宫的力就往哪边使。` +
+          `从命宫出发，四条线各串一遍——${chainOf('禄')}；${chainOf('权')}；${chainOf('科')}；${chainOf('忌')}。` +
+          `${jiRead}` +
+          `另外，四化落回本宫的是自化：${selfs.length ? selfs.join('、') + '——自己化出去又回到自己，常表现为「说得多、落得少」或一阵一阵的劲头' : '本盘没有自化'}。` +
+          `这一层只描方向与牵引，不断吉凶：同样是化忌入某宫，落在生年忌上还是落在生年禄上，味道完全不同，得并着生年四化看。`,
+      });
+    }
   }
 
   // 流月/流日/流时：流年只回答「今年」，再往下才是「这个月」「这两天」

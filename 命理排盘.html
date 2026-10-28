@@ -5262,6 +5262,8 @@ function buildZiwei(input) {
 
   chart.patterns = detectPatterns(chart);
   chart.daxianList = daxianList(chart);
+  chart.fly = flyStars(chart);
+  chart.flyChains = flyChains(chart, { from: '命宫' });
   enrichLiunian(chart);
   // 流月/流日/流时：默认按本机当前时刻，可用 asOf 指定（如 "2026-10-22T16:00"）
   chart.flow = flowOf(chart, input.asOf);
@@ -5454,6 +5456,83 @@ function daxianList(chart) {
     .sort((a, b) => a.ages[0] - b.ages[0]);
 }
 
+// ── 四化飞星：宫干四化飞向哪一宫，以及「串连」────────────────────
+// 生年四化看「这颗星先天带着什么」，飞星四化看「这一宫自己会去找谁」：
+// 宫干定出四个化星，星曜落在哪一宫，就是这一宫的禄/权/科/忌飞向哪里。
+// 串连（忌转忌、科转科…）是同一支化一路跟下去：命宫化忌入 A 宫，A 宫的宫干再化忌入 B 宫……
+// 走到回到已访问过的宫就成环（传统讲的「忌出」「自化」都在这一步显现）。
+
+const FLY_TYPES = ['禄', '权', '科', '忌'];
+
+// 某天干下某一化的星曜；表里没有就返回 null（不会凭印象补）
+function flyStarOf(stem, type) {
+  const map = MUTAGEN[stem];
+  if (!map) return null;
+  for (const [star, t] of Object.entries(map)) if (t === type) return star;
+  return null;
+}
+
+// 12 宫各自的四化落点（一次算全，供面板与解读共用）
+function flyStars(chart) {
+  const palaces = chart.palaces || [];
+  return palaces.map((p) => ({
+    palace: p.palace,
+    branch: p.branch,
+    stem: p.stem,
+    flies: FLY_TYPES.map((type) => {
+      const star = flyStarOf(p.stem, type);
+      const b = star ? starBranchOf(chart, star) : -1;
+      const target = b >= 0 ? palaces.find((x) => x.branch === BRANCHES[b]) : null;
+      return {
+        type,
+        star,
+        to: target ? target.palace : null,
+        toBranch: target ? target.branch : null,
+        // 落回本宫即自化：这一宫自己化出去又回到自己
+        self: !!(target && target.palace === p.palace),
+      };
+    }),
+  }));
+}
+
+// 从某一宫出发，跟着同一支化逐跳；ended 说明为什么停：
+// cycle=回到走过的宫（成环）、no-star=该干这一化无星、off-chart=星未上盘、max=走满上限
+function flyChain(chart, { from = '命宫', type = '忌', maxSteps = 12 } = {}) {
+  const palaces = chart.palaces || [];
+  const start = palaces.find((p) => p.palace === from) || palaces[0];
+  if (!start) return null;
+  const steps = [];
+  const seen = new Set([start.palace]);
+  let cur = start;
+  let ended = 'max';
+  for (let i = 0; i < Math.max(1, maxSteps); i++) {
+    const star = flyStarOf(cur.stem, type);
+    if (!star) { ended = 'no-star'; break; }
+    const b = starBranchOf(chart, star);
+    if (b < 0) { ended = 'off-chart'; break; }
+    const to = palaces.find((x) => x.branch === BRANCHES[b]);
+    steps.push({ from: cur.palace, fromBranch: cur.branch, fromStem: cur.stem, star, type, to: to.palace, toBranch: to.branch });
+    if (seen.has(to.palace)) { ended = 'cycle'; break; }
+    seen.add(to.palace);
+    cur = to;
+  }
+  return {
+    from: start.palace,
+    type,
+    steps,
+    path: [start.palace, ...steps.map((s) => s.to)],
+    ended,
+    closed: ended === 'cycle',
+  };
+}
+
+// 某一宫的四支化各串一条（默认命宫）
+function flyChains(chart, { from = '命宫', maxSteps = 12 } = {}) {
+  const out = {};
+  for (const type of FLY_TYPES) out[type] = flyChain(chart, { from, type, maxSteps });
+  return out;
+}
+
 // ── 流年四化落宫 ────────────────────────────────────────────
 
 function enrichLiunian(chart) {
@@ -5563,7 +5642,7 @@ function flowOf(chart, asOf) {
   };
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, enrichLiunian, asOfParts, flowOf };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, enrichLiunian, asOfParts, flowOf };
 })();
 
 __mods.tarot = (function () {
@@ -9969,12 +10048,17 @@ function buildAnswer(r, ask, ctx = {}) {
     const body = r.body || {};
     const bureau = r.bureau || {};
     const md = r.lifeMaster || '';
+    const ji = r.flyChains && r.flyChains.忌;
+    const plainFly = ji && ji.steps.length
+      ? `还有一条线值得留意：${ji.path.map((p) => p.replace(/宫$/, '')).join(' → ')}——这几件事在你身上是连着转的，一件卡住，容易牵动下一件。`
+      : '';
     return [
       head + `先说结论：你的命宫落${s(soul.branch, '—')}宫` +
         `${bureau.name ? `、${bureau.name}` : ''}${md ? `，命主${md}` : ''}` +
         `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
+      plainFly,
       `具体到你问的这件事，重点看${where}。`,
-    ].join('');
+    ].filter(Boolean).join('');
   }
 
   if (r.system === 'liuyao') {
@@ -10013,8 +10097,16 @@ function buildPlain(r, ask, ctx = {}) {
   if (r.system === 'ziwei') {
     const soul = r.soul || {};
     const body = r.body || {};
-    return `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
-      `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`;
+    const ji = r.flyChains && r.flyChains.忌;
+    // 只挑忌这一条白话：它最能说「你反复在哪几件事上使劲」
+    const plainFly = ji && ji.steps.length
+      ? `另外有一条线值得留意：${ji.path.map((p) => p.replace(/宫$/, '')).join(' → ')}——这几件事在你身上是连着转的，一件事卡住，容易牵动下一件。`
+      : '';
+    return [
+      `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
+        `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`,
+      plainFly,
+    ].filter(Boolean).join('');
   }
   if (r.system === 'liuyao') {
     const ben = r.ben || {};
@@ -10265,6 +10357,24 @@ const KNOWLEDGE = [
     status: 'variant',
     note: '空劫是否见禄反吉，各家说法不一，本插件只提示变动性质，不判吉凶。',
   },
+  {
+    id: 'ziwei-feixing',
+    system: 'ziwei', dims: ['overall', 'career'],
+    gist: '宫干定四化，星落哪宫，这一宫的力就往哪边走。',
+    detail: '生年四化是先天带的，飞星四化是宫位自己去找的：每一宫的宫干定出禄权科忌四颗星，那几颗星落在哪一宫，就是这一宫的力气往哪边使。所以同一个「化忌」，从命宫飞出去和从财帛飞出去，说的是两件事。',
+    source: '《紫微斗数全书》四化篇；中州派宫干四化传法',
+    status: 'variant',
+    note: '飞星派（如钦天四化）把宫干四化当主线，三合派只作辅助；庚干四化各派另有异说，本插件取中州派常用表。',
+  },
+  {
+    id: 'ziwei-jichuanji',
+    system: 'ziwei', dims: ['overall'],
+    gist: '忌转忌：化忌落进哪一宫，就从那一宫再化出去。',
+    detail: '串连是跟着同一支化逐宫走：命宫化忌入父母，父母宫的宫干再化忌往下一宫，直到绕回走过的宫成环。环越短，越容易在同一组宫位上反复；走不出去（传统说「忌出不去」）不等于凶，只是这条力没有别的出口。',
+    source: '《紫微斗数全书》四化篇；忌转忌串连法',
+    status: 'variant',
+    note: '串连几跳为止、是否允许借对宫飞化，各派不一；本插件只跟单一支化逐宫走，走满 12 宫或成环即停。',
+  },
 
   // ── 六爻 ──────────────────────────────────────────────
   {
@@ -10446,7 +10556,7 @@ const KNOWLEDGE = [
     system: 'liuyao', dims: [],
     gist: '具体应期（哪一天应验）本插件尚未推算。',
     detail: '应期需要综合用神旺衰、动变、旬空出空、日月冲合多层条件，且各家取法不同。当前只给时间窗口的方向性提示，不给具体日期——与其给一个看起来精确、实则拍脑袋的日子，不如留白。',
-    source: '待补：《卜筮正宗》应期章逐条实现 + 138 条卦例对拍',
+    source: '待补：《卜筮正宗》应期章逐条实现 + 已录 128 条卦例对拍（源 138 条）',
     status: 'todo',
     note: '扩展方向：用《卜筮正宗》卦例里有明确应验日期的条目做回归，先验证再输出。',
   },
@@ -11125,7 +11235,7 @@ function ziweiInterpret(r) {
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：飞星四化（宫干引发的连锁）、小限与大限的加权、流日流时的具体事项定位，以及双星组合的强弱细分。四化表取中州派常用口径，其他流派（如飞星派）结论会不同；这些不改变盘面事实，只影响轻重，所以只作方向参考。',
+      text: '本盘没有计算：小限与大限的加权、流日流时的具体事项定位、双星组合的强弱细分，以及「三方四正一起飞」的复合飞化（这里只跟单一支化逐宫串连）。四化表取中州派常用口径，其他流派（如飞星派）结论会不同；这些不改变盘面事实，只影响轻重，所以只作方向参考。',
     },
   ];
   if (natalSihua.length) {
@@ -11141,6 +11251,39 @@ function ziweiInterpret(r) {
         `读法上，化禄的宫位做起来比较顺手、也容易有人帮忙；化权的宫位偏向由你拿主意、但也更容易用力过猛；化科的宫位自带一层体面与贵人缘，遇到事多半能体面收场；化忌的宫位是你容易在意、也容易反复的地方。` +
         `${kePart}这几处只是长期倾向，落到具体某一年还要配上流年四化一起看，不必把它当成结论。`,
     });
+  }
+
+  // 飞星四化：宫干定星、星定落宫，跟着同一支化一路串到成环
+  {
+    const fc = r.flyChains;
+    const word = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+    if (fc) {
+      const chainOf = (t) => {
+        const ch = fc[t];
+        if (!ch || !ch.steps.length) return `${t}：命宫这一干不化${t}星`;
+        const hops = ch.steps
+          .map((s) => `${word(s.from)}（${s.fromStem}）化${t}${s.star}→${word(s.to)}（${s.toBranch}）`)
+          .join('；');
+        return `${t}：${hops}${ch.closed ? `，绕回${word(ch.path[ch.path.length - 1])}成环` : ''}`;
+      };
+      const selfs = (r.fly || []).flatMap((p) => (p.flies || [])
+        .filter((f) => f.self)
+        .map((f) => `${word(p.palace)}（${p.stem}）化${f.type}${f.star}落回本宫`));
+      const ji = fc.忌;
+      const jiRead = ji && ji.steps.length
+        ? `忌这一条最值得盯：${word(ji.from)}化忌入${word(ji.steps[0].to)}，${word(ji.steps[0].to)}的宫干再化忌往下一宫去，${ji.closed ? `最后绕回${word(ji.path[ji.path.length - 1])}` : '走到没有可落的星就停下'}——` +
+          `这条线就是你反复着力的那一圈，` +
+          `${ji.closed ? '环越短越容易在同一组宫位上打转（传统说「忌出不去」）' : '没成环表示这条力还有落点没走完'}。`
+        : '命宫这一干化忌未上盘，忌线不成立。';
+      sections.push({
+        key: 'fly', label: '四化飞星',
+        text: `生年四化说的是「一出场就带着什么」，飞星四化说的是「这一宫自己会去找谁」：宫干定出四颗化星，星落到哪一宫，这一宫的力就往哪边使。` +
+          `从命宫出发，四条线各串一遍——${chainOf('禄')}；${chainOf('权')}；${chainOf('科')}；${chainOf('忌')}。` +
+          `${jiRead}` +
+          `另外，四化落回本宫的是自化：${selfs.length ? selfs.join('、') + '——自己化出去又回到自己，常表现为「说得多、落得少」或一阵一阵的劲头' : '本盘没有自化'}。` +
+          `这一层只描方向与牵引，不断吉凶：同样是化忌入某宫，落在生年忌上还是落在生年禄上，味道完全不同，得并着生年四化看。`,
+      });
+    }
   }
 
   // 流月/流日/流时：流年只回答「今年」，再往下才是「这个月」「这两天」
@@ -12559,6 +12702,18 @@ function ziweiText(r) {
     : '无明显格局（按内置规则）';
   const daxian = (r.daxianList ?? []).slice(0, 8).map((d) =>
     `  ${d.branch}宫（${d.palace}）${d.ages[0]}-${d.ages[1]}岁 ${d.ganzhi} 会${d.mainStars.join('') || '—'} 化 ${d.mutagenHits.map((m) => `${m.star}${m.type}→${m.palace || '未上盘'}`).join('、')}`);
+  // 命宫四化飞星：宫干化出的星落在哪一宫，一路串下去成环为止
+  const flyLine = (() => {
+    const fc = r.flyChains;
+    if (!fc) return '';
+    const one = (t) => {
+      const ch = fc[t];
+      if (!ch || !ch.steps.length) return '';
+      return `${t}：${ch.path.join('→')}${ch.closed ? '（成环）' : ''}`;
+    };
+    const text = ['禄', '权', '科', '忌'].map(one).filter(Boolean).join('　');
+    return text ? `【命宫飞星】${text}` : '';
+  })();
   return [
     `【农历】${lunarText}（月首 ${r.lunar.monthStart}）　时支：${r.hourBranch}　年干支：${r.yearGanzhi}`,
     `【时刻】${r.solarTime ? `${r.solarTime.civilText} → 真太阳时 ${r.solarTime.trueSolarText}${r.input.geo ? '（' + r.input.geo.note + '）' : ''}` : ''}`,
@@ -12567,6 +12722,7 @@ function ziweiText(r) {
     `【大限】${r.daxian.rule}，${r.daxian.startAge}岁起　【小限】${r.xiaoxianRule.direction}`,
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
     `　　　${r.changqu.relation}　入命三方：${r.changqu.inSoulSanfang ? '是' : '否'}　吸收面：${r.changqu.absorb.label}（${r.changqu.absorb.reason}）`,
+    flyLine,
     '十二宫：',
     ...rows,
     '大限（按起运年龄排序，前 8 限，宫干四化落宫）：',
@@ -14483,6 +14639,18 @@ window.Engine = __mods.index;
       ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
+    // 命宫四化飞星：宫干化出的星落在哪一宫，跟着同一支化串到成环
+    const flyHTML = r.flyChains ? (() => {
+      const chips = ['禄', '权', '科', '忌'].map((t) => {
+        const ch = r.flyChains[t];
+        if (!ch || !ch.steps.length) return '';
+        const path = ch.path.map((p) => String(p).replace(/宫$/, '')).join('→');
+        const tip = ch.steps.map((s) => `${s.from}（${s.fromStem}）化${t}${s.star}→${s.to}`).join('；');
+        const cls = t === '忌' ? 'warn' : t === '禄' ? 'ok' : '';
+        return `<span class="pp-chip ${cls}" title="${esc(tip)}">飞${t} ${esc(path)}${ch.closed ? '↺' : ''}</span>`;
+      }).join('');
+      return chips ? `<div class="pp-chips">${chips}</div>` : '';
+    })() : '';
 
     // 流月/流日/流时：流年只能看到「今年」，要落到「这个月这段时间」得再往下一层
     const fl = r.flow;
@@ -14514,7 +14682,7 @@ window.Engine = __mods.index;
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${flyHTML}${pats}${dxs}${lnHit}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────

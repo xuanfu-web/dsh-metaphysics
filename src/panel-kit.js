@@ -1049,6 +1049,18 @@
       ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
+    // 命宫四化飞星：宫干化出的星落在哪一宫，跟着同一支化串到成环
+    const flyHTML = r.flyChains ? (() => {
+      const chips = ['禄', '权', '科', '忌'].map((t) => {
+        const ch = r.flyChains[t];
+        if (!ch || !ch.steps.length) return '';
+        const path = ch.path.map((p) => String(p).replace(/宫$/, '')).join('→');
+        const tip = ch.steps.map((s) => `${s.from}（${s.fromStem}）化${t}${s.star}→${s.to}`).join('；');
+        const cls = t === '忌' ? 'warn' : t === '禄' ? 'ok' : '';
+        return `<span class="pp-chip ${cls}" title="${esc(tip)}">飞${t} ${esc(path)}${ch.closed ? '↺' : ''}</span>`;
+      }).join('');
+      return chips ? `<div class="pp-chips">${chips}</div>` : '';
+    })() : '';
 
     // 流月/流日/流时：流年只能看到「今年」，要落到「这个月这段时间」得再往下一层
     const fl = r.flow;
@@ -1080,7 +1092,7 @@
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${flyHTML}${pats}${dxs}${lnHit}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────

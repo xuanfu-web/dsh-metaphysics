@@ -524,6 +524,8 @@ export function buildZiwei(input) {
 
   chart.patterns = detectPatterns(chart);
   chart.daxianList = daxianList(chart);
+  chart.fly = flyStars(chart);
+  chart.flyChains = flyChains(chart, { from: '命宫' });
   enrichLiunian(chart);
   // 流月/流日/流时：默认按本机当前时刻，可用 asOf 指定（如 "2026-10-22T16:00"）
   chart.flow = flowOf(chart, input.asOf);
@@ -714,6 +716,83 @@ export function daxianList(chart) {
       }),
     }))
     .sort((a, b) => a.ages[0] - b.ages[0]);
+}
+
+// ── 四化飞星：宫干四化飞向哪一宫，以及「串连」────────────────────
+// 生年四化看「这颗星先天带着什么」，飞星四化看「这一宫自己会去找谁」：
+// 宫干定出四个化星，星曜落在哪一宫，就是这一宫的禄/权/科/忌飞向哪里。
+// 串连（忌转忌、科转科…）是同一支化一路跟下去：命宫化忌入 A 宫，A 宫的宫干再化忌入 B 宫……
+// 走到回到已访问过的宫就成环（传统讲的「忌出」「自化」都在这一步显现）。
+
+export const FLY_TYPES = ['禄', '权', '科', '忌'];
+
+// 某天干下某一化的星曜；表里没有就返回 null（不会凭印象补）
+export function flyStarOf(stem, type) {
+  const map = MUTAGEN[stem];
+  if (!map) return null;
+  for (const [star, t] of Object.entries(map)) if (t === type) return star;
+  return null;
+}
+
+// 12 宫各自的四化落点（一次算全，供面板与解读共用）
+export function flyStars(chart) {
+  const palaces = chart.palaces || [];
+  return palaces.map((p) => ({
+    palace: p.palace,
+    branch: p.branch,
+    stem: p.stem,
+    flies: FLY_TYPES.map((type) => {
+      const star = flyStarOf(p.stem, type);
+      const b = star ? starBranchOf(chart, star) : -1;
+      const target = b >= 0 ? palaces.find((x) => x.branch === BRANCHES[b]) : null;
+      return {
+        type,
+        star,
+        to: target ? target.palace : null,
+        toBranch: target ? target.branch : null,
+        // 落回本宫即自化：这一宫自己化出去又回到自己
+        self: !!(target && target.palace === p.palace),
+      };
+    }),
+  }));
+}
+
+// 从某一宫出发，跟着同一支化逐跳；ended 说明为什么停：
+// cycle=回到走过的宫（成环）、no-star=该干这一化无星、off-chart=星未上盘、max=走满上限
+export function flyChain(chart, { from = '命宫', type = '忌', maxSteps = 12 } = {}) {
+  const palaces = chart.palaces || [];
+  const start = palaces.find((p) => p.palace === from) || palaces[0];
+  if (!start) return null;
+  const steps = [];
+  const seen = new Set([start.palace]);
+  let cur = start;
+  let ended = 'max';
+  for (let i = 0; i < Math.max(1, maxSteps); i++) {
+    const star = flyStarOf(cur.stem, type);
+    if (!star) { ended = 'no-star'; break; }
+    const b = starBranchOf(chart, star);
+    if (b < 0) { ended = 'off-chart'; break; }
+    const to = palaces.find((x) => x.branch === BRANCHES[b]);
+    steps.push({ from: cur.palace, fromBranch: cur.branch, fromStem: cur.stem, star, type, to: to.palace, toBranch: to.branch });
+    if (seen.has(to.palace)) { ended = 'cycle'; break; }
+    seen.add(to.palace);
+    cur = to;
+  }
+  return {
+    from: start.palace,
+    type,
+    steps,
+    path: [start.palace, ...steps.map((s) => s.to)],
+    ended,
+    closed: ended === 'cycle',
+  };
+}
+
+// 某一宫的四支化各串一条（默认命宫）
+export function flyChains(chart, { from = '命宫', maxSteps = 12 } = {}) {
+  const out = {};
+  for (const type of FLY_TYPES) out[type] = flyChain(chart, { from, type, maxSteps });
+  return out;
 }
 
 // ── 流年四化落宫 ────────────────────────────────────────────

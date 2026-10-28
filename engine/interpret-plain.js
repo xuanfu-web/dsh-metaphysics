@@ -94,12 +94,17 @@ export function buildAnswer(r, ask, ctx = {}) {
     const body = r.body || {};
     const bureau = r.bureau || {};
     const md = r.lifeMaster || '';
+    const ji = r.flyChains && r.flyChains.忌;
+    const plainFly = ji && ji.steps.length
+      ? `还有一条线值得留意：${ji.path.map((p) => p.replace(/宫$/, '')).join(' → ')}——这几件事在你身上是连着转的，一件卡住，容易牵动下一件。`
+      : '';
     return [
       head + `先说结论：你的命宫落${s(soul.branch, '—')}宫` +
         `${bureau.name ? `、${bureau.name}` : ''}${md ? `，命主${md}` : ''}` +
         `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
+      plainFly,
       `具体到你问的这件事，重点看${where}。`,
-    ].join('');
+    ].filter(Boolean).join('');
   }
 
   if (r.system === 'liuyao') {
@@ -138,8 +143,16 @@ export function buildPlain(r, ask, ctx = {}) {
   if (r.system === 'ziwei') {
     const soul = r.soul || {};
     const body = r.body || {};
-    return `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
-      `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`;
+    const ji = r.flyChains && r.flyChains.忌;
+    // 只挑忌这一条白话：它最能说「你反复在哪几件事上使劲」
+    const plainFly = ji && ji.steps.length
+      ? `另外有一条线值得留意：${ji.path.map((p) => p.replace(/宫$/, '')).join(' → ')}——这几件事在你身上是连着转的，一件事卡住，容易牵动下一件。`
+      : '';
+    return [
+      `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
+        `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`,
+      plainFly,
+    ].filter(Boolean).join('');
   }
   if (r.system === 'liuyao') {
     const ben = r.ben || {};

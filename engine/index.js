@@ -157,6 +157,18 @@ function ziweiText(r) {
     : '无明显格局（按内置规则）';
   const daxian = (r.daxianList ?? []).slice(0, 8).map((d) =>
     `  ${d.branch}宫（${d.palace}）${d.ages[0]}-${d.ages[1]}岁 ${d.ganzhi} 会${d.mainStars.join('') || '—'} 化 ${d.mutagenHits.map((m) => `${m.star}${m.type}→${m.palace || '未上盘'}`).join('、')}`);
+  // 命宫四化飞星：宫干化出的星落在哪一宫，一路串下去成环为止
+  const flyLine = (() => {
+    const fc = r.flyChains;
+    if (!fc) return '';
+    const one = (t) => {
+      const ch = fc[t];
+      if (!ch || !ch.steps.length) return '';
+      return `${t}：${ch.path.join('→')}${ch.closed ? '（成环）' : ''}`;
+    };
+    const text = ['禄', '权', '科', '忌'].map(one).filter(Boolean).join('　');
+    return text ? `【命宫飞星】${text}` : '';
+  })();
   return [
     `【农历】${lunarText}（月首 ${r.lunar.monthStart}）　时支：${r.hourBranch}　年干支：${r.yearGanzhi}`,
     `【时刻】${r.solarTime ? `${r.solarTime.civilText} → 真太阳时 ${r.solarTime.trueSolarText}${r.input.geo ? '（' + r.input.geo.note + '）' : ''}` : ''}`,
@@ -165,6 +177,7 @@ function ziweiText(r) {
     `【大限】${r.daxian.rule}，${r.daxian.startAge}岁起　【小限】${r.xiaoxianRule.direction}`,
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
     `　　　${r.changqu.relation}　入命三方：${r.changqu.inSoulSanfang ? '是' : '否'}　吸收面：${r.changqu.absorb.label}（${r.changqu.absorb.reason}）`,
+    flyLine,
     '十二宫：',
     ...rows,
     '大限（按起运年龄排序，前 8 限，宫干四化落宫）：',
