@@ -585,6 +585,16 @@
 .mp-qt-y b.first{color:var(--ji);border-bottom:2px solid var(--ji);padding-bottom:1px}
 .mp-qt-q{margin-top:6px;font-size:12.5px;line-height:1.8;color:var(--ink2);font-family:var(--fx)}
 .mp-qt-q span{display:block;font-size:11px;color:var(--ink3);font-family:var(--sans);margin-top:2px}
+.mp-cl{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
+.mp-cl-h{display:flex;gap:8px;align-items:baseline;font-size:12.5px;margin-bottom:6px}
+.mp-cl-h b{color:var(--ink);letter-spacing:.02em}
+.mp-cl-h span{color:var(--ink3);font-size:11.5px}
+.mp-cl-e{padding:6px 0;border-top:1px dashed var(--hair)}
+.mp-cl-e:first-of-type{border-top:0;padding-top:0}
+.mp-cl-t b{font-family:var(--fx);font-size:13px;color:var(--lu);font-weight:600}
+.mp-cl-q{font-family:var(--fx);font-size:13.5px;line-height:1.95;color:var(--ink);margin-top:2px;letter-spacing:.02em}
+.mp-cl-p{font-size:12px;line-height:1.85;color:var(--ink2);margin-top:2px}
+@media print{.mp-cl{break-inside:avoid}}
 @media print{.mp-cli{break-inside:avoid}}
 /* —— 起名评估卡片 —— */
 .mp-nm{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
@@ -1058,7 +1068,6 @@
         ${row(`流时 ${BR[fl.hour.hourIndex]}时`, fl.hour)}
       </div>`;
     })() : '';
-
     pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
     return `<div class="pp">
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
@@ -1977,6 +1986,14 @@
       ${sect('格局', gj)}
       ${sect('用神', ys)}
       ${cliCard}
+      ${(Array.isArray(r.classics) && r.classics.length) ? `<section class="mp-cl" aria-label="古籍原文">
+        <div class="mp-cl-h"><b>古籍原文</b><span>照录通行本，释义为白话自撰</span></div>
+        ${r.classics.map((e) => `<div class="mp-cl-e">
+          <div class="mp-cl-t"><b>${esc((e.book === 'ziping' ? '子平真诠' : '滴天髓') + '·' + e.chapter)}</b></div>
+          <div class="mp-cl-q">「${esc(e.quote)}」</div>
+          <div class="mp-cl-p">${esc(e.plain)}</div>
+        </div>`).join('')}
+      </section>` : ''}
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln) : ''}

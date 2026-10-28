@@ -383,6 +383,10 @@ function baziInterpret(r) {
       key: 'geju', label: '格局依据',
       text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
     },
+    ...(Array.isArray(r.classics) && r.classics.length ? [{
+      key: 'classics', label: '古籍原文',
+      text: r.classics.map((e) => `《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》「${e.quote}」——${e.plain}`).join('\n'),
+    }] : []),
     {
       key: 'quant', label: '量化口径',
       text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`,
@@ -1234,6 +1238,7 @@ const BUILDERS = {
 import { interpretQimen } from './qimen-interpret.js';
 import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
 import { knowledgeFor, caveatsFor, STATUS_LABEL } from './interpret-knowledge.js';
+import { CLASSIC_BOOKS } from './classics.js';
 
 /**
  * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。

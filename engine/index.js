@@ -23,6 +23,7 @@ import { buildXiaoliuren } from './xiaoliuren.js';
 import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
 import { buildConvert } from './convert.js';
+import { classicsFor, classicsText } from './classics.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
@@ -301,6 +302,11 @@ function jsonSafe(value) {
  */
 export function compute(args = {}) {
   const r = jsonSafe(computeRaw(args));
+  if (r && r.system === 'bazi') {
+    r.classics = classicsFor(r);
+    const ct = classicsText(r.classics);
+    if (ct) r.summary = `${r.summary}\n【古籍】\n${ct}`;
+  }
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
