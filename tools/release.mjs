@@ -3,25 +3,62 @@
 //
 //   NPM_TOKEN=npm_xxx npm run release              # 正式发布
 //   NPM_TOKEN=npm_xxx npm run release -- --dry-run # 只跑到校验，不发布
+//   npm run release -- --verify-only               # 只核对 registry 上当前版本的附件
 //   npm run release -- --skip-tests                # 紧急情况下跳过测试（不建议）
 //
 // 说明：
 //  - token 只从环境变量 NPM_TOKEN 读，脚本会把它写进临时 .npmrc（0600），退出时删掉；
 //  - 发布前会确认 git 工作区干净、client.js 已随源码重建、registry 上没有同版本；
+//  - 发布后必须核对「tarball 能下载、shasum 与 registry 记录一致、文件数对得上」，
+//    因为 npm 会先让版本条目可见、附件晚几分钟落盘（0.34.0 就撞上过这种半失败状态）；
 //  - 本机没装 npm CLI 时，可用 NPM_CLI=/path/to/npm-cli.js 指向它。
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { verifyPublish } from './verify-publish.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const skipTests = args.includes('--skip-tests');
+const verifyOnly = args.includes('--verify-only');
 
 const step = (msg) => console.log(`\n▸ ${msg}`);
 const fail = (msg) => { console.error(`\n✗ ${msg}\n`); process.exit(1); };
+
+// 发布后核对：附件能下载、字节与 registry 记的 shasum 一致、关键文件在包里。
+// 单独抽出来是因为 --verify-only 也要用同一套判据。
+async function verifyReleased() {
+  step(`核对 registry 上的 ${pkg.name}@${pkg.version}`);
+  const check = await verifyPublish({
+    name: pkg.name,
+    version: pkg.version,
+    expectFiles: ['package.json', 'client.js', '命理排盘.html'],
+    onWait: ({ waitedMs, lastReason }) => step(`仍在处理…（已等 ${Math.round(waitedMs / 1000)}s）：${lastReason}`),
+  });
+  if (!check.ok) {
+    console.error(`\n✗ 发布核对没通过：${check.reason}`);
+    console.error('  版本条目已在 registry 上，但附件不可用——装包的人会失败。');
+    console.error('  处理办法（按 npm 的规则，unpublish/deprecate 属于绕过 2FA 的破坏性动作，');
+    console.error('  granular token 会被 403 拒绝，需要在 npm 网页上用 2FA 手动做，或换 automation token）：');
+    console.error('    1) 网页 https://www.npmjs.com/package/' + pkg.name + '/access 删除该版本；');
+    console.error('    2) 或把 package.json 升到下一个补丁号重新发；');
+    console.error('    3) 若只是还没落盘，等 10 分钟后再跑：node tools/release.mjs --verify-only');
+    process.exit(1);
+  }
+  console.log(`  tarball: ${check.tarball}`);
+  console.log(`  shasum: ${check.shasum}`);
+  console.log(`  文件数: ${check.fileCount}`);
+  console.log(`  latest: ${check.latest}`);
+  if (check.latest !== pkg.version) {
+    console.warn(`  ⚠ latest 目前指向 ${check.latest}，若需要可执行：npm dist-tag add ${pkg.name}@${pkg.version} latest`);
+  }
+  console.log(`\n✅ 已发布并核对通过 ${pkg.name}@${pkg.version}`);
+  console.log('   提示：别忘了 git tag 并推送 —— git tag v' + pkg.version + ' && git push origin v' + pkg.version);
+  return check;
+}
 
 // npm 可执行：优先环境变量 NPM_CLI（指向 npm-cli.js），否则用 PATH 里的 npm
 const NPM_CLI = process.env.NPM_CLI || '';
@@ -41,6 +78,10 @@ function npm(rest, label, opts) {
 
 // ── 0. 版本与工作区 ──────────────────────────────────────────
 step(`发版 ${pkg.name}@${pkg.version}`);
+if (verifyOnly) {
+  await verifyReleased();
+  process.exit(0);
+}
 const dirty = run('git', ['status', '--porcelain'], '读取 git 状态', { capture: true }).trim();
 if (dirty) {
   console.error(dirty);
@@ -104,34 +145,6 @@ step(`发布 ${pkg.name}@${pkg.version} 到 npm`);
 npm(['publish', '--access', 'public', '--ignore-scripts', '--userconfig', npmrc], 'npm publish');
 
 // ── 5. 发布后核对 ──────────────────────────────────────────
-// npm 的发布是异步的（PUT 返回 202），实测 registry 生效要 1–4 分钟，
-// 所以这里对 tarball 直接轮询 HEAD，而不是用 npm view 空等。
-step('等待 registry 生效（npm 异步发布，通常 1–4 分钟）');
-const tarball = `https://registry.npmjs.org/${pkg.name}/-/${pkg.name}-${pkg.version}.tgz`;
-let ok = false;
-for (let i = 0; i < 24 && !ok; i++) {
-  await new Promise((r) => setTimeout(r, 15000));
-  try {
-    const res = await fetch(tarball, { method: 'HEAD' });
-    if (res.ok) ok = true;
-  } catch { /* 网络抖动，继续等 */ }
-  if (!ok && i % 4 === 3) step(`仍在处理…（已等 ${(i + 1) * 15}s）`);
-}
-
-if (!ok) {
-  console.warn(`\n⚠ 已提交发布，但 6 分钟内 registry 还没出现 ${pkg.version}。`);
-  console.warn('  npm 的异步流水线偶尔更久；稍后自查：npm view ' + pkg.name + ' version');
-  process.exit(0);
-}
-
-const meta = await fetch(`https://registry.npmjs.org/${pkg.name}`, { headers: { accept: 'application/json' } })
-  .then((r) => (r.ok ? r.json() : null))
-  .catch(() => null);
-console.log(`  version: ${pkg.version}`);
-if (meta && meta['dist-tags']) console.log(`  dist-tags: ${JSON.stringify(meta['dist-tags'])}`);
-if (meta && meta['dist-tags'] && meta['dist-tags'].latest !== pkg.version) {
-  console.warn(`  ⚠ latest 目前指向 ${meta['dist-tags'].latest}，若需要可执行：npm dist-tag add ${pkg.name}@${pkg.version} latest`);
-}
-
-console.log(`\n✅ 已发布 ${pkg.name}@${pkg.version}`);
-console.log('   提示：别忘了 git tag 并推送 —— git tag v' + pkg.version + ' && git push origin v' + pkg.version);
+// npm 的发布是异步的：版本条目先可见，tarball 附件可能晚几分钟才落盘。
+// 所以核对以「附件能下载且字节对得上」为准，而不是 `npm view` 或 publish 的输出。
+await verifyReleased();

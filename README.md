@@ -131,7 +131,7 @@ Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com
 - **追问**：工具参数 `ask`、面板与独立页的追问输入框——围绕**已算好的盘**回答「2027 年事业怎么样」「财运如何」这类问题；只取盘面已有字段（流年/大运/宫位/分节），不重排、不猜测；年份超出已排范围或没识别到方面时，明确说找不到并给出可问范围
 - **八字 × 紫微 交叉验证**：工具参数 `cross`（或面板勾选）会用同一份出生信息再排另一套盘，对事业/财富/感情/身体/节奏五项并列对照，标注「同向 / 有张力 / 互补」；只作对照，不把两套体系折算成同一个分数
 - **量化口径**：只量化引擎已有数据（十神权重、大运/流年档位、宫位与四化计数），**不换算金额、不给健康诊断**；报告里有「量化口径」分节写明这条边界
-- **方法与验证**：独立页内置同页「方法与验证」（体系、128 条卦例对拍、74 个测试文件/2344 条断言、七道闸、口径与已知边界），离线可开
+- **方法与验证**：独立页内置同页「方法与验证」（体系、128 条卦例对拍、75 个测试文件/2379 条断言、七道闸、口径与已知边界），离线可开
 - **夏令时校正（0.18 新增）**：1986–1991 年中国夏令时期间的钟面时间在排盘前自动减 1 小时（跨日回退），八字/紫微/合盘/验前事/生时校正统一生效；出生证已是真实太阳口径时可用 `dst: false` 关闭
 - **合婚明细层（0.18 新增）**：合盘新增属相六合/三合/六冲/相害/相刑、天干五合、双向十神、跨盘地支、年命纳音与吉凶象计数分档；只作明细，不改原总分
 - **晚子时开关**：面板与独立页都能切「23:00 后算次日/当日」；奇门另可切「归当日/归次日」——这是排盘口径，不是结果重算
@@ -242,10 +242,10 @@ npm run test:ci      # 构建 + 产物自检 + 回归 + 断言基线 + 测试自
 npm run test:baseline # 断言数确实要减少时，显式重建基线
 npm run check:html   # 单独跑 HTML 注入面扫描
 npm run check:patterns # 单独跑工程约定检查
-npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token 从 NPM_TOKEN 读）
+npm run release      # 测试 → 构建 → 校验产物 → 发 npm → 核对附件（token 从 NPM_TOKEN 读）
 ```
 
-也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/check-bundle.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/release.mjs`。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/check-bundle.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/release.mjs`、`node tools/verify-publish.mjs`（被 release 调用，也可单独用来核对某个版本）。
 
 **测试的七道闸**：
 
@@ -266,9 +266,14 @@ npm run release      # 测试 → 构建 → 校验产物 → 发 npm（token �
 NPM_TOKEN=npm_xxx npm run release              # 正式发布（会先跑测试与构建校验）
 NPM_TOKEN=npm_xxx npm run release -- --dry-run # 只校验不发布
 NPM_CLI=/path/to/npm-cli.js NPM_TOKEN=... npm run release   # 本机没有 npm CLI 时
+node tools/release.mjs --verify-only           # 只核对 registry 上当前版本的附件
 ```
 
 脚本会拦下：工作区不干净、`client.js` 未随源码重建、registry 上已有同版本；发布后自动核对新版本与 `dist-tags`，并提示补 `git tag`。
+
+**发布后为什么要看附件，而不是只看 `npm publish` 的输出**：npm 的发布是异步的，版本条目会先出现在 packument 里（连 shasum、签名、`latest` 都齐），tarball 附件却可能晚几分钟才落盘。这中间别人 `npm i` 会撞 404，而 `npm publish` 早就打印了成功。所以 `tools/verify-publish.mjs` 的判据是四条：tarball 返回 200、下载到的字节 sha1 与 registry 记的 `shasum` 一致、`fileCount` 对得上、包里该有的文件（`package.json`/`client.js`/`命理排盘.html`）确实在。15 分钟内一直对不上就判定失败并给出处置路径。
+
+另外记一条实操限制：`unpublish`/`deprecate` 属于「绕过 2FA 的破坏性动作」，granular token 会被 403 拒绝（`Granular access tokens that bypass two-factor authentication may not perform this action`），这类动作只能在 npm 网页上用 2FA 做；真要撤版，把版本号升一个补丁号重发通常更快。
 
 ### 样式命名约定
 
