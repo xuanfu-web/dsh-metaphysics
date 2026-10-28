@@ -180,6 +180,26 @@ export function gatePalaceRelation(gate, palace) {
   return { type: '比和', gate: ge, palace: pe, note: `${ge}与${pe}比和` };
 }
 
+// ── 天盘干：五行、与所落宫的生克 ─────────────────────────────
+// 天盘干（三奇六仪，甲隐于六仪，盘面上不出现甲）与所落宫五行的生克，
+// 是与门宫关系并列的一层「干—宫」关系，只作落宫条件，不折吉凶。
+const STEM_ELEMENT = {
+  甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
+  己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水',
+};
+
+/** 天盘干与其所落宫的关系：干克宫 / 宫克干 / 干生宫 / 宫生干 / 比和 */
+export function stemPalaceRelation(stem, palace) {
+  const se = STEM_ELEMENT[stem];
+  const pe = PALACE_ELEMENT[palace];
+  if (!se || !pe) return { type: 'unknown', stem: se || null, palace: pe || null, note: '缺少干或宫的五行，无法判断' };
+  if (KE[se] === pe) return { type: '干克宫', stem: se, palace: pe, note: `${se}克${pe}，天盘干克宫` };
+  if (KE[pe] === se) return { type: '宫克干', stem: se, palace: pe, note: `${pe}克${se}，宫克天盘干` };
+  if (SHENG[se] === pe) return { type: '干生宫', stem: se, palace: pe, note: `${se}生${pe}，干泄气于宫` };
+  if (SHENG[pe] === se) return { type: '宫生干', stem: se, palace: pe, note: `${pe}生${se}，宫来生干` };
+  return { type: '比和', stem: se, palace: pe, note: `${se}与${pe}比和` };
+}
+
 // ── 六仪击刑 / 三奇入墓 ─────────────────────────────────────
 // 两者都是「天盘干落到某个宫就成立」的硬条件，与门迫一样只作宫位条件，不下吉凶。
 // 六仪击刑按地支相刑推：子刑卯、戌刑未、申刑寅、午自刑、辰自刑、寅刑巳；
@@ -259,6 +279,7 @@ export const QIMEN_STATE_TABLES = Object.freeze({
   gate: Object.freeze({ ...GATE_ELEMENT }),
   star: Object.freeze({ ...STAR_ELEMENT }),
   branch: Object.freeze({ ...BRANCH_ELEMENT }),
+  stem: Object.freeze({ ...STEM_ELEMENT }),
 });
 function getDiPan(type, num) {
   const result = {};
@@ -457,8 +478,11 @@ export function buildQimen(input) {
     palaceElement: PALACE_ELEMENT['5'],
     gateElement: null,
     starElement: STAR_ELEMENT['天禽'],
+    stemElement: STEM_ELEMENT[tianPan['5']] || null,
     gateRelation: { type: 'unknown', note: '中宫无门，不参与门宫关系' },
+    stemRelation: stemPalaceRelation(tianPan['5'], '5'),
     starState: monthState(STAR_ELEMENT['天禽'], monthElement),
+    stemState: monthState(STEM_ELEMENT[tianPan['5']], monthElement),
     kong: false,
     ma: false,
     center: true,
@@ -475,9 +499,12 @@ export function buildQimen(input) {
     palaceElement: PALACE_ELEMENT[gong],
     gateElement: GATE_ELEMENT[bm.baMen[gong]] || null,
     starElement: STAR_ELEMENT[jx.jiuXing[gong]] || null,
+    stemElement: STEM_ELEMENT[tianPan[gong]] || null,
     gateRelation: gatePalaceRelation(bm.baMen[gong], gong),
+    stemRelation: stemPalaceRelation(tianPan[gong], gong),
     gateState: monthState(GATE_ELEMENT[bm.baMen[gong]], monthElement),
     starState: monthState(STAR_ELEMENT[jx.jiuXing[gong]], monthElement),
+    stemState: monthState(STEM_ELEMENT[tianPan[gong]], monthElement),
     kong: kongGong.includes(gong),
     ma: maGong === gong,
   }));
@@ -516,6 +543,7 @@ export function buildQimen(input) {
     states: {
       gate: groupByState(palaces.filter((p) => p.gate).map((p) => ({ name: p.gate, element: p.gateElement })), monthElement),
       star: groupByState(palaces.map((p) => ({ name: p.star, element: p.starElement })), monthElement),
+      stem: groupByState(palaces.filter((p) => p.tianPan).map((p) => ({ name: p.tianPan, element: p.stemElement })), monthElement),
     },
     palaces,
     centerPalace,

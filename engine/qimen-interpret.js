@@ -33,6 +33,19 @@ const YONG_SHEN = {
   travel: { label: '出行', primary: ['九天'], secondary: ['驿马'], note: '出行以九天为主，兼看驿马' },
 };
 
+/** 天盘干与宫的落宫关系统计：干克宫 3 宫（辛）… */
+function stemRelationLine(r) {
+  const groups = new Map();
+  for (const p of r.palaces || []) {
+    const rel = p.stemRelation || null;
+    if (!rel || rel.type === 'unknown' || !p.tianPan) continue;
+    if (!groups.has(rel.type)) groups.set(rel.type, []);
+    groups.get(rel.type).push(`${p.palace}宫${p.tianPan}`);
+  }
+  const order = ['干克宫', '宫克干', '干生宫', '宫生干', '比和'];
+  return order.filter((k) => groups.has(k)).map((k) => `${k} ${groups.get(k).join('、')}`).join('；') || '—';
+}
+
 const REL_TEXT = {
   生: '主体力量流向环境或趋势',
   克: '主体对环境或趋势构成压力、有改造意图',
@@ -141,7 +154,7 @@ export function interpretQimen(r, opts = {}) {
       + `这三项都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
   });
 
-  // ⑤b 月令旺衰：门与星按月支五行判五态（与门迫这类宫位关系分开）
+  // ⑤b 月令旺衰：门、星、天盘干按月支五行判五态（与门迫这类宫位关系分开）
   const mo = r.month || null;
   const st = r.states || null;
   if (mo && st) {
@@ -152,9 +165,10 @@ export function interpretQimen(r, opts = {}) {
       key: 'states',
       label: '月令旺衰',
       text: `月令 ${mo.branch}（${mo.element}）：`
-        + `门 ${line(st.gate)}。星 ${line(st.star)}。`
+        + `门 ${line(st.gate)}。星 ${line(st.star)}。天盘干 ${line(st.stem)}。`
         + `旺为同月令之气，相为月令所生，休为生月令，囚为克月令，死为月令所克。`
-        + `这一层只说明门与星自身力量强弱，不合吉凶：门旺而宫克门，仍受宫制；星旺而落宫死地，也难全其用。`,
+        + `干宫的落宫关系另算：${stemRelationLine(r)}。`
+        + `这一层只说明门、星、干自身力量强弱，不合吉凶：门旺而宫克门，仍受宫制；星旺而落宫死地，也难全其用。`,
     });
   }
 
@@ -172,7 +186,7 @@ export function interpretQimen(r, opts = {}) {
       key: 'tendency',
       label: '最终倾向',
       text: `在当前输入、规则集与所问之事下：若以「${primary.key}」为用神，用神宫对值符宫为「${rel}」，整体${tone}；`
-        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：月令旺衰只算到门与星，天盘干的旺衰未纳入本规则集。`,
+        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：天盘干与地盘的十干克应（100 组）未纳入本规则集，干宫生克只作落宫条件。`,
     });
   }
 

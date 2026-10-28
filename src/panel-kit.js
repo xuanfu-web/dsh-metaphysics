@@ -1507,6 +1507,17 @@
       ['月令', r.month && r.month.branch ? `${r.month.branch}（${r.month.element}）` : '—'],
       ['门旺衰', stateCell(r.states && r.states.gate)],
       ['星旺衰', stateCell(r.states && r.states.star)],
+      ['干旺衰', stateCell(r.states && r.states.stem)],
+      ['干宫生克', (() => {
+        const order = ['干克宫', '宫克干', '干生宫', '宫生干', '比和'];
+        const g = {};
+        for (const p of r.palaces || []) {
+          const rel = p.stemRelation || null;
+          if (!rel || rel.type === 'unknown' || !p.tianPan) continue;
+          (g[rel.type] = g[rel.type] || []).push(p.tianPan);
+        }
+        return order.filter((k) => g[k]).map((k) => k + ' ' + g[k].join('、')).join('；') || '—';
+      })()],
     ];
     return `<dl class="relation mp-qm-facts" aria-label="奇门盘面事实">${rows.map(([k, v]) => row(k, v)).join('')}</dl>`;
   };
@@ -1531,6 +1542,7 @@
         <div class="pp-qm-mid"><span class="tp">${p.tianPan || ''}</span><span class="star">${p.star || ''}</span></div>
         <div class="pp-qm-mid"><span class="dp">${p.diPan || ''}</span><span class="gate">${p.gate || ''}</span></div>
         <div class="pp-qm-bot"><span>${p.anGan || ''}</span><span class="no">${g}</span></div>
+        <div class="pp-qm-bot"><span class="dim">${(p.stemRelation && p.stemRelation.type !== 'unknown') ? p.stemRelation.type : ''}</span><span class="dim">${p.stemState || ''}</span></div>
       </div>`;
     };
     return `<div class="pp mp-qm">

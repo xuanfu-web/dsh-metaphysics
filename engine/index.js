@@ -203,7 +203,7 @@ function stateLine(r) {
   if (!st || !mo) return '无月令数据';
   const fmt = (g) => STATE_ORDER.filter((k) => g && Array.isArray(g[k]) && g[k].length)
     .map((k) => `${k} ${g[k].join('/')}`).join('　');
-  return `月令 ${mo.branch}（${mo.element}）　门 ${fmt(st.gate) || '—'}　星 ${fmt(st.star) || '—'}`;
+  return `月令 ${mo.branch}（${mo.element}）　门 ${fmt(st.gate) || '—'}　星 ${fmt(st.star) || '—'}　干 ${fmt(st.stem) || '—'}`;
 }
 
 function qimenText(r) {
