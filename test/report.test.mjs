@@ -27,7 +27,9 @@ for (const [label, r] of [['八字', BZ], ['紫微', ZW]]) {
     ok(`八字·${table.title} 有行`, table.rows.length > 0, String(table.rows.length));
     ok(`八字·${table.title} 列数对齐`, table.rows.every((row) => row.length === table.columns.length), `${table.columns.length} vs ${table.rows[0] && table.rows[0].length}`);
   }
-  ok('大运表含档位与理由', t[0].rows.some((row) => /大吉|吉|平|忌/.test(row[3]) && row[4].length > 0));
+  // 列的增删不该让断言失效：按表头取列号。0.32.0 在「年龄」后插了「交运」，档位从第 3 列挪到第 4 列
+  const DCOLS = t[0].columns; const iTier = DCOLS.indexOf('档位'); const iWhy = DCOLS.indexOf('理由');
+  ok('大运表含档位与理由', iTier >= 0 && iWhy >= 0 && t[0].rows.some((row) => /大吉|吉|平|忌/.test(row[iTier]) && row[iWhy].length > 0), DCOLS.join('|'));
   const z = ZW.interpret.tables.map((x) => x.key);
   ok('紫微有大限/流年/触发表', ['daxian', 'liunian', 'triggers'].every((k) => z.includes(k)), z.join(','));
   ok('紫微大限表 12 行', ZW.interpret.tables.find((x) => x.key === 'daxian').rows.length === 12);

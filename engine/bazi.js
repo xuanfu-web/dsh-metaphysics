@@ -6,7 +6,7 @@ import {
 } from './calendar.js';
 import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
-import { assertCivil } from './validate.js';
+import { assertCivil, daysInMonth } from './validate.js';
 import { applyDst } from './dst.js';
 import { nayinOf } from './nayin.js';
 import { SANHE } from './sanhe.js';
@@ -277,6 +277,22 @@ export function buildBazi(input) {
   // 四舍五入到 12 个月时必须进位，否则显示「X 岁 12 个月起运」
   if (startAgeMonths >= 12) { startAgeMonths -= 12; startAgeYears += 1; }
 
+  // 交运：三日折一年。
+  // 古法三条换算是同一比例的三种说法——3 日折 1 年、1 日折 4 个月、1 时辰折 10 日：
+  // 把「出生 → 起运那一侧的节令」的真实间隔按 365.2422/3（≈121.7474）倍放大，
+  // 就是起运那一刻；放大后的 1/12 恰好 121.7474/12 ≈ 10.15 天，即「一时辰十日」。
+  // 一年取回归年 365.2422 日（交运日细算各家不一，这里固定这一个口径并写明）。
+  const JIAO_YEAR_DAYS = 365.2422;
+  const JIAO_SCALE = JIAO_YEAR_DAYS / 3;
+  const jiaoFromTerm = forward ? nextJieTerm : prevJieTerm;
+  const jiaoJd = jd + spanDays * JIAO_SCALE;
+  const jiaoParts = jdToParts(jiaoJd);
+  // 每步大运在「同月同日同时刻」换；公历闰日（2 月 29 日生）退到 2 月 28 日
+  const addYearsClamped = (p, n) => {
+    const y = p.year + n;
+    return { year: y, month: p.month, day: Math.min(p.day, daysInMonth(y, p.month)), hour: p.hour, minute: p.minute };
+  };
+
   const dayun = [];
   for (let i = 1; i <= 8; i++) {
     const idx = (((monthIdx + (forward ? i : -i)) % 60) + 60) % 60;
@@ -289,6 +305,9 @@ export function buildBazi(input) {
       branch: g.branch,
       stemTenGod: tenGod(dayStem, g.stem),
       nayin: nayin(idx),
+      // 这一步大运的起止交运时刻（与摘要/面板同源，可直接拿来对年表）
+      fromDate: formatJd(partsToJd(addYearsClamped(jiaoParts, (i - 1) * 10))),
+      toDate: formatJd(partsToJd(addYearsClamped(jiaoParts, i * 10))),
     });
   }
 
@@ -503,6 +522,18 @@ export function buildBazi(input) {
       rule: `${isYangYear ? '阳' : '阴'}年${gender === 'male' ? '男' : '女'}${forward ? '顺排' : '逆排'}`,
       startAge: { years: startAgeYears, months: startAgeMonths },
       toNextJieDays: Math.round(spanDays * 100) / 100,
+      // 交运时刻（日/时辰级）：上方 startAge 是四舍五入到月的旧字段，两者同源、不互相覆盖
+      jiao: {
+        at: formatJd(jiaoJd),
+        jd: Math.round(jiaoJd * 1e6) / 1e6,
+        scaleDaysPerDay: JIAO_SCALE,
+        yearDays: JIAO_YEAR_DAYS,
+        spanDays: Math.round(spanDays * 1e4) / 1e4,
+        from: { name: jiaoFromTerm.name, time: formatJd(jiaoFromTerm.jd) },
+        frame: solar.offsetMinutes ? '真太阳时' : '平太阳时',
+        offsetMinutes: solar.offsetMinutes,
+        note: '三日折一年：出生到节令的真实间隔按 365.2422/3 放大后加到出生时刻；同一比例即「一日折四月、一时辰折十日」，每步大运在同月同日同时刻换',
+      },
       list: dayun,
     },
     strength,

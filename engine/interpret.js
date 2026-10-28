@@ -336,7 +336,10 @@ function baziInterpret(r) {
           const why = (lk.reasons || []).slice(0, 2).join('，');
           return `${l.year} ${l.ganzhi}·${l.stemTenGod || ''}·${lk.tier || '平'}${why ? `（${why}）` : ''}`;
         }).join('；');
-        return `当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
+        const jiaoLine = r.dayun && r.dayun.jiao && r.dayun.jiao.at
+          ? `起运交运时刻 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}；三日折一年，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天）。每步大运在同月同日同时刻换，逐年日期见下方大运表「交运」列。\n`
+          : '';
+        return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
     {
@@ -411,8 +414,8 @@ function baziInterpret(r) {
   // 三张表：大运 / 流年 / 触发事件。都是「把已有字段摊平」，不新增算法。
   const tables = [
     {
-      key: 'dayun', title: '大运表', columns: ['大运', '年龄', '十神', '档位', '理由'],
-      rows: list.map((d) => [d.ganzhi, `${d.startAge}–${d.startAge + 9}`, d.stemTenGod || '', d.luck?.tier || '平', (d.luck?.reasons || []).join('，')]),
+      key: 'dayun', title: '大运表', columns: ['大运', '年龄', '交运', '十神', '档位', '理由'],
+      rows: list.map((d) => [d.ganzhi, `${d.startAge}–${d.startAge + 9}`, d.fromDate || '—', d.stemTenGod || '', d.luck?.tier || '平', (d.luck?.reasons || []).join('，')]),
     },
     {
       key: 'liunian', title: '流年表（近十年）', columns: ['年份', '干支', '十神', '档位', '与原局'],

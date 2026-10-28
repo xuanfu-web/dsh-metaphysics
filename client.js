@@ -3113,7 +3113,7 @@ __mods.bazi = (function () {
 const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex, termWindow, previousJie, nextJie, equationOfTime, formatJd, xunKongOf } = __mods.calendar;
 const { resolveAddress } = __mods.geo;
 const { computeBaziShensha } = __mods.shensha;
-const { assertCivil } = __mods.validate;
+const { assertCivil, daysInMonth } = __mods.validate;
 const { applyDst } = __mods.dst;
 const { nayinOf } = __mods.nayin;
 const { SANHE } = __mods.sanhe;
@@ -3356,6 +3356,16 @@ function buildBazi(input) {
   let startAgeMonths = Math.round(totalMonths % 12);
   if (startAgeMonths >= 12) { startAgeMonths -= 12; startAgeYears += 1; }
 
+  const JIAO_YEAR_DAYS = 365.2422;
+  const JIAO_SCALE = JIAO_YEAR_DAYS / 3;
+  const jiaoFromTerm = forward ? nextJieTerm : prevJieTerm;
+  const jiaoJd = jd + spanDays * JIAO_SCALE;
+  const jiaoParts = jdToParts(jiaoJd);
+  const addYearsClamped = (p, n) => {
+    const y = p.year + n;
+    return { year: y, month: p.month, day: Math.min(p.day, daysInMonth(y, p.month)), hour: p.hour, minute: p.minute };
+  };
+
   const dayun = [];
   for (let i = 1; i <= 8; i++) {
     const idx = (((monthIdx + (forward ? i : -i)) % 60) + 60) % 60;
@@ -3368,6 +3378,8 @@ function buildBazi(input) {
       branch: g.branch,
       stemTenGod: tenGod(dayStem, g.stem),
       nayin: nayin(idx),
+      fromDate: formatJd(partsToJd(addYearsClamped(jiaoParts, (i - 1) * 10))),
+      toDate: formatJd(partsToJd(addYearsClamped(jiaoParts, i * 10))),
     });
   }
 
@@ -3563,6 +3575,17 @@ function buildBazi(input) {
       rule: `${isYangYear ? '阳' : '阴'}年${gender === 'male' ? '男' : '女'}${forward ? '顺排' : '逆排'}`,
       startAge: { years: startAgeYears, months: startAgeMonths },
       toNextJieDays: Math.round(spanDays * 100) / 100,
+      jiao: {
+        at: formatJd(jiaoJd),
+        jd: Math.round(jiaoJd * 1e6) / 1e6,
+        scaleDaysPerDay: JIAO_SCALE,
+        yearDays: JIAO_YEAR_DAYS,
+        spanDays: Math.round(spanDays * 1e4) / 1e4,
+        from: { name: jiaoFromTerm.name, time: formatJd(jiaoFromTerm.jd) },
+        frame: solar.offsetMinutes ? '真太阳时' : '平太阳时',
+        offsetMinutes: solar.offsetMinutes,
+        note: '三日折一年：出生到节令的真实间隔按 365.2422/3 放大后加到出生时刻；同一比例即「一日折四月、一时辰折十日」，每步大运在同月同日同时刻换',
+      },
       list: dayun,
     },
     strength,
@@ -9819,6 +9842,15 @@ const KNOWLEDGE = [
     note: '逆位是否参与解读本身就有分歧（有牌阵传统完全不用逆位）。本插件按削弱加内向综合取象，并在开头声明。',
   },
   {
+    id: 'bazi-dayun-jiaoqi',
+    system: 'bazi', dims: [],
+    gist: '交运按「三日折一年」放大到日、时：起运时刻与每步换运日期都给。',
+    detail: '把「出生 → 起运那一侧节令」的真实间隔按 365.2422/3（约 121.7474 倍）放大，加到出生时刻上就是交运时刻；同一比例也兑现「一日折四月、一时辰折十日」。每步大运在同月同日同时刻换，闰日退到 2 月 28 日。年长取回归年 365.2422 日，故与按 360 日折算的流派会差一两天。',
+    source: '《渊海子平》起运法（三日折一年）；《三命通会》论行运',
+    status: 'variant',
+    note: '各家对「一年折几日」「交运日是否按 360 日计」取法不一，本插件固定 365.2422 日并把口径写进结果（dayun.jiao.yearDays）。出生时刻或经度一变，交运日会前后移一两天；月柱在交节边界时尤其要复核。',
+  },
+  {
     id: 'liuyao-yingqi-exact',
     system: 'liuyao', dims: [],
     gist: '具体应期（哪一天应验）本插件尚未推算。',
@@ -9826,15 +9858,6 @@ const KNOWLEDGE = [
     source: '待补：《卜筮正宗》应期章逐条实现 + 已录 128 条卦例对拍（源 138 条）',
     status: 'todo',
     note: '扩展方向：用《卜筮正宗》卦例里有明确应验日期的条目做回归，先验证再输出。',
-  },
-  {
-    id: 'bazi-dayun-jiaoqi',
-    system: 'bazi', dims: [],
-    gist: '起运时间按「三日折一年」折算，未做交运日的时辰级校正。',
-    detail: '传统折算为三天折一年、一天折四月、一时辰折十天。本插件按此折算到年月，不含交运当日的时辰细分，因此起运年份在边界处可能相差一年内。',
-    source: '《渊海子平》起运法；交运日细算各家不一',
-    status: 'todo',
-    note: '扩展方向：补交运日的时辰级推算，并用已知案例核对。',
   },
 ];
 
@@ -10153,7 +10176,10 @@ function baziInterpret(r) {
           const why = (lk.reasons || []).slice(0, 2).join('，');
           return `${l.year} ${l.ganzhi}·${l.stemTenGod || ''}·${lk.tier || '平'}${why ? `（${why}）` : ''}`;
         }).join('；');
-        return `当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
+        const jiaoLine = r.dayun && r.dayun.jiao && r.dayun.jiao.at
+          ? `起运交运时刻 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}；三日折一年，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天）。每步大运在同月同日同时刻换，逐年日期见下方大运表「交运」列。\n`
+          : '';
+        return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
     {
@@ -10224,8 +10250,8 @@ function baziInterpret(r) {
   ];
   const tables = [
     {
-      key: 'dayun', title: '大运表', columns: ['大运', '年龄', '十神', '档位', '理由'],
-      rows: list.map((d) => [d.ganzhi, `${d.startAge}–${d.startAge + 9}`, d.stemTenGod || '', d.luck?.tier || '平', (d.luck?.reasons || []).join('，')]),
+      key: 'dayun', title: '大运表', columns: ['大运', '年龄', '交运', '十神', '档位', '理由'],
+      rows: list.map((d) => [d.ganzhi, `${d.startAge}–${d.startAge + 9}`, d.fromDate || '—', d.stemTenGod || '', d.luck?.tier || '平', (d.luck?.reasons || []).join('，')]),
     },
     {
       key: 'liunian', title: '流年表（近十年）', columns: ['年份', '干支', '十神', '档位', '与原局'],
@@ -11758,6 +11784,9 @@ function baziText(r) {
     : '';
   const dayun = r.dayun.list.slice(0, 8)
     .map((d) => `${d.startAge}岁 ${d.ganzhi}(${d.stemTenGod})${d.luck ? `·${d.luck.tier}` : ''}${d.relations && d.relations.length ? `[${d.relations.join('')}]` : ''}`).join('　');
+  const jiao = r.dayun.jiao && r.dayun.jiao.at
+    ? `；交运 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天，三日折一年）`
+    : '';
   const near = r.jieqi.nearBoundaryMinutes < 20
     ? `\n⚠ 出生时刻距「节」仅 ${r.jieqi.nearBoundaryMinutes} 分钟，而节气时刻本身有最多约 14 分钟的偏差，月柱与年柱建议人工复核。`
     : '';
@@ -11788,7 +11817,7 @@ function baziText(r) {
     shenshaLine,
     `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）　晚子时：${r.input.lateZi ? '23:00 后算次日' : '23:00 后仍算当日'}`,
     `节气：上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`,
-    `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运`,
+    `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运${jiao}`,
     `　${dayun}`,
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
     '（格局、用神、行运吉凶为扶抑＋简化调候的量化提示，非断语。）',
@@ -14211,7 +14240,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const tip = `<div class="cv-tip">曲线只呈现引擎已给出的行运评分（${VMIN} ~ ${VMAX}），不预测具体事件；档位与依据见下方「大运 / 流年」各节。悬停看逐年详情。</div>`;
 
     return `<div class="mp-curve">
-      <div class="mp-curve-h"><b>人生运势曲线</b><span>${a0}–${a1} 岁　${r.dayun.rule}，${startAge} 岁起运</span></div>
+      <div class="mp-curve-h"><b>人生运势曲线</b><span>${a0}–${a1} 岁　${r.dayun.rule}，${startAge} 岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `，交运 ${r.dayun.jiao.at}` : ''}</span></div>
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="人生运势曲线：${a0} 到 ${a1} 岁的大运与流年评分走势">
         ${bands}${axes}${dyFill}${dyLine}${lnLine}${dots}${ticks.join('')}${yLabels}${mark}${markLo}
       </svg>
@@ -14535,7 +14564,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
     const dy = r.dayun.list.map((d) => {
       const lk = d.luck || null;
-      return `<span class="pp-chip ${lk ? tierCls(lk.tier) : ''}" title="${esc(lk ? `${lk.tier} ${lk.score}｜${(lk.reasons || []).join('；')}` : '')}">${d.startAge} ${d.ganzhi}${(d.relations && d.relations.length) ? ` <i class="pp-drel">${d.relations.join('')}</i>` : ''}${lk ? ` ${lk.tier}` : ''}</span>`;
+      return `<span class="pp-chip ${lk ? tierCls(lk.tier) : ''}" title="${esc(`${d.fromDate ? `${d.fromDate} 交运；` : ''}${lk ? `${lk.tier} ${lk.score}｜${(lk.reasons || []).join('；')}` : ''}`)}">${d.startAge} ${d.ganzhi}${(d.relations && d.relations.length) ? ` <i class="pp-drel">${d.relations.join('')}</i>` : ''}${lk ? ` ${lk.tier}` : ''}</span>`;
     }).join('');
     const ln = (r.liunian && r.liunian.length) ? `<div class="pp-chips">${r.liunian.slice(0, 8).map((l) => {
       const lk = l.luck || null;
@@ -14574,7 +14603,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         <span class="pp-chip" title="${r.palaces.shengong.note}">身宫 ${r.palaces.shengong.ganzhi}</span>
       </div>`) : ''}
       ${ssx}
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}</div>
     </div>`;
   };
 
