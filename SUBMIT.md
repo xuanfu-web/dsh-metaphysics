@@ -9,6 +9,7 @@
 - `package.json` 里有 `dsh.bundle`（`./cordis.patch.yml`）——决定能否 `dsh plugin add` 安装
 - `package.json` 有 `dsh.client`（web 平台）
 - 仓库公开可读
+- `package.json` 的 `files` 里带上了 `命理排盘.html`（离线单文件页随包分发，订阅者装完就有）
 
 ## 一、条目文件
 
@@ -20,9 +21,11 @@ url: https://github.com/xuanfu-web/dsh-metaphysics
 name: xuanfu-web/dsh-metaphysics
 category: ui
 description:
-  en: 'Divination panel and agent tool: BaZi with 42 shensha plus pattern, useful-god and luck scoring; Zi Wei Dou Shu with 34 patterns, da-xian and annual mutagen; LiuYao, MeiHua YiShu, Da Liu Ren and Tarot, all computed locally.'
-  zh: '命理排盘：八字 42 神煞并给出格局、用神与大运流年吉凶评分；紫微斗数 34 格局、大限与流年四化；另有六爻、梅花易数、大六壬与塔罗，全部本地计算。'
+  en: 'Chinese metaphysics (xuanxue) divination panel and agent tool with eighteen systems: eight chart systems (BaZi, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus ten quick references (almanac, solar–lunar conversion, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, life-curve, feng shui, name analysis); ask-driven interpretation and a report layer. All computed locally; networking is off by default. The npm package also ships an offline single-file page (命理排盘.html): double-click to open, every tab included, no server and no network needed.'
+  zh: '玄学命理排盘：十八套体系——八套排盘（八字、紫微斗数、六爻、梅花易数、大六壬、奇门遁甲、合盘、塔罗）加十套速查（黄历、农历互转、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名），并可按所问之事生成解析；纯本地计算，默认不联网。npm 包内另附离线单文件页（命理排盘.html）：双击即开，十八个 tab 齐全，不用起服务、不用联网。'
 ```
+
+- 仓库里真身是 `submit/xuanfu-web__dsh-metaphysics.yml`，改描述请改那个文件，别只改这里。
 
 - `category`：可选 `agi ui usage theme model identity session memory tools wsl browser vision voice docs skill workflow git notify dev security remote market fun`。
   本插件是「对话可调用的工具 + 侧栏可视化面板」，取 `ui`；有人觉得偏 `fun`（文化娱乐）也可，维护者会改，不会因此打回。

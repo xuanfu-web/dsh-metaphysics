@@ -55,3 +55,16 @@ ok('core 已内联', (html.match(/__MPCore/g) || []).length >= 3);
   const missing = ids.filter((id) => !have.has(id));
   ok('引用的 DOM id 全部存在', missing.length === 0, missing.join(',') || `共 ${ids.length} 个`);
 }
+
+// ── ⑦ 随包分发：这一份页面真的会被 npm 发出去，且不是过期产物 ──
+{
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const NAME = '命理排盘.html';
+  ok('files 里带离线页', Array.isArray(pkg.files) && pkg.files.includes(NAME), (pkg.files || []).join(','));
+  ok('exports 里能 resolve 离线页', !!(pkg.exports && pkg.exports['./' + NAME] === './' + NAME), JSON.stringify(pkg.exports && pkg.exports['./' + NAME]));
+  // 仓库根那份必须与 page() 逐字相同：改了源码忘了重建，订阅者拿到的就是旧页面
+  const disk = fs.readFileSync(new URL('../' + NAME, import.meta.url), 'utf8');
+  ok('仓库根的离线页与构建结果一致', disk === html, `磁盘 ${disk.length} 字节 / 构建 ${html.length} 字节`);
+  const src = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta.url), 'utf8');
+  ok('构建默认写进包根（不是仓库外）', /path\.resolve\(root, '命理排盘\.html'\)/.test(src) && !/path\.resolve\(root, '\.\.', '命理排盘\.html'\)/.test(src));
+}

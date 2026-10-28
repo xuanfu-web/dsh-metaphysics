@@ -414,11 +414,12 @@ export { page };
 // 只有直接运行时才写文件；被测试 import 时只取 page()，不产生副作用
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const out = page();
-  // 默认写到工作区根目录；`--out <file>` 可另存（例如同步到桌面那份拷贝）
+  // 默认写进仓库根的 命理排盘.html：这个文件随 npm 包一起发出去（见 package.json 的 files），
+  // 订阅者装完包就有离线页，不必自己构建。`--out <file>` 可另存（例如同步到桌面那份拷贝）。
   const outIdx = process.argv.indexOf('--out');
   const target = outIdx > 0 && process.argv[outIdx + 1]
     ? path.resolve(process.argv[outIdx + 1])
-    : path.resolve(root, '..', '命理排盘.html');
+    : path.resolve(root, '命理排盘.html');
   fs.writeFileSync(target, out, 'utf8');
   console.log(`written: ${target}  (${(out.length / 1024).toFixed(1)} KB)`);
 }

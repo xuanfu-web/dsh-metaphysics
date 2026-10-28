@@ -1,8 +1,8 @@
 {
   "name": "dsh-metaphysics",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "type": "module",
-  "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: eighteen systems and ten quick references (almanac, solar–lunar conversion, …), with climate adjustment (tiaohou), the 120 Qiongtong Baojian entries, 391-char name library, classical quotes (Ziping Zhenquan / Di Tian Sui), hexagram body relations (六冲/六合/伏吟/反吟/化进神/化退神) for liuyao, and palace conditions (击刑/入墓) plus month states (旺相休囚死) for qimen.",
+  "description": "命理排盘（玄学 xuanxue）for DeepSeek Harness: eighteen systems and ten quick references (almanac, solar–lunar conversion, …), with climate adjustment (tiaohou), the 120 Qiongtong Baojian entries, 391-char name library, classical quotes (Ziping Zhenquan / Di Tian Sui), hexagram body relations (六冲/六合/伏吟/反吟/化进神/化退神) for liuyao, palace conditions (击刑/入墓) plus month states (旺相休囚死) for qimen, and a bundled offline single-file page (命理排盘.html).",
   "keywords": [
     "玄学",
     "玄学排盘",
@@ -76,11 +76,13 @@
     "./client": "./client.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./icon.svg",
+    "./命理排盘.html": "./命理排盘.html"
   },
   "files": [
     "index.js",
     "client.js",
+    "命理排盘.html",
     "engine",
     "cordis.patch.yml",
     "locale/*.json",
