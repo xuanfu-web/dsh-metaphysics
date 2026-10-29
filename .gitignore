@@ -12,3 +12,5 @@ tools/_qt2.json
 
 # 临时日志（调试时随手重定向出来的）
 _*.log
+_scan.mjs
+_grab.mjs

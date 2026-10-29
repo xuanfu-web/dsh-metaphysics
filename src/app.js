@@ -211,9 +211,27 @@ const needAsk = Core.needAsk || ((t) => false);
 // conversation.input.right 是会话作用域槽位，props 带 inputActions：
 // setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
 // 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
-const COMPOSER = { ref: null, seats: [], keys: '' };
+const COMPOSER = { ref: null, seats: [], keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
 const LAST = { r: null, q: '' };
 
+// 桥自检：把「门面有没有 inject、槽位声明成什么样、注册抛没抛错、组件被渲染过几次」
+// 拼成一行给面板显示——用户不用开控制台，把这一行截回来就能定位。
+function bridgeDiagText() {
+  const bits = [];
+  bits.push('inputActions ' + (COMPOSER.ref ? '已拿到' : '未拿到'));
+  bits.push('渲染 ' + COMPOSER.mounted + ' 次');
+  bits.push('注册 ' + COMPOSER.regs + ' 次');
+  bits.push('inject ' + (COMPOSER.injectType || '?'));
+  bits.push('槽位 ' + (COMPOSER.spec || '?'));
+  if (COMPOSER.errs.length) bits.push('错误：' + COMPOSER.errs.join(' / '));
+  return '桥自检：' + bits.join('；');
+}
+
+function noteRegError(e) {
+  if (COMPOSER.errs.length >= 3) return;
+  const s = e && e.message ? String(e.message) : String(e);
+  COMPOSER.errs.push(s.slice(0, 90));
+}
 // 槽位给的标准 props 里，inputActions 是对象；不同版本也可能挂在 actions.input 上。
 function bridgeActions(props) {
   if (!props) return null;
@@ -252,6 +270,7 @@ function askTextForLast() {
 // 输入框右侧的可见座位：挂上了就有按钮，拿不到 inputActions 就显式说一句，
 // 这样「桥没挂上」与「挂上了但没给 actions」能一眼分开。
 function ComposerBridge(props) {
+  COMPOSER.mounted += 1;
   const actions = useBridge(props, 'input.right');
   if (!actions) {
     return h('span', { className: 'mp-chip warn', title: '命理：已占住输入框槽位，但没拿到 inputActions；把这句话告诉作者' }, '命理·未就绪');
@@ -265,6 +284,7 @@ function ComposerBridge(props) {
 
 // 输入区 dock 的安静座位：不画界面，只为在 input.right 缺席时仍能拿到 actions。
 function ComposerProbe(props) {
+  COMPOSER.mounted += 1;
   useBridge(props, 'composer.dock');
   return null;
 }
@@ -671,7 +691,7 @@ function App() {
       const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim() }) : null;
       const text = p && p.text ? p.text : String(result.r.summary || '');
       if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
-      const diag = '（桥：' + (COMPOSER.ref ? '已就绪' : (COMPOSER.seats.length ? '座位 ' + COMPOSER.seats.join('/') + ' 已挂但没拿到 inputActions' : '未挂载')) + '；props ' + (COMPOSER.keys || '—') + '）';
+      const diag = '（' + bridgeDiagText() + '）';
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(
           () => setChatNote('对话输入框还没就绪' + diag + '，已复制提问；粘进对话窗回车即可。'),
@@ -1051,6 +1071,7 @@ function App() {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: askInChat, title: '把这张盘的摘要和你的问题一起发进 DSH 对话窗，由对话里的模型接着答',
       }, '问进对话'),
+      (COMPOSER.ref ? null : h('div', { key: 'bridgediag', className: 'mp-note', style: { marginTop: 6, fontSize: 11, flexBasis: '100%' } }, bridgeDiagText())),
       chatNote ? h('div', { key: 'chatnote', className: 'mp-note', style: { marginTop: 6, fontSize: 12, flexBasis: '100%' } }, chatNote) : null) : null,
 
     fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
@@ -1139,6 +1160,26 @@ function safeApply(ctx) {
     return;
   }
 
+  // 槽位门面必须有 inject（它等「声明提交」后再注册）；没有就只能直接注册。
+  try {
+    COMPOSER.injectType = typeof slots.inject;
+    const sp = typeof slots.spec === 'function' ? slots.spec('conversation.input.right') : null;
+    COMPOSER.spec = sp ? sp.kind + '/' + sp.scope : '未声明';
+  } catch (e) {
+    COMPOSER.spec = '取声明失败';
+    noteRegError(e);
+  }
+  const tryReg = (options, component) => {
+    try {
+      const d = slots.register(options, component);
+      COMPOSER.regs += 1;
+      return d;
+    } catch (e) {
+      noteRegError(e);
+      return null;
+    }
+  };
+
   // 关键：槽位由外壳（ui-layout）声明，可能晚于本插件激活。
   // 用 slots.inject 等声明提交后再注册，直接 register 会抛 "slot is not declared"。
   const waitFor = (key, install) => {
@@ -1154,12 +1195,12 @@ function safeApply(ctx) {
     }
   };
 
-  waitFor('sidebar.panellist', () => slots.register(
+  waitFor('sidebar.panellist', () => tryReg(
     { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '命理' },
     PanelIcon,
   ));
 
-  waitFor('main', () => slots.register({ name: 'main', key: 'metaphysics' }, App));
+  waitFor('main', () => tryReg({ name: 'main', key: 'metaphysics' }, App));
 
   // 会话输入框右侧的小桥：只用来拿到 inputActions，不画界面
   // 会话作用域槽位由会话视图声明，通常晚于插件激活：inject 内部会等声明提交并重放。
@@ -1181,32 +1222,37 @@ function safeApply(ctx) {
     }
   };
 
-  sessionSeat('conversation.input.right', () => slots.register(
+  sessionSeat('conversation.input.right', () => tryReg(
     { name: 'conversation.input.right', id: 'metaphysics-ask', order: 40 },
     ComposerBridge,
   ));
 
-  sessionSeat('conversation.composer.dock', () => slots.register(
+  sessionSeat('conversation.composer.dock', () => tryReg(
     { name: 'conversation.composer.dock', id: 'metaphysics-dock', order: 60 },
     ComposerProbe,
   ));
 
-  // 兜底重试：inject 等的是「槽位声明提交」，若外壳在插件激活很久之后才声明会话视图，
-  // 或 inject 因故没触发，这里在 15 秒内每 700ms 直接试着注册一次；桥一旦拿到 actions 就停。
   let seatTries = 0;
-  const seatRetry = () => {
-    if (COMPOSER.ref || seatTries >= 20) return;
+  const trySeatNow = () => {
+    if (COMPOSER.ref) return;
     seatTries += 1;
     const tag = '-' + seatTries;
-    try {
-      slots.register({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
-    } catch (e) { /* 未声明时这里必抛，忽略 */ }
-    try {
-      slots.register({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
-    } catch (e) { /* 同上 */ }
+    tryReg({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
+    tryReg({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
+  };
+  // 会话输入条要等会话视图打开才声明槽位：启动后 15 秒内连试，
+  // 用户第一次点页面时再补一次（那时输入框一定已经在）。
+  let seatTriesLeft = 20;
+  const seatRetry = () => {
+    if (COMPOSER.ref || seatTriesLeft <= 0) return;
+    seatTriesLeft -= 1;
+    trySeatNow();
     setTimeout(seatRetry, 700);
   };
   try { setTimeout(seatRetry, 700); } catch (e) { /* 无计时器环境 */ }
+  try {
+    document.addEventListener('pointerdown', () => trySeatNow(), { once: true, capture: true });
+  } catch (e) { /* 非 DOM 环境 */ }
 }
 
 return {
