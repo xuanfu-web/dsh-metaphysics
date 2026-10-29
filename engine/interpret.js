@@ -342,6 +342,19 @@ function baziInterpret(r) {
         return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
+    (() => {
+      const hits = (r.liunian || []).filter((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
+      return {
+        key: 'suiyun', label: '岁运提示',
+        text: hits.length
+          ? hits.map((l) => {
+            const stem = (l.suiyun.dayun || []).map((d) => `第${d.step}步${d.ganzhi}`).join('、');
+            return `${l.year} ${l.ganzhi}（${stem || '未到起运'}）：${l.suiyun.signals.map((s) => s.detail).join('；')}`;
+          }).join('\n') +
+            '\n读法：岁运并临、运年反吟与流年伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。'
+          : '近十年没有岁运并临、运年反吟或流年伏吟/反吟。「岁运并临主大凶」这类说法流传很广，本插件只把它当变动提示，没有命中就不作额外解读。',
+      };
+    })(),
     {
       key: 'checks', label: '交叉校验',
       text: (() => {
@@ -903,6 +916,10 @@ function liuyaoInterpret(r, ask) {
     const tuiYao = (bd.jinTui || []).filter((x) => x.type === '退');
     if (jinYao.length) bodyText.push(`化进神（第${jinYao.map((x) => x.position).join('、')}爻：${jinYao.map((x) => `${x.from}→${x.to}`).join('、')}）：变出的地支与本爻同五行、且顺着往前一步，传统读作「进」——这一爻代表的人或事有后劲，往前走比退回去顺。`);
     if (tuiYao.length) bodyText.push(`化退神（第${tuiYao.map((x) => x.position).join('、')}爻：${tuiYao.map((x) => `${x.from}→${x.to}`).join('、')}）：变出的地支与本爻同五行、却倒着退一步，传统读作「退」——这一爻代表的人或事渐渐退气，别按原来的势头去推。`);
+    const jp = r.jinTuiPower;
+    if (jp && Array.isArray(jp.lines) && jp.lines.length) {
+      bodyText.push(`进退的力重（放回月建日辰看）：${jp.lines.map((l) => `第${l.position}爻${l.say}`).join('；')}。进退只管方向，走不走得动看时令托不托着；用神化进为喜，忌神化进反而是忌。`);
+    }
     bodyText.push('这些标签只说明卦体的动势，不直接定吉凶：同一支六冲，近病问的是速愈、久病问的是凶险；同一爻化进，也得看用神旺不旺、有没有月建日辰托着。');
     sections.push({ key: 'body', label: '卦体关系', text: bodyText.join('\n') });
   }
@@ -991,7 +1008,7 @@ function liuyaoInterpret(r, ask) {
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：用神两现时该取哪一爻的权重、伏神出伏的应期。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数，也不叠动变连环；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [

@@ -13,7 +13,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
 // ── 一、盘面颜色全部走变量（深色才能只改变量就换肤）─────────────
 {
   // 变量定义本身允许写死颜色（浅色一套、深色一套），其余地方一律走 var()
-  const declStart = KIT.indexOf('.pp,.mp-it{--ink:');
+  const declStart = KIT.indexOf('.pp,.mp-it,');
   const declEnd = KIT.indexOf('container-type:inline-size');
   ok(declStart >= 0 && declEnd > declStart, '找到 .pp 变量声明块');
   const decl = KIT.slice(declStart, declEnd);
@@ -31,8 +31,8 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(!/\.pp-body::after/.test(KIT), '.pp-body 不得带 ::after（会飘出孤立「身」角标）');
   // 回归：.mp-it（解析与详解）是 .pp 的兄弟节点，变量必须与 .pp 共享；
   // 且不能用 --x:var(--x) 自引用（会让变量 invalid，连继承值也挡掉，--card 因此失效）。
-  ok(/\.pp,\.mp-it\{--ink:/.test(KIT), '.mp-it 与 .pp 共享同一份调色板变量');
-  const itBlock = (KIT.match(/\.mp-it\{[^}]*\}/) || [''])[0];
+  ok(/\.pp,\.mp-it[^{]*\.mp-mb[^{]*\.mp-quick[^{]*\{--ink:/.test(KIT), '.mp-it 与各顶层结果卡共享同一份调色板变量');
+  const itBlock = decl;
   ok(!/--([a-z0-9-]+)\s*:\s*var\(--\)/.test(itBlock),
     '.mp-it 内不得写 --x:var(--x) 自引用（无效声明会挡掉继承值）');
   ok(/--card:#[0-9a-f]{6}/.test(decl), '--card 在共享变量块里已定义（.mp-it-head 底色依赖它）');
@@ -51,7 +51,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(/@media screen and \(prefers-color-scheme:dark\)/.test(KIT), '深色主题用 @media screen 限定（打印不受影响）');
   const darkBlock = KIT.slice(KIT.indexOf('@media screen and (prefers-color-scheme:dark)'));
   const seg = darkBlock.slice(0, darkBlock.indexOf('.pp *{box-sizing'));
-  ok(/\.pp,?\.mp-it\{--ink:/.test(seg) || /\.pp\{--ink:/.test(seg), '深色块内重定义 .pp/.mp-it 变量');
+  ok(/\.pp,\.mp-it[^{]*\{--ink:/.test(seg) || /\.pp\{--ink:/.test(seg), '深色块内重定义 .pp/.mp-it 变量');
   eq(/\{background:var\(--bg\)\}/.test(seg), false, '深色块内不重复写元素样式（只改变量）');
   // 深色下主色要比浅色亮（否则小字在深底上读不出来）
   const lum = (hex) => {
@@ -59,7 +59,7 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
     return ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114;
   };
   const pick = (text) => (text.match(/--ink:(#[0-9a-f]{6})/) || [])[1];
-  const lightInk = pick(KIT.slice(KIT.indexOf('.pp,.mp-it{--ink:'), KIT.indexOf('container-type:inline-size')));
+  const lightInk = pick(KIT.slice(KIT.indexOf('.pp,.mp-it,'), KIT.indexOf('container-type:inline-size')));
   const darkInk = pick(seg);
   ok(lum(darkInk) > 200, `深色文字足够亮（${darkInk} 亮度 ${Math.round(lum(darkInk))}）`);
   ok(lum(lightInk) < 60, `浅色文字足够深（${lightInk} 亮度 ${Math.round(lum(lightInk))}）`);
@@ -93,14 +93,20 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(/window\.print\(\)/.test(UI), '走浏览器原生打印，不引第三方库');
 }
 
-// ── 五、窄屏 tab 排布：六个 tab 必须全部可见 ────────────────────
+// ── 五、窄屏 tab 排布：19 个 tab 单行横滑，且当前项必须自动滚进视野 ──
 {
-  ok(/\.tabs\{display:grid;grid-template-columns:repeat\(3,1fr\)/.test(HTML), '窄屏 tab 改 3 列网格');
-  ok(/\.tab\{width:auto;min-width:0;padding:11px 6px;text-align:center\}/.test(HTML), '窄屏 tab 均分宽度');
-  // 横滑方案会让最后一个 tab 卡在右缘，必须去掉
+  // 旧方案是 3 列网格，六个 tab 时只占两行；tab 涨到 19 个后要占七行、吃掉整个首屏，故改单行横滑
   const narrow = HTML.slice(HTML.indexOf('@media (max-width:640px)'), HTML.indexOf('@media print{'));
-  eq(/overflow-x:auto/.test(narrow), false, '窄屏 tab 不再靠横向滚动');
-  ok(/min-height:44px/.test(narrow), '窄屏 tab 触摸目标 ≥44px');
+  ok(/\.tabs\{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto/.test(narrow), '窄屏 tab 单行横滑');
+  ok(/\.tabs::-webkit-scrollbar\{display:none\}/.test(narrow) && /scrollbar-width:none/.test(narrow), '横滑条本身不显示（两种内核都要藏）');
+  // 首尾各留 12px，第一个/最后一个 tab 滚到边时不被裁成半个
+  ok(/margin:0 -12px;padding:2px 12px 6px/.test(narrow), '横滑给首尾 tab 留呼吸位');
+  ok(/\.tab\{flex:0 0 auto;min-height:44px/.test(narrow), '窄屏 tab 触摸目标 ≥44px');
+  // 横滑的旧毛病是「点中后半段 tab，高亮停在屏幕外」，靠脚本把它滚到中间
+  ok(/function scrollTabIntoView\(tabEl\)/.test(UI) && /scrollTabIntoView\(document\.querySelector\('\.tab\.on'\)\)/.test(UI),
+    '切 tab 时把当前项滚进可视区');
+  // 两列表单里 .go 写死 grid-column:4 会生成两列隐式 auto 轨道，正文被挤成 134px
+  ok(/\.go\.ghost\{grid-column:1\}\s*\.go\{grid-column:2\}/.test(narrow), '窄屏「看示例/排盘」在两列内并排，不生成额外轨道');
 }
 
 if (fails.length) {

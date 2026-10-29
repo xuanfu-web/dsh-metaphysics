@@ -1,6 +1,6 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, hexagramStrength } from './liuyao.js';
+import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, hexagramStrength, jinTuiPower } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
@@ -136,6 +136,13 @@ function baziText(r) {
     `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运${jiao}`,
     `　${dayun}`,
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
+    (() => {
+      const hits = r.liunian.filter((l) => l.suiyun && l.suiyun.signals && l.suiyun.signals.length);
+      if (!hits.length) return '岁运提示：近十年无岁运并临、运年反吟或流年伏吟/反吟（只标干支，不判吉凶）';
+      const label = (s) => `${s.type}${s.type.startsWith('流年') && s.target ? `(${s.target})` : ''}`;
+      return '岁运提示（只标干支变动，不判吉凶）：' + hits
+        .map((l) => `${l.year}${l.ganzhi} ${l.suiyun.signals.map(label).join('/')}`).join('；');
+    })(),
     '（格局、用神、行运吉凶为扶抑＋简化调候的量化提示，非断语。）',
   ].join('\n') + near;
 }
@@ -203,7 +210,7 @@ function ziweiText(r) {
     '流年（前 6 年，完整 12 年在结构化数据里）：',
     ...liunian,
     `【格局】${patterns}`,
-    r.patternSummary ? `【结构统计】吉格 ${r.patternSummary.good.length}、忌格 ${r.patternSummary.bad.length}；${r.patternSummary.note}` : '',
+    r.patternSummary ? `【结构统计】吉格 ${r.patternSummary.good.length}、中性 ${r.patternSummary.neutral.length}、忌格 ${r.patternSummary.bad.length}；${r.patternSummary.note}` : '',
     r.lunar.note ? `注：${r.lunar.note}` : '',
   ].filter(Boolean).join('\n');
 }
@@ -358,6 +365,11 @@ function liuyaoText(r) {
       ? `月建 ${hexSt.month.branch}（${hexSt.month.element}）　`
       : '无月建（未给起卦时间）　';
     out.push(`全卦旺衰：${m}${hexSt.labels.join(' · ')}`);
+  }
+  // 化进/化退的力重：单列一行，免得跟卦体标签混着读
+  const jt = r.jinTuiPower;
+  if (jt && Array.isArray(jt.lines) && jt.lines.length) {
+    out.push(`进退力重：${jt.lines.map((l) => `${l.position}爻${l.from}→${l.to}${l.type}·${l.verdict}`).join(' · ')}`);
   }
   return out.filter(Boolean).join('\n');
 }
@@ -684,6 +696,9 @@ function computeRaw(args = {}) {
     // 全卦逐爻旺衰不依赖用神：没指定所问之事也要能看整张卦的气
     const hexStrength = hexagramStrength(result, { monthBranch, dayBranch: result.dayGanZhi.branch });
     if (hexStrength) result.hexStrength = hexStrength;
+    // 化进/化退的力重：与旺衰同一套五态/五关系，只说走不走得动
+    const jtPower = jinTuiPower(result, { monthBranch, dayBranch: result.dayGanZhi.branch });
+    if (jtPower) result.jinTuiPower = jtPower;
     if (ug.liuqin) {
       const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
       if (strength) result.useGodStrength = strength;

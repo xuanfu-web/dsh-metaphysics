@@ -33,7 +33,8 @@ const CSS = `
 /* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
 .mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
 /* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
-.mp-panel{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:14px;padding:16px 18px 14px;margin-bottom:14px}
+.mp-panel{background:linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
+  box-shadow:0 1px 2px color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent),0 16px 34px -30px color-mix(in srgb,var(--dsw-alias-label-primary) 45%,transparent)}
 .mp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:end}
 .mp-lbl{display:block;height:18px;line-height:18px;font-size:12.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-checks{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px;font-size:12.5px;color:var(--dsw-alias-label-secondary)}
@@ -41,18 +42,52 @@ const CSS = `
 .mp-askblock{margin-top:14px;display:flex;flex-direction:column;gap:5px}
 .mp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .mp-tabs{display:inline-flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;padding:4px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:11px;width:100%;max-width:940px}
-.mp-tab{padding:7px 15px;border-radius:8px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13.5px;transition:background .12s,color .12s}
-.mp-tab:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
-.mp-tab.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-tab{padding:7px 15px;border-radius:9px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13.5px;transition:background .14s,color .14s,box-shadow .14s}
+.mp-tab:hover{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary)}
+.mp-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
-.mp-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px}
-.mp-input:focus{border-color:var(--dsw-alias-brand-primary)}
+.mp-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px;
+  transition:border-color .14s,box-shadow .14s,background .14s}
+.mp-input:hover{border-color:color-mix(in srgb,var(--dsw-alias-border-l1) 45%,var(--dsw-alias-brand-primary))}
+.mp-input:focus{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent)}
 /* 所问之事：多行文本，视觉与其他输入框一致 */
-.mp-textarea{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:8px;padding:8px 11px;font-size:14px;outline:none;width:100%;min-width:0;resize:vertical;line-height:1.5;font-family:inherit}
-.mp-textarea:focus{border-color:var(--dsw-alias-brand-primary)}
+.mp-textarea{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:8px 11px;font-size:14px;outline:none;width:100%;min-width:0;resize:vertical;line-height:1.5;font-family:inherit;
+  transition:border-color .14s,box-shadow .14s}
+.mp-textarea:hover{border-color:color-mix(in srgb,var(--dsw-alias-border-l1) 45%,var(--dsw-alias-brand-primary))}
+.mp-textarea:focus{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent)}
 .mp-textarea.invalid{border-color:var(--dsw-alias-state-error-primary)}
-.mp-btn{padding:8px 22px;border-radius:8px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px;font-weight:600;min-width:132px}
-.mp-btn.ghost{background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
+/* ── 人格问卷：4 题一页，1–5 单选；题面与刻度说明都来自引擎 ── */
+.mp-quiz-wrap{grid-column:1 / -1;display:flex;flex-direction:column;gap:6px}
+.mp-quiz-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mp-quiz-bar{flex:1 1 160px;min-width:110px;height:6px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-1);overflow:hidden}
+.mp-quiz-bar i{display:block;height:100%;border-radius:999px;background:var(--dsw-alias-brand-primary);transition:width .18s ease}
+.mp-quiz-count{font-size:12px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mp-quiz-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.mp-quiz-q{padding:10px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1)}
+.mp-quiz-qt{display:flex;gap:8px;align-items:baseline;font-size:13px;line-height:1.6;color:var(--dsw-alias-label-primary)}
+.mp-quiz-qt b{flex:none;padding-top:1px;font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:var(--dsw-alias-brand-primary)}
+.mp-quiz-opts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px}
+.mp-quiz-o{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);cursor:pointer;text-align:center;
+  transition:border-color .14s,background .14s,color .14s}
+.mp-quiz-o input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}
+.mp-quiz-o b{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}
+.mp-quiz-o span{font-size:11px;line-height:1.3}
+.mp-quiz-o:hover{border-color:var(--dsw-alias-brand-primary)}
+.mp-quiz-o.on{border-color:transparent;background:var(--dsw-alias-brand-primary)}
+.mp-quiz-o.on b,.mp-quiz-o.on span{color:#fff}
+.mp-quiz-o:focus-within{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.mp-quiz-nav{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.mp-quiz-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12.5px;cursor:pointer;min-height:32px}
+.mp-quiz-btn:hover:not(:disabled){border-color:var(--dsw-alias-brand-primary)}
+.mp-quiz-btn:disabled{opacity:.42;cursor:not-allowed}
+.mp-quiz-btn.primary{border-color:transparent;background:var(--dsw-alias-brand-primary);color:#fff;font-weight:600}
+.mp-quiz-hint{margin-left:auto;font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.6}
+.mp-btn{padding:8px 22px;border-radius:9px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px;font-weight:600;min-width:132px;
+  box-shadow:0 10px 20px -14px var(--dsw-alias-brand-primary);transition:transform .14s,filter .14s,box-shadow .14s}
+.mp-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.mp-btn:active{transform:none;filter:brightness(.98)}
+.mp-btn.ghost{background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary);box-shadow:none}
+.mp-btn.ghost:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);filter:none}
 .mp-seg{display:flex;width:100%;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden;height:36px}
 .mp-seg button{flex:1;padding:0 8px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:13px;cursor:pointer}
 .mp-seg button.on{background:var(--dsw-alias-brand-primary);color:#fff}
@@ -80,7 +115,8 @@ const CSS = `
 .mp-hist-item b{font-weight:600}
 .mp-hist-item span{color:var(--dsw-alias-label-secondary)}
 .mp-hist-item i{font-style:normal;color:var(--dsw-alias-label-secondary);opacity:.7;font-size:11px}.mp-hint{font-size:12.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
-.mp-card{margin-top:18px;padding:16px 18px;border-radius:14px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1)}
+.mp-card{margin-top:18px;padding:16px 18px;border-radius:16px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);
+  box-shadow:0 1px 2px color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent),0 18px 40px -32px color-mix(in srgb,var(--dsw-alias-label-primary) 42%,transparent)}
 .mp-flat{margin-top:16px;padding:0;border:none;background:transparent;border-radius:0}
 .mp-dim{color:var(--dsw-alias-label-secondary)}
 .mp-err{margin-top:16px;padding:9px 14px;border-radius:8px;border-left:3px solid var(--dsw-alias-state-error-primary);background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 8%,transparent);color:var(--dsw-alias-state-error-primary);font-size:13px}
@@ -123,6 +159,11 @@ const CSS = `
   .mp-tab{padding:9px 4px;font-size:13.5px;text-align:center}
   .mp-input,.mp-textarea{padding:10px 12px;font-size:16px;min-height:44px;height:auto}
   .mp-textarea{min-height:76px}
+  .mp-quiz-q{padding:9px 10px}
+  .mp-quiz-o{padding:8px 3px;min-height:50px}
+  .mp-quiz-o span{font-size:10px}
+  .mp-quiz-btn{flex:1 1 auto;min-height:44px}
+  .mp-quiz-hint{flex-basis:100%;margin-left:0}
   .mp-actions{margin-top:12px}
   .mp-btn{width:100%;padding:12px;font-size:15px;min-height:46px;min-width:0}
   .mp-hint,.mp-auto,.mp-cast{font-size:12.5px}
@@ -136,9 +177,68 @@ const CSS = `
   .mp-wrap{padding:12px 10px 32px}
   .mp-tab{font-size:13px;padding:8px 2px}
 }
+/* 键盘可达：面板里的按钮/链接都要有可见焦点环 */
+:where(.mp-btn,.mp-tab,.mp-chip,.mp-hist-item,.mp-hist-clear,.mp-qmopt,.seg button):focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important}
+}
 `;
 
 const { useState, useEffect } = React;
+
+// ── 十六型人格问卷：题目由引擎给，前端不再抄一份 ──────────────────
+// compute 不带 answers 时回的就是问卷（needAnswers + questions + 1–5 的说法），
+// 只在第一次取一次；答案按题序放在 App 的 mbAns 里，null = 未答。
+const MBTI_PER_PAGE = 4;
+const MBTI_MIN = 12;
+let MBTI_INFO = null;
+function mbtiInfo() {
+  if (MBTI_INFO) return MBTI_INFO;
+  let p = null;
+  try { p = Engine.compute({ system: 'mbti' }); } catch (e) { p = null; }
+  const questions = (p && p.questions) || [];
+  MBTI_INFO = { total: (p && p.total) || questions.length, questions, scale: (p && p.scale) || {} };
+  return MBTI_INFO;
+}
+
+/** 一页 4 题：进度条 + 题面 + 1–5 单选 + 翻页。状态留在 App，组件只发回调 */
+function MbtiQuiz(props) {
+  const { answers, page, onPick, onPage, onSubmit, onClear } = props;
+  const info = mbtiInfo();
+  const pages = Math.max(1, Math.ceil(info.total / MBTI_PER_PAGE));
+  const start = page * MBTI_PER_PAGE;
+  const slice = info.questions.slice(start, start + MBTI_PER_PAGE);
+  const answered = answers.filter((v) => v != null).length;
+  const pct = info.total ? Math.round((answered / info.total) * 100) : 0;
+  const last = page >= pages - 1;
+  const ready = answered >= MBTI_MIN;
+  return h('div', { className: 'mp-quiz' },
+    h('div', { className: 'mp-quiz-top' },
+      h('div', { className: 'mp-quiz-bar', 'aria-hidden': 'true' }, h('i', { style: { width: pct + '%' } })),
+      h('span', { className: 'mp-quiz-count' }, `第 ${page + 1} / ${pages} 页 · 已答 ${answered} / ${info.total}`)),
+    h('div', { className: 'mp-quiz-list' }, slice.map((q, k) => {
+      const i = start + k;
+      return h('div', { key: q.id || i, className: 'mp-quiz-q' },
+        h('div', { className: 'mp-quiz-qt' }, h('b', null, String(i + 1).padStart(2, '0')), h('span', null, q.text)),
+        h('div', { className: 'mp-quiz-opts', role: 'radiogroup', 'aria-label': `第 ${i + 1} 题` },
+          [1, 2, 3, 4, 5].map((n) => h('label', { key: n, className: 'mp-quiz-o' + (answers[i] === n ? ' on' : '') },
+            h('input', {
+              type: 'radio', name: `mpmbq${i}`, value: String(n), checked: answers[i] === n,
+              onChange: () => onPick(i, n),
+            }),
+            h('b', null, String(n)),
+            h('span', null, info.scale[n] || '')))));
+    })),
+    h('div', { className: 'mp-quiz-nav' },
+      h('button', { className: 'mp-quiz-btn', disabled: page <= 0, onClick: () => onPage(-1) }, '上一页'),
+      last ? null : h('button', { className: 'mp-quiz-btn', onClick: () => onPage(1) }, '下一页'),
+      h('button', { className: 'mp-quiz-btn primary', disabled: !ready, onClick: onSubmit }, '看结果'),
+      h('button', { className: 'mp-quiz-btn', onClick: onClear }, '清空'),
+      h('span', { className: 'mp-quiz-hint' }, ready
+        ? `已够 ${MBTI_MIN} 题，可以看结果；答完 ${info.total} 题会更准。`
+        : `答满 ${MBTI_MIN} 题可先看结果（还差 ${MBTI_MIN - answered} 题）。`)),
+  );
+}
 
 /** 渲染兜底：面板里任何一层组件抛错时，把错误原文摊在面板上，
  *  而不是留给用户一片空白（桌面端不一定开得了 devtools）。 */
@@ -191,7 +291,7 @@ const TABS = [
   { k: 'xiaoliuren', label: '小六壬', timeLabel: '起课时刻', hint: '小六壬用农历月/日/时掐指，也可用三个随机数起课。' },
   { k: 'star', label: '星座', timeLabel: '', hint: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。' },
   { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
-  { k: 'mbti', label: '人格', timeLabel: '', hint: '十六型人格是一份 MBTI 风格问卷：24 题按 1–5 打分，四维度各取一侧；只作自我参照，不是官方量表。' },
+  { k: 'mbti', label: '人格', timeLabel: '', hint: '十六型人格是 24 道自我报告题的 MBTI 风格测算：4 题一页，按 1–5 打分，答满 12 题即可看结果；只作自我参照，不是官方量表。' },
   { k: 'trend', label: '人生K线', timeLabel: '出生时刻', hint: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。' },
   { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。' },
   { k: 'name', label: '起名', timeLabel: '', hint: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。' },
@@ -354,8 +454,9 @@ function App() {
   const [leapMonth, setLeapMonth] = useState(false);
   const [xlrMode, setXlrMode] = useState('time');
   const [num1, setNum1] = useState(''); const [num2, setNum2] = useState(''); const [num3, setNum3] = useState('');
-  // 十六型人格：24 个 1–5 的分数（空格/逗号分隔）；留空则先发问卷
-  const [answers, setAnswers] = useState('');
+  // 十六型人格：24 个 1–5 的分数（null = 未答）+ 当前页；题目按引擎给的长度初始化
+  const [mbAns, setMbAns] = useState(() => new Array(mbtiInfo().total).fill(null));
+  const [mbPage, setMbPage] = useState(0);
   const [toAge, setToAge] = useState('60');
   const [fsMode, setFsMode] = useState('natal');
   const [sitting, setSitting] = useState('子');
@@ -396,7 +497,8 @@ function App() {
     || tab === 'chenggu' || tab === 'trend' || tab === 'fengshui' || tab === 'name';
   const timeKind = kindOf(tab);
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
-  const showDate = tab !== 'tarot' && usesTimeInput;
+  // 人格问卷与日期无关：留着起卦日期/时刻只会让人以为要填生辰
+  const showDate = tab !== 'tarot' && tab !== 'mbti' && usesTimeInput;
   const showTime = showDate && timeKind !== 'date';
   const showDT = showTime;
 
@@ -407,6 +509,7 @@ function App() {
     // over：示例等「临时覆盖」用，避免依赖 React 状态更新后再读（同一个 handler 里 setState 还没生效）
     const genderV = over && over.gender ? over.gender : gender;
     const addressV = over && typeof over.address === 'string' ? over.address : address;
+    setNotice('');   // 上一次的提示（如「先答满 12 题」）不该跟着新结果一起留下
     try {
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
@@ -458,7 +561,9 @@ function App() {
       }
       if (k === 'mbti') {
         delete args.datetime;
-        const nums = String(answers).split(/[^0-9]+/).filter((x) => x !== '').map((x) => Number(x));
+        // 末尾连着没答的先去掉了再交给引擎：引擎把 null 当跳过，但没必要传一整段空位
+        const nums = mbAns.slice();
+        while (nums.length && nums[nums.length - 1] == null) nums.pop();
         if (nums.length) args.answers = nums;
       }
       if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = trueSolar; args.lateZi = lateZi; }
@@ -566,8 +671,8 @@ function App() {
       setResult({ kind: k, r, it, at: dt, timed, trend });
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
-      // 历史记录：塔罗是随机抽牌，重放会变成另一副牌，不入历史
-      if (k !== 'tarot') {
+      // 历史记录：塔罗是随机抽牌，重放会变成另一副牌；人格的输入是 24 个答案、没存进来，重放也没法还原。两者都不入历史
+      if (k !== 'tarot' && k !== 'mbti') {
         const entry = {
           kind: k, date, time, gender, address,
           lines: k === 'liuyao' ? lines : '',
@@ -594,6 +699,13 @@ function App() {
     const k = kindOf(next);
     setTab(next);
     setError('');
+    // 人格 tab 的输入就是问卷本身：没答够时不要自动算（否则一进来就报「至少 12 题」）
+    if (next === 'mbti') {
+      setNotice('');
+      if (mbAns.filter((v) => v != null).length >= MBTI_MIN) run(next);
+      else setResult(null);
+      return;
+    }
     if (k === 'none') { run(next); return; } // 塔罗不看时间，直接抽牌（与 web-ui 一致）
     const v = manual[k] || (k === 'cast' ? nowParts() : { date: SAMPLE.date, time: SAMPLE.time });
     setDate(v.date);
@@ -625,6 +737,16 @@ function App() {
    * 手动改过则用你填的时刻。这样不必再单独放一个「此刻」按钮。
    */
   const go = () => {
+    // 人格问卷不看时间：先确认答够，再走同一套计算
+    if (tab === 'mbti') {
+      const n = mbAns.filter((v) => v != null).length;
+      if (n < MBTI_MIN) {
+        setNotice(`先答满 ${MBTI_MIN} 题再看结果（现答 ${n} 题，还差 ${MBTI_MIN - n} 题）。`);
+        return;
+      }
+      run(tab);
+      return;
+    }
     if (timeKind !== 'none' && !manual[timeKind]) {
       const t = nowParts();
       setDate(t.date);
@@ -947,10 +1069,27 @@ function App() {
           className: 'mp-input', type: 'number', min: 1, max: 99, value: num3,
           onChange: (e) => setNum3(e.target.value),
         })) : null,
-        tab === 'mbti' ? field('24 题分数（1–5，空格或逗号分隔；留空先发问卷）', h('textarea', {
-          className: 'mp-textarea', rows: 2, value: answers, placeholder: '如 5 4 3 2 2 5 4 3 5 4 3 2 4 5 3 2 1 2 4 3 5 4 4 2',
-          onChange: (e) => setAnswers(e.target.value),
-        })) : null,
+        tab === 'mbti' ? h('div', { className: 'mp-quiz-wrap' },
+          h('div', { className: 'mp-lbl' }, '十六型人格问卷 · 4 题一页，按 1（完全不像）到 5（很像我）打分'),
+          h(MbtiQuiz, {
+            answers: mbAns,
+            page: mbPage,
+            onPick: (i, n) => setMbAns((prev) => {
+              const next = prev.slice();
+              next[i] = n;
+              return next;
+            }),
+            onPage: (d) => setMbPage((p) => Math.max(0, Math.min(
+              p + d,
+              Math.max(0, Math.ceil(mbtiInfo().total / MBTI_PER_PAGE) - 1),
+            ))),
+            onSubmit: go,
+            onClear: () => {
+              setMbAns(new Array(mbtiInfo().total).fill(null));
+              setMbPage(0);
+              setResult(null);   // 重新答时旧结果不该留在下面
+            },
+          })) : null,
         tab === 'trend' ? field('算到几岁', h('input', {
           className: 'mp-input', type: 'number', min: 10, max: 100, value: toAge,
           onChange: (e) => setToAge(e.target.value),
@@ -1000,7 +1139,8 @@ function App() {
           onChange: (e) => { setQuestion(e.target.value); setAskInvalid(false); },
           onBlur: (e) => refreshInterpret(undefined, e.target.value),
         })) : null,
-      h('div', { key: 'actions', className: 'mp-actions' },
+      // 人格问卷的「看结果 / 清空」在问卷自己的翻页条里，底部不再重复放一个主按钮
+      tab === 'mbti' ? null : h('div', { key: 'actions', className: 'mp-actions' },
         h('button', {
           className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginRight: 8 },
           onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
@@ -1033,9 +1173,13 @@ function App() {
     notice ? h('div', { key: 'ntc', className: 'mp-note', role: 'status' }, notice) : null,
 
     (!result && !error) ? h('div', { key: 'empty', className: 'mp-empty' },
-      h('b', null, tab === 'ziwei' ? '填好出生信息，点「排盘」' : tab === 'bazi' ? '填好出生信息，点「排盘」'
-        : tab === 'tarot' ? '写下想问的事，点「抽牌」' : '写下所问之事，点「起卦」'),
-      tab === 'ziwei' || tab === 'bazi' ? '出生日期、时刻与性别即可；出生地只影响真太阳时。' : '起卦时刻已自动取当下，也可以手动改。') : null,
+      h('b', null, tab === 'ziwei' || tab === 'bazi' ? '填好出生信息，点「排盘」'
+        : tab === 'tarot' ? '写下想问的事，点「抽牌」'
+          : tab === 'mbti' ? '按 1–5 给题目打分，答满 12 题就能看结果'
+            : '写下所问之事，点「起卦」'),
+      tab === 'ziwei' || tab === 'bazi' ? '出生日期、时刻与性别即可；出生地只影响真太阳时。'
+        : tab === 'mbti' ? '4 题一页，答案只在本地参与计算，不会上传。'
+          : '起卦时刻已自动取当下，也可以手动改。') : null,
 
     result ? h('div', {
       key: 'card',

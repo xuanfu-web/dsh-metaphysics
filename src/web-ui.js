@@ -57,7 +57,7 @@
     trend: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。',
     fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。',
     name: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。',
-    mbti: '十六型人格是一份 MBTI 风格问卷：24 题按 1（完全不像）到 5（很像我）打分，四维度各取一侧；留空先出题目。',
+    mbti: '十六型人格是一份 MBTI 风格问卷：24 题分 6 页，每题按 1（完全不像）到 5（很像我）打分；答满 12 题就能出结果。',
   };
 
   // 问事的体系必须写清「所问之事」，解读才有落点；命盘类（八字/紫微）不问事，不显示这两项
@@ -386,8 +386,7 @@
     }
     if (tab === 'mbti') {
       delete args.datetime;
-      const box = el('mbtianswers');
-      const nums = box ? String(box.value).split(/[^0-9]+/).filter((x) => x !== '').map((x) => Number(x)) : [];
+      const nums = mbAnswersForEngine();
       if (nums.length) args.answers = nums;
     }
     if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
@@ -456,6 +455,8 @@
    * 「此刻」按钮据此取消。
    */
   function goCast() {
+    // 人格问卷没有时间可补：先看答够没有，再走同一套计算
+    if (tab === 'mbti') { mbSubmit(); return; }
     const k = kindOf(tab);
     if (k !== 'none' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
     run();
@@ -481,11 +482,25 @@
 
   const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti'];
 
+  // 窄屏下 tab 栏是单行横滑：切到靠后的 tab 时把它滚到可视区中间，
+  // 否则点了「人格」页面变了、高亮却停在屏幕外，看着像没响应
+  function scrollTabIntoView(tabEl) {
+    const strip = tabEl && tabEl.parentElement;
+    if (!strip || strip.scrollWidth <= strip.clientWidth + 1) return;
+    const t = tabEl.getBoundingClientRect();
+    const s = strip.getBoundingClientRect();
+    const left = strip.scrollLeft + (t.left - s.left) - (s.width - t.width) / 2;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if (strip.scrollTo) strip.scrollTo({ left, behavior: reduce ? 'auto' : 'smooth' });
+    else strip.scrollLeft = left;
+  }
+
   function setTab(next) {
     tab = next;
     const k = kindOf(tab);
     const birth = isBirthTab(tab);
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    scrollTabIntoView(document.querySelector('.tab.on'));
     el('for-bazi').style.display = birth ? '' : 'none';
     el('for-gender').style.display = birth ? '' : 'none';
     el('for-liuyao').style.display = tab === 'liuyao' ? '' : 'none';
@@ -518,6 +533,11 @@
         : tab === 'qimen' ? '起局'
           : QUICK.indexOf(tab) >= 0 ? '看结果'
             : birth ? '排盘' : '起卦';
+    // 人格问卷自带「看结果」和「清空」：底部再放一个主按钮就是两个一样的入口
+    const mbtiOn = tab === 'mbti';
+    el('go').style.display = mbtiOn ? 'none' : '';
+    const sampleBtn = el('sample');
+    if (sampleBtn) sampleBtn.style.display = mbtiOn ? 'none' : '';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
@@ -528,8 +548,8 @@
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mhMode));
     const mhNum = tab === 'meihua' && mhMode === 'number';
     el('mh-num').style.display = mhNum ? '' : 'none';
-    // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导
-    const showDT = tab !== 'tarot' && !mhNum;
+    // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导；人格问卷同样与日期无关
+    const showDT = tab !== 'tarot' && tab !== 'mbti' && !mhNum;
     el('for-date').style.display = showDT ? '' : 'none';
     el('for-time').style.display = showDT && kindOf(tab) !== 'date' ? '' : 'none';
   }
@@ -549,11 +569,191 @@
     if (el('qk-convert-lunar')) el('qk-convert-lunar').style.display = convMode === 'lunar2solar' ? '' : 'none';
   }
 
+  // ── 十六型人格：4 题一页的分页问卷 ──────────────────────────────
+  // 题目与 1–5 的说法都从引擎取（compute 不带 answers 就回问卷），
+  // 前端不再抄一份题目表；答案按题序存在 mbAns 里，null = 未答。
+  const MBTI_PER_PAGE = 4;
+  const MBTI_MIN = 12;
+  let mbPaper = null;
+  let mbAns = [];
+  let mbPage = 0;
+
+  function ensureMbtiPaper() {
+    if (mbPaper) return mbPaper;
+    let p = null;
+    try { p = window.Engine.compute({ system: 'mbti' }); } catch (e) { p = null; }
+    const questions = (p && p.questions) || [];
+    mbPaper = { total: (p && p.total) || questions.length, questions, scale: (p && p.scale) || {} };
+    mbAns = new Array(mbPaper.total).fill(null);
+    return mbPaper;
+  }
+
+  function mbAnswered() {
+    let n = 0;
+    for (let i = 0; i < mbAns.length; i += 1) if (mbAns[i] != null) n += 1;
+    return n;
+  }
+
+  /** 末尾连着没答的先去掉：引擎把 null 当「跳过」，但没必要把整段空位传过去 */
+  function mbAnswersForEngine() {
+    const out = mbAns.slice();
+    while (out.length && out[out.length - 1] == null) out.pop();
+    return out;
+  }
+
+  function mbPageCount() {
+    return Math.max(1, Math.ceil((mbPaper ? mbPaper.total : 0) / MBTI_PER_PAGE));
+  }
+
+  function refreshMbtiMeta() {
+    const total = mbPaper ? mbPaper.total : 0;
+    const answered = mbAnswered();
+    const pages = mbPageCount();
+    const count = el('mbti-count');
+    if (count) count.textContent = `第 ${mbPage + 1} / ${pages} 页 · 已答 ${answered} / ${total}`;
+    const fill = el('mbti-fill');
+    if (fill) fill.style.width = total ? `${Math.round((answered / total) * 100)}%` : '0%';
+    const prev = el('mbti-prev');
+    if (prev) prev.disabled = mbPage <= 0;
+    const next = el('mbti-next');
+    if (next) next.style.display = mbPage >= pages - 1 ? 'none' : '';
+    const sub = el('mbti-submit');
+    if (sub) sub.disabled = answered < MBTI_MIN;
+    const hint = el('mbti-hint');
+    if (hint) {
+      hint.classList.remove('warn');
+      hint.textContent = answered >= MBTI_MIN
+        ? `已够 ${MBTI_MIN} 题，可以看结果；答完 ${total} 题会更准。`
+        : `答满 ${MBTI_MIN} 题可先看结果（还差 ${MBTI_MIN - answered} 题）。`;
+    }
+  }
+
+  /** 渲染当前页 4 题。用 createElement 而不是 innerHTML：题面来自引擎，
+   *  但少一层拼接就少一个注入面，也免得转义漏一处就出问题 */
+  function renderMbti() {
+    const host = el('mbti-qs');
+    if (!host) return;
+    const paper = ensureMbtiPaper();
+    mbPage = Math.min(Math.max(0, mbPage), mbPageCount() - 1);
+    const start = mbPage * MBTI_PER_PAGE;
+    host.textContent = '';
+    paper.questions.slice(start, start + MBTI_PER_PAGE).forEach((q, k) => {
+      const i = start + k;
+      const row = document.createElement('div');
+      row.className = 'mb-q';
+      const qt = document.createElement('div');
+      qt.className = 'mb-qt';
+      const no = document.createElement('b');
+      no.textContent = pad(i + 1);
+      const tx = document.createElement('span');
+      tx.textContent = q.text;
+      qt.append(no, tx);
+      const opts = document.createElement('div');
+      opts.className = 'mb-opts';
+      opts.setAttribute('role', 'radiogroup');
+      opts.setAttribute('aria-label', `第 ${i + 1} 题`);
+      [1, 2, 3, 4, 5].forEach((n) => {
+        const lab = document.createElement('label');
+        lab.className = 'mb-o' + (mbAns[i] === n ? ' on' : '');
+        const inp = document.createElement('input');
+        inp.type = 'radio';
+        inp.name = `mbq${i}`;
+        inp.value = String(n);
+        inp.checked = mbAns[i] === n;
+        const b = document.createElement('b');
+        b.textContent = String(n);
+        const say = document.createElement('span');
+        say.textContent = (paper.scale && paper.scale[n]) || '';
+        lab.append(inp, b, say);
+        opts.appendChild(lab);
+      });
+      row.append(qt, opts);
+      host.appendChild(row);
+    });
+    refreshMbtiMeta();
+  }
+
+  function onMbtiPick(e) {
+    const inp = e.target;
+    if (!inp || inp.type !== 'radio' || String(inp.name || '').indexOf('mbq') !== 0) return;
+    const i = Number(String(inp.name).slice(3));
+    if (!Number.isInteger(i) || i < 0 || i >= mbAns.length) return;
+    mbAns[i] = Number(inp.value) || null;
+    // 只改这一题的选中态，不整页重渲染：键盘刚选完还能继续按方向键换选项
+    const row = inp.closest('.mb-q');
+    if (row) row.querySelectorAll('.mb-o').forEach((lab) => lab.classList.toggle('on', lab.contains(inp)));
+    refreshMbtiMeta();
+  }
+
+  function mbTurn(delta) {
+    mbPage = Math.min(Math.max(0, mbPage + delta), mbPageCount() - 1);
+    renderMbti();
+    const stepper = el('for-mbti');
+    if (stepper && stepper.scrollIntoView) stepper.scrollIntoView({ block: 'nearest' });
+  }
+
+  /** 不够 12 题时：提示差几题，并把光标放到本页第一个没答的题上 */
+  function mbNudge() {
+    const hint = el('mbti-hint');
+    if (hint) {
+      hint.classList.add('warn');
+      hint.textContent = `至少答 ${MBTI_MIN} 题才能出结果，还差 ${Math.max(0, MBTI_MIN - mbAnswered())} 题。`;
+    }
+    const host = el('mbti-qs');
+    if (host) {
+      const rows = host.querySelectorAll('.mb-q');
+      for (let k = 0; k < rows.length; k += 1) {
+        if (mbAns[mbPage * MBTI_PER_PAGE + k] == null) {
+          const inp = rows[k].querySelector('input');
+          if (inp && inp.focus) inp.focus({ preventScroll: true });
+          break;
+        }
+      }
+    }
+    const stepper = el('for-mbti');
+    if (stepper && stepper.scrollIntoView) stepper.scrollIntoView({ block: 'nearest' });
+  }
+
+  function mbClear() {
+    mbAns = new Array(mbPaper ? mbPaper.total : 0).fill(null);
+    mbPage = 0;
+    renderMbti();
+    // 清空是「重新答」：旧结果留在下面会让人以为答案还在
+    if (last && last.tab === 'mbti') { last = null; el('out').replaceChildren(); }
+  }
+
+  function mbSubmit() {
+    if (mbAnswered() < MBTI_MIN) { mbNudge(); return; }
+    run();
+  }
+
+  /** 切到人格 tab：答够了就直接出结果，否则清空结果区，只留问卷 */
+  function mbEnter() {
+    renderMbti();
+    if (mbAnswered() >= MBTI_MIN) { run(); return; }
+    last = null;
+    el('out').replaceChildren();
+  }
+
   window.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
       setTab(b.dataset.tab);
-      run();
+      // 人格 tab 的输入就是问卷本身：没答够时不自动算，免得一进来就弹错
+      if (b.dataset.tab === 'mbti') mbEnter(); else run();
     }));
+    const mbHost = el('mbti-qs');
+    if (mbHost) {
+      renderMbti();
+      mbHost.addEventListener('change', onMbtiPick);
+      const mbPrev = el('mbti-prev');
+      if (mbPrev) mbPrev.addEventListener('click', () => mbTurn(-1));
+      const mbNext = el('mbti-next');
+      if (mbNext) mbNext.addEventListener('click', () => mbTurn(1));
+      const mbSub = el('mbti-submit');
+      if (mbSub) mbSub.addEventListener('click', mbSubmit);
+      const mbClr = el('mbti-clear');
+      if (mbClr) mbClr.addEventListener('click', mbClear);
+    }
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.addEventListener('click', () => {
       mhMode = b.dataset.mode;
       syncMhMode();

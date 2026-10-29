@@ -1,5 +1,6 @@
 // 生成可双击打开的单文件 HTML（引擎 + 界面全部内联，无需服务器）
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { buildModule, MODULE_ORDER } from './build-client.mjs';
@@ -12,64 +13,128 @@ const root = path.resolve(import.meta.dirname, '..');
 const baseline = JSON.parse(fs.readFileSync(path.join(root, 'test', 'assertion-baseline.json'), 'utf8'));
 const TEST_FILES = Object.keys(baseline.files || {}).length;
 const TEST_ASSERTS = baseline.total || Object.values(baseline.files || {}).reduce((a, b) => a + b, 0);
+// 页面上标出版本：桌面那份拷贝是不是最新构建，一眼能看出来
+const VERSION = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 const DIR_OPTIONS = DIRECTIONS
   .map((d) => `<option value="${d.key}"${d.key === DIRECTION_DEFAULT ? ' selected' : ''}>${d.label}</option>`)
   .join('');
 
 export const CSS = `
-:root{--bg:#f4f1ea;--panel:#fffdf8;--panel2:#f7f3ea;--line:#cfc7b6;--ink:#1b1b1b;--dim:#6f6a60;--gold:#b3261e;--good:#1f6f3f;--bad:#b3261e;--warn:#8a5a00}
+:root{--bg:#f3eee4;--panel:#fffdf8;--panel2:#f8f3e9;--line:#d6cbb7;--ink:#1a1916;--ink2:#3f3a33;--dim:#6f6a60;--gold:#a72c23;--gold-deep:#7d1f18;--good:#1f6f3f;--bad:#a72c23;--warn:#8a5a00;
+  --radius:12px;--shadow:0 1px 2px rgba(35,28,18,.05),0 18px 40px -30px rgba(35,28,18,.42);--ring:0 0 0 3px rgba(167,44,35,.16)}
 /* 深色：跟随系统。只换变量，元素规则一条不改。@media screen 限定 → 打印永远浅色 */
 @media screen and (prefers-color-scheme:dark){
-  :root{--bg:#12110d;--panel:#1b1913;--panel2:#221f18;--line:#3c372e;--ink:#e7e2d6;--dim:#9b9488;--gold:#e2755f;--good:#67b98a;--bad:#e2755f;--warn:#d9a052}
+  :root{--bg:#12110d;--panel:#1b1913;--panel2:#221f18;--line:#3c372e;--ink:#e7e2d6;--ink2:#d5cfc2;--dim:#9b9488;--gold:#e2755f;--gold-deep:#b8503f;--good:#67b98a;--bad:#e2755f;--warn:#d9a052;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 40px -30px rgba(0,0,0,.9);--ring:0 0 0 3px rgba(226,117,95,.2)}
   /* 深色下强调色是浅色，这些实心底上的文字得反过来 */
   .tab.on,.seg button.on,.go{color:#14130f}
+  .mb-o.on b,.mb-o.on span,.mb-btn.primary{color:#14130f}
   .err{background:rgba(226,117,95,.14)}
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+body{margin:0;color:var(--ink);font:16px/1.65 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom);
+  background:
+    radial-gradient(900px 460px at 14% -160px,color-mix(in srgb,var(--gold) 9%,transparent),transparent 68%),
+    radial-gradient(760px 420px at 96% -120px,color-mix(in srgb,var(--good) 7%,transparent),transparent 72%),
+    var(--bg);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:color-mix(in srgb,var(--gold) 24%,transparent)}
+:where(button,input,select,textarea,a,summary):focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
 .wrap{max-width:1180px;margin:0 auto;padding:22px 26px 60px}
-header{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px}
-.brand{font-size:21px;font-weight:700;letter-spacing:.12em;color:var(--gold)}
-.brand small{display:block;font-size:12.5px;letter-spacing:.02em;color:var(--dim);font-weight:400;margin-top:2px}
-.tabs{display:flex;gap:8px;margin-left:auto}
-.tab{padding:8px 20px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-size:14.5px;font-family:inherit;white-space:nowrap}
-.tab:hover{background:var(--panel2)}
-.tab.on{background:var(--gold);border-color:transparent;color:#fff;font-weight:600}
-.bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:start;padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px}
+/* 抬头竖排：品牌在上，tab 条独占一行。19 个 tab 横排在品牌右侧会把末行挤成「起名 人格」孤零零两个 */
+header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700;letter-spacing:.14em;color:var(--gold);line-height:1.3}
+.brand .seal{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;border-radius:11px;
+  background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font:700 20px/1 "Songti SC","SimSun",serif;letter-spacing:0;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 8px 18px -10px var(--gold)}
+.brand-txt{display:block;min-width:0}
+.brand-txt small{display:block;font-size:12.5px;letter-spacing:.02em;color:var(--dim);font-weight:400;margin-top:3px}
+.ver{display:inline-block;margin-left:8px;vertical-align:3px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);
+  color:var(--dim);font:600 11px/1.5 system-ui,sans-serif;letter-spacing:.04em}
+/* 等宽网格铺满一行：每格同宽、末行左对齐，不会出现右对齐造成的锯齿缺口 */
+.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));grid-auto-rows:minmax(36px,auto);gap:6px}
+.tab{display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 10px;border-radius:999px;border:1px solid transparent;background:color-mix(in srgb,var(--panel) 62%,transparent);color:var(--dim);cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap;
+  transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
+.tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
+.tab.on{background:linear-gradient(145deg,var(--gold),var(--gold-deep));border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
+.bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:start;padding:18px 20px;margin-bottom:20px;
+  background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 90%,var(--bg)));border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
 .grp{display:contents}
-.field{display:flex;flex-direction:column;gap:6px;font-size:13.5px;color:var(--dim)}
+.field{display:flex;flex-direction:column;gap:6px;font-size:12.5px;letter-spacing:.03em;color:var(--dim)}
 /* 固定宽度而非 min-width：输入控件的默认固有宽度（20 字符）会把 1180px 下的单行输入区挤到换行 */
-.field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;outline:none;width:150px}
+.field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;outline:none;width:150px;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:color-mix(in srgb,var(--line) 55%,var(--gold))}
 #addr{width:178px}
 #mh-num input{width:124px}
 #changing{width:132px}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:var(--ring);background:var(--panel)}
 .field.check{flex-direction:row;align-items:center;gap:8px;padding-bottom:8px}
 /* 所问之事：多行文本，样式与输入框一致；整组可伸缩，空间不足时自动换行独占一行 */
 .field textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;line-height:1.5;outline:none;width:100%;min-width:0;resize:vertical}
 #for-ask{flex:1 1 240px;min-width:0}
 #ask-wrap{flex:1 1 auto;min-width:0}
+/* 人格问卷：与日期/时刻无关，整行独占；4 题一页，1–5 单选。
+   题目由 web-ui 从引擎取，页面只放容器与进度/翻页骨架 */
+#for-mbti{grid-column:1/-1}
+#for-mbti>.field{width:100%}
+.mb-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mb-prog{flex:1 1 180px;min-width:120px;height:6px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);overflow:hidden}
+.mb-prog i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold-deep));transition:width .18s ease}
+.mb-count{font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mb-qs{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.mb-q{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--panel) 72%,transparent)}
+.mb-qt{display:flex;gap:10px;align-items:baseline;font-size:14.5px;line-height:1.6;color:var(--ink)}
+.mb-qt b{flex:none;padding-top:2px;font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:var(--gold)}
+.mb-opts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px}
+.mb-o{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:7px 4px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--dim);cursor:pointer;text-align:center;
+  transition:border-color .14s ease,background .14s ease,color .14s ease,box-shadow .14s ease}
+.mb-o input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}
+.mb-o b{font-size:14px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
+.mb-o span{font-size:11.5px;line-height:1.3}
+.mb-o:hover{border-color:color-mix(in srgb,var(--line) 40%,var(--gold))}
+.mb-o.on{border-color:transparent;background:linear-gradient(145deg,var(--gold),var(--gold-deep));box-shadow:0 8px 16px -12px var(--gold)}
+.mb-o.on b,.mb-o.on span{color:#fff}
+.mb-o:focus-within{outline:2px solid var(--gold);outline-offset:2px}
+.mb-nav{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.mb-btn{padding:8px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:inherit;font-size:13.5px;cursor:pointer;
+  transition:border-color .14s ease,background .14s ease,color .14s ease}
+.mb-btn:hover:not(:disabled){border-color:var(--gold)}
+.mb-btn:disabled{opacity:.42;cursor:not-allowed}
+.mb-btn.primary{border-color:transparent;background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font-weight:600;box-shadow:0 10px 20px -14px var(--gold)}
+.mb-btn.primary:hover:not(:disabled){filter:brightness(1.05)}
+.mb-hint{margin-left:auto;font-size:12.5px;color:var(--dim);line-height:1.6}
+.mb-hint.warn{color:var(--bad);font-weight:600}
 #direction{flex:none;width:104px}
 /* 必填未填：边框转红，提示复用 .err 的口径 */
 .field.invalid textarea{border-color:var(--bad);background:rgba(224,102,95,.06)}
 .field.check input{min-width:0;width:18px;height:18px;accent-color:var(--gold);padding:0}
-.go{margin-left:0;grid-column:4;justify-self:end;align-self:end;padding:10px 22px;border-radius:6px;border:none;background:var(--gold);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px}
-.go:hover{filter:brightness(1.08)}
-.go.ghost{grid-column:3;background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;margin-right:8px}
+.go{margin-left:0;grid-column:4;justify-self:end;align-self:end;padding:11px 24px;border-radius:9px;border:none;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px;
+  background:linear-gradient(145deg,var(--gold),var(--gold-deep));box-shadow:0 10px 22px -14px var(--gold),inset 0 1px 0 rgba(255,255,255,.18);
+  transition:transform .14s ease,filter .14s ease,box-shadow .14s ease}
+.go:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 14px 26px -14px var(--gold),inset 0 1px 0 rgba(255,255,255,.22)}
+.go:active{transform:translateY(0);filter:brightness(.98)}
+.go.ghost{grid-column:3;background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;margin-right:8px;box-shadow:none;transform:none}
+.go.ghost:hover{background:var(--panel2);color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.chip{font-size:13px;padding:4px 10px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
-.chip.ok{color:var(--good);border-color:rgba(95,191,139,.35)}
-.chip.warn{color:var(--warn);border-color:rgba(216,161,60,.35)}
+.chip{font-size:12.5px;padding:4px 11px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+.chip.ok{color:var(--good);border-color:color-mix(in srgb,var(--good) 35%,transparent);background:color-mix(in srgb,var(--good) 8%,transparent)}
+.chip.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 35%,transparent);background:color-mix(in srgb,var(--warn) 8%,transparent)}
 .chip.dim{opacity:.6}
 .note{margin-top:10px;font-size:13px;color:var(--dim)}
 .err{margin-top:18px;padding:12px 16px;border-radius:10px;background:rgba(224,102,95,.12);color:var(--bad);font-size:14px}
 /* 注：盘面样式（紫微宫格 .pp-grid / 八字 .pp-bz / 六爻 .mp-hy-row / 梅花 .mp-hexbox / 六壬 .mp-dl-pan2 / 塔罗 .mp-tt-grid）
    全部由 src/panel-kit.js 的 PP.CSS 提供，本文件只保留页面框架样式，不再重复定义旧版盘面类 */
-h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{padding:7px 14px;background:transparent;border:none;color:var(--dim);font-size:13.5px;font-family:inherit;cursor:pointer}
-.seg button.on{background:var(--gold);color:#fff;font-weight:600}
+h3{display:flex;align-items:center;gap:10px;margin:22px 0 10px;font-size:15px;font-weight:600;color:var(--gold);letter-spacing:.06em}
+h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel2)}
+.seg button{padding:7px 14px;background:transparent;border:none;color:var(--dim);font-size:13.5px;font-family:inherit;cursor:pointer;transition:background .14s ease,color .14s ease}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font-weight:600}
+/* 结果入场：只做一次轻微上浮，不做循环动画 */
+#out{animation:mp-rise .3s cubic-bezier(.2,.7,.3,1) both}
+@keyframes mp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 /* 奇门换局规则：fieldset + 原生 radio（语义优先，外观沿用页面浅色块） */
 .qmrule{grid-column:1 / -1;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .qmrule legend{padding:0;font-size:13.5px;color:var(--dim)}
@@ -86,13 +151,17 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .cast-at{margin:0 0 14px;font-size:13.5px;color:var(--dim);line-height:1.7}
 .cast-at b{color:var(--ink);font-weight:600;letter-spacing:.02em}
 /* 结果区下方：导出/打印 */
-.askbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0 0;padding:10px 12px;border:1px dashed var(--line);border-radius:8px}
-.askbox input{flex:1 1 240px;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit}
-.askbox button{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--gold);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.askbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:16px 0 0;padding:11px 13px;border:1px dashed var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 55%,transparent)}
+.askbox input{flex:1 1 240px;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit;outline:none}
+.askbox input:focus{border-color:var(--gold);box-shadow:var(--ring)}
+.askbox button{padding:8px 14px;border:1px solid transparent;border-radius:8px;background:var(--gold);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.askbox button:hover{filter:brightness(1.08)}
 .askbox .hint{font-size:12px;color:var(--dim)}
 .method{max-width:860px;margin:0 auto;padding:24px 18px 40px;font-size:14px;line-height:1.9;color:var(--ink2)}
-.method h2{font-size:18px;color:var(--gold);margin:0 0 12px}
-.method h3{font-size:15px;color:var(--ink);margin:18px 0 6px}
+.method h2{font-size:18px;color:var(--gold);margin:0 0 12px;letter-spacing:.05em}
+.method h3{display:block;font-size:15px;color:var(--ink);margin:18px 0 6px;letter-spacing:0}
+.method h3::after{display:none}
+.method a{color:var(--gold);text-decoration-color:color-mix(in srgb,var(--gold) 45%,transparent);text-underline-offset:3px}
 .method ul{margin:6px 0;padding-left:20px}
 .method .note{color:var(--dim);font-size:13px}
 .mp-verify,.mp-rect{margin:14px 0 0;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
@@ -109,8 +178,9 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
 .mp-rect-cand.best{border-left:3px solid var(--gold);color:var(--ink)}
 .mp-rect-err{color:var(--bad);font-size:12.5px}
 .exp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
-.exp button{padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer}
-.exp button:hover{background:var(--panel2);border-color:var(--gold)}
+.exp button{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer;
+  transition:background .14s ease,border-color .14s ease,transform .14s ease}
+.exp button:hover{background:var(--panel2);border-color:var(--gold);transform:translateY(-1px)}
 .exp .hint{font-size:13px;color:var(--dim)}
 
 /* —— 竖屏（≤640px）：整页不横向滚动，输入区整行堆叠，盘面交给 panel-kit 的同名媒体查询 —— */
@@ -119,12 +189,18 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   .wrap{padding:14px 12px 48px}
   header{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:12px}
   header>*{min-width:0}
-  .brand{font-size:19px}
-  .tabs{margin-left:0;padding-bottom:4px;max-width:100%}
-  .tab{flex:0 0 auto;padding:11px 17px;font-size:14px;min-height:44px}
+  header{gap:10px;padding-bottom:12px}
+  .brand{font-size:19px;letter-spacing:.1em}
+  .brand .seal{width:34px;height:34px;border-radius:9px;font-size:17px}
+  .brand-txt small{font-size:11.5px;line-height:1.5}
+  /* 19 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
+     左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
+  .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
+    margin:0 -12px;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;min-height:44px;padding:11px 16px;font-size:14px}
   .bar{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}
-    .field{min-width:0}
-  .field{width:100%}
+  .field{width:100%;min-width:0}
   .field input,.field select,.field textarea,#addr,#changing,#direction{width:100%;min-width:0;padding:11px 12px;font-size:16px;min-height:44px}
   #for-ask{flex-direction:column;align-items:stretch}
   .field.check{padding-bottom:0}
@@ -132,14 +208,28 @@ h3{margin:18px 0 8px;font-size:15px;font-weight:600;color:var(--gold)}
   #mh-num input{flex:1 1 30%;width:auto}
   .seg{display:flex;width:100%}
   .seg button{flex:1;padding:12px 8px;min-height:44px}
-  .go{margin-left:0;width:100%;padding:13px;font-size:16px;min-height:48px;border-radius:8px}
+  /* 人格问卷：5 个评分格在窄屏会挤成一行细条，缩字号与内边距，按钮整行方便点 */
+  .mb-q{padding:11px 12px}
+  .mb-qt{font-size:14px}
+  .mb-o{padding:8px 3px;min-height:52px}
+  .mb-o span{font-size:10.5px}
+  .mb-btn{flex:1 1 auto;min-height:44px;padding:10px 12px}
+  .mb-hint{flex-basis:100%;margin-left:0}
+  /* 两列下把「看示例 / 排盘」并排放：原来写死 grid-column:4 会凭空多出两列 auto 轨道，
+     把前两列挤成 134px，性别、按钮全被压扁 */
+  .go,.go.ghost{grid-column:auto;justify-self:stretch;margin-left:0;margin-right:0;width:100%;padding:13px;font-size:16px;min-height:48px;border-radius:8px}
+  .go.ghost{grid-column:1}
+  .go{grid-column:2}
+  /* 性别只有一格，留在半幅会空出右边半格；出生地同理，独占一行好填 */
+  #for-gender,#for-bazi .field:not(.check){grid-column:1/-1}
   .tip{font-size:13px}
   .tip .auto-note{font-size:13px}
   .cast-at{font-size:13px}
-  /* 六个 tab 在 390px 下横向排不下，改成 3 列两行铺满：
-     原来靠 overflow-x 横滑，最后一个「塔罗」永远卡在右缘只露半个字 */
-  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow:visible;width:100%}
-  .tab{width:auto;min-width:0;padding:11px 6px;text-align:center}
+}
+
+/* 动效偏好：系统要求减少动态时，全部关掉（含结果入场） */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 }
 
 /* —— 打印 / 存为 PDF ——
@@ -193,7 +283,7 @@ function page() {
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">命理排盘<small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></div>
+    <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v${VERSION}</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
     <div class="tabs">
       <button class="tab" data-tab="ziwei">紫微</button>
       <button class="tab" data-tab="bazi">八字</button>
@@ -358,11 +448,24 @@ function page() {
         <label class="field" id="fs-advise" style="display:none">坐山<input id="sitting" placeholder="如 子 / 乾" value="子"></label>
         <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
       </div>
+      <!-- 人格问卷：4 题一页、1–5 打分。题目与 1–5 的说明由 web-ui 从引擎取，
+           这里只放容器与翻页骨架，避免题目在页面和引擎里各抄一份 -->
       <div id="for-mbti" style="display:none">
-        <label class="field">24 题分数（1–5，空格或逗号分隔）
-          <textarea id="mbtianswers" rows="2" placeholder="如 5 4 3 2 2 5 4 3 5 4 3 2 4 5 3 2 1 2 4 3 5 4 4 2"></textarea>
-        </label>
-        <p class="note">留空先出题目；每题 1 完全不像、5 很像我。这是一份 MBTI 风格问卷，不是官方量表。</p>
+        <div class="field">
+          <span>十六型人格问卷 · 4 题一页，按 1（完全不像）到 5（很像我）打分</span>
+          <div class="mb-top">
+            <div class="mb-prog" aria-hidden="true"><i id="mbti-fill"></i></div>
+            <span class="mb-count" id="mbti-count">第 1 / 6 页 · 已答 0 / 24</span>
+          </div>
+          <div class="mb-qs" id="mbti-qs"></div>
+          <div class="mb-nav">
+            <button type="button" class="mb-btn" id="mbti-prev" disabled>上一页</button>
+            <button type="button" class="mb-btn" id="mbti-next">下一页</button>
+            <button type="button" class="mb-btn primary" id="mbti-submit" disabled>看结果</button>
+            <button type="button" class="mb-btn" id="mbti-clear">清空</button>
+            <span class="mb-hint" id="mbti-hint">答满 12 题可先看结果</span>
+          </div>
+        </div>
       </div>
       <div id="qk-name" style="display:none">
         <div class="field">看什么
@@ -434,6 +537,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     : path.resolve(root, '命理排盘.html');
   fs.writeFileSync(target, out, 'utf8');
   console.log(`written: ${target}  (${(out.length / 1024).toFixed(1)} KB)`);
+  // 桌面那份是手工拷的产物，源码一改就旧了。`--desktop` 让它跟着构建走，
+  // 页面左上角的版本徽标用来核对是不是最新构建。
+  if (process.argv.includes('--desktop')) {
+    const desktop = path.join(os.homedir(), 'Desktop', '命理排盘.html');
+    fs.mkdirSync(path.dirname(desktop), { recursive: true });
+    if (path.resolve(desktop) !== path.resolve(target)) {
+      fs.writeFileSync(desktop, out, 'utf8');
+      console.log(`written: ${desktop}  (${(out.length / 1024).toFixed(1)} KB)`);
+    }
+  }
 }
 
 

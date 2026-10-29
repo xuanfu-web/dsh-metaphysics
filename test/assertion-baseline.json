@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 2531,
+  "total": 2832,
   "files": {
     "args.test.mjs": {
       "pass": 40,
@@ -47,7 +47,7 @@
       "fail": 0
     },
     "classic-quotes.test.mjs": {
-      "pass": 34,
+      "pass": 47,
       "fail": 0
     },
     "classics.test.mjs": {
@@ -147,11 +147,11 @@
       "fail": 0
     },
     "liuyao-hex-shuai.test.mjs": {
-      "pass": 53,
+      "pass": 54,
       "fail": 0
     },
     "liuyao-jintui.test.mjs": {
-      "pass": 49,
+      "pass": 76,
       "fail": 0
     },
     "liuyao-shuai.test.mjs": {
@@ -179,7 +179,7 @@
       "fail": 0
     },
     "mbti.test.mjs": {
-      "pass": 63,
+      "pass": 95,
       "fail": 0
     },
     "meihua.test.mjs": {
@@ -234,6 +234,10 @@
       "pass": 13,
       "fail": 0
     },
+    "sanming.test.mjs": {
+      "pass": 47,
+      "fail": 0
+    },
     "security.test.mjs": {
       "pass": 10,
       "fail": 0
@@ -244,6 +248,10 @@
     },
     "standalone.test.mjs": {
       "pass": 40,
+      "fail": 0
+    },
+    "suiyun.test.mjs": {
+      "pass": 102,
       "fail": 0
     },
     "symbols.test.mjs": {
@@ -308,6 +316,10 @@
     },
     "ziwei-hepan.test.mjs": {
       "pass": 10,
+      "fail": 0
+    },
+    "ziwei-patterns.test.mjs": {
+      "pass": 79,
       "fail": 0
     },
     "ziwei.test.mjs": {

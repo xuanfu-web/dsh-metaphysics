@@ -534,8 +534,9 @@ export function buildZiwei(input) {
   chart.patternSummary = {
     count: chart.patterns.length,
     good: chart.patterns.filter((p) => p.tone === 'good').map((p) => p.name),
+    neutral: chart.patterns.filter((p) => p.tone === 'neutral').map((p) => p.name),
     bad: chart.patterns.filter((p) => p.tone === 'bad').map((p) => p.name),
-    note: '格局只描述结构，不作吉凶断语；同一命盘可并存吉格与忌格',
+    note: '格局只描述结构，不作吉凶断语；同一命盘可并存吉格、中性结构与忌格',
   };
   return chart;
 }
@@ -577,19 +578,18 @@ export function detectPatterns(chart) {
 
   const lu = starBranchOf(chart, '禄存');
   const ma = starBranchOf(chart, '天马');
-  if (lu >= 0 && ma >= 0 && (lu === ma || fix(lu - ma) === 6)) add('禄马交驰', `禄存在${chart.ziwei && BRANCHES[lu]}，天马在${BRANCHES[ma]}`);
+  if (lu >= 0 && ma >= 0 && (lu === ma || fix(lu - ma) === 6)) add('禄马交驰', `禄存在${BRANCHES[lu]}，天马在${BRANCHES[ma]}`);
 
   const huo = starBranchOf(chart, '火星');
   const ling = starBranchOf(chart, '铃星');
   if (fix(soulIdx - 1) === huo && fix(soulIdx + 1) === ling) add('火铃夹命', '火星在命宫前一宫、铃星在后一宫夹命');
   if (fix(soulIdx - 1) === ling && fix(soulIdx + 1) === huo) add('火铃夹命', '铃星与火星夹命');
 
+  // 擎羊在禄存 +1、陀罗在禄存 -1，两星只能夹「禄存」那一宫；
+  // 所以「羊陀夹忌」实际就是化忌与禄存同宫，按左右两侧去找永远找不到。
   const ji = chart.palaces.find((p) => p.stars.some((s) => s.mutagen === '忌'));
-  if (ji) {
-    const jb = BRANCHES.indexOf(ji.branch);
-    if (fix(jb - 1) === starBranchOf(chart, '擎羊') && fix(jb + 1) === starBranchOf(chart, '陀罗')) {
-      add('羊陀夹忌', `化忌在${ji.branch}，擎羊陀罗夹之`);
-    }
+  if (ji && lu >= 0 && BRANCHES.indexOf(ji.branch) === lu) {
+    add('羊陀夹忌', `化忌与禄存在${ji.branch}同宫，擎羊陀罗夹之`);
   }
 
   // 铃昌陀武：四星会于命宫三方四正
@@ -607,10 +607,14 @@ export function detectPatterns(chart) {
   // ── 以下为扩展格局（条件都是星位判断，evidence 写明落在哪宫）──
   const inSoul = (name) => soul.stars.some((s) => s.name === name);
   const nearStar = (name) => near.has(name);
+  // 「夹」只要求两星分居命宫前后，不分左右——日月、左右、魁钺本来就没有固定左右；
+  // 旧写法只认一种顺序，昌曲夹命与羊陀夹命因此从未命中，日月/左右/魁钺也漏掉一半。
   const jia = (a, b) => {
     const ba = starBranchOf(chart, a);
     const bb = starBranchOf(chart, b);
-    return ba >= 0 && bb >= 0 && fix(ba + 1) === soulIdx && fix(bb - 1) === soulIdx;
+    if (ba < 0 || bb < 0) return false;
+    return (fix(ba + 1) === soulIdx && fix(bb - 1) === soulIdx)
+      || (fix(bb + 1) === soulIdx && fix(ba - 1) === soulIdx);
   };
   const mutagensIn = (indices) => {
     const set = new Set();
@@ -644,7 +648,7 @@ export function detectPatterns(chart) {
   if (jia('左辅', '右弼')) add('左右夹命', '左辅、右弼夹命宫');
   if (jia('文昌', '文曲')) add('昌曲夹命', '文昌、文曲夹命宫');
   if (jia('天魁', '天钺')) add('魁钺夹命', '天魁、天钺夹命宫');
-  if (jia('擎羊', '陀罗')) add('羊陀夹命', '擎羊、陀罗夹命宫');
+  if (jia('擎羊', '陀罗')) add('羊陀夹命', `禄存在${BRANCHES[soulIdx]}守命，擎羊陀罗前后夹之`);
 
   // 四化
   const muts = mutagensIn(sanfang);
@@ -659,9 +663,13 @@ export function detectPatterns(chart) {
   const lianzhen = starBranchOf(chart, '廉贞');
   const tianxiang = starBranchOf(chart, '天相');
   const qingyang = starBranchOf(chart, '擎羊');
-  if (lianzhen >= 0 && qingyang >= 0 && tianxiang >= 0
-    && fix(lianzhen + 1) === tianxiang && fix(qingyang - 1) === tianxiang) {
-    add('刑囚夹印', '廉贞与擎羊夹天相（刑囚夹印）');
+  // 天相与廉贞永远隔偶数宫，字面上的「廉贞、擎羊夹天相」不可能成立；
+  // 通行说法取「廉贞天相同守命宫于子午、擎羊同宫」——判的是守命那一宫，其它宫位同宫不算。
+  // 命宫卯酉、廉贞天相对照遇擎羊的变体未纳入。
+  if (lianzhen >= 0 && tianxiang >= 0 && qingyang >= 0
+    && lianzhen === tianxiang && qingyang === tianxiang && tianxiang === soulIdx
+    && (tianxiang === 0 || tianxiang === 6)) {
+    add('刑囚夹印', `廉贞天相同守命宫${BRANCHES[tianxiang]}，擎羊同宫`);
   }
   if (near.has('贪狼') && (near.has('火星') || near.has('铃星'))) {
     add('火贪铃贪', `贪狼与${near.has('火星') ? '火星' : '铃星'}会于命宫三方四正`);
@@ -678,7 +686,7 @@ export function detectPatterns(chart) {
     .map((p) => ({ ...p, tone: PATTERN_TONE[p.name] || 'neutral' }));
 }
 
-const PATTERN_TONE = {
+export const PATTERN_TONE = {
   紫府同宫: 'good', 紫府朝垣: 'good', 君臣庆会: 'good', 极向离明: 'good',
   七杀朝斗: 'good', 英星入庙: 'good', 石中隐玉: 'good', 巨日同宫: 'good',
   日月夹命: 'good', 日月对照: 'good', 左右夹命: 'good', 昌曲夹命: 'good',

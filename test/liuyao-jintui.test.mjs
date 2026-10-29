@@ -180,3 +180,49 @@ ok('面板 chip 渲染化进神', /<span class="pp-chip ok">化进神 2<\/span>/
 const rOld = castPair('乾为天之泽天夬');
 delete rOld.body;
 ok('旧结果无 body 时面板写兜底文案', PP.liuyaoHTML(rOld).includes('卦体无六冲、六合、伏吟、反吟'), '');
+
+// ── ⑥ 力重：进退只管方向，走不走得动看月建日辰 ───────────────────
+const { jinTuiPower } = await import('../engine/liuyao.js');
+const { interpret } = await import('../engine/interpret.js');
+const { buildAnswer } = await import('../engine/interpret-plain.js');
+
+const qianKuai = castPair('乾为天之泽天夬'); // 6 爻 戌→未（退）
+const tuiMonth = jinTuiPower(qianKuai, { monthBranch: '午', dayBranch: '子' });
+eq('乾之夬 进退只有一条', tuiMonth.lines.length, 1);
+eq('6 爻戌土化退，午火月土为相 → 退得缓', tuiMonth.lines[0].verdict, '退得缓');
+eq('日辰子水对戌土为耗', tuiMonth.lines[0].dayRelation, '耗');
+ok('甲子日戌在旬空，力重只标出、不改结论', tuiMonth.lines[0].kong === true && tuiMonth.lines[0].verdict === '退得缓', JSON.stringify(tuiMonth.lines[0]));
+eq('力重标签带爻位与结论', tuiMonth.labels.join('|'), '6爻化退·退得缓');
+ok('力重说明句写清干支与结论', /戌→未（退）：月建午（火）对土为相/.test(tuiMonth.lines[0].say), tuiMonth.lines[0].say);
+
+const tunJie2 = castPair('水雷屯之水泽节'); // 2 爻 寅→卯（进）
+eq('寅木化进，酉金月木为死 → 进得虚', jinTuiPower(tunJie2, { monthBranch: '酉' }).lines[0].verdict, '进得虚');
+eq('寅木化进，申月寅申相冲 → 月破失据', jinTuiPower(tunJie2, { monthBranch: '申' }).lines[0].verdict, '月破失据');
+eq('寅木化进，寅月同气 → 后劲足', jinTuiPower(tunJie2, { monthBranch: '寅' }).lines[0].verdict, '后劲足');
+eq('寅木化进，午火月木生火为休 → 后劲有限', jinTuiPower(tunJie2, { monthBranch: '午' }).lines[0].verdict, '后劲有限');
+eq('寅木化进，酉金月被克为死', jinTuiPower(tunJie2, { monthBranch: '酉' }).lines[0].monthState, '死');
+eq('戌土化退，辰月相冲 → 月破失据', jinTuiPower(qianKuai, { monthBranch: '辰' }).lines[0].verdict, '月破失据');
+eq('只给日辰没月建 → 只报趋势', jinTuiPower(qianKuai, { dayBranch: '子' }).lines[0].verdict, '只报趋势');
+eq('静卦没有进退 → null', jinTuiPower(quiet, { monthBranch: '午' }), null);
+eq('缺 body → null', jinTuiPower({}, { monthBranch: '午' }), null);
+eq('力重条数与 jinTui 条数一致', jinTuiPower(both, { monthBranch: '午' }).lines.length, 2);
+
+// 档位表要能独立复算：得令两态一个结论、失令两态一个结论、死单独一档
+const jinVerdicts = ['旺', '相', '休', '囚', '死'].map((m) => jinTuiPower(tunJie2, { monthBranch: { 旺: '寅', 相: '子', 休: '午', 囚: '辰', 死: '酉' }[m] }).lines[0].verdict);
+eq('进神五态档位（旺相/休囚/死）', jinVerdicts.join('|'), '后劲足|后劲足|后劲有限|后劲有限|进得虚');
+const tuiVerdicts = ['旺', '相', '休', '囚', '死'].map((m) => jinTuiPower(qianKuai, { monthBranch: { 旺: '未', 相: '午', 休: '申', 囚: '子', 死: '卯' }[m] }).lines[0].verdict);
+eq('退神五态档位（旺相/休囚死）', tuiVerdicts.join('|'), '退得缓|退得缓|退得实|退得实|退得实');
+
+// 全链路：compute 挂上、摘要单列、解析与白话都写出来、面板出 chip
+const castPower = compute({ system: 'liuyao', lines: [9, 7, 8, 7, 7, 6], datetime: '2024-06-15T10:00' });
+ok('compute 结果挂上 jinTuiPower', !!(castPower.jinTuiPower && castPower.jinTuiPower.lines.length === 1), JSON.stringify(castPower.jinTuiPower && castPower.jinTuiPower.labels));
+eq('2024-06-15 属午月', castPower.jinTuiPower.month && castPower.jinTuiPower.month.branch, '午');
+eq('未土化进得午火相 → 后劲足', castPower.jinTuiPower.lines[0].verdict, '后劲足');
+ok('摘要单列进退力重', /进退力重：6爻未→戌进·后劲足/.test(String(castPower.summary)), (String(castPower.summary).match(/进退力重.*/) || [''])[0]);
+const bodySec = (interpret(castPower, {}).sections || []).find((s) => s.key === 'body');
+ok('解析「卦体关系」写出力重', !!(bodySec && /进退的力重/.test(bodySec.text)), bodySec ? bodySec.text.slice(0, 60) : '缺 body 节');
+ok('解析力重写明月建与档位', !!(bodySec && /月建午（火）.*后劲足/.test(bodySec.text)), '');
+ok('白话提到进退还要看时令', /进退还要看时令/.test(buildAnswer(castPower, {}, {})), '');
+const htmlPower = PP.liuyaoHTML(castPower);
+ok('面板渲染力重 chip', /<span class="pp-chip ok">6爻化进·后劲足<\/span>/.test(htmlPower), '');
+ok('面板没有力重数据时不出该排', !/化进·|化退·/.test(PP.liuyaoHTML(rOld)), '');

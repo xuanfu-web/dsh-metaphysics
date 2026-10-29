@@ -11,8 +11,8 @@ const ok = (name, cond) => { if (cond) { pass++; console.log('PASS  ' + name); }
 const R = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'male' });
 
 // —— 数据完整性
-ok('books 两部', Object.keys(CLASSIC_BOOKS).length === 2 && CLASSIC_BOOKS.ziping.name === '子平真诠' && CLASSIC_BOOKS.ditian.name === '滴天髓');
-ok('条目数 ≥ 19', CLASSICS.length >= 19);
+ok('books 三部', Object.keys(CLASSIC_BOOKS).length === 3 && CLASSIC_BOOKS.ziping.name === '子平真诠' && CLASSIC_BOOKS.ditian.name === '滴天髓' && CLASSIC_BOOKS.sanming.name === '三命通会');
+ok('条目数 ≥ 26', CLASSICS.length >= 26);
 ok('id 唯一', new Set(CLASSICS.map((e) => e.id)).size === CLASSICS.length);
 ok('每条都有书名/章名/原文/释义/出处', CLASSICS.every((e) => CLASSIC_BOOKS[e.book] && e.chapter.length >= 2 && e.quote.length >= 12 && e.plain.length >= 8 && /^https:\/\//.test(e.url)));
 ok('scene 取值合法', CLASSICS.every((e) => ['格局', '十神', '调候', '用神'].includes(e.scene)));
@@ -30,16 +30,35 @@ ok('论阳刃原文含「劫之甚也」', classicOf('zp-yangren').quote.include
 ok('论建禄月劫原文含「别取财官煞食为用」', classicOf('zp-lujie').quote.includes('别取财官煞食为用'));
 ok('滴天髓寒暖原文含「不可过也」', classicOf('dt-hannuan').quote.includes('不可过也'));
 ok('滴天髓官杀原文含「有可有不可」', classicOf('dt-guansha').quote.includes('有可有不可'));
+ok('论用神成败救应含「成中有败」「全凭救应」', classicOf('zp-chengbai').quote.includes('成中有败') && classicOf('zp-chengbai').quote.includes('全凭救应'));
+ok('论用神变化含「则化为印」「则化为财」', classicOf('zp-bianhua').quote.includes('则化为印') && classicOf('zp-bianhua').quote.includes('则化为财'));
+ok('成败救应出自典藏网第九章', classicOf('zp-chengbai').chapter === '九、论用神成败救应' && classicOf('zp-chengbai').url === 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53629.html');
+ok('用神变化出自典藏网第十章', classicOf('zp-bianhua').chapter === '十、论用神变化' && classicOf('zp-bianhua').url === 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53630.html');
 ok('未知 id 返回 null', classicOf('no-such') === null);
 
 // —— 匹配规则
 const rows = classicsFor(R);
-ok('1996 盘取到 2–4 条', rows.length >= 2 && rows.length <= 4);
+ok('1996 盘取到 2–5 条', rows.length >= 2 && rows.length <= 5);
 ok('偏财格取《论财》', rows.some((e) => e.id === 'zp-cai'));
 ok('寒湿盘取滴天髓寒暖', rows.some((e) => e.id === 'dt-hannuan'));
 ok('配气候一条在列', rows.some((e) => e.id === 'zp-qihou'));
 ok('每条都有 why（为什么取这条）', rows.every((e) => typeof e.why === 'string' && e.why.length >= 6));
 ok('不重复', new Set(rows.map((e) => e.id)).size === rows.length);
+ok('why 不拼出「论论」', rows.every((e) => !e.why.includes('论论')));
+ok('总纲位只出一条（总纲/变化/成败三选一）', ['zp-yongshen', 'zp-bianhua', 'zp-chengbai'].filter((id) => rows.some((e) => e.id === id)).length === 1);
+ok('1996 盘有化气格，总纲位取「论用神变化」', rows.some((e) => e.id === 'zp-bianhua') && !rows.some((e) => e.id === 'zp-yongshen'));
+const huagiRows = classicsFor({ geju: [{ name: '化土格', kind: '化气格' }], climate: { kind: '平和' } });
+ok('化气格 → 论用神变化', huagiRows.some((e) => e.id === 'zp-bianhua'));
+ok('化气格 why 点明合化', huagiRows.find((e) => e.id === 'zp-bianhua').why.includes('合化'));
+const comboRows = classicsFor({ geju: [{ name: '正官格', kind: '月令格' }, { name: '伤官见官', kind: '组合' }], climate: { kind: '平和' } });
+ok('有组合无化气 → 论用神成败救应', comboRows.some((e) => e.id === 'zp-chengbai') && !comboRows.some((e) => e.id === 'zp-yongshen'));
+ok('组合 why 点明带忌与救应', comboRows.find((e) => e.id === 'zp-chengbai').why.includes('带忌与救应'));
+const plainRows = classicsFor({ geju: [{ name: '正官格', kind: '月令格' }], climate: { kind: '平和' } });
+ok('无化气无组合 → 回到通用总纲', plainRows.some((e) => e.id === 'zp-yongshen') && !plainRows.some((e) => e.id === 'zp-bianhua') && !plainRows.some((e) => e.id === 'zp-chengbai'));
+ok('化气与组合同时出现时只取变化（总纲位不并列）', (() => {
+  const both = classicsFor({ geju: [{ name: '偏财格', kind: '月令格' }, { name: '化金格', kind: '化气格' }, { name: '官印相生', kind: '组合' }], climate: { kind: '平和' } });
+  return both.some((e) => e.id === 'zp-bianhua') && !both.some((e) => e.id === 'zp-chengbai') && both.length <= 5;
+})());
 ok('正官格 → 论正官', classicsFor({ geju: [{ name: '正官格', kind: '月令格' }], climate: { kind: '平和' } }).some((e) => e.id === 'zp-zhenguan'));
 ok('无输入返回空数组', classicsFor(null).length === 0);
 ok('classicsText 带书名与章名', classicsText(rows).includes('《子平真诠·') && classicsText(rows).includes('》「'));

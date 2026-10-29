@@ -1,7 +1,7 @@
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -10,15 +10,19 @@
   --red:#b3261e;--red-rgb:179,38,30;--lu:#1f6f3f;--lu-rgb:31,111,63;
   --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
-  --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83}
+  --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83;
+  /* 之前 mp-cli / mp-qt / mp-cl / 起名卡里引用了 --ink3、--fx、--sans，却从未定义：
+     var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。 */
+  --ink3:#8a8378;--fx:"Kaiti SC",KaiTi,"STKaiti","Songti SC",serif;--sans:system-ui,-apple-system,"Microsoft YaHei",sans-serif;--kai:"Kaiti SC",KaiTi,"STKaiti",serif;
+  --shadow:0 1px 2px rgba(35,28,18,.05),0 18px 40px -30px rgba(35,28,18,.42)}
 /* 变量与 .mp-it 共享 —— 「解析与详解」是 .pp 的兄弟节点、不在 .pp 内部，
    变量只挂在 .pp 上时它拿不到 --card/--muted/--red，头部底色会变透明、边框会退回黑色。 */
 .pp{border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
-  container-type:inline-size}
+  border-radius:12px;overflow:hidden;box-shadow:var(--shadow);container-type:inline-size}
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -26,7 +30,8 @@
     --red:#f08569;--red-rgb:240,133,105;--lu:#74c795;--lu-rgb:116,199,149;
     --quan:#e2a95c;--quan-rgb:226,169,92;--ke:#86bcea;--ke-rgb:134,188,234;--ji:#f08569;
     --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
-    --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0}
+    --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0;
+    --ink3:#8b8478;--shadow:0 1px 2px rgba(0,0,0,.5),0 18px 40px -30px rgba(0,0,0,.9)}
 }
 .pp *{box-sizing:border-box}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(150px,auto));gap:0;border:1px solid var(--line)}
@@ -134,6 +139,8 @@
    点开后把该宫的完整星曜、四化、十二神、三方四正摊平看。 */
 .pp-cell{cursor:pointer;transition:background .14s ease,box-shadow .14s ease;outline:none}
 .pp-cell:hover{background:var(--hover)}
+/* 键盘可达：宫格是 div+tabindex，焦点必须看得见（原先把 outline 关了却没补替代） */
+.pp-cell:focus-visible{box-shadow:inset 0 0 0 2px var(--red)}
 .pp-cell.pp-sel{background:var(--sel);box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.5)}
 /* 选中宫的财帛/官禄/迁移三宫：能一眼看出命宫牵着哪几宫 */
 .pp-cell.pp-link{background:var(--link);box-shadow:inset 0 0 0 1.5px rgba(var(--red-rgb),.22)}
@@ -199,7 +206,7 @@
 
 /* —— 六爻 —— */
 .mp-hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
-.mp-hy-box{border:1px solid var(--line);background:var(--card);padding:12px 16px 14px;min-width:250px}
+.mp-hy-box{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:12px 16px 14px;min-width:250px}
 .mp-hy-h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;font-family:system-ui,sans-serif}
 .mp-hy-h b{color:var(--red);font-size:14px}
 .mp-hy-h span{color:var(--muted);font-size:12px}
@@ -219,7 +226,7 @@
 .mp-mh{padding:16px}
 .mp-mh-head{font-size:13px;color:var(--muted);margin-bottom:12px}
 .mp-mh-main{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
-.mp-hexbox{border:1px solid var(--line);background:var(--card);padding:12px 15px 13px}
+.mp-hexbox{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:12px 15px 13px}
 .mp-hexbox.hb-mini{min-width:118px}
 .mp-hexbox .hb-h{display:flex;justify-content:space-between;gap:10px;font-size:12px;letter-spacing:.14em;color:var(--muted);font-family:system-ui,sans-serif;margin-bottom:5px}
 .mp-hexbox .hb-n{font-size:17px;font-weight:700;color:var(--red);margin-bottom:8px;letter-spacing:.04em}
@@ -401,7 +408,7 @@
 .mp-tt{padding:16px}
 .mp-tt-head{font-size:12.5px;color:var(--muted);margin-bottom:12px;letter-spacing:.04em}
 .mp-tt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:10px}
-.mp-tt-card{border:1px solid var(--line);background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:7px;min-height:168px}
+.mp-tt-card{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:13px 14px;display:flex;flex-direction:column;gap:7px;min-height:168px}
 .mp-tt-card.tt-rev{background:var(--band);border-style:dashed}
 .mp-tt-pos{font-size:12px;color:var(--muted);letter-spacing:.14em}
 .mp-tt-name{font-size:19px;font-weight:700;color:var(--red);letter-spacing:.04em}
@@ -424,12 +431,13 @@
 /* —— 解析与详解 —— */
 /* 变量由上面的 .pp,.mp-it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
    自引用会让变量变成 guaranteed-invalid，反而把继承值也挡掉了（--card 因此彻底失效）。 */
-.mp-it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);
+.mp-it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .mp-it *{box-sizing:border-box}
 /* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
 .mp-it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
 .mp-it-head:hover{background:var(--band)}
+.mp-it-head:focus-visible{outline:2px solid var(--red);outline-offset:-3px}
 .mp-it-arrow{flex:none;font-size:12px;line-height:1;color:var(--red);transition:transform .16s ease}
 .mp-it.folded .mp-it-arrow{transform:rotate(-90deg)}
 .mp-it.folded .mp-it-wrap{display:none}
@@ -517,7 +525,7 @@
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
 .mp-table-wrap{margin-bottom:12px}
 .mp-table-h{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--lu);margin-bottom:5px;font-family:system-ui,sans-serif}
-.mp-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+.mp-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
 .mp-table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;color:var(--ink2);font-family:system-ui,sans-serif}
 .mp-table th,.mp-table td{padding:5px 9px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);white-space:nowrap}
 .mp-table th{background:var(--band);color:var(--label);font-weight:600;font-size:11px;letter-spacing:.06em}
@@ -585,15 +593,17 @@
 .mp-qt-y b.first{color:var(--ji);border-bottom:2px solid var(--ji);padding-bottom:1px}
 .mp-qt-q{margin-top:6px;font-size:12.5px;line-height:1.8;color:var(--ink2);font-family:var(--fx)}
 .mp-qt-q span{display:block;font-size:11px;color:var(--ink3);font-family:var(--sans);margin-top:2px}
-.mp-cl{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
-.mp-cl-h{display:flex;gap:8px;align-items:baseline;font-size:12.5px;margin-bottom:6px}
-.mp-cl-h b{color:var(--ink);letter-spacing:.02em}
+.mp-cl{margin-top:12px;padding:10px 12px 8px;border-left:2px solid var(--quan);border-radius:0 8px 8px 0;
+  background:color-mix(in srgb,var(--band) 72%,transparent)}
+.mp-cl-h{display:flex;gap:8px;align-items:baseline;font-size:12.5px;margin-bottom:7px}
+.mp-cl-h b{color:var(--ink);letter-spacing:.06em}
 .mp-cl-h span{color:var(--ink3);font-size:11.5px}
-.mp-cl-e{padding:6px 0;border-top:1px dashed var(--hair)}
+.mp-cl-e{padding:8px 0;border-top:1px dashed var(--hair)}
 .mp-cl-e:first-of-type{border-top:0;padding-top:0}
-.mp-cl-t b{font-family:var(--fx);font-size:13px;color:var(--lu);font-weight:600}
-.mp-cl-q{font-family:var(--fx);font-size:13.5px;line-height:1.95;color:var(--ink);margin-top:2px;letter-spacing:.02em}
-.mp-cl-p{font-size:12px;line-height:1.85;color:var(--ink2);margin-top:2px}
+.mp-cl-t b{font-family:var(--fx);font-size:13px;color:var(--lu);font-weight:600;letter-spacing:.03em}
+.mp-cl-q{font-family:var(--fx);font-size:14px;line-height:2;color:var(--ink);margin-top:3px;letter-spacing:.02em;
+  padding-left:1.05em;text-indent:-1.05em}
+.mp-cl-p{font-size:12px;line-height:1.9;color:var(--ink2);margin-top:3px}
 @media print{.mp-cl{break-inside:avoid}}
 @media print{.mp-cli{break-inside:avoid}}
 /* —— 起名评估卡片 —— */
@@ -624,31 +634,52 @@
 .mp-nm-c em{font-style:normal;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:var(--sans)}
 @media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
-/* —— 十六型人格卡片 —— */
-.mp-mb{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
-.mp-mb-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
-.mp-mb-h b{font-family:var(--fx);font-size:20px;letter-spacing:1px;color:var(--ink)}
-.mp-mb-h i{font-style:normal;font-size:12px;color:var(--muted)}
-.mp-mb-dims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin-bottom:9px}
-.mp-mb-dim{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;gap:6px;align-items:center;font-size:11.5px;color:var(--muted)}
-.mp-mb-dim b{font-size:13px;font-weight:600;color:var(--muted);font-family:var(--fx)}
-.mp-mb-dim b.on{color:var(--ink)}
-.mp-mb-bar{position:relative;height:10px;border-radius:5px;background:var(--hair);overflow:hidden}
-.mp-mb-bar em{position:absolute;top:0;bottom:0;display:block;background:var(--line)}
-.mp-mb-bar em.on{background:var(--good)}
-.mp-mb-dim i{font-style:normal;grid-column:1/-1;font-size:11px;color:var(--muted);line-height:1.6}
-.mp-mb-sec{margin:7px 0 0;font-size:12.5px;line-height:1.85;color:var(--ink2)}
-.mp-mb-sec em{font-style:normal;color:var(--lu);margin-right:6px}
-.mp-mb-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
-.mp-mb-two>div{border:1px dashed var(--hair);border-radius:6px;padding:7px 9px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
-.mp-mb-two b{display:block;font-size:11.5px;color:var(--lu);font-weight:600;margin-bottom:3px}
-.mp-mb-fn{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
-.mp-mb-fn span{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--ink2)}
-.mp-mb-note{margin-top:9px;font-size:11px;line-height:1.7;color:var(--muted);border-top:1px solid var(--hair);padding-top:7px}
-.mp-mb-paper{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
-.mp-mb-paper ol{margin:6px 0 0;padding-left:20px;font-size:12.5px;line-height:1.9;color:var(--ink2)}
-.mp-mb-paper .mp-mb-note{margin-top:8px}
-@media (max-width:640px){.mp-mb-dims,.mp-mb-two{grid-template-columns:1fr}}
+/* —— 十六型人格卡片 ——
+   旧版是「四行细条 + 段落堆叠」：字小、无层级，看着像一份导出的文档。
+   现在按「类型抬头 → 四维瓦片 → 一句 → 优势/留意 → 功能链 → 场景段」分层，
+   四维用左右双极加取值条，颜色只取共享变量，深色与打印都不用另写规则。 */
+.mp-mb{margin:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;font-family:var(--sans)}
+.mp-mb-h{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;padding:15px 18px 14px;
+  background:linear-gradient(135deg,var(--sel),var(--band) 64%,var(--card));border-bottom:1px solid var(--hair)}
+.mp-mb-code{font-family:var(--fx);font-size:32px;font-weight:700;line-height:1;letter-spacing:.12em;color:var(--ink)}
+.mp-mb-meta{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mp-mb-meta b{font-size:14.5px;font-weight:600;color:var(--ink);letter-spacing:.04em}
+.mp-mb-meta i{font-style:normal;font-size:12px;line-height:1.5;color:var(--muted)}
+.mp-mb-count{margin-left:auto;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-size:11.5px;white-space:nowrap}
+.mp-mb-body{padding:14px 18px 16px}
+.mp-mb-dims{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mp-mb-dim{border:1px solid var(--hair);border-radius:10px;background:var(--band);padding:9px 11px 10px}
+.mp-mb-dh{display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--muted)}
+.mp-mb-dh b{font-family:var(--fx);font-size:17px;font-weight:600;line-height:1.1;letter-spacing:.08em;color:var(--faint)}
+.mp-mb-dh b.on{color:var(--ink)}
+.mp-mb-dh em{font-style:normal;margin:0 auto;font-size:11.5px;letter-spacing:.06em}
+.mp-mb-bar{position:relative;height:7px;border-radius:4px;background:var(--hair);margin:7px 0 6px;overflow:hidden}
+.mp-mb-bar::after{content:"";position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:color-mix(in srgb,var(--line) 70%,transparent)}
+.mp-mb-bar em{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,var(--quan),color-mix(in srgb,var(--quan) 55%,var(--card)));border-radius:4px}
+.mp-mb-bar.l em{left:0}
+.mp-mb-bar.r em{right:0;background:linear-gradient(270deg,var(--quan),color-mix(in srgb,var(--quan) 55%,var(--card)))}
+.mp-mb-df{font-size:11.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.mp-mb-ds{margin-top:2px;font-size:11.5px;line-height:1.7;color:var(--muted)}
+.mp-mb-sec{margin-top:11px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
+.mp-mb-sec em{display:inline-block;margin-right:7px;padding:0 7px;border:1px solid var(--hair);border-radius:5px;background:var(--band);color:var(--muted);font-size:11px;font-style:normal;letter-spacing:.08em}
+.mp-mb-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:11px}
+.mp-mb-two>div{border:1px solid var(--hair);border-left:3px solid var(--br-good);border-radius:8px;background:var(--card);padding:8px 10px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-mb-two>div+div{border-left-color:var(--br-bad)}
+.mp-mb-two b{display:block;margin-bottom:2px;font-size:11.5px;font-weight:600;letter-spacing:.08em;color:var(--br-good)}
+.mp-mb-two>div+div b{color:var(--br-bad)}
+.mp-mb-fn{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.mp-mb-fn span{font-size:11.5px;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:2px 9px;color:var(--ink2)}
+.mp-mb-fn span.lead{border-color:var(--quan);background:color-mix(in srgb,var(--quan) 9%,var(--card));color:var(--quan);font-weight:600}
+.mp-mb-fn span b{font-weight:600;margin-right:4px}
+.mp-mb-note{margin:12px 18px 14px;padding-top:10px;font-size:11px;line-height:1.7;color:var(--muted);border-top:1px solid var(--hair)}
+.mp-mb-paper{margin:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;font-family:var(--sans)}
+.mp-mb-paper ol{counter-reset:q;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px;
+  margin:0;padding:12px 18px 14px;list-style:none;font-size:12.5px;line-height:1.7;color:var(--ink2)}
+.mp-mb-paper li{counter-increment:q;position:relative;padding:0 0 6px 26px;border-bottom:1px dashed var(--hair)}
+.mp-mb-paper li::before{content:counter(q);position:absolute;left:0;top:1px;display:flex;align-items:center;justify-content:center;
+  width:19px;height:19px;border:1px solid var(--hair);border-radius:50%;background:var(--band);color:var(--muted);font-size:10.5px;font-variant-numeric:tabular-nums}
+.mp-mb-paper .mp-mb-note{margin:0 18px 14px}
+@media (max-width:640px){.mp-mb-dims,.mp-mb-two,.mp-mb-paper ol{grid-template-columns:1fr}.mp-mb-code{font-size:26px}.mp-mb-body{padding:12px 14px 14px}.mp-mb-h{padding:13px 14px 12px}}
 @media print{.mp-mb{break-inside:avoid}}
 /* —— 黄历卡片 —— */
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
@@ -1323,6 +1354,14 @@
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
+    // 化进/化退的力重：方向之外再叠月建日辰，单列一排，免与卦体标签混读
+    const jp = r.jinTuiPower && Array.isArray(r.jinTuiPower.labels) ? r.jinTuiPower : null;
+    const jinRow = jp && jp.labels.length
+      ? `<div class="pp-chips">${jp.labels.map((l) => {
+        const cls = /后劲足|退得缓/.test(l) ? 'ok' : /有限|进得虚|退得实|月破|未定/.test(l) ? 'warn' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     // 全卦逐爻旺衰：五态分布 + 世应 + 破动空，用神那排之外的整卦视角
     const hs = r.hexStrength && Array.isArray(r.hexStrength.labels) ? r.hexStrength : null;
     const hexRow = hs && hs.labels.length
@@ -1338,6 +1377,7 @@
       ${bodyRow}
       ${useRow}
       ${strengthRow}
+      ${jinRow}
       ${hexRow}
     </div>`;
   };
@@ -2080,8 +2120,13 @@
     }).join('');
     const ln = (r.liunian && r.liunian.length) ? `<div class="pp-chips">${r.liunian.slice(0, 8).map((l) => {
       const lk = l.luck || null;
-      return `<span class="pp-chip ${lk ? tierCls(lk.tier) : ''}" title="${esc(lk ? `${lk.tier} ${lk.score}｜${(lk.reasons || []).join('；')}` : '')}">${l.year} ${l.ganzhi}${lk ? ` ${lk.tier}` : ''}</span>`;
+      const sy = (l.suiyun && Array.isArray(l.suiyun.signals)) ? l.suiyun.signals : [];
+      const syTip = sy.length ? `｜${sy.map((x) => x.detail).join('；')}` : '';
+      return `<span class="pp-chip ${lk ? tierCls(lk.tier) : ''}" title="${esc(lk ? `${lk.tier} ${lk.score}｜${(lk.reasons || []).join('；')}${syTip}` : syTip.replace(/^｜/, ''))}">${l.year} ${l.ganzhi}${lk ? ` ${lk.tier}` : ''}</span>`;
     }).join('')}</div>` : '';
+    const sy = (r.liunian || []).filter((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
+    const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
+      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${x.type.startsWith('流年') && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>` : '';
     const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
     const ssGroups = (r.shensha && r.shensha.groups) || [];
     const ssx = ssGroups.length ? `
@@ -2101,14 +2146,14 @@
       ${(Array.isArray(r.classics) && r.classics.length) ? `<section class="mp-cl" aria-label="古籍原文">
         <div class="mp-cl-h"><b>古籍原文</b><span>照录通行本，释义为白话自撰</span></div>
         ${r.classics.map((e) => `<div class="mp-cl-e">
-          <div class="mp-cl-t"><b>${esc((e.book === 'ziping' ? '子平真诠' : '滴天髓') + '·' + e.chapter)}</b></div>
+          <div class="mp-cl-t"><b>${esc(({ ziping: '子平真诠', ditian: '滴天髓', sanming: '三命通会' }[e.book] || e.book) + '·' + e.chapter)}</b></div>
           <div class="mp-cl-q">「${esc(e.quote)}」</div>
           <div class="mp-cl-p">${esc(e.plain)}</div>
         </div>`).join('')}
       </section>` : ''}
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
-      ${ln ? sect('流年', ln) : ''}
+      ${ln ? sect('流年', ln + syRow) : ''}
       ${r.palaces ? sect('胎元与命身宫', `<div class="pp-chips">
         <span class="pp-chip" title="${r.palaces.taiyuan.note}">胎元 ${r.palaces.taiyuan.ganzhi}</span>
         <span class="pp-chip" title="${r.palaces.minggong.note}">命宫 ${r.palaces.minggong.ganzhi}</span>
@@ -2271,7 +2316,10 @@
     if (r.needAnswers && Array.isArray(r.questions)) {
       const items = r.questions.map((q) => `<li>${esc(q.text)}</li>`).join('');
       return `<section class="mp-mb-paper" aria-label="十六型人格问卷">
-        <div class="mp-mb-h"><b>十六型人格问卷</b><i>${r.total} 题 · 1 完全不像 / 5 很像我</i></div>
+        <div class="mp-mb-h">
+          <span class="mp-mb-meta"><b>十六型人格问卷</b><i>${r.total} 题 · 每题 1 完全不像 / 5 很像我</i></span>
+          <span class="mp-mb-count">填完分数再看结果</span>
+        </div>
         <ol>${items}</ol>
         <div class="mp-mb-note">${esc(r.note || '')}</div>
       </section>`;
@@ -2280,32 +2328,35 @@
       const pct = Math.round((d.pct || 0) * 100);
       const leftOn = d.picked === d.left;
       const width = Math.max(2, pct);
-      const bar = leftOn
-        ? `<em class="on" style="left:0;width:${width}%"></em>`
-        : `<em class="on" style="right:0;width:${width}%"></em>`;
       const say = leftOn ? d.leftSay : d.rightSay;
       return `<div class="mp-mb-dim">
-        <b class="${leftOn ? 'on' : ''}">${esc(d.left)}</b>
-        <div class="mp-mb-bar">${bar}</div>
-        <b class="${leftOn ? '' : 'on'}">${esc(d.right)}</b>
-        <i>${esc(d.name)} · 取 ${esc(d.picked)}（${esc(d.strength)} ${pct}%）· ${esc(say)}</i>
+        <div class="mp-mb-dh"><b class="${leftOn ? 'on' : ''}">${esc(d.left)}</b><em>${esc(d.name)}</em><b class="${leftOn ? '' : 'on'}">${esc(d.right)}</b></div>
+        <div class="mp-mb-bar ${leftOn ? 'l' : 'r'}"><em style="width:${width}%"></em></div>
+        <div class="mp-mb-df">取 ${esc(d.picked)} · ${esc(d.strength)} ${pct}%</div>
+        <div class="mp-mb-ds">${esc(say)}</div>
       </div>`;
     }).join('');
     const p = r.profile || {};
-    const stack = (p.stack || []).map((f) => `<span>${esc(f.code)}　${esc(f.say)}</span>`).join('');
+    const stack = (p.stack || []).map((f, i) => `<span class="${i === 0 ? 'lead' : ''}"><b>${esc(f.code)}</b>${esc(f.say)}</span>`).join('');
     return `<section class="mp-mb" aria-label="十六型人格结果">
-      <div class="mp-mb-h"><b>${esc(r.type || '')}</b><i>${esc(p.title || '')} · ${esc(p.keywords || '')}　已答 ${r.answered || 0}/${r.total || 0} 题</i></div>
-      <div class="mp-mb-dims">${dims}</div>
-      <div class="mp-mb-sec"><em>一句</em>${esc(p.oneLine || '')}</div>
-      <div class="mp-mb-two">
-        <div><b>优势</b>${(p.strengths || []).map((s) => esc(s)).join('；')}</div>
-        <div><b>留意</b>${(p.blindspots || []).map((s) => esc(s)).join('；')}</div>
+      <div class="mp-mb-h">
+        <span class="mp-mb-code">${esc(r.type || '')}</span>
+        <span class="mp-mb-meta"><b>${esc(p.title || '')}</b><i>${esc(p.keywords || '')}</i></span>
+        <span class="mp-mb-count">已答 ${r.answered || 0}/${r.total || 0} 题</span>
       </div>
-      ${stack ? `<div class="mp-mb-sec"><em>认知功能</em>主导 ${esc((p.stack[0] || {}).code || '')} → 依次展开</div><div class="mp-mb-fn">${stack}</div>` : ''}
-      <div class="mp-mb-sec"><em>工作</em>${esc(p.work || '')}</div>
-      <div class="mp-mb-sec"><em>关系</em>${esc(p.love || '')}</div>
-      <div class="mp-mb-sec"><em>学习</em>${esc(p.study || '')}</div>
-      <div class="mp-mb-sec"><em>课题</em>${esc(p.growth || '')}</div>
+      <div class="mp-mb-body">
+        <div class="mp-mb-dims">${dims}</div>
+        <div class="mp-mb-sec"><em>一句</em>${esc(p.oneLine || '')}</div>
+        <div class="mp-mb-two">
+          <div><b>优势</b>${(p.strengths || []).map((s) => esc(s)).join('；')}</div>
+          <div><b>留意</b>${(p.blindspots || []).map((s) => esc(s)).join('；')}</div>
+        </div>
+        ${stack ? `<div class="mp-mb-sec"><em>认知功能</em>主导 ${esc((p.stack[0] || {}).code || '')} → 依次展开</div><div class="mp-mb-fn">${stack}</div>` : ''}
+        <div class="mp-mb-sec"><em>工作</em>${esc(p.work || '')}</div>
+        <div class="mp-mb-sec"><em>关系</em>${esc(p.love || '')}</div>
+        <div class="mp-mb-sec"><em>学习</em>${esc(p.study || '')}</div>
+        <div class="mp-mb-sec"><em>课题</em>${esc(p.growth || '')}</div>
+      </div>
       <div class="mp-mb-note">${esc(r.note || '')}</div>
     </section>`;
   };

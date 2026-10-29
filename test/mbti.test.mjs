@@ -206,7 +206,7 @@ const noBanned = (s) => !BANNED.some((w) => String(s).includes(w));
   ok('问卷态说明项', hp.includes('十六型人格问卷') && hp.includes('1 完全不像'), '');
   const r = compute({ system: 'mbti', answers: [5, 4, 3, 2, 2, 5, 4, 3, 5, 4, 3, 2, 4, 5, 3, 2, 1, 2, 4, 3, 5, 4, 4, 2] });
   const h = PP.mbtiHTML(r);
-  ok('结果态标出类型', h.includes(`<b>${r.type}</b>`) && h.includes(r.title), r.type);
+  ok('结果态标出类型', h.includes(`>${r.type}<`) && h.includes(r.title), r.type);
   ok('结果态四维条齐全（4 条进度条）', (h.match(/class="mp-mb-dim"/g) || []).length === 4, (h.match(/class="mp-mb-dim"/g) || []).length);
   ok('结果态每个功能一个 chip', r.profile.stack.every((f) => h.includes(`mp-mb-fn`) && h.includes(f.code)), '');
   ok('结果态带优势与留意', h.includes('优势') && h.includes('留意'), '');
@@ -222,7 +222,71 @@ const noBanned = (s) => !BANNED.some((w) => String(s).includes(w));
   ok('题目数组为空也不抛', typeof broken === 'string', '');
 }
 
-// ── 十、确定性与等价性：同答案同结果；同维同侧换题序不改分 ────────────
+// ── 十、分页问卷：4 题一页，题目只在引擎里 ──────────────────────────
+{
+  const HTML = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta.url), 'utf8');
+  const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
+  const APP = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+  const paper = compute({ system: 'mbti' });
+  eq('24 题按 4 题一页正好 6 页', Math.ceil(paper.total / 4), 6);
+  // 离线页：容器与翻页骨架
+  for (const id of ['mbti-qs', 'mbti-prev', 'mbti-next', 'mbti-submit', 'mbti-clear', 'mbti-count', 'mbti-fill']) {
+    ok(`离线页有 #${id}`, HTML.includes(`id="${id}"`));
+  }
+  ok('原来的 24 题分数输入框已移除', !HTML.includes('mbtianswers'), '');
+  ok('5 个评分格并排（1–5 一行）', /\.mb-opts\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/.test(HTML), '');
+  ok('评分格用原生 radio（可键盘操作）', /\.mb-o input\{position:absolute;inset:0/.test(HTML), '');
+  // web-ui：分页状态与 12 题门槛
+  ok('web-ui 每页 4 题', /const MBTI_PER_PAGE = 4;/.test(UI), '');
+  ok('web-ui 最少 12 题', /const MBTI_MIN = 12;/.test(UI), '');
+  ok('web-ui 从引擎取题目（不手抄）', /compute\(\{ system: 'mbti' \}\)/.test(UI), '');
+  ok('web-ui 用分页答案而不是文本框解析', /function mbAnswersForEngine\(/.test(UI) && !/mbtianswers/.test(UI), '');
+  ok('web-ui 不足 12 题不出结果', /mbAnswered\(\) < MBTI_MIN/.test(UI), '');
+  ok('web-ui 会算出还差几题', /还差 \$\{/.test(UI) && /MBTI_MIN - answered/.test(UI), '');
+  ok('web-ui 答案改动走事件委托', /mbHost\.addEventListener\('change', onMbtiPick\)/.test(UI), '');
+  // 面板：同一套分页组件
+  ok('面板有分页组件 MbtiQuiz', /function MbtiQuiz\(/.test(APP), '');
+  ok('面板状态是答案数组 + 页码', /const \[mbAns, setMbAns\] = useState/.test(APP) && /const \[mbPage, setMbPage\] = useState/.test(APP), '');
+  ok('面板同样每页 4 题 / 至少 12 题', /const MBTI_PER_PAGE = 4;/.test(APP) && /const MBTI_MIN = 12;/.test(APP), '');
+  ok('面板提交时把已答答案交给引擎', /if \(nums\.length\) args\.answers = nums;/.test(APP), '');
+  ok('面板不再用「24 题分数」文本框', !/24 题分数/.test(APP), '');
+  // 单一事实来源：题面不复制到页面/面板
+  ok('离线页没有抄题面', !HTML.includes(QUESTIONS[0].text), '');
+  ok('面板没有抄题面', !APP.includes(QUESTIONS[0].text), '');
+  // 面板组件单跑：面板是 React 插件，没有 DOM/React 也能把 h() 树当数据检查
+  {
+    const from = APP.indexOf('function MbtiQuiz(');
+    const to = APP.indexOf('/** 渲染兜底', from);
+    ok('能从 app.js 取出 MbtiQuiz 源码', from > 0 && to > from, `${from}/${to}`);
+    const h = (tag, props, ...kids) => ({ tag, props: props || {}, kids: kids.flat(Infinity).filter((k) => k != null && k !== false) });
+    const sandbox = {
+      h,
+      MBTI_PER_PAGE: 4,
+      MBTI_MIN: 12,
+      mbtiInfo: () => ({ total: paper.total, questions: paper.questions, scale: paper.scale }),
+    };
+    const MbtiQuiz = vm.runInNewContext(`${APP.slice(from, to)}\nMbtiQuiz;`, sandbox, { filename: 'app.js#MbtiQuiz' });
+    const flat = (n) => (n && Array.isArray(n.kids) ? [n, ...n.kids.flatMap(flat)] : [n]);
+    const byClass = (tree, cls) => flat(tree).filter((n) => n && n.props && new RegExp(`(^|\\s)${cls}(\\s|$)`).test(n.props.className || ''));
+    const textOf = (tree) => flat(tree).filter((n) => typeof n === 'string').join('');
+    const none = () => {};
+    const quiz = (answers, page) => MbtiQuiz({ answers, page, onPick: none, onPage: none, onSubmit: none, onClear: none });
+    const empty = new Array(paper.total).fill(null);
+    const t1 = quiz(empty, 0);
+    eq('面板一页只渲染 4 题', byClass(t1, 'mp-quiz-q').length, 4);
+    ok('面板刻度说明来自引擎', textOf(t1).includes(paper.scale[1]) && textOf(t1).includes(paper.scale[5]), paper.scale[1]);
+    ok('面板进度显示页码与已答数', /第 1 \/ 6 页/.test(textOf(t1)) && /已答 0 \/ 24/.test(textOf(t1)), '');
+    const submitOf = (tree) => byClass(tree, 'mp-quiz-btn').find((n) => textOf(n) === '看结果');
+    eq('面板答不满 12 题时看结果禁用', !!submitOf(t1).props.disabled, true);
+    const twelve = empty.slice();
+    for (let i = 0; i < 12; i += 1) twelve[i] = 3;
+    eq('面板答满 12 题后看结果可用', !!submitOf(quiz(twelve, 2)).props.disabled, false);
+    const last = quiz(twelve, 5);
+    ok('面板最后一页没有下一页', !byClass(last, 'mp-quiz-btn').some((n) => textOf(n) === '下一页'), '');
+  }
+}
+
+// ── 十一、确定性与等价性：同答案同结果；同维同侧换题序不改分 ────────────
 {
   const ans = [5, 4, 3, 2, 2, 5, 4, 3, 5, 4, 3, 2, 4, 5, 3, 2, 1, 2, 4, 3, 5, 4, 4, 2];
   const a = buildMbti({ answers: ans });

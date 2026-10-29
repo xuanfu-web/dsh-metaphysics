@@ -65,6 +65,20 @@ function useStrengthPlain(st) {
   return `${when}对这件事有帮有压，一半的力要自己挣——结果更看你怎么走。`;
 }
 
+// 化进 / 化退的力重 → 一句白话：方向之外，时令托不托着
+function jinTuiPlain(r) {
+  const jp = r && r.jinTuiPower;
+  if (!jp || !Array.isArray(jp.lines) || !jp.lines.length) return '';
+  const sayOf = (l) => (l.verdict === '后劲足' ? '时令托着，后劲足'
+    : l.verdict === '后劲有限' ? '时令不太托，后劲有限'
+      : l.verdict === '进得虚' ? '时令最背，进也是虚进'
+        : l.verdict === '退得缓' ? '时令还托着，退得慢'
+          : l.verdict === '退得实' ? '时令也不托，退得实'
+            : l.verdict === '月破失据' ? '又正好逢月破，进退都站不稳'
+              : '缺月建，先只当方向看');
+  return `动爻的进退还要看时令：${jp.lines.map((l) => `${l.position}爻${l.from}→${l.to}${l.type}，${sayOf(l)}`).join('；')}。`;
+}
+
 // 全卦逐爻旺衰 → 一句白话：整张卦的气偏在哪一头（与用神那一句分开说）
 function hexStrengthPlain(hs) {
   if (!hs || !hs.counts) return '';
@@ -174,7 +188,7 @@ export function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${hexStrengthPlain(r.hexStrength)}`,
+        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -192,9 +206,13 @@ export function buildPlain(r, ask, ctx = {}) {
     const avoid = join(ys.avoid);
     const strength = STRENGTH_PLAIN[st.level] || '力量偏中性';
     const tiaohou = ys.tiaohou && ys.tiaohou.note ? `另外，${ys.tiaohou.note}，所以「暖一点、亮一点」的环境通常更舒服。` : '';
+    const sy = (r.liunian || []).find((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
+    const syPlain = sy
+      ? `再往后看，${sy.year} 年${sy.ganzhi}是${sy.suiyun.signals.map((x) => x.type).join('、')}——传统上把它当作「变化感强一点」的提示，既不是好消息也不是坏消息，遇上时多留个心眼就好。`
+      : '';
     return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
       `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
-      tiaohou;
+      tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
     const soul = r.soul || {};
@@ -218,7 +236,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${hexStrengthPlain(r.hexStrength)}`;
+      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
   }
   return '';
 }

@@ -1,10 +1,11 @@
-// 古籍原文库：《子平真诠》《滴天髓》里与「格局取用」「十神喜忌」「寒暖燥湿」直接相关的条目。
-// 原文照录（公共版权：清·沈孝瞻《子平真诠》、明·京图《滴天髓》通行本），仅供文化研究与参考。
+// 古籍原文库：《子平真诠》《滴天髓》《三命通会》里与「格局取用」「十神喜忌」「寒暖燥湿」直接相关的条目。
+// 原文照录（公共版权：清·沈孝瞻《子平真诠》、明·京图《滴天髓》、明·万民英《三命通会》通行本），仅供文化研究与参考。
 // 出处以中华典藏网在线本为准（逐条给 url），异文处不合并、不改写；plain 是本站自撰白话，不是原文。
 
 export const CLASSIC_BOOKS = {
   ziping: { name: '子平真诠', author: '清·沈孝瞻', base: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/' },
   ditian: { name: '滴天髓', author: '明·京图（通行本）', base: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/' },
+  sanming: { name: '三命通会', author: '明·万民英', base: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/' },
 };
 
 export const CLASSICS = [
@@ -109,6 +110,26 @@ export const CLASSICS = [
     url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53634.html',
   },
   {
+    id: 'zp-chengbai',
+    book: 'ziping',
+    chapter: '九、论用神成败救应',
+    scene: '格局',
+    tags: [],
+    quote: '成中有败，必是带忌；败中有成，全凭救应。',
+    plain: '成格不等于一路顺：成中带忌（官逢财又逢伤、官被合之类）就打了折；败格也未必无救——印来解伤、合来清煞，败中还能转成。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53629.html',
+  },
+  {
+    id: 'zp-bianhua',
+    book: 'ziping',
+    chapter: '十、论用神变化',
+    scene: '格局',
+    tags: [],
+    quote: '故若丁生亥月，本为正官，支全卯未，则化为印。己生申月，本属伤官。藏庚透壬，则化为财。凡此之类皆用神之变化也。',
+    plain: '用神本从月令取，但月令藏干不一：丁生亥月本为正官，支会卯未就化为印；己生申月本属伤官，庚藏壬透就化为财。起点相同，合化一变，取用也跟着变（原文只说变化之由，不断定某盘必化）。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53630.html',
+  },
+  {
     id: 'dt-hannuan',
     book: 'ditian',
     chapter: '通神论·寒暖',
@@ -198,6 +219,78 @@ export const CLASSICS = [
     plain: '看精神不能偏执一端，要在损益之间求其中。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html',
   },
+  // —— 三命通会（明·万民英）：同一组十神，子平真诠说「怎么用」，三命通会说「怎么取、怕什么」。
+  // 两书并列取用，按同一 tag 各取一条对照读，不合并、不裁定谁对。
+  {
+    id: 'smt-zhenguan',
+    book: 'sanming',
+    chapter: '卷五·论正官',
+    scene: '格局',
+    tags: ['正官'],
+    quote: '正官者，乃甲见辛、乙见庚之例。阴阳配合，相制有用，成其道也。故正官为六格之首，止许一位，多则不宜。',
+    plain: '正官取「克我而阴阳相配」，有制而能成用；六格以正官居首，只宜一位，多见就杂。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7582.html',
+  },
+  {
+    id: 'smt-zhengcai',
+    book: 'sanming',
+    chapter: '卷六·论正财',
+    scene: '格局',
+    tags: ['财'],
+    quote: '正财者，乃甲见己、乙见戊之例。受我克制，为我之妻，譬人娶妻，妻赍财嫁我，我必精神康强，而后可享用，若衰微不振，虽妻财丰厚，但能目视，终不得用。',
+    plain: '正财是我克制之物，古人以「娶妻带财」作比：自身精神康强才受用得起，身弱不振，财再厚也只是看着。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7645.html',
+  },
+  {
+    id: 'smt-yinshou',
+    book: 'sanming',
+    chapter: '卷六·论印绶',
+    scene: '格局',
+    tags: ['印'],
+    quote: '印绶者，乃五行生我之名。如甲乙在亥子月，丙丁在寅卯月之类，乃我气之源，为生气，为父母，能护我官星，使无伤克',
+    plain: '印是生我之气，像源头与父母：它能护住官星，使官不受伤克；反过来说，印重就怕财来破。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7655.html',
+  },
+  {
+    id: 'smt-shishen',
+    book: 'sanming',
+    chapter: '卷六·论食神',
+    scene: '格局',
+    tags: ['食神'],
+    quote: '凡命遇财煞之地，食神旺相，煞被食制，不敢为祸，财被食生，充裕不竭，故食神一名寿星，一名爵星，良有以也。',
+    plain: '食神旺，一头制煞、一头生财：煞被制住不敢为祸，财被生起不至枯竭；所以食神又叫寿星、爵星。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7663.html',
+  },
+  {
+    id: 'smt-shangguan',
+    book: 'sanming',
+    chapter: '卷六·论伤官',
+    scene: '格局',
+    tags: ['伤官'],
+    quote: '伤官虽凶，乃我所生，自家之物，伤尽则能生财，财旺则能生官，造化展转有情。',
+    plain: '伤官虽称凶，却是我自己生出来的：伤尽（柱中不见官星）反能生财，财旺再生官，辗转还是有情。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7662.html',
+  },
+  {
+    id: 'smt-yangren',
+    book: 'sanming',
+    chapter: '卷六·论阳刃',
+    scene: '格局',
+    tags: ['阳刃', '劫财'],
+    quote: '阳者，阴阳之阳，刃者，刀刃之刃，即禄前一位，言旺越其分，故险。',
+    plain: '阳刃指禄前一位，旺过了本分，所以险；甲丙戊庚壬五阳干才有刃，阴干见伤官同论。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7671.html',
+  },
+  {
+    id: 'smt-jianlu',
+    book: 'sanming',
+    chapter: '卷六·论建禄',
+    scene: '格局',
+    tags: ['建禄', '比肩', '月劫'],
+    quote: '凡命月令建禄，难招祖业，必主平生见财不聚，却病少寿长，行运再见比肩，克妻妨父损子',
+    plain: '月令建禄是日主临官之地，身旺而财官难取：古说难承祖业、见财不聚，但病少寿长；再走比肩运，古书说克妻妨父损子（属于旧说的重话，本插件只记原文、不作断语）。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7672.html',
+  },
 ];
 
 const BY_ID = CLASSICS.reduce((m, e) => { m[e.id] = e; return m; }, {});
@@ -229,8 +322,19 @@ function tagOf(gejuName) {
   return GEJU_KEY[bare + '格'] || bare;
 }
 
-// 根据一张八字结果挑原文：先格局（格局条），再调候（寒暖/燥湿），最后用神通则；去重、限量。
-export function classicsFor(r, limit = 4) {
+// 同一 tag 各书取一条：子平真诠在前（讲怎么用），三命通会紧随作对照（讲怎么取、怕什么）
+function pick(tag, book) {
+  return CLASSICS.find((e) => e.scene === '格局' && e.tags.includes(tag) && (!book || e.book === book)) || null;
+}
+
+// 章节名去掉卷次/序号与开头的「论」，避免 why 里拼成「论论财」
+function chapterTitle(e) {
+  return e.chapter.replace(/^.*[、·]/, '').replace(/^论/, '');
+}
+
+// 根据一张八字结果挑原文：先格局（子平真诠 + 三命通会对照），再调候（寒暖/燥湿），
+// 最后「用神总纲」一位按盘取：有化气格取论用神变化、见组合取论用神成败救应、其余取通用总纲；去重、限量。
+export function classicsFor(r, limit = 5) {
   if (!r) return [];
   const out = [];
   const seen = new Set();
@@ -243,8 +347,10 @@ export function classicsFor(r, limit = 4) {
   for (const g of gejuList) {
     if (!g || (g.kind && g.kind !== '月令格')) continue;
     const tag = tagOf(g.name);
-    const hit = CLASSICS.find((e) => e.scene === '格局' && e.tags.includes(tag));
-    if (hit) push(hit, `你的月令格局是「${g.name}」，故取${CLASSIC_BOOKS[hit.book].name}论${hit.chapter.replace(/^.*、/, '')}`);
+    const primary = pick(tag, 'ziping') || pick(tag);
+    if (primary) push(primary, `你的月令格局是「${g.name}」，故取${CLASSIC_BOOKS[primary.book].name}「${chapterTitle(primary)}」一条`);
+    const alt = CLASSICS.find((e) => e.scene === '格局' && e.tags.includes(tag) && (!primary || e.book !== primary.book));
+    if (alt) push(alt, `同是「${g.name}」，${CLASSIC_BOOKS[alt.book].name}「${chapterTitle(alt)}」另有取法，可对照读`);
   }
   const cli = r.climate || (r.frame && r.frame.yongshen && (r.frame.yongshen.climate || r.frame.yongshen.tiaohou));
   if (cli && cli.kind && cli.kind !== '平和') {
@@ -254,7 +360,17 @@ export function classicsFor(r, limit = 4) {
     push(classicOf('zp-qihou'), '气候与月令用神要互参，故取子平真诠「用神配气候」一条');
     if (hot) push(classicOf('dt-hannuan'), '本盘偏热，寒暖一条正对');
   }
-  push(classicOf('zp-yongshen'), '用神从月令取、四吉顺用四凶逆用，是通用总纲');
+  // 用神总纲位只放一条：同一个格，化气看「变化」、有组合看「成败救应」，都没有才回到四吉四凶总纲。
+  // 不另加位次，是因为格局两条 + 气候两条正好占满 5 条上限；总纲与具体结构二选一，避免泛论挤掉针对这张盘的话。
+  const huagi = gejuList.find((g) => g && g.kind === '化气格');
+  const combo = gejuList.find((g) => g && g.kind === '组合');
+  if (huagi) {
+    push(classicOf('zp-bianhua'), `本盘列有「${huagi.name}」：用神由月令合化而变，总纲一位改取${CLASSIC_BOOKS.ziping.name}论用神变化`);
+  } else if (combo) {
+    push(classicOf('zp-chengbai'), `本盘另有「${combo.name}」组合：成格还要看带忌与救应，总纲一位改取${CLASSIC_BOOKS.ziping.name}论用神成败救应`);
+  } else {
+    push(classicOf('zp-yongshen'), '用神从月令取、四吉顺用四凶逆用，是通用总纲');
+  }
   return out;
 }
 

@@ -776,3 +776,72 @@ export function hexagramStrength(result, opts = {}) {
     note: '月建主这一段的旺衰、日辰管当天的扶克，六爻逐一给状态；判定与用神旺衰同一套，只多了世应与动爻标记。只报状态、不折分数，也不单独断吉凶。',
   };
 }
+
+// ── 化进 / 化退的力重：进退只管方向，走不走得动看时令 ─────────────────
+// 化进只说明这一爻顺着往前走一步，能不能走实要放回月建日辰：
+//   得令（旺/相）化进 → 后劲足；休/囚化进 → 后劲有限；逢死 → 进得虚
+//   得令化退 → 退得缓（时令还托着，退得慢）；失令化退 → 退得实
+// 月破压过一切：爻遭月建冲，进退都站不稳，先看出空填实。
+// 旬空只标出来、不并进结论——动爻旬空要等出空才算数。
+// 《增删卜易》进神退神章讲「化进神须得日月生扶」，这里只做这一步，不叠动变连环。
+const JIN_VERDICT = { 旺: '后劲足', 相: '后劲足', 休: '后劲有限', 囚: '后劲有限', 死: '进得虚' };
+const TUI_VERDICT = { 旺: '退得缓', 相: '退得缓', 休: '退得实', 囚: '退得实', 死: '退得实' };
+
+/**
+ * 化进 / 化退的力重：把 body.jinTui 每一条放回月建日辰结算。
+ * @param {object} result buildLiuyao 的结果（需带 body.jinTui）
+ * @param {{monthBranch?: string, dayBranch?: string}} opts
+ */
+export function jinTuiPower(result, opts = {}) {
+  const items = result && result.body && Array.isArray(result.body.jinTui) ? result.body.jinTui : [];
+  if (!items.length) return null;
+  const rows = result && result.ben && Array.isArray(result.ben.lines) ? result.ben.lines : [];
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result && result.xunKong)
+    ? result.xunKong
+    : (result && typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+
+  const lines = items.map((x) => {
+    const line = rows[x.position - 1] || null;
+    const element = (line && line.element) || zhiElementOf(x.from);
+    const monthState = monthStateOf(element, monthElement);
+    const monthChong = !!(monthBranch && CHONG_OF[x.from] === monthBranch);
+    const dayChong = !!(dayBranch && CHONG_OF[x.from] === dayBranch);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const isEmpty = kong.includes(x.from);
+    // 判定顺序：无月建只报趋势 → 月破压过一切 → 按五态给进退定档
+    const verdict = !monthBranch ? '只报趋势'
+      : monthChong ? '月破失据'
+        : ((x.type === '进' ? JIN_VERDICT : TUI_VERDICT)[monthState] || '未定');
+    const monthSay = monthBranch
+      ? `月建${monthBranch}（${monthElement}）对${element}为${monthState}`
+      : '缺月建，只看日辰';
+    const daySay = dayRelation === 'unknown' ? '' : `日辰${dayBranch}（${dayElement}）${dayRelation}`;
+    const extra = [monthChong ? '又遭月破' : '', isEmpty ? '旬空待填' : '', dayChong ? '逢日辰冲' : ''].filter(Boolean);
+    return {
+      position: x.position,
+      from: x.from,
+      to: x.to,
+      type: x.type,
+      element,
+      monthState,
+      monthChong,
+      dayRelation,
+      dayChong,
+      kong: isEmpty,
+      verdict,
+      say: `${x.from}→${x.to}（${x.type}）：${monthSay}${daySay ? `，${daySay}` : ''}${extra.length ? `，${extra.join('、')}` : ''} → ${verdict}`,
+    };
+  });
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    lines,
+    labels: lines.map((l) => `${l.position}爻化${l.type}·${l.verdict}`),
+    note: '进退只说这一爻往哪边走；力重是把它放回月建日辰，看有没有托着——得令则进得动、退得慢，失令则进得虚、退得实，月破压过一切。仍不直接定吉凶：用神化进为喜，忌神化进反而是忌。',
+  };
+}

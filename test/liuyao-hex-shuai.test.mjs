@@ -143,7 +143,8 @@ const RESULT = compute({ system: 'liuyao', lines: [7, 8, 9, 7, 8, 6], datetime: 
 
   const limits = (interpret(RESULT, {}).sections || []).find((x) => x.key === 'limits');
   ok('「未纳入」不再写全卦逐爻旺衰', !/全卦逐爻/.test(limits.text), limits.text.slice(0, 50));
-  ok('「未纳入」仍保留力重与应期', /实际力重/.test(limits.text) && /应期/.test(limits.text));
+  ok('「未纳入」仍保留权重与应期', /权重/.test(limits.text) && /应期/.test(limits.text));
+  ok('「未纳入」不再把化进力重整条列为空缺', !/没有计算：化进/.test(limits.text), limits.text.slice(0, 60));
 
   const plain = buildAnswer(RESULT, {}, {});
   ok('白话给出整张卦的气', /整张卦六爻/.test(plain), plain.slice(0, 80));

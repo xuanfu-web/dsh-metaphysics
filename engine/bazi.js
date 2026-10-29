@@ -294,9 +294,12 @@ export function buildBazi(input) {
   };
 
   const dayun = [];
+  const dayunWindows = [];
   for (let i = 1; i <= 8; i++) {
     const idx = (((monthIdx + (forward ? i : -i)) % 60) + 60) % 60;
     const g = ganzhiName(idx);
+    const fromJd = partsToJd(addYearsClamped(jiaoParts, (i - 1) * 10));
+    const toJd = partsToJd(addYearsClamped(jiaoParts, i * 10));
     dayun.push({
       step: i,
       startAge: startAgeYears + (i - 1) * 10,
@@ -306,9 +309,10 @@ export function buildBazi(input) {
       stemTenGod: tenGod(dayStem, g.stem),
       nayin: nayin(idx),
       // 这一步大运的起止交运时刻（与摘要/面板同源，可直接拿来对年表）
-      fromDate: formatJd(partsToJd(addYearsClamped(jiaoParts, (i - 1) * 10))),
-      toDate: formatJd(partsToJd(addYearsClamped(jiaoParts, i * 10))),
+      fromDate: formatJd(fromJd),
+      toDate: formatJd(toJd),
     });
+    dayunWindows.push({ step: i, ganzhi: g.name, fromJd, toJd });
   }
 
   // 流年（默认从「今年」起排 10 年；传 input.nowYear 可钉死基准年，用于复现历史结论）
@@ -459,6 +463,48 @@ export function buildBazi(input) {
   for (const l of liunian) {
     l.relations = relOf(l.ganzhi[1]);
     l.luck = scoreLuck(l.ganzhi, frame);
+  }
+
+  // ── 岁运并临 / 伏吟反吟：只标干支层面的「变动信号」，不判吉凶 ──
+  // 流年按立春起算（该年立春到次年立春），当值大运取与这一区间相交的步；
+  // 交运落在这一年里时，前后两步都在本年当过值，两条都列出。
+  const NATAL_LABEL = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
+  const stemOvercomes = (a, b) => OVERCOMES[STEM_ELEMENT[a]] === STEM_ELEMENT[b];
+  const tianKeDiChong = (a, b) => {
+    if (typeof a !== 'string' || typeof b !== 'string' || a.length < 2 || b.length < 2) return false;
+    if (!(a[0] in STEM_ELEMENT) || !(b[0] in STEM_ELEMENT)) return false;
+    return (stemOvercomes(a[0], b[0]) || stemOvercomes(b[0], a[0])) && hasPair(BRANCH_CHONG, a[1], b[1]);
+  };
+  const lichunJd = (y) => {
+    const t = termWindow(y, { jieOnly: true }).find((x) => x.index === 2 && jdToParts(x.jd).year === y);
+    return t ? t.jd : partsToJd({ year: y, month: 2, day: 4 });
+  };
+  for (const l of liunian) {
+    const yStart = lichunJd(l.year);
+    const yEnd = lichunJd(l.year + 1);
+    const active = dayunWindows.filter((w) => w.fromJd < yEnd && w.toJd > yStart);
+    const signals = [];
+    for (const w of active) {
+      if (w.ganzhi === l.ganzhi) {
+        signals.push({ type: '岁运并临', target: `第${w.step}步大运`, detail: `大运与流年同为${l.ganzhi}` });
+      } else if (tianKeDiChong(w.ganzhi, l.ganzhi)) {
+        signals.push({ type: '运年反吟', target: `第${w.step}步大运`, detail: `大运${w.ganzhi}与流年${l.ganzhi}天克地冲` });
+      }
+    }
+    for (const key of ['year', 'month', 'day', 'hour']) {
+      const g = pillars[key].ganzhi;
+      if (!g) continue;
+      if (l.ganzhi === g) {
+        signals.push({ type: '流年伏吟', target: NATAL_LABEL[key], detail: `流年${l.ganzhi}与${NATAL_LABEL[key]}同干支` });
+      } else if (tianKeDiChong(l.ganzhi, g)) {
+        signals.push({ type: '流年反吟', target: NATAL_LABEL[key], detail: `流年${l.ganzhi}与${NATAL_LABEL[key]}${g}天克地冲` });
+      }
+    }
+    l.suiyun = {
+      dayun: active.map((w) => ({ step: w.step, ganzhi: w.ganzhi })),
+      signals,
+      note: '只标干支重复与天克地冲这类变动信号，不判吉凶；大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列',
+    };
   }
 
   const p = jdToParts(jd);
