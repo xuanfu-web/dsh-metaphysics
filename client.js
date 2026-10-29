@@ -1,5 +1,6 @@
 window.__ModuleLoader__.load({
   id: 'dsh-metaphysics',
+  version: '0.35.1',
   factory(require) {
     const React = (function () {
       try { return require('react'); } catch (e) { return globalThis.React; }
@@ -12933,6 +12934,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
     const Engine = __mods.index;
     window.Engine = Engine;
+    window.__MP_VER = '0.35.1';
 (function () {
   const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
   const needAsk = (kind) => !!NEED_ASK[kind];
@@ -15297,6 +15299,23 @@ const CSS = `
 
 const { useState, useEffect } = React;
 
+class PanelGuard extends (React.Component || Object) {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { console.error('[metaphysics] 面板渲染异常', err, info); }
+  render() {
+    if (!this.state.err) return this.props.children;
+    const e = this.state.err;
+    const stack = String((e && e.stack) || '').split('\n').slice(0, 14).join('\n');
+    return h('div', { className: 'mp-wrap' }, h('div', { className: 'mp-panel' },
+      h('div', { className: 'mp-lbl' }, '命理面板渲染出错——把下面这段发给我'),
+      h('pre', { style: { whiteSpace: 'pre-wrap', fontSize: 12, lineHeight: 1.5, maxHeight: 320, overflow: 'auto', margin: '8px 0' } },
+        String((e && e.message) || e) + '\n\n' + stack),
+      h('div', { className: 'mp-lbl' }, '环境：__PP ' + (typeof PP) + ' · Engine ' + (typeof window.Engine) + ' · React ' + (typeof React) + ' · 版本 ' + (typeof PP === 'object' && PP && (window.__MP_VER || '?'))),
+    ));
+  }
+}
+
 function PanelIcon(props) {
   const size = props && props.size ? props.size : 20;
   const active = props && props.active;
@@ -15452,9 +15471,6 @@ function App() {
   const [crossOn, setCrossOn] = useState(false);
   const [askText, setAskText] = useState('');
   const [chatNote, setChatNote] = useState('');
-  useEffect(() => {
-    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
-  }, [result, askText]);
   const [fx, setFx] = useState(null);
   const [pastMarks, setPastMarks] = useState({});
   const [fit, setFit] = useState(null);
@@ -15480,6 +15496,9 @@ function App() {
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
+  useEffect(() => {
+    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
+  }, [result, askText]);
   const [hist, setHist] = useState(() => loadHistory());
   const [replayArgs, setReplayArgs] = useState(null);
   const [error, setError] = useState('');
@@ -16278,11 +16297,11 @@ function safeApply(ctx) {
   };
 
   waitFor('sidebar.panellist', () => tryReg(
-    { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '命理' },
+    { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '命理 v' + (window.__MP_VER || '') },
     PanelIcon,
   ));
 
-  waitFor('main', () => tryReg({ name: 'main', key: 'metaphysics' }, App));
+  waitFor('main', () => tryReg({ name: 'main', key: 'metaphysics' }, (p) => h(PanelGuard, null, h(App, p))));
 
   const sessionSeat = (key, install) => {
     const run = () => {

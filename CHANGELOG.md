@@ -1,3 +1,12 @@
+## 0.35.1（待发布）
+
+修一个会让整个命理面板白屏的崩溃，并让它以后能自己把错误说出来。
+
+- **崩溃根因**（`src/app.js`）：为了给「问进对话」记住上一张盘，加了一个 `useEffect` 去写 `LAST`，但它落在 `const [result, setResult] = useState(null)` **之前**；React 首渲时读依赖数组撞上 TDZ，抛 `ReferenceError: Cannot access 'result' before initialization`，整个面板渲染失败——桌面端看到的就是「侧栏有『命理』、点开一片空白」。已把该 effect 移到 `result` 声明之后。
+- **渲染兜底**（新增 `PanelGuard`，`React.Component` 的错误边界）：面板里任何一层组件抛错时，把错误原文与前 14 行栈直接铺在面板上，并附「__PP / Engine / React / 版本」环境行——不再白屏，也不用开 devtools 才能报错。
+- **版本可见**：构建时把 `package.json` 的版本注入 `window.__MP_VER`，侧栏标题显示为「命理 v0.35.1」；`__ModuleLoader__.load` 的模块描述里也带 `version`。以后一眼能确认应用加载的是哪份构建。
+- 测试与闸门不变：**76 个测试文件 / 2434 条断言**，七道闸全绿。
+
 ## 0.35.0（待发布）
 
 面板可以直接把提问送进对话窗了：排完盘点「问进对话」，这张盘的摘要和你的问题会变成一条正常的用户消息，由对话里的模型接着答。

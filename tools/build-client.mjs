@@ -138,10 +138,13 @@ export function assemble(tail) {
   const body = tail ?? fs.readFileSync(path.join(root, 'src', 'app.js'), 'utf8');
   const core = fs.readFileSync(path.join(root, 'src', 'core.js'), 'utf8');
   const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
-  const pkgName = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).name;
+  const pkgJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const pkgName = pkgJson.name;
+  const pkgVersion = pkgJson.version;
   return `// 由 tools/build-client.mjs 生成，请勿手改。
 window.__ModuleLoader__.load({
   id: '${pkgName}',
+  version: '${pkgVersion}',
   factory(require) {
     const React = (function () {
       try { return require('react'); } catch (e) { return globalThis.React; }
@@ -152,6 +155,7 @@ window.__ModuleLoader__.load({
 ${ORDER.map(buildModule).join('\n')}
     const Engine = __mods.index;
     window.Engine = Engine;
+    window.__MP_VER = '${pkgVersion}';
 ${core}
 ${kit}
 ${body}

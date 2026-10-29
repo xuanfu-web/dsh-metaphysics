@@ -140,6 +140,25 @@ const CSS = `
 
 const { useState, useEffect } = React;
 
+/** 渲染兜底：面板里任何一层组件抛错时，把错误原文摊在面板上，
+ *  而不是留给用户一片空白（桌面端不一定开得了 devtools）。 */
+class PanelGuard extends (React.Component || Object) {
+  constructor(props) { super(props); this.state = { err: null }; }
+  static getDerivedStateFromError(err) { return { err }; }
+  componentDidCatch(err, info) { console.error('[metaphysics] 面板渲染异常', err, info); }
+  render() {
+    if (!this.state.err) return this.props.children;
+    const e = this.state.err;
+    const stack = String((e && e.stack) || '').split('\n').slice(0, 14).join('\n');
+    return h('div', { className: 'mp-wrap' }, h('div', { className: 'mp-panel' },
+      h('div', { className: 'mp-lbl' }, '命理面板渲染出错——把下面这段发给我'),
+      h('pre', { style: { whiteSpace: 'pre-wrap', fontSize: 12, lineHeight: 1.5, maxHeight: 320, overflow: 'auto', margin: '8px 0' } },
+        String((e && e.message) || e) + '\n\n' + stack),
+      h('div', { className: 'mp-lbl' }, '环境：__PP ' + (typeof PP) + ' · Engine ' + (typeof window.Engine) + ' · React ' + (typeof React) + ' · 版本 ' + (typeof PP === 'object' && PP && (window.__MP_VER || '?'))),
+    ));
+  }
+}
+
 function PanelIcon(props) {
   const size = props && props.size ? props.size : 20;
   const active = props && props.active;
@@ -320,9 +339,6 @@ function App() {
   const [crossOn, setCrossOn] = useState(false);
   const [askText, setAskText] = useState('');
   const [chatNote, setChatNote] = useState('');
-  useEffect(() => {
-    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
-  }, [result, askText]);
   const [fx, setFx] = useState(null);
   // 验前事 / 生时校正
   const [pastMarks, setPastMarks] = useState({});
@@ -351,6 +367,9 @@ function App() {
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
+  useEffect(() => {
+    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
+  }, [result, askText]);
   const [hist, setHist] = useState(() => loadHistory());
   const [replayArgs, setReplayArgs] = useState(null);
   const [error, setError] = useState('');
@@ -1196,11 +1215,11 @@ function safeApply(ctx) {
   };
 
   waitFor('sidebar.panellist', () => tryReg(
-    { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '命理' },
+    { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '命理 v' + (window.__MP_VER || '') },
     PanelIcon,
   ));
 
-  waitFor('main', () => tryReg({ name: 'main', key: 'metaphysics' }, App));
+  waitFor('main', () => tryReg({ name: 'main', key: 'metaphysics' }, (p) => h(PanelGuard, null, h(App, p))));
 
   // 会话输入框右侧的小桥：只用来拿到 inputActions，不画界面
   // 会话作用域槽位由会话视图声明，通常晚于插件激活：inject 内部会等声明提交并重放。
