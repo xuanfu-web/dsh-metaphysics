@@ -518,6 +518,7 @@ export function buildZiwei(input) {
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
       masters: '命主按命宫地支，身主按生年地支',
       liunian: '流年命宫取该年地支宫；三方四正为本宫与 +4/+8/+6；并给该年所属大限与小限',
+      flyComposite: '三方四正取本宫、对宫与两个三合宫共四宫，四宫宫干各化禄权科忌共 16 条，按落宫归堆标会聚（双忌会、禄忌同宫、三化会、自化）；只描会照，不折吉凶',
       changqu: '昌曲落宫只由时支决定，故与丑未的关系（夹/三合/同宫/无关）是结构性结论；absorb 的「清/杂」是启发式标记，依据昌曲化忌与会煞，不是断语',
     },
   };
@@ -526,6 +527,7 @@ export function buildZiwei(input) {
   chart.daxianList = daxianList(chart);
   chart.fly = flyStars(chart);
   chart.flyChains = flyChains(chart, { from: '命宫' });
+  chart.flyComposite = flyComposite(chart, { from: '命宫' });
   enrichLiunian(chart);
   // 流月/流日/流时：默认按本机当前时刻，可用 asOf 指定（如 "2026-10-22T16:00"）
   chart.flow = flowOf(chart, input.asOf);
@@ -793,6 +795,102 @@ export function flyChains(chart, { from = '命宫', maxSteps = 12 } = {}) {
   const out = {};
   for (const type of FLY_TYPES) out[type] = flyChain(chart, { from, type, maxSteps });
   return out;
+}
+
+// ── 三方四正复合飞化：四宫一起飞、看落到同一宫的会聚 ─────────────────
+// 单宫飞化回答「这一宫自己去找谁」；三方四正看的是本宫连同对宫、两个三合宫
+// 四股力同时飞出去，最后在哪一宫会到一起。会在一处的化越多，那一宫被牵动的力道越集中。
+// 只归堆与标会照，不折吉凶：同样是双忌会一宫，落在生年忌和落在生年禄上意思完全不同。
+const PALACE_SUFFIX = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+
+export function flyComposite(chart, { from = '命宫' } = {}) {
+  const palaces = chart.palaces || [];
+  const src = palaces.find((p) => p.palace === from) || palaces[0];
+  if (!src) return null;
+  const names = Array.isArray(src.sanfang) && src.sanfang.length
+    ? [...new Set(src.sanfang)].slice(0, 4)
+    : [src.palace];
+
+  const sources = [];
+  for (const name of names) {
+    const p = palaces.find((x) => x.palace === name);
+    if (!p) continue;
+    sources.push({
+      palace: p.palace,
+      branch: p.branch,
+      stem: p.stem,
+      flies: FLY_TYPES.map((type) => {
+        const star = flyStarOf(p.stem, type);
+        const b = star ? starBranchOf(chart, star) : -1;
+        const target = b >= 0 ? palaces.find((x) => x.branch === BRANCHES[b]) : null;
+        return {
+          type,
+          star,
+          to: target ? target.palace : null,
+          toBranch: target ? target.branch : null,
+          self: !!(target && target.palace === p.palace),
+        };
+      }),
+    });
+  }
+
+  // 16 条飞化按落宫归堆；未上盘的星不计入落点
+  const targets = [];
+  for (const p of palaces) {
+    const incoming = [];
+    for (const s of sources) {
+      for (const f of s.flies) {
+        if (f.to === p.palace) {
+          incoming.push({ from: s.palace, fromBranch: s.branch, fromStem: s.stem, type: f.type, star: f.star, self: f.self });
+        }
+      }
+    }
+    if (!incoming.length) continue;
+    targets.push({
+      palace: p.palace,
+      branch: p.branch,
+      incoming,
+      types: [...new Set(incoming.map((x) => x.type))],
+      count: incoming.length,
+    });
+  }
+  targets.sort((a, b) => b.count - a.count || BRANCHES.indexOf(a.branch) - BRANCHES.indexOf(b.branch));
+
+  const jiAt = (t) => t.incoming.filter((x) => x.type === '忌').length;
+  const groups = {
+    doubleJi: targets.filter((t) => jiAt(t) >= 2),
+    luJi: targets.filter((t) => t.types.includes('禄') && t.types.includes('忌')),
+    tripleHua: targets.filter((t) => t.types.length >= 3),
+    selfHua: targets.filter((t) => t.incoming.some((x) => x.self)),
+  };
+
+  const labels = [];
+  for (const t of groups.doubleJi) labels.push(`${['', '', '双忌', '三忌', '四忌'][jiAt(t)] || `${jiAt(t)}忌`}会${PALACE_SUFFIX(t.palace)}`);
+  for (const t of groups.luJi) labels.push(`禄忌同宫${PALACE_SUFFIX(t.palace)}`);
+  const HUA_NUM = { 3: '三化会', 4: '四化会' };
+  for (const t of groups.tripleHua) labels.push(`${HUA_NUM[t.types.length] || `${t.types.length}化会`}${PALACE_SUFFIX(t.palace)}`);
+  for (const t of groups.selfHua) labels.push(`${PALACE_SUFFIX(t.palace)}自化`);
+
+  const byType = {};
+  for (const type of FLY_TYPES) {
+    byType[type] = sources
+      .map((s) => {
+        const f = s.flies.find((x) => x.type === type);
+        return f && f.to ? { from: s.palace, star: f.star, to: f.to, self: f.self } : null;
+      })
+      .filter(Boolean);
+  }
+
+  return {
+    from: src.palace,
+    sanfang: sources.map((s) => s.palace),
+    sources,
+    targets,
+    groups,
+    byType,
+    labels,
+    note: '三方四正取本宫、对宫与两个三合宫共四宫，四宫宫干各化禄权科忌共 16 条飞化，按落宫归堆；只在落宫相同（会照）时标会聚，单条飞出不另立标签。只描会照与方向，不折吉凶，也未叠大限流年四化。',
+  };
 }
 
 // ── 流年四化落宫 ────────────────────────────────────────────

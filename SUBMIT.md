@@ -21,11 +21,11 @@ url: https://github.com/xuanfu-web/dsh-metaphysics
 name: xuanfu-web/dsh-metaphysics
 category: ui
 description:
-  en: 'Chinese metaphysics (xuanxue) divination panel and agent tool with nineteen systems: eight chart systems (BaZi, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus eleven quick references (almanac, solar–lunar conversion, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, an MBTI-style 16-type questionnaire, life-curve, feng shui, name analysis); ask-driven interpretation and a report layer. All computed locally; networking is off by default. The npm package also ships an offline single-file page (命理排盘.html): double-click to open, every tab included, no server and no network needed.'
-  zh: '玄学命理排盘：十九套体系——八套排盘（八字、紫微斗数、六爻、梅花易数、大六壬、奇门遁甲、合盘、塔罗）加十一套速查（黄历、农历互转、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名、十六型人格问卷），并可按所问之事生成解析；纯本地计算，默认不联网。npm 包内另附离线单文件页（命理排盘.html）：双击即开，十九个 tab 齐全，不用起服务、不用联网。'
+  en: 'Chinese metaphysics (xuanxue) divination panel and agent tool with nineteen systems: eight chart systems (BaZi, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus eleven quick references (almanac, solar–lunar conversion, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, an MBTI-style 16-type questionnaire, life-curve, feng shui, name analysis); ask-driven interpretation and a report layer, including chained and three-way-four-corner composite flying transformations for Zi Wei and yongshen plus whole-hexagram per-line month/day strength for LiuYao. All computed locally; networking is off by default. The npm package also ships an offline single-file page (命理排盘.html): double-click to open, every tab included, no server and no network needed.'
+  zh: '玄学命理排盘：十九套体系——八套排盘（八字、紫微斗数、六爻、梅花易数、大六壬、奇门遁甲、合盘、塔罗）加十一套速查（黄历、农历互转、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名、十六型人格问卷），并可按所问之事生成解析；紫微含飞星串连与三方四正复合飞化，六爻含用神旺衰与全卦逐爻旺衰；纯本地计算，默认不联网。npm 包内另附离线单文件页（命理排盘.html）：双击即开，十九个 tab 齐全，不用起服务、不用联网。'
 ```
 
-- 仓库里真身是 `submit/xuanfu-web__dsh-metaphysics.yml`，改描述请改那个文件，别只改这里。
+> 上面这份是镜像；真身是 `submit/xuanfu-web__dsh-metaphysics.yml`，改描述以那个文件为准，改完记得回来同步这一段。
 
 - `category`：可选 `agi ui usage theme model identity session memory tools wsl browser vision voice docs skill workflow git notify dev security remote market fun`。
   本插件是「对话可调用的工具 + 侧栏可视化面板」，取 `ui`；有人觉得偏 `fun`（文化娱乐）也可，维护者会改，不会因此打回。
@@ -62,11 +62,12 @@ PR 合并后站点与 dsh-market 会自动重建，通常一天内可见。
 npm publish --access public
 ```
 
-## 四、提交状态（2026-10-27 更新）
+## 四、提交状态（2026-10-29 更新）
 
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/9854 （open，把条目描述更新为十八套体系并加上「玄学」关键词；原 PR #8517 已于 2026-10-22 合并；0.19.0 发布后条目描述已含公农历互转）
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/9854 （open，把条目描述更新为十八套体系并加上「玄学」关键词；原 PR #8517 已于 2026-10-22 合并）。条目描述现已落后于 0.35 / 0.36 两项能力，下一次发版后再提一次 PR 同步。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.22.0`（`dist-tags.latest = 0.22.0`，registry 已核对；git tag `v0.22.0`、GitHub Release latest `v0.22.0`、桌面 profile 已升到 0.22.0；0.22.0 新增《穷通宝鉴》120 格用神与原文摘句）；发布命令：
+- **已发布**：npm `dsh-metaphysics@0.34.0`（`dist-tags.latest = 0.34.0`；0.23.0–0.33.0 只提交在本地，随 0.34.0 一并发布）。**0.35.0 / 0.35.1 / 0.36.0 均未发布**，本地 `main` 领先 `origin/main` 19 个提交。
+- **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布命令
   `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
   token 走临时 `.npmrc`（0600），发布后立即删除
 - **历史卡点**：建仓用的临时令牌已删除（API 401）；`github.com:443` 曾间歇失败，重试后可推

@@ -1,6 +1,6 @@
 window.__ModuleLoader__.load({
   id: 'dsh-metaphysics',
-  version: '0.35.1',
+  version: '0.36.0',
   factory(require) {
     const React = (function () {
       try { return require('react'); } catch (e) { return globalThis.React; }
@@ -4221,7 +4221,80 @@ function yongshenStrength(result, useGod, opts = {}) {
   };
 }
 
-return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao, zhiElementOf, monthStateOf, dayRelationOf, yongshenStrength };
+function hexagramStrength(result, opts = {}) {
+  const rows = (result && result.ben && Array.isArray(result.ben.lines))
+    ? result.ben.lines
+    : (result && Array.isArray(result.lines) ? result.lines : []);
+  if (!rows.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result.dayGanZhi ? result.dayGanZhi.branch : null);
+  if (!monthBranch && !dayBranch) return null;
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result.xunKong)
+    ? result.xunKong
+    : (typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+  const shiPos = result.ben ? result.ben.shi : null;
+  const yingPos = result.ben ? result.ben.ying : null;
+
+  const lines = rows.map((l) => {
+    const element = l.element || zhiElementOf(l.branch);
+    const monthChong = !!(monthBranch && CHONG_OF[l.branch] === monthBranch);
+    const dayChong = !!(dayBranch && CHONG_OF[l.branch] === dayBranch);
+    const monthState = monthStateOf(element, monthElement);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const isEmpty = kong.includes(l.branch);
+    return {
+      position: l.position,
+      name: l.name,
+      branch: l.branch,
+      element,
+      liuqin: l.liuqin ?? null,
+      shi: l.position === shiPos,
+      ying: l.position === yingPos,
+      moving: !!l.moving,
+      kong: isEmpty,
+      monthState,
+      monthSay: MONTH_STATE_SAY[monthState] || '',
+      monthChong,
+      dayRelation,
+      daySay: DAY_RELATION_SAY[dayRelation] || '',
+      dayChong,
+      chongTag: monthChong ? '月破'
+        : dayChong ? (isEmpty ? '冲空' : (l.moving ? '逢日辰冲' : '暗动')) : '',
+    };
+  });
+
+  const counts = {};
+  for (const st of MONTH_STATE_ORDER) counts[st] = lines.filter((l) => l.monthState === st).length;
+
+  const labels = [];
+  for (const st of MONTH_STATE_ORDER) if (counts[st]) labels.push(`全卦${st}${counts[st]}爻`);
+  const shiLine = lines.find((l) => l.shi) || null;
+  const yingLine = lines.find((l) => l.ying) || null;
+  if (shiLine && shiLine.monthState !== 'unknown') labels.push(`世爻月建${shiLine.monthState}`);
+  if (yingLine && yingLine.monthState !== 'unknown') labels.push(`应爻月建${yingLine.monthState}`);
+  const tagCount = (tag) => lines.filter((l) => l.chongTag === tag).length;
+  for (const tag of ['月破', '暗动', '冲空', '逢日辰冲']) {
+    const n = tagCount(tag);
+    if (n) labels.push(`${tag}${n}爻`);
+  }
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    lines,
+    counts,
+    strongest: lines.filter((l) => l.monthState === '旺').map((l) => l.position),
+    weakest: lines.filter((l) => l.monthState === '死' || l.monthChong).map((l) => l.position),
+    shi: shiLine ? { position: shiLine.position, branch: shiLine.branch, monthState: shiLine.monthState, dayRelation: shiLine.dayRelation } : null,
+    ying: yingLine ? { position: yingLine.position, branch: yingLine.branch, monthState: yingLine.monthState, dayRelation: yingLine.dayRelation } : null,
+    labels,
+    note: '月建主这一段的旺衰、日辰管当天的扶克，六爻逐一给状态；判定与用神旺衰同一套，只多了世应与动爻标记。只报状态、不折分数，也不单独断吉凶。',
+  };
+}
+
+return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao, zhiElementOf, monthStateOf, dayRelationOf, yongshenStrength, hexagramStrength };
 })();
 
 __mods.ziwei = (function () {
@@ -4698,6 +4771,7 @@ function buildZiwei(input) {
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
       masters: '命主按命宫地支，身主按生年地支',
       liunian: '流年命宫取该年地支宫；三方四正为本宫与 +4/+8/+6；并给该年所属大限与小限',
+      flyComposite: '三方四正取本宫、对宫与两个三合宫共四宫，四宫宫干各化禄权科忌共 16 条，按落宫归堆标会聚（双忌会、禄忌同宫、三化会、自化）；只描会照，不折吉凶',
       changqu: '昌曲落宫只由时支决定，故与丑未的关系（夹/三合/同宫/无关）是结构性结论；absorb 的「清/杂」是启发式标记，依据昌曲化忌与会煞，不是断语',
     },
   };
@@ -4706,6 +4780,7 @@ function buildZiwei(input) {
   chart.daxianList = daxianList(chart);
   chart.fly = flyStars(chart);
   chart.flyChains = flyChains(chart, { from: '命宫' });
+  chart.flyComposite = flyComposite(chart, { from: '命宫' });
   enrichLiunian(chart);
   chart.flow = flowOf(chart, input.asOf);
   chart.patternSummary = {
@@ -4950,6 +5025,97 @@ function flyChains(chart, { from = '命宫', maxSteps = 12 } = {}) {
   return out;
 }
 
+const PALACE_SUFFIX = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+
+function flyComposite(chart, { from = '命宫' } = {}) {
+  const palaces = chart.palaces || [];
+  const src = palaces.find((p) => p.palace === from) || palaces[0];
+  if (!src) return null;
+  const names = Array.isArray(src.sanfang) && src.sanfang.length
+    ? [...new Set(src.sanfang)].slice(0, 4)
+    : [src.palace];
+
+  const sources = [];
+  for (const name of names) {
+    const p = palaces.find((x) => x.palace === name);
+    if (!p) continue;
+    sources.push({
+      palace: p.palace,
+      branch: p.branch,
+      stem: p.stem,
+      flies: FLY_TYPES.map((type) => {
+        const star = flyStarOf(p.stem, type);
+        const b = star ? starBranchOf(chart, star) : -1;
+        const target = b >= 0 ? palaces.find((x) => x.branch === BRANCHES[b]) : null;
+        return {
+          type,
+          star,
+          to: target ? target.palace : null,
+          toBranch: target ? target.branch : null,
+          self: !!(target && target.palace === p.palace),
+        };
+      }),
+    });
+  }
+
+  const targets = [];
+  for (const p of palaces) {
+    const incoming = [];
+    for (const s of sources) {
+      for (const f of s.flies) {
+        if (f.to === p.palace) {
+          incoming.push({ from: s.palace, fromBranch: s.branch, fromStem: s.stem, type: f.type, star: f.star, self: f.self });
+        }
+      }
+    }
+    if (!incoming.length) continue;
+    targets.push({
+      palace: p.palace,
+      branch: p.branch,
+      incoming,
+      types: [...new Set(incoming.map((x) => x.type))],
+      count: incoming.length,
+    });
+  }
+  targets.sort((a, b) => b.count - a.count || BRANCHES.indexOf(a.branch) - BRANCHES.indexOf(b.branch));
+
+  const jiAt = (t) => t.incoming.filter((x) => x.type === '忌').length;
+  const groups = {
+    doubleJi: targets.filter((t) => jiAt(t) >= 2),
+    luJi: targets.filter((t) => t.types.includes('禄') && t.types.includes('忌')),
+    tripleHua: targets.filter((t) => t.types.length >= 3),
+    selfHua: targets.filter((t) => t.incoming.some((x) => x.self)),
+  };
+
+  const labels = [];
+  for (const t of groups.doubleJi) labels.push(`${['', '', '双忌', '三忌', '四忌'][jiAt(t)] || `${jiAt(t)}忌`}会${PALACE_SUFFIX(t.palace)}`);
+  for (const t of groups.luJi) labels.push(`禄忌同宫${PALACE_SUFFIX(t.palace)}`);
+  const HUA_NUM = { 3: '三化会', 4: '四化会' };
+  for (const t of groups.tripleHua) labels.push(`${HUA_NUM[t.types.length] || `${t.types.length}化会`}${PALACE_SUFFIX(t.palace)}`);
+  for (const t of groups.selfHua) labels.push(`${PALACE_SUFFIX(t.palace)}自化`);
+
+  const byType = {};
+  for (const type of FLY_TYPES) {
+    byType[type] = sources
+      .map((s) => {
+        const f = s.flies.find((x) => x.type === type);
+        return f && f.to ? { from: s.palace, star: f.star, to: f.to, self: f.self } : null;
+      })
+      .filter(Boolean);
+  }
+
+  return {
+    from: src.palace,
+    sanfang: sources.map((s) => s.palace),
+    sources,
+    targets,
+    groups,
+    byType,
+    labels,
+    note: '三方四正取本宫、对宫与两个三合宫共四宫，四宫宫干各化禄权科忌共 16 条飞化，按落宫归堆；只在落宫相同（会照）时标会聚，单条飞出不另立标签。只描会照与方向，不折吉凶，也未叠大限流年四化。',
+  };
+}
+
 function enrichLiunian(chart) {
   for (const ln of chart.liunian) {
     const stem = ln.ganzhi[0];
@@ -5052,7 +5218,7 @@ function flowOf(chart, asOf) {
   };
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, enrichLiunian, asOfParts, flowOf };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, enrichLiunian, asOfParts, flowOf };
 })();
 
 __mods.tarot = (function () {
@@ -9464,6 +9630,27 @@ function useStrengthPlain(st) {
   return `${when}对这件事有帮有压，一半的力要自己挣——结果更看你怎么走。`;
 }
 
+function hexStrengthPlain(hs) {
+  if (!hs || !hs.counts) return '';
+  const up = (hs.counts.旺 || 0) + (hs.counts.相 || 0);
+  const down = (hs.counts.囚 || 0) + (hs.counts.死 || 0);
+  const when = hs.month && hs.month.branch ? `按${hs.month.branch}月这段时令看` : '按起卦这天看';
+  const shi = hs.shi && hs.shi.monthState !== 'unknown' ? `代表你的世爻在${hs.shi.monthState}` : '';
+  if (up >= 4 && down === 0) return `${when}，整张卦六爻的气多数是顺的，${shi}，眼下算是好推的时候。`;
+  if (down >= 4 && up === 0) return `${when}，整张卦六爻的气多数被压着，${shi}，这几天更适合等而不是冲。`;
+  return `${when}，整张卦六爻有顺有逆（旺相 ${up} 爻、囚死 ${down} 爻）${shi ? `，${shi}` : ''}，成不成要看具体哪一爻在动。`;
+}
+
+function flyCompositePlain(fc) {
+  if (!fc || !Array.isArray(fc.targets)) return '';
+  const hub = fc.targets.find((t) => t.count >= 2);
+  const self = fc.groups && fc.groups.selfHua && fc.groups.selfHua.length
+    ? '其中有的宫自己化出去又落回自己，容易表现为「想得多、落得少」。'
+    : '';
+  if (!hub) return `把命宫连同对宫、两个三合宫一起看，四股力飞出去没有挤到同一处，这几件事之间牵连不深。${self}`;
+  return `把命宫连同对宫与两个三合宫一起看，${hub.incoming.length} 股力最后挤在「${String(hub.palace).replace(/宫$/, '')}」这件事上——这件事会把好几个方面的劲都吸过来。${self}`;
+}
+
 function bodyPlainOf(labels) {
   const keyOf = (l) => Object.keys(PLAIN_BODY).find((k) => l === k || l.startsWith(`${k} `)) || '';
   const primary = labels.find((l) => keyOf(l));
@@ -9526,6 +9713,7 @@ function buildAnswer(r, ask, ctx = {}) {
         `${bureau.name ? `、${bureau.name}` : ''}${md ? `，命主${md}` : ''}` +
         `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
       plainFly,
+      flyCompositePlain(r.flyComposite),
       `具体到你问的这件事，重点看${where}。`,
     ].filter(Boolean).join('');
   }
@@ -9540,7 +9728,7 @@ function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`,
+        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${hexStrengthPlain(r.hexStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -9572,6 +9760,7 @@ function buildPlain(r, ask, ctx = {}) {
       `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
         `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`,
       plainFly,
+      flyCompositePlain(r.flyComposite),
     ].filter(Boolean).join('');
   }
   if (r.system === 'liuyao') {
@@ -9581,7 +9770,7 @@ function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`;
+      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${hexStrengthPlain(r.hexStrength)}`;
   }
   return '';
 }
@@ -9813,7 +10002,16 @@ const KNOWLEDGE = [
     detail: '生年四化是先天带的，飞星四化是宫位自己去找的：每一宫的宫干定出禄权科忌四颗星，那几颗星落在哪一宫，就是这一宫的力气往哪边使。所以同一个「化忌」，从命宫飞出去和从财帛飞出去，说的是两件事。',
     source: '《紫微斗数全书》四化篇；中州派宫干四化传法',
     status: 'variant',
-    note: '飞星派（如钦天四化）把宫干四化当主线，三合派只作辅助；庚干四化各派另有异说，本插件取中州派常用表。',
+    note: '飞星派（如钦天四化）把宫干四化当主线，三合派只作辅助；庚干四化各派另有异说，本插件取中州派常用表。飞星串连与三方四正复合飞化现已给出，但未叠大限流年四化。',
+  },
+  {
+    id: 'ziwei-sanfang-fei',
+    system: 'ziwei', dims: ['overall', 'career'],
+    gist: '三方四正一起飞，看四股力会到哪一宫。',
+    detail: '单宫飞化只看本宫宫干把四化送去哪里；三方四正复合飞化把本宫、对宫与两个三合宫共四宫的宫干四化同时摊开，约 16 条，按落宫归堆，落到同一宫的就是会照。会在一处的化越多，那一宫被牵动的力道越集中；两忌以上会宫、禄忌同宫、三化以上会宫、宫干化出又落回本宫（自化），是这一层最常取的几种情形。',
+    source: '《紫微斗数全书》四化篇；飞星派三方四正同飞说',
+    status: 'variant',
+    note: '飞星派对「三方四正一起飞」是否成立、会照要不要折成分数，各家口径不一；本插件只做落宫归堆与会照标记，不折分数，也未叠大限流年四化。',
   },
   {
     id: 'ziwei-jichuanji',
@@ -9866,6 +10064,15 @@ const KNOWLEDGE = [
     source: '《增删卜易》月建章、日辰章；《卜筮正宗》月建论',
     status: 'variant',
     note: '月破、暗动、冲空三者各家取法不完全一致（有派别把日冲动爻也叫暗动，有派别只认旺相之爻暗动）；本插件按「月建冲=月破、日冲静爻=暗动、日冲旬空=冲空」这一套给标签，并注明用了哪一支月建。',
+  },
+  {
+    id: 'liuyao-quanggu-shuai',
+    system: 'liuyao', dims: ['overall', 'work'],
+    gist: '全卦逐爻看月建，才看得出气聚在哪一头。',
+    detail: '月建管这一段时令的旺衰、日辰管当天的扶克，落到全部六爻逐爻判定：每爻都出月令五态（旺相休囚死）与日辰五关系，并标月破、暗动、冲空。世爻、应爻、动爻与旬空另标，五态分布能看出气是聚在世应还是散在旁爻——用神只是其中一处落点，不看全卦容易把一处当全局。',
+    source: '《增删卜易》月建章、日辰章；《卜筮正宗》六爻旺衰论',
+    status: 'variant',
+    note: '各家对月破、暗动、冲空的取法不完全一致，是否给六爻折力重（分数）分歧更大；本插件只给状态标签与五态分布，不折分数。',
   },
   {
     id: 'liuyao-yingqi',
@@ -10686,6 +10893,38 @@ function ziweiInterpret(r) {
     }
   }
 
+  {
+    const fc = r.flyComposite;
+    const word = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+    if (fc && Array.isArray(fc.sources) && fc.sources.length >= 2) {
+      const hubs = fc.targets.filter((t) => t.count >= 2);
+      const hubText = hubs.length
+        ? hubs.slice(0, 5).map((t) => `${word(t.palace)}收了 ${t.incoming.map((x) => `${word(x.from)}化${x.type}${x.star}`).join('、')}`).join('；')
+        : '四宫化出去之后没有落在同一宫，力是散开的';
+      const readings = [];
+      if (fc.groups.doubleJi.length) {
+        readings.push(`${fc.groups.doubleJi.map((t) => word(t.palace)).join('、')}收到两个以上的忌——同一件事被反复牵动，传统看作那一宫的事务容易拖着不放`);
+      }
+      if (fc.groups.luJi.length) {
+        readings.push(`${fc.groups.luJi.map((t) => word(t.palace)).join('、')}禄忌同宫：好处与在意的地方绑在一起，越想要的东西越容易反复`);
+      }
+      if (fc.groups.tripleHua.length) {
+        readings.push(`${fc.groups.tripleHua.map((t) => word(t.palace)).join('、')}三化以上会宫：那一宫同时被几种力牵住，常常是这张盘最忙的地方`);
+      }
+      if (fc.groups.selfHua.length) {
+        readings.push(`${fc.groups.selfHua.map((t) => word(t.palace)).join('、')}自化：宫干化出去又落回自己，表现为力气绕回原处`);
+      }
+      sections.push({
+        key: 'flyComposite',
+        label: '三方四正飞化',
+        text: `上一节是命宫一条线往下追；这一节把命宫连同对宫与两个三合宫（${fc.sanfang.join('、')}）一起飞：四宫各化禄权科忌，共 16 条飞化（星未上盘的只记星不记落宫），按落宫归堆。` +
+          `${hubText}。` +
+          `${readings.length ? `${readings.join('；')}。` : ''}` +
+          `读法上，会在一处的化越多，那一宫被牵动的力道越集中；落单的飞化只说明方向，不单独取象。这一层同样只描会照与方向，不折吉凶，也没有叠大限与流年四化。`,
+      });
+    }
+  }
+
   if (r.flow) {
     const f = r.flow;
     const at = (p) => `${p.ganzhi || '—'}${p.palace ? `落${p.palace}` : ''}`;
@@ -10900,9 +11139,35 @@ function liuyaoInterpret(r, ask) {
     sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
   }
 
+  {
+    const hs = r.hexStrength;
+    if (hs && Array.isArray(hs.lines) && hs.lines.length) {
+      const head = hs.month && hs.month.branch
+        ? `月建 ${hs.month.branch}（${hs.month.element}）`
+        : '没有月建（未给起卦时间）';
+      const day = hs.day && hs.day.branch ? `日辰 ${hs.day.branch}（${hs.day.element}）` : '日辰 —';
+      const rows = hs.lines.map((l) => {
+        const who = l.shi ? '（世）' : l.ying ? '（应）' : '';
+        const flags = `${l.moving ? '·动' : ''}${l.kong ? '·旬空' : ''}`;
+        return `${l.position}爻${l.liuqin ? l.liuqin : ''}${l.branch}${l.element}${who}${flags}：月建${l.monthState}，${l.dayRelation}${l.chongTag ? `，${l.chongTag}` : ''}`;
+      });
+      const order = ['旺', '相', '休', '囚', '死'];
+      const dist = order.filter((k) => hs.counts[k]).map((k) => `${k}${hs.counts[k]}`).join('、');
+      const shi = hs.shi ? `世爻在${hs.shi.position}爻（月建${hs.shi.monthState}，${hs.shi.dayRelation}）` : '';
+      const ying = hs.ying ? `应爻在${hs.ying.position}爻（月建${hs.ying.monthState}，${hs.ying.dayRelation}）` : '';
+      sections.push({
+        key: 'hexStrength',
+        label: '全卦逐爻旺衰',
+        text: `整张卦按${head}、${day}逐爻过一遍：${rows.join('；')}。五态分布：${dist}——${[shi, ying].filter(Boolean).join('，')}。` +
+          `气旺的爻对应的事推进起来省力，气弱或遭月破的爻对应的事宜缓；这只是六爻全貌，用神那几爻的细节仍以上一节为准，两处不冲突时再看动爻把哪一头带动。` +
+          `判定与用神旺衰同一套（月令五态、日辰五关系、月破/暗动/冲空），只报状态，不折成分数。`,
+      });
+    }
+  }
+
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：全卦逐爻的月建旺衰（现在只算到用神那几爻）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -11930,7 +12195,7 @@ return { matchEvent, rectifyBirth, RECTIFY_KINDS };
 
 __mods.index = (function () {
 const { buildBazi } = __mods.bazi;
-const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength } = __mods.liuyao;
+const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, hexagramStrength } = __mods.liuyao;
 const { buildZiwei, BRIGHTNESS, flowOf, asOfParts } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
@@ -12092,6 +12357,17 @@ function ziweiText(r) {
     const text = ['禄', '权', '科', '忌'].map(one).filter(Boolean).join('　');
     return text ? `【命宫飞星】${text}` : '';
   })();
+  const flyCompositeLine = (() => {
+    const fc = r.flyComposite;
+    if (!fc || !Array.isArray(fc.sources) || !fc.sources.length) return '';
+    const groups = fc.labels.length ? fc.labels.join(' · ') : '无同宫会聚';
+    const detail = ['禄', '权', '科', '忌'].map((t) => {
+      const list = ((fc.byType && fc.byType[t]) || []).filter((x) => !x.self);
+      const tos = [...new Set(list.map((x) => String(x.to).replace(/宫$/, '')))];
+      return tos.length ? `${t}→${tos.join('/')}` : '';
+    }).filter(Boolean).join('　');
+    return `【三方四正飞化】${fc.sanfang.join('·')}：${groups}${detail ? `　${detail}` : ''}`;
+  })();
   return [
     `【农历】${lunarText}（月首 ${r.lunar.monthStart}）　时支：${r.hourBranch}　年干支：${r.yearGanzhi}`,
     `【时刻】${r.solarTime ? `${r.solarTime.civilText} → 真太阳时 ${r.solarTime.trueSolarText}${r.input.geo ? '（' + r.input.geo.note + '）' : ''}` : ''}`,
@@ -12101,6 +12377,7 @@ function ziweiText(r) {
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
     `　　　${r.changqu.relation}　入命三方：${r.changqu.inSoulSanfang ? '是' : '否'}　吸收面：${r.changqu.absorb.label}（${r.changqu.absorb.reason}）`,
     flyLine,
+    flyCompositeLine,
     '十二宫：',
     ...rows,
     '大限（按起运年龄排序，前 8 限，宫干四化落宫）：',
@@ -12252,6 +12529,13 @@ function liuyaoText(r) {
     }
   } else {
     out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
+  }
+  const hexSt = r.hexStrength;
+  if (hexSt && Array.isArray(hexSt.labels) && hexSt.labels.length) {
+    const m = hexSt.month && hexSt.month.branch
+      ? `月建 ${hexSt.month.branch}（${hexSt.month.element}）　`
+      : '无月建（未给起卦时间）　';
+    out.push(`全卦旺衰：${m}${hexSt.labels.join(' · ')}`);
   }
   return out.filter(Boolean).join('\n');
 }
@@ -12533,17 +12817,19 @@ function computeRaw(args = {}) {
       throw fail('E_LINES', e && e.message ? e.message : e);
     }
     const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
-    if (ug.liuqin) {
-      result.useGod = ug;
-      let monthBranch = null;
-      if (stamp) {
-        try {
-          const snap = buildSnapshot({ year: stamp.year, month: stamp.month, day: stamp.day, hour: stamp.hour, minute: stamp.minute });
-          monthBranch = (snap.monthGanZhi || '')[1] || null;
-        } catch {
-          monthBranch = null;
-        }
+    if (ug.liuqin) result.useGod = ug;
+    let monthBranch = null;
+    if (stamp) {
+      try {
+        const snap = buildSnapshot({ year: stamp.year, month: stamp.month, day: stamp.day, hour: stamp.hour, minute: stamp.minute });
+        monthBranch = (snap.monthGanZhi || '')[1] || null;
+      } catch {
+        monthBranch = null;
       }
+    }
+    const hexStrength = hexagramStrength(result, { monthBranch, dayBranch: result.dayGanZhi.branch });
+    if (hexStrength) result.hexStrength = hexStrength;
+    if (ug.liuqin) {
       const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
       if (strength) result.useGodStrength = strength;
     }
@@ -12934,7 +13220,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
     const Engine = __mods.index;
     window.Engine = Engine;
-    window.__MP_VER = '0.35.1';
+    window.__MP_VER = '0.36.0';
 (function () {
   const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
   const needAsk = (kind) => !!NEED_ASK[kind];
@@ -13938,6 +14224,14 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       }).join('');
       return chips ? `<div class="pp-chips">${chips}</div>` : '';
     })() : '';
+    const flyCompositeHTML = r.flyComposite && Array.isArray(r.flyComposite.labels) && r.flyComposite.labels.length
+      ? `<div class="pp-chips">${r.flyComposite.labels.map((l) => {
+        const cls = /忌/.test(l) ? 'warn' : /自化/.test(l) ? '' : 'ok';
+        const palaceOf = (x) => String(x).replace(/^.*?会/, '').replace(/^禄忌同宫/, '').replace(/自化$/, '');
+        const hit = (r.flyComposite.targets || []).find((t) => t.palace === palaceOf(l));
+        const tip = hit ? hit.incoming.map((x) => `${x.from}化${x.type}${x.star}`).join('、') : r.flyComposite.note;
+        return `<span class="pp-chip ${cls}" title="${esc(tip)}">三方四正 ${esc(l)}</span>`;
+      }).join('')}</div>` : '';
 
     const fl = r.flow;
     const flowHTML = fl ? (() => {
@@ -13967,7 +14261,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${flyHTML}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}`;
   };
 
   function starLine(list) {
@@ -14149,12 +14443,21 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
+    const hs = r.hexStrength && Array.isArray(r.hexStrength.labels) ? r.hexStrength : null;
+    const hexRow = hs && hs.labels.length
+      ? `<div class="pp-chips">${hs.labels.map((l) => {
+        const cls = /死|囚|月破|冲空/.test(l) ? 'warn'
+          : /旺|相/.test(l) ? 'ok' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
       ${useRow}
       ${strengthRow}
+      ${hexRow}
     </div>`;
   };
 

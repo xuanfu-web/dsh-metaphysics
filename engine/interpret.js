@@ -699,6 +699,39 @@ function ziweiInterpret(r) {
     }
   }
 
+  // 三方四正复合飞化：命宫连同对宫与两个三合宫一起飞，四宫 16 条按落宫归堆
+  {
+    const fc = r.flyComposite;
+    const word = (p) => `${p}${String(p).endsWith('宫') ? '' : '宫'}`;
+    if (fc && Array.isArray(fc.sources) && fc.sources.length >= 2) {
+      const hubs = fc.targets.filter((t) => t.count >= 2);
+      const hubText = hubs.length
+        ? hubs.slice(0, 5).map((t) => `${word(t.palace)}收了 ${t.incoming.map((x) => `${word(x.from)}化${x.type}${x.star}`).join('、')}`).join('；')
+        : '四宫化出去之后没有落在同一宫，力是散开的';
+      const readings = [];
+      if (fc.groups.doubleJi.length) {
+        readings.push(`${fc.groups.doubleJi.map((t) => word(t.palace)).join('、')}收到两个以上的忌——同一件事被反复牵动，传统看作那一宫的事务容易拖着不放`);
+      }
+      if (fc.groups.luJi.length) {
+        readings.push(`${fc.groups.luJi.map((t) => word(t.palace)).join('、')}禄忌同宫：好处与在意的地方绑在一起，越想要的东西越容易反复`);
+      }
+      if (fc.groups.tripleHua.length) {
+        readings.push(`${fc.groups.tripleHua.map((t) => word(t.palace)).join('、')}三化以上会宫：那一宫同时被几种力牵住，常常是这张盘最忙的地方`);
+      }
+      if (fc.groups.selfHua.length) {
+        readings.push(`${fc.groups.selfHua.map((t) => word(t.palace)).join('、')}自化：宫干化出去又落回自己，表现为力气绕回原处`);
+      }
+      sections.push({
+        key: 'flyComposite',
+        label: '三方四正飞化',
+        text: `上一节是命宫一条线往下追；这一节把命宫连同对宫与两个三合宫（${fc.sanfang.join('、')}）一起飞：四宫各化禄权科忌，共 16 条飞化（星未上盘的只记星不记落宫），按落宫归堆。` +
+          `${hubText}。` +
+          `${readings.length ? `${readings.join('；')}。` : ''}` +
+          `读法上，会在一处的化越多，那一宫被牵动的力道越集中；落单的飞化只说明方向，不单独取象。这一层同样只描会照与方向，不折吉凶，也没有叠大限与流年四化。`,
+      });
+    }
+  }
+
   // 流月/流日/流时：流年只回答「今年」，再往下才是「这个月」「这两天」
   if (r.flow) {
     const f = r.flow;
@@ -929,9 +962,36 @@ function liuyaoInterpret(r, ask) {
     sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
   }
 
+  // 全卦逐爻旺衰：不挑用神，六爻都过一遍，看整张卦的气压在哪一头
+  {
+    const hs = r.hexStrength;
+    if (hs && Array.isArray(hs.lines) && hs.lines.length) {
+      const head = hs.month && hs.month.branch
+        ? `月建 ${hs.month.branch}（${hs.month.element}）`
+        : '没有月建（未给起卦时间）';
+      const day = hs.day && hs.day.branch ? `日辰 ${hs.day.branch}（${hs.day.element}）` : '日辰 —';
+      const rows = hs.lines.map((l) => {
+        const who = l.shi ? '（世）' : l.ying ? '（应）' : '';
+        const flags = `${l.moving ? '·动' : ''}${l.kong ? '·旬空' : ''}`;
+        return `${l.position}爻${l.liuqin ? l.liuqin : ''}${l.branch}${l.element}${who}${flags}：月建${l.monthState}，${l.dayRelation}${l.chongTag ? `，${l.chongTag}` : ''}`;
+      });
+      const order = ['旺', '相', '休', '囚', '死'];
+      const dist = order.filter((k) => hs.counts[k]).map((k) => `${k}${hs.counts[k]}`).join('、');
+      const shi = hs.shi ? `世爻在${hs.shi.position}爻（月建${hs.shi.monthState}，${hs.shi.dayRelation}）` : '';
+      const ying = hs.ying ? `应爻在${hs.ying.position}爻（月建${hs.ying.monthState}，${hs.ying.dayRelation}）` : '';
+      sections.push({
+        key: 'hexStrength',
+        label: '全卦逐爻旺衰',
+        text: `整张卦按${head}、${day}逐爻过一遍：${rows.join('；')}。五态分布：${dist}——${[shi, ying].filter(Boolean).join('，')}。` +
+          `气旺的爻对应的事推进起来省力，气弱或遭月破的爻对应的事宜缓；这只是六爻全貌，用神那几爻的细节仍以上一节为准，两处不冲突时再看动爻把哪一头带动。` +
+          `判定与用神旺衰同一套（月令五态、日辰五关系、月破/暗动/冲空），只报状态，不折成分数。`,
+      });
+    }
+  }
+
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：全卦逐爻的月建旺衰（现在只算到用神那几爻）、化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：化进化退叠上月建日辰之后的实际力重、用神两现时该取哪一爻的权重、伏神出伏的应期。这些会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [

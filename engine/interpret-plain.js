@@ -65,6 +65,29 @@ function useStrengthPlain(st) {
   return `${when}对这件事有帮有压，一半的力要自己挣——结果更看你怎么走。`;
 }
 
+// 全卦逐爻旺衰 → 一句白话：整张卦的气偏在哪一头（与用神那一句分开说）
+function hexStrengthPlain(hs) {
+  if (!hs || !hs.counts) return '';
+  const up = (hs.counts.旺 || 0) + (hs.counts.相 || 0);
+  const down = (hs.counts.囚 || 0) + (hs.counts.死 || 0);
+  const when = hs.month && hs.month.branch ? `按${hs.month.branch}月这段时令看` : '按起卦这天看';
+  const shi = hs.shi && hs.shi.monthState !== 'unknown' ? `代表你的世爻在${hs.shi.monthState}` : '';
+  if (up >= 4 && down === 0) return `${when}，整张卦六爻的气多数是顺的，${shi}，眼下算是好推的时候。`;
+  if (down >= 4 && up === 0) return `${when}，整张卦六爻的气多数被压着，${shi}，这几天更适合等而不是冲。`;
+  return `${when}，整张卦六爻有顺有逆（旺相 ${up} 爻、囚死 ${down} 爻）${shi ? `，${shi}` : ''}，成不成要看具体哪一爻在动。`;
+}
+
+// 三方四正复合飞化 → 一句白话：四股力有没有挤到同一处
+function flyCompositePlain(fc) {
+  if (!fc || !Array.isArray(fc.targets)) return '';
+  const hub = fc.targets.find((t) => t.count >= 2);
+  const self = fc.groups && fc.groups.selfHua && fc.groups.selfHua.length
+    ? '其中有的宫自己化出去又落回自己，容易表现为「想得多、落得少」。'
+    : '';
+  if (!hub) return `把命宫连同对宫、两个三合宫一起看，四股力飞出去没有挤到同一处，这几件事之间牵连不深。${self}`;
+  return `把命宫连同对宫与两个三合宫一起看，${hub.incoming.length} 股力最后挤在「${String(hub.palace).replace(/宫$/, '')}」这件事上——这件事会把好几个方面的劲都吸过来。${self}`;
+}
+
 /**
  * 六爻卦体 → 一句白话。
  * 标签可能带爻位（「化进神 5」），所以按前缀匹配；
@@ -135,6 +158,7 @@ export function buildAnswer(r, ask, ctx = {}) {
         `${bureau.name ? `、${bureau.name}` : ''}${md ? `，命主${md}` : ''}` +
         `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
       plainFly,
+      flyCompositePlain(r.flyComposite),
       `具体到你问的这件事，重点看${where}。`,
     ].filter(Boolean).join('');
   }
@@ -150,7 +174,7 @@ export function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`,
+        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${hexStrengthPlain(r.hexStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -184,6 +208,7 @@ export function buildPlain(r, ask, ctx = {}) {
       `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
         `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`,
       plainFly,
+      flyCompositePlain(r.flyComposite),
     ].filter(Boolean).join('');
   }
   if (r.system === 'liuyao') {
@@ -193,7 +218,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}`;
+      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${hexStrengthPlain(r.hexStrength)}`;
   }
   return '';
 }

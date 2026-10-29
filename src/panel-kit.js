@@ -1087,6 +1087,15 @@
       }).join('');
       return chips ? `<div class="pp-chips">${chips}</div>` : '';
     })() : '';
+    // 三方四正一起飞：四宫 16 条按落宫归堆，只摆会聚的那几条
+    const flyCompositeHTML = r.flyComposite && Array.isArray(r.flyComposite.labels) && r.flyComposite.labels.length
+      ? `<div class="pp-chips">${r.flyComposite.labels.map((l) => {
+        const cls = /忌/.test(l) ? 'warn' : /自化/.test(l) ? '' : 'ok';
+        const palaceOf = (x) => String(x).replace(/^.*?会/, '').replace(/^禄忌同宫/, '').replace(/自化$/, '');
+        const hit = (r.flyComposite.targets || []).find((t) => t.palace === palaceOf(l));
+        const tip = hit ? hit.incoming.map((x) => `${x.from}化${x.type}${x.star}`).join('、') : r.flyComposite.note;
+        return `<span class="pp-chip ${cls}" title="${esc(tip)}">三方四正 ${esc(l)}</span>`;
+      }).join('')}</div>` : '';
 
     // 流月/流日/流时：流年只能看到「今年」，要落到「这个月这段时间」得再往下一层
     const fl = r.flow;
@@ -1118,7 +1127,7 @@
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${flyHTML}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────
@@ -1314,12 +1323,22 @@
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
+    // 全卦逐爻旺衰：五态分布 + 世应 + 破动空，用神那排之外的整卦视角
+    const hs = r.hexStrength && Array.isArray(r.hexStrength.labels) ? r.hexStrength : null;
+    const hexRow = hs && hs.labels.length
+      ? `<div class="pp-chips">${hs.labels.map((l) => {
+        const cls = /死|囚|月破|冲空/.test(l) ? 'warn'
+          : /旺|相/.test(l) ? 'ok' : '';
+        return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     return `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
       ${useRow}
       ${strengthRow}
+      ${hexRow}
     </div>`;
   };
 

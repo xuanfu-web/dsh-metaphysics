@@ -700,3 +700,79 @@ export function yongshenStrength(result, useGod, opts = {}) {
     note: '月建主这一段的旺衰，日辰看当天是扶是克；两处都只给状态标签，不折成分数，也不单独断吉凶。',
   };
 }
+
+// ── 全卦逐爻旺衰：月建日辰落到六爻全部 ──────────────────────────────
+// 与用神旺衰同一套判定（月令五态、日辰五关系、三种冲法），区别只在不挑用神：
+// 六爻每一爻都给一次，世应、动爻、旬空另标，看得出整张卦的气压在哪一头。
+export function hexagramStrength(result, opts = {}) {
+  const rows = (result && result.ben && Array.isArray(result.ben.lines))
+    ? result.ben.lines
+    : (result && Array.isArray(result.lines) ? result.lines : []);
+  if (!rows.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result.dayGanZhi ? result.dayGanZhi.branch : null);
+  if (!monthBranch && !dayBranch) return null;
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result.xunKong)
+    ? result.xunKong
+    : (typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+  const shiPos = result.ben ? result.ben.shi : null;
+  const yingPos = result.ben ? result.ben.ying : null;
+
+  const lines = rows.map((l) => {
+    const element = l.element || zhiElementOf(l.branch);
+    const monthChong = !!(monthBranch && CHONG_OF[l.branch] === monthBranch);
+    const dayChong = !!(dayBranch && CHONG_OF[l.branch] === dayBranch);
+    const monthState = monthStateOf(element, monthElement);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const isEmpty = kong.includes(l.branch);
+    return {
+      position: l.position,
+      name: l.name,
+      branch: l.branch,
+      element,
+      liuqin: l.liuqin ?? null,
+      shi: l.position === shiPos,
+      ying: l.position === yingPos,
+      moving: !!l.moving,
+      kong: isEmpty,
+      monthState,
+      monthSay: MONTH_STATE_SAY[monthState] || '',
+      monthChong,
+      dayRelation,
+      daySay: DAY_RELATION_SAY[dayRelation] || '',
+      dayChong,
+      chongTag: monthChong ? '月破'
+        : dayChong ? (isEmpty ? '冲空' : (l.moving ? '逢日辰冲' : '暗动')) : '',
+    };
+  });
+
+  const counts = {};
+  for (const st of MONTH_STATE_ORDER) counts[st] = lines.filter((l) => l.monthState === st).length;
+
+  const labels = [];
+  for (const st of MONTH_STATE_ORDER) if (counts[st]) labels.push(`全卦${st}${counts[st]}爻`);
+  const shiLine = lines.find((l) => l.shi) || null;
+  const yingLine = lines.find((l) => l.ying) || null;
+  if (shiLine && shiLine.monthState !== 'unknown') labels.push(`世爻月建${shiLine.monthState}`);
+  if (yingLine && yingLine.monthState !== 'unknown') labels.push(`应爻月建${yingLine.monthState}`);
+  const tagCount = (tag) => lines.filter((l) => l.chongTag === tag).length;
+  for (const tag of ['月破', '暗动', '冲空', '逢日辰冲']) {
+    const n = tagCount(tag);
+    if (n) labels.push(`${tag}${n}爻`);
+  }
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    lines,
+    counts,
+    strongest: lines.filter((l) => l.monthState === '旺').map((l) => l.position),
+    weakest: lines.filter((l) => l.monthState === '死' || l.monthChong).map((l) => l.position),
+    shi: shiLine ? { position: shiLine.position, branch: shiLine.branch, monthState: shiLine.monthState, dayRelation: shiLine.dayRelation } : null,
+    ying: yingLine ? { position: yingLine.position, branch: yingLine.branch, monthState: yingLine.monthState, dayRelation: yingLine.dayRelation } : null,
+    labels,
+    note: '月建主这一段的旺衰、日辰管当天的扶克，六爻逐一给状态；判定与用神旺衰同一套，只多了世应与动爻标记。只报状态、不折分数，也不单独断吉凶。',
+  };
+}

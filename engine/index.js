@@ -1,6 +1,6 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength } from './liuyao.js';
+import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, hexagramStrength } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
@@ -174,6 +174,18 @@ function ziweiText(r) {
     const text = ['禄', '权', '科', '忌'].map(one).filter(Boolean).join('　');
     return text ? `【命宫飞星】${text}` : '';
   })();
+  // 三方四正一起飞：四宫的 16 条飞化按落宫归堆，只看会聚
+  const flyCompositeLine = (() => {
+    const fc = r.flyComposite;
+    if (!fc || !Array.isArray(fc.sources) || !fc.sources.length) return '';
+    const groups = fc.labels.length ? fc.labels.join(' · ') : '无同宫会聚';
+    const detail = ['禄', '权', '科', '忌'].map((t) => {
+      const list = ((fc.byType && fc.byType[t]) || []).filter((x) => !x.self);
+      const tos = [...new Set(list.map((x) => String(x.to).replace(/宫$/, '')))];
+      return tos.length ? `${t}→${tos.join('/')}` : '';
+    }).filter(Boolean).join('　');
+    return `【三方四正飞化】${fc.sanfang.join('·')}：${groups}${detail ? `　${detail}` : ''}`;
+  })();
   return [
     `【农历】${lunarText}（月首 ${r.lunar.monthStart}）　时支：${r.hourBranch}　年干支：${r.yearGanzhi}`,
     `【时刻】${r.solarTime ? `${r.solarTime.civilText} → 真太阳时 ${r.solarTime.trueSolarText}${r.input.geo ? '（' + r.input.geo.note + '）' : ''}` : ''}`,
@@ -183,6 +195,7 @@ function ziweiText(r) {
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
     `　　　${r.changqu.relation}　入命三方：${r.changqu.inSoulSanfang ? '是' : '否'}　吸收面：${r.changqu.absorb.label}（${r.changqu.absorb.reason}）`,
     flyLine,
+    flyCompositeLine,
     '十二宫：',
     ...rows,
     '大限（按起运年龄排序，前 8 限，宫干四化落宫）：',
@@ -337,6 +350,14 @@ function liuyaoText(r) {
     }
   } else {
     out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
+  }
+  // 全卦逐爻旺衰：不挑用神，六爻都给状态，世应、动爻、旬空另标
+  const hexSt = r.hexStrength;
+  if (hexSt && Array.isArray(hexSt.labels) && hexSt.labels.length) {
+    const m = hexSt.month && hexSt.month.branch
+      ? `月建 ${hexSt.month.branch}（${hexSt.month.element}）　`
+      : '无月建（未给起卦时间）　';
+    out.push(`全卦旺衰：${m}${hexSt.labels.join(' · ')}`);
   }
   return out.filter(Boolean).join('\n');
 }
@@ -649,18 +670,21 @@ function computeRaw(args = {}) {
     }
     // 用神挂在结果上：摘要、面板、解析三层读同一份，避免各自取一次走散
     const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
-    if (ug.liuqin) {
-      result.useGod = ug;
-      // 月建按节气换月、与八字同源：从同一个 snapshot 取月支，取不到就只按日辰算
-      let monthBranch = null;
-      if (stamp) {
-        try {
-          const snap = buildSnapshot({ year: stamp.year, month: stamp.month, day: stamp.day, hour: stamp.hour, minute: stamp.minute });
-          monthBranch = (snap.monthGanZhi || '')[1] || null;
-        } catch {
-          monthBranch = null;
-        }
+    if (ug.liuqin) result.useGod = ug;
+    // 月建按节气换月、与八字同源：从同一个 snapshot 取月支，取不到就只按日辰算
+    let monthBranch = null;
+    if (stamp) {
+      try {
+        const snap = buildSnapshot({ year: stamp.year, month: stamp.month, day: stamp.day, hour: stamp.hour, minute: stamp.minute });
+        monthBranch = (snap.monthGanZhi || '')[1] || null;
+      } catch {
+        monthBranch = null;
       }
+    }
+    // 全卦逐爻旺衰不依赖用神：没指定所问之事也要能看整张卦的气
+    const hexStrength = hexagramStrength(result, { monthBranch, dayBranch: result.dayGanZhi.branch });
+    if (hexStrength) result.hexStrength = hexStrength;
+    if (ug.liuqin) {
       const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
       if (strength) result.useGodStrength = strength;
     }
