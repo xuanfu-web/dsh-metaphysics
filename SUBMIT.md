@@ -64,12 +64,11 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-29 更新）
 
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/9854 （open，把条目描述更新为十八套体系并加上「玄学」关键词；原 PR #8517 已于 2026-10-22 合并）。条目描述现已落后于 0.35 / 0.36 两项能力，下一次发版后再提一次 PR 同步。
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 （open，把条目描述更新为十九套体系、补上 MBTI 问卷与 0.38 能力；旧 PR #9854 已合并，原 PR #8517 已于 2026-10-22 合并）。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.34.0`（`dist-tags.latest = 0.34.0`；0.23.0–0.33.0 只提交在本地，随 0.34.0 一并发布）。**0.35.0 / 0.35.1 / 0.36.0 均未发布**，本地 `main` 领先 `origin/main` 19 个提交。
-- **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布命令
-  `node <dsh>/dsh-runtimes/dsh-primary-runtime/dependencies/pnpm/bin/pnpm.cjs publish --no-git-checks`
-  token 走临时 `.npmrc`（0600），发布后立即删除
+- **已发布**：npm `dsh-metaphysics@0.38.2`（2026-10-29，`dist-tags.latest = 0.38.2`，shasum `94599d7af0e71438e33889ee50dba8843dde47f6`，59 个文件；0.35.0–0.38.1 只提交在本地，随 0.38.2 一并发布）。上一次发布是 0.34.0。
+- **CDN 小坑**：发布后本机通过 `registry.npmjs.org` 查到的 packument 与 tarball 可能还是旧的（边缘缓存），表现为新版本查不到、tarball 404；加一个随机查询串（`?cb=<随机>`）或带 token 访问即能拿到新内容，等几分钟自然过期。
+- **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布走 `node tools/release.mjs`（须设 `NPM_CLI=<node>/node_modules/npm/bin/npm-cli.js`，否则 Windows 上 `spawnSync npm` 报 ENOENT），token 走临时 `.npmrc`（0600），发布后立即删除
 - **历史卡点**：建仓用的临时令牌已删除（API 401）；`github.com:443` 曾间歇失败，重试后可推
 
 ## 五、本地同步（已完成）
