@@ -334,7 +334,7 @@ node tools/release.mjs --verify-only           # 只核对 registry 上当前版
 
 微信群：**dsh-metaphysics**
 
-<img src="https://cdn.jsdelivr.net/gh/xuanfu-web/dsh-metaphysics@main/docs/assets/dsh-metaphysics-group.jpg" alt="dsh-metaphysics 讨论群二维码" width="480">
+<img src="https://gcore.jsdelivr.net/gh/xuanfu-web/dsh-metaphysics@main/docs/assets/dsh-metaphysics-group.jpg" alt="dsh-metaphysics 讨论群二维码" width="480">
 
 图片走 jsDelivr CDN（raw / camo 在部分网络下会被拦）。若仍未显示，可在微信里打开[群邀请链接](https://weixin.qq.com/g/AwYAALNPaFJTRhCwJ3YPr2zEUFvsTobu2yLHzchZGuwCGXOf0T8Xnk9ymbs_R76V)。
 
