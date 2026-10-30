@@ -336,7 +336,7 @@ node tools/release.mjs --verify-only           # 只核对 registry 上当前版
 
 <img src="https://github.com/xuanfu-web/dsh-metaphysics/releases/download/v0.50.1/dsh-metaphysics-group-2026-10-30.jpg" alt="dsh-metaphysics 讨论群二维码" width="480">
 
-图片用 GitHub Release 附件（不经过 camo / raw，部分网络下更稳）。若仍未显示，可在微信里打开[群邀请链接](https://weixin.qq.com/g/AwYAALNPaFJTRhCwJ3YPr2zEUFvsTobu2yLHzchZGuwCGXOf0T8Xnk9ymbs_R76V)。
+图片用 GitHub Release 附件（不经过 camo / raw，部分网络下更稳）。
 
 这批二维码 7 天内有效（11 月 6 日前，2026-10-30 更新）；过期了在 [issues](https://github.com/xuanfu-web/dsh-metaphysics/issues) 说一声，我换新图。只想提问题、不想进群的，开 issue 一样算数。
 
