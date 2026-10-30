@@ -40,6 +40,8 @@ ok('未知 id 返回 null', classicOf('no-such') === null);
 const rows = classicsFor(R);
 ok('1996 盘取到 2–5 条', rows.length >= 2 && rows.length <= 5);
 ok('偏财格取《论财》', rows.some((e) => e.id === 'zp-cai'));
+ok('偏财格的三命对照取《论偏财》而非《论正财》', rows.some((e) => e.id === 'smt-piancai') && !rows.some((e) => e.id === 'smt-zhengcai'));
+ok('七杀格的三命对照取《官煞去留杂论》', classicsFor({ geju: [{ name: '七杀格', kind: '月令格' }], climate: { kind: '平和' } }).some((e) => e.id === 'smt-guansha-liu'));
 ok('寒湿盘取滴天髓寒暖', rows.some((e) => e.id === 'dt-hannuan'));
 ok('配气候一条在列', rows.some((e) => e.id === 'zp-qihou'));
 ok('每条都有 why（为什么取这条）', rows.every((e) => typeof e.why === 'string' && e.why.length >= 6));
@@ -62,6 +64,33 @@ ok('化气与组合同时出现时只取变化（总纲位不并列）', (() => 
 ok('正官格 → 论正官', classicsFor({ geju: [{ name: '正官格', kind: '月令格' }], climate: { kind: '平和' } }).some((e) => e.id === 'zp-zhenguan'));
 ok('无输入返回空数组', classicsFor(null).length === 0);
 ok('classicsText 带书名与章名', classicsText(rows).includes('《子平真诠·') && classicsText(rows).includes('》「'));
+
+// —— 特殊结构（专旺五格 / 弃命从财从煞）：命中的单章原文排在最前，且不被 5 条上限挤掉
+const SPECIAL = [
+  ['1960-07-05T21:30', '曲直格', 'smt-quzhi'],
+  ['1962-11-05T09:30', '炎上格', 'smt-yanshang'],
+  ['1961-08-15T15:30', '从革格', 'smt-congge'],
+  ['1960-03-25T21:30', '润下格', 'smt-runxia'],
+  ['1961-01-25T09:30', '稼穑格', 'smt-jiasi'],
+  ['1972-09-15T21:30', '从财格', 'smt-congcai'],
+  ['1969-03-25T21:30', '从杀格', 'smt-congsha'],
+];
+for (const [datetime, name, id] of SPECIAL) {
+  const r = compute({ system: 'bazi', datetime, gender: 'male' });
+  ok(`${datetime} 排出${name}`, (r.frame.geju || []).some((g) => g.name === name), (r.frame.geju || []).map((g) => g.name).join(','));
+  ok(`${name} → ${id} 且排第一`, r.classics[0] && r.classics[0].id === id, r.classics.map((e) => e.id).join(','));
+  ok(`${name} 的 why 点名所命中的格`, r.classics[0] && r.classics[0].why.includes(name));
+  ok(`${name} 仍守 5 条上限`, r.classics.length <= 5, String(r.classics.length));
+}
+const congEr = compute({ system: 'bazi', datetime: '1960-12-15T15:30', gender: 'male' });
+const SPECIAL_IDS = ['smt-quzhi', 'smt-yanshang', 'smt-congge', 'smt-runxia', 'smt-jiasi', 'smt-congcai', 'smt-congsha'];
+ok('1960-12-15 是从儿格', (congEr.frame.geju || []).some((g) => g.name === '从儿格'));
+ok('从儿格没有专章就不硬配', !congEr.classics.some((e) => SPECIAL_IDS.includes(e.id)), congEr.classics.map((e) => e.id).join(','));
+ok('从强格同样不硬配', !classicsFor({ geju: [{ name: '从强格', kind: '从格' }], climate: { kind: '平和' } }).some((e) => SPECIAL_IDS.includes(e.id)));
+ok('特殊结构原文截断仍受 limit 约束', classicsFor({ geju: [{ name: '润下格', kind: '专旺格' }], climate: { kind: '寒湿' } }, 1).length === 1);
+const congCaiR = compute({ system: 'bazi', datetime: '1972-09-15T21:30', gender: 'male', withInterpret: true });
+ok('从格原文进摘要', congCaiR.summary.includes('《三命通会·卷六·弃命从财》'));
+ok('从格原文进解释层', (congCaiR.interpret.sections || []).some((s) => s.key === 'classics' && s.text.includes('弃命从财')));
 
 // —— 解释层与摘要
 const it = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'male', withInterpret: true }).interpret;

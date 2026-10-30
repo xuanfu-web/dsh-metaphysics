@@ -1,6 +1,6 @@
 window.__ModuleLoader__.load({
   id: 'dsh-metaphysics',
-  version: '0.38.2',
+  version: '0.46.5',
   factory(require) {
     const React = (function () {
       try { return require('react'); } catch (e) { return globalThis.React; }
@@ -2544,7 +2544,7 @@ const CLASSICS = [
     book: 'ziping',
     chapter: '三十三、论财',
     scene: '格局',
-    tags: ['财'],
+    tags: ['财', '正财', '偏财'],
     quote: '财为我克，使用之物也，以能生官，所以为美。为财帛，为妻妾，为才能，为驿马，皆财类也。',
     plain: '财是我所克、能为我用之物，因能生官而美；它同时代表钱财、配偶、才能、走动，不只「钱」一项。',
     url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53653.html',
@@ -2730,6 +2730,16 @@ const CLASSICS = [
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html',
   },
   {
+    id: 'dt-tongguan',
+    book: 'ditian',
+    chapter: '通神论·通关',
+    scene: '用神',
+    tags: [],
+    quote: '关内有织女，关外有牛郎，此关若通也，相邀入洞房。',
+    plain: '两股力隔着一道关相望：一边织女、一边牛郎，中间若有一行能把两边接上（一方生它、它再生另一方），对峙就化成相生。原文只给取象，哪一行为关要按五行生克定。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html',
+  },
+  {
     id: 'smt-zhenguan',
     book: 'sanming',
     chapter: '卷五·论正官',
@@ -2744,10 +2754,20 @@ const CLASSICS = [
     book: 'sanming',
     chapter: '卷六·论正财',
     scene: '格局',
-    tags: ['财'],
+    tags: ['财', '正财'],
     quote: '正财者，乃甲见己、乙见戊之例。受我克制，为我之妻，譬人娶妻，妻赍财嫁我，我必精神康强，而后可享用，若衰微不振，虽妻财丰厚，但能目视，终不得用。',
     plain: '正财是我克制之物，古人以「娶妻带财」作比：自身精神康强才受用得起，身弱不振，财再厚也只是看着。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7645.html',
+  },
+  {
+    id: 'smt-piancai',
+    book: 'sanming',
+    chapter: '卷六·论偏财',
+    scene: '格局',
+    tags: ['财', '偏财'],
+    quote: '何谓偏财？乃甲见戊、乙见己之例。非妻所带，乃众人之财也。切忌有姊妹兄弟分夺，柱无官星，祸患百出。',
+    plain: '偏财取「我克而阴阳不同」：不是妻家带来的私财，而是众人之财，宜流通不宜独占。原文最忌比肩劫财来分夺，又说柱中无官星则多事（旧说的重话照录，本插件只记原文、不作断语）。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7650.html',
   },
   {
     id: 'smt-yinshou',
@@ -2799,6 +2819,86 @@ const CLASSICS = [
     plain: '月令建禄是日主临官之地，身旺而财官难取：古说难承祖业、见财不聚，但病少寿长；再走比肩运，古书说克妻妨父损子（属于旧说的重话，本插件只记原文、不作断语）。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7672.html',
   },
+  {
+    id: 'smt-guansha-liu',
+    book: 'sanming',
+    chapter: '卷五·官煞去留杂论',
+    scene: '格局',
+    tags: ['七杀', '偏官'],
+    quote: '凡看去留，要详柱中官煞孰重孰轻，天干透者易去，月支所藏者难去，须伤官食神去官煞之物众而有力，方才去得。',
+    plain: '官煞混见时先比谁重谁轻：天干透出的容易去，月支藏着的难去；用来去官煞的伤官食神要成众、有根有力，才真去得掉。七杀格遇正官混杂，就按这一篇看取舍。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7599.html',
+  },
+  {
+    id: 'smt-quzhi',
+    book: 'sanming',
+    chapter: '卷六·曲直',
+    scene: '格局',
+    tags: ['曲直格', '专旺'],
+    quote: '甲乙日得亥卯未局，柱中须有亥字带印为入格，若无亥有卯，止是木之本气，却要见金土为贵，既无亥字，又无金土，则木不秀不实，难以言贵。',
+    plain: '曲直格要木局成方（亥卯未）且带亥字为印，才算入格；只有卯、没有亥，只是木的本气，得另见金土才谈得上贵；两样都没有，木虽旺而无成，难称贵格。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7630.html',
+  },
+  {
+    id: 'smt-yanshang',
+    book: 'sanming',
+    chapter: '卷六·炎上',
+    scene: '格局',
+    tags: ['炎上格', '专旺'],
+    quote: '丙丁日遇寅午戌局，柱中须有寅字带印为入格，无寅止是九流近贵之命，若火自旺，无亥水相济，不贵。喜东北方运，忌见辰丑戊己，晦火光明，多主眼疾，或患风气，柱有木制成贵，忌水金乡，怕冲。',
+    plain: '炎上格要火局成方（寅午戌）且带寅字为印才入格；无寅只是偏贵的命。火自旺还要一点水相济，过燥不贵；行运喜东北、忌湿土晦火，也怕冲。原文另带「多主眼疾」一句，属于旧说，本插件只记原文、不作健康判断。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7631.html',
+  },
+  {
+    id: 'smt-congge',
+    book: 'sanming',
+    chapter: '卷六·从革',
+    scene: '格局',
+    tags: ['从革格', '专旺'],
+    quote: '庚辛日见巳酉丑局，须带丙丁巳午一二位方成其器，但不可火多。如辛巳、辛酉、辛丑三日不喜五月生，被火所伤，宜八月或水土养育食神印绶为吉。',
+    plain: '从革格是金局成方（巳酉丑），但金要火炼才成器：须带丙丁或巳午一二位，火又不能多。辛巳、辛酉、辛丑三日出身在五月（火旺）被伤，原文说宜八月或水土养育。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7632.html',
+  },
+  {
+    id: 'smt-runxia',
+    book: 'sanming',
+    chapter: '卷六·润下',
+    scene: '格局',
+    tags: ['润下格', '专旺'],
+    quote: '壬癸日见申子辰全，忌引卯巳死绝之地，三刑四冲之乡，死绝则不流，冲刑则横流，岁运同。或曰水太泛须柱有土神一两位制之，得成堤岸，既有土怕会木为凶，如有木伤土要金印救解，终是一生成败。',
+    plain: '润下格是水局三合全（申子辰），最忌卯巳死绝与三刑四冲：死绝水不流，冲刑水横流，行运也一样看。水太泛要一两位土作堤，有土又怕木来破堤，木伤土再用金印解救——原文把成败条件摊开讲。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7633.html',
+  },
+  {
+    id: 'smt-jiasi',
+    book: 'sanming',
+    chapter: '卷六·稼穑',
+    scene: '格局',
+    tags: ['稼穑格', '专旺'],
+    quote: '赋云：戊己忻逢四季，乃为稼穑之名。是戊己生逢季月，喜见木为官，止得一木为妙，木多则土虚，主虚诈为破家不仁之人。',
+    plain: '稼穑格取戊己生于四季月（辰戌丑未）。原文说喜见一木为官，木多则土虚；后半对木多之人的评语是旧说的重话，本插件只照录条件、不拿来评价人。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7634.html',
+  },
+  {
+    id: 'smt-congsha',
+    book: 'sanming',
+    chapter: '卷五·弃命从煞',
+    scene: '格局',
+    tags: ['从杀格'],
+    quote: '《独步》云：弃命从煞，须要会煞从财，忌煞从煞。盖言从煞格，以煞神太重，身无所归，不得已从之，要行煞旺及财乡，四柱无一点比肩印绶方论，如遇运扶身旺，与煞为敌，从煞不专，故为祸患。',
+    plain: '从煞格是煞太重、日主无所归才「弃命」相从：条件是四柱没有一点比肩印绶扶身，行运喜煞旺与财乡；一旦走扶身之运，与煞为敌，就从得不专。本插件只作结构说明，不据此断寿夭。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7598.html',
+  },
+  {
+    id: 'smt-congcai',
+    book: 'sanming',
+    chapter: '卷六·弃命从财',
+    scene: '格局',
+    tags: ['从财格'],
+    quote: '《独步》云：弃命从财，须要会财，若逢根气，命损无猜。假如丁生酉月，柱多庚辛，日干无气，只得弃命相从，运入北方财官旺地，乃为入格，南行灾。',
+    plain: '从财格要财会成局、日干无气；一见根气就破格，原文用「命损无猜」这种重话写明。以丁生酉月、柱多庚辛为例：只能弃命相从，行北方财官旺地为入格，南行则灾。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7652.html',
+  },
 ];
 
 const BY_ID = CLASSICS.reduce((m, e) => { m[e.id] = e; return m; }, {});
@@ -2807,8 +2907,8 @@ const GEJU_KEY = {
   正官格: '正官',
   七杀格: '七杀',
   偏官格: '偏官',
-  正财格: '财',
-  偏财格: '财',
+  正财格: '正财',
+  偏财格: '偏财',
   正印格: '印',
   偏印格: '印',
   食神格: '食神',
@@ -2816,6 +2916,16 @@ const GEJU_KEY = {
   阳刃格: '阳刃',
   月劫格: '月劫',
   建禄格: '建禄',
+};
+
+const SPECIAL_CLASSIC = {
+  曲直格: 'smt-quzhi',
+  炎上格: 'smt-yanshang',
+  从革格: 'smt-congge',
+  润下格: 'smt-runxia',
+  稼穑格: 'smt-jiasi',
+  从财格: 'smt-congcai',
+  从杀格: 'smt-congsha',
 };
 
 function classicOf(id) {
@@ -2848,6 +2958,10 @@ function classicsFor(r, limit = 5) {
   };
   const gejuList = Array.isArray(r.geju) ? r.geju : (r.frame && Array.isArray(r.frame.geju) ? r.frame.geju : []);
   for (const g of gejuList) {
+    const entry = g && SPECIAL_CLASSIC[g.name] ? classicOf(SPECIAL_CLASSIC[g.name]) : null;
+    if (entry) push(entry, `本盘列有「${g.name}」，故取${CLASSIC_BOOKS[entry.book].name}「${chapterTitle(entry)}」一条`);
+  }
+  for (const g of gejuList) {
     if (!g || (g.kind && g.kind !== '月令格')) continue;
     const tag = tagOf(g.name);
     const primary = pick(tag, 'ziping') || pick(tag);
@@ -2856,12 +2970,17 @@ function classicsFor(r, limit = 5) {
     if (alt) push(alt, `同是「${g.name}」，${CLASSIC_BOOKS[alt.book].name}「${chapterTitle(alt)}」另有取法，可对照读`);
   }
   const cli = r.climate || (r.frame && r.frame.yongshen && (r.frame.yongshen.climate || r.frame.yongshen.tiaohou));
+  const tg = r.frame && r.frame.yongshen && r.frame.yongshen.tongguan;
+  const tgEntry = tg && tg.usable ? classicOf('dt-tongguan') : null;
   if (cli && cli.kind && cli.kind !== '平和') {
     const cold = !!(cli.cold || cli.kind.indexOf('寒') >= 0);
     const hot = !!(cli.hot || cli.kind.indexOf('热') >= 0);
     push(classicOf(cold ? 'dt-hannuan' : 'dt-zaoshi'), `本盘气候判为「${cli.kind}」，故取${CLASSIC_BOOKS.ditian.name}寒暖燥湿一条`);
-    push(classicOf('zp-qihou'), '气候与月令用神要互参，故取子平真诠「用神配气候」一条');
+    if (!tgEntry) push(classicOf('zp-qihou'), '气候与月令用神要互参，故取子平真诠「用神配气候」一条');
     if (hot) push(classicOf('dt-hannuan'), '本盘偏热，寒暖一条正对');
+  }
+  if (tgEntry) {
+    push(tgEntry, `本盘忌${tg.foe}克用${tg.use}，局中${tg.bridge}${tg.weight}分可作通关，故取${CLASSIC_BOOKS.ditian.name}「通关」一条`);
   }
   const huagi = gejuList.find((g) => g && g.kind === '化气格');
   const combo = gejuList.find((g) => g && g.kind === '组合');
@@ -3065,6 +3184,32 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
   return out;
 }
 
+const TONGGUAN_MIN = 1.5;
+function tongguanOf(favor = [], avoid = [], wuxing = {}) {
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  for (const use of favor) {
+    if (w(use) < TONGGUAN_MIN) continue;
+    for (const foe of avoid) {
+      if (OVERCOMES[foe] !== use || w(foe) < TONGGUAN_MIN) continue;
+      const bridge = GENERATES[foe];
+      if (!bridge || GENERATES[bridge] !== use) continue;
+      const weight = w(bridge);
+      const bridgeIsAvoid = avoid.includes(bridge) && !favor.includes(bridge);
+      const level = bridgeIsAvoid ? '为忌' : weight >= TONGGUAN_MIN ? '可通' : weight > 0 ? '关弱' : '未通';
+      return {
+        use, foe, bridge,
+        weight,
+        present: weight > 0,
+        bridgeIsAvoid,
+        level,
+        usable: level === '可通',
+        note: '相战＝用神与忌神两行各在局中 ≥1.5 分且相克；通关一行＝克方所生、又能生用神的那一行（五行里唯一），只报局中分量，不据此断吉凶',
+      };
+    }
+  }
+  return null;
+}
+
 function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const roles = elementRoles(dayStem);
   const me = roles.me;
@@ -3094,6 +3239,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   };
   const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
   const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
+  const tongguan = tongguanOf(favor, avoid, wuxing);
 
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
@@ -3104,6 +3250,15 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
         : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
     `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
+    tongguan
+      ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
+        ? `${tongguan.bridge} ${tongguan.weight} 分，关可通`
+        : tongguan.level === '关弱'
+          ? `仅 ${tongguan.bridge} ${tongguan.weight} 分，关弱`
+          : tongguan.level === '为忌'
+            ? `${tongguan.bridge} ${tongguan.weight} 分但此行为忌，通关力打折`
+            : `未见${tongguan.bridge}，关未通`}（只作结构提示，不据此断吉凶）。`
+      : '',
     arb.text,
     arb.clash ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。' : '',
   ].filter(Boolean).join('');
@@ -3120,6 +3275,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,
+    tongguan,
     detail,
   };
 }
@@ -3216,7 +3372,7 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   };
 }
 
-return { tenGod, elementRoles, scoreLuck, analyzeBaziFrame };
+return { tenGod, elementRoles, tongguanOf, scoreLuck, analyzeBaziFrame };
 })();
 
 __mods.bazi = (function () {
@@ -4373,6 +4529,80 @@ function yongshenStrength(result, useGod, opts = {}) {
   };
 }
 
+const FUSHEN_VERDICTS = ['可出', '有助有压', '受压难出', '未得助'];
+
+function fushenAccess(result, useGod, opts = {}) {
+  if (!useGod || !Array.isArray(useGod.fushen) || !useGod.fushen.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result && result.xunKong)
+    ? result.xunKong
+    : (result && typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+
+  const items = useGod.fushen.map((f) => {
+    const element = f.element || zhiElementOf(f.branch);
+    const relation = f.relation || null;
+    const monthState = monthStateOf(element, monthElement);
+    const monthChong = !!(monthBranch && CHONG_OF[f.branch] === monthBranch);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const kongz = kong.includes(f.branch);
+
+    const supports = [];
+    if (relation === '飞生伏') supports.push('飞神生伏');
+    if (relation === '伏克飞') supports.push('伏神克飞');
+    if (dayRelation === '日生') supports.push('日辰生伏');
+    if (dayRelation === '比和') supports.push('日辰比和');
+    if (monthState === '旺') supports.push('月建同气');
+    if (monthState === '相') supports.push('月建相生');
+
+    const pressures = [];
+    if (relation === '飞克伏') pressures.push('飞神克伏');
+    if (dayRelation === '日克') pressures.push('日辰克伏');
+    if (monthChong) pressures.push('月破');
+
+    const verdict = !relation ? '飞伏未知'
+      : supports.length && pressures.length ? '有助有压'
+        : supports.length ? '可出'
+          : pressures.length ? '受压难出' : '未得助';
+    const basis = monthBranch && dayBranch ? '月建日辰' : monthBranch ? '月建' : dayBranch ? '日辰' : '飞伏';
+
+    const facts = [];
+    if (relation) facts.push(`飞伏${relation}`);
+    if (monthBranch) facts.push(`月建${monthBranch}（${monthElement}）${monthState}${monthChong ? '、月破' : ''}`);
+    if (dayBranch) facts.push(`日辰${dayBranch}（${dayElement}）${dayRelation}`);
+    if (kongz) facts.push('伏神旬空');
+    const say = `第${f.position}爻${f.branch}${element}：${facts.join('，')} → ${verdict}` +
+      `（助：${supports.join('、') || '无'}；压：${pressures.join('、') || '无'}）`;
+
+    return {
+      position: f.position,
+      branch: f.branch,
+      element,
+      relation,
+      fei: f.fei || null,
+      monthState,
+      monthChong,
+      dayRelation,
+      kong: kongz,
+      basis,
+      supports,
+      pressures,
+      verdict,
+      say,
+    };
+  });
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    items,
+    labels: items.map((it) => `第${it.position}爻${it.verdict}`),
+    note: '出伏只看「有没有助、有没有压」两件事：飞生伏、伏克飞、日辰生/比和、月建旺/相算助；飞克伏、日辰克、月破算压。四档只把条件并列，不排各家优先级；旬空只标出，不并入档位，也不出应期。',
+  };
+}
+
 function hexagramStrength(result, opts = {}) {
   const rows = (result && result.ben && Array.isArray(result.ben.lines))
     ? result.ben.lines
@@ -4502,7 +4732,7 @@ function jinTuiPower(result, opts = {}) {
   };
 }
 
-return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao, zhiElementOf, monthStateOf, dayRelationOf, yongshenStrength, hexagramStrength, jinTuiPower };
+return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao, zhiElementOf, monthStateOf, dayRelationOf, yongshenStrength, FUSHEN_VERDICTS, fushenAccess, hexagramStrength, jinTuiPower };
 })();
 
 __mods.ziwei = (function () {
@@ -4573,11 +4803,171 @@ const MUTAGEN = {
   癸: { 破军: '禄', 巨门: '权', 太阴: '科', 贪狼: '忌' },
 };
 
+const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
+  brightnessSchool: 'default',
+  gengYearSihua: 'GYWYT',
+  tianmaSchool: 'year-branch',
+  tiankongSchool: 'off',
+  jiekongSchool: 'off',
+  kuiyueSchool: 'qs1',
+  tianshiTianshang: 'normal',
+  changshengSchool: 'yin-yang-shun-ni',
+  lateZishi: 'current-day',
+});
+
+const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
+  brightnessSchool: ['default', 'QS', 'XD1', 'ZZ', 'XD2'],
+  gengYearSihua: ['GYWYT', 'GYWTY', 'GYWFT', 'GYWFX', 'GYWTX'],
+  tianmaSchool: ['year-branch', 'month-branch'],
+  tiankongSchool: ['off', 'normal', 'shun-jia-shi'],
+  jiekongSchool: ['off', 'double', 'single', 'zhanyan'],
+  kuiyueSchool: ['qs1', 'qs2', 'zhong-yiming', 'network'],
+  tianshiTianshang: ['normal', 'zhongzhou'],
+  changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
+  lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
+});
+
+function ziweiSchoolsOf(input = {}) {
+  const nested = input.schools && typeof input.schools === 'object' ? input.schools : {};
+  const out = {};
+  for (const [key, allowed] of Object.entries(ZIWEI_SCHOOL_OPTIONS)) {
+    const raw = input[key] !== undefined ? input[key] : nested[key];
+    out[key] = allowed.includes(raw) ? raw : ZIWEI_SCHOOL_DEFAULTS[key];
+  }
+  return out;
+}
+
+const BRIGHTNESS_LEVELS_7 = ['', '庙', '旺', '得', '利', '平', '不', '陷'];
+const BRIGHTNESS_LEVELS_5 = ['', '庙', '旺', '平', '闲', '陷'];
+const BRIGHTNESS_SCHOOLS = {
+  QS: {
+    levels: BRIGHTNESS_LEVELS_7,
+    rows: {
+      紫微: [5, 1, 2, 2, 3, 2, 1, 1, 2, 2, 3, 2],
+      天机: [1, 7, 3, 2, 4, 5, 1, 7, 3, 2, 4, 5],
+      太阳: [7, 6, 2, 1, 2, 2, 2, 3, 3, 5, 6, 7],
+      武曲: [2, 1, 3, 4, 1, 5, 2, 1, 3, 4, 1, 5],
+      天同: [2, 6, 4, 5, 5, 1, 7, 6, 2, 5, 5, 1],
+      廉贞: [5, 4, 1, 5, 4, 7, 5, 4, 1, 5, 4, 7],
+      天府: [1, 1, 1, 3, 1, 3, 2, 1, 3, 2, 1, 3],
+      太阴: [1, 1, 2, 7, 7, 7, 6, 6, 4, 2, 2, 1],
+      贪狼: [2, 1, 5, 4, 1, 7, 2, 1, 5, 4, 1, 7],
+      巨门: [2, 6, 1, 1, 7, 2, 2, 6, 1, 1, 7, 2],
+      天相: [1, 1, 1, 7, 3, 3, 1, 3, 1, 7, 3, 3],
+      天梁: [1, 2, 1, 1, 1, 3, 1, 2, 7, 3, 1, 7],
+      七杀: [2, 1, 1, 2, 1, 5, 2, 1, 1, 2, 1, 5],
+      破军: [1, 2, 3, 7, 2, 5, 1, 2, 3, 7, 2, 5],
+    },
+  },
+  XD1: {
+    levels: BRIGHTNESS_LEVELS_7,
+    rows: {
+      紫微: [5, 1, 1, 2, 3, 2, 1, 1, 2, 2, 3, 2],
+      天机: [1, 7, 3, 2, 4, 5, 1, 7, 3, 2, 4, 5],
+      太阳: [7, 6, 2, 1, 2, 2, 1, 3, 4, 5, 7, 7],
+      武曲: [2, 1, 3, 4, 1, 5, 2, 1, 3, 4, 1, 5],
+      天同: [2, 6, 4, 1, 5, 1, 7, 6, 2, 5, 5, 1],
+      廉贞: [5, 4, 1, 5, 4, 7, 5, 4, 1, 5, 4, 7],
+      天府: [1, 1, 1, 3, 2, 3, 2, 1, 3, 2, 2, 3],
+      太阴: [1, 1, 6, 7, 7, 7, 7, 5, 4, 2, 2, 1],
+      贪狼: [2, 1, 5, 3, 1, 7, 2, 1, 5, 4, 1, 7],
+      巨门: [2, 6, 1, 1, 5, 5, 2, 5, 1, 1, 5, 2],
+      天相: [1, 1, 1, 7, 5, 3, 3, 3, 1, 7, 3, 3],
+      天梁: [1, 2, 1, 2, 1, 7, 1, 2, 7, 3, 1, 7],
+      七杀: [2, 1, 1, 2, 3, 5, 2, 1, 1, 2, 1, 5],
+      破军: [1, 2, 3, 7, 2, 5, 1, 2, 3, 7, 2, 5],
+    },
+  },
+  ZZ: {
+    levels: BRIGHTNESS_LEVELS_5,
+    rows: {
+      紫微: [3, 1, 1, 2, 5, 2, 1, 1, 2, 3, 4, 2],
+      天机: [1, 5, 2, 2, 1, 3, 1, 5, 3, 2, 1, 3],
+      太阳: [5, 5, 2, 1, 2, 2, 1, 3, 4, 4, 5, 5],
+      武曲: [2, 1, 4, 5, 1, 3, 2, 1, 3, 2, 1, 3],
+      天同: [2, 5, 4, 1, 3, 1, 5, 5, 2, 3, 3, 1],
+      廉贞: [3, 2, 1, 4, 2, 5, 3, 1, 1, 3, 2, 5],
+      天府: [1, 1, 1, 3, 1, 3, 2, 1, 3, 5, 1, 2],
+      太阴: [1, 1, 4, 5, 4, 5, 5, 3, 3, 2, 2, 1],
+      贪狼: [2, 1, 3, 4, 1, 5, 2, 1, 3, 3, 1, 5],
+      巨门: [2, 2, 1, 1, 3, 3, 2, 5, 1, 1, 2, 2],
+      天相: [1, 1, 1, 5, 2, 3, 2, 4, 1, 5, 4, 3],
+      天梁: [1, 2, 1, 1, 2, 5, 1, 2, 5, 4, 2, 5],
+      七杀: [2, 1, 1, 5, 2, 3, 2, 2, 1, 4, 1, 3],
+      破军: [1, 2, 5, 2, 2, 4, 1, 1, 5, 5, 2, 3],
+    },
+  },
+  XD2: {
+    levels: BRIGHTNESS_LEVELS_5,
+    rows: {
+      紫微: [4, 1, 1, 2, 4, 2, 1, 1, 2, 3, 5, 2],
+      天机: [1, 5, 2, 2, 2, 3, 1, 5, 2, 2, 2, 3],
+      太阳: [5, 5, 2, 1, 2, 2, 1, 2, 3, 3, 5, 5],
+      武曲: [2, 1, 3, 5, 1, 3, 2, 1, 3, 2, 1, 3],
+      天同: [2, 5, 3, 1, 2, 1, 5, 5, 2, 3, 3, 1],
+      廉贞: [3, 2, 1, 4, 2, 5, 3, 1, 1, 3, 2, 5],
+      天府: [2, 1, 1, 3, 1, 2, 2, 1, 2, 3, 1, 2],
+      太阴: [1, 1, 5, 5, 5, 5, 5, 5, 2, 2, 1, 1],
+      贪狼: [2, 1, 3, 2, 1, 5, 2, 1, 3, 2, 1, 5],
+      巨门: [2, 5, 1, 2, 5, 1, 2, 5, 1, 2, 5, 1],
+      天相: [1, 1, 1, 5, 2, 3, 2, 3, 1, 5, 5, 3],
+      天梁: [1, 2, 1, 1, 2, 5, 1, 2, 5, 3, 2, 5],
+      七杀: [2, 2, 1, 5, 1, 3, 2, 2, 1, 3, 1, 3],
+      破军: [1, 1, 5, 2, 2, 3, 1, 1, 5, 5, 2, 3],
+    },
+  },
+};
+
+function schoolBrightness(name, branchIndex, school = 'default') {
+  const table = BRIGHTNESS_SCHOOLS[school];
+  if (!table || !table.rows[name]) return BRIGHTNESS[name] ? BRIGHTNESS[name][fix(branchIndex)] : undefined;
+  const level = table.rows[name][fix(branchIndex)];
+  return level ? table.levels[level] : undefined;
+}
+
+const GENG_MUTAGEN = {
+  GYWYT: { 太阳: '禄', 武曲: '权', 太阴: '科', 天同: '忌' },
+  GYWTY: { 太阳: '禄', 武曲: '权', 天同: '科', 太阴: '忌' },
+  GYWFT: { 太阳: '禄', 武曲: '权', 天府: '科', 天同: '忌' },
+  GYWFX: { 太阳: '禄', 武曲: '权', 天府: '科', 天相: '忌' },
+  GYWTX: { 太阳: '禄', 武曲: '权', 天同: '科', 天相: '忌' },
+};
+
+function mutagenOf(stem, schools) {
+  if (stem === '庚') return GENG_MUTAGEN[schools.gengYearSihua] || MUTAGEN.庚;
+  return MUTAGEN[stem] ?? {};
+}
+
+const KUI_YUE_SCHOOLS = {
+  qs2: {
+    甲: [1, 7], 戊: [1, 7], 庚: [6, 2], 乙: [0, 8], 己: [0, 8],
+    丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [5, 3], 癸: [5, 3],
+  },
+  'zhong-yiming': {
+    甲: [1, 7], 戊: [1, 7], 庚: [2, 6], 乙: [0, 8], 己: [0, 8],
+    丙: [11, 9], 丁: [11, 9], 辛: [2, 6], 壬: [5, 3], 癸: [5, 3],
+  },
+  network: {
+    甲: [1, 7], 戊: [1, 7], 庚: [1, 7], 乙: [0, 8], 己: [0, 8],
+    丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [3, 5], 癸: [3, 5],
+  },
+};
+
+const JIEKONG = {
+  single: { 甲: 8, 乙: 6, 丙: 4, 丁: 2, 戊: 0, 己: 9, 庚: 7, 辛: 5, 壬: 3, 癸: 1 },
+  double: {
+    甲: [8, 9], 乙: [7, 6], 丙: [4, 5], 丁: [3, 2], 戊: [0, 1],
+    己: [9, 8], 庚: [6, 7], 辛: [5, 4], 壬: [2, 3], 癸: [1, 0],
+  },
+  zhanyan: { 甲: 8, 乙: 6, 丙: 4, 丁: 2, 戊: 10, 己: 9, 庚: 7, 辛: 5, 壬: 3, 癸: 11 },
+};
+
 const LUCUN = { 甲: 2, 乙: 3, 丙: 5, 丁: 6, 戊: 5, 己: 6, 庚: 8, 辛: 9, 壬: 11, 癸: 0 };
 const KUI_YUE = {
   甲: [1, 7], 戊: [1, 7], 庚: [1, 7], 乙: [0, 8], 己: [0, 8],
   丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [3, 5], 癸: [3, 5],
 };
+KUI_YUE_SCHOOLS.qs1 = KUI_YUE;
 
 const MING_ZHU = {
   子: '贪狼', 丑: '巨门', 寅: '禄存', 卯: '文曲', 辰: '廉贞', 巳: '武曲',
@@ -4676,8 +5066,23 @@ function xiaoxianAge(branchIndex, triad, gender) {
   return gender === 'female' ? fix(start - b) + 1 : fix(b - start) + 1;
 }
 
+const LEAP_POLICIES = ['split', 'next', 'prev'];
+
+function leapPolicyOf(input) {
+  if (input && LEAP_POLICIES.includes(input.leapMonth)) return input.leapMonth;
+  return input && input.leapAsNext ? 'next' : 'split';
+}
+
+function effectiveLunarMonth(raw, policy) {
+  if (!raw || !raw.isLeap) return raw ? raw.month : 0;
+  if (policy === 'next') return (raw.month % 12) + 1;
+  if (policy === 'split') return raw.day <= 15 ? raw.month : (raw.month % 12) + 1;
+  return raw.month;
+}
+
 function buildZiwei(input) {
   assertCivil(input);
+  const schools = ziweiSchoolsOf(input);
   const { year: cy, month: cm, day: cd, hour: ch = 0, minute: cmin = 0, gender = 'male' } = input;
   const useTrueSolar = input.trueSolar !== false;
   const geo = input.geo || (input.address ? resolveAddress(input.address) : null);
@@ -4690,7 +5095,8 @@ function buildZiwei(input) {
   const solar = useTrueSolar
     ? applyTrueSolar(civilJd, longitude)
     : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
-  const eff = jdToParts(solar.jd);
+  let eff = jdToParts(solar.jd);
+  if (schools.lateZishi === 'next-day' && eff.hour >= 23) eff = jdToParts(solar.jd + 1);
   const year = eff.year;
   const month = eff.month;
   const day = eff.day;
@@ -4698,9 +5104,8 @@ function buildZiwei(input) {
   const minute = eff.minute;
 
   const lunarRaw = solarToLunar(year, month, day);
-  const lunarMonth = lunarRaw.isLeap && input.leapAsNext
-    ? (lunarRaw.month % 12) + 1
-    : lunarRaw.month;
+  const leapPolicy = leapPolicyOf(input);
+  const lunarMonth = effectiveLunarMonth(lunarRaw, leapPolicy);
   const lunarDay = lunarRaw.day;
 
   const hb = hourBranchIndex(hour, minute);
@@ -4710,6 +5115,9 @@ function buildZiwei(input) {
   const yearStem = yearGanzhi.stem;
   const yb = BRANCHES.indexOf(yearGanzhi.branch);
   const triad = triadOf(yb);
+  const yearYang = STEMS.indexOf(yearStem) % 2 === 0;
+  const forward = (yearYang && gender === 'male') || (!yearYang && gender === 'female');
+  const kuiyueTable = KUI_YUE_SCHOOLS[schools.kuiyueSchool] || KUI_YUE;
 
   const soulIndex = fix(2 + (lunarMonth - 1) - hb);
   const bodyIndex = fix(2 + (lunarMonth - 1) + hb);
@@ -4726,7 +5134,7 @@ function buildZiwei(input) {
     const idx = fix(branch);
     const star = { name, type };
     if (type === '主星' && BRIGHTNESS[name]) {
-      const b = BRIGHTNESS[name][idx];
+      const b = schoolBrightness(name, idx, schools.brightnessSchool);
       if (b) star.brightness = b;
     }
     starsByBranch[idx].push(star);
@@ -4750,7 +5158,7 @@ function buildZiwei(input) {
   put(lucun, '禄存', '吉星');
   put(lucun + 1, '擎羊', '煞星');
   put(lucun - 1, '陀罗', '煞星');
-  const [kui, yue] = KUI_YUE[yearStem];
+  const [kui, yue] = kuiyueTable[yearStem];
   put(kui, '天魁', '吉星');
   put(yue, '天钺', '吉星');
 
@@ -4761,13 +5169,33 @@ function buildZiwei(input) {
   put(6 + yb, '天虚', '煞星');
   put(4 + yb, '龙池', '吉星');
   put(10 - yb, '凤阁', '吉星');
-  put(TIANMA[triad], '天马', '吉星');
+  const maTriad = schools.tianmaSchool === 'month-branch'
+    ? triadOf(fix(2 + (lunarMonth - 1)))
+    : triad;
+  put(TIANMA[maTriad], '天马', '吉星');
   put(XIANCHI[triad], '咸池', '煞星');
   put(HUAGAI[triad], '华盖', '杂曜');
   const dirGroup = directionOf(yb);
   put(GUCHEN[dirGroup], '孤辰', '煞星');
   put(GUASU[dirGroup], '寡宿', '煞星');
   put(posuIndex(yb), '破碎', '煞星');
+
+  if (schools.tiankongSchool !== 'off') {
+    put(schools.tiankongSchool === 'shun-jia-shi' ? yb + hb : yb + 1, '天空', '杂曜');
+  }
+  if (schools.jiekongSchool !== 'off') {
+    const jk = JIEKONG[schools.jiekongSchool][yearStem];
+    if (Array.isArray(jk)) {
+      put(jk[0], '截空', '杂曜');
+      put(jk[1], '副截', '杂曜');
+    } else {
+      put(jk, '截空', '杂曜');
+    }
+    const nianIndex = (((lunarRaw.lunarYear - 4) % 60) + 60) % 60;
+    const decadeStart = nianIndex - (nianIndex % 10);
+    put(decadeStart + 10, '旬空', '杂曜');
+    put(decadeStart + 11, '副旬', '杂曜');
+  }
 
   put(9 + (lunarMonth - 1), '天刑', '煞星');  // 酉起正月顺行
   put(1 + (lunarMonth - 1), '天姚', '煞星');  // 丑起正月顺行
@@ -4782,10 +5210,11 @@ function buildZiwei(input) {
   put(11 + hb, '地劫', '煞星');   // 亥宫起子时，顺行
   put(11 - hb, '地空', '煞星');   // 亥宫起子时，逆行
 
-  put(soulIndex - 7, '天伤', '杂曜');
-  put(soulIndex - 5, '天使', '杂曜');
+  const swapTianshi = schools.tianshiTianshang === 'zhongzhou' && !forward;
+  put(soulIndex - (swapTianshi ? 5 : 7), '天伤', '杂曜');
+  put(soulIndex - (swapTianshi ? 7 : 5), '天使', '杂曜');
 
-  const mutagenMap = MUTAGEN[yearStem] ?? {};
+  const mutagenMap = mutagenOf(yearStem, schools);
   for (const list of starsByBranch) {
     for (const star of list) {
       if (mutagenMap[star.name]) star.mutagen = mutagenMap[star.name];
@@ -4795,11 +5224,11 @@ function buildZiwei(input) {
   const palaceNames = [];
   for (let i = 0; i < 12; i++) palaceNames[fix(soulIndex - i)] = PALACE_NAMES[i];
 
-  const yearYang = STEMS.indexOf(yearStem) % 2 === 0;
-  const forward = (yearYang && gender === 'male') || (!yearYang && gender === 'female');
   const startAge = bureau.number;
 
-  const csStart = CHANGSHENG_START[bureau.number];
+  const csStart = schools.changshengSchool === 'huo-tu' && bureau.number === 5
+    ? 2
+    : CHANGSHENG_START[bureau.number];
   const shenshaAt = (branch) => {
     const d = forward ? 1 : -1;
     return {
@@ -4903,8 +5332,8 @@ function buildZiwei(input) {
       liulu: BRANCHES[lu],
       liuyang: BRANCHES[fix(lu + 1)],
       liutuo: BRANCHES[fix(lu - 1)],
-      liukui: BRANCHES[KUI_YUE[gz.stem][0]],
-      liuyue: BRANCHES[KUI_YUE[gz.stem][1]],
+      liukui: BRANCHES[kuiyueTable[gz.stem][0]],
+      liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
       mutagen: Object.entries(MUTAGEN[gz.stem] ?? {}).map(([s, k]) => `${s}化${k}`),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
@@ -4918,13 +5347,16 @@ function buildZiwei(input) {
     input: {
       year: cy, month: cm, day: cd, hour: ch, minute: cmin,
       gender,
-      leapAsNext: Boolean(input.leapAsNext),
+      leapMonth: leapPolicy,
+      leapAsNext: leapPolicy === 'next',
       longitude: longitude ?? null,
       address: input.address || null,
       geo,
       trueSolar: useTrueSolar,
       dst: { applied: !!dst.applied, note: dst.note || null },
+      schools: { ...schools },
     },
+    schools: { ...schools },
     solarTime: {
       civilText: `${cy}-${String(cm).padStart(2, '0')}-${String(cd).padStart(2, '0')} ${String(ch).padStart(2, '0')}:${String(cmin).padStart(2, '0')}`,
       trueSolarText: formatJd(solar.jd),
@@ -4934,10 +5366,16 @@ function buildZiwei(input) {
     lunar: {
       year: lunarRaw.lunarYear,
       month: lunarMonth,
+      monthRaw: lunarRaw.month,
       day: lunarDay,
       isLeap: lunarRaw.isLeap,
+      leapPolicy,
       monthStart: lunarRaw.monthStart,
-      ...(lunarRaw.isLeap ? { note: '闰月按本月起盘（可用 leapAsNext 改为按次月）' } : {}),
+      ...(lunarRaw.isLeap ? {
+        note: leapPolicy === 'split'
+          ? `闰${lunarRaw.month}月按日切分：1–15 按本月、16 起按次月；本盘闰月${lunarDay}日按${lunarMonth}月`
+          : leapPolicy === 'next' ? '闰月整月按次月起盘' : '闰月整月按本月起盘',
+      } : {}),
     },
     hourBranch,
     yearGanzhi: yearGanzhi.name,
@@ -4973,8 +5411,9 @@ function buildZiwei(input) {
     },
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
-      mutagen: '生年四化用中州派常用表；庚干各派有异（有以天同化科、太阴化忌者）',
-      leapMonth: '闰月默认按本月，可切换为按次月',
+      mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}；庚干四化只作用于生年四化`,
+      leapMonth: '闰月默认按日切分（1–15 归本月、16 起归次月，主流排盘口径）；可传 leapMonth: next（整月归次月）或 prev（整月归本月），leapAsNext: true 等同 next',
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
       masters: '命主按命宫地支，身主按生年地支',
@@ -5367,8 +5806,7 @@ function flowOf(chart, asOf) {
   const MI = a.minute === undefined ? now.getMinutes() : a.minute;
 
   const lr = solarToLunar(Y, M, D);
-  const leapAsNext = Boolean(chart.input && chart.input.leapAsNext);
-  const natalMonth = chart.lunar.isLeap && leapAsNext ? (chart.lunar.month % 12) + 1 : chart.lunar.month;
+  const natalMonth = chart.lunar.month;
   const natalHB = BRANCHES.indexOf(chart.hourBranch);
   const hbNow = hourBranchIndex(H, MI);
 
@@ -5427,7 +5865,7 @@ function flowOf(chart, asOf) {
   };
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, buildZiwei, detectPatterns, PATTERN_TONE, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, enrichLiunian, asOfParts, flowOf };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_TONE, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, enrichLiunian, asOfParts, flowOf };
 })();
 
 __mods.tarot = (function () {
@@ -6646,6 +7084,7 @@ return { buildTrend };
 __mods.fengshui = (function () {
 const { partsToJd, termInstantJd } = __mods.calendar;
 const { applyDst } = __mods.dst;
+const { fail } = __mods.fail;
 
 const NINE_STARS = {
   1: { name: '一白', color: '白', element: '水', star: '贪狼', lucky: true },
@@ -6695,7 +7134,7 @@ const MOUNTAIN_INDEX = new Map(MOUNTAINS_24.map((x, i) => [x.m, i]));
 function mountainInfo(name) {
   const i = MOUNTAIN_INDEX.get(name);
   if (i === undefined) {
-    throw new Error(`坐向必须是 24 山之一（${MOUNTAINS_24.map((x) => x.m).join('')}），收到「${name}」——请按罗盘 24 山报坐或报向，不要自造方位词。`);
+    throw fail('E_INPUT', `坐向必须是 24 山之一（${MOUNTAINS_24.map((x) => x.m).join('')}），收到「${name}」——请按罗盘 24 山报坐或报向，不要自造方位词。`);
   }
   return { ...MOUNTAINS_24[i], index: i };
 }
@@ -6768,6 +7207,113 @@ function yearlyFlying(year) {
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
+function periodOfYear(year) {
+  const k = Math.floor((year - 1864) / 20);
+  const period = ((k % 9) + 9) % 9 + 1;
+  const start = 1864 + 20 * k;
+  return { period, start, end: start + 19, label: `${period}运（${start}–${start + 19}）` };
+}
+
+const YANG_MOUNTAINS = new Set(['乾', '巽', '艮', '坤', '甲', '庚', '壬', '丙', '寅', '申', '巳', '亥']);
+const YUAN_NAME = ['地元', '天元', '人元'];
+
+const MOUNTAIN_META = {};
+MOUNTAINS_24.forEach((x, i) => {
+  MOUNTAIN_META[x.m] = { ...x, yuan: YUAN_NAME[i % 3], yinYang: YANG_MOUNTAINS.has(x.m) ? '阳' : '阴' };
+});
+
+const FLY_SEQ = ['中', '乾', '兑', '艮', '离', '坎', '坤', '震', '巽'];
+const NUM_TO_GUA = ['坎', '坤', '震', '巽', '中', '乾', '兑', '艮', '离']; // 洛书数 1–9 本位卦
+const YUAN_INDEX = { 地元: 0, 天元: 1, 人元: 2 };
+
+const mountainsOfGua = (gua) => MOUNTAINS_24.filter((x) => x.gua === gua).map((x) => MOUNTAIN_META[x.m]);
+
+function fly(center, forward) {
+  const out = {};
+  for (let i = 0; i < 9; i++) {
+    const v = ((center - 1 + (forward ? i : -i)) % 9 + 9) % 9 + 1;
+    out[FLY_SEQ[i]] = v;
+  }
+  return out;
+}
+
+function flightOf(mount, center) {
+  if (center === 5) {
+    return { forward: mount.yinYang === '阳', basis: `五黄入中，按${mount.m}本山${mount.yuan}${mount.yinYang}论` };
+  }
+  const home = NUM_TO_GUA[center - 1];
+  const hm = mountainsOfGua(home)[YUAN_INDEX[mount.yuan]];
+  return { forward: hm.yinYang === '阳', basis: `${center}${home}宫取${mount.yuan}${hm.m}（${hm.yinYang}）` };
+}
+
+const WANG_SHAN_WANG_XIANG = {
+  1: [],
+  2: [['乾', '巽'], ['亥', '巳'], ['丑', '未']],
+  3: [['卯', '酉'], ['乙', '辛'], ['辰', '戌']],
+  4: [['艮', '坤'], ['寅', '申'], ['甲', '庚']],
+  5: [['子', '午'], ['癸', '丁'], ['卯', '酉'], ['乙', '辛'], ['丑', '未'], ['辰', '戌']],
+  6: [['艮', '坤'], ['寅', '申'], ['甲', '庚']],
+  7: [['卯', '酉'], ['乙', '辛'], ['辰', '戌']],
+  8: [['乾', '巽'], ['亥', '巳'], ['丑', '未']],
+  9: [],
+};
+
+const XUANKONG_SOURCES = [
+  '三元九运（1864 年起一运、每运 20 年，九运 180 年一轮）',
+  '玄空下卦挨星（运盘顺飞；山盘/向盘以入中运星本宫同元龙阴阳定顺逆，五黄入中按本山阴阳）',
+  '二十四山旺山旺向通行表（每项含正反两向；一运、九运无局）',
+];
+
+const XUANKONG_DISCLAIMER = '玄空下卦为传统通行口径的本地排盘，属民俗参考，不构成现场勘舆结论，仅供娱乐；替卦/兼向、年月日时飞星与形峦不在本工具范围内。';
+
+function xuankongChart(period, sitting, facing) {
+  const sit = MOUNTAIN_META[sitting];
+  const face = MOUNTAIN_META[facing];
+  const yun = fly(period, true);
+  const sCenter = yun[sit.gua];
+  const fCenter = yun[face.gua];
+  const sFly = flightOf(sit, sCenter);
+  const fFly = flightOf(face, fCenter);
+  const shan = fly(sCenter, sFly.forward);
+  const xiang = fly(fCenter, fFly.forward);
+  const palaces = PALACE_ORDER.map((palace, i) => ({
+    palace,
+    direction: palace === '中' ? '中宫' : PALACE_DIRECTION[palace],
+    luoshu: i + 1,
+    yun: yun[palace],
+    shan: shan[palace],
+    xiang: xiang[palace],
+  }));
+  const wheres = (map) => PALACE_ORDER.filter((p) => map[p] === period);
+  const pairs = WANG_SHAN_WANG_XIANG[period];
+  const hit = pairs.find(([a, b]) => (sit.m === a && face.m === b) || (sit.m === b && face.m === a));
+  const byChart = shan[sit.gua] === period && xiang[face.gua] === period;
+  const note = byChart && hit
+    ? '盘面与表法一致：本局到山到向。'
+    : byChart
+      ? '盘面到山到向，但不在通行表法所列之局（表法与盘面口径不同，并列不合并）。'
+      : hit
+        ? '通行表法列为旺山旺向，但本盘当运山星/向星未同时落坐向（表法与盘面口径不同，并列不合并）。'
+        : '本局既未到山到向，也不在表法旺山旺向之列。';
+  return {
+    palaces,
+    sitting: sit,
+    facing: face,
+    yun,
+    shan,
+    xiang,
+    yunCenter: period,
+    shanCenter: { star: sCenter, ...sFly },
+    xiangCenter: { star: fCenter, ...fFly },
+    dangYun: { shan: wheres(shan), xiang: wheres(xiang) },
+    heshi: {
+      shan: PALACE_ORDER.filter((p) => shan[p] + yun[p] === 10),
+      xiang: PALACE_ORDER.filter((p) => xiang[p] + yun[p] === 10),
+    },
+    wangShanWangXiang: { byChart, byTable: Boolean(hit), table: pairs.map(([a, b]) => `${a}${b}`), note },
+  };
+}
+
 function civilDate(input) {
   const dst = input.dst === false
     ? { year: input.year, month: input.month, day: input.day, hour: 0, minute: 0, applied: false, note: null }
@@ -6785,12 +7331,13 @@ const DISCLAIMER = '八宅与飞星为传统通行口径的本地计算，属民
 
 function buildFengshui(input) {
   if (input.action === 'advise') return buildAdvise(input);
+  if (input.action === 'xuankong') return buildXuankong(input);
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
-    throw new Error('风水命卦需要性别：男女命卦算法不同，不可缺省');
+    throw fail('E_INPUT', '风水命卦需要性别：男女命卦算法不同，不可缺省');
   }
   if (!Number.isInteger(input.year) || !Number.isInteger(input.month) || !Number.isInteger(input.day)) {
-    throw new Error('风水命卦需要完整出生年月日（公历）——只知道年份不够：命卦按立春界划分出生年');
+    throw fail('E_INPUT', '风水命卦需要完整出生年月日（公历）——只知道年份不够：命卦按立春界划分出生年');
   }
   const civil = civilDate(input);
   const guaYear = guaYearOf(civil.year, civil.month, civil.day);
@@ -6808,7 +7355,7 @@ function buildFengshui(input) {
       fortuneYear,
       ...(civil.dst.applied ? { dst: civil.dst.note } : {}),
       ...(fortuneYear === null ? { note: '未给流年：未算年紫白飞星（需要时补 fortuneYear）。' } : {}),
-      scope: '八宅命卦 + 大游年八星 + 年紫白；不含玄空飞星各运盘、不含形峦与现场勘舆。',
+      scope: '八宅命卦 + 大游年八星 + 年紫白；玄空飞星见 action=xuankong；不含形峦与现场勘舆。',
     },
     mingGua: {
       num,
@@ -6825,21 +7372,26 @@ function buildFengshui(input) {
   };
 }
 
-function buildAdvise(input) {
+function resolveSittingFacing(input) {
   const hasSitting = typeof input.sitting === 'string' && input.sitting.trim() !== '';
   const hasFacing = typeof input.facing === 'string' && input.facing.trim() !== '';
   if (!hasSitting && !hasFacing) {
-    throw new Error('缺少坐向：sitting（坐山）或 facing（向山）至少给一个——按罗盘 24 山报坐或报向，例如「坐北朝南」对应坐子向午');
+    throw fail('E_INPUT', '缺少坐向：sitting（坐山）或 facing（向山）至少给一个——按罗盘 24 山报坐或报向，例如「坐北朝南」对应坐子向午');
   }
   if (hasSitting && hasFacing) {
     const s = mountainInfo(input.sitting.trim());
     const f = mountainInfo(input.facing.trim());
     if ((s.index + 12) % 24 !== f.index) {
-      throw new Error(`坐向不自洽：坐${s.m}（${s.deg}°）与向${f.m}（${f.deg}°）不是对宫（相差应 180°，实测 ${((f.deg - s.deg) + 360) % 360}°）——请核对罗盘读数。`);
+      throw fail('E_INPUT', `坐向不自洽：坐${s.m}（${s.deg}°）与向${f.m}（${f.deg}°）不是对宫（相差应 180°，实测 ${((f.deg - s.deg) + 360) % 360}°）——请核对罗盘读数。`);
     }
   }
   const sitting = hasSitting ? mountainInfo(input.sitting.trim()) : sittingFromFacing(input.facing.trim());
   const facing = MOUNTAINS_24[(sitting.index + 12) % 24];
+  return { sitting, facing };
+}
+
+function buildAdvise(input) {
+  const { sitting, facing } = resolveSittingFacing(input);
   const houseGua = sitting.gua;
   const stars = eightStars(houseGua);
   const lucky = LUCKY_STARS.map((s) => stars[s]);
@@ -6893,7 +7445,7 @@ function buildAdvise(input) {
       facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
       houseGua,
       houseGroup: `${guaGroup(houseGua)}宅`,
-      scope: '门主灶厕走向按八宅通行口径给倾向，不含形峦、不含玄空飞星各运盘、不是现场勘舆结论。',
+      scope: '门主灶厕走向按八宅通行口径给倾向，玄空飞星见 action=xuankong；不含形峦、不是现场勘舆结论。',
     },
     houseStars: starChart,
     layout,
@@ -6903,12 +7455,277 @@ function buildAdvise(input) {
   };
 }
 
-return { NINE_STARS, PALACE_DIRECTION, DAYOUTIAN, LUCKY_STARS, UNLUCKY_STARS, MOUNTAINS_24, mountainInfo, sittingFromFacing, STAR_LAYOUT_ROLE, mingGua, eightStars, guaYearOf, yearZibaiStar, yearlyFlying, buildFengshui };
+function buildXuankong(input) {
+  const { sitting, facing } = resolveSittingFacing(input);
+  let period;
+  let yearInfo = null;
+  let note;
+  if (input.period !== undefined && input.period !== null && !Number.isInteger(input.period)) {
+    throw fail('E_INPUT', `运必须是 1–9 的整数（三元九运），收到「${input.period}」——一运 1864 起、九运 2024–2043。`);
+  }
+  if (Number.isInteger(input.period)) {
+    if (input.period < 1 || input.period > 9) {
+      throw fail('E_INPUT', `运必须是 1–9 的整数（三元九运），收到「${input.period}」——一运 1864 起、九运 2024–2043。`);
+    }
+    period = input.period;
+  } else if (Number.isInteger(input.fortuneYear)) {
+    yearInfo = periodOfYear(input.fortuneYear);
+    period = yearInfo.period;
+  } else {
+    period = 9;
+    note = '未给运：默认按九运（2024–2043）排盘；可传 period（1–9）或 fortuneYear 指定。';
+  }
+  const chart = xuankongChart(period, sitting.m, facing.m);
+  const sitMeta = MOUNTAIN_META[sitting.m];
+  const faceMeta = MOUNTAIN_META[facing.m];
+  const center = (c) => ({ star: c.star, name: NINE_STARS[c.star].name, fly: c.forward ? '顺飞' : '逆飞', basis: c.basis });
+  const where = (list) => list.map((p) => `${p}宫${PALACE_DIRECTION[p]}`).join('、') || '无';
+  return {
+    system: 'fengshui',
+    meta: {
+      action: 'xuankong',
+      period,
+      periodLabel: yearInfo ? yearInfo.label : `${period}运`,
+      ...(yearInfo ? { year: input.fortuneYear, periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
+      sitting: `${sitting.m}山（罗盘 ${sitting.deg}°）`,
+      facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
+      sittingGua: sitting.gua,
+      facingGua: facing.gua,
+      sittingYuan: `${sitMeta.yuan}${sitMeta.yinYang}`,
+      facingYuan: `${faceMeta.yuan}${faceMeta.yinYang}`,
+      shanCenter: center(chart.shanCenter),
+      xiangCenter: center(chart.xiangCenter),
+      ...(note ? { note } : {}),
+      scope: '玄空下卦：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向；不含替卦/兼向、不含年月日时飞星、不含形峦与现场勘舆。',
+    },
+    palaces: chart.palaces,
+    dangYun: {
+      shan: { palaces: chart.dangYun.shan, text: where(chart.dangYun.shan) },
+      xiang: { palaces: chart.dangYun.xiang, text: where(chart.dangYun.xiang) },
+    },
+    heshi: { shan: chart.heshi.shan, xiang: chart.heshi.xiang },
+    wangShanWangXiang: chart.wangShanWangXiang,
+    sources: XUANKONG_SOURCES,
+    disclaimer: XUANKONG_DISCLAIMER,
+  };
+}
+
+return { NINE_STARS, PALACE_DIRECTION, DAYOUTIAN, LUCKY_STARS, UNLUCKY_STARS, MOUNTAINS_24, mountainInfo, sittingFromFacing, STAR_LAYOUT_ROLE, mingGua, eightStars, guaYearOf, yearZibaiStar, yearlyFlying, periodOfYear, MOUNTAIN_META, WANG_SHAN_WANG_XIANG, XUANKONG_SOURCES, XUANKONG_DISCLAIMER, xuankongChart, buildFengshui };
+})();
+
+__mods['name-data'] = (function () {
+
+const READING = [
+  ['梓', 'zi', 3, 11], ['桐', 'tong', 2, 10], ['楠', 'nan', 2, 13], ['楷', 'kai', 3, 13],
+  ['松', 'song', 1, 8], ['柏', 'bai', 3, 9], ['枫', 'feng', 1, 13], ['榕', 'rong', 2, 14],
+  ['槿', 'jin', 3, 15], ['棠', 'tang', 2, 12], ['楚', 'chu', 3, 13], ['柯', 'ke', 1, 9],
+  ['桓', 'huan', 2, 10], ['榆', 'yu', 2, 13], ['栩', 'xu', 3, 10], ['榛', 'zhen', 1, 14],
+  ['芸', 'yun', 2, 10], ['芷', 'zhi', 3, 10], ['芮', 'rui', 4, 10], ['若', 'ruo', 4, 11],
+  ['茜', 'qian', 4, 12], ['茵', 'yin', 1, 12], ['茗', 'ming', 2, 12], ['莎', 'sha', 1, 13],
+  ['茉', 'mo', 4, 11], ['筱', 'xiao', 3, 13], ['蓉', 'rong', 2, 16], ['萱', 'xuan', 1, 15],
+  ['蕙', 'hui', 4, 18], ['蕊', 'rui', 3, 18], ['菲', 'fei', 1, 14], ['蔓', 'man', 4, 17],
+  ['荣', 'rong', 2, 14], ['茂', 'mao', 4, 11], ['栋', 'dong', 4, 12], ['梁', 'liang', 2, 11],
+  ['朴', 'pu', 3, 6], ['本', 'ben', 3, 5], ['林', 'lin', 2, 8], ['森', 'sen', 1, 12],
+  ['枝', 'zhi', 1, 8], ['果', 'guo', 3, 8], ['禾', 'he', 2, 5], ['秀', 'xiu', 4, 7],
+  ['穗', 'sui', 4, 17], ['稼', 'jia', 4, 15], ['颖', 'ying', 3, 16], ['苗', 'miao', 2, 8],
+  ['菁', 'jing', 1, 14], ['菡', 'han', 4, 14], ['蕴', 'yun', 4, 22], ['蕾', 'lei', 3, 19],
+  ['薇', 'wei', 1, 19], ['薏', 'yi', 4, 19], ['菀', 'wan', 3, 14], ['荷', 'he', 2, 13],
+  ['莲', 'lian', 2, 17], ['菱', 'ling', 2, 14], ['苇', 'wei', 3, 15], ['荻', 'di', 2, 13],
+  ['筠', 'yun', 2, 13], ['笛', 'di', 2, 11], ['杉', 'shan', 1, 7], ['柠', 'ning', 2, 18],
+  ['桢', 'zhen', 1, 13], ['樾', 'yue', 4, 16], ['柘', 'zhe', 4, 9], ['权', 'quan', 2, 22],
+  ['材', 'cai', 2, 7], ['杭', 'hang', 2, 8], ['枚', 'mei', 2, 8], ['梧', 'wu', 2, 11],
+  ['竹', 'zhu', 2, 6], ['简', 'jian', 3, 18], ['策', 'ce', 4, 12], ['筹', 'chou', 2, 20],
+  ['芬', 'fen', 1, 10], ['芳', 'fang', 1, 10], ['花', 'hua', 1, 10], ['菊', 'ju', 2, 14],
+  ['兰', 'lan', 2, 23], ['芝', 'zhi', 1, 10], ['芹', 'qin', 2, 10], ['荃', 'quan', 2, 12],
+  ['萃', 'cui', 4, 14], ['蓁', 'zhen', 1, 16], ['荞', 'qiao', 2, 18], ['莞', 'wan', 3, 13],
+  ['萦', 'ying', 2, 16], ['蔚', 'wei', 4, 17], ['芃', 'peng', 2, 9], ['芩', 'qin', 2, 10],
+  ['苡', 'yi', 3, 11], ['莱', 'lai', 2, 14], ['萌', 'meng', 2, 14], ['葆', 'bao', 3, 15],
+  ['萧', 'xiao', 1, 18], ['樟', 'zhang', 1, 15], ['樱', 'ying', 1, 21], ['栎', 'li', 4, 19],
+  ['棹', 'zhao', 4, 12], ['楸', 'qiu', 1, 13], ['槐', 'huai', 2, 14], ['橙', 'cheng', 2, 16],
+  ['檀', 'tan', 2, 17],
+  ['炎', 'yan', 2, 8], ['灿', 'can', 4, 17], ['炫', 'xuan', 4, 9], ['炜', 'wei', 3, 13],
+  ['烨', 'ye', 4, 14], ['煜', 'yu', 4, 13], ['熙', 'xi', 1, 13], ['煊', 'xuan', 1, 13],
+  ['焕', 'huan', 4, 13], ['熠', 'yi', 4, 15], ['炅', 'jiong', 3, 8], ['昱', 'yu', 4, 9],
+  ['晗', 'han', 2, 11], ['旭', 'xu', 4, 6], ['昊', 'hao', 4, 8], ['晟', 'sheng', 4, 11],
+  ['晨', 'chen', 2, 11], ['景', 'jing', 3, 12], ['曜', 'yao', 4, 18], ['曦', 'xi', 1, 20],
+  ['朗', 'lang', 3, 11], ['昭', 'zhao', 1, 9], ['昕', 'xin', 1, 8], ['昀', 'yun', 2, 8],
+  ['暖', 'nuan', 3, 13], ['灵', 'ling', 2, 24], ['丹', 'dan', 1, 4], ['彤', 'tong', 2, 7],
+  ['冉', 'ran', 3, 5], ['南', 'nan', 2, 9], ['丰', 'feng', 1, 18], ['日', 'ri', 4, 4],
+  ['阳', 'yang', 2, 17], ['光', 'guang', 1, 6], ['亮', 'liang', 4, 9], ['明', 'ming', 2, 8],
+  ['晶', 'jing', 1, 12], ['晴', 'qing', 2, 12], ['夏', 'xia', 4, 10], ['智', 'zhi', 4, 12],
+  ['卓', 'zhuo', 2, 8], ['乐', 'le', 4, 15], ['恺', 'kai', 3, 14], ['恬', 'tian', 2, 10],
+  ['甜', 'tian', 2, 11], ['亭', 'ting', 2, 9], ['俊', 'jun', 4, 9], ['丙', 'bing', 3, 5],
+  ['丁', 'ding', 1, 2], ['鼎', 'ding', 3, 13], ['陶', 'tao', 2, 16], ['熹', 'xi', 1, 16],
+  ['炀', 'yang', 2, 13], ['烜', 'xuan', 3, 10], ['暻', 'jing', 3, 16], ['晖', 'hui', 1, 13],
+  ['晔', 'ye', 4, 16], ['旻', 'min', 2, 8], ['晏', 'yan', 4, 10], ['晓', 'xiao', 3, 16],
+  ['暄', 'xuan', 1, 13], ['昆', 'kun', 1, 8], ['伶', 'ling', 2, 7],
+  ['坤', 'kun', 1, 8], ['垚', 'yao', 2, 9], ['培', 'pei', 2, 11], ['城', 'cheng', 2, 10],
+  ['域', 'yu', 4, 11], ['坚', 'jian', 1, 11], ['墨', 'mo', 4, 15], ['均', 'jun', 1, 7],
+  ['坦', 'tan', 3, 8], ['基', 'ji', 1, 11], ['堂', 'tang', 2, 11], ['圣', 'sheng', 4, 13],
+  ['在', 'zai', 4, 6], ['岳', 'yue', 4, 8], ['峰', 'feng', 1, 10], ['峻', 'jun', 4, 10],
+  ['岚', 'lan', 2, 12], ['岩', 'yan', 2, 8], ['崇', 'chong', 2, 11], ['岐', 'qi', 2, 7],
+  ['屿', 'yu', 3, 17], ['磊', 'lei', 3, 15], ['尧', 'yao', 2, 12], ['圆', 'yuan', 2, 13],
+  ['恩', 'en', 1, 10], ['惟', 'wei', 2, 11], ['轩', 'xuan', 1, 10], ['逸', 'yi', 4, 15],
+  ['山', 'shan', 1, 3], ['岸', 'an', 4, 8], ['岑', 'cen', 2, 7], ['巍', 'wei', 1, 21],
+  ['嵩', 'song', 1, 13], ['岭', 'ling', 3, 17], ['奥', 'ao', 4, 13], ['宜', 'yi', 2, 8],
+  ['容', 'rong', 2, 10], ['意', 'yi', 4, 13], ['依', 'yi', 1, 8], ['悠', 'you', 1, 11],
+  ['维', 'wei', 2, 14], ['纬', 'wei', 3, 15], ['永', 'yong', 3, 5], ['远', 'yuan', 3, 17],
+  ['辰', 'chen', 2, 7], ['壁', 'bi', 4, 16], ['田', 'tian', 2, 5], ['由', 'you', 2, 5],
+  ['画', 'hua', 4, 12], ['延', 'yan', 2, 7], ['建', 'jian', 4, 9], ['音', 'yin', 1, 9],
+  ['韵', 'yun', 4, 19], ['玮', 'wei', 3, 14], ['雍', 'yong', 1, 13], ['懿', 'yi', 4, 22],
+  ['宇', 'yu', 3, 6], ['亦', 'yi', 4, 6], ['安', 'an', 1, 6], ['宁', 'ning', 2, 14],
+  ['锋', 'feng', 1, 15], ['钢', 'gang', 1, 16], ['钧', 'jun', 1, 12], ['铭', 'ming', 2, 14],
+  ['锐', 'rui', 4, 15], ['锡', 'xi', 1, 16], ['锦', 'jin', 3, 16], ['鑫', 'xin', 1, 24],
+  ['键', 'jian', 4, 17], ['鉴', 'jian', 4, 22], ['钦', 'qin', 1, 12], ['镇', 'zhen', 4, 18],
+  ['铮', 'zheng', 1, 16], ['钰', 'yu', 4, 13], ['铠', 'kai', 3, 18], ['珊', 'shan', 1, 10],
+  ['珠', 'zhu', 1, 10], ['琳', 'lin', 2, 13], ['琦', 'qi', 2, 13], ['琪', 'qi', 2, 13],
+  ['瑜', 'yu', 2, 14], ['瑞', 'rui', 4, 14], ['瑄', 'xuan', 1, 14], ['璇', 'xuan', 2, 16],
+  ['璟', 'jing', 3, 17], ['璐', 'lu', 4, 18], ['瑾', 'jin', 3, 16], ['珏', 'jue', 2, 9],
+  ['环', 'huan', 2, 18], ['玲', 'ling', 2, 10], ['珑', 'long', 2, 21], ['瑶', 'yao', 2, 15],
+  ['莹', 'ying', 2, 15], ['铎', 'duo', 2, 21], ['金', 'jin', 1, 8], ['秋', 'qiu', 1, 9],
+  ['书', 'shu', 1, 10], ['舒', 'shu', 1, 12], ['善', 'shan', 4, 12], ['信', 'xin', 4, 9],
+  ['修', 'xiu', 1, 10], ['素', 'su', 4, 10], ['静', 'jing', 4, 16], ['心', 'xin', 1, 4],
+  ['新', 'xin', 1, 13], ['正', 'zheng', 4, 5], ['世', 'shi', 4, 5], ['少', 'shao', 3, 4],
+  ['西', 'xi', 1, 6], ['白', 'bai', 2, 5], ['辛', 'xin', 1, 7], ['成', 'cheng', 2, 7],
+  ['利', 'li', 4, 7], ['剑', 'jian', 4, 15], ['刚', 'gang', 1, 10], ['则', 'ze', 2, 9],
+  ['初', 'chu', 1, 7], ['硕', 'shuo', 4, 14], ['尚', 'shang', 4, 8], ['臣', 'chen', 2, 6],
+  ['川', 'chuan', 1, 3], ['舟', 'zhou', 1, 6], ['州', 'zhou', 1, 6], ['祖', 'zu', 3, 10],
+  ['祥', 'xiang', 2, 11], ['禄', 'lu', 4, 13], ['禧', 'xi', 3, 17], ['珍', 'zhen', 1, 10],
+  ['宣', 'xuan', 1, 9], ['序', 'xu', 4, 7], ['谦', 'qian', 1, 17], ['赞', 'zan', 4, 19],
+  ['超', 'chao', 1, 12], ['锴', 'kai', 3, 17], ['承', 'cheng', 2, 8], ['语', 'yu', 3, 14],
+  ['诺', 'nuo', 4, 16], ['诗', 'shi', 1, 13], ['梦', 'meng', 4, 14], ['思', 'si', 1, 9],
+  ['悦', 'yue', 4, 11], ['欣', 'xin', 1, 8], ['嘉', 'jia', 1, 14], ['佳', 'jia', 1, 8],
+  ['博', 'bo', 2, 12], ['睿', 'rui', 4, 14], ['知', 'zhi', 1, 8], ['星', 'xing', 1, 9],
+  ['言', 'yan', 2, 7], ['和', 'he', 2, 8],
+  ['江', 'jiang', 1, 7], ['河', 'he', 2, 9], ['海', 'hai', 3, 11], ['洋', 'yang', 2, 10],
+  ['波', 'bo', 1, 9], ['涛', 'tao', 1, 18], ['涵', 'han', 2, 12], ['清', 'qing', 1, 12],
+  ['澈', 'che', 4, 16], ['澄', 'cheng', 2, 16], ['润', 'run', 4, 16], ['泽', 'ze', 2, 17],
+  ['沛', 'pei', 4, 8], ['沁', 'qin', 4, 8], ['泓', 'hong', 2, 9], ['泉', 'quan', 2, 9],
+  ['汐', 'xi', 1, 7], ['淇', 'qi', 2, 12], ['鸿', 'hong', 2, 17], ['滋', 'zi', 1, 13],
+  ['淼', 'miao', 3, 12], ['雨', 'yu', 3, 8], ['雪', 'xue', 3, 11], ['霖', 'lin', 2, 16],
+  ['霏', 'fei', 1, 16], ['露', 'lu', 4, 21], ['霆', 'ting', 2, 15], ['雯', 'wen', 2, 12],
+  ['霓', 'ni', 2, 16], ['湉', 'tian', 2, 13], ['沐', 'mu', 4, 8], ['宸', 'chen', 2, 10],
+  ['然', 'ran', 2, 12], ['文', 'wen', 2, 4], ['月', 'yue', 4, 4], ['水', 'shui', 3, 4],
+  ['冰', 'bing', 1, 6], ['洁', 'jie', 2, 16], ['浩', 'hao', 4, 11], ['瀚', 'han', 4, 20],
+  ['渊', 'yuan', 1, 12], ['澜', 'lan', 2, 21], ['潮', 'chao', 2, 16], ['溪', 'xi', 1, 14],
+  ['湘', 'xiang', 1, 13], ['渝', 'yu', 2, 13], ['深', 'shen', 1, 12], ['湛', 'zhan', 4, 13],
+  ['汇', 'hui', 4, 13], ['洲', 'zhou', 1, 10], ['湾', 'wan', 1, 26], ['云', 'yun', 2, 12],
+  ['风', 'feng', 1, 9], ['北', 'bei', 3, 5], ['冬', 'dong', 1, 5], ['玄', 'xuan', 2, 5],
+  ['子', 'zi', 3, 3], ['平', 'ping', 2, 5], ['方', 'fang', 1, 4], ['帆', 'fan', 1, 6],
+  ['航', 'hang', 2, 10], ['敏', 'min', 3, 11], ['慧', 'hui', 4, 15], ['惠', 'hui', 4, 12],
+  ['霈', 'pei', 4, 15], ['灏', 'hao', 4, 25], ['湄', 'mei', 2, 13], ['滨', 'bin', 1, 18],
+  ['洛', 'luo', 4, 10], ['津', 'jin', 1, 10], ['泊', 'bo', 2, 9], ['沧', 'cang', 1, 14],
+  ['浦', 'pu', 3, 11],
+];
+
+const SURNAME_STROKES = {
+  王: 4, 李: 7, 张: 11, 刘: 15, 陈: 16, 杨: 13, 黄: 12, 赵: 14, 吴: 7, 周: 8,
+  徐: 10, 孙: 10, 马: 10, 朱: 6, 胡: 11, 郭: 15, 何: 7, 高: 10, 林: 8, 罗: 20,
+  郑: 19, 梁: 11, 谢: 17, 宋: 7, 唐: 10, 许: 11, 韩: 17, 冯: 12, 曹: 11, 彭: 12,
+  曾: 12, 萧: 18, 田: 5, 董: 15, 潘: 16, 袁: 10, 蔡: 17, 余: 7, 于: 3, 杜: 7,
+  叶: 15, 程: 12, 魏: 18, 吕: 7, 丁: 2, 任: 6, 姚: 9, 卢: 16, 姜: 9, 崔: 11,
+  钟: 17, 谭: 19, 陆: 16, 范: 15, 金: 8, 石: 5, 廖: 14, 贾: 13, 夏: 10, 韦: 9,
+  付: 5, 方: 4, 白: 5, 邹: 17, 孟: 8, 熊: 14, 秦: 10, 邱: 12, 江: 7, 尹: 4,
+  薛: 19, 段: 9, 雷: 13, 侯: 9, 龙: 16, 史: 5, 陶: 16, 黎: 15, 贺: 12, 顾: 21,
+  毛: 4, 郝: 14, 龚: 22, 邵: 12, 钱: 16, 严: 20, 武: 8, 戴: 18, 莫: 13, 孔: 4,
+  向: 6, 常: 11, 康: 11, 易: 8, 文: 4, 施: 9, 洪: 10, 安: 6, 颜: 18, 温: 13,
+  章: 11, 鲁: 15, 葛: 15, 伍: 6, 申: 5, 尤: 4, 焦: 12, 柳: 9, 邢: 11, 路: 13,
+  岳: 8, 乔: 12, 赖: 20, 万: 15, 苏: 22, 蒋: 17, 沈: 8, 汪: 8, 邓: 19, 覃: 12,
+  房: 8, 边: 22, 辛: 7, 涂: 11, 甘: 5, 封: 9, 储: 18, 邬: 17, 路: 13, 詹: 13,
+};
+
+const SURNAME_READING = {
+  王: ['wang', 2], 李: ['li', 3], 张: ['zhang', 1], 刘: ['liu', 2], 陈: ['chen', 2],
+  杨: ['yang', 2], 黄: ['huang', 2], 赵: ['zhao', 4], 吴: ['wu', 2], 周: ['zhou', 1],
+  徐: ['xu', 2], 孙: ['sun', 1], 马: ['ma', 3], 朱: ['zhu', 1], 胡: ['hu', 2],
+  郭: ['guo', 1], 何: ['he', 2], 高: ['gao', 1], 林: ['lin', 2], 罗: ['luo', 2],
+  郑: ['zheng', 4], 梁: ['liang', 2], 谢: ['xie', 4], 宋: ['song', 4], 唐: ['tang', 2],
+  许: ['xu', 3], 韩: ['han', 2], 冯: ['feng', 2], 曹: ['cao', 2], 彭: ['peng', 2],
+  曾: ['zeng', 1], 萧: ['xiao', 1], 田: ['tian', 2], 董: ['dong', 3], 潘: ['pan', 1],
+  袁: ['yuan', 2], 蔡: ['cai', 4], 余: ['yu', 2], 于: ['yu', 2], 杜: ['du', 4],
+  叶: ['ye', 4], 程: ['cheng', 2], 魏: ['wei', 4], 吕: ['lv', 3], 丁: ['ding', 1],
+  任: ['ren', 2], 姚: ['yao', 2], 卢: ['lu', 2], 姜: ['jiang', 1], 崔: ['cui', 1],
+  钟: ['zhong', 1], 谭: ['tan', 2], 陆: ['lu', 4], 范: ['fan', 4], 金: ['jin', 1],
+  石: ['shi', 2], 廖: ['liao', 4], 贾: ['jia', 3], 夏: ['xia', 4], 韦: ['wei', 2],
+  付: ['fu', 4], 方: ['fang', 1], 白: ['bai', 2], 邹: ['zou', 1], 孟: ['meng', 4],
+  熊: ['xiong', 2], 秦: ['qin', 2], 邱: ['qiu', 1], 江: ['jiang', 1], 尹: ['yin', 3],
+  薛: ['xue', 1], 段: ['duan', 4], 雷: ['lei', 2], 侯: ['hou', 2], 龙: ['long', 2],
+  史: ['shi', 3], 陶: ['tao', 2], 黎: ['li', 2], 贺: ['he', 4], 顾: ['gu', 4],
+  毛: ['mao', 2], 郝: ['hao', 3], 龚: ['gong', 1], 邵: ['shao', 4], 钱: ['qian', 2],
+  严: ['yan', 2], 武: ['wu', 3], 戴: ['dai', 4], 莫: ['mo', 4], 孔: ['kong', 3],
+  向: ['xiang', 4], 常: ['chang', 2], 康: ['kang', 1], 易: ['yi', 4], 文: ['wen', 2],
+  施: ['shi', 1], 洪: ['hong', 2], 安: ['an', 1], 颜: ['yan', 2], 温: ['wen', 1],
+  章: ['zhang', 1], 鲁: ['lu', 3], 葛: ['ge', 3], 伍: ['wu', 3], 申: ['shen', 1],
+  尤: ['you', 2], 焦: ['jiao', 1], 柳: ['liu', 3], 邢: ['xing', 2], 路: ['lu', 4],
+  岳: ['yue', 4], 乔: ['qiao', 2], 赖: ['lai', 4], 万: ['wan', 4], 苏: ['su', 1],
+  蒋: ['jiang', 3], 沈: ['shen', 3], 汪: ['wang', 1], 邓: ['deng', 4], 覃: ['tan', 2],
+  房: ['fang', 2], 边: ['bian', 1], 辛: ['xin', 1], 涂: ['tu', 2], 甘: ['gan', 1],
+  封: ['feng', 1], 储: ['chu', 3], 邬: ['wu', 1], 詹: ['zhan', 1],
+  欧: ['ou', 1],
+  阳: ['yang', 2],
+  司: ['si', 1],
+  上: ['shang', 4],
+  官: ['guan', 1],
+  诸: ['zhu', 1],
+  东: ['dong', 1],
+  皇: ['huang', 2],
+  甫: ['fu', 3],
+  尉: ['yu', 4],
+  迟: ['chi', 2],
+  令: ['ling', 4],
+  狐: ['hu', 2],
+  慕: ['mu', 4],
+  徒: ['tu', 2],
+  公: ['gong', 1],
+};
+
+const DOUBLE_SURNAMES = {
+  欧阳: { s: [15, 17], py: 'ouyang', tone: 1 },
+  司马: { s: [5, 10], py: 'sima', tone: 1 },
+  上官: { s: [3, 8], py: 'shangguan', tone: 4 },
+  诸葛: { s: [15, 15], py: 'zhuge', tone: 1 },
+  东方: { s: [8, 4], py: 'dongfang', tone: 1 },
+  皇甫: { s: [9, 7], py: 'huangfu', tone: 2 },
+  尉迟: { s: [11, 19], py: 'yuchi', tone: 4 },
+  令狐: { s: [5, 8], py: 'linghu', tone: 4 },
+  慕容: { s: [14, 10], py: 'murong', tone: 4 },
+  宇文: { s: [6, 4], py: 'yuwen', tone: 3 },
+  司徒: { s: [5, 10], py: 'situ', tone: 1 },
+  夏侯: { s: [10, 9], py: 'xiahou', tone: 4 },
+  公孙: { s: [4, 10], py: 'gongsun', tone: 1 },
+};
+
+const SHULI_81 = [null,
+  ['吉', '太极之数'], ['凶', '两仪之数'], ['吉', '三才之数'], ['凶', '四象之数'],
+  ['吉', '五行之数'], ['吉', '六爻之数'], ['吉', '七政之数'], ['吉', '八卦之数'],
+  ['凶', '大成之数'], ['凶', '终结之数'], ['吉', '旱苗逢雨'], ['凶', '掘井无泉'],
+  ['吉', '春日牡丹'], ['凶', '破兆之数'], ['吉', '福寿之数'], ['吉', '厚重之数'],
+  ['吉', '刚强之数'], ['吉', '铁镜重磨'], ['凶', '多难之数'], ['凶', '屋下藏金'],
+  ['吉', '明月中天'], ['凶', '秋草逢霜'], ['吉', '壮丽之数'], ['吉', '掘藏得金'],
+  ['吉', '荣俊之数'], ['凶', '变怪之数'], ['半吉', '增长之数'], ['凶', '阔水浮萍'],
+  ['吉', '智谋之数'], ['半吉', '非运之数'], ['吉', '春日花开'], ['吉', '宝马金鞍'],
+  ['吉', '旭日升天'], ['凶', '破家之数'], ['吉', '高楼望月'], ['凶', '波澜重叠'],
+  ['吉', '猛虎出林'], ['半吉', '磨铁成针'], ['吉', '富贵荣华'], ['半吉', '退安之数'],
+  ['吉', '有德之数'], ['半吉', '寒蝉在柳'], ['凶', '散财破产'], ['凶', '烦闷之数'],
+  ['吉', '顺风之数'], ['凶', '浪里淘金'], ['吉', '点石成金'], ['吉', '古松立鹤'],
+  ['半吉', '转变之数'], ['半吉', '小舟入海'], ['半吉', '沉浮之数'], ['吉', '先见之明'],
+  ['半吉', '曲卷难星'], ['凶', '石上栽花'], ['半吉', '善恶之数'], ['凶', '浪里行舟'],
+  ['吉', '日照春松'], ['半吉', '晚行遇月'], ['凶', '寒蝉悲风'], ['凶', '无谋之数'],
+  ['吉', '牡丹芙蓉'], ['凶', '衰败之数'], ['吉', '舟归平海'], ['凶', '非命之数'],
+  ['吉', '巨流归海'], ['凶', '岩头步马'], ['吉', '通达之数'], ['吉', '顺风吹帆'],
+  ['凶', '非业之数'], ['凶', '残菊经霜'], ['半吉', '石上金花'], ['凶', '劳苦之数'],
+  ['半吉', '志高力微'], ['凶', '残菊逢霜'], ['半吉', '退守之数'], ['凶', '离散之数'],
+  ['半吉', '半吉之数'], ['半吉', '晚苦之数'], ['凶', '云头望月'], ['半吉', '遁吉之数'],
+  ['吉', '万物回春'],
+];
+
+return { READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81 };
 })();
 
 __mods.name = (function () {
 const { buildBazi } = __mods.bazi;
 const { assertCivil } = __mods.validate;
+const { READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81 } = __mods['name-data'];
 
 const SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
 const KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
@@ -7117,8 +7934,179 @@ const CHAR_LIB = [
 ];
 
 const EL_INDEX = new Map();
+const EXTRA_INDEX = new Map();
+for (const [c, py, tone, st] of READING) {
+  if (!EXTRA_INDEX.has(c)) EXTRA_INDEX.set(c, { py, tone, st });
+}
 for (const c of CHAR_LIB) {
-  if (!EL_INDEX.has(c[0])) EL_INDEX.set(c[0], { c: c[0], el: c[1], meaning: c[2], g: c[3], order: EL_INDEX.size });
+  if (!EL_INDEX.has(c[0])) {
+    const x = EXTRA_INDEX.get(c[0]) || {};
+    EL_INDEX.set(c[0], {
+      c: c[0], el: c[1], meaning: c[2], g: c[3], order: EL_INDEX.size,
+      py: x.py || null, tone: x.tone || null, strokes: x.st || null,
+    });
+  }
+}
+
+const NUM_ELEMENT = { 1: '木', 2: '木', 3: '火', 4: '火', 5: '土', 6: '土', 7: '金', 8: '金', 9: '水', 0: '水' };
+const WX_REL = (a, b) => (a === b ? '同' : SHENG[a] === b ? '生' : KE[a] === b ? '克' : SHENG[b] === a ? '被生' : '被克');
+
+function shuliOf(n) {
+  let x = n;
+  while (x > 81) x -= 80;
+  if (!(x >= 1)) return null;
+  const row = SHULI_81[x];
+  return row ? { num: x, level: row[0], name: row[1] } : null;
+}
+
+function overridesOf(input) {
+  const out = {};
+  for (const src of [input && input.surnameStrokes, input && input.strokeOverrides]) {
+    if (!src || typeof src !== 'object') continue;
+    for (const [k, v] of Object.entries(src)) {
+      if (Number.isInteger(v) && v > 0) out[k] = v;
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function strokeOf(ch, overrides, kind) {
+  if (overrides && Number.isInteger(overrides[ch]) && overrides[ch] > 0) {
+    return { strokes: overrides[ch], source: 'user' };
+  }
+  const info = EL_INDEX.get(ch);
+  if (info && info.strokes) return { strokes: info.strokes, source: 'lib' };
+  if (kind === 'surname' && SURNAME_STROKES[ch]) return { strokes: SURNAME_STROKES[ch], source: 'surname' };
+  return null;
+}
+
+function readingOf(ch, kind) {  const info = EL_INDEX.get(ch);
+  if (info && info.py) return { py: info.py, tone: info.tone };
+  if (kind === 'surname' && SURNAME_READING[ch]) {
+    const [py, tone] = SURNAME_READING[ch];
+    return { py, tone };
+  }
+  return null;
+}
+
+function wuge(surname, given, overrides) {
+  const s = [...String(surname || '')];
+  const g = [...String(given || '')];
+  if (!s.length || !g.length) return { available: false, reason: '需要姓与名才能排五格' };
+  if (s.length > 2) return { available: false, reason: '姓超过两字：五格只算单姓与常见复姓' };
+
+  const dbl = s.length === 2 ? DOUBLE_SURNAMES[surname] : null;
+  const useDbl = dbl && !s.some((ch) => overrides && overrides[ch]);
+  const sInfo = useDbl
+    ? dbl.s.map((n) => ({ strokes: n, source: 'table' }))
+    : s.map((ch) => strokeOf(ch, overrides, 'surname'));
+  const gInfo = g.map((ch) => strokeOf(ch, overrides, 'given'));
+  const missing = [...s, ...g].filter((ch, i) => !(i < s.length ? sInfo[i] : gInfo[i - s.length]));
+  if (missing.length) {
+    return {
+      available: false,
+      reason: `这些字没有康熙笔画数据，五格算不了：${missing.join('、')}——可用 strokeOverrides 传入笔画后再算`,
+      missing,
+    };
+  }
+
+  const sStroke = sInfo.map((x) => x.strokes);
+  const gStroke = gInfo.map((x) => x.strokes);
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const isDouble = s.length === 2;
+  const tian = isDouble ? sum(sStroke) : sStroke[0] + 1;
+  const ren = sStroke[s.length - 1] + gStroke[0];
+  const di = sum(gStroke) + (g.length === 1 ? 1 : 0);
+  const zong = sum(sStroke) + sum(gStroke);
+  const wai = s.length === 1 && g.length === 1 ? 2 : zong - ren + 1;
+
+  const rows = [['天格', tian], ['人格', ren], ['地格', di], ['外格', wai], ['总格', zong]].map(([key, n]) => ({
+    key, strokes: n, ...shuliOf(n),
+  }));
+  const sancaiNums = [tian, ren, di].map((n) => n % 10);
+  const sancaiEl = sancaiNums.map((n) => NUM_ELEMENT[n]);
+  const rels = [
+    { pair: '天与人', rel: WX_REL(sancaiEl[0], sancaiEl[1]) },
+    { pair: '人与地', rel: WX_REL(sancaiEl[1], sancaiEl[2]) },
+  ];
+  const ordered = sancaiEl[0] === sancaiEl[1] && sancaiEl[1] === sancaiEl[2]
+    ? '三才同气，气脉集中'
+    : rels.every((x) => x.rel === '生' || x.rel === '同')
+      ? '一路相生，传统看作顺遂'
+      : rels.every((x) => x.rel === '克' || x.rel === '被克')
+        ? '相连相克，传统看作内外拉扯'
+        : `${rels.map((x) => `${x.pair}${x.rel}`).join('、')}，吉凶各派看法不一`;
+
+  const source = [...sInfo, ...gInfo].some((x) => x.source === 'user') ? 'mixed' : 'table';
+  return {
+    available: true,
+    surnameStyle: isDouble ? '复姓' : '单姓',
+    strokes: [
+      ...s.map((ch, i) => ({ char: ch, strokes: sInfo[i].strokes, source: sInfo[i].source, kind: '姓' })),
+      ...g.map((ch, i) => ({ char: ch, strokes: gInfo[i].strokes, source: gInfo[i].source, kind: '名' })),
+    ],
+    rows,
+    sancai: {
+      elements: sancaiEl,
+      text: `${sancaiEl.join('')}（${ordered}）`,
+      relations: rels,
+    },
+    summary: rows.map((r) => `${r.key}${r.strokes}${r.level}`).join('　'),
+    source,
+  };
+}
+
+const INITIALS = ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w'];
+
+function splitPinyin(py) {
+  const p = String(py || '').toLowerCase();
+  for (const ini of INITIALS) {
+    if (p.startsWith(ini)) return { ini, fin: p.slice(ini.length) };
+  }
+  return { ini: '', fin: p };
+}
+
+const TONE_LABEL = { 1: '一', 2: '二', 3: '三', 4: '四' };
+
+function phonetics(fullName) {
+  const chars = [...String(fullName || '')];
+  if (chars.length < 2) return { available: false, reason: '至少两个字才谈得上音韵' };
+  const items = chars.map((ch, i) => {
+    const r = readingOf(ch, i === 0 ? 'surname' : 'given');
+    return r ? { char: ch, py: r.py, tone: r.tone, ...splitPinyin(r.py) } : { char: ch, py: null, tone: null, ini: null, fin: null };
+  });
+  const missing = items.filter((x) => !x.py).map((x) => x.char);
+  if (missing.length) {
+    return { available: false, reason: `这些字没有读音数据：${missing.join('、')}`, missing };
+  }
+
+  const issues = [];
+  const tones = new Set(items.map((x) => x.tone));
+  if (tones.size === 1 && items.length >= 2) {
+    issues.push({ type: 'tone', text: `全名都是${TONE_LABEL[items[0].tone]}声，声调没有起伏` });
+  }
+  for (let i = 1; i < items.length; i++) {
+    const a = items[i - 1];
+    const b = items[i];
+    if (a.py === b.py && a.tone === b.tone) {
+      issues.push({ type: 'same', text: `「${a.char}${b.char}」同音同调（叠字或撞音）` });
+      continue;
+    }
+    if (a.ini && a.ini === b.ini) issues.push({ type: 'initial', text: `「${a.char}${b.char}」同声母 ${a.ini}` });
+    if (a.fin === b.fin) issues.push({ type: 'final', text: `「${a.char}${b.char}」同韵母 ${a.fin}` });
+  }
+  const inis = new Set(items.map((x) => x.ini).filter(Boolean));
+  if (items.length >= 3 && inis.size === 1) {
+    issues.push({ type: 'initial', text: `三字同声母 ${[...inis][0]}，连着读容易黏在一起` });
+  }
+  const level = issues.length === 0 ? '顺口' : issues.length === 1 ? '略拗' : '拗口';
+  return {
+    available: true,
+    chars: items.map((x) => ({ char: x.char, py: x.py, tone: x.tone })),
+    tonePattern: items.map((x) => x.tone).join('-'),
+    issues,
+    level,
+  };
 }
 
 function userElement(input, ch) {
@@ -7230,6 +8218,10 @@ function assessName(input) {
   else if (favCount > 0) verdict = `部分用字合喜用（${favCount}/${judged}），其余可再斟酌；喜用为 ${favorable.list.join('、')}。`;
   else verdict = `用字未落在喜用（${favorable.list.join('、')}）上；不必然是坏名，但若想贴合命局可换字再看。`;
 
+  const ov = overridesOf(input);
+  const wu = wuge(surname, given, ov);
+  const ph = phonetics(surname + given);
+
   return {
     system: 'name',
     action: 'assess',
@@ -7245,11 +8237,14 @@ function assessName(input) {
       },
     } : {}),
     chars,
-    stats: { chars: chars.length, known, unknown, favorableCount: favCount, libSize: CHAR_LIB.length },
+    wuge: wu,
+    phonetics: ph,
+    stats: { chars: chars.length, known, unknown, favorableCount: favCount, libSize: CHAR_LIB.length, wugeReady: wu.available === true },
     verdict,
     notes: [
       `字之五行按通行字义/偏旁归类，自建字库共 ${CHAR_LIB.length} 字（常用名用字为主）；未收录的字不猜五行，如实标注，「用户指定」是你传入的归类。`,
-      '不做五格剖象（需康熙字典笔画），也不做音韵格律判断——谐音、拗口请自己读三遍或用方言读一遍。',
+      '五格按康熙字典繁体笔画计（氵→水4、艹→艸6、华→華14 这类换算），81 数理取通行本、各派对少数数取法有出入；姓氏笔画表没覆盖的姓或你想按别派算，可传 strokeOverrides 覆盖。',
+      '音韵只做机械检查（全名同调、相邻同声母/同韵母、叠字），不做语义谐音判断——谐音、方言读法还得自己读三遍。',
       '起名只做用字参考，不替父母做决定。',
     ],
   };
@@ -7278,6 +8273,14 @@ function generateNames(input) {
   const fav = favorableElements(strength);
   const pool = CHAR_LIB.filter((c) => fav.list.includes(c[1]) && c[0] !== surname);
   const gPref = gender === 'male' ? 'm' : 'f';
+  const sChars = [...surname];
+  const ov = overridesOf(input);
+  const sStroke = sChars.map((ch) => strokeOf(ch, ov, 'surname'));
+  const sReady = sChars.length <= 2 && sStroke.every(Boolean);
+  const sSum = sReady ? sStroke.reduce((x, y) => x + y.strokes, 0) : 0;
+  const sLast = sReady ? sStroke[sStroke.length - 1].strokes : 0;
+  const lv = (n) => { const r = shuliOf(n); return r ? (r.level === '吉' ? 2 : r.level === '半吉' ? 1 : 0) : 0; };
+  const poolStroke = new Map(pool.map((c) => [c[0], (strokeOf(c[0], ov, 'given') || {}).strokes || 0]));
   const scored = [];
   for (let i = 0; i < pool.length; i++) {
     for (let j = 0; j < pool.length; j++) {
@@ -7286,6 +8289,15 @@ function generateNames(input) {
       const b = pool[j];
       const fit = (x) => (x[3] === gPref || x[3] === 'n' ? 1 : 0);
       const gScore = fit(a) + fit(b) - (a[3] !== gPref && a[3] !== 'n' && b[3] !== gPref && b[3] !== 'n' ? 2 : 0);
+      const aSt = poolStroke.get(a[0]);
+      const bSt = poolStroke.get(b[0]);
+      let wuScore = 0;
+      if (sReady && aSt && bSt) {
+        const ren = sLast + aSt;
+        const di = aSt + bSt;
+        const zong = sSum + aSt + bSt;
+        wuScore = lv(ren) + lv(di) + lv(zong) + lv(zong - ren + 1);
+      }
       scored.push({
         name: a[0] + b[0],
         chars: [
@@ -7295,12 +8307,14 @@ function generateNames(input) {
         elements: [a[1], b[1]],
         allFavorable: fav.list.includes(a[1]) && fav.list.includes(b[1]),
         genderScore: gScore,
+        wugeScore: wuScore,
         order: (i * 7 + j * 13) % 9973,
       });
     }
   }
   const mixed = (c) => (c.elements[0] !== c.elements[1] ? 1 : 0);
-  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x)) || (y.genderScore - x.genderScore) || (x.order - y.order));
+  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x))
+    || (y.wugeScore - x.wugeScore) || (y.genderScore - x.genderScore) || (x.order - y.order));
   const out = [];
   const usedNames = new Set();
   const usedChars = new Set([surname]);
@@ -7314,7 +8328,11 @@ function generateNames(input) {
     usedNames.add(key);
     usedPairs.add(pair);
     cand.chars.forEach((x) => usedChars.add(x.char));
-    out.push({ rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars });
+    out.push({
+      rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars,
+      wuge: wuge(surname, cand.name, ov),
+      phonetics: phonetics(surname + cand.name),
+    });
     return true;
   };
   for (const cand of scored) {
@@ -7338,8 +8356,11 @@ function generateNames(input) {
     candidates: out,
     notes: [
       `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可用 charElements 指定五行后评估。`,
-      '候选按合喜用与性别倾向确定性排序，不是「吉名」判定；音韵与方言谐音请自行读念检查。',
-      '不做五格剖象（需康熙字典笔画）。',
+      '候选排序依次看：合喜用 → 两字异行 → 五格（人格/地格/总格/外格 吉多者先）→ 性别倾向 → 字库序，是排序不是「吉名」判定。',
+      sReady
+        ? '五格按康熙字典繁体笔画与通行本 81 数理算；姓的笔画取自内置姓氏表，没覆盖的姓可传 surnameStrokes 或 strokeOverrides。'
+        : '姓的笔画不在内置姓氏表里，这一轮没按五格排序（不半算）；可传 surnameStrokes 或 strokeOverrides 后重算。',
+      '音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断——候选的音韵结果随每条一起给出。',
     ],
   };
 }
@@ -7349,7 +8370,7 @@ function buildName(input) {
   return assessName(input);
 }
 
-return { CHAR_LIB, favorableElements, assessName, generateNames, buildName };
+return { CHAR_LIB, shuliOf, wuge, splitPinyin, phonetics, favorableElements, assessName, generateNames, buildName };
 })();
 
 __mods['ziwei-hepan'] = (function () {
@@ -9814,7 +10835,15 @@ const PLAIN_BODY = {
   化退神: '有一爻在往后退，别按原来的势头硬推。',
 };
 
-function usePlainOf(ug) {
+const FUSHEN_PLAIN = {
+  可出: '眼下的条件算是有助无压，属于「出得来」的一档——这是条件，不等于马上应验。',
+  有助有压: '眼下是一边有助、一边有压，出得来，但得费点劲。',
+  受压难出: '眼下被上面的力量压着，不太容易露头，先别急着硬推。',
+  未得助: '眼下暂时没借到力，还得等条件转过来。',
+  飞伏未知: '飞伏关系看不全，这一层先不下判断。',
+};
+
+function usePlainOf(ug, fa) {
   if (!ug || !ug.liuqin) return '';
   if (ug.found.length) {
     const pos = ug.found.map((f) => `第${f.position}爻`).join('、');
@@ -9824,7 +10853,9 @@ function usePlainOf(ug) {
   }
   if (ug.fushen.length) {
     const f = ug.fushen[0];
-    return `你问的这件事，卦面上没有直接露出来，得往深处找：它藏在第${f.position}爻下面（伏神），与上面的关系是「${f.relation || '—'}」，要借力才出得来。`;
+    const hit = fa && Array.isArray(fa.items) ? fa.items.find((x) => x.position === f.position) : null;
+    const tail = hit ? ` ${FUSHEN_PLAIN[hit.verdict] || ''}` : '';
+    return `你问的这件事，卦面上没有直接露出来，得往深处找：它藏在第${f.position}爻下面（伏神），与上面的关系是「${f.relation || '—'}」，要借力才出得来。${tail}`;
   }
   return '';
 }
@@ -9918,6 +10949,7 @@ function buildAnswer(r, ask, ctx = {}) {
         : '',
       `具体到你问的这件事，重点看${where}。`,
     ];
+    if (!q) parts[parts.length - 1] = `没指定问题，就按${where}的顺序往下看。`;
     return parts.filter(Boolean).join('');
   }
 
@@ -9936,7 +10968,7 @@ function buildAnswer(r, ask, ctx = {}) {
         `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
       plainFly,
       flyCompositePlain(r.flyComposite),
-      `具体到你问的这件事，重点看${where}。`,
+      q ? `具体到你问的这件事，重点看${where}。` : `没指定问题，就按${where}的顺序往下看。`,
     ].filter(Boolean).join('');
   }
 
@@ -9950,12 +10982,20 @@ function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
+        `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
 
-  return head ? `${head}下面按五个维度拆开看，重点看${where}。` : `下面按五个维度拆开看，重点看${where}。`;
+  if (head) return `${head}下面按五个维度拆开看，重点看${where}。`;
+  if (r.system === 'qimen') {
+    const dirTip = dir !== 'general' && ask && ask.directionLabel ? `，取「${ask.directionLabel}」方向的用神` : '';
+    return `下面按排盘事实、用神、宫位条件几节展开${dirTip}。`;
+  }
+  if (dir !== 'general' && ask && ask.directionLabel) {
+    return `下面按五个维度拆开看，重点看与「${ask.directionLabel}」方向最贴近的那一节。`;
+  }
+  return '下面按五个维度拆开看，没指定问题，就从头依次读。';
 }
 
 function buildPlain(r, ask, ctx = {}) {
@@ -9976,17 +11016,26 @@ function buildPlain(r, ask, ctx = {}) {
       tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
-    const soul = r.soul || {};
     const body = r.body || {};
     const ji = r.flyChains && r.flyChains.忌;
-    const plainFly = ji && ji.steps.length
-      ? `另外有一条线值得留意：${ji.path.map((p) => p.replace(/宫$/, '')).join(' → ')}——这几件事在你身上是连着转的，一件事卡住，容易牵动下一件。`
+    const feltChain = ji && ji.steps.length
+      ? '你身上有个绕不开的规律：几件事是连着转的，一件卡住，后面就跟着慢下来。'
+      : '';
+    const fc = r.flyComposite;
+    const hub = fc && Array.isArray(fc.targets) ? fc.targets.find((t) => t.count >= 2) : null;
+    const feltComposite = !fc || !Array.isArray(fc.targets)
+      ? ''
+      : hub
+        ? `再往深一层，四股力最后也压在「${String(hub.palace).replace(/宫$/, '')}」上——几个方面的劲都往这儿聚。`
+        : '再往深一层，四股的力没有全挤到一处，这几件事之间牵连不深。';
+    const focus = body.lands
+      ? `真正让你上心的，多半是「${body.lands}」这件事，做别的总会分心。`
       : '';
     return [
-      `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
-        `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`,
-      plainFly,
-      flyCompositePlain(r.flyComposite),
+      `紫微讲的是「你与环境怎么互动」，不是谁好谁坏——同一件事换个环境、换个人配合，结果就不一样。`,
+      focus,
+      feltChain,
+      feltComposite,
     ].filter(Boolean).join('');
   }
   if (r.system === 'liuyao') {
@@ -9996,7 +11045,7 @@ function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
+      `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
   }
   return '';
 }
@@ -10033,6 +11082,19 @@ const GLOSSARY = [
   ['纳甲', '给六个爻配上天干地支，六亲与生克才有依据。'],
   ['四化', '禄权科忌四种变化，标记星曜在这一步运里扮演什么角色。'],
   ['大限', '紫微里的十年阶段，作用类似八字的「大运」。'],
+  ['庙旺', '星曜落在某宫时的力量档位：庙、旺最强，得、利、平居中，不、陷最弱。'],
+  ['三方四正', '从命宫出发的三合三方加对宫，共四个宫位，是全盘最核心的势力范围。'],
+  ['命主', '紫微里另有一颗命主星，补命宫看不到的那一层底色。'],
+  ['身主', '紫微里另有一颗身主星，管后天的行动与身体那一面。'],
+  ['五行局', '用纳音给整张盘定一个局（水二局、木三局等），大限的起法以此为准。'],
+  ['自化', '宫干让本宫星曜自己生出四化，代表这一宫的事容易自己发酵。'],
+  ['飞星', '拿一个宫的宫干去四化别的宫，看事情从哪来、往哪走。'],
+  ['正曜', '十四主星。「无正曜」指命宫没有主星，要借对宫来看。'],
+  ['借对宫', '命宫无主星时借对宫主星来读，性格更依赖环境与身边的人。'],
+  ['双星', '两主星同宫，按组合读，不能只看其中一颗。'],
+  ['墓库', '地支里的仓库。五行入墓代表这股力量收着，不是没有。'],
+  ['伏吟', '干支重复出现，事情容易原地打转、反复。'],
+  ['反吟', '天克地冲，变动与对撞的意味更明显。'],
 ];
 
 const GLOSSARY_BY_SYSTEM = {
@@ -10173,8 +11235,8 @@ const KNOWLEDGE = [
     id: 'bazi-sanming-duizhao',
     system: 'bazi', dims: ['overall', 'career'],
     gist: '同一个格，子平真诠讲怎么用，三命通会讲怎么取。',
-    detail: '两书不是谁替代谁：子平真诠以月令取用神、论顺逆成败，重「用」；三命通会按十神逐格立论，重「取」与「忌」。同看正官格，前者问财印护官、伤煞混杂，后者先说「止许一位，多则不宜」。本插件把两条并列，不合并成一句断语。',
-    source: '《子平真诠》论正官等篇；《三命通会》卷五、卷六论十神',
+    detail: '两书不是谁替代谁：子平真诠以月令取用神、论顺逆成败，重「用」；三命通会按十神逐格立论，重「取」与「忌」。同看正官格，前者问财印护官、伤煞混杂，后者先说「止许一位，多则不宜」。此本正财、偏财分章，两格各取本格一条；七杀没有单列「论偏官」，取卷五「官煞去留杂论」讲混杂时的去留。本插件把两条并列，不合并成一句断语。',
+    source: '《子平真诠》论正官等篇；《三命通会》卷五、卷六论十神与官煞去留',
     status: 'variant',
     note: '两书成书年代与流派不同，用语有出入；本插件照录通行本，不做校勘改字，也不替两家调和。',
   },
@@ -10195,6 +11257,33 @@ const KNOWLEDGE = [
     source: '《子平真诠》十、论用神变化；化气条件各家另论',
     status: 'variant',
     note: '化气格成立条件各家宽严不一（是否要求月令为化神、日主是否允许有根），本插件只列条件、附原文，不据此断定化气已成。',
+  },
+  {
+    id: 'bazi-zhuanwang-yuanwen',
+    system: 'bazi', dims: ['overall', 'career'],
+    gist: '专旺五格各有专章：成格要看局全带印，不只看身强。',
+    detail: '三命通会卷六曲直、炎上、从革、润下、稼穑五篇各立一格：曲直须亥卯未带亥，炎上须寅午戌带寅，从革须巳酉丑带丙丁巳午，润下须申子辰全，稼穑取四季土。原文的条件都比「身强」细：要局全、要带印或带火炼金，还要防冲刑死绝。本插件把命中的那一篇附在结果里，只作结构说明。',
+    source: '《三命通会》卷六·曲直、炎上、从革、润下、稼穑',
+    status: 'variant',
+    note: '专旺是否必须成方局、是否允许一点官杀财，各家宽严不一；原文五篇之间条件也不齐（润下重忌冲刑、稼穑重四季土）。本插件只按「同类+印 ≥5、官杀财皆弱」列出并附原文，不据此断贵贱，也不补专旺的破格条件。',
+  },
+  {
+    id: 'bazi-congge-yuanwen',
+    system: 'bazi', dims: ['overall', 'career'],
+    gist: '从格是身无归处才「弃命」相从：一见根气就破格。',
+    detail: '三命通会卷五弃命从煞、卷六弃命从财各有一篇：从煞要煞重身柔、四柱无一点比肩印绶；从财要财会成局、日干无气，原文说「若逢根气，命损无猜」。两篇都说行运喜财煞旺地、忌扶身。本插件只在盘面出现从财格或从杀格时附上对应原文；从儿、从强没有单章，不硬凑。',
+    source: '《三命通会》卷五·弃命从煞；卷六·弃命从财',
+    status: 'variant',
+    note: '从格成立条件各家分歧很大：是否允许日主有微根、阴阳干从与不从（原文说阳木不能从）、从儿与从强算不算正从，说法不一。本插件只列结构与原文，不据此断吉凶，也不补从儿、从强的原文。',
+  },
+  {
+    id: 'bazi-tongguan',
+    system: 'bazi', dims: ['overall', 'career'],
+    gist: '两神相战要有中间一行接上，对峙才化成相生。',
+    detail: '用神与忌神两行在局中各 ≥1.5 分、又正好相克时，五行里只有一行能接上：克方生它、它再生被克方（金克木则以水为关，土克水则以金为关）。滴天髓用织女、牛郎隔关相望作比，说「此关若通也，相邀入洞房」。本插件只按局中分量点出这一行，并写明它是不是忌神。',
+    source: '《滴天髓》通神论·通关；五行生克为通行说',
+    status: 'variant',
+    note: '各家对「两神相战」取哪两神不一（有取日主与官杀、有取用神与忌神、有取局中最旺两行），本插件固定取「用神与克它的忌神，且两行各 ≥1.5 分」；通关一行只按五行生克唯一确定，不据此断吉凶，也不判通关之力是否够用。',
   },
 
   {
@@ -10305,10 +11394,10 @@ const KNOWLEDGE = [
     id: 'liuyao-fushen',
     system: 'liuyao', dims: ['overall'],
     gist: '用神不上卦，就去本宫首卦的同位取伏神。',
-    detail: '本卦六爻里没有用神那一类六亲，就叫用神不上卦。取法是回到本卦所属宫的首卦（八纯卦），找出该六亲所在的爻位，那一爻即伏神，本卦同一爻位上的爻叫飞神。伏神要「得出」才有用：飞神生伏神、伏神克飞神、日月生扶都算得力；飞神克伏神则受压难出。本插件给出伏神爻位、干支五行与飞伏生克关系，不出具体的出伏日期。',
+    detail: '本卦六爻里没有用神那一类六亲，就叫用神不上卦。取法是回到本卦所属宫的首卦（八纯卦），找出该六亲所在的爻位，那一爻即伏神，本卦同一爻位上的爻叫飞神。伏神要「得出」才有用：飞神生伏神、伏神克飞神、日月生扶都算得力；飞神克伏神则受压难出。本插件给出伏神爻位、干支五行、飞伏生克，并按月建日辰归成四档出伏条件（可出 / 有助有压 / 受压难出 / 未得助）；只判条件，不出应期日期。',
     source: '《卜筮正宗》伏神章；《增删卜易》伏神篇',
     status: 'variant',
-    note: '首卦里同一六亲也可能出现两次（如乾宫乾为天的父母在三爻与上爻），此时取哪一爻为伏神各家不一；本插件把候选都列出并标「伏神两现」，不代选。伏神出伏的应期各家分歧更大，故不输出日期。',
+    note: '首卦里同一六亲也可能出现两次（如乾宫乾为天的父母在三爻与上爻），此时取哪一爻为伏神各家不一；本插件把候选都列出并标「伏神两现」，不代选。出伏条件的归并口径：飞生伏、伏克飞、日辰生/比和、月建旺/相算助，飞克伏、日辰克、月破算压；有助无压为「可出」，有助有压为「有助有压」，有压无助为「受压难出」，两者都无为「未得助」。四档只并列条件、不排各家优先级；旬空只标出，不并入档位。应期各家分歧更大，仍不输出日期。',
   },
   {
     id: 'liuyao-yongshen-shuai',
@@ -10514,10 +11603,390 @@ const STATUS_LABEL = {
 return { KNOWLEDGE, knowledgeFor, caveatsFor, STATUS_LABEL };
 })();
 
+__mods['ziwei-words'] = (function () {
+
+const PALACE_FIELD = {
+  命宫: { field: '你自己、性格与选择的出发点', ask: '我是个什么样的人、遇事怎么反应', drift: '整个人的状态与主见', huaJi: '容易对自己不满意，反复琢磨「是不是还不够好」' },
+  兄弟: { field: '手足、同辈与合作', ask: '和同辈人怎么相处', drift: '同辈之间的支持与较劲', huaJi: '同辈之间容易有拉扯，合作前先把账算清楚' },
+  夫妻: { field: '亲密关系与伴侣', ask: '感情里怎么相处', drift: '关系的温度与相处方式', huaJi: '感情里容易反复计较，越在意越觉得累' },
+  子女: { field: '子女、晚辈与作品', ask: '和晚辈、和自己的创作怎么相处', drift: '照顾与创造', huaJi: '对子女或作品容易操心过头，投入多而见效慢' },
+  财帛: { field: '赚钱方式与现金流', ask: '钱从哪来、留不留得住', drift: '进项与花销', huaJi: '钱上容易反复，进得来也容易散，先管现金再谈收益' },
+  疾厄: { field: '身体底子与情绪出口', ask: '身体哪里要多留意', drift: '作息与身体的信号', huaJi: '情绪容易往身体上走，压力最先反映在睡眠与肠胃' },
+  迁移: { field: '出门、环境与人缘', ask: '在外发展顺不顺', drift: '外部环境与人际机会', huaJi: '在外容易遇到消耗，换环境前先把代价想清楚' },
+  交友: { field: '朋友、同事与部属', ask: '怎么识人、怎么带人', drift: '身边的人际圈', huaJi: '容易替别人操心、被人情拖住，帮人之前先给自己留余地' },
+  官禄: { field: '事业方向与做事方式', ask: '做什么工作、怎么做事', drift: '工作与身份感', huaJi: '工作上容易反复调整方向，先把一件事做完再谈换' },
+  田宅: { field: '家庭、住所与积累', ask: '安家、置产与家底', drift: '居住环境与家庭气氛', huaJi: '家里的事容易牵扯精力，置产与搬迁宜缓不宜急' },
+  福德: { field: '精神享受与内在节奏', ask: '怎么让自己舒服、怎么放松', drift: '心境、兴趣与休息', huaJi: '想得多、放不下，休息也休息不踏实' },
+  父母: { field: '长辈、上司与文书', ask: '和长辈上级的关系、文书合约', drift: '长辈缘与合同文书', huaJi: '与长辈上级容易有隔阂，文书合约要逐条看清' },
+};
+
+const STAR_EXTRA = {
+  紫微: { alias: '帝星', key: '尊', bright: '心里像有根定海针，遇事敢拍板，也压得住场面', dim: '容易端着架子，想法很多却不肯先低头', gift: '定方向、分主次、把人组织起来', watch: '面子与身段' },
+  天机: { alias: '智星', key: '动', bright: '脑子快、点子多，变化里反而找得到路', dim: '想法多过行动，容易在犹豫里把时间耗掉', gift: '策划、推演、把复杂的事拆成步骤', watch: '想太多、坐不住' },
+  太阳: { alias: '日主', key: '公', bright: '外放热心，愿意担事，也容易被看见', dim: '付出多、回报少，容易觉得不被认可', gift: '对外沟通、带头做事、把光照到别人身上', watch: '用力过度、忘了照顾自己' },
+  武曲: { alias: '财星', key: '实', bright: '务实果决，认结果、扛得住硬活', dim: '容易只认数字，人情上显得生硬', gift: '算账、执行、把事做扎实', watch: '太硬、不给缓冲' },
+  天同: { alias: '福星', key: '柔', bright: '脾气温和，能把紧张的气氛化开', dim: '容易贪舒服、事情拖着不动', gift: '协调、服务、让人放松下来', watch: '安逸与拖延' },
+  廉贞: { alias: '囚星', key: '细', bright: '细腻又讲原则，做事有分寸', dim: '容易较真到钻牛角尖，情绪起伏也大', gift: '抓细节、守规矩、做需要精度的活', watch: '情绪郁结、过度执着' },
+  天府: { alias: '库星', key: '稳', bright: '稳得住、会存会调度，是团队的压舱石', dim: '偏保守，机会来了也不敢动', gift: '守成、管资源、把局面稳住', watch: '求稳到错过时机' },
+  太阴: { alias: '月主', key: '藏', bright: '心思细、耐得住，静下来能做深事', dim: '敏感多虑，情绪都藏在心里', gift: '研究、文案、需要长期专注的活', watch: '内耗与睡眠' },
+  贪狼: { alias: '桃花', key: '贪', bright: '好奇、活络、人缘好，学什么都快', dim: '什么都想要，结果哪样都没做透', gift: '开拓、交际、把资源变成机会', watch: '边界与节制' },
+  巨门: { alias: '暗星', key: '辩', bright: '口才与逻辑都好，靠说理就能服人', dim: '容易多疑，一句话能听出三层意思', gift: '谈判、教学、法务、需要辨析的活', watch: '言语是非与疑心' },
+  天相: { alias: '印星', key: '辅', bright: '讲规矩、会协调，是让人放心的副手', dim: '容易迁就别人，委屈自己也不说', gift: '协调、执行、把流程跑顺', watch: '太在意别人怎么看' },
+  天梁: { alias: '荫星', key: '荫', bright: '有长者气，能扛事、也愿意护着人', dim: '操心过度，替别人背了不该背的', gift: '顾问、教育、医护、替人排忧', watch: '管太多、放不下' },
+  七杀: { alias: '将星', key: '决', bright: '果断敢冲，压力越大越顶得住', dim: '容易硬碰硬，把关系撞出裂痕', gift: '开拓、攻坚、从零打出一块地', watch: '急与硬' },
+  破军: { alias: '耗星', key: '破', bright: '敢破敢立，旧局推得动、新局立得起', dim: '推翻了却重建不了，反复折腾', gift: '变革、重组、做从零到一的事', watch: '冲动与耗损' },
+};
+
+const STAR_PAIR = {
+  紫微天府: { gist: '尊贵加稳重：既想有位置，也守得住家底，适合在体系里往上走', watch: '别把稳做成不动' },
+  紫微贪狼: { gist: '帝星带桃花：有格局也有玩心，门路多、欲望也多', watch: '兴趣铺太开，主次容易乱' },
+  紫微天相: { gist: '帝星配印：权力与规矩并存，做事讲体面，也讲章法', watch: '太要好看，容易被形式拖住' },
+  紫微七杀: { gist: '帝星加将星：气魄大、手腕硬，开得了局面', watch: '压得住人也容易压伤人' },
+  紫微破军: { gist: '帝星带耗：敢于推倒重来，一生常有大的转身', watch: '代价是先破后立，破之前先备好退路' },
+  天机太阴: { gist: '机月同宫：心思细、筹划深，适合幕后与会动脑子的活', watch: '算得太细，反而迟迟不动手' },
+  天机巨门: { gist: '机巨同宫：头脑快、嘴也利，论辩是强项', watch: '话多容易生是非' },
+  天机天梁: { gist: '机梁同宫：善谋又讲原则，常是出主意又担责任的人', watch: '替人想太多，累的是自己' },
+  太阳太阴: { gist: '日月同宫：外放与内敛同时在身上，两种节奏互相拉扯', watch: '别自己跟自己打架' },
+  太阳巨门: { gist: '日巨同宫：靠一张嘴把事说成，适合以表达与说服为业', watch: '说话直，容易得罪人' },
+  太阳天梁: { gist: '阳梁同宫：热心又有长者气，助人型，容易被人依赖', watch: '别把别人的事全揽过来' },
+  武曲天府: { gist: '武府同宫：会算也会守，财务与执行双强，稳中有实', watch: '只算眼前账，容易错过长线' },
+  武曲贪狼: { gist: '武贪同宫：务实与欲望并存，传统说三十岁以后越走越开', watch: '先把本事磨厚，别急着要结果' },
+  武曲天相: { gist: '武相同宫：讲效率也讲规矩，适合在大机构里做执行', watch: '规矩压得太死，手脚会绑住' },
+  武曲七杀: { gist: '武杀同宫：硬碰硬的组合，冲劲足、压力也大', watch: '成事快，耗得也快' },
+  武曲破军: { gist: '武破同宫：能打也能拆，适合攻坚与改革', watch: '聚散都快，留不住的要认' },
+  天同太阴: { gist: '同阴同宫：温和细腻，重感受，适合安静一点的环境', watch: '太舒服就不想动' },
+  天同巨门: { gist: '同巨同宫：想得软、说得直，容易在亲近的人面前失控', watch: '把话说软一点' },
+  天同天梁: { gist: '同梁同宫：有福气也有长者缘，遇事常有人替你说句话', watch: '依赖久了会长不大' },
+  廉贞天府: { gist: '廉府同宫：精细配稳重，守得住规矩也管得住资源', watch: '过分谨慎会错过窗口' },
+  廉贞贪狼: { gist: '廉贪同宫：欲望与原则拉扯，才艺多、诱惑也多', watch: '重心要自己定，别被带着走' },
+  廉贞天相: { gist: '廉相同宫：讲分寸、重体面，做事有章法', watch: '被规矩绑住手脚' },
+  廉贞七杀: { gist: '廉杀同宫：刚烈果决，抗压强，敢碰难事', watch: '硬碰硬伤的是关系' },
+  廉贞破军: { gist: '廉破同宫：敢于破局，变动多，适合在动荡里做事', watch: '变动要有节奏，别一直重来' },
+};
+
+const SHA_STAR = {
+  擎羊: { nature: '锐、直接、带冲撞', inPalace: '让这一宫的事来得急，容易有竞争与对抗', remind: '慢半拍再回应，别用人身去硬碰' },
+  陀罗: { nature: '拖、磨、反复', inPalace: '让这一宫的事拖得久，越急越推不动', remind: '把大目标切成小段，靠节奏推进而不是靠爆发' },
+  火星: { nature: '急、爆、来得快去得快', inPalace: '让这一宫的事突然发生，情绪也容易点着', remind: '起的当下先别做决定，隔一天再看' },
+  铃星: { nature: '闷、记、往里烧', inPalace: '让这一宫的事闷着发酵，不说并不代表没有', remind: '把不满讲出来，比憋着省事' },
+  地空: { nature: '抽离、落空', inPalace: '让这一宫的努力容易「看着有、抓不住」', remind: '重要的事留书面凭证，别只靠口头约定' },
+  地劫: { nature: '耗、变动', inPalace: '让这一宫的资源容易在变动里流失', remind: '先设止损线，再谈投入' },
+  天刑: { nature: '约束、规矩', inPalace: '这一宫容易受规则或外力约束', remind: '照流程走，别找捷径' },
+  天姚: { nature: '吸引、暧昧', inPalace: '这一宫容易有人情与暧昧的牵扯', remind: '边界说清楚，别用含糊换方便' },
+  咸池: { nature: '情欲、外缘', inPalace: '这一宫容易被外在的吸引牵动', remind: '分清一时心动与长期相处' },
+  孤辰: { nature: '孤、独', inPalace: '这一宫的事常要自己扛', remind: '主动开口求援，不丢人' },
+  寡宿: { nature: '淡、疏', inPalace: '这一宫的关系容易偏淡', remind: '关系要靠主动经营' },
+  破碎: { nature: '碎、不整', inPalace: '这一宫的成果容易零散、难成整块', remind: '把事收尾收完整' },
+  天哭: { nature: '忧、敏感', inPalace: '这一宫容易让人心里发紧', remind: '情绪来了先照顾好身体' },
+  天虚: { nature: '虚、不实', inPalace: '这一宫容易雷声大雨点小', remind: '看落地证据，不看承诺' },
+};
+
+const MAIN_SHA = ['擎羊', '陀罗', '火星', '铃星', '地空', '地劫'];
+
+const FU_STAR = {
+  左辅: { nature: '助力、帮手', gift: '这一宫容易有人搭把手', note: '多把事交出去，别一个人扛' },
+  右弼: { nature: '援手、缓和', gift: '这一宫容易在关键处被接住', note: '接受帮助，也记得回礼' },
+  文昌: { nature: '文书、条理', gift: '这一宫的书面与规划能力强', note: '把想法落成文档' },
+  文曲: { nature: '才艺、口才', gift: '这一宫的表达与感受力好', note: '用表达换机会' },
+  天魁: { nature: '明文贵人', gift: '这一宫容易遇到明面上的提携', note: '该争取的位置直接开口' },
+  天钺: { nature: '暗助贵人', gift: '这一宫常有人在背后帮忙', note: '人情记着，早晚用得上' },
+  禄存: { nature: '守财、积存', gift: '这一宫的东西守得住', note: '先存后花' },
+  天马: { nature: '动、驿马', gift: '这一宫的事常与移动、外地有关', note: '动起来比原地等更有利' },
+  台辅: { nature: '台面、名分', gift: '这一宫容易被摆到台面上', note: '露脸的机会别推' },
+  封诰: { nature: '封赏、认证', gift: '这一宫的资质与头衔有用', note: '该考的证早点考' },
+  红鸾: { nature: '喜事', gift: '这一宫容易有喜庆与好消息', note: '好消息要说出来' },
+  天喜: { nature: '喜庆、人缘', gift: '这一宫的人缘与气氛好', note: '多参加场合' },
+  龙池: { nature: '雅、工整', gift: '这一宫有审美与工整的一面', note: '把细节做好' },
+  凤阁: { nature: '华、体面', gift: '这一宫讲究排场与观感', note: '该有的体面别省' },
+  三台: { nature: '地位、层级', gift: '这一宫容易有位置感', note: '按层级办事' },
+  八座: { nature: '席位、稳定', gift: '这一宫坐得稳', note: '守住已有的位置' },
+  恩光: { nature: '恩、被赏识', gift: '这一宫容易被赏识', note: '把成果让人看见' },
+  天贵: { nature: '贵气、身份', gift: '这一宫带一点贵气', note: '抬头挺胸，别自轻' },
+};
+
+const HUA_READ = {
+  禄: { key: '得', gist: '顺手、有人帮，做起来不费劲' },
+  权: { key: '掌', gist: '要自己拿主意，也容易用力过猛' },
+  科: { key: '名', gist: '带一层体面与名声，遇事多能收得漂亮' },
+  忌: { key: '执', gist: '容易在意、反复，是心里放不下的那一块' },
+};
+
+const BRIGHT_READ = {
+  庙: { word: '得地', tone: 'good', plain: '长处放得开，几乎是本色出演' },
+  旺: { word: '有力', tone: 'good', plain: '特点容易显出来，做事有底气' },
+  得: { word: '尚可', tone: 'neutral', plain: '能用，需要一点外力配合' },
+  利: { word: '中平', tone: 'neutral', plain: '长处与短板都在，看怎么用' },
+  平: { word: '偏弱', tone: 'neutral', plain: '不太争得到位置，宜借势' },
+  不: { word: '不得地', tone: 'bad', plain: '长处不容易使上，得多绕一步' },
+  陷: { word: '失地', tone: 'bad', plain: '容易往负面走，更需要自觉' },
+};
+
+const PATTERN_READ = {
+  紫府同宫: { gist: '帝星与库星同坐命宫：格局稳、底气足，天生适合做统筹', advice: '别把稳做成保守，该出手时出手' },
+  紫府朝垣: { gist: '紫微天府会照命宫：有贵气也有实力，环境一般不会太差', advice: '靠结构做事，别只靠个人硬撑' },
+  君臣庆会: { gist: '紫微或天府坐命，又得左辅右弼魁钺会照：有人帮、有位置', advice: '把团队搭起来，别一个人扛' },
+  极向离明: { gist: '紫微在午守命：处在最亮的位置，格局与声势都强', advice: '光环大，注意别把人压住' },
+  七杀朝斗: { gist: '七杀在子午守命：杀伐果断，能在压力下成事', advice: '硬气用在事上，不用在关系上' },
+  英星入庙: { gist: '破军在子午守命：敢破敢立，常能从零打出一片', advice: '破之后要有立，别只破不立' },
+  石中隐玉: { gist: '巨门在子午守命：本事藏在里面，要靠机会慢慢磨出来', advice: '别因为一时不被看见就放弃' },
+  巨日同宫: { gist: '巨门太阳同宫：靠表达与说服开路，越抛头露面越有利', advice: '话多的时候注意分寸' },
+  日月夹命: { gist: '太阳太阴分居命宫两侧：内外两种力量都来帮你', advice: '一快一慢，别自己跟自己打架' },
+  日月对照: { gist: '太阳太阴分守命迁：外放与内敛互为表里', advice: '换环境对你是加分项' },
+  左右夹命: { gist: '左辅右弼夹命：关键处总有人搭手', advice: '主动求助，贵人才好使力' },
+  昌曲夹命: { gist: '文昌文曲夹命：文书、考试、表达上占便宜', advice: '把才华落到作品与证书上' },
+  魁钺夹命: { gist: '天魁天钺夹命：明暗两路都有人提携', advice: '机会来了别客气' },
+  三奇嘉会: { gist: '化禄化权化科会于命宫三方：三样都到位，是标准的顺局', advice: '别把顺境当常态，留一手' },
+  双禄朝垣: { gist: '禄存与化禄同会命宫三方：进项与积累两头都有', advice: '存下来的才算数' },
+  府相朝垣: { gist: '天府天相会于命宫三方：稳当、讲规矩，适合体系内发展', advice: '按流程走，别嫌慢' },
+  禄马交驰: { gist: '禄存与天马同宫或对照：动中得财，越跑越有', advice: '别在原地等机会' },
+  月朗天门: { gist: '太阴在亥守命：心思澄明，适合做需要静气的事', advice: '把敏感用在专业上，别用在揣测上' },
+  日出扶桑: { gist: '太阳在卯守命：正当升起的位置，势头好、人也敞亮', advice: '趁势做事，别等' },
+  机月同梁: { gist: '天机太阴天梁会命：动脑、静气、长者缘齐备，适合稳定的专业路线', advice: '少折腾，深耕一门' },
+  武贪同行: { gist: '武曲贪狼同宫：务实与欲望并存，传统说三十岁后越走越开', advice: '先把本事磨厚，别急着要结果' },
+  命无正曜: { gist: '命宫无主星：性格由环境与对宫塑造，适应力是你的长处', advice: '选对环境比选对方法更要紧' },
+  杀破狼: { gist: '七杀破军贪狼会命：一生变动多、节奏快，适合在动荡里做事', advice: '把变动变成主动选择，而不是被动应付' },
+  双禄交流: { gist: '禄存与化禄相对：财路两头通', advice: '现金流要管好，小心两头都花' },
+  火贪铃贪: { gist: '贪狼遇火星或铃星：爆发型的组合，机会来得猛', advice: '机会来时别犹豫，走时别恋战' },
+  火铃夹命: { gist: '火星铃星分居命宫两侧：情绪容易被点着，也容易被消耗', advice: '先把火气压一压，事就顺一半' },
+  羊陀夹命: { gist: '禄存守命、擎羊陀罗前后夹之：位置稳，但四周都是压力', advice: '守得住就别急着动' },
+  羊陀夹忌: { gist: '化忌与禄存同宫、羊陀夹之：传统里最需要留意的一类结构', advice: '那件事慢一点，让别人先动' },
+  铃昌陀武: { gist: '铃星文昌陀罗武曲会于命宫三方：想法多、爱走弯路，容易自己把自己绊住', advice: '做决定前先写下来，隔一夜再定' },
+  命里逢空: { gist: '地空地劫会命：计划常有意外的抽离，落袋才算数', advice: '留凭证、留退路' },
+  马头带箭: { gist: '擎羊在午守命：锋芒极盛，成事快、伤人也不慢', advice: '冲劲用在攻坚，不用在争输赢' },
+  天罗地网: { gist: '命宫在辰戌：天罗地网，走的是有限制的路', advice: '在框里做出成绩，别硬撞框' },
+  刑囚夹印: { gist: '廉贞天相同守命宫于子午又遇擎羊：规则与冲撞同时压过来', advice: '循规蹈矩是保命符' },
+  泛水桃花: { gist: '贪狼在子守命：才情与情缘都旺，重心容易散', advice: '给自己立一条不越的线' },
+};
+
+const PALACE_ALIAS = { 奴仆: '交友', 奴仆宫: '交友', 事业: '官禄', 事业宫: '官禄' };
+function palaceFieldOf(name) {
+  const key = PALACE_ALIAS[String(name || '')] || String(name || '');
+  return PALACE_FIELD[key] || null;
+}
+
+function brightRead(level) {
+  return BRIGHT_READ[String(level || '')] || null;
+}
+
+function starExtraOf(name) {
+  return STAR_EXTRA[String(name || '')] || null;
+}
+
+function starPairOf(mainStars) {
+  const list = (Array.isArray(mainStars) ? mainStars : []).filter(Boolean);
+  if (list.length !== 2) return null;
+  return STAR_PAIR[list.join('')] || STAR_PAIR[list.slice().reverse().join('')] || null;
+}
+
+function huaInLine(type, palace) {
+  const f = palaceFieldOf(palace);
+  const h = HUA_READ[type];
+  if (!f || !h) return '';
+  if (type === '忌') return `化忌入${palace}：${f.huaJi}`;
+  const tail = {
+    禄: `${f.field}上来路顺、有人递梯子`,
+    权: `${f.field}上你会想自己拿主意，也容易用力过猛`,
+    科: `${f.field}上体面与名声会帮到你`,
+  }[type];
+  return tail ? `化${type}入${palace}：${tail}` : '';
+}
+
+function shaLineOf(names) {
+  const list = (Array.isArray(names) ? names : []).filter((n) => SHA_STAR[n]);
+  if (!list.length) return '';
+  const parts = list.slice(0, 3).map((n) => `${n}（${SHA_STAR[n].nature}）${SHA_STAR[n].inPalace}`);
+  const remind = list.length === 1 ? SHA_STAR[list[0]].remind : '先处理最急的那一件，其余的会跟着松动';
+  return `${parts.join('；')}。做法上：${remind}。`;
+}
+
+function shaNatureOf(names) {
+  return (Array.isArray(names) ? names : [])
+    .map((n) => SHA_STAR[n] && SHA_STAR[n].nature)
+    .filter(Boolean)
+    .join('、');
+}
+
+function fuLineOf(names) {
+  const list = (Array.isArray(names) ? names : []).filter((n) => FU_STAR[n]);
+  if (!list.length) return '';
+  return list.slice(0, 3).map((n) => `${n}${FU_STAR[n].gift.replace(/^这一宫/, '')}`).join('，');
+}
+
+function patternReadOf(name, tone) {
+  const hit = PATTERN_READ[String(name || '')];
+  if (hit) return hit;
+  if (tone === 'good') return { gist: '结构偏向有利，具体落在哪件事，要看它牵动的是哪一宫', advice: '顺势把事情做完整' };
+  if (tone === 'bad') return { gist: '结构偏向消耗，提示这一块值得多一分留意', advice: '先把节奏放缓，再谈取舍' };
+  return { gist: '结构中性，成事与否更多看后天怎么用', advice: '当成提醒，不当成结论' };
+}
+
+return { PALACE_FIELD, STAR_EXTRA, STAR_PAIR, SHA_STAR, MAIN_SHA, FU_STAR, HUA_READ, BRIGHT_READ, PATTERN_READ, palaceFieldOf, brightRead, starExtraOf, starPairOf, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf };
+})();
+
+__mods['bazi-words'] = (function () {
+
+const STEM_PORTRAIT = {
+  甲: {
+    image: '参天之木',
+    look: '身形多半偏修长，肩背挺，站着有股站相',
+    temper: '直、有担当，认定的事不太会转弯',
+    gift: '扛得起事，适合把一摊子组织起来',
+    trap: '不会转弯，撞上南墙也硬顶',
+  },
+  乙: {
+    image: '藤萝之木',
+    look: '身形柔韧，气质亲和，不太有攻击性',
+    temper: '柔中带韧，擅长借力，能屈能伸',
+    gift: '协调、渗透，在缝隙里也能生长',
+    trap: '太依赖环境，环境一换就慌',
+  },
+  丙: {
+    image: '太阳之火',
+    look: '面色偏红润，精神足，进门容易被注意到',
+    temper: '外放热情，心里想什么脸上就写着什么',
+    gift: '感染人、带动气氛，适合站到台前',
+    trap: '三分钟热度，来得快去得也快',
+  },
+  丁: {
+    image: '灯烛之火',
+    look: '偏清瘦，眼神亮，动静之间有点静气',
+    temper: '内敛细腻，认准一件事能守很久',
+    gift: '专注、耐得住，适合做需要磨的活',
+    trap: '敏感，容易在心里反复内耗',
+  },
+  戊: {
+    image: '城墙之土',
+    look: '骨架偏厚，给人稳当、压得住场的感觉',
+    temper: '沉稳慢热，不轻易表态，表态了就算数',
+    gift: '承载与守成，能把局面稳稳托住',
+    trap: '太钝，机会过了才反应过来',
+  },
+  己: {
+    image: '田园之土',
+    look: '面目温和，身形圆润，没什么棱角',
+    temper: '包容细致，想得多，习惯先照顾别人',
+    gift: '经营与服务，把琐碎的事理顺',
+    trap: '纠结，反复权衡反而错过时机',
+  },
+  庚: {
+    image: '刀剑之金',
+    look: '骨架硬朗，气场直接，说话不绕弯',
+    temper: '果决、讲义气，眼里容不下拖泥带水',
+    gift: '执行与开疆，难啃的骨头敢接',
+    trap: '太刚，锋利的一面容易伤到亲近的人',
+  },
+  辛: {
+    image: '珠玉之金',
+    look: '清秀讲究，衣着细节看得出用心',
+    temper: '精致敏锐，对分寸与体面很在意',
+    gift: '审美与精细活，做得比说的好',
+    trap: '挑剔，也容易被一句评价刺到',
+  },
+  壬: {
+    image: '江河之水',
+    look: '身形偏厚实，眉眼开阔，气度大',
+    temper: '大开大合，爱自由，不喜欢被框住',
+    gift: '统筹与流动，能把资源盘活',
+    trap: '散漫，摊子铺开却收不回来',
+  },
+  癸: {
+    image: '雨露之水',
+    look: '清秀安静，存在感不抢，但耐看',
+    temper: '细腻、直觉强，心事多半自己消化',
+    gift: '感知与研究，能注意到别人漏掉的细节',
+    trap: '多愁，遇事先退，容易错过表态的时机',
+  },
+};
+
+const TENGOD_PORTRAIT = {
+  正官: { role: '规则与名分', gift: '守序可靠，答应的事会做到', trap: '太在意评价，放不开手脚', love: '重承诺，但不擅长把在意说出口', work: '适合在成体系的组织里按层级上升' },
+  七杀: { role: '压力与冲劲', gift: '抗压强、敢担事，越难越来劲', trap: '急躁，习惯用硬碰解决问题', love: '容易被有主见的人吸引，也容易互相较劲', work: '适合高挑战、要快速决断的岗位' },
+  正财: { role: '稳定收入与责任', gift: '务实会积累，账目清楚', trap: '算得太细，不敢为机会冒一点险', love: '重实际，用行动多于言语', work: '适合按劳取酬、积累型的路径' },
+  偏财: { role: '机会与流动资源', gift: '善抓机会、人脉活络', trap: '铺得太开，钱和精力都容易留不住', love: '大方、桃花多，边界要自己划', work: '适合业务、投资、资源整合' },
+  食神: { role: '表达与享受', gift: '会生活，也能把喜欢的事做成产出', trap: '太舒服就懒下来，节奏一松就拖', love: '温柔会照顾人，也怕麻烦', work: '适合技术、创作、餐饮、教育' },
+  伤官: { role: '才华与不服', gift: '点子多、敢改，能做出别人做不出的东西', trap: '嘴上不饶人，赢了道理输了关系', love: '要求高，容易挑对方的刺', work: '适合改革、创意、专业型岗位' },
+  正印: { role: '支持与学习', gift: '有耐心、学得进，靠得住', trap: '依赖心重，想得多做得少', love: '需要被理解与照顾', work: '适合研究、文教、需要资质的岗位' },
+  偏印: { role: '偏门与钻研', gift: '冷门的门类也能钻透', trap: '孤，想法多但不爱解释', love: '需要空间，不喜欢被管', work: '适合专精技术、冷门专业' },
+  比肩: { role: '同伴与自我', gift: '独立、扛得住，不轻易麻烦别人', trap: '固执，什么都想亲力亲为', love: '相处像朋友多过像恋人', work: '适合并肩作战或独立负责一块' },
+  劫财: { role: '竞争与行动', gift: '行动快、敢抢，机会面前不犹豫', trap: '冲动，容易在钱和人情上破口', love: '来去都快，需要给彼此空间', work: '适合业务冲刺、竞争型岗位' },
+
+  比劫: { role: '自我与同辈', gift: '独立、扛得住，不太依赖别人', trap: '固执，什么都想自己来', love: '相处像并肩的伙伴', work: '适合独立负责一块，或与同频的人并肩' },
+  食伤: { role: '表达与产出', gift: '有想法，也做得出东西', trap: '话多或要求高，容易得罪人', love: '重视交流，也容易挑刺', work: '适合创作、技术、教学这类要表达的岗位' },
+  财: { role: '资源与现实', gift: '务实、会算账、抓得住机会', trap: '把安全感全押在数字上', love: '重实际，用行动多于言语', work: '适合业务、财务、资源整合' },
+  官杀: { role: '规则与压力', gift: '守序、抗压、担得起责任', trap: '绷得太紧，习惯用硬碰解决', love: '重承诺，也容易管得太宽', work: '适合体系内按层级上升，或高压高挑战的岗位' },
+  印: { role: '支持与学习', gift: '有耐心、学得进、靠得住', trap: '想得多做得少，依赖现成的东西', love: '需要被理解与照顾', work: '适合研究、文教、需要资质的岗位' },
+};
+
+const FRAME_TONE = {
+  强: {
+    泄: '这盘的问题是「力气有余、出口不够」：不缺劲头，缺的是把劲往哪使。先把方向定下来，比再多加一把力更管用。',
+    制: '这盘气足又带压力：能扛事，但也容易一直绷着。学会把压力分出去，比硬顶更能长久。',
+    耗: '这盘底子厚，适合在资源与实务上做文章：把力气换成看得见的成果，别停在想法里。',
+  },
+  弱: {
+    生: '这盘底子偏薄，靠「有人托一把」最有效：找对平台、师友与环境，比自己硬撑省力得多。',
+    比: '这盘单打独斗会累，找到同频的人并肩做，反而能把短板补上。',
+    泄: '这盘不宜再往外耗，先收一收摊子，把根基补稳，再谈扩张。',
+  },
+  中: {
+    default: '这盘五行相对均衡，没有哪一处特别极端：走哪条路都能走，靠的是选择与坚持，不是运气。',
+  },
+};
+
+function frameToneOf(level, favorRoles) {
+  const strong = /强/.test(String(level || ''));
+  const weak = /弱/.test(String(level || ''));
+  const roles = Array.isArray(favorRoles) ? favorRoles : [String(favorRoles || '')];
+  if (!strong && !weak) return FRAME_TONE.中.default;
+  const table = strong ? FRAME_TONE.强 : FRAME_TONE.弱;
+  for (const r of roles) {
+    const key = /官杀/.test(r) ? '制'
+      : /财/.test(r) ? '耗'
+        : /食伤/.test(r) ? '泄'
+          : /印/.test(r) ? '生'
+            : /比劫/.test(r) ? '比' : '';
+    if (key && table[key]) return table[key];
+  }
+  return strong ? table.泄 : table.生;
+}
+
+const RELATION_RULES = [
+  [/自刑/, '自刑：自己跟自己较劲，多半是内耗而不是外来的事'],
+  [/三会|三合/, '三合三会：几股力并成一股，做同类的事更容易成势'],
+  [/六合|合/, '合：人事上容易谈拢，也容易被关系绑住、脱不开身'],
+  [/相冲|冲/, '冲：桩子会晃，变动与拉扯偏多，宜先稳住再动'],
+  [/相刑|刑/, '刑：规矩与情绪上的摩擦，事情不大但磨人'],
+  [/相害|害/, '害：暗处的损耗，多是说不清的不顺'],
+  [/相破|破/, '破：本来成形的事容易散，收尾要多花一分力'],
+];
+
+function relationNotes(list) {
+  const out = [];
+  for (const raw of (Array.isArray(list) ? list : [])) {
+    for (const [re, note] of RELATION_RULES) {
+      if (re.test(raw) && !out.includes(note)) { out.push(note); break; }
+    }
+  }
+  return out;
+}
+
+function godPortraitOf(name) {
+  return TENGOD_PORTRAIT[String(name || '')] || null;
+}
+
+function stemPortraitOf(stem) {
+  return STEM_PORTRAIT[String(stem || '')] || null;
+}
+
+return { STEM_PORTRAIT, TENGOD_PORTRAIT, FRAME_TONE, frameToneOf, relationNotes, godPortraitOf, stemPortraitOf };
+})();
+
 __mods.interpret = (function () {
 
 const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE, LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER } = __mods['interpret-data'];
 const { MUTAGEN } = __mods.ziwei;
+const { palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA } = __mods['ziwei-words'];
+const { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } = __mods['bazi-words'];
 const { bodyLabels, yongshenOf } = __mods.liuyao;
 
 const DIMENSIONS = [
@@ -10560,7 +12029,7 @@ function askOf(opts) {
     question,
     direction: d.key,
     directionLabel: d.label,
-    echo: `问题：${question || '（未填写）'} ｜ 询问方向：${d.label}`,
+    echo: question ? `问题：${question} ｜ 询问方向：${d.label}` : `询问方向：${d.label}`,
   };
 }
 
@@ -10787,8 +12256,66 @@ function baziInterpret(r) {
     },
   ];
 
+  const stemP = stemPortraitOf(dm.stem);
+  const topP = godPortraitOf(topName);
+  const secondP = godPortraitOf(secondName);
+  const season = st.parts && st.parts.season ? st.parts.season : null;
+  const dayZhi = pick(r.pillars?.day, 'branch', '');
+  const byGodSorted = Object.entries(isObj(frame.godStats?.byGod) ? frame.godStats.byGod : {})
+    .filter(([, v]) => Number(v) > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const topGodName = byGodSorted[0] ? byGodSorted[0][0] : '';
+  const topGodP = godPortraitOf(topGodName);
+  const favorRolesByWeight = (Array.isArray(ys.favorRoles) ? ys.favorRoles : [])
+    .slice()
+    .sort((a, b) => (Number(groups[b]) || 0) - (Number(groups[a]) || 0));
+
+  const frameworkText = [
+    `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。`,
+    `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${frameToneOf(level, favorRolesByWeight)}`,
+    `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
+      ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
+      : ''}。`,
+  ].join('\n');
+
+  const portraitText = [
+    `**外在取象**：${stemP ? `${stemP.image}的日主，传统取象上${stemP.look}` : '这一柱的取象词库未覆盖'}${stemP ? `；气质上${stemP.temper}` : ''}。这一层只是取象，不作定论。`,
+    `**性格底色**：十神里${topName || '—'}最重${top[0] ? `（${top[0][1]}）` : ''}${secondName ? `，${secondName}次之` : ''}。${topP ? `${topP.gift}；${topP.trap}。` : ''}`
+      + (topGodP && topGodName && topGodName !== topName ? `具体到单颗，${topGodName}最显，落在「${topGodP.role}」上。` : '')
+      + (stemP ? `放在${dm.stem}日主身上，长处是「${stemP.gift}」，容易踩的坑是「${stemP.trap}」。` : ''),
+    `**事业与家庭**：${topP ? `做事上${topP.work}` : '做事方式看喜用与时运'}${topP ? `；感情里${topP.love}。` : '。'}日支${dayZhi}${pick(r.pillars?.day, 'zizuo', '') ? `坐${pick(r.pillars?.day, 'zizuo', '')}` : ''}，${Number(groups[spouseKey] || 0) >= 2 ? '配偶星不弱，关系里你有条件被好好对待，也要留意别把这些当成理所当然' : '配偶星偏轻，感情更需要主动经营'}。${secondP ? `另一面是${secondName}的${secondP.role}：${secondP.gift}。` : ''}`,
+  ].join('\n');
+
+  const yearLines = (r.liunian || []).slice(0, 3).map((l) => {
+    const lk = isObj(l.luck) ? l.luck : {};
+    const notes = relationNotes(l.relations);
+    const why = (lk.reasons || []).slice(0, 2).join('，');
+    return `**${l.year} ${l.ganzhi}**（${l.age}岁·${l.stemTenGod || '—'}）${lk.tier || '平'}：${why || '没有特别信号，按大运的基调走'}${notes.length ? `；与命局的关系——${notes.join('；')}` : ''}。`;
+  }).join('\n');
+  const yearsText = yearLines
+    ? `先看眼前三年（大字是当年干支与十神，后面是该年的档位与理由）：\n${yearLines}\n读法：档位说的是「这一年顺不顺手」，不是「会发生什么」；年份不顺时把重要动作挪到顺的年份，比硬扛更省事。`
+    : '流年数据未取到，暂不展开。';
+
+  const adviceItems = [];
+  if (favor.length) {
+    adviceItems.push(`把生活与工作往${join(favor)}的方向挪一点：${favor.slice(0, 2).map((e) => WUXING_INDUSTRY[e] || '').filter(Boolean).join('；') || '按喜用五行对应的行业挑'}。不必推倒重来，先从环境、圈子和日常习惯改起。`);
+  }
+  if (avoid.length) {
+    adviceItems.push(`对${join(avoid)}保持一点自觉：不是不能碰，而是别在关键决定上给它加码——${avoid.includes('火') ? '少在情绪最热的时候拍板' : avoid.includes('木') ? '少在想法最多的时候开工' : '先把手上的事收尾再谈新的'}。`);
+  }
+  const relNotes = relationNotes(r.relations && r.relations.branches);
+  if (relNotes.length) {
+    adviceItems.push(`命局里的地支关系是「${(r.relations.branches || []).join('、')}」：${relNotes.join('；')}。对应到具体人事，先处理情绪，再处理事情。`);
+  }
+  if (cli && cli.need) {
+    adviceItems.push(`调候要${cli.need.stem}${cli.need.element}：${cli.need.why}。落到日常，就是往这一类的环境、作息与节奏上靠。`);
+  }
+  const adviceText = adviceItems.slice(0, 4).map((t, i) => `${'①②③④'[i]} ${t}`).join('\n');
+
   const sections = [
     ...(cross.length ? [{ key: 'cross', label: '交叉判断', text: cross.join('　') }] : []),
+    { key: 'framework', label: '命局框架', text: frameworkText },
+    { key: 'portrait', label: '画像', text: portraitText },
     {
       key: 'reasoning', label: '看盘顺序',
       text: [
@@ -10818,6 +12345,8 @@ function baziInterpret(r) {
         return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
+    { key: 'years', label: '流年时间轴', text: yearsText },
+    { key: 'advice', label: '专业建议', text: adviceText },
     (() => {
       const hits = (r.liunian || []).filter((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
       return {
@@ -10994,11 +12523,20 @@ function ziweiInterpret(r) {
       ? `你的命宫无正曜，按紫微的规则借对宫（迁移）来看，主星是${soulStar}`
       : `你的命宫与对宫都没有正曜，这里按命主星${soulStar}来看`;
   const S = ZIWEI_STARS[soulStar] || ZIWEI_STARS.紫微;
+  const zwMainSha = (p) => zwSha(p).filter((n) => MAIN_SHA.includes(n));
 
   const careerStar = zwMainStar(career);
   const wealthStar = zwMainStar(wealth);
   const spouseStar = zwMainStar(spouse);
   const healthStar = zwMainStar(health);
+
+  const mainsOf = (p) => (p?.stars || []).filter((x) => x.type === '主星');
+  const brightOf = (p, name) => (p?.stars || []).find((x) => x.name === name)?.brightness || '';
+  const pairOf = (p) => starPairOf(mainsOf(p).map((x) => x.name));
+  const SX = starExtraOf(soulStar) || {};
+  const soulBright = brightRead(brightOf(soul, soulStar));
+  const soulPair = pairOf(soul);
+  const lightLine = (b, extra) => (extra ? `${b && b.tone === 'bad' ? extra.dim : extra.bright}。` : '');
 
   const age = Number(pick(r.liunian?.[0], 'age', NaN));
   let daxianPalace = null;
@@ -11017,14 +12555,21 @@ function ziweiInterpret(r) {
   const dimensions = [
     {
       key: 'overall', label: '整体运势',
-      text: `${soulFrom}，性格底色上${S.trait}。本盘${patText}。` +
+      text: `${soulFrom}${soulBright ? `（${soulBright.word}——${soulBright.plain}）` : ''}，性格底色上${S.trait}。` +
+        (soulPair ? `${soulPair.gist}；${soulPair.watch}。` : '') +
+        `本盘${patText}。` +
         `当前大限走在${daxianPalace ? `${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）` : '当前阶段'}，` +
         `${lnMutagen ? `流年四化为${lnMutagen}，本年的变化感主要落在这几颗星上` : '流年四化信号不明显'}。` +
         (r.flow ? `再往下一层，当前流月命宫是${r.flow.month.ganzhi}，落在原局${r.flow.month.palace || '未上盘'}，本月的变化更容易在这一宫代表的事情上显出来。` : '') +
         (natalSihuaText
           ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
           : ''),
-      advice: `这一阶段的主题更接近「${daxianPalace ? daxianPalace.palace : '命宫'}」代表的事——把它当作今年的主线，其余事围绕它安排；${S.trait}是你的优势，也是需要留意别用过头的地方。`,
+      advice: (() => {
+        const dxName = daxianPalace ? daxianPalace.palace : '命宫';
+        const dxField = palaceFieldOf(dxName);
+        return `这一阶段的主题更接近「${dxName}」——${dxField ? dxField.field : '这一宫代表的事'}。把它当作这几年的主线，其余安排围着它让路；`
+          + `${SX.gift ? `你最顺手的做法是${SX.gift}` : `你的优势在${S.trait}`}，但要留意${SX.watch || '用它用过了头'}。`;
+      })(),
       evidence: [
         `命宫 ${soulStar}${soulOwn ? '' : '（借对宫）'}`,
         daxianPalace ? `大限 ${daxianPalace.palace} ${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁` : '',
@@ -11034,16 +12579,38 @@ function ziweiInterpret(r) {
     },
     {
       key: 'work', label: '工作与职业选择',
-      text: `命宫${soulStar}给出的是底层偏好：${S.work}。官禄宫${careerStar ? `主星为${careerStar}，${ZIWEI_STARS[careerStar]?.work || '有其自身的做事方式'}` : '无正曜，工作方式更多受环境与他人影响，适合配合型岗位'}。` +
-        `两者合起来看，你更适合${careerStar && careerStar !== soulStar ? `用${soulStar}的方式去做${careerStar}擅长的事` : '在稳定的框架里发挥自己的特点'}。`,
-      advice: `挑工作时可以优先看岗位内容是否匹配上面这条；如果暂时不能换，试着在现有岗位里争取靠近这部分的事务，会比硬熬更容易做出成绩。`,
-      evidence: [`命宫 ${soulStar}`, `官禄 ${careerStar || '无正曜'}`, `财帛 ${wealthStar || '无正曜'}`],
+      text: (() => {
+        const careerBright = brightRead(brightOf(career, careerStar));
+        const careerPair = pairOf(career);
+        const careerSha = zwMainSha(career);
+        return `命宫${soulStar}给你的是底层偏好：${S.work}。`
+          + `官禄宫${careerStar
+            ? `主星为${careerStar}${careerBright ? `（${careerBright.word}）` : ''}，${ZIWEI_STARS[careerStar]?.work || '有其自身的做事方式'}`
+            : '无正曜，工作方式更多受环境与他人影响，适合配合型岗位'}。`
+          + (careerPair ? `${careerPair.gist}；要留意${careerPair.watch}。` : '')
+          + (careerSha.length ? `官禄宫又见${join(careerSha)}：${shaLineOf(careerSha)}` : '')
+          + `两者合起来看，你更适合${careerStar && careerStar !== soulStar ? `用${soulStar}的方式去做${careerStar}擅长的事` : '在稳定的框架里发挥自己的特点'}。`;
+      })(),
+      advice: `挑工作时可以先看岗位内容是否匹配上面这条；如果暂时不能换，试着在现有岗位里争取靠近这部分的事务——${SX.gift ? `把「${SX.gift}」这类活往自己身上揽，比硬熬更容易做出成绩` : '先做出一件拿得出手的事，比硬熬更容易被看见'}。`,
+      evidence: [
+        `命宫 ${soulStar}${soulBright ? `·${soulBright.word}` : ''}`,
+        `官禄 ${careerStar || '无正曜'}`,
+        `财帛 ${wealthStar || '无正曜'}`,
+        ...(zwMainSha(career).length ? [`官禄煞星 ${join(zwMainSha(career))}`] : []),
+      ],
     },
     {
       key: 'career', label: '事业发展',
-      text: `财帛宫${wealthStar ? `见${wealthStar}，${ZIWEI_STARS[wealthStar]?.trait || ''}` : '无正曜'}，官禄宫${careerStar || '无正曜'}，` +
-        `${wealthStar && careerStar ? '财与事业两宫都有主星坐守，说明这两块是可以主动经营的部分' : '有一宫无主星，说明该块更容易受外部条件牵动，宜借势而非强求'}。` +
-        `大限推进上，${daxianPalace ? `目前落在${daxianPalace.palace}` : '当前阶段'}，下一步会转入相邻的宫位，重心也会跟着挪。`,
+      text: (() => {
+        const wealthBright = brightRead(brightOf(wealth, wealthStar));
+        const wealthPair = pairOf(wealth);
+        return `财帛宫${wealthStar
+          ? `见${wealthStar}${wealthBright ? `（${wealthBright.word}）` : ''}，${ZIWEI_STARS[wealthStar]?.trait || ''}`
+          : '无正曜'}，官禄宫${careerStar || '无正曜'}，`
+          + `${wealthStar && careerStar ? '财与事业两宫都有主星坐守，说明这两块是可以主动经营的部分' : '有一宫无主星，说明该块更容易受外部条件牵动，宜借势而非强求'}。`
+          + (wealthPair ? `${wealthPair.gist}。` : '')
+          + `大限推进上，${daxianPalace ? `目前落在${daxianPalace.palace}，这一宫管${palaceFieldOf(daxianPalace.palace)?.field || '这一段的事'}` : '当前阶段'}，下一步会转入相邻的宫位，重心也会跟着挪。`;
+      })(),
       advice: `事业上建议做两件事：一是把可积累的东西（技能、资质、作品）做厚；二是${careerStar ? `发挥${careerStar}的优势——${ZIWEI_STARS[careerStar]?.trait || ''}` : '找一个能带你的前辈或平台'}。遇到四化化忌的年份，先守成再谈扩张。`,
       evidence: [
         `财帛 ${wealthStar || '无正曜'}`,
@@ -11053,8 +12620,17 @@ function ziweiInterpret(r) {
     },
     {
       key: 'love', label: '爱情与感情',
-      text: `夫妻宫${spouseStar ? `主星为${spouseStar}，感情上的倾向是${ZIWEI_STARS[spouseStar]?.love || '有自己相处的节奏'}` : '无正曜，关系状态更多由对方与互动方式决定'}。` +
-        `${zwSha(spouse).length ? `夫妻宫同时见${join(zwSha(spouse))}，相处中容易出现摩擦或第三者干扰的暗示，但煞星不等于定局，更多是提醒你留意沟通方式` : '夫妻宫未见明显煞星，关系的基调相对平顺'}。`,
+      text: (() => {
+        const spouseBright = brightRead(brightOf(spouse, spouseStar));
+        const spousePair = pairOf(spouse);
+        const spouseSha = zwMainSha(spouse);
+        return `夫妻宫${spouseStar
+          ? `主星为${spouseStar}${spouseBright ? `（${spouseBright.word}）` : ''}，感情上的倾向是${ZIWEI_STARS[spouseStar]?.love || '有自己相处的节奏'}`
+          : '无正曜，关系状态更多由对方与互动方式决定'}。`
+          + (spousePair ? `${spousePair.gist}。` : '')
+          + `${spouseSha.length ? `夫妻宫同时见${join(spouseSha)}：${shaLineOf(spouseSha)}煞星不等于定局，更多是提醒你留意沟通方式。` : '夫妻宫未见明显煞星，关系的基调相对平顺。'}`
+          + (SX.watch ? `另外，你自带的${SX.watch}这一面，在亲密关系里最容易被放大。` : '');
+      })(),
       advice: `感情里${spouseStar ? `参考${spouseStar}的特点：${ZIWEI_STARS[spouseStar]?.love || ''}` : '可以更主动地表达自己的需求'}。有分歧时先说清事实与感受，别急着下结论；关系的好坏取决于两个人怎么做，不取决于这张盘。`,
       evidence: [
         `夫妻宫 ${spouseStar || '无正曜'}`,
@@ -11064,8 +12640,17 @@ function ziweiInterpret(r) {
     },
     {
       key: 'health', label: '健康状况',
-      text: `疾厄宫${healthStar ? `见${healthStar}，传统取象上${ZIWEI_STARS[healthStar]?.health || '需要留意自身的薄弱环节'}` : '无正曜，身体状态更多受生活作息直接影响'}。` +
-        `${zwSha(health).length ? `同时见${join(zwSha(health))}，提示这一块值得比其他部位多一分留意。` : ''}这些都是象征性的提示，不构成任何医学判断。`,
+      text: (() => {
+        const healthBright = brightRead(brightOf(health, healthStar));
+        const healthSha = zwMainSha(health);
+        return `疾厄宫${healthStar
+          ? `见${healthStar}${healthBright ? `（${healthBright.word}）` : ''}，传统取象上${ZIWEI_STARS[healthStar]?.health || '需要留意自身的薄弱环节'}`
+          : '无正曜，身体状态更多受生活作息直接影响'}。`
+          + (healthSha.length
+            ? `同时见${join(healthSha)}，按星情只是「${shaNatureOf(healthSha)}」这一层，提示这一块值得比其他部位多一分留意。`
+            : '')
+          + '这些都是象征性的提示，不构成任何医学判断。';
+      })(),
       advice: `把${healthStar ? ZIWEI_STARS[healthStar]?.health?.replace('留意', '').replace('需要留意', '') || '常规' : '常规'}当作体检时重点关注的参考；真正管用的还是规律作息、适度运动与定期检查。身体不舒服请直接就医。`,
       evidence: [
         `疾厄宫 ${healthStar || '无正曜'}`,
@@ -11074,9 +12659,101 @@ function ziweiInterpret(r) {
     },
   ];
 
+  const soulField = palaceFieldOf('命宫');
+  const bodyLands = pick(r.body, 'lands', '');
+  const bodyField = palaceFieldOf(bodyLands);
+  const identityText = [
+    `命宫落在${soul.branch}（${soul && soul.ganzhi ? soul.ganzhi : '—'}），主星${soulStar}${soulBright ? `·${soulBright.word}` : ''}——这一宫管${soulField ? soulField.field : '你自己'}，${SX.gift ? `你身上最能用出去的是${SX.gift}` : S.trait}。`
+      + (SX.gift ? lightLine(soulBright, SX) : ''),
+    soulPair ? `${soulPair.gist}；要留意的是${soulPair.watch}。` : '',
+    bodyLands ? `身宫寄在${bodyLands}——${bodyField ? `${bodyField.field}是后天更容易使上劲的地方` : '这是后天着力点'}，中年以后会越来越明显。` : '',
+    `五行局为${pick(r.bureau, 'name', '—')}，${pick(r.daxian, 'startAge', '—')}岁起运：局定的是节奏（几步起、十年一换），不是好坏。`,
+    `命主${pick(r, 'lifeMaster', '—')}、身主${pick(r, 'bodyMaster', '—')}：传统把这两颗当作整张盘的定调星，命主看底色，身主看后半程的着力点。`,
+  ].filter(Boolean).join('\n');
+
+  const trimDot = (s) => String(s || '').replace(/。$/, '');
+  const palaceLines = (r.palaces || []).map((p) => {
+    const mains = mainsOf(p);
+    const shas = zwSha(p);
+    const fus = (p.stars || []).filter((x) => x.type === '辅星' || x.type === '吉星').map((x) => x.name);
+    const huas = (p.stars || []).filter((x) => x.mutagen).map((x) => `${x.name}化${x.mutagen}`);
+    const selfs = (p.selfHua || []).map((x) => `自化${x.type}`);
+    const head = `【${p.palace}·${p.branch}】`
+      + `${mains.length ? mains.map((x) => `${x.name}${x.brightness || ''}`).join('·') : '无正曜'}`
+      + (fus.length ? `｜吉 ${fus.slice(0, 3).join('、')}` : '')
+      + (shas.length ? `｜煞 ${shas.join('、')}` : '')
+      + ((huas.length || selfs.length) ? `｜${[...huas, ...selfs].join('、')}` : '');
+
+    const read = [];
+    if (mains.length) {
+      const pair = starPairOf(mains.map((x) => x.name));
+      const ex = starExtraOf(mains[0].name);
+      if (pair) read.push(pair.gist);
+      else if (ex) read.push(ex.gift);
+    } else {
+      const opposite = zwMainStar(zwPalace(r, (p.sanfang || [])[3]));
+      read.push(opposite ? `无正曜，借对宫${opposite}来看` : '无正曜，这一宫随环境走');
+    }
+    if (fus.length) read.push(fuLineOf(fus));
+    if (shas.length) read.push(shaLineOf(shas));
+    for (const x of (p.stars || []).filter((y) => y.mutagen).slice(0, 2)) read.push(huaInLine(x.mutagen, p.palace));
+    const tail = read.filter(Boolean).map(trimDot).join('；');
+    return `${head}\n　${tail}。`;
+  }).join('\n');
+  const palacesText = `十二宫从命宫逆排，每宫管一件事。看一宫不能只看本宫，还要并上它的三方四正（本宫＋对宫＋两个三合宫）——下面先逐宫摊开，再回到整体。\n${palaceLines}`;
+
+  const PATTERN_TIERS = [
+    { tone: 'good', label: '有利格局' },
+    { tone: 'neutral', label: '结构提示' },
+    { tone: 'bad', label: '忌格提醒' },
+  ];
+  const patternSections = PATTERN_TIERS.map((t) => {
+    const list = patterns.filter((p) => (p.tone || 'neutral') === t.tone);
+    if (!list.length) return null;
+    return {
+      key: `pattern-${t.tone}`,
+      label: t.label,
+      tone: t.tone === 'neutral' ? 'watch' : t.tone,
+      text: list.map((p) => {
+        const rd = patternReadOf(p.name, p.tone);
+        return `**${p.name}**　${rd.gist}\n　依据：${p.evidence}\n　做法：${rd.advice}`;
+      }).join('\n'),
+    };
+  }).filter(Boolean);
+  if (!patternSections.length) {
+    patternSections.push({ key: 'pattern-none', label: '格局', text: '本盘未触发内置的常见格局条目。这不代表盘面平淡——格局只是把若干星位组合起个名字，没命中时按宫位与四化逐条看即可。' });
+  }
+
+  const adviceItems = [];
+  if (SX.gift) {
+    adviceItems.push(`把「${SX.gift}」做成招牌：${soulBright && soulBright.tone === 'bad'
+      ? `${soulStar}在这宫不得地，长处不会自己显出来，越要挑能发挥它的场子`
+      : `${soulStar}${soulBright ? `·${soulBright.word}` : '在命宫'}，顺着这条走最省力`}。`);
+  }
+  if (daxianPalace && daxianPalace.daxian) {
+    const dxf = palaceFieldOf(daxianPalace.palace);
+    adviceItems.push(`这几年主线在${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）：${dxf ? dxf.field : '这一宫的事'}排前面，力气别摊平。`);
+  }
+  const jiHua = natalSihua.find((m) => m.type === '忌');
+  if (jiHua && jiHua.palace) {
+    const jf = palaceFieldOf(jiHua.palace);
+    adviceItems.push(`生年化忌落在${jiHua.palace}：${jf ? jf.huaJi : '这一块容易反复'}——别硬顶，把预期调低一点反而顺。`);
+  }
+  const soulSha = zwMainSha(soul);
+  if (soulSha.length) adviceItems.push(`命宫见${join(soulSha)}：${shaLineOf(soulSha)}`);
+  const spouseSha2 = zwMainSha(spouse);
+  if (spouseSha2.length && !soulSha.length) {
+    adviceItems.push(`夫妻宫见${join(spouseSha2)}：${shaLineOf(spouseSha2)}`);
+  }
+  const adviceText = adviceItems.slice(0, 4)
+    .map((t, i) => `${'①②③④'[i]} ${trimDot(t)}`)
+    .join('\n') || '这张盘的结构比较平，没有单点特别突出——按现有节奏走，把一件事做完整比开新头更划算。';
+
   const sections = [
-    { key: 'palaces', label: '关键宫位', text: `命宫${soulStar}　官禄${careerStar || '无正曜'}　财帛${wealthStar || '无正曜'}　夫妻${spouseStar || '无正曜'}　疾厄${healthStar || '无正曜'}` },
-    { key: 'patterns', label: '格局', text: patText },
+    { key: 'identity', label: '命身底色', text: identityText },
+    { key: 'palaces', label: '逐宫分析', text: palacesText },
+    ...patternSections,
+    { key: 'advice', label: '行动建议', text: adviceText },
     {
       key: 'reasoning', label: '看盘顺序',
       text: [
@@ -11371,6 +13048,11 @@ function liuyaoInterpret(r, ask) {
     } else if (ug.fushen.length) {
       useText.push(`用神不上卦：本卦六爻里没有${ug.liuqin}，按「用神不上卦则于本宫首卦内寻之」，到${String(pick(ben, 'palace', '')).replace(/宫$/, '')}宫首卦取伏神——${ug.fushen.map((f) => `${f.position}爻${f.ganzhi}${f.element}，伏于飞神${f.fei ? `${f.fei.liuqin}${f.fei.ganzhi}${f.fei.element}` : '—'}之下`).join('；')}。`);
       if (ug.relationSay.length) useText.push(`飞伏生克：${ug.relationSay.join('；')}。伏神要得出才算有力，藏在忌神之下且被克，则虽有如无。`);
+      const chufu = r.fushenAccess;
+      if (chufu && Array.isArray(chufu.items) && chufu.items.length) {
+        useText.push(`伏神出伏的条件：${chufu.items.map((f) => f.say).join('；')}。`);
+        useText.push('「助」与「压」只把飞伏生克、月建日辰与月破并列摆出，再归成四档（可出 / 有助有压 / 受压难出 / 未得助）；不排各家优先级，旬空只标出、不并入档位，也不给应期日期。');
+      }
     } else {
       useText.push(`用神不上卦，且本宫首卦里也没找到${ug.liuqin}，这一问在卦面上没有直接对应物，只能借日月或改日再占。`);
     }
@@ -11438,7 +13120,7 @@ function liuyaoInterpret(r, ask) {
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：用神两现时该取哪一爻的权重、伏神出伏的应期。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数，也不叠动变连环；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：用神两现时该取哪一爻的权重、伏神出伏的应期（出伏条件已判，应期仍未做）。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数，也不叠动变连环；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -11845,19 +13527,30 @@ const { CLASSIC_BOOKS } = __mods.classics;
 
 function enrichPlain(result, r, ask) {
   if (!result) return result;
+  const DIM_RANK = ['overall', 'work', 'career', 'love', 'health'];
+  const rankOf = (key) => { const i = DIM_RANK.indexOf(key); return i < 0 ? DIM_RANK.length : i; };
+  const seen = new Set();
   const dims = (result.dimensions || []).map((d) => {
     const p = dimensionPlain(d.key, r, {});
-    const know = knowledgeFor(r.system, d.key).map((k) => ({
-      id: k.id,
-      gist: k.gist,
-      detail: k.detail,
-      source: k.source,
-      status: k.status,
-      statusLabel: STATUS_LABEL[k.status] || k.status,
-      note: k.note || '',
-    }));
-    return { ...d, ...(p ? { plain: p } : {}), ...(know.length ? { knowledge: know } : {}) };
+    return { ...d, ...(p ? { plain: p } : {}) };
   });
+  const KNOW_PER_DIM = 3;
+  for (const d of dims.slice().sort((a, b) => rankOf(a.key) - rankOf(b.key))) {
+    const know = knowledgeFor(r.system, d.key)
+      .filter((k) => !seen.has(k.id))
+      .slice(0, KNOW_PER_DIM)
+      .map((k) => ({
+        id: k.id,
+        gist: k.gist,
+        detail: k.detail,
+        source: k.source,
+        status: k.status,
+        statusLabel: STATUS_LABEL[k.status] || k.status,
+        note: k.note || '',
+      }));
+    for (const k of know) seen.add(k.id);
+    if (know.length) d.knowledge = know;
+  }
   const texts = [
     result.lead,
     ...dims.map((d) => [d.label, d.text, d.advice, d.plain, ...(d.knowledge || []).map((k) => k.detail)].filter(Boolean).join('')),
@@ -11865,15 +13558,19 @@ function enrichPlain(result, r, ask) {
   ].filter(Boolean);
 
   const caveats = caveatsFor(r.system);
-  const caveatLine = caveats.length
-    ? caveats.slice(0, 4).map((k) => `· ${k.gist}（${STATUS_LABEL[k.status] || k.status}）${k.note ? `——${k.note}` : ''}`).join('\n')
+  const disputed = caveats.filter((k) => k.status !== 'todo');
+  const caveatLine = disputed.length
+    ? disputed.map((k) => {
+      const tag = STATUS_LABEL[k.status] || k.status;
+      return `· ${k.gist}（${tag}）${seen.has(k.id) || !k.note ? '' : `——${k.note}`}`;
+    }).join('\n')
     : '';
   const secs = [...(result.sections || [])];
   if (caveatLine) {
     secs.push({
       key: 'caveats',
       label: '这套规则有多稳',
-      text: `下列几条各家说法不一，本插件取其中一派并把分歧标出来，供你判断可信度：\n${caveatLine}`,
+      text: `下列几条各家说法不一，本插件取其中一派并把分歧标出来，供你判断可信度（已在上面展开的只列条目，未展开的附原注）：\n${caveatLine}`,
     });
   }
   const todos = caveats.filter((k) => k.status === 'todo');
@@ -12153,24 +13850,45 @@ const SYSTEM_LABEL = {
 function askPrompt(r, opts = {}) {
   const label = SYSTEM_LABEL[r && r.system] || (r && r.system) || '未知体系';
   const asked = String((opts && opts.question) || '').trim();
-  const question = asked || '请先总览这张盘，指出最值得注意的一两处，并说明各自的依据。';
+  const question = asked || '请先用一句白话讲清这张盘的主线，再指出最值得注意的一两处，并说明每处的具体依据。';
   const limit = Number.isFinite(opts && opts.maxChars) && opts.maxChars >= 400 ? opts.maxChars : 3000;
   const raw = String((r && r.summary) || '').trim();
   const truncated = raw.length > limit;
   const summary = truncated ? `${raw.slice(0, limit)}…（摘要已截断）` : raw;
+
+  const it = (opts && typeof opts.interpret === 'object' && opts.interpret)
+    || (r && typeof r.interpret === 'object' && r.interpret) || null;
+  const answer = String((it && it.answer) || '').trim();
+  const plain = String((it && it.plain) || '').trim();
+  const draft = [];
+  if (answer) draft.push(`直答：${answer}`);
+  if (plain) draft.push(`说人话：${plain}`);
 
   const lines = [
     '【命理追问】下面这张盘是命理插件刚排好的，请就着它回答我的问题；不用重新排盘，盘面字段已经够用。',
     `体系：${label}`,
     `所问：${question}`,
     '',
+    ...(draft.length ? [
+      '——开场结论（插件已按同一套规则算好，开场先沿用这句；措辞可改，口径别换）——',
+      ...draft,
+      '',
+    ] : []),
     '——盘面摘要——',
     summary || '（这张盘没有摘要字段，请先让我重新排一次。）',
     '',
     '——回答要求——',
-    '1) 尽量引用到具体的柱、宫或爻，再说判断，别只给结论；',
-    '2) 盘面里没有依据的地方直接说「这盘里看不出来」，不要补外部假设；',
-    '3) 用概率和倾向的说法，别给绝对化的断言，也别把传统说法当成事实。',
+    '读者不懂命理。按下面的骨架答；任何一句他看不懂，就算没写完：',
+    draft.length
+      ? '1) 开头一句结论：先沿用上面的「开场结论」，再用一句不用术语的话说清这张盘的主线——只读这一句也该有收获；'
+      : '1) 开头一句结论：不用术语，一句话说清这张盘的主线，只读这一句也该有收获；',
+    '2) 判断最多两条，按重要性排序，每条分四行写：',
+    '   盘面｜只引盘面已有的字（具体的柱、宫或爻、字段名），不掺解释；',
+    '   白话｜把上一行的术语当场翻成日常话——调候 / 化气 / 通关 / 空亡 / 争合 这类词必须落地，一个词只翻一次，不连续堆三个以上；',
+    '   倾向｜说「更可能……」，讲清它在现实里大概意味着什么，用概率语气；',
+    '   边界｜这条在什么情况下不成立；盘面没给的，直接写「这盘里看不出来」；',
+    '3) 收尾一句「如果只记一件事」：给一条能核对、能动手的观察点，并说明它出自上面哪条盘面依据；',
+    '4) 别把传统说法当成已证实的事实：不下绝对断言，也不用「肯定」「绝对」这类词，更不写「格局很好」「运程不顺」这种没有信息的空话。',
   ];
   const text = lines.join('\n');
   return { text, question, system: (r && r.system) || '', label, chars: text.length, truncated };
@@ -12466,8 +14184,8 @@ return { matchEvent, rectifyBirth, RECTIFY_KINDS };
 
 __mods.index = (function () {
 const { buildBazi } = __mods.bazi;
-const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, hexagramStrength, jinTuiPower } = __mods.liuyao;
-const { buildZiwei, BRIGHTNESS, flowOf, asOfParts } = __mods.ziwei;
+const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower } = __mods.liuyao;
+const { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } = __mods.ziwei;
 const { drawTarot } = __mods.tarot;
 const { buildMeihua } = __mods.meihua;
 const { buildDaliuren } = __mods.daliuren;
@@ -12513,6 +14231,20 @@ function requireGender(value, who = '') {
   if (GENDERS.includes(value)) return value;
   const got = value === undefined || value === null || value === '' ? '（未提供）' : `「${value}」`;
   throw fail('E_INPUT', `${who ? who + '的' : ''}gender 必须是 male 或 female${got}；性别决定大运/大限顺逆，不能靠默认值`);
+}
+
+const ZIWEI_SCHOOL_KEYS = [
+  'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
+  'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi',
+];
+
+function ziweiSchoolArgs(args) {
+  const out = {};
+  for (const key of ZIWEI_SCHOOL_KEYS) {
+    if (args[key] !== undefined) out[key] = args[key];
+  }
+  if (args.schools && typeof args.schools === 'object') out.schools = args.schools;
+  return out;
 }
 
 function parseDateTime(text) {
@@ -12603,7 +14335,21 @@ function baziText(r) {
 }
 
 function ziweiText(r) {
-  const lunarText = `${r.lunar.year}年${r.lunar.isLeap ? '闰' : ''}${r.lunar.month}月${r.lunar.day}日`;
+  const rawMonth = r.lunar.monthRaw || r.lunar.month;
+  const lunarText = `${r.lunar.year}年${r.lunar.isLeap ? `闰${rawMonth}` : r.lunar.month}月${r.lunar.day}日`
+    + (r.lunar.isLeap && r.lunar.month !== rawMonth ? `（按${r.lunar.month}月起盘）` : '');
+  const schoolLine = (() => {
+    if (!r.schools) return '';
+    const labels = {
+      brightnessSchool: '亮度', gengYearSihua: '庚干四化', tianmaSchool: '天马', tiankongSchool: '天空',
+      jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
+      changshengSchool: '长生', lateZishi: '晚子时',
+    };
+    const diff = Object.entries(labels)
+      .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])
+      .map(([key, label]) => `${label} ${r.schools[key]}`);
+    return diff.length ? `【流派】${diff.join('　')}` : '';
+  })();
   const starText = (stars) => (stars.length
     ? stars.map((s) => `${s.name}${s.mutagen ? `化${s.mutagen}` : ''}`).join(' ')
     : '—');
@@ -12652,6 +14398,7 @@ function ziweiText(r) {
     `【命宫】${r.soul.branch}（${r.soul.ganzhi}·${r.soul.nayin}）　【身宫】${r.body.branch}（落${r.body.lands}）　【五行局】${r.bureau.name}`,
     `【紫微】${r.ziwei}　【天府】${r.tianfu}　【命主】${r.lifeMaster}　【身主】${r.bodyMaster}`,
     `【大限】${r.daxian.rule}，${r.daxian.startAge}岁起　【小限】${r.xiaoxianRule.direction}`,
+    schoolLine,
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
     `　　　${r.changqu.relation}　入命三方：${r.changqu.inSoulSanfang ? '是' : '否'}　吸收面：${r.changqu.absorb.label}（${r.changqu.absorb.reason}）`,
     flyLine,
@@ -12805,6 +14552,10 @@ function liuyaoText(r) {
       const m = strength.month && strength.month.branch ? `月建 ${strength.month.branch}（${strength.month.element}）　` : '';
       out.push(`用神旺衰：${m}${strength.labels.join(' · ')}`);
     }
+    const chufu = r.fushenAccess;
+    if (chufu && Array.isArray(chufu.labels) && chufu.labels.length) {
+      out.push(`伏神出伏：${chufu.labels.join(' · ')}`);
+    }
   } else {
     out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
   }
@@ -12858,7 +14609,7 @@ function compute(args = {}) {
     };
     const asOf = checkAsOf(args.asOf);
     const other = r.system === 'bazi'
-      ? buildZiwei({ ...common, leapAsNext: args.leapAsNext === true, asOf })
+      ? buildZiwei({ ...common, leapMonth: args.leapMonth, leapAsNext: args.leapAsNext === true, ...ziweiSchoolArgs(args), asOf })
       : buildBazi({ ...common, lateZi: args.lateZi !== false, nowYear: asOf ? asOf.year : undefined });
     r.cross = crossCheck(r.system === 'bazi' ? r : other, r.system === 'ziwei' ? r : other);
     if (r.interpret) {
@@ -12907,7 +14658,7 @@ function compute(args = {}) {
 function interpretText(i) {
   if (!i) return '';
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
-  if (i.answer) out.push(`▶ 先答所问：${i.answer}`);
+  if (i.answer) out.push(`▶ ${i.ask && i.ask.question ? '先答所问' : '先看结论'}：${i.answer}`);
   if (i.plain) out.push(`▶ 说人话：${i.plain}`);
   if (i.lead) out.push(i.lead);
   if (Array.isArray(i.outline) && i.outline.length) {
@@ -12977,7 +14728,9 @@ function computeRaw(args = {}) {
     const result = buildZiwei({
       ...dt,
       gender: requireGender(args.gender),
+      leapMonth: args.leapMonth,
       leapAsNext: args.leapAsNext === true,
+      ...ziweiSchoolArgs(args),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
@@ -13116,6 +14869,8 @@ function computeRaw(args = {}) {
     if (ug.liuqin) {
       const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
       if (strength) result.useGodStrength = strength;
+      const chufu = fushenAccess(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
+      if (chufu) result.fushenAccess = chufu;
     }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
@@ -13214,7 +14969,17 @@ function computeRaw(args = {}) {
     return { ...result, precision: dt.precision, summary: trendText(result) };
   }
   if (system === 'fengshui') {
-    const action = args.action === 'advise' ? 'advise' : 'natal';
+    const action = args.action === 'advise' ? 'advise' : args.action === 'xuankong' ? 'xuankong' : 'natal';
+    if (action === 'xuankong') {
+      const result = buildFengshui({
+        action,
+        sitting: args.sitting,
+        facing: args.facing,
+        ...(args.period !== undefined ? { period: args.period } : {}),
+        ...(Number.isInteger(args.fortuneYear) ? { fortuneYear: args.fortuneYear } : {}),
+      });
+      return { ...result, summary: fengshuiText(result) };
+    }
     if (action === 'advise') {
       const result = buildFengshui({
         action,
@@ -13253,6 +15018,8 @@ function computeRaw(args = {}) {
       givenName: args.givenName,
       limit: args.limit,
       charElements: args.charElements && typeof args.charElements === 'object' ? args.charElements : undefined,
+      strokeOverrides: args.strokeOverrides && typeof args.strokeOverrides === 'object' ? args.strokeOverrides : undefined,
+      surnameStrokes: args.surnameStrokes && typeof args.surnameStrokes === 'object' ? args.surnameStrokes : undefined,
       ...birth,
       ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
       ...(args.datetime ? {
@@ -13420,6 +15187,25 @@ function trendText(r) {
 }
 
 function fengshuiText(r) {
+  if (r.meta.action === 'xuankong') {
+    const p = r.meta.period;
+    const cell = (palace) => {
+      const x = r.palaces.find((y) => y.palace === palace);
+      return `${palace}${x.yun}/${x.shan}/${x.xiang}`;
+    };
+    const row = (names) => names.map(cell).join('　');
+    const w = r.wangShanWangXiang;
+    return [
+      `【玄空】${r.meta.periodLabel}　坐 ${r.meta.sitting}　向 ${r.meta.facing}`,
+      `【入中】山盘 ${r.meta.shanCenter.star}${r.meta.shanCenter.name}（${r.meta.shanCenter.fly}，${r.meta.shanCenter.basis}）；向盘 ${r.meta.xiangCenter.star}${r.meta.xiangCenter.name}（${r.meta.xiangCenter.fly}，${r.meta.xiangCenter.basis}）`,
+      `【九宫】${row(['巽', '离', '坤'])}｜${row(['震', '中', '兑'])}｜${row(['艮', '坎', '乾'])}`,
+      `【当运】山星${p}到${r.dangYun.shan.text}；向星${p}到${r.dangYun.xiang.text}`,
+      `【表法】${w.table.length ? w.table.join('、') : '无'}；${w.note}`,
+      `【合十】山星合十 ${r.heshi.shan.join('、') || '无'}；向星合十 ${r.heshi.xiang.join('、') || '无'}`,
+      ...(r.meta.note ? [`※ ${r.meta.note}`] : []),
+      `※ ${r.disclaimer}`,
+    ].join('\n');
+  }
   if (r.meta.action === 'advise') {
     const match = r.mingMatch
       ? [`【命宅配】${r.mingMatch.text}`]
@@ -13451,7 +15237,11 @@ function nameText(r) {
   if (r.action === 'generate') {
     return [
       `【候选名】姓 ${r.surname}（${r.gender}，喜用 ${r.bazi.favorable.join('、')}）${r.bazi.basis}`,
-      ...r.candidates.map((c) => `${c.rank}. ${c.name}　${c.chars.map((x) => `${x.char}(${x.element})${x.meaning}`).join('　')}`),
+      ...r.candidates.map((c) => {
+        const wu = c.wuge && c.wuge.available ? `　五格 ${c.wuge.summary}` : '';
+        const ph = c.phonetics && c.phonetics.available ? `　音韵 ${c.phonetics.level}（${c.phonetics.tonePattern}）` : '';
+        return `${c.rank}. ${c.name}　${c.chars.map((x) => `${x.char}(${x.element})${x.meaning}`).join('　')}${wu}${ph}`;
+      }),
       ...r.notes.map((n) => `※ ${n}`),
     ].join('\n');
   }
@@ -13464,10 +15254,20 @@ function nameText(r) {
       : '';
     return `· ${c.char}：${el}｜${fit}｜${c.meaning}${sug}`;
   };
+  const wu = r.wuge;
+  const wugeLine = wu && wu.available
+    ? `【五格】${wu.strokes.map((x) => `${x.char}${x.strokes}画`).join('＋')}｜${wu.summary}｜三才 ${wu.sancai.text}`
+    : `【五格】${wu ? wu.reason : '未算'}`;
+  const ph = r.phonetics;
+  const phLine = ph && ph.available
+    ? `【音韵】${ph.chars.map((x) => `${x.char}${x.py}${x.tone}`).join(' ')}｜声调 ${ph.tonePattern}｜${ph.level}${ph.issues.length ? `：${ph.issues.map((i) => i.text).join('；')}` : ''}`
+    : `【音韵】${ph ? ph.reason : '未算'}`;
   return [
     `【名字评估】${r.fullName}`,
     ...r.chars.map(charLine),
     r.bazi ? `【八字】日主 ${r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : r.bazi.dayMaster}，旺衰 ${r.bazi.strength.level}（${r.bazi.strength.score}），${r.bazi.basis}` : '',
+    wugeLine,
+    phLine,
     `【结论】${r.verdict}`,
     ...r.notes.map((n) => `※ ${n}`),
   ].filter(Boolean).join('\n');
@@ -13504,7 +15304,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 
     const Engine = __mods.index;
     window.Engine = Engine;
-    window.__MP_VER = '0.38.2';
+    window.__MP_VER = '0.46.5';
 (function () {
   const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
   const needAsk = (kind) => !!NEED_ASK[kind];
@@ -13635,7 +15435,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .pp-modes{display:flex;align-items:center;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif}
 .pp-modes label{min-height:44px;display:inline-flex;align-items:center;padding:3px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
 .pp-modes label:hover{background:var(--hover2)}
-.pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--faint)}
+.pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--muted)}
 .pp-body{display:none}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
@@ -13927,7 +15727,6 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-it-ask .ask-q{font-weight:600;color:var(--ink)}
 .mp-it-ask .ask-sep{color:var(--dimline);margin:0 7px}
 .mp-it-ask .ask-d{color:var(--lu)}
-.mp-it-ask .ask-none{color:var(--muted);font-weight:400}
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 .mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
 .mp-it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
@@ -13968,6 +15767,16 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-it-sec{margin-bottom:11px}
 .mp-it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
 .mp-it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+.mp-it-sec.tone-good,.mp-it-sec.tone-watch,.mp-it-sec.tone-bad{padding-left:8px}
+.mp-it-sec.tone-good{border-left:2px solid var(--lu)}
+.mp-it-sec.tone-watch{border-left:2px solid var(--quan)}
+.mp-it-sec.tone-bad{border-left:2px solid var(--red)}
+.mp-it-sec.tone-good .mp-it-sh{color:var(--lu)}
+.mp-it-sec.tone-watch .mp-it-sh{color:var(--quan)}
+.mp-it-sec.tone-bad .mp-it-sh{color:var(--red)}
+.mp-it-p{margin:0 0 5px}
+.mp-it-p:last-child{margin-bottom:0}
+.mp-it-p b{color:var(--ink);font-weight:700;letter-spacing:.02em}
 .mp-outline{margin:12px 16px 0;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px}
 .mp-outline-h{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
 .mp-outline-row{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;padding:3px 0;font-size:13px;line-height:1.7;color:var(--ink2)}
@@ -14095,8 +15904,57 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 .mp-nm-c:last-child{border-bottom:0}
 .mp-nm-c b{font-family:var(--fx);font-size:16.5px;font-weight:600;white-space:nowrap;letter-spacing:.5px}
 .mp-nm-c em{font-style:normal;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:var(--sans)}
+.mp-nm-wu{margin-top:10px;border-top:1px solid var(--hair);padding-top:9px}
+.mp-nm-wu-h{display:flex;align-items:baseline;gap:9px;font-size:12.5px;color:var(--ink2)}
+.mp-nm-wu-h b{font-weight:700;letter-spacing:.18em}
+.mp-nm-wu-h i{font-style:normal;font-size:11px;color:var(--faint)}
+.mp-nm-wu-rows{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:7px 0 6px}
+.mp-nm-wu-c{border:1px solid var(--line);border-radius:6px;padding:5px 6px;text-align:center;background:var(--band)}
+.mp-nm-wu-c em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+.mp-nm-wu-c b{display:block;font-size:16px;line-height:1.35;color:var(--ink);font-family:var(--sans)}
+.mp-nm-wu-c i{display:block;font-style:normal;font-size:10px;line-height:1.5;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-nm-wu-c.is-ok{border-color:var(--lu)}
+.mp-nm-wu-c.is-ok b{color:var(--lu)}
+.mp-nm-wu-c.is-half{border-color:var(--quan)}
+.mp-nm-wu-c.is-half b{color:var(--quan)}
+.mp-nm-wu-c.is-bad b{color:var(--ji)}
+.mp-nm-ph{margin-top:9px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-nm-ph b{font-weight:700;letter-spacing:.18em;margin-right:6px}
+.mp-nm-ph em{font-style:normal;color:var(--muted);margin-left:6px;font-family:var(--sans);font-size:11.5px}
+.mp-nm-ph-lv{font-size:11px;border-radius:999px;padding:0 7px;line-height:1.7;border:1px solid var(--line);color:var(--muted)}
+.mp-nm-ph-lv.ok{color:var(--lu);border-color:var(--lu)}
+.mp-nm-ph-lv.warn{color:var(--quan);border-color:var(--quan)}
+.mp-nm-ph-lv.bad{color:var(--ji);border-color:var(--ji)}
+.mp-nm-ph-i{display:inline-block;margin:2px 6px 0 0;font-size:11.5px;color:var(--muted)}
+.mp-nm-ph-i:before{content:'·';margin-right:3px;color:var(--faint)}
 @media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
+.mp-fs .mp-quick-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mp-fs-sub{font-size:11.5px;color:var(--muted);font-family:var(--sans)}
+.mp-fs-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mp-fs-chip{font-size:11.5px;line-height:1.8;border:1px solid var(--line);border-radius:999px;padding:0 9px;color:var(--muted);background:var(--band);font-family:var(--sans)}
+.mp-fs-chip.ok{color:var(--lu);border-color:color-mix(in srgb,var(--lu) 40%,var(--line))}
+.mp-fs-key{margin:0 0 6px;font-size:11px;color:var(--faint);font-family:var(--sans)}
+.mp-fs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.mp-fs-cell{background:var(--card);padding:7px 9px;display:flex;flex-direction:column;gap:6px;min-height:56px}
+.mp-fs-cell.center{background:var(--band)}
+.mp-fs-top{display:flex;align-items:baseline;gap:6px;min-width:0}
+.mp-fs-gua{font-family:var(--fx);font-size:15px;font-weight:700;line-height:1;color:var(--ink)}
+.mp-fs-dir{font-size:10.5px;color:var(--muted);font-family:var(--sans);white-space:nowrap}
+.mp-fs-star{margin-left:auto;font-size:12px;color:var(--ink2);font-family:var(--sans);white-space:nowrap}
+.mp-fs-star em{font-style:normal;font-size:10px;margin-left:4px;padding:0 5px;border:1px solid currentColor;border-radius:999px;line-height:1.6;vertical-align:1px}
+.mp-fs-star em.ok{color:var(--lu)}
+.mp-fs-star em.bad{color:var(--ji)}
+.mp-fs-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;font-family:var(--sans);font-variant-numeric:tabular-nums}
+.mp-fs-nums span{text-align:center;font-size:13px;line-height:1.7;border:1px solid var(--hair);border-radius:4px;color:var(--ink2)}
+.mp-fs-nums span.on{background:var(--tri);border-color:var(--quan);color:var(--quan);font-weight:700}
+.mp-fs-facts{margin:0;display:flex;flex-direction:column;gap:4px}
+.mp-fs-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.75}
+.mp-fs-row dt{margin:0;color:var(--muted);font-family:var(--sans)}
+.mp-fs-row dd{margin:0;color:var(--ink2);word-break:break-word}
+.mp-fs-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
+@media print{.mp-fs{break-inside:avoid}}
+@media (max-width:420px){.mp-fs-cell{padding:6px}.mp-fs-gua{font-size:14px}.mp-fs-nums span{font-size:12px}}
 .mp-mb{margin:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;font-family:var(--sans)}
 .mp-mb-h{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;padding:15px 18px 14px;
   background:linear-gradient(135deg,var(--sel),var(--band) 64%,var(--card));border-bottom:1px solid var(--hair)}
@@ -14493,7 +16351,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       return `<div class="pp-center">
         ${mode}
         <div class="ct-t2">公历 ${r.input.year}-${String(r.input.month).padStart(2, '0')}-${String(r.input.day).padStart(2, '0')} ${String(r.input.hour).padStart(2, '0')}:${String(r.input.minute).padStart(2, '0')}</div>
-        <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? '闰' : ''}${r.lunar.month}月${r.lunar.day}日${r.hourBranch}时</div>
+        <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? `闰${r.lunar.monthRaw || r.lunar.month}` : r.lunar.month}月${r.lunar.day}日${r.hourBranch}时${r.lunar.isLeap && r.lunar.monthRaw && r.lunar.month !== r.lunar.monthRaw ? `（按${r.lunar.month}月起盘）` : ''}</div>
         ${sizhuOf(r) ? `<div class="ct-t3">${sizhuOf(r)}</div>` : ''}
         <div class="ct-t4">命主 ${r.lifeMaster}　身主 ${r.bodyMaster}</div>
         <div class="ct-t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
@@ -14752,6 +16610,13 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
+    const fu = r.fushenAccess && Array.isArray(r.fushenAccess.labels) ? r.fushenAccess : null;
+    const fushenRow = fu && fu.labels.length
+      ? `<div class="pp-chips">${fu.labels.map((l) => {
+        const cls = /可出/.test(l) ? 'ok' : /受压难出|有助有压/.test(l) ? 'warn' : '';
+        return `<span class="pp-chip ${cls}">伏神${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     const jp = r.jinTuiPower && Array.isArray(r.jinTuiPower.labels) ? r.jinTuiPower : null;
     const jinRow = jp && jp.labels.length
       ? `<div class="pp-chips">${jp.labels.map((l) => {
@@ -14773,6 +16638,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       ${bodyRow}
       ${useRow}
       ${strengthRow}
+      ${fushenRow}
       ${jinRow}
       ${hexRow}
     </div>`;
@@ -15342,7 +17208,20 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
     const head = (title, sub) => `<div class="mp-nm-h"><b>${esc(title)}</b>${sub ? `<i>${esc(sub)}</i>` : ''}</div>`;
     if (r.action === 'generate') {
       const fav = r.bazi && r.bazi.favorable ? r.bazi.favorable.join('、') : '';
-      const cands = (r.candidates || []).map((c) => `<div class="mp-nm-c"><b>${esc(c.name)}</b><span class="mp-nm-els">${c.chars.map((x) => elChip(x.element)).join('')}</span><em>${esc(c.chars.map((x) => x.char + '·' + x.meaning).join('　'))}</em></div>`).join('');
+      const cands = (r.candidates || []).map((c) => {
+        const wu = c.wuge && c.wuge.available
+          ? (() => {
+            const good = c.wuge.rows.filter((x) => x.level === '吉').length;
+            const bad = c.wuge.rows.filter((x) => x.level === '凶').length;
+            const cls = bad === 0 && good >= 4 ? ' ok' : bad >= 2 ? ' no' : '';
+            return `<span class="mp-nm-fit${cls}" title="${esc(c.wuge.summary)}">五格 ${good}/5 吉</span>`;
+          })()
+          : '';
+        const ph = c.phonetics && c.phonetics.available
+          ? `<span class="mp-nm-fit${c.phonetics.level === '拗口' ? ' no' : c.phonetics.level === '顺口' ? ' ok' : ''}" title="${esc((c.phonetics.issues || []).map((x) => x.text).join('；'))}">${esc(c.phonetics.level)}</span>`
+          : '';
+        return `<div class="mp-nm-c"><b>${esc(c.name)}</b><span class="mp-nm-els">${c.chars.map((x) => elChip(x.element)).join('')}${wu}${ph}</span><em>${esc(c.chars.map((x) => x.char + '·' + x.meaning).join('　'))}</em></div>`;
+      }).join('');
       return `<section class="mp-nm" aria-label="候选名">
         ${head('候选名', `姓 ${r.surname}（${r.gender}）${fav ? `　喜用 ${fav}` : ''}`)}
         <div class="mp-nm-cand">${cands}</div>
@@ -15365,10 +17244,24 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       ? `<div class="mp-nm-m">八字：${esc(r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : String(r.bazi.dayMaster || ''))}　${esc(r.bazi.strength ? `${r.bazi.strength.level}（${r.bazi.strength.score}）` : '')}　喜用 ${esc((r.bazi.favorable || []).join('、'))}</div>
          <div class="mp-nm-m">${esc(r.bazi.basis || '')}</div>`
       : '';
+    const LV = (x) => (x === '吉' ? 'is-ok' : x === '半吉' ? 'is-half' : 'is-bad');
+    const wu = r.wuge && r.wuge.available
+      ? `<div class="mp-nm-wu">
+          <div class="mp-nm-wu-h"><b>五格</b><i>康熙笔画 · 通行本 81 数理</i></div>
+          <div class="mp-nm-wu-rows">${r.wuge.rows.map((x) => `<div class="mp-nm-wu-c ${LV(x.level)}"><em>${esc(x.key)}</em><b>${x.strokes}</b><i>${esc(`${x.level} · ${x.name}`)}</i></div>`).join('')}</div>
+          <div class="mp-nm-m">笔画：${r.wuge.strokes.map((x) => `${esc(x.char)}${x.strokes}${x.source === 'user' ? '（指定）' : ''}`).join(' ＋ ')}</div>
+          <div class="mp-nm-m">三才：${esc(r.wuge.sancai.text)}</div>
+        </div>`
+      : `<div class="mp-nm-wu"><div class="mp-nm-wu-h"><b>五格</b><i>这一版算不了</i></div><div class="mp-nm-m">${esc(r.wuge ? r.wuge.reason : '未算')}</div></div>`;
+    const ph = r.phonetics && r.phonetics.available
+      ? `<div class="mp-nm-ph"><b>音韵</b><span class="mp-nm-ph-lv${r.phonetics.level === '顺口' ? ' ok' : r.phonetics.level === '拗口' ? ' bad' : ' warn'}">${esc(r.phonetics.level)}</span><em>${esc(r.phonetics.chars.map((x) => `${x.py}${x.tone}`).join(' '))}　声调 ${esc(r.phonetics.tonePattern)}</em>${(r.phonetics.issues || []).map((x) => `<span class="mp-nm-ph-i">${esc(x.text)}</span>`).join('')}</div>`
+      : `<div class="mp-nm-ph"><b>音韵</b><em>${esc(r.phonetics ? r.phonetics.reason : '未算')}</em></div>`;
     return `<section class="mp-nm" aria-label="名字评估">
       ${head(r.fullName || '', `字库 ${r.stats && r.stats.libSize ? r.stats.libSize : ''} 字${r.stats && r.stats.unknown ? `　未收录 ${r.stats.unknown}` : ''}`)}
       ${rows}
       ${bz}
+      ${wu}
+      ${ph}
       <div class="mp-nm-verd">${esc(r.verdict || '')}</div>
       <div class="mp-nm-note">${(r.notes || []).map((n) => '※ ' + esc(n)).join('<br>')}</div>
     </section>`;
@@ -15537,18 +17430,23 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
           </table></div>
         </div>`).join('')}</div>`
       : '';
+    const richText = (text) => String(text || '')
+      .split('\n')
+      .map((line) => `<div class="mp-it-p">${esc(line).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')}</div>`)
+      .join('');
     const secs = (it.sections && it.sections.length)
-      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec" id="mp-sec-${esc(s.key)}">
+      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
         <div class="mp-it-sh">${esc(s.label)}</div>
-        <div class="mp-it-stext">${esc(s.text)}</div>
+        <div class="mp-it-stext">${richText(s.text)}</div>
       </div>`).join('')}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
     const ask = it.ask;
-    const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
-      ? `<div class="mp-it-ask"><span class="ask-q">问题：${ask.question ? esc(ask.question) : '<span class="ask-none">（未填写）</span>'}</span><span class="ask-sep">｜</span><span class="ask-d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
+    const askQ = ask && ask.question ? esc(ask.question) : '';
+    const askLine = ask && (askQ || (ask.direction && ask.direction !== 'general'))
+      ? `<div class="mp-it-ask">${askQ ? `<span class="ask-q">问题：${askQ}</span><span class="ask-sep">｜</span>` : ''}<span class="ask-d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
       : '';
-    const answer = it.answer ? `<div class="mp-it-ans"><b>先答所问</b>${esc(it.answer)}</div>` : '';
+    const answer = it.answer ? `<div class="mp-it-ans"><b>${askQ ? '先答所问' : '先看结论'}</b>${esc(it.answer)}</div>` : '';
     const plain = it.plain ? `<div class="mp-it-plain"><b>说人话</b>${esc(it.plain)}</div>` : '';
     const fu = (it.followups && it.followups.length)
       ? `<div class="mp-it-fu"><b>还可以这样追问</b><ul>${it.followups.map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>`
@@ -15676,6 +17574,93 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
       </div>
       <div class="mp-mb-note">${esc(r.note || '')}</div>
     </section>`;
+  };
+
+  const FS_GRID = [['巽', '离', '坤'], ['震', '中', '兑'], ['艮', '坎', '乾']];
+  const FS_DIR = { 坎: '正北', 艮: '东北', 震: '正东', 巽: '东南', 离: '正南', 坤: '西南', 兑: '正西', 乾: '西北', 中: '中宫' };
+  const FS_LUCKY = ['生气', '延年', '天医', '伏位'];
+  const fsChip = (text, cls) => `<span class="mp-fs-chip${cls ? ' ' + cls : ''}">${esc(text)}</span>`;
+  const fsCell = (gua, head, body) => `<div class="mp-fs-cell${gua === '中' ? ' center' : ''}">`
+    + `<div class="mp-fs-top"><span class="mp-fs-gua">${esc(gua)}</span><span class="mp-fs-dir">${esc(FS_DIR[gua] || '')}</span>${head || ''}</div>`
+    + (body || '') + '</div>';
+  const fsFacts = (rows) => (rows.length
+    ? `<dl class="mp-fs-facts">${rows.map(([k, v]) => `<div class="mp-fs-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`
+    : '');
+  const fsSection = (title, sub, chips, grid, facts, notes) => `<section class="mp-quick mp-fs" aria-label="风水结果">`
+    + `<div class="mp-quick-h"><b>${esc(title)}</b>${sub ? `<span class="mp-fs-sub">${esc(sub)}</span>` : ''}</div>`
+    + (chips.length ? `<div class="mp-fs-chips">${chips.join('')}</div>` : '')
+    + grid + facts
+    + (notes.filter(Boolean).map((x) => `<div class="mp-fs-note">${esc(x)}</div>`).join(''))
+    + '</section>';
+  const fsBaguaGrid = (list, aria) => `<div class="mp-fs-grid" role="group" aria-label="${esc(aria)}">`
+    + FS_GRID.map((row) => row.map((g) => {
+      const x = list.find((y) => y && y.palace === g);
+      if (!x) return fsCell(g, '', '');
+      const good = FS_LUCKY.includes(x.star);
+      const head = `<span class="mp-fs-star"${x.role ? ` title="${esc(x.role)}"` : ''}>${esc(x.star)}`
+        + `<em class="${good ? 'ok' : 'bad'}">${good ? '吉' : '凶'}</em></span>`;
+      return fsCell(g, head, '');
+    }).join('')).join('') + '</div>';
+
+  function fsXuankong(r, m) {
+    const period = m.period;
+    const by = {};
+    for (const p of r.palaces || []) by[p.palace] = p;
+    const grid = `<div class="mp-fs-key">每宫依次为 <b>运</b>／<b>山</b>／<b>向</b> 三星；底色高亮＝当运（${esc(period)}运）</div>`
+      + '<div class="mp-fs-grid" role="group" aria-label="玄空九宫（运/山/向）">'
+      + FS_GRID.map((row) => row.map((g) => {
+        const p = by[g];
+        if (!p) return fsCell(g, '', '');
+        const nums = [['运', p.yun], ['山', p.shan], ['向', p.xiang]]
+          .map(([k, v]) => `<span class="${v === period ? 'on' : ''}" title="${esc(k)}星 ${esc(v)}">${esc(v)}</span>`).join('');
+        return fsCell(g, '', `<div class="mp-fs-nums">${nums}</div>`);
+      }).join('')).join('') + '</div>';
+    const w = r.wangShanWangXiang || {};
+    const chips = [
+      fsChip(`山盘 ${m.shanCenter.star}${m.shanCenter.name} · ${m.shanCenter.fly}`),
+      fsChip(`向盘 ${m.xiangCenter.star}${m.xiangCenter.name} · ${m.xiangCenter.fly}`),
+      fsChip(w.byChart ? '盘面：到山到向' : '盘面：未到山到向', w.byChart ? 'ok' : ''),
+      fsChip(w.byTable ? '表法：在列' : '表法：未列', w.byTable ? 'ok' : ''),
+    ];
+    const facts = fsFacts([
+      ['入中', `山盘 ${m.shanCenter.star}${m.shanCenter.name}（${m.shanCenter.fly}，${m.shanCenter.basis}）；`
+        + `向盘 ${m.xiangCenter.star}${m.xiangCenter.name}（${m.xiangCenter.fly}，${m.xiangCenter.basis}）`],
+      ['当运', `山星${period}落 ${r.dangYun.shan.text}；向星${period}落 ${r.dangYun.xiang.text}`],
+      ['合十', `山星：${(r.heshi.shan || []).join('、') || '无'}；向星：${(r.heshi.xiang || []).join('、') || '无'}`],
+      ['表法', `${w.note || ''}${(w.table || []).length ? ` 本运所列：${w.table.join('、')}。` : ' 本运表法无局。'}`],
+    ]);
+    return fsSection('玄空下卦', `${m.periodLabel} · 坐${m.sitting} · 向${m.facing}`, chips, grid, facts, [m.note, r.disclaimer]);
+  }
+
+  function fsNatal(r, m) {
+    const mg = r.mingGua || {};
+    const grid = fsBaguaGrid([...(r.luckyDirections || []), ...(r.unluckyDirections || [])], '八宅八向（吉凶）');
+    const chips = [fsChip(mg.compatible || '—'), fsChip(`${m.gender}命 · ${m.guaYear} 年立春界`)];
+    const rows = [];
+    if (r.yearlyFlying) {
+      const fy = r.yearlyFlying;
+      rows.push(['年紫白', `${fy.centerName}入中；${fy.palaces.filter((p) => p.palace !== '中')
+        .map((p) => `${p.palace}${p.name}`).join('、')}`]);
+    }
+    return fsSection('八宅命卦', `${mg.num}${mg.gua}（${mg.group}）· ${mg.direction}`, chips, grid, fsFacts(rows), [m.note, r.disclaimer]);
+  }
+
+  function fsAdvise(r, m) {
+    const lay = r.layout || {};
+    const grid = fsBaguaGrid(r.houseStars || [], '宅卦八向（吉凶）');
+    const chips = [fsChip(`${m.houseGua}宅 · ${m.houseGroup}`), fsChip(`坐${m.sitting}`), fsChip(`向${m.facing}`)];
+    const rows = [['门', lay.door], ['灶', lay.stove], ['床', lay.bed], ['厕', lay.toilet]];
+    if (r.mingMatch) rows.push(['命宅配', r.mingMatch.text]);
+    return fsSection('门主灶', `${m.houseGua}宅 · 坐${m.sitting} · 向${m.facing}`, chips, grid, fsFacts(rows),
+      [m.birthNote, r.disclaimer]);
+  }
+
+  pp.fengshuiHTML = function (r) {
+    if (!r || r.system !== 'fengshui') return pp.quickHTML(r);
+    const m = r.meta || {};
+    if (m.action === 'xuankong') return fsXuankong(r, m);
+    if (m.action === 'advise') return fsAdvise(r, m);
+    return fsNatal(r, m);
   };
 
   pp.quickHTML = function (r) {
@@ -16073,11 +18058,13 @@ const TABS = [
   { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
   { k: 'mbti', label: '人格', timeLabel: '', hint: '十六型人格是 24 道自我报告题的 MBTI 风格测算：4 题一页，按 1–5 打分，答满 12 题即可看结果；只作自我参照，不是官方量表。' },
   { k: 'trend', label: '人生K线', timeLabel: '出生时刻', hint: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。' },
-  { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。' },
+  { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。' },
   { k: 'name', label: '起名', timeLabel: '', hint: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。' },
 ];
 
 function pad(n) { return String(n).padStart(2, '0'); }
+
+const QUICK_TABS = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
 
 function nowParts() {
   const d = new Date();
@@ -16100,7 +18087,7 @@ const Core = window.__MPCore || {};
 const needAsk = Core.needAsk || ((t) => false);
 
 const COMPOSER = { ref: null, seats: [], keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
-const LAST = { r: null, q: '' };
+const LAST = { r: null, q: '', it: null };
 
 function bridgeDiagText() {
   const bits = [];
@@ -16145,7 +18132,7 @@ function askTextForLast() {
   const r = LAST.r;
   if (!r) return '';
   try {
-    const p = Engine.askPrompt ? Engine.askPrompt(r, { question: LAST.q }) : null;
+    const p = Engine.askPrompt ? Engine.askPrompt(r, { question: LAST.q, interpret: LAST.it }) : null;
     return (p && p.text) || String(r.summary || '');
   } catch (e) { return String(r.summary || ''); }
 }
@@ -16213,6 +18200,7 @@ function App() {
   const [mbPage, setMbPage] = useState(0);
   const [toAge, setToAge] = useState('60');
   const [fsMode, setFsMode] = useState('natal');
+  const [fsPeriod, setFsPeriod] = useState('9');
   const [sitting, setSitting] = useState('子');
   const [facing, setFacing] = useState('午');
   const [nnMode, setNnMode] = useState('assess');
@@ -16223,7 +18211,7 @@ function App() {
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
   useEffect(() => {
-    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
+    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); LAST.it = result.it || null; }
   }, [result, askText]);
   const [hist, setHist] = useState(() => loadHistory());
   const [replayArgs, setReplayArgs] = useState(null);
@@ -16310,8 +18298,13 @@ function App() {
       if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = trueSolar; args.lateZi = lateZi; }
       if (k === 'fengshui') {
         args.action = fsMode;
-        if (fsMode === 'advise') { args.sitting = sitting; args.facing = facing; delete args.datetime; }
-        else { args.gender = genderV; }
+        if (fsMode === 'natal') { args.gender = genderV; }
+        else {
+          args.sitting = sitting;
+          args.facing = facing;
+          delete args.datetime;
+          if (fsMode === 'xuankong') args.period = Number(fsPeriod) || 9;
+        }
       }
       if (k === 'name') {
         args.action = nnMode;
@@ -16321,7 +18314,7 @@ function App() {
           args.trueSolar = trueSolar; args.lateZi = lateZi;
         } else {
           args.givenName = givenName.trim();
-          delete args.datetime;
+          if (!dt.date || !dt.time) delete args.datetime;
         }
       }
       if (k === 'convert') {
@@ -16546,7 +18539,7 @@ function App() {
   const askInChat = () => {
     if (!result || !result.r) return;
     try {
-      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim() }) : null;
+      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim(), interpret: result.it }) : null;
       const text = p && p.text ? p.text : String(result.r.summary || '');
       if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
       const diag = '（' + bridgeDiagText() + '）';
@@ -16808,14 +18801,19 @@ function App() {
         })) : null,
         tab === 'fengshui' ? field('看什么', h('div', { className: 'mp-seg' },
           h('button', { className: fsMode === 'natal' ? 'on' : '', onClick: () => setFsMode('natal') }, '命卦'),
-          h('button', { className: fsMode === 'advise' ? 'on' : '', onClick: () => setFsMode('advise') }, '门主灶'))) : null,
-        (tab === 'fengshui' && fsMode === 'advise') ? field('坐山（24 山）', h('input', {
+          h('button', { className: fsMode === 'advise' ? 'on' : '', onClick: () => setFsMode('advise') }, '门主灶'),
+          h('button', { className: fsMode === 'xuankong' ? 'on' : '', onClick: () => setFsMode('xuankong') }, '玄空'))) : null,
+        (tab === 'fengshui' && fsMode !== 'natal') ? field('坐山（24 山）', h('input', {
           className: 'mp-input', value: sitting, placeholder: '如 子 / 乾',
           onChange: (e) => setSitting(e.target.value),
         })) : null,
-        (tab === 'fengshui' && fsMode === 'advise') ? field('朝向（24 山）', h('input', {
+        (tab === 'fengshui' && fsMode !== 'natal') ? field('朝向（24 山）', h('input', {
           className: 'mp-input', value: facing, placeholder: '如 午 / 巽',
           onChange: (e) => setFacing(e.target.value),
+        })) : null,
+        (tab === 'fengshui' && fsMode === 'xuankong') ? field('运（1–9）', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 9, value: fsPeriod,
+          onChange: (e) => setFsPeriod(e.target.value),
         })) : null,
         tab === 'name' ? field('看什么', h('div', { className: 'mp-seg' },
           h('button', { className: nnMode === 'assess' ? 'on' : '', onClick: () => setNnMode('assess') }, '评名字'),
@@ -16856,7 +18854,11 @@ function App() {
           onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
         }, '看示例'),
         h('button', { className: 'mp-btn', onClick: go, title: '时间仍为自动时，点它会取当下再起卦' },
-          tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : tab === 'hepan' ? '合盘' : '起卦'))),
+          tab === 'tarot' ? '抽牌'
+            : tab === 'bazi' || tab === 'ziwei' ? '排盘'
+              : tab === 'hepan' ? '合盘'
+                : tab === 'qimen' ? '起局'
+                  : QUICK_TABS.indexOf(tab) >= 0 ? '看结果' : '起卦'))),
 
     h('div', { key: 'hint', className: 'mp-hint' }, meta.hint),
 
@@ -16885,10 +18887,12 @@ function App() {
       h('b', null, tab === 'ziwei' || tab === 'bazi' ? '填好出生信息，点「排盘」'
         : tab === 'tarot' ? '写下想问的事，点「抽牌」'
           : tab === 'mbti' ? '按 1–5 给题目打分，答满 12 题就能看结果'
-            : '写下所问之事，点「起卦」'),
+            : QUICK_TABS.indexOf(tab) >= 0 ? '填好参数，点「看结果」'
+              : '写下所问之事，点「起卦」'),
       tab === 'ziwei' || tab === 'bazi' ? '出生日期、时刻与性别即可；出生地只影响真太阳时。'
         : tab === 'mbti' ? '4 题一页，答案只在本地参与计算，不会上传。'
-          : '起卦时刻已自动取当下，也可以手动改。') : null,
+          : QUICK_TABS.indexOf(tab) >= 0 ? '按上面的选项填好参数即可；全部在本机计算，不上传。'
+            : '起卦时刻已自动取当下，也可以手动改。') : null,
 
     result ? h('div', {
       key: 'card',
@@ -16912,6 +18916,7 @@ function App() {
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : result.kind === 'name' ? PP.nameHTML(result.r)
                         : result.kind === 'mbti' ? PP.mbtiHTML(result.r)
+                        : result.kind === 'fengshui' ? PP.fengshuiHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },

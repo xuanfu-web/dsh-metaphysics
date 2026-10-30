@@ -1,9 +1,13 @@
-// 起名：字库五行匹配 + 候选组合（纯本地确定性）。
+// 起名：字库五行匹配 + 候选组合（纯本地确定性），另附五格剖象与音韵检查。
 // 口径：字之五行按通行字义/偏旁归类（自建常用字库，未收录的字如实标注，不猜）；
 //       喜用倾向取八字旺衰的简化判定（偏强喜克泄耗、偏弱喜生扶、中和不筛）。
-//       不做五格剖象（需康熙字典笔画），也不做音韵格律判断——这两项请在 results.notes 里看提示。
+//       五格按康熙字典繁体笔画计（见 name-data.js 的口径说明），81 数理取通行本；
+//       音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断。
 import { buildBazi } from './bazi.js';
 import { assertCivil } from './validate.js';
+import {
+  READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81,
+} from './name-data.js';
 
 const SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
 const KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
@@ -228,8 +232,195 @@ export const CHAR_LIB = [
 ];
 
 const EL_INDEX = new Map();
+const EXTRA_INDEX = new Map();
+for (const [c, py, tone, st] of READING) {
+  if (!EXTRA_INDEX.has(c)) EXTRA_INDEX.set(c, { py, tone, st });
+}
 for (const c of CHAR_LIB) {
-  if (!EL_INDEX.has(c[0])) EL_INDEX.set(c[0], { c: c[0], el: c[1], meaning: c[2], g: c[3], order: EL_INDEX.size });
+  if (!EL_INDEX.has(c[0])) {
+    const x = EXTRA_INDEX.get(c[0]) || {};
+    EL_INDEX.set(c[0], {
+      c: c[0], el: c[1], meaning: c[2], g: c[3], order: EL_INDEX.size,
+      py: x.py || null, tone: x.tone || null, strokes: x.st || null,
+    });
+  }
+}
+
+const NUM_ELEMENT = { 1: '木', 2: '木', 3: '火', 4: '火', 5: '土', 6: '土', 7: '金', 8: '金', 9: '水', 0: '水' };
+const WX_REL = (a, b) => (a === b ? '同' : SHENG[a] === b ? '生' : KE[a] === b ? '克' : SHENG[b] === a ? '被生' : '被克');
+
+/** 数理超过 81 按传统「减 80 循环」取（如 104 → 24）。 */
+export function shuliOf(n) {
+  let x = n;
+  while (x > 81) x -= 80;
+  if (!(x >= 1)) return null;
+  const row = SHULI_81[x];
+  return row ? { num: x, level: row[0], name: row[1] } : null;
+}
+
+/** 合并两处笔画覆盖：surnameStrokes（按姓给的）+ strokeOverrides（逐字覆盖），后者优先。 */
+function overridesOf(input) {
+  const out = {};
+  for (const src of [input && input.surnameStrokes, input && input.strokeOverrides]) {
+    if (!src || typeof src !== 'object') continue;
+    for (const [k, v] of Object.entries(src)) {
+      if (Number.isInteger(v) && v > 0) out[k] = v;
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+function strokeOf(ch, overrides, kind) {
+  if (overrides && Number.isInteger(overrides[ch]) && overrides[ch] > 0) {
+    return { strokes: overrides[ch], source: 'user' };
+  }
+  const info = EL_INDEX.get(ch);
+  if (info && info.strokes) return { strokes: info.strokes, source: 'lib' };
+  if (kind === 'surname' && SURNAME_STROKES[ch]) return { strokes: SURNAME_STROKES[ch], source: 'surname' };
+  return null;
+}
+
+function readingOf(ch, kind) {  const info = EL_INDEX.get(ch);
+  if (info && info.py) return { py: info.py, tone: info.tone };
+  if (kind === 'surname' && SURNAME_READING[ch]) {
+    const [py, tone] = SURNAME_READING[ch];
+    return { py, tone };
+  }
+  return null;
+}
+
+/**
+ * 五格剖象：天格 / 人格 / 地格 / 外格 / 总格 + 81 数理 + 三才。
+ * 单姓单名、单姓双名、复姓都按通行算法；任一字缺笔画就整体返回 uncomputable，不半算。
+ * @param {string} surname
+ * @param {string} given
+ * @param {Object<string, number>} [overrides] 字 → 康熙笔画，覆盖数据表（会被标为「用户指定」）
+ */
+export function wuge(surname, given, overrides) {
+  const s = [...String(surname || '')];
+  const g = [...String(given || '')];
+  if (!s.length || !g.length) return { available: false, reason: '需要姓与名才能排五格' };
+  if (s.length > 2) return { available: false, reason: '姓超过两字：五格只算单姓与常见复姓' };
+
+  // 复姓两字的笔画取自复姓表（逐字存，人格要用姓末字）；表里有但用户又覆盖时以用户为准
+  const dbl = s.length === 2 ? DOUBLE_SURNAMES[surname] : null;
+  const useDbl = dbl && !s.some((ch) => overrides && overrides[ch]);
+  const sInfo = useDbl
+    ? dbl.s.map((n) => ({ strokes: n, source: 'table' }))
+    : s.map((ch) => strokeOf(ch, overrides, 'surname'));
+  const gInfo = g.map((ch) => strokeOf(ch, overrides, 'given'));
+  const missing = [...s, ...g].filter((ch, i) => !(i < s.length ? sInfo[i] : gInfo[i - s.length]));
+  if (missing.length) {
+    return {
+      available: false,
+      reason: `这些字没有康熙笔画数据，五格算不了：${missing.join('、')}——可用 strokeOverrides 传入笔画后再算`,
+      missing,
+    };
+  }
+
+  const sStroke = sInfo.map((x) => x.strokes);
+  const gStroke = gInfo.map((x) => x.strokes);
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  const isDouble = s.length === 2;
+  const tian = isDouble ? sum(sStroke) : sStroke[0] + 1;
+  const ren = sStroke[s.length - 1] + gStroke[0];
+  const di = sum(gStroke) + (g.length === 1 ? 1 : 0);
+  const zong = sum(sStroke) + sum(gStroke);
+  // 单姓单名没有「外侧」，通行本固定记 2；其余情形（单姓双名 / 复姓单名 / 复姓双名）都是 总−人+1
+  const wai = s.length === 1 && g.length === 1 ? 2 : zong - ren + 1;
+
+  const rows = [['天格', tian], ['人格', ren], ['地格', di], ['外格', wai], ['总格', zong]].map(([key, n]) => ({
+    key, strokes: n, ...shuliOf(n),
+  }));
+  const sancaiNums = [tian, ren, di].map((n) => n % 10);
+  const sancaiEl = sancaiNums.map((n) => NUM_ELEMENT[n]);
+  const rels = [
+    { pair: '天与人', rel: WX_REL(sancaiEl[0], sancaiEl[1]) },
+    { pair: '人与地', rel: WX_REL(sancaiEl[1], sancaiEl[2]) },
+  ];
+  const ordered = sancaiEl[0] === sancaiEl[1] && sancaiEl[1] === sancaiEl[2]
+    ? '三才同气，气脉集中'
+    : rels.every((x) => x.rel === '生' || x.rel === '同')
+      ? '一路相生，传统看作顺遂'
+      : rels.every((x) => x.rel === '克' || x.rel === '被克')
+        ? '相连相克，传统看作内外拉扯'
+        : `${rels.map((x) => `${x.pair}${x.rel}`).join('、')}，吉凶各派看法不一`;
+
+  const source = [...sInfo, ...gInfo].some((x) => x.source === 'user') ? 'mixed' : 'table';
+  return {
+    available: true,
+    surnameStyle: isDouble ? '复姓' : '单姓',
+    strokes: [
+      ...s.map((ch, i) => ({ char: ch, strokes: sInfo[i].strokes, source: sInfo[i].source, kind: '姓' })),
+      ...g.map((ch, i) => ({ char: ch, strokes: gInfo[i].strokes, source: gInfo[i].source, kind: '名' })),
+    ],
+    rows,
+    sancai: {
+      elements: sancaiEl,
+      text: `${sancaiEl.join('')}（${ordered}）`,
+      relations: rels,
+    },
+    summary: rows.map((r) => `${r.key}${r.strokes}${r.level}`).join('　'),
+    source,
+  };
+}
+
+const INITIALS = ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w'];
+
+/** 按拼写切声母韵母：先匹配双字母声母（zh/ch/sh），其余取单字母；y/w 按拼写当声母处理。 */
+export function splitPinyin(py) {
+  const p = String(py || '').toLowerCase();
+  for (const ini of INITIALS) {
+    if (p.startsWith(ini)) return { ini, fin: p.slice(ini.length) };
+  }
+  return { ini: '', fin: p };
+}
+
+const TONE_LABEL = { 1: '一', 2: '二', 3: '三', 4: '四' };
+
+/**
+ * 音韵的机械检查：全名同调 / 相邻同声母 / 相邻同韵母 / 相邻同音（叠字）。
+ * 只报可数的事实，不替人判断好不好听，也不查语义谐音（那需要词库，没做就说没做）。
+ */
+export function phonetics(fullName) {
+  const chars = [...String(fullName || '')];
+  if (chars.length < 2) return { available: false, reason: '至少两个字才谈得上音韵' };
+  const items = chars.map((ch, i) => {
+    const r = readingOf(ch, i === 0 ? 'surname' : 'given');
+    return r ? { char: ch, py: r.py, tone: r.tone, ...splitPinyin(r.py) } : { char: ch, py: null, tone: null, ini: null, fin: null };
+  });
+  const missing = items.filter((x) => !x.py).map((x) => x.char);
+  if (missing.length) {
+    return { available: false, reason: `这些字没有读音数据：${missing.join('、')}`, missing };
+  }
+
+  const issues = [];
+  const tones = new Set(items.map((x) => x.tone));
+  if (tones.size === 1 && items.length >= 2) {
+    issues.push({ type: 'tone', text: `全名都是${TONE_LABEL[items[0].tone]}声，声调没有起伏` });
+  }
+  for (let i = 1; i < items.length; i++) {
+    const a = items[i - 1];
+    const b = items[i];
+    if (a.py === b.py && a.tone === b.tone) {
+      issues.push({ type: 'same', text: `「${a.char}${b.char}」同音同调（叠字或撞音）` });
+      continue;
+    }
+    if (a.ini && a.ini === b.ini) issues.push({ type: 'initial', text: `「${a.char}${b.char}」同声母 ${a.ini}` });
+    if (a.fin === b.fin) issues.push({ type: 'final', text: `「${a.char}${b.char}」同韵母 ${a.fin}` });
+  }
+  const inis = new Set(items.map((x) => x.ini).filter(Boolean));
+  if (items.length >= 3 && inis.size === 1) {
+    issues.push({ type: 'initial', text: `三字同声母 ${[...inis][0]}，连着读容易黏在一起` });
+  }
+  const level = issues.length === 0 ? '顺口' : issues.length === 1 ? '略拗' : '拗口';
+  return {
+    available: true,
+    chars: items.map((x) => ({ char: x.char, py: x.py, tone: x.tone })),
+    tonePattern: items.map((x) => x.tone).join('-'),
+    issues,
+    level,
+  };
 }
 
 /** 用户可自带某字的五行（字库未收时用，按你信的那派算；传了就算「用户指定」）。 */
@@ -345,6 +536,10 @@ export function assessName(input) {
   else if (favCount > 0) verdict = `部分用字合喜用（${favCount}/${judged}），其余可再斟酌；喜用为 ${favorable.list.join('、')}。`;
   else verdict = `用字未落在喜用（${favorable.list.join('、')}）上；不必然是坏名，但若想贴合命局可换字再看。`;
 
+  const ov = overridesOf(input);
+  const wu = wuge(surname, given, ov);
+  const ph = phonetics(surname + given);
+
   return {
     system: 'name',
     action: 'assess',
@@ -360,11 +555,14 @@ export function assessName(input) {
       },
     } : {}),
     chars,
-    stats: { chars: chars.length, known, unknown, favorableCount: favCount, libSize: CHAR_LIB.length },
+    wuge: wu,
+    phonetics: ph,
+    stats: { chars: chars.length, known, unknown, favorableCount: favCount, libSize: CHAR_LIB.length, wugeReady: wu.available === true },
     verdict,
     notes: [
       `字之五行按通行字义/偏旁归类，自建字库共 ${CHAR_LIB.length} 字（常用名用字为主）；未收录的字不猜五行，如实标注，「用户指定」是你传入的归类。`,
-      '不做五格剖象（需康熙字典笔画），也不做音韵格律判断——谐音、拗口请自己读三遍或用方言读一遍。',
+      '五格按康熙字典繁体笔画计（氵→水4、艹→艸6、华→華14 这类换算），81 数理取通行本、各派对少数数取法有出入；姓氏笔画表没覆盖的姓或你想按别派算，可传 strokeOverrides 覆盖。',
+      '音韵只做机械检查（全名同调、相邻同声母/同韵母、叠字），不做语义谐音判断——谐音、方言读法还得自己读三遍。',
       '起名只做用字参考，不替父母做决定。',
     ],
   };
@@ -397,6 +595,15 @@ export function generateNames(input) {
   const fav = favorableElements(strength);
   const pool = CHAR_LIB.filter((c) => fav.list.includes(c[1]) && c[0] !== surname);
   const gPref = gender === 'male' ? 'm' : 'f';
+  // 五格只影响排序：姓的笔画整轮不变，先备好；每个候选只做四次取数与查表
+  const sChars = [...surname];
+  const ov = overridesOf(input);
+  const sStroke = sChars.map((ch) => strokeOf(ch, ov, 'surname'));
+  const sReady = sChars.length <= 2 && sStroke.every(Boolean);
+  const sSum = sReady ? sStroke.reduce((x, y) => x + y.strokes, 0) : 0;
+  const sLast = sReady ? sStroke[sStroke.length - 1].strokes : 0;
+  const lv = (n) => { const r = shuliOf(n); return r ? (r.level === '吉' ? 2 : r.level === '半吉' ? 1 : 0) : 0; };
+  const poolStroke = new Map(pool.map((c) => [c[0], (strokeOf(c[0], ov, 'given') || {}).strokes || 0]));
   const scored = [];
   for (let i = 0; i < pool.length; i++) {
     for (let j = 0; j < pool.length; j++) {
@@ -406,6 +613,15 @@ export function generateNames(input) {
       // 性别倾向：优先本性别与中性，避免两个字都强烈偏另一性别
       const fit = (x) => (x[3] === gPref || x[3] === 'n' ? 1 : 0);
       const gScore = fit(a) + fit(b) - (a[3] !== gPref && a[3] !== 'n' && b[3] !== gPref && b[3] !== 'n' ? 2 : 0);
+      const aSt = poolStroke.get(a[0]);
+      const bSt = poolStroke.get(b[0]);
+      let wuScore = 0;
+      if (sReady && aSt && bSt) {
+        const ren = sLast + aSt;
+        const di = aSt + bSt;
+        const zong = sSum + aSt + bSt;
+        wuScore = lv(ren) + lv(di) + lv(zong) + lv(zong - ren + 1);
+      }
       scored.push({
         name: a[0] + b[0],
         chars: [
@@ -415,12 +631,14 @@ export function generateNames(input) {
         elements: [a[1], b[1]],
         allFavorable: fav.list.includes(a[1]) && fav.list.includes(b[1]),
         genderScore: gScore,
+        wugeScore: wuScore,
         order: (i * 7 + j * 13) % 9973, // 打散字库顺序，避免候选清一色都是前几个字
       });
     }
   }
   const mixed = (c) => (c.elements[0] !== c.elements[1] ? 1 : 0); // 两字异行，比同气堆叠更有层次
-  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x)) || (y.genderScore - x.genderScore) || (x.order - y.order));
+  scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x))
+    || (y.wugeScore - x.wugeScore) || (y.genderScore - x.genderScore) || (x.order - y.order));
   // 去重 + 用字轮换：先收「两个字都没出现过」的候选，再放宽——避免 20 个候选里 13 个都用同一个「梓」
   const out = [];
   const usedNames = new Set();
@@ -435,7 +653,11 @@ export function generateNames(input) {
     usedNames.add(key);
     usedPairs.add(pair);
     cand.chars.forEach((x) => usedChars.add(x.char));
-    out.push({ rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars });
+    out.push({
+      rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars,
+      wuge: wuge(surname, cand.name, ov),
+      phonetics: phonetics(surname + cand.name),
+    });
     return true;
   };
   // 三轮：①新字 + 新五行组合 ②新字 ③放开——先保证候选之间不撞字、不撞组合
@@ -460,8 +682,11 @@ export function generateNames(input) {
     candidates: out,
     notes: [
       `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可用 charElements 指定五行后评估。`,
-      '候选按合喜用与性别倾向确定性排序，不是「吉名」判定；音韵与方言谐音请自行读念检查。',
-      '不做五格剖象（需康熙字典笔画）。',
+      '候选排序依次看：合喜用 → 两字异行 → 五格（人格/地格/总格/外格 吉多者先）→ 性别倾向 → 字库序，是排序不是「吉名」判定。',
+      sReady
+        ? '五格按康熙字典繁体笔画与通行本 81 数理算；姓的笔画取自内置姓氏表，没覆盖的姓可传 surnameStrokes 或 strokeOverrides。'
+        : '姓的笔画不在内置姓氏表里，这一轮没按五格排序（不半算）；可传 surnameStrokes 或 strokeOverrides 后重算。',
+      '音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断——候选的音韵结果随每条一起给出。',
     ],
   };
 }

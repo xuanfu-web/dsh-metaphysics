@@ -3,6 +3,7 @@
 // 参照公开通行表实现（与常见八宅/玄空入门资料一致），年紫白用纯公式，不依赖任何第三方历法库。
 import { partsToJd, termInstantJd } from './calendar.js';
 import { applyDst } from './dst.js';
+import { fail } from './fail.js';
 
 /** 九星名称表：数 → {name, color, element, star(北斗名), lucky}。 */
 export const NINE_STARS = {
@@ -56,7 +57,7 @@ const MOUNTAIN_INDEX = new Map(MOUNTAINS_24.map((x, i) => [x.m, i]));
 export function mountainInfo(name) {
   const i = MOUNTAIN_INDEX.get(name);
   if (i === undefined) {
-    throw new Error(`坐向必须是 24 山之一（${MOUNTAINS_24.map((x) => x.m).join('')}），收到「${name}」——请按罗盘 24 山报坐或报向，不要自造方位词。`);
+    throw fail('E_INPUT', `坐向必须是 24 山之一（${MOUNTAINS_24.map((x) => x.m).join('')}），收到「${name}」——请按罗盘 24 山报坐或报向，不要自造方位词。`);
   }
   return { ...MOUNTAINS_24[i], index: i };
 }
@@ -143,6 +144,127 @@ export function yearlyFlying(year) {
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
+// ── 玄空飞星（下卦） ─────────────────────────────────────────────
+// 口径：三元九运每运 20 年，1864 年起一运；运盘当运星入中顺飞。
+// 山盘/向盘：取坐宫/向宫的运星入中，按「入中运星本宫同元龙」的阴阳定顺逆（五黄入中按本山阴阳）。
+// 这一步是玄空挨星的关键：不是按坐山本身的阴阳，而是按入中运星原宫对应元龙的阴阳；
+// 按本山阴阳会把旺山旺向算成每运固定的六局，与通行二十四山旺山旺向表对不上。
+
+/** 三元九运：1864 起每 20 年一运，九运一轮（180 年）。 */
+export function periodOfYear(year) {
+  const k = Math.floor((year - 1864) / 20);
+  const period = ((k % 9) + 9) % 9 + 1;
+  const start = 1864 + 20 * k;
+  return { period, start, end: start + 19, label: `${period}运（${start}–${start + 19}）` };
+}
+
+/** 三元龙阴阳：天元/人元四隅为阳、四正为阴；地元四正为阳、四隅为阴。 */
+const YANG_MOUNTAINS = new Set(['乾', '巽', '艮', '坤', '甲', '庚', '壬', '丙', '寅', '申', '巳', '亥']);
+const YUAN_NAME = ['地元', '天元', '人元'];
+
+/** 24 山 → 三元龙 + 阴阳（MOUNTAINS_24 每卦三山依次为 地元/天元/人元）。 */
+export const MOUNTAIN_META = {};
+MOUNTAINS_24.forEach((x, i) => {
+  MOUNTAIN_META[x.m] = { ...x, yuan: YUAN_NAME[i % 3], yinYang: YANG_MOUNTAINS.has(x.m) ? '阳' : '阴' };
+});
+
+/** 飞星轨迹：中 → 乾 → 兑 → 艮 → 离 → 坎 → 坤 → 震 → 巽（即洛书 5→6→7→8→9→1→2→3→4）。 */
+const FLY_SEQ = ['中', '乾', '兑', '艮', '离', '坎', '坤', '震', '巽'];
+const NUM_TO_GUA = ['坎', '坤', '震', '巽', '中', '乾', '兑', '艮', '离']; // 洛书数 1–9 本位卦
+const YUAN_INDEX = { 地元: 0, 天元: 1, 人元: 2 };
+
+const mountainsOfGua = (gua) => MOUNTAINS_24.filter((x) => x.gua === gua).map((x) => MOUNTAIN_META[x.m]);
+
+/** 入中星按轨迹飞布：forward=true 顺飞，false 逆飞。返回 宫 → 星数。 */
+function fly(center, forward) {
+  const out = {};
+  for (let i = 0; i < 9; i++) {
+    const v = ((center - 1 + (forward ? i : -i)) % 9 + 9) % 9 + 1;
+    out[FLY_SEQ[i]] = v;
+  }
+  return out;
+}
+
+/** 入中运星定顺逆：取本宫（运星本位卦）同元龙之山的阴阳；五黄入中按本山阴阳。 */
+function flightOf(mount, center) {
+  if (center === 5) {
+    return { forward: mount.yinYang === '阳', basis: `五黄入中，按${mount.m}本山${mount.yuan}${mount.yinYang}论` };
+  }
+  const home = NUM_TO_GUA[center - 1];
+  const hm = mountainsOfGua(home)[YUAN_INDEX[mount.yuan]];
+  return { forward: hm.yinYang === '阳', basis: `${center}${home}宫取${mount.yuan}${hm.m}（${hm.yinYang}）` };
+}
+
+/** 通行二十四山旺山旺向表（每项含正反两向；一运、九运无局）。 */
+export const WANG_SHAN_WANG_XIANG = {
+  1: [],
+  2: [['乾', '巽'], ['亥', '巳'], ['丑', '未']],
+  3: [['卯', '酉'], ['乙', '辛'], ['辰', '戌']],
+  4: [['艮', '坤'], ['寅', '申'], ['甲', '庚']],
+  5: [['子', '午'], ['癸', '丁'], ['卯', '酉'], ['乙', '辛'], ['丑', '未'], ['辰', '戌']],
+  6: [['艮', '坤'], ['寅', '申'], ['甲', '庚']],
+  7: [['卯', '酉'], ['乙', '辛'], ['辰', '戌']],
+  8: [['乾', '巽'], ['亥', '巳'], ['丑', '未']],
+  9: [],
+};
+
+export const XUANKONG_SOURCES = [
+  '三元九运（1864 年起一运、每运 20 年，九运 180 年一轮）',
+  '玄空下卦挨星（运盘顺飞；山盘/向盘以入中运星本宫同元龙阴阳定顺逆，五黄入中按本山阴阳）',
+  '二十四山旺山旺向通行表（每项含正反两向；一运、九运无局）',
+];
+
+export const XUANKONG_DISCLAIMER = '玄空下卦为传统通行口径的本地排盘，属民俗参考，不构成现场勘舆结论，仅供娱乐；替卦/兼向、年月日时飞星与形峦不在本工具范围内。';
+
+/** 玄空下卦排盘：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向。 */
+export function xuankongChart(period, sitting, facing) {
+  const sit = MOUNTAIN_META[sitting];
+  const face = MOUNTAIN_META[facing];
+  const yun = fly(period, true);
+  const sCenter = yun[sit.gua];
+  const fCenter = yun[face.gua];
+  const sFly = flightOf(sit, sCenter);
+  const fFly = flightOf(face, fCenter);
+  const shan = fly(sCenter, sFly.forward);
+  const xiang = fly(fCenter, fFly.forward);
+  const palaces = PALACE_ORDER.map((palace, i) => ({
+    palace,
+    direction: palace === '中' ? '中宫' : PALACE_DIRECTION[palace],
+    luoshu: i + 1,
+    yun: yun[palace],
+    shan: shan[palace],
+    xiang: xiang[palace],
+  }));
+  const wheres = (map) => PALACE_ORDER.filter((p) => map[p] === period);
+  const pairs = WANG_SHAN_WANG_XIANG[period];
+  const hit = pairs.find(([a, b]) => (sit.m === a && face.m === b) || (sit.m === b && face.m === a));
+  const byChart = shan[sit.gua] === period && xiang[face.gua] === period;
+  const note = byChart && hit
+    ? '盘面与表法一致：本局到山到向。'
+    : byChart
+      ? '盘面到山到向，但不在通行表法所列之局（表法与盘面口径不同，并列不合并）。'
+      : hit
+        ? '通行表法列为旺山旺向，但本盘当运山星/向星未同时落坐向（表法与盘面口径不同，并列不合并）。'
+        : '本局既未到山到向，也不在表法旺山旺向之列。';
+  return {
+    palaces,
+    sitting: sit,
+    facing: face,
+    yun,
+    shan,
+    xiang,
+    yunCenter: period,
+    shanCenter: { star: sCenter, ...sFly },
+    xiangCenter: { star: fCenter, ...fFly },
+    dangYun: { shan: wheres(shan), xiang: wheres(xiang) },
+    heshi: {
+      shan: PALACE_ORDER.filter((p) => shan[p] + yun[p] === 10),
+      xiang: PALACE_ORDER.filter((p) => xiang[p] + yun[p] === 10),
+    },
+    wangShanWangXiang: { byChart, byTable: Boolean(hit), table: pairs.map(([a, b]) => `${a}${b}`), note },
+  };
+}
+
 /** DST 校正出生日期（1986–1991），返回校正后的年月日。 */
 function civilDate(input) {
   const dst = input.dst === false
@@ -161,19 +283,21 @@ const DISCLAIMER = '八宅与飞星为传统通行口径的本地计算，属民
 
 /**
  * 风水主函数。
- * @param {{action?:'natal'|'advise', year?:number, month?:number, day?:number, gender?:'male'|'female',
- *          fortuneYear?:number, sitting?:string, facing?:string, dst?:boolean}} input
+ * @param {{action?:'natal'|'advise'|'xuankong', year?:number, month?:number, day?:number, gender?:'male'|'female',
+ *          fortuneYear?:number, sitting?:string, facing?:string, period?:number, dst?:boolean}} input
  *  natal（默认）：要生日 + 性别 + 流年（缺流年则只算命卦与八星）。
  *  advise：要坐山或向山（24 山，给一即可）；出生信息可选，给了才做命宅配。
+ *  xuankong：要坐山或向山；运由 period（1–9）或 fortuneYear 定，缺省按九运并注明。
  */
 export function buildFengshui(input) {
   if (input.action === 'advise') return buildAdvise(input);
+  if (input.action === 'xuankong') return buildXuankong(input);
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
-    throw new Error('风水命卦需要性别：男女命卦算法不同，不可缺省');
+    throw fail('E_INPUT', '风水命卦需要性别：男女命卦算法不同，不可缺省');
   }
   if (!Number.isInteger(input.year) || !Number.isInteger(input.month) || !Number.isInteger(input.day)) {
-    throw new Error('风水命卦需要完整出生年月日（公历）——只知道年份不够：命卦按立春界划分出生年');
+    throw fail('E_INPUT', '风水命卦需要完整出生年月日（公历）——只知道年份不够：命卦按立春界划分出生年');
   }
   const civil = civilDate(input);
   const guaYear = guaYearOf(civil.year, civil.month, civil.day);
@@ -191,7 +315,7 @@ export function buildFengshui(input) {
       fortuneYear,
       ...(civil.dst.applied ? { dst: civil.dst.note } : {}),
       ...(fortuneYear === null ? { note: '未给流年：未算年紫白飞星（需要时补 fortuneYear）。' } : {}),
-      scope: '八宅命卦 + 大游年八星 + 年紫白；不含玄空飞星各运盘、不含形峦与现场勘舆。',
+      scope: '八宅命卦 + 大游年八星 + 年紫白；玄空飞星见 action=xuankong；不含形峦与现场勘舆。',
     },
     mingGua: {
       num,
@@ -208,22 +332,28 @@ export function buildFengshui(input) {
   };
 }
 
-/** 宅卦坐向 + 门主灶厕布局倾向 + 命宅配。 */
-function buildAdvise(input) {
+/** 坐向解析：至少给坐或向；两者都给则必须对宫。 */
+function resolveSittingFacing(input) {
   const hasSitting = typeof input.sitting === 'string' && input.sitting.trim() !== '';
   const hasFacing = typeof input.facing === 'string' && input.facing.trim() !== '';
   if (!hasSitting && !hasFacing) {
-    throw new Error('缺少坐向：sitting（坐山）或 facing（向山）至少给一个——按罗盘 24 山报坐或报向，例如「坐北朝南」对应坐子向午');
+    throw fail('E_INPUT', '缺少坐向：sitting（坐山）或 facing（向山）至少给一个——按罗盘 24 山报坐或报向，例如「坐北朝南」对应坐子向午');
   }
   if (hasSitting && hasFacing) {
     const s = mountainInfo(input.sitting.trim());
     const f = mountainInfo(input.facing.trim());
     if ((s.index + 12) % 24 !== f.index) {
-      throw new Error(`坐向不自洽：坐${s.m}（${s.deg}°）与向${f.m}（${f.deg}°）不是对宫（相差应 180°，实测 ${((f.deg - s.deg) + 360) % 360}°）——请核对罗盘读数。`);
+      throw fail('E_INPUT', `坐向不自洽：坐${s.m}（${s.deg}°）与向${f.m}（${f.deg}°）不是对宫（相差应 180°，实测 ${((f.deg - s.deg) + 360) % 360}°）——请核对罗盘读数。`);
     }
   }
   const sitting = hasSitting ? mountainInfo(input.sitting.trim()) : sittingFromFacing(input.facing.trim());
   const facing = MOUNTAINS_24[(sitting.index + 12) % 24];
+  return { sitting, facing };
+}
+
+/** 宅卦坐向 + 门主灶厕布局倾向 + 命宅配。 */
+function buildAdvise(input) {
+  const { sitting, facing } = resolveSittingFacing(input);
   const houseGua = sitting.gua;
   const stars = eightStars(houseGua);
   const lucky = LUCKY_STARS.map((s) => stars[s]);
@@ -277,12 +407,68 @@ function buildAdvise(input) {
       facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
       houseGua,
       houseGroup: `${guaGroup(houseGua)}宅`,
-      scope: '门主灶厕走向按八宅通行口径给倾向，不含形峦、不含玄空飞星各运盘、不是现场勘舆结论。',
+      scope: '门主灶厕走向按八宅通行口径给倾向，玄空飞星见 action=xuankong；不含形峦、不是现场勘舆结论。',
     },
     houseStars: starChart,
     layout,
     ...(mingMatch ? { mingMatch } : {}),
     sources: SOURCES,
     disclaimer: DISCLAIMER,
+  };
+}
+
+/** 玄空下卦：坐向 + 运 → 九宫盘、当运星、合十、表法旺山旺向。 */
+function buildXuankong(input) {
+  const { sitting, facing } = resolveSittingFacing(input);
+  let period;
+  let yearInfo = null;
+  let note;
+  if (input.period !== undefined && input.period !== null && !Number.isInteger(input.period)) {
+    throw fail('E_INPUT', `运必须是 1–9 的整数（三元九运），收到「${input.period}」——一运 1864 起、九运 2024–2043。`);
+  }
+  if (Number.isInteger(input.period)) {
+    if (input.period < 1 || input.period > 9) {
+      throw fail('E_INPUT', `运必须是 1–9 的整数（三元九运），收到「${input.period}」——一运 1864 起、九运 2024–2043。`);
+    }
+    period = input.period;
+  } else if (Number.isInteger(input.fortuneYear)) {
+    yearInfo = periodOfYear(input.fortuneYear);
+    period = yearInfo.period;
+  } else {
+    period = 9;
+    note = '未给运：默认按九运（2024–2043）排盘；可传 period（1–9）或 fortuneYear 指定。';
+  }
+  const chart = xuankongChart(period, sitting.m, facing.m);
+  const sitMeta = MOUNTAIN_META[sitting.m];
+  const faceMeta = MOUNTAIN_META[facing.m];
+  const center = (c) => ({ star: c.star, name: NINE_STARS[c.star].name, fly: c.forward ? '顺飞' : '逆飞', basis: c.basis });
+  const where = (list) => list.map((p) => `${p}宫${PALACE_DIRECTION[p]}`).join('、') || '无';
+  return {
+    system: 'fengshui',
+    meta: {
+      action: 'xuankong',
+      period,
+      periodLabel: yearInfo ? yearInfo.label : `${period}运`,
+      ...(yearInfo ? { year: input.fortuneYear, periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
+      sitting: `${sitting.m}山（罗盘 ${sitting.deg}°）`,
+      facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
+      sittingGua: sitting.gua,
+      facingGua: facing.gua,
+      sittingYuan: `${sitMeta.yuan}${sitMeta.yinYang}`,
+      facingYuan: `${faceMeta.yuan}${faceMeta.yinYang}`,
+      shanCenter: center(chart.shanCenter),
+      xiangCenter: center(chart.xiangCenter),
+      ...(note ? { note } : {}),
+      scope: '玄空下卦：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向；不含替卦/兼向、不含年月日时飞星、不含形峦与现场勘舆。',
+    },
+    palaces: chart.palaces,
+    dangYun: {
+      shan: { palaces: chart.dangYun.shan, text: where(chart.dangYun.shan) },
+      xiang: { palaces: chart.dangYun.xiang, text: where(chart.dangYun.xiang) },
+    },
+    heshi: { shan: chart.heshi.shan, xiang: chart.heshi.xiang },
+    wangShanWangXiang: chart.wangShanWangXiang,
+    sources: XUANKONG_SOURCES,
+    disclaimer: XUANKONG_DISCLAIMER,
   };
 }

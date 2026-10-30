@@ -74,12 +74,182 @@ export const MUTAGEN = {
   癸: { 破军: '禄', 巨门: '权', 太阴: '科', 贪狼: '忌' },
 };
 
+// ── 流派开关 ──────────────────────────────────────────────────
+// 默认值对齐本插件既有盘面：亮度用内置通行表，庚干用阳武阴同，
+// 天马按年支、魁钺用全书理解一、天使天伤不换、长生按现有五行局表、
+// 晚子时仍算当日；天空/截空旬空默认不排（旧盘没有这两组星，保持 49 颗）。
+// 其余选项只在显式指定时改变盘面，不影响默认输出。
+export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
+  brightnessSchool: 'default',
+  gengYearSihua: 'GYWYT',
+  tianmaSchool: 'year-branch',
+  tiankongSchool: 'off',
+  jiekongSchool: 'off',
+  kuiyueSchool: 'qs1',
+  tianshiTianshang: 'normal',
+  changshengSchool: 'yin-yang-shun-ni',
+  lateZishi: 'current-day',
+});
+
+export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
+  brightnessSchool: ['default', 'QS', 'XD1', 'ZZ', 'XD2'],
+  gengYearSihua: ['GYWYT', 'GYWTY', 'GYWFT', 'GYWFX', 'GYWTX'],
+  tianmaSchool: ['year-branch', 'month-branch'],
+  tiankongSchool: ['off', 'normal', 'shun-jia-shi'],
+  jiekongSchool: ['off', 'double', 'single', 'zhanyan'],
+  kuiyueSchool: ['qs1', 'qs2', 'zhong-yiming', 'network'],
+  tianshiTianshang: ['normal', 'zhongzhou'],
+  changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
+  lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
+});
+
+export function ziweiSchoolsOf(input = {}) {
+  const nested = input.schools && typeof input.schools === 'object' ? input.schools : {};
+  const out = {};
+  for (const [key, allowed] of Object.entries(ZIWEI_SCHOOL_OPTIONS)) {
+    const raw = input[key] !== undefined ? input[key] : nested[key];
+    out[key] = allowed.includes(raw) ? raw : ZIWEI_SCHOOL_DEFAULTS[key];
+  }
+  return out;
+}
+
+// 亮度表按流派取值：数值 1–7 按各派档位换成中文。
+// QS / XD1 为七档（1庙…7陷），ZZ / XD2 为五档（1庙 2旺 3平 4闲 5陷）。
+const BRIGHTNESS_LEVELS_7 = ['', '庙', '旺', '得', '利', '平', '不', '陷'];
+const BRIGHTNESS_LEVELS_5 = ['', '庙', '旺', '平', '闲', '陷'];
+export const BRIGHTNESS_SCHOOLS = {
+  QS: {
+    levels: BRIGHTNESS_LEVELS_7,
+    rows: {
+      紫微: [5, 1, 2, 2, 3, 2, 1, 1, 2, 2, 3, 2],
+      天机: [1, 7, 3, 2, 4, 5, 1, 7, 3, 2, 4, 5],
+      太阳: [7, 6, 2, 1, 2, 2, 2, 3, 3, 5, 6, 7],
+      武曲: [2, 1, 3, 4, 1, 5, 2, 1, 3, 4, 1, 5],
+      天同: [2, 6, 4, 5, 5, 1, 7, 6, 2, 5, 5, 1],
+      廉贞: [5, 4, 1, 5, 4, 7, 5, 4, 1, 5, 4, 7],
+      天府: [1, 1, 1, 3, 1, 3, 2, 1, 3, 2, 1, 3],
+      太阴: [1, 1, 2, 7, 7, 7, 6, 6, 4, 2, 2, 1],
+      贪狼: [2, 1, 5, 4, 1, 7, 2, 1, 5, 4, 1, 7],
+      巨门: [2, 6, 1, 1, 7, 2, 2, 6, 1, 1, 7, 2],
+      天相: [1, 1, 1, 7, 3, 3, 1, 3, 1, 7, 3, 3],
+      天梁: [1, 2, 1, 1, 1, 3, 1, 2, 7, 3, 1, 7],
+      七杀: [2, 1, 1, 2, 1, 5, 2, 1, 1, 2, 1, 5],
+      破军: [1, 2, 3, 7, 2, 5, 1, 2, 3, 7, 2, 5],
+    },
+  },
+  XD1: {
+    levels: BRIGHTNESS_LEVELS_7,
+    rows: {
+      紫微: [5, 1, 1, 2, 3, 2, 1, 1, 2, 2, 3, 2],
+      天机: [1, 7, 3, 2, 4, 5, 1, 7, 3, 2, 4, 5],
+      太阳: [7, 6, 2, 1, 2, 2, 1, 3, 4, 5, 7, 7],
+      武曲: [2, 1, 3, 4, 1, 5, 2, 1, 3, 4, 1, 5],
+      天同: [2, 6, 4, 1, 5, 1, 7, 6, 2, 5, 5, 1],
+      廉贞: [5, 4, 1, 5, 4, 7, 5, 4, 1, 5, 4, 7],
+      天府: [1, 1, 1, 3, 2, 3, 2, 1, 3, 2, 2, 3],
+      太阴: [1, 1, 6, 7, 7, 7, 7, 5, 4, 2, 2, 1],
+      贪狼: [2, 1, 5, 3, 1, 7, 2, 1, 5, 4, 1, 7],
+      巨门: [2, 6, 1, 1, 5, 5, 2, 5, 1, 1, 5, 2],
+      天相: [1, 1, 1, 7, 5, 3, 3, 3, 1, 7, 3, 3],
+      天梁: [1, 2, 1, 2, 1, 7, 1, 2, 7, 3, 1, 7],
+      七杀: [2, 1, 1, 2, 3, 5, 2, 1, 1, 2, 1, 5],
+      破军: [1, 2, 3, 7, 2, 5, 1, 2, 3, 7, 2, 5],
+    },
+  },
+  ZZ: {
+    levels: BRIGHTNESS_LEVELS_5,
+    rows: {
+      紫微: [3, 1, 1, 2, 5, 2, 1, 1, 2, 3, 4, 2],
+      天机: [1, 5, 2, 2, 1, 3, 1, 5, 3, 2, 1, 3],
+      太阳: [5, 5, 2, 1, 2, 2, 1, 3, 4, 4, 5, 5],
+      武曲: [2, 1, 4, 5, 1, 3, 2, 1, 3, 2, 1, 3],
+      天同: [2, 5, 4, 1, 3, 1, 5, 5, 2, 3, 3, 1],
+      廉贞: [3, 2, 1, 4, 2, 5, 3, 1, 1, 3, 2, 5],
+      天府: [1, 1, 1, 3, 1, 3, 2, 1, 3, 5, 1, 2],
+      太阴: [1, 1, 4, 5, 4, 5, 5, 3, 3, 2, 2, 1],
+      贪狼: [2, 1, 3, 4, 1, 5, 2, 1, 3, 3, 1, 5],
+      巨门: [2, 2, 1, 1, 3, 3, 2, 5, 1, 1, 2, 2],
+      天相: [1, 1, 1, 5, 2, 3, 2, 4, 1, 5, 4, 3],
+      天梁: [1, 2, 1, 1, 2, 5, 1, 2, 5, 4, 2, 5],
+      七杀: [2, 1, 1, 5, 2, 3, 2, 2, 1, 4, 1, 3],
+      破军: [1, 2, 5, 2, 2, 4, 1, 1, 5, 5, 2, 3],
+    },
+  },
+  XD2: {
+    levels: BRIGHTNESS_LEVELS_5,
+    rows: {
+      紫微: [4, 1, 1, 2, 4, 2, 1, 1, 2, 3, 5, 2],
+      天机: [1, 5, 2, 2, 2, 3, 1, 5, 2, 2, 2, 3],
+      太阳: [5, 5, 2, 1, 2, 2, 1, 2, 3, 3, 5, 5],
+      武曲: [2, 1, 3, 5, 1, 3, 2, 1, 3, 2, 1, 3],
+      天同: [2, 5, 3, 1, 2, 1, 5, 5, 2, 3, 3, 1],
+      廉贞: [3, 2, 1, 4, 2, 5, 3, 1, 1, 3, 2, 5],
+      天府: [2, 1, 1, 3, 1, 2, 2, 1, 2, 3, 1, 2],
+      太阴: [1, 1, 5, 5, 5, 5, 5, 5, 2, 2, 1, 1],
+      贪狼: [2, 1, 3, 2, 1, 5, 2, 1, 3, 2, 1, 5],
+      巨门: [2, 5, 1, 2, 5, 1, 2, 5, 1, 2, 5, 1],
+      天相: [1, 1, 1, 5, 2, 3, 2, 3, 1, 5, 5, 3],
+      天梁: [1, 2, 1, 1, 2, 5, 1, 2, 5, 3, 2, 5],
+      七杀: [2, 2, 1, 5, 1, 3, 2, 2, 1, 3, 1, 3],
+      破军: [1, 1, 5, 2, 2, 3, 1, 1, 5, 5, 2, 3],
+    },
+  },
+};
+
+export function schoolBrightness(name, branchIndex, school = 'default') {
+  const table = BRIGHTNESS_SCHOOLS[school];
+  if (!table || !table.rows[name]) return BRIGHTNESS[name] ? BRIGHTNESS[name][fix(branchIndex)] : undefined;
+  const level = table.rows[name][fix(branchIndex)];
+  return level ? table.levels[level] : undefined;
+}
+
+// 庚干四化五变体
+const GENG_MUTAGEN = {
+  GYWYT: { 太阳: '禄', 武曲: '权', 太阴: '科', 天同: '忌' },
+  GYWTY: { 太阳: '禄', 武曲: '权', 天同: '科', 太阴: '忌' },
+  GYWFT: { 太阳: '禄', 武曲: '权', 天府: '科', 天同: '忌' },
+  GYWFX: { 太阳: '禄', 武曲: '权', 天府: '科', 天相: '忌' },
+  GYWTX: { 太阳: '禄', 武曲: '权', 天同: '科', 天相: '忌' },
+};
+
+function mutagenOf(stem, schools) {
+  if (stem === '庚') return GENG_MUTAGEN[schools.gengYearSihua] || MUTAGEN.庚;
+  return MUTAGEN[stem] ?? {};
+}
+
+// 安魁钺四派：差异集中在庚辛壬癸年
+export const KUI_YUE_SCHOOLS = {
+  qs2: {
+    甲: [1, 7], 戊: [1, 7], 庚: [6, 2], 乙: [0, 8], 己: [0, 8],
+    丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [5, 3], 癸: [5, 3],
+  },
+  'zhong-yiming': {
+    甲: [1, 7], 戊: [1, 7], 庚: [2, 6], 乙: [0, 8], 己: [0, 8],
+    丙: [11, 9], 丁: [11, 9], 辛: [2, 6], 壬: [5, 3], 癸: [5, 3],
+  },
+  network: {
+    甲: [1, 7], 戊: [1, 7], 庚: [1, 7], 乙: [0, 8], 己: [0, 8],
+    丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [3, 5], 癸: [3, 5],
+  },
+};
+
+// 截空（按生年干）：single 单星、double 正副双星、zhanyan 占验派
+const JIEKONG = {
+  single: { 甲: 8, 乙: 6, 丙: 4, 丁: 2, 戊: 0, 己: 9, 庚: 7, 辛: 5, 壬: 3, 癸: 1 },
+  double: {
+    甲: [8, 9], 乙: [7, 6], 丙: [4, 5], 丁: [3, 2], 戊: [0, 1],
+    己: [9, 8], 庚: [6, 7], 辛: [5, 4], 壬: [2, 3], 癸: [1, 0],
+  },
+  zhanyan: { 甲: 8, 乙: 6, 丙: 4, 丁: 2, 戊: 10, 己: 9, 庚: 7, 辛: 5, 壬: 3, 癸: 11 },
+};
+
 // 年干系
 export const LUCUN = { 甲: 2, 乙: 3, 丙: 5, 丁: 6, 戊: 5, 己: 6, 庚: 8, 辛: 9, 壬: 11, 癸: 0 };
 export const KUI_YUE = {
   甲: [1, 7], 戊: [1, 7], 庚: [1, 7], 乙: [0, 8], 己: [0, 8],
   丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [3, 5], 癸: [3, 5],
 };
+KUI_YUE_SCHOOLS.qs1 = KUI_YUE;
 
 /** 命主：按命宫地支 */
 export const MING_ZHU = {
@@ -193,11 +363,30 @@ export function xiaoxianAge(branchIndex, triad, gender) {
 // ── 主流程 ────────────────────────────────────────────────────
 
 /**
+ * 闰月口径：split 按日切分（1–15 归本月、16 起归次月，主流排盘默认）、
+ * next 整月归次月、prev 整月归本月。`leapAsNext: true` 是 next 的旧写法。
+ */
+export const LEAP_POLICIES = ['split', 'next', 'prev'];
+
+export function leapPolicyOf(input) {
+  if (input && LEAP_POLICIES.includes(input.leapMonth)) return input.leapMonth;
+  return input && input.leapAsNext ? 'next' : 'split';
+}
+
+export function effectiveLunarMonth(raw, policy) {
+  if (!raw || !raw.isLeap) return raw ? raw.month : 0;
+  if (policy === 'next') return (raw.month % 12) + 1;
+  if (policy === 'split') return raw.day <= 15 ? raw.month : (raw.month % 12) + 1;
+  return raw.month;
+}
+
+/**
  * 排紫微斗数命盘
- * @param {object} input { year,month,day,hour,minute, gender, leapAsNext? }
+ * @param {object} input { year,month,day,hour,minute, gender, leapMonth? }
  */
 export function buildZiwei(input) {
   assertCivil(input);
+  const schools = ziweiSchoolsOf(input);
   const { year: cy, month: cm, day: cd, hour: ch = 0, minute: cmin = 0, gender = 'male' } = input;
   const useTrueSolar = input.trueSolar !== false;
   const geo = input.geo || (input.address ? resolveAddress(input.address) : null);
@@ -212,7 +401,9 @@ export function buildZiwei(input) {
     ? applyTrueSolar(civilJd, longitude)
     : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
   // 紫微按「时辰」起盘：真太阳时若跨时辰/跨日，命盘随之改变
-  const eff = jdToParts(solar.jd);
+  // 晚子时 next-day：23:00 后起盘日顺延一日，只改起盘日，不改真太阳时显示
+  let eff = jdToParts(solar.jd);
+  if (schools.lateZishi === 'next-day' && eff.hour >= 23) eff = jdToParts(solar.jd + 1);
   const year = eff.year;
   const month = eff.month;
   const day = eff.day;
@@ -220,9 +411,8 @@ export function buildZiwei(input) {
   const minute = eff.minute;
 
   const lunarRaw = solarToLunar(year, month, day);
-  const lunarMonth = lunarRaw.isLeap && input.leapAsNext
-    ? (lunarRaw.month % 12) + 1
-    : lunarRaw.month;
+  const leapPolicy = leapPolicyOf(input);
+  const lunarMonth = effectiveLunarMonth(lunarRaw, leapPolicy);
   const lunarDay = lunarRaw.day;
 
   const hb = hourBranchIndex(hour, minute);
@@ -232,6 +422,10 @@ export function buildZiwei(input) {
   const yearStem = yearGanzhi.stem;
   const yb = BRANCHES.indexOf(yearGanzhi.branch);
   const triad = triadOf(yb);
+  // 大限顺逆：阳男阴女顺行、阴男阳女逆行（天伤天使的中州派互换也要用它）
+  const yearYang = STEMS.indexOf(yearStem) % 2 === 0;
+  const forward = (yearYang && gender === 'male') || (!yearYang && gender === 'female');
+  const kuiyueTable = KUI_YUE_SCHOOLS[schools.kuiyueSchool] || KUI_YUE;
 
   // 命宫 / 身宫
   const soulIndex = fix(2 + (lunarMonth - 1) - hb);
@@ -247,12 +441,12 @@ export function buildZiwei(input) {
 
   // 星曜落宫
   const starsByBranch = Array.from({ length: 12 }, () => []);
-  // 安星：主星顺带记下所在宫的庙旺得利平不陷（BRIGHTNESS 以地支序索引，与 fix(branch) 一致）
+  // 安星：主星顺带记下所在宫的庙旺得利平不陷（亮度可按流派切换，默认用内置通行表）
   const put = (branch, name, type) => {
     const idx = fix(branch);
     const star = { name, type };
     if (type === '主星' && BRIGHTNESS[name]) {
-      const b = BRIGHTNESS[name][idx];
+      const b = schoolBrightness(name, idx, schools.brightnessSchool);
       if (b) star.brightness = b;
     }
     starsByBranch[idx].push(star);
@@ -278,7 +472,7 @@ export function buildZiwei(input) {
   put(lucun, '禄存', '吉星');
   put(lucun + 1, '擎羊', '煞星');
   put(lucun - 1, '陀罗', '煞星');
-  const [kui, yue] = KUI_YUE[yearStem];
+  const [kui, yue] = kuiyueTable[yearStem];
   put(kui, '天魁', '吉星');
   put(yue, '天钺', '吉星');
 
@@ -290,13 +484,36 @@ export function buildZiwei(input) {
   put(6 + yb, '天虚', '煞星');
   put(4 + yb, '龙池', '吉星');
   put(10 - yb, '凤阁', '吉星');
-  put(TIANMA[triad], '天马', '吉星');
+  // 天马：默认按年支三合，可切生月三合（正月起寅）
+  const maTriad = schools.tianmaSchool === 'month-branch'
+    ? triadOf(fix(2 + (lunarMonth - 1)))
+    : triad;
+  put(TIANMA[maTriad], '天马', '吉星');
   put(XIANCHI[triad], '咸池', '煞星');
   put(HUAGAI[triad], '华盖', '杂曜');
   const dirGroup = directionOf(yb);
   put(GUCHEN[dirGroup], '孤辰', '煞星');
   put(GUASU[dirGroup], '寡宿', '煞星');
   put(posuIndex(yb), '破碎', '煞星');
+
+  // 空曜（默认不排，旧盘保持 49 颗）
+  if (schools.tiankongSchool !== 'off') {
+    put(schools.tiankongSchool === 'shun-jia-shi' ? yb + hb : yb + 1, '天空', '杂曜');
+  }
+  if (schools.jiekongSchool !== 'off') {
+    const jk = JIEKONG[schools.jiekongSchool][yearStem];
+    if (Array.isArray(jk)) {
+      put(jk[0], '截空', '杂曜');
+      put(jk[1], '副截', '杂曜');
+    } else {
+      put(jk, '截空', '杂曜');
+    }
+    // 旬空：本旬十日所空两支（年干支所在旬的末两位）
+    const nianIndex = (((lunarRaw.lunarYear - 4) % 60) + 60) % 60;
+    const decadeStart = nianIndex - (nianIndex % 10);
+    put(decadeStart + 10, '旬空', '杂曜');
+    put(decadeStart + 11, '副旬', '杂曜');
+  }
 
   // 月系
   put(9 + (lunarMonth - 1), '天刑', '煞星');  // 酉起正月顺行
@@ -314,12 +531,13 @@ export function buildZiwei(input) {
   put(11 + hb, '地劫', '煞星');   // 亥宫起子时，顺行
   put(11 - hb, '地空', '煞星');   // 亥宫起子时，逆行
 
-  // 固定宫位：天伤恒在交友，天使恒在疾厄
-  put(soulIndex - 7, '天伤', '杂曜');
-  put(soulIndex - 5, '天使', '杂曜');
+  // 固定宫位：天伤恒在交友、天使恒在疾厄；中州派阴男阳女互换
+  const swapTianshi = schools.tianshiTianshang === 'zhongzhou' && !forward;
+  put(soulIndex - (swapTianshi ? 5 : 7), '天伤', '杂曜');
+  put(soulIndex - (swapTianshi ? 7 : 5), '天使', '杂曜');
 
-  // 生年四化
-  const mutagenMap = MUTAGEN[yearStem] ?? {};
+  // 生年四化（庚干按所选变体）
+  const mutagenMap = mutagenOf(yearStem, schools);
   for (const list of starsByBranch) {
     for (const star of list) {
       if (mutagenMap[star.name]) star.mutagen = mutagenMap[star.name];
@@ -330,13 +548,14 @@ export function buildZiwei(input) {
   const palaceNames = [];
   for (let i = 0; i < 12; i++) palaceNames[fix(soulIndex - i)] = PALACE_NAMES[i];
 
-  // 大限：阳男阴女顺行、阴男阳女逆行
-  const yearYang = STEMS.indexOf(yearStem) % 2 === 0;
-  const forward = (yearYang && gender === 'male') || (!yearYang && gender === 'female');
+  // 大限：阳男阴女顺行、阴男阳女逆行（forward 已在安星前算好）
   const startAge = bureau.number;
 
   // 十二神（长生/博士 随大限顺逆，将前/岁前 恒顺行）
-  const csStart = CHANGSHENG_START[bureau.number];
+  // 土五局长生起点按流派：默认申，河洛/火土派取寅
+  const csStart = schools.changshengSchool === 'huo-tu' && bureau.number === 5
+    ? 2
+    : CHANGSHENG_START[bureau.number];
   const shenshaAt = (branch) => {
     const d = forward ? 1 : -1;
     return {
@@ -442,8 +661,8 @@ export function buildZiwei(input) {
       liulu: BRANCHES[lu],
       liuyang: BRANCHES[fix(lu + 1)],
       liutuo: BRANCHES[fix(lu - 1)],
-      liukui: BRANCHES[KUI_YUE[gz.stem][0]],
-      liuyue: BRANCHES[KUI_YUE[gz.stem][1]],
+      liukui: BRANCHES[kuiyueTable[gz.stem][0]],
+      liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
       mutagen: Object.entries(MUTAGEN[gz.stem] ?? {}).map(([s, k]) => `${s}化${k}`),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
@@ -457,13 +676,16 @@ export function buildZiwei(input) {
     input: {
       year: cy, month: cm, day: cd, hour: ch, minute: cmin,
       gender,
-      leapAsNext: Boolean(input.leapAsNext),
+      leapMonth: leapPolicy,
+      leapAsNext: leapPolicy === 'next',
       longitude: longitude ?? null,
       address: input.address || null,
       geo,
       trueSolar: useTrueSolar,
       dst: { applied: !!dst.applied, note: dst.note || null },
+      schools: { ...schools },
     },
+    schools: { ...schools },
     solarTime: {
       civilText: `${cy}-${String(cm).padStart(2, '0')}-${String(cd).padStart(2, '0')} ${String(ch).padStart(2, '0')}:${String(cmin).padStart(2, '0')}`,
       trueSolarText: formatJd(solar.jd),
@@ -473,10 +695,16 @@ export function buildZiwei(input) {
     lunar: {
       year: lunarRaw.lunarYear,
       month: lunarMonth,
+      monthRaw: lunarRaw.month,
       day: lunarDay,
       isLeap: lunarRaw.isLeap,
+      leapPolicy,
       monthStart: lunarRaw.monthStart,
-      ...(lunarRaw.isLeap ? { note: '闰月按本月起盘（可用 leapAsNext 改为按次月）' } : {}),
+      ...(lunarRaw.isLeap ? {
+        note: leapPolicy === 'split'
+          ? `闰${lunarRaw.month}月按日切分：1–15 按本月、16 起按次月；本盘闰月${lunarDay}日按${lunarMonth}月`
+          : leapPolicy === 'next' ? '闰月整月按次月起盘' : '闰月整月按本月起盘',
+      } : {}),
     },
     hourBranch,
     yearGanzhi: yearGanzhi.name,
@@ -512,8 +740,9 @@ export function buildZiwei(input) {
     },
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
-      mutagen: '生年四化用中州派常用表；庚干各派有异（有以天同化科、太阴化忌者）',
-      leapMonth: '闰月默认按本月，可切换为按次月',
+      mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}；庚干四化只作用于生年四化`,
+      leapMonth: '闰月默认按日切分（1–15 归本月、16 起归次月，主流排盘口径）；可传 leapMonth: next（整月归次月）或 prev（整月归本月），leapAsNext: true 等同 next',
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
       masters: '命主按命宫地支，身主按生年地支',
@@ -950,8 +1179,7 @@ export function flowOf(chart, asOf) {
   const MI = a.minute === undefined ? now.getMinutes() : a.minute;
 
   const lr = solarToLunar(Y, M, D);
-  const leapAsNext = Boolean(chart.input && chart.input.leapAsNext);
-  const natalMonth = chart.lunar.isLeap && leapAsNext ? (chart.lunar.month % 12) + 1 : chart.lunar.month;
+  const natalMonth = chart.lunar.month; // 已在起盘时按闰月口径换算过，这里不再二次换月
   const natalHB = BRANCHES.indexOf(chart.hourBranch);
   const hbNow = hourBranchIndex(H, MI);
 

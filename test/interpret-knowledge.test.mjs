@@ -3,7 +3,7 @@
 // 这套条目会在文末以「各家有异说 / 待核实」的形式直接展示给用户，
 // 所以它比普通文案更需要硬约束：没有出处的知识、没标注分歧的断言，都不该进库。
 import { KNOWLEDGE, knowledgeFor, caveatsFor, STATUS_LABEL } from '../engine/interpret-knowledge.js';
-import { compute } from '../engine/index.js';
+import { compute, interpretText } from '../engine/index.js';
 import { ok } from './_harness.mjs';
 
 const STATUSES = new Set(['settled', 'variant', 'todo']);
@@ -63,6 +63,23 @@ ok('八字：知识条目带出处', withKnow.every((d) => d.knowledge.every((k)
 ok('八字：有条目计数', it.knowledgeCount > 0, String(it.knowledgeCount));
 ok('八字：文末有可信度声明', (it.sections || []).some((s) => s.label === '这套规则有多稳'), '缺「这套规则有多稳」');
 ok('八字：caveats 数组存在', Array.isArray(it.caveats) && it.caveats.length > 0, `${it.caveats && it.caveats.length}`);
+
+// 注解不刷屏：一张卡全报告只挂一次，每维最多 3 条——否则同一段规则会在五个维度里复读
+{
+  const ids = (it.dimensions || []).flatMap((d) => (d.knowledge || []).map((k) => k.id));
+  const uniq = new Set(ids);
+  ok('八字：同一张知识卡不重复出现', uniq.size === ids.length, `${ids.length} 条 / ${uniq.size} 张`);
+  ok('八字：每维注解不超过 3 条', (it.dimensions || []).every((d) => (d.knowledge || []).length <= 3), (it.dimensions || []).map((d) => (d.knowledge || []).length).join(','));
+  ok('八字：knowledgeCount 与实际挂载的条目数一致', it.knowledgeCount === ids.length, `${it.knowledgeCount} vs ${ids.length}`);
+}
+
+// 没填问题时：抬头不喊「（未填写）」，也不假称「你问的这件事」
+{
+  const n = compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州', withInterpret: true });
+  const text = interpretText(n.interpret);
+  ok('无问题：抬头不写「未填写」', !text.includes('（未填写）'), text.slice(0, 40));
+  ok('无问题：不假称「你问的这件事」', !text.includes('具体到你问的这件事'), text.slice(0, 160));
+}
 
 // 六爻：用神条目必须出现（这是六爻最核心的一条规则）
 const l = compute({ system: 'liuyao', datetime: '2026-10-24T19:30', lines: [7, 8, 9, 6, 7, 8], question: '这件事能成吗', withInterpret: true }).interpret;

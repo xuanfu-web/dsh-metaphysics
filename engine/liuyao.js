@@ -701,6 +701,91 @@ export function yongshenStrength(result, useGod, opts = {}) {
   };
 }
 
+// ── 伏神出伏：飞伏生克 + 月建日辰，只判条件、不出应期 ─────────────────
+// 知识卡只承诺四件事：飞神生伏、伏神克飞、日月生扶算得力，飞神克伏算受压。
+// 这里把「助」与「压」分开列，再按四档归并；不排各家优先级，也不推日期。
+export const FUSHEN_VERDICTS = ['可出', '有助有压', '受压难出', '未得助'];
+
+/**
+ * 伏神出不出得来：先看飞伏生克，再叠月建与日辰。
+ * 助：飞生伏、伏克飞、日辰生/比和、月建旺/相；
+ * 压：飞克伏、日辰克、月破。旬空只标出，不并入档位。
+ * @param {object} result buildLiuyao 的结果
+ * @param {object} useGod yongshenOf 的结果
+ * @param {{monthBranch?: string, dayBranch?: string}} opts
+ */
+export function fushenAccess(result, useGod, opts = {}) {
+  if (!useGod || !Array.isArray(useGod.fushen) || !useGod.fushen.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const dayElement = dayBranch ? zhiElementOf(dayBranch) : null;
+  const kong = Array.isArray(result && result.xunKong)
+    ? result.xunKong
+    : (result && typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+
+  const items = useGod.fushen.map((f) => {
+    const element = f.element || zhiElementOf(f.branch);
+    const relation = f.relation || null;
+    const monthState = monthStateOf(element, monthElement);
+    const monthChong = !!(monthBranch && CHONG_OF[f.branch] === monthBranch);
+    const dayRelation = dayRelationOf(element, dayElement);
+    const kongz = kong.includes(f.branch);
+
+    const supports = [];
+    if (relation === '飞生伏') supports.push('飞神生伏');
+    if (relation === '伏克飞') supports.push('伏神克飞');
+    if (dayRelation === '日生') supports.push('日辰生伏');
+    if (dayRelation === '比和') supports.push('日辰比和');
+    if (monthState === '旺') supports.push('月建同气');
+    if (monthState === '相') supports.push('月建相生');
+
+    const pressures = [];
+    if (relation === '飞克伏') pressures.push('飞神克伏');
+    if (dayRelation === '日克') pressures.push('日辰克伏');
+    if (monthChong) pressures.push('月破');
+
+    const verdict = !relation ? '飞伏未知'
+      : supports.length && pressures.length ? '有助有压'
+        : supports.length ? '可出'
+          : pressures.length ? '受压难出' : '未得助';
+    const basis = monthBranch && dayBranch ? '月建日辰' : monthBranch ? '月建' : dayBranch ? '日辰' : '飞伏';
+
+    const facts = [];
+    if (relation) facts.push(`飞伏${relation}`);
+    if (monthBranch) facts.push(`月建${monthBranch}（${monthElement}）${monthState}${monthChong ? '、月破' : ''}`);
+    if (dayBranch) facts.push(`日辰${dayBranch}（${dayElement}）${dayRelation}`);
+    if (kongz) facts.push('伏神旬空');
+    const say = `第${f.position}爻${f.branch}${element}：${facts.join('，')} → ${verdict}` +
+      `（助：${supports.join('、') || '无'}；压：${pressures.join('、') || '无'}）`;
+
+    return {
+      position: f.position,
+      branch: f.branch,
+      element,
+      relation,
+      fei: f.fei || null,
+      monthState,
+      monthChong,
+      dayRelation,
+      kong: kongz,
+      basis,
+      supports,
+      pressures,
+      verdict,
+      say,
+    };
+  });
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    day: dayBranch ? { branch: dayBranch, element: dayElement } : null,
+    items,
+    labels: items.map((it) => `第${it.position}爻${it.verdict}`),
+    note: '出伏只看「有没有助、有没有压」两件事：飞生伏、伏克飞、日辰生/比和、月建旺/相算助；飞克伏、日辰克、月破算压。四档只把条件并列，不排各家优先级；旬空只标出，不并入档位，也不出应期。',
+  };
+}
+
 // ── 全卦逐爻旺衰：月建日辰落到六爻全部 ──────────────────────────────
 // 与用神旺衰同一套判定（月令五态、日辰五关系、三种冲法），区别只在不挑用神：
 // 六爻每一爻都给一次，世应、动爻、旬空另标，看得出整张卦的气压在哪一头。

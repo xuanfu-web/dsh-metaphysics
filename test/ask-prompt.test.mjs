@@ -23,24 +23,31 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
   eq('默认不截断', p.truncated, false);
 }
 
-// ② 内容：体系翻译、问题、摘要、回答要求三段都在
+// ② 内容：体系翻译、问题、摘要、回答要求都在，且回答要求给的是「能读懂」的骨架
 {
   const p = askPrompt(bazi, { question: '2027 年事业怎么样' });
   ok('体系翻成中文名', p.text.includes('体系：八字（四柱）') && p.label === '八字（四柱）');
   ok('问题出现在【所问】那行', p.text.includes('所问：2027 年事业怎么样'));
   ok('带【盘面摘要】小节', p.text.includes('——盘面摘要——'));
   ok('摘要真的搬进来了（取盘面首句片段）', p.text.includes('【四柱】'));
-  ok('带【回答要求】三条', p.text.includes('——回答要求——') && /1\)/.test(p.text) && /2\)/.test(p.text) && /3\)/.test(p.text));
+  ok('带【回答要求】小节与 1–4 编号', p.text.includes('——回答要求——') && /1\)/.test(p.text) && /2\)/.test(p.text) && /3\)/.test(p.text) && /4\)/.test(p.text));
+  ok('先交代读者不懂命理', /读者不懂命理/.test(p.text));
+  ok('四行骨架齐全（盘面/白话/倾向/边界）', ['盘面｜', '白话｜', '倾向｜', '边界｜'].every((k) => p.text.includes(k)));
+  ok('骨架里先要一句无术语的结论', /开头一句结论/.test(p.text) && /不用术语/.test(p.text));
+  ok('要求把难词当场翻成日常话', /调候 \/ 化气 \/ 通关 \/ 空亡 \/ 争合/.test(p.text));
+  ok('要求收尾给一句「如果只记一件事」', /如果只记一件事/.test(p.text));
   ok('要求里点明要引到柱/宫/爻', /柱、宫或爻/.test(p.text));
   ok('要求里点明看不出来就说', /这盘里看不出来/.test(p.text));
+  ok('要求里禁「没有信息的空话」（举例给了两条）', /格局很好/.test(p.text) && /运程不顺/.test(p.text));
   ok('不含绝对化表述', noBanned(p.text));
   ok('不以句号外的裸换行结尾', !/\n\s*$/.test(p.text), JSON.stringify(p.text.slice(-3)));
 }
 
-// ③ 空问题 → 默认请它总览，且说明依据
+// ③ 空问题 → 默认请它先讲白话主线，再讲依据
 {
   const p = askPrompt(bazi, { question: '   ' });
-  ok('空问题退到默认问法', p.question.includes('总览这张盘') && p.question.includes('依据'));
+  ok('空问题退到默认问法（先白话主线）', p.question.includes('一句白话') && p.question.includes('主线'));
+  ok('默认问法也要依据', p.question.includes('依据'));
   ok('默认问法也进到【所问】行', p.text.includes(`所问：${p.question}`));
   const p2 = askPrompt(bazi, {});
   eq('不传 question 与空串等价', p2.question, p.question);
@@ -71,7 +78,10 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
   const p = askPrompt(long, { maxChars: 400 });
   eq('超长摘要标记截断', p.truncated, true);
   ok('截断处带标注', p.text.includes('（摘要已截断）'));
-  ok('正文实际长度受控', p.chars < 400 + 400, String(p.chars));
+  // 受控的是「摘要那一段」，不是整段提问：固定抬头与回答要求是常量，随 maxChars 不变
+  const kept = (p.text.match(/甲/g) || []).length;
+  ok('摘要正文真的截到 maxChars（只多一个省略号位）', kept <= 401, String(kept));
+  ok('固定骨架本身不超过 900 字（别把提问写成小作文）', p.chars - kept < 900, String(p.chars - kept));
 
   const bare = askPrompt({ system: 'ziwei' }, { question: '看看命宫' });
   ok('没有摘要时给占位句', bare.text.includes('没有摘要字段'));
@@ -96,4 +106,39 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
   const p = askPrompt(liuyao, { question: '这份工作能成吗' });
   ok('六爻摘要带卦名与用神', /用神|卦体/.test(p.text), p.text.slice(0, 80));
   ok('问题原样出现', p.text.includes('所问：这份工作能成吗'));
+}
+
+// ⑧ 白话层接进模板：面板已算好的「直答 / 说人话」原样交给模型，开场不再另起一套
+{
+  const rich = compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州', withInterpret: true, question: '今年考运', direction: 'study' });
+  const it = rich.interpret;
+  const p = askPrompt(rich, { question: '今年考运', interpret: it });
+  ok('传解析时带「开场结论」小节', p.text.includes('——开场结论（插件已按同一套规则算好'), p.text.slice(0, 100));
+  ok('直答原样进模板', p.text.includes(`直答：${it.answer}`), it.answer.slice(0, 40));
+  ok('说人话原样进模板', p.text.includes(`说人话：${it.plain}`), it.plain.slice(0, 40));
+  ok('开场结论排在盘面摘要之前', p.text.indexOf('——开场结论') < p.text.indexOf('——盘面摘要——'));
+  ok('回答要求改为先沿用开场结论', /先沿用上面的「开场结论」/.test(p.text) && /不用术语/.test(p.text));
+  const noDraft = askPrompt({ system: rich.system, summary: rich.summary }, { question: '今年考运' });
+  const extra = p.chars - noDraft.chars;
+  ok('底稿只多出一小段、不撑成小作文', extra > 0 && extra < 700, `+${extra}`);
+
+  // 不传 interpret、盘面也没有 r.interpret 时保持原样，别硬凑一段空白话
+  const plainOnly = askPrompt(bazi, { question: '2027 年事业怎么样' });
+  ok('没有解析时不加「开场结论」小节', !plainOnly.text.includes('——开场结论'));
+  ok('没有解析时回答要求保持原文', plainOnly.text.includes('1) 开头一句结论：不用术语'));
+  ok('空解析对象不生成空小节', !askPrompt(bazi, { question: 'x', interpret: {} }).text.includes('——开场结论'));
+
+  // compute 已带 interpret 时自动采用，调用方忘了传也不会退回老口径
+  const auto = askPrompt(rich, { question: '今年考运' });
+  ok('r.interpret 存在时自动带底稿', auto.text.includes('——开场结论') && auto.text.includes(`直答：${it.answer}`));
+
+  // 没问事时，底稿也不该出现「先答所问」
+  const silent = compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州', withInterpret: true });
+  const sp = askPrompt(silent, { interpret: silent.interpret });
+  ok('没问事时底稿不说「答所问」', sp.text.includes('——开场结论') && !sp.text.includes('先答所问'), sp.text.slice(0, 80));
+  ok('没问事时直答落在「没指定问题」', /没指定问题/.test(sp.text));
+
+  // 传了解析也要保持确定性（同一盘同一问逐字相同）
+  const again = askPrompt(rich, { question: '今年考运', interpret: it });
+  eq('带底稿时输出仍逐字相同', again.text, p.text);
 }

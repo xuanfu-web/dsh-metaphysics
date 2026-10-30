@@ -199,30 +199,54 @@ const SYSTEM_LABEL = {
  * 客户端把这段文字写进对话输入框并提交，由对话里的模型基于盘面回答。
  *
  * @param {object} r compute 的结果（至少要带 system 与 summary）
- * @param {{question?:string, maxChars?:number}} [opts]
+ * @param {{question?:string, maxChars?:number, interpret?:object}} [opts]
+ *        interpret 传面板已算好的解析对象（it）时，把其中的白话结论一并交给模型，
+ *        让对话开场与面板里的「先答所问 / 说人话」是同一个口径；不传则不加这一段。
  * @returns {{text:string, question:string, system:string, label:string, chars:number, truncated:boolean}}
  */
 export function askPrompt(r, opts = {}) {
   const label = SYSTEM_LABEL[r && r.system] || (r && r.system) || '未知体系';
   const asked = String((opts && opts.question) || '').trim();
-  const question = asked || '请先总览这张盘，指出最值得注意的一两处，并说明各自的依据。';
+  const question = asked || '请先用一句白话讲清这张盘的主线，再指出最值得注意的一两处，并说明每处的具体依据。';
   const limit = Number.isFinite(opts && opts.maxChars) && opts.maxChars >= 400 ? opts.maxChars : 3000;
   const raw = String((r && r.summary) || '').trim();
   const truncated = raw.length > limit;
   const summary = truncated ? `${raw.slice(0, limit)}…（摘要已截断）` : raw;
+
+  // 面板里已经算过一遍解析：直接取「直答 / 说人话」，避免模型开场另起一套说法
+  const it = (opts && typeof opts.interpret === 'object' && opts.interpret)
+    || (r && typeof r.interpret === 'object' && r.interpret) || null;
+  const answer = String((it && it.answer) || '').trim();
+  const plain = String((it && it.plain) || '').trim();
+  const draft = [];
+  if (answer) draft.push(`直答：${answer}`);
+  if (plain) draft.push(`说人话：${plain}`);
 
   const lines = [
     '【命理追问】下面这张盘是命理插件刚排好的，请就着它回答我的问题；不用重新排盘，盘面字段已经够用。',
     `体系：${label}`,
     `所问：${question}`,
     '',
+    ...(draft.length ? [
+      '——开场结论（插件已按同一套规则算好，开场先沿用这句；措辞可改，口径别换）——',
+      ...draft,
+      '',
+    ] : []),
     '——盘面摘要——',
     summary || '（这张盘没有摘要字段，请先让我重新排一次。）',
     '',
     '——回答要求——',
-    '1) 尽量引用到具体的柱、宫或爻，再说判断，别只给结论；',
-    '2) 盘面里没有依据的地方直接说「这盘里看不出来」，不要补外部假设；',
-    '3) 用概率和倾向的说法，别给绝对化的断言，也别把传统说法当成事实。',
+    '读者不懂命理。按下面的骨架答；任何一句他看不懂，就算没写完：',
+    draft.length
+      ? '1) 开头一句结论：先沿用上面的「开场结论」，再用一句不用术语的话说清这张盘的主线——只读这一句也该有收获；'
+      : '1) 开头一句结论：不用术语，一句话说清这张盘的主线，只读这一句也该有收获；',
+    '2) 判断最多两条，按重要性排序，每条分四行写：',
+    '   盘面｜只引盘面已有的字（具体的柱、宫或爻、字段名），不掺解释；',
+    '   白话｜把上一行的术语当场翻成日常话——调候 / 化气 / 通关 / 空亡 / 争合 这类词必须落地，一个词只翻一次，不连续堆三个以上；',
+    '   倾向｜说「更可能……」，讲清它在现实里大概意味着什么，用概率语气；',
+    '   边界｜这条在什么情况下不成立；盘面没给的，直接写「这盘里看不出来」；',
+    '3) 收尾一句「如果只记一件事」：给一条能核对、能动手的观察点，并说明它出自上面哪条盘面依据；',
+    '4) 别把传统说法当成已证实的事实：不下绝对断言，也不用「肯定」「绝对」这类词，更不写「格局很好」「运程不顺」这种没有信息的空话。',
   ];
   const text = lines.join('\n');
   return { text, question, system: (r && r.system) || '', label, chars: text.length, truncated };

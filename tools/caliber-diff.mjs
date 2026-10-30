@@ -45,9 +45,14 @@ const SWITCHES = {
   ],
   ziwei: [
     {
-      name: '闰月：按本月 / 按次月',
-      a: { leapAsNext: false },
-      b: { leapAsNext: true },
+      name: '闰月：按日切分 / 整月归次月',
+      a: { leapMonth: 'split' },
+      b: { leapMonth: 'next' },
+    },
+    {
+      name: '闰月：整月归本月 / 整月归次月',
+      a: { leapMonth: 'prev' },
+      b: { leapMonth: 'next' },
     },
     {
       name: '真太阳时：是否按出生地经度修正',

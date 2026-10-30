@@ -198,6 +198,36 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
   return out;
 }
 
+// ── 通关 ────────────────────────────────────────────────────
+// 滴天髓「通关」只给取象（织女、牛郎），这里把结构说清：
+// 用神与忌神两行在局中都真有分量、且相克时，五行里恰有一行能接上——克方所生、且能生被克方。
+// 只报这一行在局中的分量，不判「关通了就吉」。
+const TONGGUAN_MIN = 1.5;
+export function tongguanOf(favor = [], avoid = [], wuxing = {}) {
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  for (const use of favor) {
+    if (w(use) < TONGGUAN_MIN) continue;
+    for (const foe of avoid) {
+      if (OVERCOMES[foe] !== use || w(foe) < TONGGUAN_MIN) continue;
+      const bridge = GENERATES[foe];
+      if (!bridge || GENERATES[bridge] !== use) continue;
+      const weight = w(bridge);
+      const bridgeIsAvoid = avoid.includes(bridge) && !favor.includes(bridge);
+      const level = bridgeIsAvoid ? '为忌' : weight >= TONGGUAN_MIN ? '可通' : weight > 0 ? '关弱' : '未通';
+      return {
+        use, foe, bridge,
+        weight,
+        present: weight > 0,
+        bridgeIsAvoid,
+        level,
+        usable: level === '可通',
+        note: '相战＝用神与忌神两行各在局中 ≥1.5 分且相克；通关一行＝克方所生、又能生用神的那一行（五行里唯一），只报局中分量，不据此断吉凶',
+      };
+    }
+  }
+  return null;
+}
+
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
 
 
@@ -232,6 +262,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   };
   const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
   const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
+  const tongguan = tongguanOf(favor, avoid, wuxing);
 
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
@@ -242,6 +273,15 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
         : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
     `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
+    tongguan
+      ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
+        ? `${tongguan.bridge} ${tongguan.weight} 分，关可通`
+        : tongguan.level === '关弱'
+          ? `仅 ${tongguan.bridge} ${tongguan.weight} 分，关弱`
+          : tongguan.level === '为忌'
+            ? `${tongguan.bridge} ${tongguan.weight} 分但此行为忌，通关力打折`
+            : `未见${tongguan.bridge}，关未通`}（只作结构提示，不据此断吉凶）。`
+      : '',
     arb.text,
     arb.clash ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。' : '',
   ].filter(Boolean).join('');
@@ -258,6 +298,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,
+    tongguan,
     detail,
   };
 }

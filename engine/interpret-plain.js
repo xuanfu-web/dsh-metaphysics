@@ -33,11 +33,20 @@ const PLAIN_BODY = {
   化退神: '有一爻在往后退，别按原来的势头硬推。',
 };
 
+// 伏神出伏的四档 → 一句白话；只讲条件，不把它说成应期
+const FUSHEN_PLAIN = {
+  可出: '眼下的条件算是有助无压，属于「出得来」的一档——这是条件，不等于马上应验。',
+  有助有压: '眼下是一边有助、一边有压，出得来，但得费点劲。',
+  受压难出: '眼下被上面的力量压着，不太容易露头，先别急着硬推。',
+  未得助: '眼下暂时没借到力，还得等条件转过来。',
+  飞伏未知: '飞伏关系看不全，这一层先不下判断。',
+};
+
 /**
  * 用神 → 一句白话。
  * 只说「用神落在哪、有没有动、要不要往深处找」，不替人断成败。
  */
-function usePlainOf(ug) {
+function usePlainOf(ug, fa) {
   if (!ug || !ug.liuqin) return '';
   if (ug.found.length) {
     const pos = ug.found.map((f) => `第${f.position}爻`).join('、');
@@ -47,7 +56,9 @@ function usePlainOf(ug) {
   }
   if (ug.fushen.length) {
     const f = ug.fushen[0];
-    return `你问的这件事，卦面上没有直接露出来，得往深处找：它藏在第${f.position}爻下面（伏神），与上面的关系是「${f.relation || '—'}」，要借力才出得来。`;
+    const hit = fa && Array.isArray(fa.items) ? fa.items.find((x) => x.position === f.position) : null;
+    const tail = hit ? ` ${FUSHEN_PLAIN[hit.verdict] || ''}` : '';
+    return `你问的这件事，卦面上没有直接露出来，得往深处找：它藏在第${f.position}爻下面（伏神），与上面的关系是「${f.relation || '—'}」，要借力才出得来。${tail}`;
   }
   return '';
 }
@@ -155,6 +166,7 @@ export function buildAnswer(r, ask, ctx = {}) {
         : '',
       `具体到你问的这件事，重点看${where}。`,
     ];
+    if (!q) parts[parts.length - 1] = `没指定问题，就按${where}的顺序往下看。`;
     return parts.filter(Boolean).join('');
   }
 
@@ -173,7 +185,7 @@ export function buildAnswer(r, ask, ctx = {}) {
         `${body.lands ? `，身宫落在「${body.lands}」——这张盘的重心在这件事上` : ''}。`,
       plainFly,
       flyCompositePlain(r.flyComposite),
-      `具体到你问的这件事，重点看${where}。`,
+      q ? `具体到你问的这件事，重点看${where}。` : `没指定问题，就按${where}的顺序往下看。`,
     ].filter(Boolean).join('');
   }
 
@@ -188,12 +200,22 @@ export function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
+        `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
 
-  return head ? `${head}下面按五个维度拆开看，重点看${where}。` : `下面按五个维度拆开看，重点看${where}。`;
+  // 其余体系没有固定小节名：有问才指路；没问就按顺序读，别假装知道「你的问题」
+  if (head) return `${head}下面按五个维度拆开看，重点看${where}。`;
+  // 奇门没有五维，内容按排盘事实/用神/宫位条件几节走，不能跟着说「五个维度」
+  if (r.system === 'qimen') {
+    const dirTip = dir !== 'general' && ask && ask.directionLabel ? `，取「${ask.directionLabel}」方向的用神` : '';
+    return `下面按排盘事实、用神、宫位条件几节展开${dirTip}。`;
+  }
+  if (dir !== 'general' && ask && ask.directionLabel) {
+    return `下面按五个维度拆开看，重点看与「${ask.directionLabel}」方向最贴近的那一节。`;
+  }
+  return '下面按五个维度拆开看，没指定问题，就从头依次读。';
 }
 
 /** 说人话整段：去掉术语，用生活语言讲这张盘的整体气质 */
@@ -215,18 +237,28 @@ export function buildPlain(r, ask, ctx = {}) {
       tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
-    const soul = r.soul || {};
     const body = r.body || {};
     const ji = r.flyChains && r.flyChains.忌;
     // 只挑忌这一条白话：它最能说「你反复在哪几件事上使劲」
-    const plainFly = ji && ji.steps.length
-      ? `另外有一条线值得留意：${ji.path.map((p) => p.replace(/宫$/, '')).join(' → ')}——这几件事在你身上是连着转的，一件事卡住，容易牵动下一件。`
+    // 上面「先答所问」已经报过忌链与飞化的原句，这里换个说法只讲感受，避免同一句念两遍
+    const feltChain = ji && ji.steps.length
+      ? '你身上有个绕不开的规律：几件事是连着转的，一件卡住，后面就跟着慢下来。'
+      : '';
+    const fc = r.flyComposite;
+    const hub = fc && Array.isArray(fc.targets) ? fc.targets.find((t) => t.count >= 2) : null;
+    const feltComposite = !fc || !Array.isArray(fc.targets)
+      ? ''
+      : hub
+        ? `再往深一层，四股力最后也压在「${String(hub.palace).replace(/宫$/, '')}」上——几个方面的劲都往这儿聚。`
+        : '再往深一层，四股的力没有全挤到一处，这几件事之间牵连不深。';
+    const focus = body.lands
+      ? `真正让你上心的，多半是「${body.lands}」这件事，做别的总会分心。`
       : '';
     return [
-      `紫微看的是「你与环境怎么互动」。命宫落${s(soul.branch, '—')}宫，说明你做事的第一反应是从这个宫位的气质出发` +
-        `${body.lands ? `；身宫在「${body.lands}」，意味着真正让你上心的，是${body.lands}这件事` : ''}。`,
-      plainFly,
-      flyCompositePlain(r.flyComposite),
+      `紫微讲的是「你与环境怎么互动」，不是谁好谁坏——同一件事换个环境、换个人配合，结果就不一样。`,
+      focus,
+      feltChain,
+      feltComposite,
     ].filter(Boolean).join('');
   }
   if (r.system === 'liuyao') {
@@ -236,7 +268,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
+      `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
   }
   return '';
 }
@@ -275,6 +307,19 @@ const GLOSSARY = [
   ['纳甲', '给六个爻配上天干地支，六亲与生克才有依据。'],
   ['四化', '禄权科忌四种变化，标记星曜在这一步运里扮演什么角色。'],
   ['大限', '紫微里的十年阶段，作用类似八字的「大运」。'],
+  ['庙旺', '星曜落在某宫时的力量档位：庙、旺最强，得、利、平居中，不、陷最弱。'],
+  ['三方四正', '从命宫出发的三合三方加对宫，共四个宫位，是全盘最核心的势力范围。'],
+  ['命主', '紫微里另有一颗命主星，补命宫看不到的那一层底色。'],
+  ['身主', '紫微里另有一颗身主星，管后天的行动与身体那一面。'],
+  ['五行局', '用纳音给整张盘定一个局（水二局、木三局等），大限的起法以此为准。'],
+  ['自化', '宫干让本宫星曜自己生出四化，代表这一宫的事容易自己发酵。'],
+  ['飞星', '拿一个宫的宫干去四化别的宫，看事情从哪来、往哪走。'],
+  ['正曜', '十四主星。「无正曜」指命宫没有主星，要借对宫来看。'],
+  ['借对宫', '命宫无主星时借对宫主星来读，性格更依赖环境与身边的人。'],
+  ['双星', '两主星同宫，按组合读，不能只看其中一颗。'],
+  ['墓库', '地支里的仓库。五行入墓代表这股力量收着，不是没有。'],
+  ['伏吟', '干支重复出现，事情容易原地打转、反复。'],
+  ['反吟', '天克地冲，变动与对撞的意味更明显。'],
 ];
 
 /** 同一个术语在不同体系里含义不同，必须分体系解释，否则会给出错误定义 */

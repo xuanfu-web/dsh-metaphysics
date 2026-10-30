@@ -125,7 +125,8 @@
    原先 6px 上下内边距只有 31px 高，手机上是实打实的误触来源 */
 .pp-modes label{min-height:44px;display:inline-flex;align-items:center;padding:3px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
 .pp-modes label:hover{background:var(--hover2)}
-.pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--faint)}
+/* 提示条是「宫位可点」的唯一说明，--faint 在浅色下只有 2.3:1，换 --muted 才读得清 */
+.pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--muted)}
 .pp-body{display:none}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
@@ -449,7 +450,6 @@
 .mp-it-ask .ask-q{font-weight:600;color:var(--ink)}
 .mp-it-ask .ask-sep{color:var(--dimline);margin:0 7px}
 .mp-it-ask .ask-d{color:var(--lu)}
-.mp-it-ask .ask-none{color:var(--muted);font-weight:400}
 /* 按询问方向提到最前的那一条 */
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 .mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
@@ -497,6 +497,18 @@
 .mp-it-sec{margin-bottom:11px}
 .mp-it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
 .mp-it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
+/* 分节按「吉 / 留意 / 忌」分层：只改标题色与左侧细线，不换版式 */
+.mp-it-sec.tone-good,.mp-it-sec.tone-watch,.mp-it-sec.tone-bad{padding-left:8px}
+.mp-it-sec.tone-good{border-left:2px solid var(--lu)}
+.mp-it-sec.tone-watch{border-left:2px solid var(--quan)}
+.mp-it-sec.tone-bad{border-left:2px solid var(--red)}
+.mp-it-sec.tone-good .mp-it-sh{color:var(--lu)}
+.mp-it-sec.tone-watch .mp-it-sh{color:var(--quan)}
+.mp-it-sec.tone-bad .mp-it-sh{color:var(--red)}
+/* 长节按行分段：一行一段，行内**加粗**只强化术语，不引入其它标记 */
+.mp-it-p{margin:0 0 5px}
+.mp-it-p:last-child{margin-bottom:0}
+.mp-it-p b{color:var(--ink);font-weight:700;letter-spacing:.02em}
 /* 一页读懂：报告顶部五条结论 */
 .mp-outline{margin:12px 16px 0;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px}
 .mp-outline-h{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
@@ -632,8 +644,61 @@
 .mp-nm-c:last-child{border-bottom:0}
 .mp-nm-c b{font-family:var(--fx);font-size:16.5px;font-weight:600;white-space:nowrap;letter-spacing:.5px}
 .mp-nm-c em{font-style:normal;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:var(--sans)}
+.mp-nm-wu{margin-top:10px;border-top:1px solid var(--hair);padding-top:9px}
+.mp-nm-wu-h{display:flex;align-items:baseline;gap:9px;font-size:12.5px;color:var(--ink2)}
+.mp-nm-wu-h b{font-weight:700;letter-spacing:.18em}
+.mp-nm-wu-h i{font-style:normal;font-size:11px;color:var(--faint)}
+.mp-nm-wu-rows{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:7px 0 6px}
+.mp-nm-wu-c{border:1px solid var(--line);border-radius:6px;padding:5px 6px;text-align:center;background:var(--band)}
+.mp-nm-wu-c em{display:block;font-style:normal;font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+.mp-nm-wu-c b{display:block;font-size:16px;line-height:1.35;color:var(--ink);font-family:var(--sans)}
+.mp-nm-wu-c i{display:block;font-style:normal;font-size:10px;line-height:1.5;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-nm-wu-c.is-ok{border-color:var(--lu)}
+.mp-nm-wu-c.is-ok b{color:var(--lu)}
+.mp-nm-wu-c.is-half{border-color:var(--quan)}
+.mp-nm-wu-c.is-half b{color:var(--quan)}
+.mp-nm-wu-c.is-bad b{color:var(--ji)}
+.mp-nm-ph{margin-top:9px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+.mp-nm-ph b{font-weight:700;letter-spacing:.18em;margin-right:6px}
+.mp-nm-ph em{font-style:normal;color:var(--muted);margin-left:6px;font-family:var(--sans);font-size:11.5px}
+.mp-nm-ph-lv{font-size:11px;border-radius:999px;padding:0 7px;line-height:1.7;border:1px solid var(--line);color:var(--muted)}
+.mp-nm-ph-lv.ok{color:var(--lu);border-color:var(--lu)}
+.mp-nm-ph-lv.warn{color:var(--quan);border-color:var(--quan)}
+.mp-nm-ph-lv.bad{color:var(--ji);border-color:var(--ji)}
+.mp-nm-ph-i{display:inline-block;margin:2px 6px 0 0;font-size:11.5px;color:var(--muted)}
+.mp-nm-ph-i:before{content:'·';margin-right:3px;color:var(--faint)}
 @media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
+/* —— 风水卡片：八宅八向 / 门主灶 / 玄空九宫 ——
+   此前风水结果只是一段等宽文本，「巽8/6/3」要靠读的人自己脑补方位。
+   现在摆成后天八卦 3×3：玄空每宫依次是运/山/向三星，当运高亮；
+   八宅每宫是星名与吉凶。颜色只取共享变量，深色与打印不另写规则。 */
+.mp-fs .mp-quick-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mp-fs-sub{font-size:11.5px;color:var(--muted);font-family:var(--sans)}
+.mp-fs-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mp-fs-chip{font-size:11.5px;line-height:1.8;border:1px solid var(--line);border-radius:999px;padding:0 9px;color:var(--muted);background:var(--band);font-family:var(--sans)}
+.mp-fs-chip.ok{color:var(--lu);border-color:color-mix(in srgb,var(--lu) 40%,var(--line))}
+.mp-fs-key{margin:0 0 6px;font-size:11px;color:var(--faint);font-family:var(--sans)}
+.mp-fs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.mp-fs-cell{background:var(--card);padding:7px 9px;display:flex;flex-direction:column;gap:6px;min-height:56px}
+.mp-fs-cell.center{background:var(--band)}
+.mp-fs-top{display:flex;align-items:baseline;gap:6px;min-width:0}
+.mp-fs-gua{font-family:var(--fx);font-size:15px;font-weight:700;line-height:1;color:var(--ink)}
+.mp-fs-dir{font-size:10.5px;color:var(--muted);font-family:var(--sans);white-space:nowrap}
+.mp-fs-star{margin-left:auto;font-size:12px;color:var(--ink2);font-family:var(--sans);white-space:nowrap}
+.mp-fs-star em{font-style:normal;font-size:10px;margin-left:4px;padding:0 5px;border:1px solid currentColor;border-radius:999px;line-height:1.6;vertical-align:1px}
+.mp-fs-star em.ok{color:var(--lu)}
+.mp-fs-star em.bad{color:var(--ji)}
+.mp-fs-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;font-family:var(--sans);font-variant-numeric:tabular-nums}
+.mp-fs-nums span{text-align:center;font-size:13px;line-height:1.7;border:1px solid var(--hair);border-radius:4px;color:var(--ink2)}
+.mp-fs-nums span.on{background:var(--tri);border-color:var(--quan);color:var(--quan);font-weight:700}
+.mp-fs-facts{margin:0;display:flex;flex-direction:column;gap:4px}
+.mp-fs-row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;font-size:12px;line-height:1.75}
+.mp-fs-row dt{margin:0;color:var(--muted);font-family:var(--sans)}
+.mp-fs-row dd{margin:0;color:var(--ink2);word-break:break-word}
+.mp-fs-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
+@media print{.mp-fs{break-inside:avoid}}
+@media (max-width:420px){.mp-fs-cell{padding:6px}.mp-fs-gua{font-size:14px}.mp-fs-nums span{font-size:12px}}
 /* —— 十六型人格卡片 ——
    旧版是「四行细条 + 段落堆叠」：字小、无层级，看着像一份导出的文档。
    现在按「类型抬头 → 四维瓦片 → 一句 → 优势/留意 → 功能链 → 场景段」分层，
@@ -1077,7 +1142,7 @@
       return `<div class="pp-center">
         ${mode}
         <div class="ct-t2">公历 ${r.input.year}-${String(r.input.month).padStart(2, '0')}-${String(r.input.day).padStart(2, '0')} ${String(r.input.hour).padStart(2, '0')}:${String(r.input.minute).padStart(2, '0')}</div>
-        <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? '闰' : ''}${r.lunar.month}月${r.lunar.day}日${r.hourBranch}时</div>
+        <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? `闰${r.lunar.monthRaw || r.lunar.month}` : r.lunar.month}月${r.lunar.day}日${r.hourBranch}时${r.lunar.isLeap && r.lunar.monthRaw && r.lunar.month !== r.lunar.monthRaw ? `（按${r.lunar.month}月起盘）` : ''}</div>
         ${sizhuOf(r) ? `<div class="ct-t3">${sizhuOf(r)}</div>` : ''}
         <div class="ct-t4">命主 ${r.lifeMaster}　身主 ${r.bodyMaster}</div>
         <div class="ct-t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
@@ -1354,6 +1419,14 @@
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
+    // 伏神出伏：用神不上卦时才出现；只摆条件档，不写应期
+    const fu = r.fushenAccess && Array.isArray(r.fushenAccess.labels) ? r.fushenAccess : null;
+    const fushenRow = fu && fu.labels.length
+      ? `<div class="pp-chips">${fu.labels.map((l) => {
+        const cls = /可出/.test(l) ? 'ok' : /受压难出|有助有压/.test(l) ? 'warn' : '';
+        return `<span class="pp-chip ${cls}">伏神${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     // 化进/化退的力重：方向之外再叠月建日辰，单列一排，免与卦体标签混读
     const jp = r.jinTuiPower && Array.isArray(r.jinTuiPower.labels) ? r.jinTuiPower : null;
     const jinRow = jp && jp.labels.length
@@ -1377,6 +1450,7 @@
       ${bodyRow}
       ${useRow}
       ${strengthRow}
+      ${fushenRow}
       ${jinRow}
       ${hexRow}
     </div>`;
@@ -1992,7 +2066,20 @@
     const head = (title, sub) => `<div class="mp-nm-h"><b>${esc(title)}</b>${sub ? `<i>${esc(sub)}</i>` : ''}</div>`;
     if (r.action === 'generate') {
       const fav = r.bazi && r.bazi.favorable ? r.bazi.favorable.join('、') : '';
-      const cands = (r.candidates || []).map((c) => `<div class="mp-nm-c"><b>${esc(c.name)}</b><span class="mp-nm-els">${c.chars.map((x) => elChip(x.element)).join('')}</span><em>${esc(c.chars.map((x) => x.char + '·' + x.meaning).join('　'))}</em></div>`).join('');
+      const cands = (r.candidates || []).map((c) => {
+        const wu = c.wuge && c.wuge.available
+          ? (() => {
+            const good = c.wuge.rows.filter((x) => x.level === '吉').length;
+            const bad = c.wuge.rows.filter((x) => x.level === '凶').length;
+            const cls = bad === 0 && good >= 4 ? ' ok' : bad >= 2 ? ' no' : '';
+            return `<span class="mp-nm-fit${cls}" title="${esc(c.wuge.summary)}">五格 ${good}/5 吉</span>`;
+          })()
+          : '';
+        const ph = c.phonetics && c.phonetics.available
+          ? `<span class="mp-nm-fit${c.phonetics.level === '拗口' ? ' no' : c.phonetics.level === '顺口' ? ' ok' : ''}" title="${esc((c.phonetics.issues || []).map((x) => x.text).join('；'))}">${esc(c.phonetics.level)}</span>`
+          : '';
+        return `<div class="mp-nm-c"><b>${esc(c.name)}</b><span class="mp-nm-els">${c.chars.map((x) => elChip(x.element)).join('')}${wu}${ph}</span><em>${esc(c.chars.map((x) => x.char + '·' + x.meaning).join('　'))}</em></div>`;
+      }).join('');
       return `<section class="mp-nm" aria-label="候选名">
         ${head('候选名', `姓 ${r.surname}（${r.gender}）${fav ? `　喜用 ${fav}` : ''}`)}
         <div class="mp-nm-cand">${cands}</div>
@@ -2015,10 +2102,24 @@
       ? `<div class="mp-nm-m">八字：${esc(r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : String(r.bazi.dayMaster || ''))}　${esc(r.bazi.strength ? `${r.bazi.strength.level}（${r.bazi.strength.score}）` : '')}　喜用 ${esc((r.bazi.favorable || []).join('、'))}</div>
          <div class="mp-nm-m">${esc(r.bazi.basis || '')}</div>`
       : '';
+    const LV = (x) => (x === '吉' ? 'is-ok' : x === '半吉' ? 'is-half' : 'is-bad');
+    const wu = r.wuge && r.wuge.available
+      ? `<div class="mp-nm-wu">
+          <div class="mp-nm-wu-h"><b>五格</b><i>康熙笔画 · 通行本 81 数理</i></div>
+          <div class="mp-nm-wu-rows">${r.wuge.rows.map((x) => `<div class="mp-nm-wu-c ${LV(x.level)}"><em>${esc(x.key)}</em><b>${x.strokes}</b><i>${esc(`${x.level} · ${x.name}`)}</i></div>`).join('')}</div>
+          <div class="mp-nm-m">笔画：${r.wuge.strokes.map((x) => `${esc(x.char)}${x.strokes}${x.source === 'user' ? '（指定）' : ''}`).join(' ＋ ')}</div>
+          <div class="mp-nm-m">三才：${esc(r.wuge.sancai.text)}</div>
+        </div>`
+      : `<div class="mp-nm-wu"><div class="mp-nm-wu-h"><b>五格</b><i>这一版算不了</i></div><div class="mp-nm-m">${esc(r.wuge ? r.wuge.reason : '未算')}</div></div>`;
+    const ph = r.phonetics && r.phonetics.available
+      ? `<div class="mp-nm-ph"><b>音韵</b><span class="mp-nm-ph-lv${r.phonetics.level === '顺口' ? ' ok' : r.phonetics.level === '拗口' ? ' bad' : ' warn'}">${esc(r.phonetics.level)}</span><em>${esc(r.phonetics.chars.map((x) => `${x.py}${x.tone}`).join(' '))}　声调 ${esc(r.phonetics.tonePattern)}</em>${(r.phonetics.issues || []).map((x) => `<span class="mp-nm-ph-i">${esc(x.text)}</span>`).join('')}</div>`
+      : `<div class="mp-nm-ph"><b>音韵</b><em>${esc(r.phonetics ? r.phonetics.reason : '未算')}</em></div>`;
     return `<section class="mp-nm" aria-label="名字评估">
       ${head(r.fullName || '', `字库 ${r.stats && r.stats.libSize ? r.stats.libSize : ''} 字${r.stats && r.stats.unknown ? `　未收录 ${r.stats.unknown}` : ''}`)}
       ${rows}
       ${bz}
+      ${wu}
+      ${ph}
       <div class="mp-nm-verd">${esc(r.verdict || '')}</div>
       <div class="mp-nm-note">${(r.notes || []).map((n) => '※ ' + esc(n)).join('<br>')}</div>
     </section>`;
@@ -2203,21 +2304,27 @@
           </table></div>
         </div>`).join('')}</div>`
       : '';
+    // 分节正文先转义再认两种轻标记：换行分段、**术语**加粗——不引入 HTML 注入面
+    const richText = (text) => String(text || '')
+      .split('\n')
+      .map((line) => `<div class="mp-it-p">${esc(line).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')}</div>`)
+      .join('');
     const secs = (it.sections && it.sections.length)
-      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec" id="mp-sec-${esc(s.key)}">
+      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
         <div class="mp-it-sh">${esc(s.label)}</div>
-        <div class="mp-it-stext">${esc(s.text)}</div>
+        <div class="mp-it-stext">${richText(s.text)}</div>
       </div>`).join('')}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
     // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
     const ask = it.ask;
-    // 只有真的填了问题、或选了非「综合」方向时才回显；命盘类不问事，不显示这一行
-    const askLine = (ask && (ask.question || (ask.direction && ask.direction !== 'general')))
-      ? `<div class="mp-it-ask"><span class="ask-q">问题：${ask.question ? esc(ask.question) : '<span class="ask-none">（未填写）</span>'}</span><span class="ask-sep">｜</span><span class="ask-d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
+    // 只有真的填了问题、或选了非「综合」方向时才回显；没填就只报方向，不喊「（未填写）」
+    const askQ = ask && ask.question ? esc(ask.question) : '';
+    const askLine = ask && (askQ || (ask.direction && ask.direction !== 'general'))
+      ? `<div class="mp-it-ask">${askQ ? `<span class="ask-q">问题：${askQ}</span><span class="ask-sep">｜</span>` : ''}<span class="ask-d">询问方向：${esc(ask.directionLabel || '综合')}</span></div>`
       : '';
-    // 直答与说人话：放在正文最前，先给结论再给推导
-    const answer = it.answer ? `<div class="mp-it-ans"><b>先答所问</b>${esc(it.answer)}</div>` : '';
+    // 直答与说人话：放在正文最前，先给结论再给推导；没问事时不能写「先答所问」
+    const answer = it.answer ? `<div class="mp-it-ans"><b>${askQ ? '先答所问' : '先看结论'}</b>${esc(it.answer)}</div>` : '';
     const plain = it.plain ? `<div class="mp-it-plain"><b>说人话</b>${esc(it.plain)}</div>` : '';
     const fu = (it.followups && it.followups.length)
       ? `<div class="mp-it-fu"><b>还可以这样追问</b><ul>${it.followups.map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>`
@@ -2359,6 +2466,97 @@
       </div>
       <div class="mp-mb-note">${esc(r.note || '')}</div>
     </section>`;
+  };
+
+  // ── 风水：八宅八向 / 门主灶 / 玄空九宫 ──────────────────────────
+  // 与 quickHTML 的「一段文本」不同，这里把八向与九宫摆成方位网格。
+  // 数值全部来自引擎结果（palaces / luckyDirections / houseStars），前端不推导。
+  const FS_GRID = [['巽', '离', '坤'], ['震', '中', '兑'], ['艮', '坎', '乾']];
+  const FS_DIR = { 坎: '正北', 艮: '东北', 震: '正东', 巽: '东南', 离: '正南', 坤: '西南', 兑: '正西', 乾: '西北', 中: '中宫' };
+  const FS_LUCKY = ['生气', '延年', '天医', '伏位'];
+  const fsChip = (text, cls) => `<span class="mp-fs-chip${cls ? ' ' + cls : ''}">${esc(text)}</span>`;
+  const fsCell = (gua, head, body) => `<div class="mp-fs-cell${gua === '中' ? ' center' : ''}">`
+    + `<div class="mp-fs-top"><span class="mp-fs-gua">${esc(gua)}</span><span class="mp-fs-dir">${esc(FS_DIR[gua] || '')}</span>${head || ''}</div>`
+    + (body || '') + '</div>';
+  const fsFacts = (rows) => (rows.length
+    ? `<dl class="mp-fs-facts">${rows.map(([k, v]) => `<div class="mp-fs-row"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`
+    : '');
+  const fsSection = (title, sub, chips, grid, facts, notes) => `<section class="mp-quick mp-fs" aria-label="风水结果">`
+    + `<div class="mp-quick-h"><b>${esc(title)}</b>${sub ? `<span class="mp-fs-sub">${esc(sub)}</span>` : ''}</div>`
+    + (chips.length ? `<div class="mp-fs-chips">${chips.join('')}</div>` : '')
+    + grid + facts
+    + (notes.filter(Boolean).map((x) => `<div class="mp-fs-note">${esc(x)}</div>`).join(''))
+    + '</section>';
+  /** 八宅八向：按后天八卦方位摆格，吉凶由引擎给的星名判定 */
+  const fsBaguaGrid = (list, aria) => `<div class="mp-fs-grid" role="group" aria-label="${esc(aria)}">`
+    + FS_GRID.map((row) => row.map((g) => {
+      const x = list.find((y) => y && y.palace === g);
+      if (!x) return fsCell(g, '', '');
+      const good = FS_LUCKY.includes(x.star);
+      const head = `<span class="mp-fs-star"${x.role ? ` title="${esc(x.role)}"` : ''}>${esc(x.star)}`
+        + `<em class="${good ? 'ok' : 'bad'}">${good ? '吉' : '凶'}</em></span>`;
+      return fsCell(g, head, '');
+    }).join('')).join('') + '</div>';
+
+  function fsXuankong(r, m) {
+    const period = m.period;
+    const by = {};
+    for (const p of r.palaces || []) by[p.palace] = p;
+    const grid = `<div class="mp-fs-key">每宫依次为 <b>运</b>／<b>山</b>／<b>向</b> 三星；底色高亮＝当运（${esc(period)}运）</div>`
+      + '<div class="mp-fs-grid" role="group" aria-label="玄空九宫（运/山/向）">'
+      + FS_GRID.map((row) => row.map((g) => {
+        const p = by[g];
+        if (!p) return fsCell(g, '', '');
+        const nums = [['运', p.yun], ['山', p.shan], ['向', p.xiang]]
+          .map(([k, v]) => `<span class="${v === period ? 'on' : ''}" title="${esc(k)}星 ${esc(v)}">${esc(v)}</span>`).join('');
+        return fsCell(g, '', `<div class="mp-fs-nums">${nums}</div>`);
+      }).join('')).join('') + '</div>';
+    const w = r.wangShanWangXiang || {};
+    const chips = [
+      fsChip(`山盘 ${m.shanCenter.star}${m.shanCenter.name} · ${m.shanCenter.fly}`),
+      fsChip(`向盘 ${m.xiangCenter.star}${m.xiangCenter.name} · ${m.xiangCenter.fly}`),
+      fsChip(w.byChart ? '盘面：到山到向' : '盘面：未到山到向', w.byChart ? 'ok' : ''),
+      fsChip(w.byTable ? '表法：在列' : '表法：未列', w.byTable ? 'ok' : ''),
+    ];
+    const facts = fsFacts([
+      ['入中', `山盘 ${m.shanCenter.star}${m.shanCenter.name}（${m.shanCenter.fly}，${m.shanCenter.basis}）；`
+        + `向盘 ${m.xiangCenter.star}${m.xiangCenter.name}（${m.xiangCenter.fly}，${m.xiangCenter.basis}）`],
+      ['当运', `山星${period}落 ${r.dangYun.shan.text}；向星${period}落 ${r.dangYun.xiang.text}`],
+      ['合十', `山星：${(r.heshi.shan || []).join('、') || '无'}；向星：${(r.heshi.xiang || []).join('、') || '无'}`],
+      ['表法', `${w.note || ''}${(w.table || []).length ? ` 本运所列：${w.table.join('、')}。` : ' 本运表法无局。'}`],
+    ]);
+    return fsSection('玄空下卦', `${m.periodLabel} · 坐${m.sitting} · 向${m.facing}`, chips, grid, facts, [m.note, r.disclaimer]);
+  }
+
+  function fsNatal(r, m) {
+    const mg = r.mingGua || {};
+    const grid = fsBaguaGrid([...(r.luckyDirections || []), ...(r.unluckyDirections || [])], '八宅八向（吉凶）');
+    const chips = [fsChip(mg.compatible || '—'), fsChip(`${m.gender}命 · ${m.guaYear} 年立春界`)];
+    const rows = [];
+    if (r.yearlyFlying) {
+      const fy = r.yearlyFlying;
+      rows.push(['年紫白', `${fy.centerName}入中；${fy.palaces.filter((p) => p.palace !== '中')
+        .map((p) => `${p.palace}${p.name}`).join('、')}`]);
+    }
+    return fsSection('八宅命卦', `${mg.num}${mg.gua}（${mg.group}）· ${mg.direction}`, chips, grid, fsFacts(rows), [m.note, r.disclaimer]);
+  }
+
+  function fsAdvise(r, m) {
+    const lay = r.layout || {};
+    const grid = fsBaguaGrid(r.houseStars || [], '宅卦八向（吉凶）');
+    const chips = [fsChip(`${m.houseGua}宅 · ${m.houseGroup}`), fsChip(`坐${m.sitting}`), fsChip(`向${m.facing}`)];
+    const rows = [['门', lay.door], ['灶', lay.stove], ['床', lay.bed], ['厕', lay.toilet]];
+    if (r.mingMatch) rows.push(['命宅配', r.mingMatch.text]);
+    return fsSection('门主灶', `${m.houseGua}宅 · 坐${m.sitting} · 向${m.facing}`, chips, grid, fsFacts(rows),
+      [m.birthNote, r.disclaimer]);
+  }
+
+  pp.fengshuiHTML = function (r) {
+    if (!r || r.system !== 'fengshui') return pp.quickHTML(r);
+    const m = r.meta || {};
+    if (m.action === 'xuankong') return fsXuankong(r, m);
+    if (m.action === 'advise') return fsAdvise(r, m);
+    return fsNatal(r, m);
   };
 
   pp.quickHTML = function (r) {

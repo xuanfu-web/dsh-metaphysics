@@ -13,6 +13,13 @@ import {
 } from './interpret-data.js';
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
 import { MUTAGEN } from './ziwei.js';
+// 紫微的词库单列一处：宫位取象、主星细节、双星、煞星辅星、四化措辞、庙旺语气、格局读法
+import {
+  palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine,
+  shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA,
+} from './ziwei-words.js';
+// 八字的画像词库：日主取象、十神画像、命局基调与地支关系说法
+import { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } from './bazi-words.js';
 // 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
 import { bodyLabels, yongshenOf } from './liuyao.js';
 
@@ -61,7 +68,8 @@ function askOf(opts) {
     question,
     direction: d.key,
     directionLabel: d.label,
-    echo: `问题：${question || '（未填写）'} ｜ 询问方向：${d.label}`,
+    // 没填问题时别在抬头喊一句「（未填写）」——读者只想知道这张盘在说什么
+    echo: question ? `问题：${question} ｜ 询问方向：${d.label}` : `询问方向：${d.label}`,
   };
 }
 
@@ -310,8 +318,69 @@ function baziInterpret(r) {
     },
   ];
 
+  // ── 词库取词：日主取象 / 十神画像 / 命局基调 / 地支关系 ────────────
+  const stemP = stemPortraitOf(dm.stem);
+  const topP = godPortraitOf(topName);
+  const secondP = godPortraitOf(secondName);
+  const season = st.parts && st.parts.season ? st.parts.season : null;
+  const dayZhi = pick(r.pillars?.day, 'branch', '');
+  // 组（比劫/食伤…）之外，再点出单颗最突出的十神：同一组里正财与偏财的味道并不一样
+  const byGodSorted = Object.entries(isObj(frame.godStats?.byGod) ? frame.godStats.byGod : {})
+    .filter(([, v]) => Number(v) > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const topGodName = byGodSorted[0] ? byGodSorted[0][0] : '';
+  const topGodP = godPortraitOf(topGodName);
+  // 用神角色按权重排序，命局基调取分量最重的那一路
+  const favorRolesByWeight = (Array.isArray(ys.favorRoles) ? ys.favorRoles : [])
+    .slice()
+    .sort((a, b) => (Number(groups[b]) || 0) - (Number(groups[a]) || 0));
+
+  const frameworkText = [
+    `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。`,
+    `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${frameToneOf(level, favorRolesByWeight)}`,
+    `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
+      ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
+      : ''}。`,
+  ].join('\n');
+
+  const portraitText = [
+    `**外在取象**：${stemP ? `${stemP.image}的日主，传统取象上${stemP.look}` : '这一柱的取象词库未覆盖'}${stemP ? `；气质上${stemP.temper}` : ''}。这一层只是取象，不作定论。`,
+    `**性格底色**：十神里${topName || '—'}最重${top[0] ? `（${top[0][1]}）` : ''}${secondName ? `，${secondName}次之` : ''}。${topP ? `${topP.gift}；${topP.trap}。` : ''}`
+      + (topGodP && topGodName && topGodName !== topName ? `具体到单颗，${topGodName}最显，落在「${topGodP.role}」上。` : '')
+      + (stemP ? `放在${dm.stem}日主身上，长处是「${stemP.gift}」，容易踩的坑是「${stemP.trap}」。` : ''),
+    `**事业与家庭**：${topP ? `做事上${topP.work}` : '做事方式看喜用与时运'}${topP ? `；感情里${topP.love}。` : '。'}日支${dayZhi}${pick(r.pillars?.day, 'zizuo', '') ? `坐${pick(r.pillars?.day, 'zizuo', '')}` : ''}，${Number(groups[spouseKey] || 0) >= 2 ? '配偶星不弱，关系里你有条件被好好对待，也要留意别把这些当成理所当然' : '配偶星偏轻，感情更需要主动经营'}。${secondP ? `另一面是${secondName}的${secondP.role}：${secondP.gift}。` : ''}`,
+  ].join('\n');
+
+  const yearLines = (r.liunian || []).slice(0, 3).map((l) => {
+    const lk = isObj(l.luck) ? l.luck : {};
+    const notes = relationNotes(l.relations);
+    const why = (lk.reasons || []).slice(0, 2).join('，');
+    return `**${l.year} ${l.ganzhi}**（${l.age}岁·${l.stemTenGod || '—'}）${lk.tier || '平'}：${why || '没有特别信号，按大运的基调走'}${notes.length ? `；与命局的关系——${notes.join('；')}` : ''}。`;
+  }).join('\n');
+  const yearsText = yearLines
+    ? `先看眼前三年（大字是当年干支与十神，后面是该年的档位与理由）：\n${yearLines}\n读法：档位说的是「这一年顺不顺手」，不是「会发生什么」；年份不顺时把重要动作挪到顺的年份，比硬扛更省事。`
+    : '流年数据未取到，暂不展开。';
+
+  const adviceItems = [];
+  if (favor.length) {
+    adviceItems.push(`把生活与工作往${join(favor)}的方向挪一点：${favor.slice(0, 2).map((e) => WUXING_INDUSTRY[e] || '').filter(Boolean).join('；') || '按喜用五行对应的行业挑'}。不必推倒重来，先从环境、圈子和日常习惯改起。`);
+  }
+  if (avoid.length) {
+    adviceItems.push(`对${join(avoid)}保持一点自觉：不是不能碰，而是别在关键决定上给它加码——${avoid.includes('火') ? '少在情绪最热的时候拍板' : avoid.includes('木') ? '少在想法最多的时候开工' : '先把手上的事收尾再谈新的'}。`);
+  }
+  const relNotes = relationNotes(r.relations && r.relations.branches);
+  if (relNotes.length) {
+    adviceItems.push(`命局里的地支关系是「${(r.relations.branches || []).join('、')}」：${relNotes.join('；')}。对应到具体人事，先处理情绪，再处理事情。`);
+  }
+  if (cli && cli.need) {
+    adviceItems.push(`调候要${cli.need.stem}${cli.need.element}：${cli.need.why}。落到日常，就是往这一类的环境、作息与节奏上靠。`);
+  }
+  const adviceText = adviceItems.slice(0, 4).map((t, i) => `${'①②③④'[i]} ${t}`).join('\n');
+
   const sections = [
     ...(cross.length ? [{ key: 'cross', label: '交叉判断', text: cross.join('　') }] : []),
+    { key: 'framework', label: '命局框架', text: frameworkText },
+    { key: 'portrait', label: '画像', text: portraitText },
     {
       key: 'reasoning', label: '看盘顺序',
       // 把「先看什么、后看什么」摊开：用户能照着复核，也避免只给结论不给路径
@@ -342,6 +411,8 @@ function baziInterpret(r) {
         return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
+    { key: 'years', label: '流年时间轴', text: yearsText },
+    { key: 'advice', label: '专业建议', text: adviceText },
     (() => {
       const hits = (r.liunian || []).filter((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
       return {
@@ -542,11 +613,23 @@ function ziweiInterpret(r) {
       ? `你的命宫无正曜，按紫微的规则借对宫（迁移）来看，主星是${soulStar}`
       : `你的命宫与对宫都没有正曜，这里按命主星${soulStar}来看`;
   const S = ZIWEI_STARS[soulStar] || ZIWEI_STARS.紫微;
+  // 维度里只点名六煞；其余煞星留在逐宫分析，避免把细枝末节放大成主线
+  const zwMainSha = (p) => zwSha(p).filter((n) => MAIN_SHA.includes(n));
 
   const careerStar = zwMainStar(career);
   const wealthStar = zwMainStar(wealth);
   const spouseStar = zwMainStar(spouse);
   const healthStar = zwMainStar(health);
+
+  // 词库取词的几个小入口：主星清单、单颗星的亮度、双星组合、主星细节
+  const mainsOf = (p) => (p?.stars || []).filter((x) => x.type === '主星');
+  const brightOf = (p, name) => (p?.stars || []).find((x) => x.name === name)?.brightness || '';
+  const pairOf = (p) => starPairOf(mainsOf(p).map((x) => x.name));
+  const SX = starExtraOf(soulStar) || {};
+  const soulBright = brightRead(brightOf(soul, soulStar));
+  const soulPair = pairOf(soul);
+  // 亮度的语气只调「长处放不放得开」，不改结论：落陷时取 dim 那一句
+  const lightLine = (b, extra) => (extra ? `${b && b.tone === 'bad' ? extra.dim : extra.bright}。` : '');
 
   const age = Number(pick(r.liunian?.[0], 'age', NaN));
   let daxianPalace = null;
@@ -567,14 +650,21 @@ function ziweiInterpret(r) {
   const dimensions = [
     {
       key: 'overall', label: '整体运势',
-      text: `${soulFrom}，性格底色上${S.trait}。本盘${patText}。` +
+      text: `${soulFrom}${soulBright ? `（${soulBright.word}——${soulBright.plain}）` : ''}，性格底色上${S.trait}。` +
+        (soulPair ? `${soulPair.gist}；${soulPair.watch}。` : '') +
+        `本盘${patText}。` +
         `当前大限走在${daxianPalace ? `${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）` : '当前阶段'}，` +
         `${lnMutagen ? `流年四化为${lnMutagen}，本年的变化感主要落在这几颗星上` : '流年四化信号不明显'}。` +
         (r.flow ? `再往下一层，当前流月命宫是${r.flow.month.ganzhi}，落在原局${r.flow.month.palace || '未上盘'}，本月的变化更容易在这一宫代表的事情上显出来。` : '') +
         (natalSihuaText
           ? `另外你本命的生年四化落在：${natalSihuaText}——这是你这辈子比较稳定的底色，不随某一年改变。`
           : ''),
-      advice: `这一阶段的主题更接近「${daxianPalace ? daxianPalace.palace : '命宫'}」代表的事——把它当作今年的主线，其余事围绕它安排；${S.trait}是你的优势，也是需要留意别用过头的地方。`,
+      advice: (() => {
+        const dxName = daxianPalace ? daxianPalace.palace : '命宫';
+        const dxField = palaceFieldOf(dxName);
+        return `这一阶段的主题更接近「${dxName}」——${dxField ? dxField.field : '这一宫代表的事'}。把它当作这几年的主线，其余安排围着它让路；`
+          + `${SX.gift ? `你最顺手的做法是${SX.gift}` : `你的优势在${S.trait}`}，但要留意${SX.watch || '用它用过了头'}。`;
+      })(),
       evidence: [
         `命宫 ${soulStar}${soulOwn ? '' : '（借对宫）'}`,
         daxianPalace ? `大限 ${daxianPalace.palace} ${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁` : '',
@@ -584,16 +674,38 @@ function ziweiInterpret(r) {
     },
     {
       key: 'work', label: '工作与职业选择',
-      text: `命宫${soulStar}给出的是底层偏好：${S.work}。官禄宫${careerStar ? `主星为${careerStar}，${ZIWEI_STARS[careerStar]?.work || '有其自身的做事方式'}` : '无正曜，工作方式更多受环境与他人影响，适合配合型岗位'}。` +
-        `两者合起来看，你更适合${careerStar && careerStar !== soulStar ? `用${soulStar}的方式去做${careerStar}擅长的事` : '在稳定的框架里发挥自己的特点'}。`,
-      advice: `挑工作时可以优先看岗位内容是否匹配上面这条；如果暂时不能换，试着在现有岗位里争取靠近这部分的事务，会比硬熬更容易做出成绩。`,
-      evidence: [`命宫 ${soulStar}`, `官禄 ${careerStar || '无正曜'}`, `财帛 ${wealthStar || '无正曜'}`],
+      text: (() => {
+        const careerBright = brightRead(brightOf(career, careerStar));
+        const careerPair = pairOf(career);
+        const careerSha = zwMainSha(career);
+        return `命宫${soulStar}给你的是底层偏好：${S.work}。`
+          + `官禄宫${careerStar
+            ? `主星为${careerStar}${careerBright ? `（${careerBright.word}）` : ''}，${ZIWEI_STARS[careerStar]?.work || '有其自身的做事方式'}`
+            : '无正曜，工作方式更多受环境与他人影响，适合配合型岗位'}。`
+          + (careerPair ? `${careerPair.gist}；要留意${careerPair.watch}。` : '')
+          + (careerSha.length ? `官禄宫又见${join(careerSha)}：${shaLineOf(careerSha)}` : '')
+          + `两者合起来看，你更适合${careerStar && careerStar !== soulStar ? `用${soulStar}的方式去做${careerStar}擅长的事` : '在稳定的框架里发挥自己的特点'}。`;
+      })(),
+      advice: `挑工作时可以先看岗位内容是否匹配上面这条；如果暂时不能换，试着在现有岗位里争取靠近这部分的事务——${SX.gift ? `把「${SX.gift}」这类活往自己身上揽，比硬熬更容易做出成绩` : '先做出一件拿得出手的事，比硬熬更容易被看见'}。`,
+      evidence: [
+        `命宫 ${soulStar}${soulBright ? `·${soulBright.word}` : ''}`,
+        `官禄 ${careerStar || '无正曜'}`,
+        `财帛 ${wealthStar || '无正曜'}`,
+        ...(zwMainSha(career).length ? [`官禄煞星 ${join(zwMainSha(career))}`] : []),
+      ],
     },
     {
       key: 'career', label: '事业发展',
-      text: `财帛宫${wealthStar ? `见${wealthStar}，${ZIWEI_STARS[wealthStar]?.trait || ''}` : '无正曜'}，官禄宫${careerStar || '无正曜'}，` +
-        `${wealthStar && careerStar ? '财与事业两宫都有主星坐守，说明这两块是可以主动经营的部分' : '有一宫无主星，说明该块更容易受外部条件牵动，宜借势而非强求'}。` +
-        `大限推进上，${daxianPalace ? `目前落在${daxianPalace.palace}` : '当前阶段'}，下一步会转入相邻的宫位，重心也会跟着挪。`,
+      text: (() => {
+        const wealthBright = brightRead(brightOf(wealth, wealthStar));
+        const wealthPair = pairOf(wealth);
+        return `财帛宫${wealthStar
+          ? `见${wealthStar}${wealthBright ? `（${wealthBright.word}）` : ''}，${ZIWEI_STARS[wealthStar]?.trait || ''}`
+          : '无正曜'}，官禄宫${careerStar || '无正曜'}，`
+          + `${wealthStar && careerStar ? '财与事业两宫都有主星坐守，说明这两块是可以主动经营的部分' : '有一宫无主星，说明该块更容易受外部条件牵动，宜借势而非强求'}。`
+          + (wealthPair ? `${wealthPair.gist}。` : '')
+          + `大限推进上，${daxianPalace ? `目前落在${daxianPalace.palace}，这一宫管${palaceFieldOf(daxianPalace.palace)?.field || '这一段的事'}` : '当前阶段'}，下一步会转入相邻的宫位，重心也会跟着挪。`;
+      })(),
       advice: `事业上建议做两件事：一是把可积累的东西（技能、资质、作品）做厚；二是${careerStar ? `发挥${careerStar}的优势——${ZIWEI_STARS[careerStar]?.trait || ''}` : '找一个能带你的前辈或平台'}。遇到四化化忌的年份，先守成再谈扩张。`,
       evidence: [
         `财帛 ${wealthStar || '无正曜'}`,
@@ -603,8 +715,17 @@ function ziweiInterpret(r) {
     },
     {
       key: 'love', label: '爱情与感情',
-      text: `夫妻宫${spouseStar ? `主星为${spouseStar}，感情上的倾向是${ZIWEI_STARS[spouseStar]?.love || '有自己相处的节奏'}` : '无正曜，关系状态更多由对方与互动方式决定'}。` +
-        `${zwSha(spouse).length ? `夫妻宫同时见${join(zwSha(spouse))}，相处中容易出现摩擦或第三者干扰的暗示，但煞星不等于定局，更多是提醒你留意沟通方式` : '夫妻宫未见明显煞星，关系的基调相对平顺'}。`,
+      text: (() => {
+        const spouseBright = brightRead(brightOf(spouse, spouseStar));
+        const spousePair = pairOf(spouse);
+        const spouseSha = zwMainSha(spouse);
+        return `夫妻宫${spouseStar
+          ? `主星为${spouseStar}${spouseBright ? `（${spouseBright.word}）` : ''}，感情上的倾向是${ZIWEI_STARS[spouseStar]?.love || '有自己相处的节奏'}`
+          : '无正曜，关系状态更多由对方与互动方式决定'}。`
+          + (spousePair ? `${spousePair.gist}。` : '')
+          + `${spouseSha.length ? `夫妻宫同时见${join(spouseSha)}：${shaLineOf(spouseSha)}煞星不等于定局，更多是提醒你留意沟通方式。` : '夫妻宫未见明显煞星，关系的基调相对平顺。'}`
+          + (SX.watch ? `另外，你自带的${SX.watch}这一面，在亲密关系里最容易被放大。` : '');
+      })(),
       advice: `感情里${spouseStar ? `参考${spouseStar}的特点：${ZIWEI_STARS[spouseStar]?.love || ''}` : '可以更主动地表达自己的需求'}。有分歧时先说清事实与感受，别急着下结论；关系的好坏取决于两个人怎么做，不取决于这张盘。`,
       evidence: [
         `夫妻宫 ${spouseStar || '无正曜'}`,
@@ -614,8 +735,17 @@ function ziweiInterpret(r) {
     },
     {
       key: 'health', label: '健康状况',
-      text: `疾厄宫${healthStar ? `见${healthStar}，传统取象上${ZIWEI_STARS[healthStar]?.health || '需要留意自身的薄弱环节'}` : '无正曜，身体状态更多受生活作息直接影响'}。` +
-        `${zwSha(health).length ? `同时见${join(zwSha(health))}，提示这一块值得比其他部位多一分留意。` : ''}这些都是象征性的提示，不构成任何医学判断。`,
+      text: (() => {
+        const healthBright = brightRead(brightOf(health, healthStar));
+        const healthSha = zwMainSha(health);
+        return `疾厄宫${healthStar
+          ? `见${healthStar}${healthBright ? `（${healthBright.word}）` : ''}，传统取象上${ZIWEI_STARS[healthStar]?.health || '需要留意自身的薄弱环节'}`
+          : '无正曜，身体状态更多受生活作息直接影响'}。`
+          + (healthSha.length
+            ? `同时见${join(healthSha)}，按星情只是「${shaNatureOf(healthSha)}」这一层，提示这一块值得比其他部位多一分留意。`
+            : '')
+          + '这些都是象征性的提示，不构成任何医学判断。';
+      })(),
       advice: `把${healthStar ? ZIWEI_STARS[healthStar]?.health?.replace('留意', '').replace('需要留意', '') || '常规' : '常规'}当作体检时重点关注的参考；真正管用的还是规律作息、适度运动与定期检查。身体不舒服请直接就医。`,
       evidence: [
         `疾厄宫 ${healthStar || '无正曜'}`,
@@ -624,9 +754,106 @@ function ziweiInterpret(r) {
     },
   ];
 
+  // ── 命身底色：先把「这张盘是谁」摆出来，再谈逐宫与格局 ──────────
+  const soulField = palaceFieldOf('命宫');
+  const bodyLands = pick(r.body, 'lands', '');
+  const bodyField = palaceFieldOf(bodyLands);
+  const identityText = [
+    `命宫落在${soul.branch}（${soul && soul.ganzhi ? soul.ganzhi : '—'}），主星${soulStar}${soulBright ? `·${soulBright.word}` : ''}——这一宫管${soulField ? soulField.field : '你自己'}，${SX.gift ? `你身上最能用出去的是${SX.gift}` : S.trait}。`
+      + (SX.gift ? lightLine(soulBright, SX) : ''),
+    soulPair ? `${soulPair.gist}；要留意的是${soulPair.watch}。` : '',
+    bodyLands ? `身宫寄在${bodyLands}——${bodyField ? `${bodyField.field}是后天更容易使上劲的地方` : '这是后天着力点'}，中年以后会越来越明显。` : '',
+    `五行局为${pick(r.bureau, 'name', '—')}，${pick(r.daxian, 'startAge', '—')}岁起运：局定的是节奏（几步起、十年一换），不是好坏。`,
+    `命主${pick(r, 'lifeMaster', '—')}、身主${pick(r, 'bodyMaster', '—')}：传统把这两颗当作整张盘的定调星，命主看底色，身主看后半程的着力点。`,
+  ].filter(Boolean).join('\n');
+
+  // ── 逐宫分析：十二宫各一行清单 + 一句读法 ────────────────────
+  const trimDot = (s) => String(s || '').replace(/。$/, '');
+  const palaceLines = (r.palaces || []).map((p) => {
+    const mains = mainsOf(p);
+    const shas = zwSha(p);
+    const fus = (p.stars || []).filter((x) => x.type === '辅星' || x.type === '吉星').map((x) => x.name);
+    const huas = (p.stars || []).filter((x) => x.mutagen).map((x) => `${x.name}化${x.mutagen}`);
+    const selfs = (p.selfHua || []).map((x) => `自化${x.type}`);
+    const head = `【${p.palace}·${p.branch}】`
+      + `${mains.length ? mains.map((x) => `${x.name}${x.brightness || ''}`).join('·') : '无正曜'}`
+      + (fus.length ? `｜吉 ${fus.slice(0, 3).join('、')}` : '')
+      + (shas.length ? `｜煞 ${shas.join('、')}` : '')
+      + ((huas.length || selfs.length) ? `｜${[...huas, ...selfs].join('、')}` : '');
+
+    const read = [];
+    if (mains.length) {
+      const pair = starPairOf(mains.map((x) => x.name));
+      const ex = starExtraOf(mains[0].name);
+      if (pair) read.push(pair.gist);
+      else if (ex) read.push(ex.gift);
+    } else {
+      // 命无正曜时借对宫：三方数组的第四位就是对宫
+      const opposite = zwMainStar(zwPalace(r, (p.sanfang || [])[3]));
+      read.push(opposite ? `无正曜，借对宫${opposite}来看` : '无正曜，这一宫随环境走');
+    }
+    if (fus.length) read.push(fuLineOf(fus));
+    if (shas.length) read.push(shaLineOf(shas));
+    for (const x of (p.stars || []).filter((y) => y.mutagen).slice(0, 2)) read.push(huaInLine(x.mutagen, p.palace));
+    const tail = read.filter(Boolean).map(trimDot).join('；');
+    return `${head}\n　${tail}。`;
+  }).join('\n');
+  const palacesText = `十二宫从命宫逆排，每宫管一件事。看一宫不能只看本宫，还要并上它的三方四正（本宫＋对宫＋两个三合宫）——下面先逐宫摊开，再回到整体。\n${palaceLines}`;
+
+  // ── 格局分三层：有利 / 结构提示 / 忌格提醒 ──────────────────
+  const PATTERN_TIERS = [
+    { tone: 'good', label: '有利格局' },
+    { tone: 'neutral', label: '结构提示' },
+    { tone: 'bad', label: '忌格提醒' },
+  ];
+  const patternSections = PATTERN_TIERS.map((t) => {
+    const list = patterns.filter((p) => (p.tone || 'neutral') === t.tone);
+    if (!list.length) return null;
+    return {
+      key: `pattern-${t.tone}`,
+      label: t.label,
+      tone: t.tone === 'neutral' ? 'watch' : t.tone,
+      text: list.map((p) => {
+        const rd = patternReadOf(p.name, p.tone);
+        return `**${p.name}**　${rd.gist}\n　依据：${p.evidence}\n　做法：${rd.advice}`;
+      }).join('\n'),
+    };
+  }).filter(Boolean);
+  if (!patternSections.length) {
+    patternSections.push({ key: 'pattern-none', label: '格局', text: '本盘未触发内置的常见格局条目。这不代表盘面平淡——格局只是把若干星位组合起个名字，没命中时按宫位与四化逐条看即可。' });
+  }
+
+  // ── 行动建议：每条都从盘面事实推出来，能指到具体一宫才写 ──────────
+  const adviceItems = [];
+  if (SX.gift) {
+    adviceItems.push(`把「${SX.gift}」做成招牌：${soulBright && soulBright.tone === 'bad'
+      ? `${soulStar}在这宫不得地，长处不会自己显出来，越要挑能发挥它的场子`
+      : `${soulStar}${soulBright ? `·${soulBright.word}` : '在命宫'}，顺着这条走最省力`}。`);
+  }
+  if (daxianPalace && daxianPalace.daxian) {
+    const dxf = palaceFieldOf(daxianPalace.palace);
+    adviceItems.push(`这几年主线在${daxianPalace.palace}（${daxianPalace.daxian.start}–${daxianPalace.daxian.end}岁）：${dxf ? dxf.field : '这一宫的事'}排前面，力气别摊平。`);
+  }
+  const jiHua = natalSihua.find((m) => m.type === '忌');
+  if (jiHua && jiHua.palace) {
+    const jf = palaceFieldOf(jiHua.palace);
+    adviceItems.push(`生年化忌落在${jiHua.palace}：${jf ? jf.huaJi : '这一块容易反复'}——别硬顶，把预期调低一点反而顺。`);
+  }
+  const soulSha = zwMainSha(soul);
+  if (soulSha.length) adviceItems.push(`命宫见${join(soulSha)}：${shaLineOf(soulSha)}`);
+  const spouseSha2 = zwMainSha(spouse);
+  if (spouseSha2.length && !soulSha.length) {
+    adviceItems.push(`夫妻宫见${join(spouseSha2)}：${shaLineOf(spouseSha2)}`);
+  }
+  const adviceText = adviceItems.slice(0, 4)
+    .map((t, i) => `${'①②③④'[i]} ${trimDot(t)}`)
+    .join('\n') || '这张盘的结构比较平，没有单点特别突出——按现有节奏走，把一件事做完整比开新头更划算。';
+
   const sections = [
-    { key: 'palaces', label: '关键宫位', text: `命宫${soulStar}　官禄${careerStar || '无正曜'}　财帛${wealthStar || '无正曜'}　夫妻${spouseStar || '无正曜'}　疾厄${healthStar || '无正曜'}` },
-    { key: 'patterns', label: '格局', text: patText },
+    { key: 'identity', label: '命身底色', text: identityText },
+    { key: 'palaces', label: '逐宫分析', text: palacesText },
+    ...patternSections,
+    { key: 'advice', label: '行动建议', text: adviceText },
     {
       key: 'reasoning', label: '看盘顺序',
       text: [
@@ -938,6 +1165,11 @@ function liuyaoInterpret(r, ask) {
     } else if (ug.fushen.length) {
       useText.push(`用神不上卦：本卦六爻里没有${ug.liuqin}，按「用神不上卦则于本宫首卦内寻之」，到${String(pick(ben, 'palace', '')).replace(/宫$/, '')}宫首卦取伏神——${ug.fushen.map((f) => `${f.position}爻${f.ganzhi}${f.element}，伏于飞神${f.fei ? `${f.fei.liuqin}${f.fei.ganzhi}${f.fei.element}` : '—'}之下`).join('；')}。`);
       if (ug.relationSay.length) useText.push(`飞伏生克：${ug.relationSay.join('；')}。伏神要得出才算有力，藏在忌神之下且被克，则虽有如无。`);
+      const chufu = r.fushenAccess;
+      if (chufu && Array.isArray(chufu.items) && chufu.items.length) {
+        useText.push(`伏神出伏的条件：${chufu.items.map((f) => f.say).join('；')}。`);
+        useText.push('「助」与「压」只把飞伏生克、月建日辰与月破并列摆出，再归成四档（可出 / 有助有压 / 受压难出 / 未得助）；不排各家优先级，旬空只标出、不并入档位，也不给应期日期。');
+      }
     } else {
       useText.push(`用神不上卦，且本宫首卦里也没找到${ug.liuqin}，这一问在卦面上没有直接对应物，只能借日月或改日再占。`);
     }
@@ -1008,7 +1240,7 @@ function liuyaoInterpret(r, ask) {
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：用神两现时该取哪一爻的权重、伏神出伏的应期。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数，也不叠动变连环；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：用神两现时该取哪一爻的权重、伏神出伏的应期（出伏条件已判，应期仍未做）。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数，也不叠动变连环；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -1442,37 +1674,61 @@ import { CLASSIC_BOOKS } from './classics.js';
  */
 function enrichPlain(result, r, ask) {
   if (!result) return result;
+  // 注解卡的归属按「维度身份」定，不按显示顺序：所问之事会把某一维提前，
+  // 若按显示顺序先到先得，同一张盘换个问法就换了注解归属。
+  const DIM_RANK = ['overall', 'work', 'career', 'love', 'health'];
+  const rankOf = (key) => { const i = DIM_RANK.indexOf(key); return i < 0 ? DIM_RANK.length : i; };
+  const seen = new Set();
   const dims = (result.dimensions || []).map((d) => {
     const p = dimensionPlain(d.key, r, {});
-    // 知识条目挂在维度下：讲「为什么这样断」，与结论、依据形成三层
-    const know = knowledgeFor(r.system, d.key).map((k) => ({
-      id: k.id,
-      gist: k.gist,
-      detail: k.detail,
-      source: k.source,
-      status: k.status,
-      statusLabel: STATUS_LABEL[k.status] || k.status,
-      note: k.note || '',
-    }));
-    return { ...d, ...(p ? { plain: p } : {}), ...(know.length ? { knowledge: know } : {}) };
+    return { ...d, ...(p ? { plain: p } : {}) };
   });
+  // 知识条目挂在维度下：讲「为什么这样断」，与结论、依据形成三层。
+  // 两条硬约束，都是为「读得下去」：
+  //   ① 一张卡全报告只挂一次——它讲的是「这条规则怎么用」，与挂在哪个维度无关；
+  //      逐维重复会把五段正文冲散（1996 示例盘：29 条里 13 条是同一张卡的复读）。
+  //   ② 每维最多 3 条——正文是给人读的，注解是读法不是清单；没挂进正文的分歧条目
+  //      仍会在文末「这套规则有多稳」里逐条列出（带原注），不丢信息。
+  const KNOW_PER_DIM = 3;
+  for (const d of dims.slice().sort((a, b) => rankOf(a.key) - rankOf(b.key))) {
+    const know = knowledgeFor(r.system, d.key)
+      .filter((k) => !seen.has(k.id))
+      .slice(0, KNOW_PER_DIM)
+      .map((k) => ({
+        id: k.id,
+        gist: k.gist,
+        detail: k.detail,
+        source: k.source,
+        status: k.status,
+        statusLabel: STATUS_LABEL[k.status] || k.status,
+        note: k.note || '',
+      }));
+    for (const k of know) seen.add(k.id);
+    if (know.length) d.knowledge = know;
+  }
   const texts = [
     result.lead,
     ...dims.map((d) => [d.label, d.text, d.advice, d.plain, ...(d.knowledge || []).map((k) => k.detail)].filter(Boolean).join('')),
     ...(result.sections || []).map((x) => x.text),
   ].filter(Boolean);
 
-  // 文末的诚实声明：把「各家有异说 / 还没做」的部分摊开，而不是藏在专业感里
+  // 文末的诚实声明：把「各家有异说 / 还没做」的部分摊开，而不是藏在专业感里。
+  // 「待核实」的在下面单独成段（附原注），这里只列已定论/有异说的，避免同一句话写两遍。
+  // 已在上面展开过的只留条目名当索引；没展开的附原注，保证信息不丢。
   const caveats = caveatsFor(r.system);
-  const caveatLine = caveats.length
-    ? caveats.slice(0, 4).map((k) => `· ${k.gist}（${STATUS_LABEL[k.status] || k.status}）${k.note ? `——${k.note}` : ''}`).join('\n')
+  const disputed = caveats.filter((k) => k.status !== 'todo');
+  const caveatLine = disputed.length
+    ? disputed.map((k) => {
+      const tag = STATUS_LABEL[k.status] || k.status;
+      return `· ${k.gist}（${tag}）${seen.has(k.id) || !k.note ? '' : `——${k.note}`}`;
+    }).join('\n')
     : '';
   const secs = [...(result.sections || [])];
   if (caveatLine) {
     secs.push({
       key: 'caveats',
       label: '这套规则有多稳',
-      text: `下列几条各家说法不一，本插件取其中一派并把分歧标出来，供你判断可信度：\n${caveatLine}`,
+      text: `下列几条各家说法不一，本插件取其中一派并把分歧标出来，供你判断可信度（已在上面展开的只列条目，未展开的附原注）：\n${caveatLine}`,
     });
   }
   const todos = caveats.filter((k) => k.status === 'todo');

@@ -293,11 +293,14 @@ const TABS = [
   { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
   { k: 'mbti', label: '人格', timeLabel: '', hint: '十六型人格是 24 道自我报告题的 MBTI 风格测算：4 题一页，按 1–5 打分，答满 12 题即可看结果；只作自我参照，不是官方量表。' },
   { k: 'trend', label: '人生K线', timeLabel: '出生时刻', hint: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。' },
-  { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。' },
+  { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。' },
   { k: 'name', label: '起名', timeLabel: '', hint: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。' },
 ];
 
 function pad(n) { return String(n).padStart(2, '0'); }
+
+// 速查类：不算完整命盘，主按钮统一叫「看结果」；与独立页（web-ui）保持同一套文案
+const QUICK_TABS = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
 
 function nowParts() {
   const d = new Date();
@@ -331,7 +334,7 @@ const needAsk = Core.needAsk || ((t) => false);
 // setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
 // 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
 const COMPOSER = { ref: null, seats: [], keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
-const LAST = { r: null, q: '' };
+const LAST = { r: null, q: '', it: null };
 
 // 桥自检：把「门面有没有 inject、槽位声明成什么样、注册抛没抛错、组件被渲染过几次」
 // 拼成一行给面板显示——用户不用开控制台，把这一行截回来就能定位。
@@ -381,7 +384,7 @@ function askTextForLast() {
   const r = LAST.r;
   if (!r) return '';
   try {
-    const p = Engine.askPrompt ? Engine.askPrompt(r, { question: LAST.q }) : null;
+    const p = Engine.askPrompt ? Engine.askPrompt(r, { question: LAST.q, interpret: LAST.it }) : null;
     return (p && p.text) || String(r.summary || '');
   } catch (e) { return String(r.summary || ''); }
 }
@@ -459,6 +462,7 @@ function App() {
   const [mbPage, setMbPage] = useState(0);
   const [toAge, setToAge] = useState('60');
   const [fsMode, setFsMode] = useState('natal');
+  const [fsPeriod, setFsPeriod] = useState('9');
   const [sitting, setSitting] = useState('子');
   const [facing, setFacing] = useState('午');
   const [nnMode, setNnMode] = useState('assess');
@@ -469,7 +473,7 @@ function App() {
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
   useEffect(() => {
-    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); }
+    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); LAST.it = result.it || null; }
   }, [result, askText]);
   const [hist, setHist] = useState(() => loadHistory());
   const [replayArgs, setReplayArgs] = useState(null);
@@ -569,8 +573,13 @@ function App() {
       if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = trueSolar; args.lateZi = lateZi; }
       if (k === 'fengshui') {
         args.action = fsMode;
-        if (fsMode === 'advise') { args.sitting = sitting; args.facing = facing; delete args.datetime; }
-        else { args.gender = genderV; }
+        if (fsMode === 'natal') { args.gender = genderV; }
+        else {
+          args.sitting = sitting;
+          args.facing = facing;
+          delete args.datetime;
+          if (fsMode === 'xuankong') args.period = Number(fsPeriod) || 9;
+        }
       }
       if (k === 'name') {
         args.action = nnMode;
@@ -580,7 +589,8 @@ function App() {
           args.trueSolar = trueSolar; args.lateZi = lateZi;
         } else {
           args.givenName = givenName.trim();
-          delete args.datetime; // 评估名字时生辰可空：空着只评字面五行
+          // 生辰留着：填了就按喜用判、空着 engine 自己只评字面五行
+          if (!dt.date || !dt.time) delete args.datetime;
         }
       }
       if (k === 'convert') {
@@ -829,7 +839,7 @@ function App() {
   const askInChat = () => {
     if (!result || !result.r) return;
     try {
-      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim() }) : null;
+      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim(), interpret: result.it }) : null;
       const text = p && p.text ? p.text : String(result.r.summary || '');
       if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
       const diag = '（' + bridgeDiagText() + '）';
@@ -1096,14 +1106,19 @@ function App() {
         })) : null,
         tab === 'fengshui' ? field('看什么', h('div', { className: 'mp-seg' },
           h('button', { className: fsMode === 'natal' ? 'on' : '', onClick: () => setFsMode('natal') }, '命卦'),
-          h('button', { className: fsMode === 'advise' ? 'on' : '', onClick: () => setFsMode('advise') }, '门主灶'))) : null,
-        (tab === 'fengshui' && fsMode === 'advise') ? field('坐山（24 山）', h('input', {
+          h('button', { className: fsMode === 'advise' ? 'on' : '', onClick: () => setFsMode('advise') }, '门主灶'),
+          h('button', { className: fsMode === 'xuankong' ? 'on' : '', onClick: () => setFsMode('xuankong') }, '玄空'))) : null,
+        (tab === 'fengshui' && fsMode !== 'natal') ? field('坐山（24 山）', h('input', {
           className: 'mp-input', value: sitting, placeholder: '如 子 / 乾',
           onChange: (e) => setSitting(e.target.value),
         })) : null,
-        (tab === 'fengshui' && fsMode === 'advise') ? field('朝向（24 山）', h('input', {
+        (tab === 'fengshui' && fsMode !== 'natal') ? field('朝向（24 山）', h('input', {
           className: 'mp-input', value: facing, placeholder: '如 午 / 巽',
           onChange: (e) => setFacing(e.target.value),
+        })) : null,
+        (tab === 'fengshui' && fsMode === 'xuankong') ? field('运（1–9）', h('input', {
+          className: 'mp-input', type: 'number', min: 1, max: 9, value: fsPeriod,
+          onChange: (e) => setFsPeriod(e.target.value),
         })) : null,
         tab === 'name' ? field('看什么', h('div', { className: 'mp-seg' },
           h('button', { className: nnMode === 'assess' ? 'on' : '', onClick: () => setNnMode('assess') }, '评名字'),
@@ -1146,7 +1161,11 @@ function App() {
           onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
         }, '看示例'),
         h('button', { className: 'mp-btn', onClick: go, title: '时间仍为自动时，点它会取当下再起卦' },
-          tab === 'tarot' ? '抽牌' : tab === 'bazi' || tab === 'ziwei' ? '排盘' : tab === 'hepan' ? '合盘' : '起卦'))),
+          tab === 'tarot' ? '抽牌'
+            : tab === 'bazi' || tab === 'ziwei' ? '排盘'
+              : tab === 'hepan' ? '合盘'
+                : tab === 'qimen' ? '起局'
+                  : QUICK_TABS.indexOf(tab) >= 0 ? '看结果' : '起卦'))),
 
     h('div', { key: 'hint', className: 'mp-hint' }, meta.hint),
 
@@ -1176,10 +1195,12 @@ function App() {
       h('b', null, tab === 'ziwei' || tab === 'bazi' ? '填好出生信息，点「排盘」'
         : tab === 'tarot' ? '写下想问的事，点「抽牌」'
           : tab === 'mbti' ? '按 1–5 给题目打分，答满 12 题就能看结果'
-            : '写下所问之事，点「起卦」'),
+            : QUICK_TABS.indexOf(tab) >= 0 ? '填好参数，点「看结果」'
+              : '写下所问之事，点「起卦」'),
       tab === 'ziwei' || tab === 'bazi' ? '出生日期、时刻与性别即可；出生地只影响真太阳时。'
         : tab === 'mbti' ? '4 题一页，答案只在本地参与计算，不会上传。'
-          : '起卦时刻已自动取当下，也可以手动改。') : null,
+          : QUICK_TABS.indexOf(tab) >= 0 ? '按上面的选项填好参数即可；全部在本机计算，不上传。'
+            : '起卦时刻已自动取当下，也可以手动改。') : null,
 
     result ? h('div', {
       key: 'card',
@@ -1203,6 +1224,7 @@ function App() {
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : result.kind === 'name' ? PP.nameHTML(result.r)
                         : result.kind === 'mbti' ? PP.mbtiHTML(result.r)
+                        : result.kind === 'fengshui' ? PP.fengshuiHTML(result.r)
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },

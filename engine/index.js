@@ -1,7 +1,7 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, hexagramStrength, jinTuiPower } from './liuyao.js';
-import { buildZiwei, BRIGHTNESS, flowOf, asOfParts } from './ziwei.js';
+import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower } from './liuyao.js';
+import { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
@@ -53,6 +53,21 @@ function requireGender(value, who = '') {
   if (GENDERS.includes(value)) return value;
   const got = value === undefined || value === null || value === '' ? '（未提供）' : `「${value}」`;
   throw fail('E_INPUT', `${who ? who + '的' : ''}gender 必须是 male 或 female${got}；性别决定大运/大限顺逆，不能靠默认值`);
+}
+
+const ZIWEI_SCHOOL_KEYS = [
+  'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
+  'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi',
+];
+
+/** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
+function ziweiSchoolArgs(args) {
+  const out = {};
+  for (const key of ZIWEI_SCHOOL_KEYS) {
+    if (args[key] !== undefined) out[key] = args[key];
+  }
+  if (args.schools && typeof args.schools === 'object') out.schools = args.schools;
+  return out;
 }
 
 /** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD' */
@@ -148,7 +163,23 @@ function baziText(r) {
 }
 
 function ziweiText(r) {
-  const lunarText = `${r.lunar.year}年${r.lunar.isLeap ? '闰' : ''}${r.lunar.month}月${r.lunar.day}日`;
+  // 闰月：日期按「闰X月」原样写；换算过起盘月时再附一句，免得把 21 日写成「闰5月21日」
+  const rawMonth = r.lunar.monthRaw || r.lunar.month;
+  const lunarText = `${r.lunar.year}年${r.lunar.isLeap ? `闰${rawMonth}` : r.lunar.month}月${r.lunar.day}日`
+    + (r.lunar.isLeap && r.lunar.month !== rawMonth ? `（按${r.lunar.month}月起盘）` : '');
+  // 只在显式改动流派时补一行，默认盘不增加噪音
+  const schoolLine = (() => {
+    if (!r.schools) return '';
+    const labels = {
+      brightnessSchool: '亮度', gengYearSihua: '庚干四化', tianmaSchool: '天马', tiankongSchool: '天空',
+      jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
+      changshengSchool: '长生', lateZishi: '晚子时',
+    };
+    const diff = Object.entries(labels)
+      .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])
+      .map(([key, label]) => `${label} ${r.schools[key]}`);
+    return diff.length ? `【流派】${diff.join('　')}` : '';
+  })();
   const starText = (stars) => (stars.length
     ? stars.map((s) => `${s.name}${s.mutagen ? `化${s.mutagen}` : ''}`).join(' ')
     : '—');
@@ -199,6 +230,7 @@ function ziweiText(r) {
     `【命宫】${r.soul.branch}（${r.soul.ganzhi}·${r.soul.nayin}）　【身宫】${r.body.branch}（落${r.body.lands}）　【五行局】${r.bureau.name}`,
     `【紫微】${r.ziwei}　【天府】${r.tianfu}　【命主】${r.lifeMaster}　【身主】${r.bodyMaster}`,
     `【大限】${r.daxian.rule}，${r.daxian.startAge}岁起　【小限】${r.xiaoxianRule.direction}`,
+    schoolLine,
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
     `　　　${r.changqu.relation}　入命三方：${r.changqu.inSoulSanfang ? '是' : '否'}　吸收面：${r.changqu.absorb.label}（${r.changqu.absorb.reason}）`,
     flyLine,
@@ -355,6 +387,11 @@ function liuyaoText(r) {
       const m = strength.month && strength.month.branch ? `月建 ${strength.month.branch}（${strength.month.element}）　` : '';
       out.push(`用神旺衰：${m}${strength.labels.join(' · ')}`);
     }
+    // 伏神出伏条件：只在用神不上卦时出现；只归条件档，不给应期
+    const chufu = r.fushenAccess;
+    if (chufu && Array.isArray(chufu.labels) && chufu.labels.length) {
+      out.push(`伏神出伏：${chufu.labels.join(' · ')}`);
+    }
   } else {
     out.push('用神：未取（未指明所问之事；用「询问方向」指定后即按六亲取用）');
   }
@@ -421,7 +458,7 @@ export function compute(args = {}) {
     };
     const asOf = checkAsOf(args.asOf);
     const other = r.system === 'bazi'
-      ? buildZiwei({ ...common, leapAsNext: args.leapAsNext === true, asOf })
+      ? buildZiwei({ ...common, leapMonth: args.leapMonth, leapAsNext: args.leapAsNext === true, ...ziweiSchoolArgs(args), asOf })
       : buildBazi({ ...common, lateZi: args.lateZi !== false, nowYear: asOf ? asOf.year : undefined });
     r.cross = crossCheck(r.system === 'bazi' ? r : other, r.system === 'ziwei' ? r : other);
     if (r.interpret) {
@@ -474,8 +511,9 @@ export function compute(args = {}) {
 export function interpretText(i) {
   if (!i) return '';
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
-  // 直答放在最前：先回答「你问的事」，再说依据，避免读者读到最后才知道结论
-  if (i.answer) out.push(`▶ 先答所问：${i.answer}`);
+  // 直答放在最前：先回答「你问的事」，再说依据，避免读者读到最后才知道结论；
+  // 没填问题时就不该喊「答所问」——改为「先看结论」，否则是一句假话
+  if (i.answer) out.push(`▶ ${i.ask && i.ask.question ? '先答所问' : '先看结论'}：${i.answer}`);
   if (i.plain) out.push(`▶ 说人话：${i.plain}`);
   if (i.lead) out.push(i.lead);
   // 一页读懂：报告顶部的五条结论，先给读的人一个「整体形状」
@@ -551,7 +589,9 @@ function computeRaw(args = {}) {
     const result = buildZiwei({
       ...dt,
       gender: requireGender(args.gender),
+      leapMonth: args.leapMonth,
       leapAsNext: args.leapAsNext === true,
+      ...ziweiSchoolArgs(args),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
@@ -702,6 +742,9 @@ function computeRaw(args = {}) {
     if (ug.liuqin) {
       const strength = yongshenStrength(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
       if (strength) result.useGodStrength = strength;
+      // 伏神出伏条件：飞伏生克叠月建日辰，只判条件、不出应期
+      const chufu = fushenAccess(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
+      if (chufu) result.fushenAccess = chufu;
     }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
@@ -802,7 +845,17 @@ function computeRaw(args = {}) {
     return { ...result, precision: dt.precision, summary: trendText(result) };
   }
   if (system === 'fengshui') {
-    const action = args.action === 'advise' ? 'advise' : 'natal';
+    const action = args.action === 'advise' ? 'advise' : args.action === 'xuankong' ? 'xuankong' : 'natal';
+    if (action === 'xuankong') {
+      const result = buildFengshui({
+        action,
+        sitting: args.sitting,
+        facing: args.facing,
+        ...(args.period !== undefined ? { period: args.period } : {}),
+        ...(Number.isInteger(args.fortuneYear) ? { fortuneYear: args.fortuneYear } : {}),
+      });
+      return { ...result, summary: fengshuiText(result) };
+    }
     if (action === 'advise') {
       const result = buildFengshui({
         action,
@@ -841,6 +894,8 @@ function computeRaw(args = {}) {
       givenName: args.givenName,
       limit: args.limit,
       charElements: args.charElements && typeof args.charElements === 'object' ? args.charElements : undefined,
+      strokeOverrides: args.strokeOverrides && typeof args.strokeOverrides === 'object' ? args.strokeOverrides : undefined,
+      surnameStrokes: args.surnameStrokes && typeof args.surnameStrokes === 'object' ? args.surnameStrokes : undefined,
       ...birth,
       ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
       ...(args.datetime ? {
@@ -1019,6 +1074,25 @@ function trendText(r) {
 
 /** 风水文本 */
 function fengshuiText(r) {
+  if (r.meta.action === 'xuankong') {
+    const p = r.meta.period;
+    const cell = (palace) => {
+      const x = r.palaces.find((y) => y.palace === palace);
+      return `${palace}${x.yun}/${x.shan}/${x.xiang}`;
+    };
+    const row = (names) => names.map(cell).join('　');
+    const w = r.wangShanWangXiang;
+    return [
+      `【玄空】${r.meta.periodLabel}　坐 ${r.meta.sitting}　向 ${r.meta.facing}`,
+      `【入中】山盘 ${r.meta.shanCenter.star}${r.meta.shanCenter.name}（${r.meta.shanCenter.fly}，${r.meta.shanCenter.basis}）；向盘 ${r.meta.xiangCenter.star}${r.meta.xiangCenter.name}（${r.meta.xiangCenter.fly}，${r.meta.xiangCenter.basis}）`,
+      `【九宫】${row(['巽', '离', '坤'])}｜${row(['震', '中', '兑'])}｜${row(['艮', '坎', '乾'])}`,
+      `【当运】山星${p}到${r.dangYun.shan.text}；向星${p}到${r.dangYun.xiang.text}`,
+      `【表法】${w.table.length ? w.table.join('、') : '无'}；${w.note}`,
+      `【合十】山星合十 ${r.heshi.shan.join('、') || '无'}；向星合十 ${r.heshi.xiang.join('、') || '无'}`,
+      ...(r.meta.note ? [`※ ${r.meta.note}`] : []),
+      `※ ${r.disclaimer}`,
+    ].join('\n');
+  }
   if (r.meta.action === 'advise') {
     const match = r.mingMatch
       ? [`【命宅配】${r.mingMatch.text}`]
@@ -1051,7 +1125,11 @@ function nameText(r) {
   if (r.action === 'generate') {
     return [
       `【候选名】姓 ${r.surname}（${r.gender}，喜用 ${r.bazi.favorable.join('、')}）${r.bazi.basis}`,
-      ...r.candidates.map((c) => `${c.rank}. ${c.name}　${c.chars.map((x) => `${x.char}(${x.element})${x.meaning}`).join('　')}`),
+      ...r.candidates.map((c) => {
+        const wu = c.wuge && c.wuge.available ? `　五格 ${c.wuge.summary}` : '';
+        const ph = c.phonetics && c.phonetics.available ? `　音韵 ${c.phonetics.level}（${c.phonetics.tonePattern}）` : '';
+        return `${c.rank}. ${c.name}　${c.chars.map((x) => `${x.char}(${x.element})${x.meaning}`).join('　')}${wu}${ph}`;
+      }),
       ...r.notes.map((n) => `※ ${n}`),
     ].join('\n');
   }
@@ -1064,10 +1142,20 @@ function nameText(r) {
       : '';
     return `· ${c.char}：${el}｜${fit}｜${c.meaning}${sug}`;
   };
+  const wu = r.wuge;
+  const wugeLine = wu && wu.available
+    ? `【五格】${wu.strokes.map((x) => `${x.char}${x.strokes}画`).join('＋')}｜${wu.summary}｜三才 ${wu.sancai.text}`
+    : `【五格】${wu ? wu.reason : '未算'}`;
+  const ph = r.phonetics;
+  const phLine = ph && ph.available
+    ? `【音韵】${ph.chars.map((x) => `${x.char}${x.py}${x.tone}`).join(' ')}｜声调 ${ph.tonePattern}｜${ph.level}${ph.issues.length ? `：${ph.issues.map((i) => i.text).join('；')}` : ''}`
+    : `【音韵】${ph ? ph.reason : '未算'}`;
   return [
     `【名字评估】${r.fullName}`,
     ...r.chars.map(charLine),
     r.bazi ? `【八字】日主 ${r.bazi.dayMaster && r.bazi.dayMaster.stem ? `${r.bazi.dayMaster.stem}（${r.bazi.dayMaster.element}）` : r.bazi.dayMaster}，旺衰 ${r.bazi.strength.level}（${r.bazi.strength.score}），${r.bazi.basis}` : '',
+    wugeLine,
+    phLine,
     `【结论】${r.verdict}`,
     ...r.notes.map((n) => `※ ${n}`),
   ].filter(Boolean).join('\n');

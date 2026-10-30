@@ -5,11 +5,99 @@
   let mhMode = 'time';
   let xlrMode = 'time';
   let fsMode = 'natal';
+  let fsPeriod = '9';
   let nnMode = 'assess';
   let convMode = 'solar2lunar';
 
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
+
+  // ── 首屏：最近用过 / 分组 ↔ 平铺 ────────────────────────────────
+  // 只记「点过哪个入口」，不存任何输入内容；读写失败（隐私模式、禁用存储）就降级成不记。
+  const RECENT_KEY = 'mp.recent.tabs';
+  const VIEW_KEY = 'mp.first.view';
+  const RECENT_MAX = 3;
+
+  function storeGet(key) {
+    try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+  }
+  function storeSet(key, val) {
+    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
+  }
+
+  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次 */
+  function dayLabel(ts) {
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return '';
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(new Date()) - day(d)) / 86400000);
+    if (diff <= 0) return '今天';
+    if (diff === 1) return '昨天';
+    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  /** 当前页面上真实存在的入口 → 名称。存储里的 tab 值先过这张表，避免脏数据被当选择器用 */
+  function entryLabels() {
+    const map = {};
+    document.querySelectorAll('.tab[data-tab]').forEach((b) => { map[b.dataset.tab] = b.textContent.trim(); });
+    return map;
+  }
+
+  function renderRecent() {
+    const row = el('recent');
+    const box = el('recent-list');
+    if (!row || !box) return;
+    const labels = entryLabels();
+    const list = (storeGet(RECENT_KEY) || []).filter((x) => x && labels[x.tab]).slice(0, RECENT_MAX);
+    box.replaceChildren();
+    list.forEach((x) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'rc';
+      b.dataset.tab = x.tab;
+      b.appendChild(document.createTextNode(labels[x.tab]));
+      const when = dayLabel(x.at);
+      if (when) {
+        const i = document.createElement('i');
+        i.textContent = when;
+        b.appendChild(i);
+      }
+      b.addEventListener('click', () => activate(x.tab));
+      box.appendChild(b);
+    });
+    row.hidden = list.length === 0;
+  }
+
+  function recordRecent(t) {
+    if (!entryLabels()[t]) return;
+    const list = (storeGet(RECENT_KEY) || []).filter((x) => x && x.tab && x.tab !== t);
+    list.unshift({ tab: t, at: Date.now() });
+    storeSet(RECENT_KEY, list.slice(0, RECENT_MAX));
+    renderRecent();
+  }
+
+  /** 点入口：切 tab + 立刻算；人格问卷例外，答够 12 题才出结果 */
+  function activate(next) {
+    setTab(next);
+    recordRecent(next);
+    if (next === 'mbti') mbEnter(); else run();
+  }
+
+  /** 分组 / 平铺：只切显示，19 个 tab 与分组卡片两套入口始终可用 */
+  function applyView(v) {
+    const flat = v === 'flat';
+    document.body.classList.toggle('view-flat', flat);
+    document.body.classList.toggle('view-group', !flat);
+    document.querySelectorAll('.view-switch [data-view]').forEach((b) => {
+      const on = b.dataset.view === (flat ? 'flat' : 'group');
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (flat) {
+      const cur = document.querySelector('.tab.on');
+      if (cur) setTimeout(() => scrollTabIntoView(cur), 0);
+    }
+  }
 
   // ── 时间语义分类 ────────────────────────────────────────────────
   // birth：八字 / 紫微 —— 要的是「出生时间」，必然是过去，用示例默认，不取当前时刻
@@ -55,7 +143,7 @@
     star: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。',
     numerology: '生命数字按公历生日归约出生命路径数、生日数与态度数。',
     trend: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。',
-    fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向。',
+    fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。',
     name: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。',
     mbti: '十六型人格是一份 MBTI 风格问卷：24 题分 6 页，每题按 1（完全不像）到 5（很像我）打分；答满 12 题就能出结果。',
   };
@@ -192,7 +280,7 @@
     `<button type="button" class="mp-chip${pastMarks[r.year] === m ? ' on' : ''}" data-pmark="${r.year}" data-mark="${m}">${l}</button>`).join('')}</span></div>`;
     return `<div class="mp-verify"><div class="mp-verify-h">验前事 · 过去几年的信号（只读，不改盘）</div>
       ${rows.map(row).join('')}
-      <div class="mp-verify-foot"><button type="button" class="mp-btn ghost" data-calfit="1" style="font-size:12px;padding:5px 12px">算贴合度</button>
+      <div class="mp-verify-foot"><button type="button" class="mp-btn ghost" data-calfit="1">算贴合度</button>
       <span id="fitout" class="mp-verify-fit">${pastFit ? `命中 ${pastFit.yes}/${pastFit.answered}（${pastFit.level}）：${pastFit.advice}` : ''}</span></div></div>`;
   }
 
@@ -204,7 +292,7 @@
     .map(([v, l]) => `<option value="${v}"${ev.kind === v ? ' selected' : ''}>${l}</option>`).join('')}
       </select></div>`).join('');
     return `<div class="mp-rect"><div class="mp-verify-h">生时校正 · 用过去的事反推时辰</div>${rows}
-      <button type="button" class="mp-btn ghost" data-rectify="1" style="font-size:12px;padding:5px 12px">计算候选时辰</button>
+      <button type="button" class="mp-btn ghost" data-rectify="1">计算候选时辰</button>
       <div id="rectout">${rectOutHTML()}</div></div>`;
   }
 
@@ -392,8 +480,13 @@
     if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
     if (tab === 'fengshui') {
       args.action = fsMode;
-      if (fsMode === 'advise') { args.sitting = el('sitting').value.trim(); args.facing = el('facing').value.trim(); delete args.datetime; }
-      else { args.gender = el('gender').value; }
+      if (fsMode === 'natal') { args.gender = el('gender').value; }
+      else {
+        args.sitting = el('sitting').value.trim();
+        args.facing = el('facing').value.trim();
+        delete args.datetime;
+        if (fsMode === 'xuankong') args.period = Number(el('fsperiod').value) || 9;
+      }
     }
     if (tab === 'name') {
       args.action = nnMode;
@@ -403,7 +496,8 @@
         args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true;
       } else {
         args.givenName = el('givenname').value.trim();
-        delete args.datetime;
+        // 生辰留着：填了就按喜用判、空着 engine 自己只评字面五行
+        if (!date || !time) delete args.datetime;
       }
     }
     // 问题与卦象一起交给解读：解读按它展开，并在开头回显供你确认
@@ -436,6 +530,7 @@
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : tab === 'name' ? window.__PP.nameHTML(r)
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
+                          : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
       last = { r, html, tab, date, time, timed, trend };
       paint();
@@ -455,6 +550,7 @@
    * 「此刻」按钮据此取消。
    */
   function goCast() {
+    recordRecent(tab);
     // 人格问卷没有时间可补：先看答够没有，再走同一套计算
     if (tab === 'mbti') { mbSubmit(); return; }
     const k = kindOf(tab);
@@ -500,6 +596,7 @@
     const k = kindOf(tab);
     const birth = isBirthTab(tab);
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+    document.querySelectorAll('.tool').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     scrollTabIntoView(document.querySelector('.tab.on'));
     el('for-bazi').style.display = birth ? '' : 'none';
     el('for-gender').style.display = birth ? '' : 'none';
@@ -560,8 +657,9 @@
     document.querySelectorAll('#xlrmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === xlrMode));
     el('xlr-num').style.display = xlrMode === 'number' ? '' : 'none';
     document.querySelectorAll('#fsmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === fsMode));
-    el('fs-advise').style.display = fsMode === 'advise' ? '' : 'none';
-    el('fs-advise2').style.display = fsMode === 'advise' ? '' : 'none';
+    el('fs-advise').style.display = fsMode !== 'natal' ? '' : 'none';
+    el('fs-advise2').style.display = fsMode !== 'natal' ? '' : 'none';
+    if (el('fs-period')) el('fs-period').style.display = fsMode === 'xuankong' ? '' : 'none';
     document.querySelectorAll('#nnmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === nnMode));
     el('nn-assess').style.display = nnMode === 'assess' ? '' : 'none';
     el('nn-generate').style.display = nnMode === 'generate' ? '' : 'none';
@@ -724,6 +822,7 @@
 
   function mbSubmit() {
     if (mbAnswered() < MBTI_MIN) { mbNudge(); return; }
+    recordRecent('mbti');
     run();
   }
 
@@ -736,11 +835,27 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
-      setTab(b.dataset.tab);
-      // 人格 tab 的输入就是问卷本身：没答够时不自动算，免得一进来就弹错
-      if (b.dataset.tab === 'mbti') mbEnter(); else run();
+    // 两套入口（平铺 tab 与分组卡片）走同一条激活路径，避免行为分叉
+    document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => activate(b.dataset.tab)));
+    document.querySelectorAll('.view-switch [data-view]').forEach((b) => b.addEventListener('click', () => {
+      applyView(b.dataset.view);
+      storeSet(VIEW_KEY, b.dataset.view);
     }));
+    // 分组卡片：窄屏每组只露 4 个，余下的折在「还有 N 个」后面（展开态由 CSS 控制）
+    document.querySelectorAll('.tgroup').forEach((g) => {
+      const more = g.querySelector('.tmore');
+      if (!more) return;
+      const extra = g.querySelectorAll('.ttools>.tool').length - 4;
+      if (extra <= 0) { more.style.display = 'none'; return; }
+      more.textContent = `还有 ${extra} 个`;
+      more.addEventListener('click', () => {
+        const open = g.classList.toggle('open');
+        more.textContent = open ? '收起' : `还有 ${extra} 个`;
+        more.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    });
+    applyView(storeGet(VIEW_KEY) === 'flat' ? 'flat' : 'group');
+    renderRecent();
     const mbHost = el('mbti-qs');
     if (mbHost) {
       renderMbti();
@@ -775,6 +890,7 @@
       el('gender').value = 'male';
       el('addr').value = '河北石家庄';
       setTab('bazi');
+      recordRecent('bazi');
       run();
     });
     el('gender').addEventListener('change', run);
@@ -802,7 +918,7 @@
     seg('#fsmode button', (v) => { fsMode = v; });
     seg('#nnmode button', (v) => { nnMode = v; });
     seg('#convertmode button', (v) => { convMode = v; syncQuick(); run(); });
-    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
+    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
       .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', run); });
     // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');
@@ -847,7 +963,7 @@
       if (e.target && e.target.id === 'askq' && e.key === 'Enter') { e.preventDefault(); doAsk(); }
     });
     // 切到问事的体系时把光标放进「所问之事」
-    document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => {
       if (needAsk(tab) && !el('question').value.trim() && el('question').focus) el('question').focus();
     }));
     setTab('ziwei');

@@ -92,8 +92,10 @@ export function apply(ctx) {
     if (next.system === 'xiaoliuren' && next.mode !== 'number' && !next.datetime && !next.date) {
       next.datetime = `${today}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
     }
-    // 风水 natal 的流年飞星默认看今年；显式给了 fortuneYear 就按给的算
-    if (next.system === 'fengshui' && next.action !== 'advise' && next.fortuneYear === undefined) {
+    // 风水 natal 的流年飞星默认看今年；玄空由 period / fortuneYear 自定，不补默认年份，
+    // 否则缺省会悄悄把「默认九运」变成「按今年定运」。
+    if (next.system === 'fengshui' && (next.action === undefined || next.action === 'natal')
+      && next.fortuneYear === undefined) {
       next.fortuneYear = now.getFullYear();
     }
     return compute(next);
@@ -108,7 +110,7 @@ export function apply(ctx) {
         system: {
           type: 'string',
           enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'],
-          description: 'bazi = 四柱八字（含调候寒暖与《穷通宝鉴》120 格用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、卦体关系、用神落位与月建日辰旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（MBTI 风格 24 题问卷：给 answers 出类型，不给则先返回题目）；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局）；name = 起名（391 字库的用字五行评估与候选生成；未收录字可传 charElements 指定五行）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
+          description: 'bazi = 四柱八字（含调候寒暖与《穷通宝鉴》120 格用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、卦体关系、用神落位与月建日辰旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（MBTI 风格 24 题问卷：给 answers 出类型，不给则先返回题目）；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局/玄空下卦，action 三选一）；name = 起名（391 字库的用字五行评估与候选生成；未收录字可传 charElements 指定五行）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
         },
         datetime: {
           type: 'string',
@@ -275,24 +277,78 @@ export function apply(ctx) {
           enum: [1, 3, 5],
           description: '塔罗张数：1 单张指引、3 过去现在未来、5 十字牌阵。默认 3。',
         },
+        leapMonth: {
+          type: 'string',
+          enum: ['split', 'next', 'prev'],
+          description: '紫微斗数：闰月口径。split（默认，按日切分：1–15 归本月、16 起归次月，主流排盘口径）、next（整月归次月）、prev（整月归本月）。',
+        },
         leapAsNext: {
           type: 'boolean',
-          description: '紫微斗数：闰月是否按次月起盘（默认按本月起盘）。',
+          description: '紫微斗数：旧写法，true 等同 leapMonth: next。',
+        },
+        brightnessSchool: {
+          type: 'string',
+          enum: ['default', 'QS', 'XD1', 'ZZ', 'XD2'],
+          description: '紫微斗数：星曜亮度流派。default 用内置通行表；QS/XD1 为全书派/现代派七档，ZZ/XD2 为五档。只影响十四主星的庙旺得利平不陷。',
+        },
+        gengYearSihua: {
+          type: 'string',
+          enum: ['GYWYT', 'GYWTY', 'GYWFT', 'GYWFX', 'GYWTX'],
+          description: '紫微斗数：庚干四化变体，默认 GYWYT（阳武阴同）。仅作用于生年四化。',
+        },
+        tianmaSchool: {
+          type: 'string',
+          enum: ['year-branch', 'month-branch'],
+          description: '紫微斗数：天马安法。year-branch（默认）按年支三合，month-branch 改按生月三合。',
+        },
+        tiankongSchool: {
+          type: 'string',
+          enum: ['off', 'normal', 'shun-jia-shi'],
+          description: '紫微斗数：天空安法。off（默认不排）、normal（年支顺行一位）、shun-jia-shi（年支加生时）。',
+        },
+        jiekongSchool: {
+          type: 'string',
+          enum: ['off', 'double', 'single', 'zhanyan'],
+          description: '紫微斗数：截空/旬空安法。off（默认不排）、single 单星、double 正副双星、zhanyan 占验派；非 off 时同时排旬空、副旬。',
+        },
+        kuiyueSchool: {
+          type: 'string',
+          enum: ['qs1', 'qs2', 'zhong-yiming', 'network'],
+          description: '紫微斗数：天魁天钺安法，默认 qs1（全书理解一），差异集中在庚辛壬癸年。',
+        },
+        tianshiTianshang: {
+          type: 'string',
+          enum: ['normal', 'zhongzhou'],
+          description: '紫微斗数：天伤天使安法。normal（默认，天伤交友、天使疾厄）、zhongzhou（阴男阳女互换）。',
+        },
+        changshengSchool: {
+          type: 'string',
+          enum: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
+          description: '紫微斗数：长生十二神起点流派。默认 yin-yang-shun-ni；huo-tu 把土五局起点从申改寅；shui-tu 与默认同。',
+        },
+        lateZishi: {
+          type: 'string',
+          enum: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
+          description: '紫微斗数：晚子时口径。current-day（默认，23:00 后仍按当日）、next-day（起盘日顺延次日）；另两个别名保留为兼容值。',
         },
         action: {
           type: 'string',
-          enum: ['natal', 'advise', 'assess', 'generate'],
-          description: '子动作。fengshui：natal（默认，算八宅命卦+流年飞星，需生日与性别）、advise（算宅卦门主灶布局，需 sitting 或 facing，出生信息可选）；name：assess（默认，评估已有名字，需 surname + givenName）、generate（生成候选名，需生辰，可选 surname / limit）。',
+          enum: ['natal', 'advise', 'xuankong', 'assess', 'generate'],
+          description: '子动作。fengshui：natal（默认，算八宅命卦+流年飞星，需生日与性别）、advise（算宅卦门主灶布局，需 sitting 或 facing，出生信息可选）、xuankong（玄空下卦九宫盘，需 sitting 或 facing，运由 period 或 fortuneYear 定，缺省九运并注明）；name：assess（默认，评估已有名字，需 surname + givenName）、generate（生成候选名，需生辰，可选 surname / limit）。',
         },
         toAge: {
           type: 'number',
           description: '仅 trend 使用：算到几岁（10–100，默认 100）。',
         },
-        sitting: { type: 'string', description: '仅 fengshui advise：坐山（24 山之一，如 子/午/乾）。与 facing 至少给一个。' },
-        facing: { type: 'string', description: '仅 fengshui advise：向山（24 山之一）。缺 sitting 时按对宫反推。' },
+        sitting: { type: 'string', description: '仅 fengshui advise / xuankong：坐山（24 山之一，如 子/午/乾）。与 facing 至少给一个（玄空按坐向定山盘/向盘）。' },
+        facing: { type: 'string', description: '仅 fengshui advise / xuankong：向山（24 山之一）。缺 sitting 时按对宫反推。' },
         fortuneYear: {
           type: 'number',
-          description: '仅 fengshui natal：流年九宫飞星的目标年份，省略则不算飞星（只算命卦与八星）。',
+          description: '仅 fengshui natal / xuankong：natal 用它定流年九宫飞星（省略则按今年）；xuankong 用它定三元九运（省略按九运）。',
+        },
+        period: {
+          type: 'number',
+          description: '仅 fengshui xuankong：三元九运的运（1–9）。优先于 fortuneYear；省略时按 fortuneYear 定，再缺省按九运（2024–2043）并注明。',
         },
         surname: { type: 'string', description: '仅 name 使用：姓氏，如「李」（复姓整体写，如「欧阳」）。' },
         givenName: { type: 'string', description: '仅 name assess 使用：名（1–2 个汉字）。' },

@@ -44,6 +44,9 @@ ok('三个组件都是函数', registered.every((r) => typeof r.comp === 'functi
 // 1b) 「问进对话」这条链在源码里必须完整：生成提问 → 写草稿 → 走正常回车路径
 const appSrc = (await import('node:fs')).readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 ok('面板用 Engine.askPrompt 组装提问', appSrc.includes('Engine.askPrompt('));
+// 白话底稿必须由面板带进去：只传 r 的话模型拿不到「直答 / 说人话」
+ok('面板把解析对象传给 askPrompt', appSrc.includes('interpret: result.it') && appSrc.includes('interpret: LAST.it'));
+ok('输入框桥的上一张盘也保留解析对象', appSrc.includes('LAST.it = result.it'));
 ok('桥从 slot props 取 inputActions（兼容 actions.input）', appSrc.includes('props.inputActions') && appSrc.includes('props.actions && props.actions.input'));
 ok('会话槽位注册套 ctx.effect', appSrc.includes('ctx.effect(run') && appSrc.includes("sessionSeat('conversation.input.right'"));
 ok('拿不到 inputActions 时显式说明（不静默）', appSrc.includes('命理·未就绪'));

@@ -28,6 +28,8 @@ export const CSS = `
     --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 40px -30px rgba(0,0,0,.9);--ring:0 0 0 3px rgba(226,117,95,.2)}
   /* 深色下强调色是浅色，这些实心底上的文字得反过来 */
   .tab.on,.seg button.on,.go{color:#14130f}
+  .tool.on,.tool.on b{color:#14130f}
+  .tool.on span{color:rgba(20,19,15,.72)}
   .mb-o.on b,.mb-o.on span,.mb-btn.primary{color:#14130f}
   .err{background:rgba(226,117,95,.14)}
 }
@@ -44,6 +46,7 @@ body{margin:0;color:var(--ink);font:16px/1.65 "Microsoft YaHei","PingFang SC",sy
 .wrap{max-width:1180px;margin:0 auto;padding:22px 26px 60px}
 /* 抬头竖排：品牌在上，tab 条独占一行。19 个 tab 横排在品牌右侧会把末行挤成「起名 人格」孤零零两个 */
 header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.brand-row{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700;letter-spacing:.14em;color:var(--gold);line-height:1.3}
 .brand .seal{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;border-radius:11px;
   background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font:700 20px/1 "Songti SC","SimSun",serif;letter-spacing:0;
@@ -58,6 +61,46 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--gold),var(--gold-deep));border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
+/* 首屏按「想干什么」分组：19 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
+   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（19 个 tab 原样保留）。 */
+.view-switch{display:flex;align-items:center;gap:8px}
+.view-switch .hint{font-size:12px;color:var(--dim)}
+.view-switch .seg button{padding:5px 11px;font-size:12.5px}
+.start{margin-bottom:20px}
+.recent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+/* .recent 自带 display:flex，会盖掉 [hidden] 的 UA 样式：没有记录时必须显式收起，否则只剩一个空标签 */
+.recent[hidden]{display:none}
+.recent-lbl{font-size:12px;font-weight:600;letter-spacing:.1em;color:var(--gold)}
+.recent-list{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rc{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 72%,transparent);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer;
+  transition:border-color .14s ease,background .14s ease}
+.rc:hover{border-color:var(--gold);background:var(--panel)}
+.rc i{font-style:normal;font-size:11.5px;color:var(--dim)}
+.groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tgroup{padding:14px 14px 12px;border:1px solid var(--line);border-radius:14px;
+  background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--bg)));box-shadow:var(--shadow)}
+.tgroup-head h2{display:flex;align-items:center;gap:8px;margin:0;font-size:15.5px;font-weight:600;color:var(--ink);letter-spacing:.06em}
+.tgroup-head h2::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--gold)}
+.tgroup-head p{margin:4px 0 11px;font-size:12.5px;line-height:1.6;color:var(--dim)}
+.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.tool{display:flex;flex-direction:column;gap:1px;padding:8px 10px;text-align:left;border:1px solid var(--line);border-radius:9px;
+  background:color-mix(in srgb,var(--panel2) 72%,transparent);color:var(--ink);font-family:inherit;cursor:pointer;
+  transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.tool b{font-size:13.5px;font-weight:600;letter-spacing:.02em}
+.tool span{font-size:11.5px;line-height:1.4;color:var(--dim)}
+.tool:hover{border-color:var(--gold);background:var(--panel)}
+.tool.on{border-color:transparent;background:linear-gradient(145deg,var(--gold),var(--gold-deep));box-shadow:0 8px 18px -12px var(--gold)}
+.tool.on b{color:#fff}
+.tool.on span{color:rgba(255,255,255,.84)}
+/* 奇数个的那一组：末项铺满整行，避免右下留一个孤格 */
+.tool.wide{grid-column:1/-1}
+/* 手机端每组先露 4 个，其余折在「还有 N 个」后面：三组全展开会把表单挤到第二屏 */
+.tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
+  background:transparent;color:var(--dim);font-family:inherit;font-size:12.5px;cursor:pointer}
+.tmore:hover{color:var(--gold);border-color:var(--gold)}
+body.view-group .tabs{display:none}
+body.view-flat .start{display:none}
 .bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:start;padding:18px 20px;margin-bottom:20px;
   background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 90%,var(--bg)));border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
 .grp{display:contents}
@@ -177,11 +220,24 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .mp-rect-cand{font-size:12.5px;padding:5px 8px;border-radius:6px;background:var(--panel2);margin-top:4px;color:var(--dim)}
 .mp-rect-cand.best{border-left:3px solid var(--gold);color:var(--ink)}
 .mp-rect-err{color:var(--bad);font-size:12.5px}
+/* 验前事 / 生时校正的按钮与输入框只有 .mp-btn/.mp-input 类名，样式却写在 DSH 宿主的 app.js 里，
+   离线页借不到 → 退回原生控件（年份框 21px、按钮灰底且 31px 高）。页面层补一套同变量的小号控件，
+   深浅两色都只跟着变量走，不另写颜色。 */
+.mp-verify .mp-btn,.mp-rect .mp-btn{min-height:36px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:inherit;font-size:13px;cursor:pointer}
+.mp-verify .mp-btn:hover,.mp-rect .mp-btn:hover{border-color:var(--gold);background:var(--panel)}
+.mp-verify .mp-input,.mp-rect .mp-input{min-height:36px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:inherit;font-size:14px;outline:none}
+.mp-verify .mp-input:focus,.mp-rect .mp-input:focus{border-color:var(--gold);box-shadow:var(--ring)}
 .exp{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 0}
 .exp button{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer;
   transition:background .14s ease,border-color .14s ease,transform .14s ease}
 .exp button:hover{background:var(--panel2);border-color:var(--gold);transform:translateY(-1px)}
 .exp .hint{font-size:13px;color:var(--dim)}
+
+/* 中屏：三列会把每格压到 130px 上下，标题与一行白话都放不下，改成一列铺开 */
+@media (min-width:641px) and (max-width:1000px){
+  .groups{grid-template-columns:1fr}
+  .ttools{grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}
+}
 
 /* —— 竖屏（≤640px）：整页不横向滚动，输入区整行堆叠，盘面交给 panel-kit 的同名媒体查询 —— */
 @media (max-width:640px){
@@ -193,6 +249,19 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .brand{font-size:19px;letter-spacing:.1em}
   .brand .seal{width:34px;height:34px;border-radius:9px;font-size:17px}
   .brand-txt small{font-size:11.5px;line-height:1.5}
+  /* 分组卡片：每组先露 4 个，其余折起来；否则三组铺完，表单要滚过一整屏才见到 */
+  .view-switch{gap:6px}
+  .view-switch .hint{display:none}
+  .view-switch .seg button{min-height:36px;padding:6px 10px}
+  .groups{grid-template-columns:1fr}
+  .tgroup{padding:12px}
+  .ttools{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tool{padding:9px 10px;min-height:52px}
+  .tool b{font-size:14px}
+  .tool span{font-size:11px}
+  .tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
+  .tmore{display:flex}
+  .rc{min-height:36px}
   /* 19 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
@@ -222,6 +291,18 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .go{grid-column:2}
   /* 性别只有一格，留在半幅会空出右边半格；出生地同理，独占一行好填 */
   #for-gender,#for-bazi .field:not(.check){grid-column:1/-1}
+  /* 验前事 / 生时校正：标签独占一行，三档判断按钮等分成 44px 触摸格；
+     年份与类型输入同样抬到 44px（原先在离线页是 21px 的原生控件） */
+  .mp-verify,.mp-rect{padding:10px}
+  .mp-verify-row{flex-wrap:wrap;gap:6px;padding:5px 0}
+  .mp-verify-txt{flex:1 1 100%}
+  .mp-verify-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+  .mp-chip{min-height:44px;min-width:44px;font-size:14px;padding:10px 6px}
+  .mp-verify .mp-btn,.mp-rect .mp-btn{min-height:44px;font-size:14px;padding:10px 14px}
+  .mp-verify .mp-input,.mp-rect .mp-input{min-height:44px;font-size:16px}
+  /* 追问框与导出条同样抬到 44px：原先输入 37px、按钮 39px，是结果区最后几处矮控件 */
+  .askbox input,.askbox button,.exp button{min-height:44px}
+  .askbox input{font-size:16px}
   .tip{font-size:13px}
   .tip .auto-note{font-size:13px}
   .cast-at{font-size:13px}
@@ -240,6 +321,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   body{background:#fff;padding:0;font-size:12pt}
   .wrap{max-width:none;padding:0}
   .tabs,.bar,.tip,.go,.no-print,.exp{display:none!important}
+  .start,.view-switch{display:none!important}
   header{margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid #bbb}
   .brand{font-size:15pt}
   .brand small{display:block}
@@ -283,7 +365,16 @@ function page() {
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v${VERSION}</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+    <div class="brand-row">
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v${VERSION}</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="view-switch">
+        <span class="hint">熟练了可以换回平铺</span>
+        <span class="seg" role="group" aria-label="首屏样式">
+          <button type="button" data-view="group" class="on">分组</button>
+          <button type="button" data-view="flat">平铺</button>
+        </span>
+      </div>
+    </div>
     <div class="tabs">
       <button class="tab" data-tab="ziwei">紫微</button>
       <button class="tab" data-tab="bazi">八字</button>
@@ -306,6 +397,53 @@ function page() {
       <button class="tab" data-tab="mbti">人格</button>
     </div>
   </header>
+
+  <!-- 首屏分组：同一批入口按「想干什么」重排，点击走 web-ui 的 setTab；平铺视图下整块收起 -->
+  <section class="start" id="start" aria-label="选择要算的事">
+    <div class="recent" id="recent" hidden>
+      <span class="recent-lbl">最近用过</span>
+      <span class="recent-list" id="recent-list"></span>
+    </div>
+    <div class="groups" id="groups">
+      <section class="tgroup">
+        <div class="tgroup-head"><h2>问一件事</h2><p>心里有一件具体的事，起一卦再决定</p></div>
+        <div class="ttools">
+          <button type="button" class="tool" data-tab="liuyao"><b>六爻</b><span>摇六次，问一件事</span></button>
+          <button type="button" class="tool" data-tab="meihua"><b>梅花</b><span>见闻起卦，看当下</span></button>
+          <button type="button" class="tool" data-tab="tarot"><b>塔罗</b><span>抽牌，看关系与选择</span></button>
+          <button type="button" class="tool" data-tab="qimen"><b>奇门</b><span>看方位、时机与取舍</span></button>
+          <button type="button" class="tool" data-tab="daliuren"><b>六壬</b><span>占事，断来意与结果</span></button>
+          <button type="button" class="tool" data-tab="xiaoliuren"><b>小六壬</b><span>掐指一算，快速断</span></button>
+          <button type="button" class="tmore" aria-expanded="false"></button>
+        </div>
+      </section>
+      <section class="tgroup">
+        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情、格局与运程</p></div>
+        <div class="ttools">
+          <button type="button" class="tool" data-tab="bazi"><b>八字</b><span>四柱看一生格局</span></button>
+          <button type="button" class="tool" data-tab="ziwei"><b>紫微</b><span>十二宫细看</span></button>
+          <button type="button" class="tool" data-tab="hepan"><b>合盘</b><span>两个人合不合</span></button>
+          <button type="button" class="tool" data-tab="mbti"><b>人格</b><span>16 型性格问卷</span></button>
+          <button type="button" class="tool" data-tab="chenggu"><b>称骨</b><span>按生辰称命重</span></button>
+          <button type="button" class="tool" data-tab="numerology"><b>数字</b><span>生日数字看性格</span></button>
+          <button type="button" class="tool wide" data-tab="trend"><b>人生K</b><span>一生高低走势</span></button>
+          <button type="button" class="tmore" aria-expanded="false"></button>
+        </div>
+      </section>
+      <section class="tgroup">
+        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，顺带看看家里和名字</p></div>
+        <div class="ttools">
+          <button type="button" class="tool" data-tab="almanac"><b>黄历</b><span>今天宜忌、时辰吉凶</span></button>
+          <button type="button" class="tool" data-tab="zeri"><b>择日</b><span>挑个办事的好日子</span></button>
+          <button type="button" class="tool" data-tab="convert"><b>农历</b><span>公历农历互转</span></button>
+          <button type="button" class="tool" data-tab="star"><b>星座</b><span>星座性格与今日运</span></button>
+          <button type="button" class="tool" data-tab="fengshui"><b>风水</b><span>房屋朝向与布置</span></button>
+          <button type="button" class="tool" data-tab="name"><b>起名</b><span>按八字选字</span></button>
+          <button type="button" class="tmore" aria-expanded="false"></button>
+        </div>
+      </section>
+    </div>
+  </section>
 
   <div class="bar">
     <!-- 初始值是「命盘类（紫微/八字）」的示例默认：出生时间必然是过去，不取当前时刻。
@@ -443,10 +581,12 @@ function page() {
           <div class="seg" id="fsmode">
             <button data-mode="natal" class="on">命卦</button>
             <button data-mode="advise">门主灶</button>
+            <button data-mode="xuankong">玄空</button>
           </div>
         </div>
         <label class="field" id="fs-advise" style="display:none">坐山<input id="sitting" placeholder="如 子 / 乾" value="子"></label>
         <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
+        <label class="field" id="fs-period" style="display:none">运（1–9）<input id="fsperiod" type="number" min="1" max="9" value="9"></label>
       </div>
       <!-- 人格问卷：4 题一页、1–5 打分。题目与 1–5 的说明由 web-ui 从引擎取，
            这里只放容器与翻页骨架，避免题目在页面和引擎里各抄一份 -->
