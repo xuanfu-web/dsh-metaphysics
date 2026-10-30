@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { GROUPS } from '../src/groups.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
@@ -156,6 +157,7 @@ ${ORDER.map(buildModule).join('\n')}
     const Engine = __mods.index;
     window.Engine = Engine;
     window.__MP_VER = '${pkgVersion}';
+    window.__MPGroups = ${JSON.stringify(GROUPS)};
 ${core}
 ${kit}
 ${body}

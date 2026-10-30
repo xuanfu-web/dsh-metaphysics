@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { buildModule, MODULE_ORDER } from './build-client.mjs';
 // 询问方向的选项直接取自引擎，避免界面与解析层两处维护
 import { DIRECTIONS, DIRECTION_DEFAULT } from '../engine/interpret.js';
+import { GROUPS } from '../src/groups.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 
@@ -411,43 +412,13 @@ function page() {
       <span class="recent-list" id="recent-list"></span>
     </div>
     <div class="groups" id="groups">
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>问一件事</h2><p>心里有一件具体的事，起一卦再决定</p></div>
+${GROUPS.map((g) => `      <section class="tgroup">
+        <div class="tgroup-head"><h2>${g.title}</h2><p>${g.hint}</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="liuyao"><b>六爻</b><span>摇六次，问一件事</span></button>
-          <button type="button" class="tool" data-tab="meihua"><b>梅花</b><span>见闻起卦，看当下</span></button>
-          <button type="button" class="tool" data-tab="tarot"><b>塔罗</b><span>抽牌，看关系与选择</span></button>
-          <button type="button" class="tool" data-tab="qimen"><b>奇门</b><span>看方位、时机与取舍</span></button>
-          <button type="button" class="tool" data-tab="daliuren"><b>六壬</b><span>占事，断来意与结果</span></button>
-          <button type="button" class="tool" data-tab="xiaoliuren"><b>小六壬</b><span>掐指一算，快速断</span></button>
+${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' wide' : ''}" data-tab="${it.k}"><b>${it.label}</b><span>${it.tip}</span></button>`).join('\n')}
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
-      </section>
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情、格局与运程</p></div>
-        <div class="ttools">
-          <button type="button" class="tool" data-tab="bazi"><b>八字</b><span>四柱看一生格局</span></button>
-          <button type="button" class="tool" data-tab="ziwei"><b>紫微</b><span>十二宫细看</span></button>
-          <button type="button" class="tool" data-tab="hepan"><b>合盘</b><span>两个人合不合</span></button>
-          <button type="button" class="tool" data-tab="mbti"><b>人格</b><span>16 型性格问卷</span></button>
-          <button type="button" class="tool" data-tab="chenggu"><b>称骨</b><span>按生辰称命重</span></button>
-          <button type="button" class="tool" data-tab="numerology"><b>数字</b><span>生日数字看性格</span></button>
-          <button type="button" class="tool wide" data-tab="trend"><b>人生K</b><span>一生高低走势</span></button>
-          <button type="button" class="tmore" aria-expanded="false"></button>
-        </div>
-      </section>
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，顺带看看家里和名字</p></div>
-        <div class="ttools">
-          <button type="button" class="tool" data-tab="almanac"><b>黄历</b><span>今天宜忌、时辰吉凶</span></button>
-          <button type="button" class="tool" data-tab="zeri"><b>择日</b><span>挑个办事的好日子</span></button>
-          <button type="button" class="tool" data-tab="convert"><b>农历</b><span>公历农历互转</span></button>
-          <button type="button" class="tool" data-tab="star"><b>星座</b><span>星座性格与今日运</span></button>
-          <button type="button" class="tool" data-tab="fengshui"><b>风水</b><span>房屋朝向与布置</span></button>
-          <button type="button" class="tool" data-tab="name"><b>起名</b><span>按八字选字</span></button>
-          <button type="button" class="tmore" aria-expanded="false"></button>
-        </div>
-      </section>
+      </section>`).join('\n')}
     </div>
   </section>
 

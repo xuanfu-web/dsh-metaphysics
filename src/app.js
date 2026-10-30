@@ -29,7 +29,7 @@ function HISTORY_LABEL(kind, r) {
 // Client 半：命理排盘面板。由 build-client.mjs 注入 React / h / Engine / __PP。
 const PP = window.__PP;
 const CSS = `
-.mp-wrap{height:100%;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px}
+.mp-wrap{height:100%;width:100%;box-sizing:border-box;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px}
 /* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
 .mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
 /* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
@@ -41,10 +41,56 @@ const CSS = `
 .mp-checks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .mp-askblock{margin-top:14px;display:flex;flex-direction:column;gap:5px}
 .mp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
-.mp-tabs{display:inline-flex;gap:4px;margin-bottom:14px;flex-wrap:wrap;padding:4px;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:11px;width:100%;max-width:940px}
-.mp-tab{padding:7px 15px;border-radius:9px;border:none;background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13.5px;transition:background .14s,color .14s,box-shadow .14s}
-.mp-tab:hover{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary)}
-.mp-tab.on{background:var(--dsw-alias-brand-primary);color:#fff;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
+/* ── 首屏：最近用过 / 分组卡片 / 分组↔平铺（与独立页同一套信息架构） ── */
+.mp-start{margin-bottom:14px;container-type:inline-size}
+.mp-start-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.mp-recent{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-recent[hidden]{display:none}
+.mp-recent-lbl{font-size:11.5px;font-weight:700;letter-spacing:.1em;color:var(--dsw-alias-brand-primary)}
+.mp-recent-list{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-rc{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);
+  background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 72%,transparent);color:var(--dsw-alias-label-primary);
+  font-family:inherit;font-size:12.5px;cursor:pointer;transition:border-color .14s,background .14s}
+.mp-rc:hover{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-2)}
+.mp-rc i{font-style:normal;font-size:11px;color:var(--dsw-alias-label-secondary)}
+.mp-viewsw{margin-left:auto;display:inline-flex;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2)}
+.mp-viewsw button{border:none;background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;transition:background .14s,color .14s}
+.mp-viewsw button:hover{color:var(--dsw-alias-label-primary)}
+.mp-viewsw button.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:10px}
+.mp-tgroup{padding:12px 12px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;
+  background:linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));
+  box-shadow:0 1px 2px color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent)}
+.mp-tgroup-head h2{display:flex;align-items:center;gap:7px;margin:0;font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary);letter-spacing:.06em}
+.mp-tgroup-head h2::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--dsw-alias-brand-primary)}
+.mp-tgroup-head p{margin:3px 0 9px;font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-secondary)}
+.mp-ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mp-tool{display:flex;flex-direction:column;gap:1px;padding:7px 9px;text-align:left;border:1px solid var(--dsw-alias-border-l1);border-radius:9px;
+  background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 72%,transparent);color:var(--dsw-alias-label-primary);font-family:inherit;cursor:pointer;
+  transition:border-color .14s,background .14s,box-shadow .14s}
+.mp-tool b{font-size:13px;font-weight:600;letter-spacing:.02em}
+.mp-tool span{font-size:11px;line-height:1.4;color:var(--dsw-alias-label-secondary)}
+.mp-tool:hover{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1)}
+.mp-tool.on{border-color:transparent;background:var(--dsw-alias-brand-primary);box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
+.mp-tool.on b,.mp-tool.on span{color:#fff}
+.mp-tool.wide{grid-column:1/-1}
+.mp-tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:7px;border:1px dashed var(--dsw-alias-border-l1);border-radius:9px;
+  background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;cursor:pointer}
+.mp-tmore:hover{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary)}
+/* 侧栏宽度不等于窗口宽度：用容器查询决定每组先露 4 项、其余折在「还有 N 个」后面 */
+@container (max-width:560px){
+  /* 窄侧栏：视图开关另起一行右对齐，避免和「最近用过」挤在同一行被裁掉 */
+  .mp-start-top{flex-direction:column;align-items:stretch;gap:8px}
+  .mp-viewsw{margin-left:0;align-self:flex-end}
+  .mp-tgroup:not(.open) .mp-ttools>.mp-tool:nth-child(n+5){display:none}
+  .mp-tmore{display:flex}
+}
+.mp-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:6px;margin-bottom:14px;width:100%;max-width:940px}
+.mp-tabs.hide{display:none}
+.mp-tab{padding:7px 10px;border-radius:999px;border:1px solid transparent;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 62%,transparent);color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13px;white-space:nowrap;
+  transition:background .16s,color .16s,border-color .16s,box-shadow .16s}
+.mp-tab:hover{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary)}
+.mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
 .mp-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px;
   transition:border-color .14s,box-shadow .14s,background .14s}
@@ -155,8 +201,11 @@ const CSS = `
 }
 @media (max-width:720px){
   .mp-wrap{padding:14px 14px 36px}
-  .mp-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:12px}
-  .mp-tab{padding:9px 4px;font-size:13.5px;text-align:center}
+  /* 19 个 tab 铺网格要占掉大半个首屏：窄屏改单行横滑，44px 触摸目标、滚动条藏起来 */
+  .mp-tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;margin:0 -14px 12px;padding:2px 14px 6px;scrollbar-width:none}
+  .mp-tabs::-webkit-scrollbar{display:none}
+  .mp-tab{flex:0 0 auto;min-height:44px;padding:10px 16px;font-size:13.5px;text-align:center}
+  .mp-rc{min-height:36px}
   .mp-input,.mp-textarea{padding:10px 12px;font-size:16px;min-height:44px;height:auto}
   .mp-textarea{min-height:76px}
   .mp-quiz-q{padding:9px 10px}
@@ -175,7 +224,8 @@ const CSS = `
 }
 @media (max-width:420px){
   .mp-wrap{padding:12px 10px 32px}
-  .mp-tab{font-size:13px;padding:8px 2px}
+  .mp-tabs{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}
+  .mp-tab{font-size:13px;padding:9px 13px}
 }
 /* 键盘可达：面板里的按钮/链接都要有可见焦点环 */
 :where(.mp-btn,.mp-tab,.mp-chip,.mp-hist-item,.mp-hist-clear,.mp-qmopt,.seg button):focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
@@ -301,6 +351,34 @@ function pad(n) { return String(n).padStart(2, '0'); }
 
 // 速查类：不算完整命盘，主按钮统一叫「看结果」；与独立页（web-ui）保持同一套文案
 const QUICK_TABS = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
+
+// 首屏分组：与独立页（命理排盘.html）同一套「问一件事 / 看一个人 / 查日子」。
+// 卡片只是另一套入口——19 个 tab 原样保留，两套入口都走 switchTo，分组不改变任何排盘行为。
+// 首屏分组：与独立页（命理排盘.html）共用 src/groups.mjs；构建时由 tools/build-client.mjs
+// 注入 window.__MPGroups（同一份数据也生成页面的分组卡片，改一处两边一起变）。
+// 卡片只是另一套入口——19 个 tab 原样保留，两套入口都走 switchTo，分组不改变任何排盘行为。
+const GROUPS = Array.isArray(window.__MPGroups) ? window.__MPGroups : [];
+
+// 首屏记忆：只记「点过哪个入口」，不存任何输入内容；读写失败（隐私模式、禁用存储）就降级成不记。
+const RECENT_KEY = 'mp.recent.tabs';
+const VIEW_KEY = 'mp.first.view';
+const RECENT_MAX = 3;
+
+function storeGet(key) {
+  try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+}
+function storeSet(key, val) {
+  try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
+}
+function dayLabel(ts) {
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return '';
+  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((day(new Date()) - day(d)) / 86400000);
+  if (diff <= 0) return '今天';
+  if (diff === 1) return '昨天';
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 function nowParts() {
   const d = new Date();
@@ -476,6 +554,13 @@ function App() {
     if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); LAST.it = result.it || null; }
   }, [result, askText]);
   const [hist, setHist] = useState(() => loadHistory());
+  // 首屏视图与「最近用过」：与独立页同一套存储键，分组视图下隐藏平铺 tab 条
+  const [view, setView] = useState(() => (storeGet(VIEW_KEY) === 'flat' ? 'flat' : 'group'));
+  const [recent, setRecent] = useState(() => {
+    const v = storeGet(RECENT_KEY);
+    return Array.isArray(v) ? v : [];
+  });
+  const [openGroups, setOpenGroups] = useState({});
   const [replayArgs, setReplayArgs] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -723,6 +808,27 @@ function App() {
     run(next, v);
   };
 
+  /** 「最近用过」：只在用户点入口时记，初始化不写；存储失败静默降级 */
+  const recordRecent = (k) => {
+    if (!TABS.some((t) => t.k === k)) return;
+    setRecent((prev) => {
+      const list = (prev || []).filter((x) => x && x.tab && x.tab !== k);
+      const next = [{ tab: k, at: Date.now() }].concat(list).slice(0, RECENT_MAX);
+      storeSet(RECENT_KEY, next);
+      return next;
+    });
+  };
+  const changeView = (v) => {
+    const next = v === 'flat' ? 'flat' : 'group';
+    setView(next);
+    storeSet(VIEW_KEY, next);
+  };
+  /** 两套入口共用：先记录，再走 switchTo（与独立页 activate 同一路径） */
+  const activate = (k) => {
+    recordRecent(k);
+    switchTo(k);
+  };
+
   /** 手动改日期/时刻：记进当前语义分类，之后切同类 tab 会保留 */
   const editDate = (value) => {
     setDate(value);
@@ -946,15 +1052,55 @@ function App() {
     run(k);
   }, [replayArgs]);
 
+  const recentList = (recent || []).filter((x) => x && TABS.some((t) => t.k === x.tab)).slice(0, RECENT_MAX);
+  const tabLabel = (k) => (TABS.find((t) => t.k === k) || {}).label || k;
+  const toolOf = ({ k, label, tip, wide }) => h('button', {
+    key: k, type: 'button', className: 'mp-tool' + (wide ? ' wide' : '') + (tab === k ? ' on' : ''), 'data-tab': k,
+    onClick: () => activate(k),
+  }, h('b', null, label), h('span', null, tip));
+
   const children = [
-    h('div', { key: 'tabs', className: 'mp-tabs', role: 'tablist', 'aria-label': '命理体系' }, TABS.map((t) =>
+    h('section', { key: 'start', className: 'mp-start', 'aria-label': '选择要算的事' },
+      h('div', { className: 'mp-start-top' },
+        h('div', { className: 'mp-recent', hidden: recentList.length === 0 },
+          h('span', { className: 'mp-recent-lbl' }, '最近用过'),
+          h('span', { className: 'mp-recent-list' }, recentList.map((x) => h('button', {
+            key: x.tab, type: 'button', className: 'mp-rc', onClick: () => activate(x.tab),
+          }, tabLabel(x.tab), h('i', null, dayLabel(x.at)))))),
+        h('div', { className: 'mp-viewsw', role: 'group', 'aria-label': '首屏视图' },
+          h('button', {
+            type: 'button', className: view === 'group' ? 'on' : '',
+            'aria-pressed': view === 'group' ? 'true' : 'false',
+            onClick: () => changeView('group'),
+          }, '分组'),
+          h('button', {
+            type: 'button', className: view === 'flat' ? 'on' : '',
+            'aria-pressed': view === 'flat' ? 'true' : 'false',
+            onClick: () => changeView('flat'),
+          }, '平铺'))),
+      view === 'group' ? h('div', { className: 'mp-groups' },
+        GROUPS.map((g) => {
+          const open = !!openGroups[g.title];
+          const extra = Math.max(0, g.items.length - 4);
+          return h('section', { key: g.title, className: 'mp-tgroup' + (open ? ' open' : '') },
+            h('div', { className: 'mp-tgroup-head' }, h('h2', null, g.title), h('p', null, g.hint)),
+            h('div', { className: 'mp-ttools' },
+              g.items.map(toolOf),
+              extra > 0 ? h('button', {
+                key: 'more', type: 'button', className: 'mp-tmore',
+                'aria-expanded': open ? 'true' : 'false',
+                onClick: () => setOpenGroups((o) => Object.assign({}, o, { [g.title]: !open })),
+              }, open ? '收起' : `还有 ${extra} 个`) : null));
+        })) : null),
+
+    h('div', { key: 'tabs', className: 'mp-tabs' + (view === 'flat' ? '' : ' hide'), role: 'tablist', 'aria-label': '命理体系' }, TABS.map((t) =>
       h('button', {
         key: t.k,
         role: 'tab',
         'aria-selected': tab === t.k ? 'true' : 'false',
         tabIndex: tab === t.k ? 0 : -1,
         className: 'mp-tab' + (tab === t.k ? ' on' : ''),
-        onClick: () => switchTo(t.k),
+        onClick: () => activate(t.k),
       }, t.label))),
 
     h('div', { key: 'head', className: 'mp-panel' },
