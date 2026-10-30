@@ -64,7 +64,7 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-30 更新）
 
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并（条目更新为十九套体系 + 0.38 能力）；随后另提一个 PR 把 0.39–0.46.5 的能力（玄空、五格、流派开关、出伏、通关、报告化解读）补进描述。
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并（条目更新为十九套体系 + 0.38 能力）；0.46.5 的描述同步另提 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10557 （open）。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
 - **已发布**：npm `dsh-metaphysics@0.46.5`（2026-10-30，`dist-tags.latest = 0.46.5`，shasum `da08e2b8d1a32017eebd5648917762c0709de73d`，62 个文件；0.39.0–0.46.4 只提交在本地，随 0.46.5 一并发布）。上一版是 0.38.2（2026-10-29）。
 - **仓库同步**：`main` = 3333db2（0.39.0–0.46.5 一次性入库），tag `v0.46.5`，GitHub release 已建。
