@@ -90,7 +90,7 @@ npm publish --access public
 
 ## 六、自动发布（每 24 小时）
 
-- **计划任务**：Windows「DSHMetaphysicsAutopublish」，每天 **04:00**（当前用户登录时运行；关机/睡眠错过会在恢复后补跑，最多 30 分钟）。
+- **计划任务**：Windows「DSHMetaphysicsAutopublish」，每天 **12:00**（中午；当前用户登录时运行；关机/睡眠错过会在恢复后补跑，最多 30 分钟）。
   - 查询：`Get-ScheduledTask -TaskName DSHMetaphysicsAutopublish`
   - 删除：`Unregister-ScheduledTask -TaskName DSHMetaphysicsAutopublish -Confirm:$false`
 - **入口**：`tools/autopublish.cmd` → `tools/autopublish.mjs`（也可手动 `node tools/autopublish.mjs`）。
