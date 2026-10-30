@@ -14,5 +14,10 @@ tools/_qt2.json
 _*.log
 _scan.mjs
 _grab.mjs
-# �Ӿ��Բ��ͼ����ͷ Chrome ���ɣ�����⣩
+# 视觉自查截图（无头 Chrome 生成，不入库）
 _*.png
+
+# 自动发布：状态/锁/日志（配置在 ~/.dsh，不入库）
+.autopublish-state.json
+.autopublish.lock
+tools/.autopublish.log
