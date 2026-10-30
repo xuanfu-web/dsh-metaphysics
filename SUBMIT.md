@@ -64,10 +64,10 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-30 更新）
 
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并（条目更新为十九套体系 + 0.38 能力）；0.46.5 的描述同步另提 https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10557 （open）。
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并（条目更新为十九套体系 + 0.38 能力）；#10557 仍 open（条目同步到 0.46 能力），0.47–0.50.1（应期、流派杂气等）的市场描述随后续 PR 补。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.46.5`（2026-10-30，`dist-tags.latest = 0.46.5`，shasum `da08e2b8d1a32017eebd5648917762c0709de73d`，62 个文件；0.39.0–0.46.4 只提交在本地，随 0.46.5 一并发布）。上一版是 0.38.2（2026-10-29）。
-- **仓库同步**：`main` = 3333db2（0.39.0–0.46.5 一次性入库），tag `v0.46.5`，GitHub release 已建。
+- **已发布**：npm `dsh-metaphysics@0.50.1`（2026-10-30，`dist-tags.latest = 0.50.1`，shasum `82e04de8904c69eff50ab673804a898314a31c87`，62 个文件；0.47.0–0.50.0 只提交在本地，随 0.50.1 一并发布）。上一版是 0.46.5（同日）。
+- **仓库同步**：`main` 已到面板同步提交（0.50.1），tag `v0.50.1`，GitHub release 已建。
 - **仓库修复（2026-10-30）**：`.git` 的 `HEAD` / `config` / `index` 丢失（只剩 `objects`、`refs`、`ORIG_HEAD`），git 报 "not a git repository"；按 `refs/heads/main`（6e4966f）补回 `HEAD` 与 `config` 后 `git reset` 重建索引，工作区内容未被改动。
 - **CDN 小坑**：发布后本机通过 `registry.npmjs.org` 查到的 packument 与 tarball 可能还是旧的（边缘缓存），表现为新版本查不到、tarball 404；加一个随机查询串（`?cb=<随机>`）或带 token 访问即能拿到新内容，等几分钟自然过期。
 - **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布走 `node tools/release.mjs`（须设 `NPM_CLI=<node>/node_modules/npm/bin/npm-cli.js`，否则 Windows 上 `spawnSync npm` 报 ENOENT），token 走临时 `.npmrc`（0600），发布后立即删除；`npm run` 在 PowerShell 下会撞执行策略，用 `cmd /c "npm run ..."` 或直接 `node tools/*.mjs`。
