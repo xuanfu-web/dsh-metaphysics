@@ -21,8 +21,8 @@ url: https://github.com/xuanfu-web/dsh-metaphysics
 name: xuanfu-web/dsh-metaphysics
 category: ui
 description:
-  en: 'Chinese metaphysics (xuanxue) divination panel and agent tool with nineteen systems: eight chart systems (BaZi, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus eleven quick references (almanac, solar–lunar conversion, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, an MBTI-style 16-type questionnaire, life-curve, feng shui, name analysis); ask-driven interpretation and a report layer, including chained and three-way-four-corner composite flying transformations for Zi Wei and yongshen plus whole-hexagram per-line month/day strength for LiuYao. All computed locally; networking is off by default. The npm package also ships an offline single-file page (命理排盘.html): double-click to open, every tab included, no server and no network needed.'
-  zh: '玄学命理排盘：十九套体系——八套排盘（八字、紫微斗数、六爻、梅花易数、大六壬、奇门遁甲、合盘、塔罗）加十一套速查（黄历、农历互转、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名、十六型人格问卷），并可按所问之事生成解析；紫微含飞星串连与三方四正复合飞化，六爻含用神旺衰与全卦逐爻旺衰；纯本地计算，默认不联网。npm 包内另附离线单文件页（命理排盘.html）：双击即开，十九个 tab 齐全，不用起服务、不用联网。'
+  en: 'Chinese metaphysics (xuanxue) divination panel and agent tool with nineteen systems: eight chart systems (BaZi, Zi Wei Dou Shu, LiuYao, MeiHua, Da Liu Ren, Qi Men Dun Jia, compatibility charts, Tarot) plus eleven quick references (almanac, solar–lunar conversion, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, life-curve, feng shui, name analysis, an MBTI-style 16-type questionnaire), with ask-driven, report-style interpretation. BaZi adds exact dayun handover dates, annual suiyun hints, "passing-through" (通关) and three-book classical cross-reference; Zi Wei adds 34 patterns, nine switchable school variants, chained flying transformations and three-way-four-corner composite flights; LiuYao adds yongshen strength, whole-hexagram per-line strength and hidden-spirit release conditions; feng shui covers eight-mansion and Xuan Kong flying stars; name analysis ships a 391-character library with five-grid (五格) numerology and phonetics checks. All computed locally; networking is off by default. The npm package also ships an offline single-file page (命理排盘.html): double-click to open, every tab included, no server and no network needed.'
+  zh: '玄学命理排盘：十九套体系——八套排盘（八字、紫微斗数、六爻、梅花易数、大六壬、奇门遁甲、合盘、塔罗）加十一套速查（黄历、农历互转、择日、称骨、小六壬、星座、生命数字、人生K线、风水、起名、十六型人格问卷），并可按所问之事生成可读报告；八字含交运日、岁运并临/伏吟反吟、通关与三书对照，紫微含 34 格局、九类流派开关、飞星串连与三方四正复合飞化，六爻含用神旺衰、全卦逐爻旺衰与伏神出伏条件，风水含八宅与玄空飞星，起名含 391 字库、五格剖象与音韵检查；纯本地计算，默认不联网。npm 包内另附离线单文件页（命理排盘.html）：双击即开，十九个 tab 齐全，不用起服务、不用联网。'
 ```
 
 > 上面这份是镜像；真身是 `submit/xuanfu-web__dsh-metaphysics.yml`，改描述以那个文件为准，改完记得回来同步这一段。
@@ -64,10 +64,10 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-30 更新）
 
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 （open，把条目描述更新为十九套体系、补上 MBTI 问卷与 0.38 能力；旧 PR #9854 已合并，原 PR #8517 已于 2026-10-22 合并）。
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并（条目更新为十九套体系 + 0.38 能力）；随后另提一个 PR 把 0.39–0.46.5 的能力（玄空、五格、流派开关、出伏、通关、报告化解读）补进描述。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.38.2`（2026-10-29，`dist-tags.latest = 0.38.2`，shasum `94599d7af0e71438e33889ee50dba8843dde47f6`，59 个文件；0.35.0–0.38.1 只提交在本地，随 0.38.2 一并发布）。上一次发布是 0.34.0。
-- **待发**：`main` 已推进到 **0.46.5**（0.39.0–0.46.5 尚未发 npm，CHANGELOG 均标「未发布」；七道闸全绿，94 个测试文件 / 3643 条断言）。发版时按 0.38.2 的流程走 `tools/release.mjs`。
+- **已发布**：npm `dsh-metaphysics@0.46.5`（2026-10-30，`dist-tags.latest = 0.46.5`，shasum `da08e2b8d1a32017eebd5648917762c0709de73d`，62 个文件；0.39.0–0.46.4 只提交在本地，随 0.46.5 一并发布）。上一版是 0.38.2（2026-10-29）。
+- **仓库同步**：`main` = 3333db2（0.39.0–0.46.5 一次性入库），tag `v0.46.5`，GitHub release 已建。
 - **仓库修复（2026-10-30）**：`.git` 的 `HEAD` / `config` / `index` 丢失（只剩 `objects`、`refs`、`ORIG_HEAD`），git 报 "not a git repository"；按 `refs/heads/main`（6e4966f）补回 `HEAD` 与 `config` 后 `git reset` 重建索引，工作区内容未被改动。
 - **CDN 小坑**：发布后本机通过 `registry.npmjs.org` 查到的 packument 与 tarball 可能还是旧的（边缘缓存），表现为新版本查不到、tarball 404；加一个随机查询串（`?cb=<随机>`）或带 token 访问即能拿到新内容，等几分钟自然过期。
 - **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布走 `node tools/release.mjs`（须设 `NPM_CLI=<node>/node_modules/npm/bin/npm-cli.js`，否则 Windows 上 `spawnSync npm` 报 ENOENT），token 走临时 `.npmrc`（0600），发布后立即删除；`npm run` 在 PowerShell 下会撞执行策略，用 `cmd /c "npm run ..."` 或直接 `node tools/*.mjs`。
