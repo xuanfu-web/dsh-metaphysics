@@ -122,6 +122,16 @@ export const CLASSICS = [
     url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53629.html',
   },
   {
+    id: 'zp-zaji',
+    book: 'ziping',
+    chapter: '十六、论杂气如何取用',
+    scene: '用神',
+    tags: [],
+    quote: '何谓透干？如甲生辰月，透戊则用偏财，透癸则用正印，透乙则用月劫是也。何谓会支？如甲生辰月，逢申与子会局，则用水印是也。一透则一用，兼透则兼用，透而又会，则透与会并用。',
+    plain: '四墓（辰戌丑未）所藏不止一气，所以叫杂气：取用先看哪一藏干透到天干，透一个用一个；没有透干，再看地支有没有与月支会成三合局，会成什么局就取局中那一气。透干与会支同时成立时两样并用。原文对「兼透」只给原则，没有给取舍次序。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53636.html',
+  },
+  {
     id: 'zp-bianhua',
     book: 'ziping',
     chapter: '十、论用神变化',
@@ -397,6 +407,20 @@ export const CLASSICS = [
     plain: '从财格要财会成局、日干无气；一见根气就破格，原文用「命损无猜」这种重话写明。以丁生酉月、柱多庚辛为例：只能弃命相从，行北方财官旺地为入格，南行则灾。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7652.html',
   },
+  // —— 三命通会 · 总论岁运：岁运提示一节的原文出处。
+  // 原文的「返吟 / 伏吟」按「岁运与日柱相对 / 岁运压日」说，与本插件「干支相同为伏吟、天克地冲为反吟」
+  // 不是同一套定义；口径照本插件，原文照录不改写，两者在 plain 里并列说明。
+  // 这一条不进五条上限的取条表：它只在盘面有岁运信号时随「岁运提示」一起出现。
+  {
+    id: 'smt-suiyun',
+    book: 'sanming',
+    chapter: '卷二·总论岁运',
+    scene: '岁运',
+    tags: [],
+    quote: '行运以生月为运元，最怕行运与太岁冲克，若岁运冲月必祸；若岁运与日相对，谓之返吟，岁运压日，谓之伏吟，二者不利六亲，非横破财，不为吉兆。',
+    plain: '大运以生月为起点，最怕与流年（太岁）冲克：原文说岁运冲月为祸，又把「岁运与日柱相对」叫返吟、「岁运压日」叫伏吟。这两句是按「对日柱」说的，与本插件「干支相同为伏吟、天克地冲为反吟」不是同一套定义（本插件取后者）；末句「不利六亲、破财」是旧说的重话，只作变动提示，不作断语。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html',
+  },
 ];
 
 const BY_ID = CLASSICS.reduce((m, e) => { m[e.id] = e; return m; }, {});
@@ -433,6 +457,14 @@ export function classicOf(id) {
   return BY_ID[id] || null;
 }
 
+// 岁运提示的原文：盘面出现岁运并临 / 运年反吟 / 流年伏吟反吟时随该节给出，不占五条上限。
+// 没有信号就不给——这段原文讲的正是冲克，没冲没克时挂出来只会误导。
+export function suiyunClassicOf(r) {
+  const liunian = r && Array.isArray(r.liunian) ? r.liunian : [];
+  const hit = liunian.some((l) => l && l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
+  return hit ? classicOf('smt-suiyun') : null;
+}
+
 function tagOf(gejuName) {
   const name = String(gejuName || '');
   if (GEJU_KEY[name]) return GEJU_KEY[name];
@@ -451,7 +483,8 @@ function chapterTitle(e) {
 }
 
 // 根据一张八字结果挑原文：特殊结构（专旺/从格）先取单章，再月令格（子平真诠 + 三命通会对照），
-// 再调候（寒暖/燥湿），最后「用神总纲」一位按盘取：有化气格取论用神变化、见组合取论用神成败救应、其余取通用总纲；去重、限量。
+// 再调候（寒暖/燥湿），最后「用神总纲」一位按盘四选一：有化气格取论用神变化、辰戌丑未月取论杂气如何取用、
+// 见组合取论用神成败救应、其余取通用总纲；去重、限量。
 export function classicsFor(r, limit = 5) {
   if (!r) return [];
   const out = [];
@@ -489,12 +522,16 @@ export function classicsFor(r, limit = 5) {
   if (tgEntry) {
     push(tgEntry, `本盘忌${tg.foe}克用${tg.use}，局中${tg.bridge}${tg.weight}分可作通关，故取${CLASSIC_BOOKS.ditian.name}「通关」一条`);
   }
-  // 用神总纲位只放一条：同一个格，化气看「变化」、有组合看「成败救应」，都没有才回到四吉四凶总纲。
-  // 不另加位次，是因为格局两条 + 气候两条正好占满 5 条上限；总纲与具体结构二选一，避免泛论挤掉针对这张盘的话。
+  // 用神总纲位只放一条，按盘四选一：化气看「变化」、四墓杂气看「杂气取用」、有组合看「成败救应」，
+  // 都没有才回到四吉四凶总纲。不另加位次，是因为格局两条 + 气候两条正好占满 5 条上限。
   const huagi = gejuList.find((g) => g && g.kind === '化气格');
   const combo = gejuList.find((g) => g && g.kind === '组合');
+  const monthBranch = r.monthBranch || (r.frame && r.frame.monthBranch) || (r.pillars && r.pillars.month && r.pillars.month.branch);
+  const zaMonth = ['辰', '未', '戌', '丑'].includes(monthBranch);
   if (huagi) {
     push(classicOf('zp-bianhua'), `本盘列有「${huagi.name}」：用神由月令合化而变，总纲一位改取${CLASSIC_BOOKS.ziping.name}论用神变化`);
+  } else if (zaMonth) {
+    push(classicOf('zp-zaji'), `月令${monthBranch}属四墓杂气，取用先看透干、再看会支，总纲一位取${CLASSIC_BOOKS.ziping.name}论杂气如何取用`);
   } else if (combo) {
     push(classicOf('zp-chengbai'), `本盘另有「${combo.name}」组合：成格还要看带忌与救应，总纲一位改取${CLASSIC_BOOKS.ziping.name}论用神成败救应`);
   } else {

@@ -21,17 +21,16 @@ const DIR_OPTIONS = DIRECTIONS
 
 export const CSS = `
 :root{--bg:#f3eee4;--panel:#fffdf8;--panel2:#f8f3e9;--line:#d6cbb7;--ink:#1a1916;--ink2:#3f3a33;--dim:#6f6a60;--gold:#a72c23;--gold-deep:#7d1f18;--good:#1f6f3f;--bad:#a72c23;--warn:#8a5a00;
+  /* 强调面（选中 tab、主按钮等实心底）与压在上面的文字色，两套配色各给一组 */
+  --accent-bg:#a72c23;--accent-bg2:#7d1f18;--on-accent:#fff;--on-accent-soft:rgba(255,255,255,.84);
   --radius:12px;--shadow:0 1px 2px rgba(35,28,18,.05),0 18px 40px -30px rgba(35,28,18,.42);--ring:0 0 0 3px rgba(167,44,35,.16)}
 /* 深色：跟随系统。只换变量，元素规则一条不改。@media screen 限定 → 打印永远浅色 */
 @media screen and (prefers-color-scheme:dark){
   :root{--bg:#12110d;--panel:#1b1913;--panel2:#221f18;--line:#3c372e;--ink:#e7e2d6;--ink2:#d5cfc2;--dim:#9b9488;--gold:#e2755f;--gold-deep:#b8503f;--good:#67b98a;--bad:#e2755f;--warn:#d9a052;
+    /* 深色下 --gold 是浅珊瑚，实心底若沿用原色，白字与深字都够不着 4.5:1；
+       所以强调面单独取一档更亮的珊瑚，压深色字（见 test/theme.test.mjs 的对比度复算） */
+    --accent-bg:#f0a38e;--accent-bg2:#e2755f;--on-accent:#14130f;--on-accent-soft:rgba(20,19,15,.84);
     --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 40px -30px rgba(0,0,0,.9);--ring:0 0 0 3px rgba(226,117,95,.2)}
-  /* 深色下强调色是浅色，这些实心底上的文字得反过来 */
-  .tab.on,.seg button.on,.go{color:#14130f}
-  .tool.on,.tool.on b{color:#14130f}
-  .tool.on span{color:rgba(20,19,15,.72)}
-  .mb-o.on b,.mb-o.on span,.mb-btn.primary{color:#14130f}
-  .err{background:rgba(226,117,95,.14)}
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -49,7 +48,7 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .brand-row{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:700;letter-spacing:.14em;color:var(--gold);line-height:1.3}
 .brand .seal{display:inline-flex;align-items:center;justify-content:center;flex:none;width:40px;height:40px;border-radius:11px;
-  background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font:700 20px/1 "Songti SC","SimSun",serif;letter-spacing:0;
+  background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));color:var(--on-accent);font:700 20px/1 "Songti SC","SimSun",serif;letter-spacing:0;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 8px 18px -10px var(--gold)}
 .brand-txt{display:block;min-width:0}
 .brand-txt small{display:block;font-size:12.5px;letter-spacing:.02em;color:var(--dim);font-weight:400;margin-top:3px}
@@ -60,7 +59,7 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .tab{display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 10px;border-radius:999px;border:1px solid transparent;background:color-mix(in srgb,var(--panel) 62%,transparent);color:var(--dim);cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap;
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
-.tab.on{background:linear-gradient(145deg,var(--gold),var(--gold-deep));border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
+.tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
 /* 首屏按「想干什么」分组：19 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
    卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（19 个 tab 原样保留）。 */
 .view-switch{display:flex;align-items:center;gap:8px}
@@ -90,9 +89,9 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .tool b{font-size:13.5px;font-weight:600;letter-spacing:.02em}
 .tool span{font-size:11.5px;line-height:1.4;color:var(--dim)}
 .tool:hover{border-color:var(--gold);background:var(--panel)}
-.tool.on{border-color:transparent;background:linear-gradient(145deg,var(--gold),var(--gold-deep));box-shadow:0 8px 18px -12px var(--gold)}
-.tool.on b{color:#fff}
-.tool.on span{color:rgba(255,255,255,.84)}
+.tool.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 8px 18px -12px var(--gold)}
+.tool.on b{color:var(--on-accent)}
+.tool.on span{color:var(--on-accent-soft)}
 /* 奇数个的那一组：末项铺满整行，避免右下留一个孤格 */
 .tool.wide{grid-column:1/-1}
 /* 手机端每组先露 4 个，其余折在「还有 N 个」后面：三组全展开会把表单挤到第二屏 */
@@ -137,15 +136,15 @@ body.view-flat .start{display:none}
 .mb-o b{font-size:14px;font-weight:600;color:var(--ink2);font-variant-numeric:tabular-nums}
 .mb-o span{font-size:11.5px;line-height:1.3}
 .mb-o:hover{border-color:color-mix(in srgb,var(--line) 40%,var(--gold))}
-.mb-o.on{border-color:transparent;background:linear-gradient(145deg,var(--gold),var(--gold-deep));box-shadow:0 8px 16px -12px var(--gold)}
-.mb-o.on b,.mb-o.on span{color:#fff}
+.mb-o.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 8px 16px -12px var(--gold)}
+.mb-o.on b,.mb-o.on span{color:var(--on-accent)}
 .mb-o:focus-within{outline:2px solid var(--gold);outline-offset:2px}
 .mb-nav{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
 .mb-btn{padding:8px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-family:inherit;font-size:13.5px;cursor:pointer;
   transition:border-color .14s ease,background .14s ease,color .14s ease}
 .mb-btn:hover:not(:disabled){border-color:var(--gold)}
 .mb-btn:disabled{opacity:.42;cursor:not-allowed}
-.mb-btn.primary{border-color:transparent;background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font-weight:600;box-shadow:0 10px 20px -14px var(--gold)}
+.mb-btn.primary{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));color:var(--on-accent);font-weight:600;box-shadow:0 10px 20px -14px var(--gold)}
 .mb-btn.primary:hover:not(:disabled){filter:brightness(1.05)}
 .mb-hint{margin-left:auto;font-size:12.5px;color:var(--dim);line-height:1.6}
 .mb-hint.warn{color:var(--bad);font-weight:600}
@@ -153,8 +152,8 @@ body.view-flat .start{display:none}
 /* 必填未填：边框转红，提示复用 .err 的口径 */
 .field.invalid textarea{border-color:var(--bad);background:rgba(224,102,95,.06)}
 .field.check input{min-width:0;width:18px;height:18px;accent-color:var(--gold);padding:0}
-.go{margin-left:0;grid-column:4;justify-self:end;align-self:end;padding:11px 24px;border-radius:9px;border:none;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px;
-  background:linear-gradient(145deg,var(--gold),var(--gold-deep));box-shadow:0 10px 22px -14px var(--gold),inset 0 1px 0 rgba(255,255,255,.18);
+.go{margin-left:0;grid-column:4;justify-self:end;align-self:end;padding:11px 24px;border-radius:9px;border:none;color:var(--on-accent);font-weight:600;cursor:pointer;font-family:inherit;font-size:15px;
+  background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 10px 22px -14px var(--gold),inset 0 1px 0 rgba(255,255,255,.18);
   transition:transform .14s ease,filter .14s ease,box-shadow .14s ease}
 .go:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 14px 26px -14px var(--gold),inset 0 1px 0 rgba(255,255,255,.22)}
 .go:active{transform:translateY(0);filter:brightness(.98)}
@@ -174,7 +173,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel2)}
 .seg button{padding:7px 14px;background:transparent;border:none;color:var(--dim);font-size:13.5px;font-family:inherit;cursor:pointer;transition:background .14s ease,color .14s ease}
 .seg button:hover{color:var(--ink)}
-.seg button.on{background:linear-gradient(145deg,var(--gold),var(--gold-deep));color:#fff;font-weight:600}
+.seg button.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));color:var(--on-accent);font-weight:600}
 /* 结果入场：只做一次轻微上浮，不做循环动画 */
 #out{animation:mp-rise .3s cubic-bezier(.2,.7,.3,1) both}
 @keyframes mp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -197,7 +196,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .askbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:16px 0 0;padding:11px 13px;border:1px dashed var(--line);border-radius:10px;background:color-mix(in srgb,var(--panel) 55%,transparent)}
 .askbox input{flex:1 1 240px;min-width:0;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:14px;font-family:inherit;outline:none}
 .askbox input:focus{border-color:var(--gold);box-shadow:var(--ring)}
-.askbox button{padding:8px 14px;border:1px solid transparent;border-radius:8px;background:var(--gold);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.askbox button{padding:8px 14px;border:1px solid transparent;border-radius:8px;background:var(--accent-bg);color:var(--on-accent);font:inherit;font-size:13px;cursor:pointer}
 .askbox button:hover{filter:brightness(1.08)}
 .askbox .hint{font-size:12px;color:var(--dim)}
 .method{max-width:860px;margin:0 auto;padding:24px 18px 40px;font-size:14px;line-height:1.9;color:var(--ink2)}
@@ -212,7 +211,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .mp-verify-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0}
 .mp-verify-btns{display:flex;gap:4px}
 .mp-chip{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer;font-family:inherit}
-.mp-chip.on{background:var(--gold);color:#fff;border-color:transparent}
+.mp-chip.on{background:var(--accent-bg);color:var(--on-accent);border-color:transparent}
 .mp-verify-foot{display:flex;align-items:flex-start;gap:8px;margin-top:8px;flex-wrap:wrap}
 .mp-verify-fit{font-size:12.5px;color:var(--dim);line-height:1.7;flex:1;min-width:0}
 .mp-rect-row{display:flex;gap:6px;margin-bottom:6px}
@@ -271,8 +270,15 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .bar{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}
   .field{width:100%;min-width:0}
   .field input,.field select,.field textarea,#addr,#changing,#direction{width:100%;min-width:0;padding:11px 12px;font-size:16px;min-height:44px}
+  /* 农历：子表单独占整行，方向分段按钮不再把「农历 → 公历」折成两行；
+     闰月改用 .field.check 的小号勾选框，不再被 .field input 的 width:100% 拉成大方块 */
+  #qk-convert{grid-column:1/-1}
+  #qk-convert .seg button{white-space:nowrap}
   #for-ask{flex-direction:column;align-items:stretch}
-  .field.check{padding-bottom:0}
+  /* .field input 的 44px 高度是给文本框的；勾选框继承后会变成 18×44 的长条，
+     触摸区改由外层 label 撑（点文字也能勾），方块本身保持 18px */
+  .field.check{min-height:44px;padding-bottom:0;gap:10px}
+  .field.check input{min-height:0;height:18px}
   #mh-num{flex-wrap:wrap}
   #mh-num input{flex:1 1 30%;width:auto}
   .seg{display:flex;width:100%}
@@ -555,9 +561,7 @@ function page() {
         </div>
         <div id="qk-convert-lunar" style="display:none">
           <label class="field">农历日期<input id="lunardate" placeholder="如 2026-9-17"></label>
-          <label class="field" style="flex-direction:row;gap:6px;align-items:center">
-            <input id="leapm" type="checkbox"> 闰月
-          </label>
+          <label class="field check">闰月<input id="leapm" type="checkbox"></label>
         </div>
       </div>
       <div id="qk-xiaoliuren" style="display:none">

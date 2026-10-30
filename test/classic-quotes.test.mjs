@@ -15,7 +15,7 @@ ok('books 三部', Object.keys(CLASSIC_BOOKS).length === 3 && CLASSIC_BOOKS.zipi
 ok('条目数 ≥ 26', CLASSICS.length >= 26);
 ok('id 唯一', new Set(CLASSICS.map((e) => e.id)).size === CLASSICS.length);
 ok('每条都有书名/章名/原文/释义/出处', CLASSICS.every((e) => CLASSIC_BOOKS[e.book] && e.chapter.length >= 2 && e.quote.length >= 12 && e.plain.length >= 8 && /^https:\/\//.test(e.url)));
-ok('scene 取值合法', CLASSICS.every((e) => ['格局', '十神', '调候', '用神'].includes(e.scene)));
+ok('scene 取值合法', CLASSICS.every((e) => ['格局', '十神', '调候', '用神', '岁运'].includes(e.scene)));
 ok('tags 都是字符串数组', CLASSICS.every((e) => Array.isArray(e.tags) && e.tags.every((t) => typeof t === 'string')));
 ok('原文不带省略号占位（不伪造断句）', CLASSICS.every((e) => !e.quote.includes('…') && !e.quote.includes('...')));
 
@@ -34,6 +34,11 @@ ok('论用神成败救应含「成中有败」「全凭救应」', classicOf('zp
 ok('论用神变化含「则化为印」「则化为财」', classicOf('zp-bianhua').quote.includes('则化为印') && classicOf('zp-bianhua').quote.includes('则化为财'));
 ok('成败救应出自典藏网第九章', classicOf('zp-chengbai').chapter === '九、论用神成败救应' && classicOf('zp-chengbai').url === 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53629.html');
 ok('用神变化出自典藏网第十章', classicOf('zp-bianhua').chapter === '十、论用神变化' && classicOf('zp-bianhua').url === 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53630.html');
+ok('论杂气如何取用含「透干」「会支」「透而又会」', classicOf('zp-zaji').quote.includes('何谓透干') && classicOf('zp-zaji').quote.includes('何谓会支') && classicOf('zp-zaji').quote.includes('透而又会'));
+ok('杂气取用出自典藏网第十六章', classicOf('zp-zaji').chapter === '十六、论杂气如何取用' && classicOf('zp-zaji').url === 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53636.html');
+ok('总论岁运含「谓之返吟」「谓之伏吟」', classicOf('smt-suiyun').quote.includes('谓之返吟') && classicOf('smt-suiyun').quote.includes('谓之伏吟'));
+ok('总论岁运出自典藏网卷二', classicOf('smt-suiyun').book === 'sanming' && classicOf('smt-suiyun').chapter === '卷二·总论岁运' && classicOf('smt-suiyun').url === 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html');
+ok('岁运条文不冒充原文：plain 点明与本插件口径不同', classicOf('smt-suiyun').plain.includes('不是同一套定义'));
 ok('未知 id 返回 null', classicOf('no-such') === null);
 
 // —— 匹配规则
@@ -47,8 +52,9 @@ ok('配气候一条在列', rows.some((e) => e.id === 'zp-qihou'));
 ok('每条都有 why（为什么取这条）', rows.every((e) => typeof e.why === 'string' && e.why.length >= 6));
 ok('不重复', new Set(rows.map((e) => e.id)).size === rows.length);
 ok('why 不拼出「论论」', rows.every((e) => !e.why.includes('论论')));
-ok('总纲位只出一条（总纲/变化/成败三选一）', ['zp-yongshen', 'zp-bianhua', 'zp-chengbai'].filter((id) => rows.some((e) => e.id === id)).length === 1);
+ok('总纲位只出一条（总纲/变化/成败/杂气四选一）', ['zp-yongshen', 'zp-bianhua', 'zp-chengbai', 'zp-zaji'].filter((id) => rows.some((e) => e.id === id)).length === 1);
 ok('1996 盘有化气格，总纲位取「论用神变化」', rows.some((e) => e.id === 'zp-bianhua') && !rows.some((e) => e.id === 'zp-yongshen'));
+ok('1996 盘虽是丑月，化气仍优先于杂气', !rows.some((e) => e.id === 'zp-zaji'));
 const huagiRows = classicsFor({ geju: [{ name: '化土格', kind: '化气格' }], climate: { kind: '平和' } });
 ok('化气格 → 论用神变化', huagiRows.some((e) => e.id === 'zp-bianhua'));
 ok('化气格 why 点明合化', huagiRows.find((e) => e.id === 'zp-bianhua').why.includes('合化'));
@@ -57,6 +63,9 @@ ok('有组合无化气 → 论用神成败救应', comboRows.some((e) => e.id ==
 ok('组合 why 点明带忌与救应', comboRows.find((e) => e.id === 'zp-chengbai').why.includes('带忌与救应'));
 const plainRows = classicsFor({ geju: [{ name: '正官格', kind: '月令格' }], climate: { kind: '平和' } });
 ok('无化气无组合 → 回到通用总纲', plainRows.some((e) => e.id === 'zp-yongshen') && !plainRows.some((e) => e.id === 'zp-bianhua') && !plainRows.some((e) => e.id === 'zp-chengbai'));
+ok('无月令地支时不猜杂气', !plainRows.some((e) => e.id === 'zp-zaji'));
+const zaRows = classicsFor({ geju: [{ name: '偏财格', kind: '月令格' }], climate: { kind: '平和' }, monthBranch: '丑' });
+ok('四墓月 → 论杂气如何取用', zaRows.some((e) => e.id === 'zp-zaji') && !zaRows.some((e) => e.id === 'zp-yongshen'));
 ok('化气与组合同时出现时只取变化（总纲位不并列）', (() => {
   const both = classicsFor({ geju: [{ name: '偏财格', kind: '月令格' }, { name: '化金格', kind: '化气格' }, { name: '官印相生', kind: '组合' }], climate: { kind: '平和' } });
   return both.some((e) => e.id === 'zp-bianhua') && !both.some((e) => e.id === 'zp-chengbai') && both.length <= 5;

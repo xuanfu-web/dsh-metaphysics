@@ -119,6 +119,8 @@
 .pp-str b{color:var(--red);font-size:15px;margin:0 4px}
 .pp-drel{font-style:normal;color:var(--red);font-size:12px}
 .pp-dim{color:var(--muted)}
+/* 岁运提示下的原文：比正文再轻一档，只做出处，不抢结论 */
+.pp-sy-src{margin-top:6px;font-size:11.5px;line-height:1.55}
 .pp-r{display:none}
 .pp-modes{display:flex;align-items:center;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif}
 /* min-height:44px —— 视图切换是本盘唯一的主要控件，触摸目标必须够。
@@ -432,7 +434,8 @@
 /* —— 解析与详解 —— */
 /* 变量由上面的 .pp,.mp-it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
    自引用会让变量变成 guaranteed-invalid，反而把继承值也挡掉了（--card 因此彻底失效）。 */
-.mp-it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);
+/* container-type：dsh 侧栏是「窗口宽、报告窄」，@media 不触发；下面 ≤640 的表格/目录规则另挂一份 @container */
+.mp-it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);container-type:inline-size;
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .mp-it *{box-sizing:border-box}
 /* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
@@ -533,6 +536,19 @@
 .mp-it-conf.c-强{color:var(--lu);border-color:rgba(var(--lu-rgb),.4)}
 .mp-it-conf.c-中{color:var(--label);border-color:var(--line)}
 .mp-it-conf.c-弱{color:var(--red);border-color:rgba(var(--red-rgb),.4)}
+/* 交叉验证：一个方面一张对照卡，八字与紫微左右并列，判断做成语气标签 */
+.mp-cross{display:flex;flex-direction:column;gap:8px;font-family:system-ui,sans-serif}
+.mp-cross-row{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:9px 11px}
+.mp-cross-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-cross-l{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.02em}
+.mp-cross-tag{font-size:11px;line-height:1.5;padding:1px 8px;border:1px solid currentColor;border-radius:999px;color:var(--muted)}
+.mp-cross-tag.t-good{color:var(--lu)}
+.mp-cross-tag.t-watch{color:var(--quan)}
+.mp-cross-tag.t-alt{color:var(--ke)}
+.mp-cross-b{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 14px;margin-top:7px}
+.mp-cross-cell{font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.mp-cross-cell b{display:block;font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:1px}
+.mp-cross-note{margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:12px;line-height:1.7;color:var(--muted)}
 /* 三张表：横向可滚动，避免窄栏撑破 */
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
 .mp-table-wrap{margin-bottom:12px}
@@ -540,7 +556,8 @@
 .mp-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
 .mp-table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;color:var(--ink2);font-family:system-ui,sans-serif}
 .mp-table th,.mp-table td{padding:5px 9px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);white-space:nowrap}
-.mp-table th{background:var(--band);color:var(--label);font-weight:600;font-size:11px;letter-spacing:.06em}
+/* 表头 11px 小字：用 ink2 而不是 label，浅色下 label 对 band 只有 3.5:1，读不清 */
+.mp-table th{background:var(--band);color:var(--ink2);font-weight:600;font-size:11px;letter-spacing:.06em}
 .mp-table tbody tr:last-child td{border-bottom:none}
 .mp-table tbody tr:nth-child(even) td{background:rgba(0,0,0,.02)}
 /* 打印：表格不撕页、目录隐藏、折叠的内容要展开 */
@@ -551,6 +568,56 @@
   .mp-table th,.mp-table td{white-space:normal}
   .mp-table-wrap,.mp-it-sec,.mp-it-dim{break-inside:avoid}
   .mp-table-wrap{page-break-inside:avoid}
+}
+/* —— ≤640px：大运表 6 列排到 748px，窄屏只能看到左边一段且没有「还能滑」的提示，
+   这里改成一列一张卡；目录横滑成胶囊、证据摘要与名词解释的点击区抬到 44px —— */
+@media (max-width:640px){
+  .mp-tables{padding:10px 11px 2px}
+  .mp-table-wrap{margin-bottom:14px}
+  .mp-table-scroll{overflow:visible;border:0;border-radius:0}
+  .mp-table{display:block;width:100%}
+  .mp-table thead{display:none}
+  .mp-table tbody{display:block}
+  .mp-table tr{display:block;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:7px 10px;margin:0 0 8px}
+  .mp-table td{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;border-bottom:0;padding:2px 0;white-space:normal;font-size:12.5px;line-height:1.65}
+  .mp-table td::before{content:attr(data-label);color:var(--muted);font-size:11px;line-height:1.9}
+  .mp-table td:first-child{display:block;padding-bottom:3px;font-size:13px;font-weight:700;color:var(--ink)}
+  .mp-table td:first-child::before{content:none}
+  .mp-table tbody tr:nth-child(even) td{background:none}
+  .mp-table tbody tr:last-child{margin-bottom:0}
+  /* 对照卡：两列并排在 342px 里每边只剩 164px，竖排后标签跟正文走 */
+  .mp-cross-b{grid-template-columns:1fr;gap:6px}
+  .mp-cross-cell b{display:inline;margin-right:6px;letter-spacing:.06em}
+  .mp-toc{flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:10px 0 0;padding:6px 11px;border:0;border-bottom:1px solid var(--line);border-radius:0;scrollbar-width:none}
+  .mp-toc::-webkit-scrollbar{display:none}
+  .mp-toc a{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--lu);text-decoration:none}
+  .mp-toc a:hover{color:var(--ink)}
+  .mp-it-ev>summary{display:flex;align-items:center;min-height:44px;padding:0 9px}
+  .mp-it-gloss summary{display:flex;align-items:center;min-height:44px;margin-bottom:2px}
+}
+/* 容器查询版（dsh 侧栏 420px、窗口 1400px 时 @media 不会触发）：与上面同规则，不另立一套口径 */
+@container (max-width:640px){
+  .mp-tables{padding:10px 11px 2px}
+  .mp-table-wrap{margin-bottom:14px}
+  .mp-table-scroll{overflow:visible;border:0;border-radius:0}
+  .mp-table{display:block;width:100%}
+  .mp-table thead{display:none}
+  .mp-table tbody{display:block}
+  .mp-table tr{display:block;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:7px 10px;margin:0 0 8px}
+  .mp-table td{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;border-bottom:0;padding:2px 0;white-space:normal;font-size:12.5px;line-height:1.65}
+  .mp-table td::before{content:attr(data-label);color:var(--muted);font-size:11px;line-height:1.9}
+  .mp-table td:first-child{display:block;padding-bottom:3px;font-size:13px;font-weight:700;color:var(--ink)}
+  .mp-table td:first-child::before{content:none}
+  .mp-table tbody tr:nth-child(even) td{background:none}
+  .mp-table tbody tr:last-child{margin-bottom:0}
+  .mp-cross-b{grid-template-columns:1fr;gap:6px}
+  .mp-cross-cell b{display:inline;margin-right:6px;letter-spacing:.06em}
+  .mp-toc{flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:10px 0 0;padding:6px 11px;border:0;border-bottom:1px solid var(--line);border-radius:0;scrollbar-width:none}
+  .mp-toc::-webkit-scrollbar{display:none}
+  .mp-toc a{flex:0 0 auto;display:inline-flex;align-items:center;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:999px;color:var(--lu);text-decoration:none}
+  .mp-toc a:hover{color:var(--ink)}
+  .mp-it-ev>summary{display:flex;align-items:center;min-height:44px;padding:0 9px}
+  .mp-it-gloss summary{display:flex;align-items:center;min-height:44px;margin-bottom:2px}
 }
 /* 追问结果 */
 .mp-fu{margin:12px 16px;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px;font-size:13px;line-height:1.8;color:var(--ink2)}
@@ -1427,6 +1494,14 @@
         return `<span class="pp-chip ${cls}">伏神${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
+    // 应期线索：只摆触发支与快慢方向，不写日期
+    const yq = r.yingqi && Array.isArray(r.yingqi.labels) ? r.yingqi : null;
+    const yingqiRow = yq && yq.labels.length
+      ? `<div class="pp-chips">${yq.labels.map((l) => {
+        const cls = /应期偏速/.test(l) ? 'ok' : /应期待解/.test(l) ? 'warn' : '';
+        return `<span class="pp-chip ${cls}" title="只列地支，不出日期">${esc(l)}</span>`;
+      }).join('')}</div>`
+      : '';
     // 化进/化退的力重：方向之外再叠月建日辰，单列一排，免与卦体标签混读
     const jp = r.jinTuiPower && Array.isArray(r.jinTuiPower.labels) ? r.jinTuiPower : null;
     const jinRow = jp && jp.labels.length
@@ -1451,6 +1526,7 @@
       ${useRow}
       ${strengthRow}
       ${fushenRow}
+      ${yingqiRow}
       ${jinRow}
       ${hexRow}
     </div>`;
@@ -2226,8 +2302,10 @@
       return `<span class="pp-chip ${lk ? tierCls(lk.tier) : ''}" title="${esc(lk ? `${lk.tier} ${lk.score}｜${(lk.reasons || []).join('；')}${syTip}` : syTip.replace(/^｜/, ''))}">${l.year} ${l.ganzhi}${lk ? ` ${lk.tier}` : ''}</span>`;
     }).join('')}</div>` : '';
     const sy = (r.liunian || []).filter((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
+    const syc = r.suiyunClassic;
+    const sySrc = syc ? `<div class="pp-dim pp-sy-src" title="${esc(syc.plain || '')}">《${esc(syc.bookName || '')}·${esc(syc.chapter || '')}》「${esc(syc.quote || '')}」</div>` : '';
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
-      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${x.type.startsWith('流年') && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>` : '';
+      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${x.type.startsWith('流年') && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
     const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
     const ssGroups = (r.shensha && r.shensha.groups) || [];
     const ssx = ssGroups.length ? `
@@ -2268,6 +2346,21 @@
   // ── 解析与详解：把 interpret() 的结构化结果渲染成卡片 ──
   const MT_LABEL = { natal: '命盘解析', divination: '卦象解析', card: '牌阵解析' };
 
+  // 交叉验证的「判断」只有三档，各给一种语气色；未知值走中性色，不猜
+  const STANCE_TONE = { 同向: 'good', 有张力: 'watch', 互补: 'alt' };
+  // 一栏一个方面：标题带判断标签，八字与紫微并列，注解放最后一行，省得五段长句连读
+  const crossHTML = (items) => `<div class="mp-cross">${items.map((c) => {
+    const tone = STANCE_TONE[c.stance] || 'plain';
+    return `<div class="mp-cross-row">
+      <div class="mp-cross-h"><span class="mp-cross-l">${esc(c.label)}</span><span class="mp-cross-tag t-${tone}">${esc(c.stance || '—')}</span></div>
+      <div class="mp-cross-b">
+        <div class="mp-cross-cell"><b>八字</b><span>${esc(c.bazi || '—')}</span></div>
+        <div class="mp-cross-cell"><b>紫微</b><span>${esc(c.ziwei || '—')}</span></div>
+      </div>
+      ${c.note ? `<div class="mp-cross-note">${esc(c.note)}</div>` : ''}
+    </div>`;
+  }).join('')}</div>`;
+
   /**
    * @param {object} it interpret() 的结果
    * @param {object} [opt] { folded 是否收起 } —— 桌面默认展开、竖屏默认收起由调用方按视口决定
@@ -2299,8 +2392,8 @@
       ? `<div class="mp-tables">${it.tables.filter((t) => Array.isArray(t.rows) && t.rows.length).map((t) => `<div class="mp-table-wrap">
           <div class="mp-table-h">${esc(t.title)}</div>
           <div class="mp-table-scroll"><table class="mp-table">
-            <thead><tr>${t.columns.map((c) => `<th>${esc(c)}</th>`).join('')}</tr></thead>
-            <tbody>${t.rows.map((row) => `<tr>${row.map((c) => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+            <thead><tr>${t.columns.map((c) => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead>
+            <tbody>${t.rows.map((row) => `<tr>${row.map((c, ci) => `<td data-label="${esc(t.columns[ci] || '')}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
           </table></div>
         </div>`).join('')}</div>`
       : '';
@@ -2312,7 +2405,7 @@
     const secs = (it.sections && it.sections.length)
       ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
         <div class="mp-it-sh">${esc(s.label)}</div>
-        <div class="mp-it-stext">${richText(s.text)}</div>
+        <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`).join('')}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);

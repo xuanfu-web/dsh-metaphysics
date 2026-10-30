@@ -66,6 +66,7 @@ const LIUSHEN_START = { 甲: 0, 乙: 0, 丙: 1, 丁: 1, 戊: 2, 己: 3, 庚: 4, 
 const ZHI_CHONG_PAIRS = [['子', '午'], ['丑', '未'], ['寅', '申'], ['卯', '酉'], ['辰', '戌'], ['巳', '亥']];
 const ZHI_HE_PAIRS = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], ['巳', '申'], ['午', '未']];
 const CHONG_OF = Object.fromEntries(ZHI_CHONG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
+const HE_OF = Object.fromEntries(ZHI_HE_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
 const TRIGRAM_OPPOSITE = { 乾: '巽', 巽: '乾', 坎: '离', 离: '坎', 艮: '坤', 坤: '艮', 震: '兑', 兑: '震' };
 
 // ── 化进神 / 化退神 ────────────────────────────────────────────────
@@ -928,5 +929,104 @@ export function jinTuiPower(result, opts = {}) {
     lines,
     labels: lines.map((l) => `${l.position}爻化${l.type}·${l.verdict}`),
     note: '进退只说这一爻往哪边走；力重是把它放回月建日辰，看有没有托着——得令则进得动、退得慢，失令则进得虚、退得实，月破压过一切。仍不直接定吉凶：用神化进为喜，忌神化进反而是忌。',
+  };
+}
+
+// ── 应期线索：只列「该留意哪一支」，不给日期 ─────────────────────────
+// 知识卡 liuyao-yingqi 的承诺是「只作时间窗口的提示」：传统取用神逢值、
+// 逢冲、逢合之期，旬空另等出空、冲空。这里只把这些地支列出来，再按月建给
+// 一个快慢方向；不换算成日期、不排先后、不判忌神受制，也不叠动变连环。
+export const YINGQI_TEMPO = ['偏速', '偏缓', '待解', '未定'];
+const TEMPO_SAY = {
+  偏速: '用神得月令之气，应期偏近',
+  偏缓: '用神失月令之气，应期偏远',
+  待解: '有月破或旬空的用神，先等条件解除',
+  未定: '快慢不定（缺月建，或用神两现而旺衰不一）',
+};
+const TRIGGER_ORDER = ['逢值', '逢冲', '逢合', '出空填实', '冲空'];
+
+/**
+ * 应期线索：用神逢值、逢冲、逢合，旬空另标出空与冲空。
+ * @param {object} result buildLiuyao 的结果
+ * @param {object} useGod yongshenOf 的结果
+ * @param {{monthBranch?: string}} opts
+ */
+export function yingqiWindow(result, useGod, opts = {}) {
+  if (!useGod || !useGod.liuqin) return null;
+  const found = Array.isArray(useGod.found) ? useGod.found : [];
+  const fushen = Array.isArray(useGod.fushen) ? useGod.fushen : [];
+  const viaFushen = !found.length && fushen.length > 0;
+  const source = found.length ? found : fushen;
+  if (!source.length) return null;
+  const monthBranch = opts.monthBranch || null;
+  const monthElement = monthBranch ? zhiElementOf(monthBranch) : null;
+  const kong = Array.isArray(result && result.xunKong)
+    ? result.xunKong
+    : (result && typeof result.xunKong === 'string' ? result.xunKong.split('') : []);
+
+  const items = source.map((l) => {
+    const branch = l.branch;
+    const element = l.element || zhiElementOf(branch);
+    const monthState = monthStateOf(element, monthElement);
+    const isEmpty = kong.includes(branch);
+    const monthChong = !!(monthBranch && CHONG_OF[branch] === monthBranch);
+    const tempo = monthChong ? '待解'
+      : isEmpty ? '待解'
+        : monthState === 'unknown' ? '未定'
+          : (monthState === '旺' || monthState === '相') ? '偏速' : '偏缓';
+    const tempoSay = monthChong ? `遭${monthBranch}冲（月破），先待出月或填实`
+      : isEmpty ? '用神旬空，先待出空填实'
+        : monthState === 'unknown' ? '缺月建，快慢不定'
+          : `月建${monthState}，${tempo === '偏速' ? '应期偏近' : '应期偏远'}`;
+    const triggers = [
+      { branch, labels: ['逢值'] },
+      { branch: CHONG_OF[branch] || null, labels: ['逢冲'] },
+      { branch: HE_OF[branch] || null, labels: ['逢合'] },
+    ];
+    if (isEmpty) {
+      triggers[0].labels.push('出空填实');
+      triggers[1].labels.push('冲空');
+    }
+    return {
+      position: l.position,
+      branch,
+      element,
+      monthState,
+      monthChong,
+      kong: isEmpty,
+      tempo,
+      tempoSay,
+      triggers,
+    };
+  });
+
+  // 用神两现时各爻的支可能不同：按支归并标签，不替谁选主用
+  const merged = new Map();
+  for (const it of items) {
+    for (const t of it.triggers) {
+      if (!t.branch) continue;
+      const cur = merged.get(t.branch) || { branch: t.branch, labels: [] };
+      for (const lb of t.labels) if (!cur.labels.includes(lb)) cur.labels.push(lb);
+      merged.set(t.branch, cur);
+    }
+  }
+  const triggers = [...merged.values()].map((t) => ({
+    branch: t.branch,
+    labels: [...t.labels].sort((a, b) => TRIGGER_ORDER.indexOf(a) - TRIGGER_ORDER.indexOf(b)),
+  }));
+  const tempos = items.map((x) => x.tempo);
+  const tempo = tempos.includes('待解') ? '待解'
+    : tempos.every((t) => t === '偏速') ? '偏速'
+      : tempos.every((t) => t === '偏缓') ? '偏缓' : '未定';
+
+  return {
+    month: monthBranch ? { branch: monthBranch, element: monthElement } : null,
+    viaFushen,
+    tempo,
+    tempoSay: TEMPO_SAY[tempo],
+    items,
+    triggers,
+    labels: [`应期${tempo}`, ...triggers.map((t) => `${t.labels.join('/')}${t.branch}`)],
+    note: '应期只给「该留意哪一支」与快慢方向：用神逢值、逢冲、逢合，旬空另标出空与冲空。不换算成日期、不排先后、不判忌神受制；近事以日计、远事以月计，用哪把尺由事情远近决定，本插件不代选。',
   };
 }

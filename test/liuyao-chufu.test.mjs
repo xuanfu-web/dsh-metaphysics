@@ -209,7 +209,7 @@ const fu = (name, dir, mo, da, dayGanZhi = { stem: '甲', branch: '子', name: '
   ok('解析写明四档与不排优先级', /可出 \/ 有助有压 \/ 受压难出 \/ 未得助/.test(sec.text) && /不排各家优先级/.test(sec.text));
   ok('解析写完不出应期日期', /也不给应期日期/.test(sec.text));
   const limits = (interpret(RESULT, { direction: 'study' }).sections || []).find((x) => x.key === 'limits');
-  ok('「未纳入」承认条件已判、应期未做', /出伏条件已判，应期仍未做/.test(limits.text), limits.text.slice(0, 60));
+  ok('「未纳入」承认条件已判、应期具体日期未做', /应期的具体日期（只给逢值\/逢冲\/逢合的触发支与快慢方向）/.test(limits.text), limits.text.slice(0, 80));
 
   const plain = buildAnswer(RESULT, { direction: 'study' }, {});
   ok('白话带上出伏条件', /属于「出得来」的一档|一边有助、一边有压|被上面的力量压着|暂时没借到力/.test(plain), plain.slice(-90));

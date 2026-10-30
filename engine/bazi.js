@@ -28,6 +28,24 @@ export const HIDDEN_STEMS = {
   亥: ['壬', '甲'],
 };
 
+// 人元司权的 30 日表：余气 → 中气 → 本气，按「节」当日起算。
+// 各家对日数分法不一（另有 7/7/16、9/3/18 等），这里固定通行 30 日表；
+// 只作解释层的一层细节，不参与取格。亥月的余气戊不在本柱藏干表中，两表各照原样。
+export const RENYUAN_TABLE = {
+  寅: [['戊', 7], ['丙', 7], ['甲', 16]],
+  卯: [['甲', 10], ['乙', 20]],
+  辰: [['乙', 9], ['癸', 3], ['戊', 18]],
+  巳: [['戊', 5], ['庚', 9], ['丙', 16]],
+  午: [['丙', 10], ['己', 9], ['丁', 11]],
+  未: [['丁', 9], ['乙', 3], ['己', 18]],
+  申: [['戊', 7], ['壬', 3], ['庚', 20]],
+  酉: [['庚', 10], ['辛', 20]],
+  戌: [['辛', 9], ['丁', 3], ['戊', 18]],
+  亥: [['戊', 7], ['甲', 5], ['壬', 18]],
+  子: [['壬', 10], ['癸', 20]],
+  丑: [['癸', 9], ['辛', 3], ['己', 18]],
+};
+
 export const STEM_ELEMENT = {
   甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
   己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水',
@@ -201,6 +219,45 @@ export function applyTrueSolar(jd, longitude) {
     offsetMinutes: Math.round(offset * 10) / 10,
     jd: jd + offset / 1440,
     note: `经度差 ${longitudeMinutes.toFixed(1)} 分 + 均时差 ${eot.toFixed(1)} 分`,
+  };
+}
+
+/**
+ * 人元司权：生在本月第几日、哪一藏干当权。
+ * 日数按「节令日」与出生日的日差计，节当日为第 1 日；固定 30 日表，
+ * 第 31 日以后不再硬分摊，按本气算并标 beyond。
+ * @param {string} monthBranch 月支（寅…丑）
+ * @param {number} birthJdn 出生日的儒略日数（含真太阳时修正后的日）
+ * @param {number} termJd 本月「节」的儒略日
+ */
+export function renyuanOf(monthBranch, birthJdn, termJd) {
+  const table = RENYUAN_TABLE[monthBranch];
+  if (!table) return null;
+  const segments = [];
+  let from = 1;
+  for (const [stem, days] of table) {
+    segments.push({ stem, element: STEM_ELEMENT[stem], from, to: from + days - 1 });
+    from += days;
+  }
+  const tableDays = from - 1;
+  const day = Math.max(1, Math.floor(birthJdn) - Math.floor(termJd + 0.5) + 1);
+  const beyond = day > tableDays;
+  const idx = beyond ? segments.length - 1 : segments.findIndex((s) => day >= s.from && day <= s.to);
+  const seg = segments[idx] || segments[segments.length - 1];
+  const next = segments[idx + 1] || null;
+  return {
+    month: monthBranch,
+    day,
+    tableDays,
+    segments,
+    active: seg.stem,
+    activeElement: seg.element,
+    segment: { from: seg.from, to: seg.to },
+    next: next ? { stem: next.stem, element: next.element, from: next.from, inDays: next.from - day } : null,
+    // 司权表与本柱藏干表口径不同：亥月的余气戊只出现在司权表里
+    inHidden: (HIDDEN_STEMS[monthBranch] || []).includes(seg.stem),
+    beyond,
+    note: '人元司权按「节」当日起算，节当日为第 1 日，日差用本盘所用时刻（含真太阳时）所在日计；本插件固定 30 日表（余气 → 中气 → 本气），第 31 日以后按本气算。只作解释层的一层细节，不改取格。',
   };
 }
 
@@ -526,6 +583,10 @@ export function buildBazi(input) {
   const bodyStemIdx = (yinStem + ((bodyIdx - 2 + 12) % 12)) % 10;
   const shengong = ganzhiName(sexagenaryIndex(bodyStemIdx, bodyIdx));
 
+  // 人元司权：按节令到出生日的日差定当权藏干（节当日为第 1 日）
+  const renyuan = renyuanOf(BRANCHES[monthBranchIdx], jdnBase, prevJieTerm.jd);
+  if (renyuan) renyuan.term = { name: prevJieTerm.name, time: formatJd(prevJieTerm.jd) };
+
   return {
     system: 'bazi',
     relations: buildRelations(pillars),
@@ -558,6 +619,7 @@ export function buildBazi(input) {
       // 与 NAOJ 历要项对拍实测节气最多偏 13.5 分钟，20 分钟留出余量。
       nearBoundaryMinutes: Math.round(Math.min(jd - prevJieTerm.jd, nextJieTerm.jd - jd) * 1440),
     },
+    renyuan,
     pillars,
     dayMaster: { stem: dayStem, element: STEM_ELEMENT[dayStem], yinYang: isYangStem(dayStem) ? '阳' : '阴' },
     wuxing,

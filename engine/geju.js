@@ -9,6 +9,7 @@
 
 import { judgeClimate, arbitrate } from './tiaohou.js';
 import { qtOf } from './qiongtong.js';
+import { sanheGroupOf } from './sanhe.js';
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -87,6 +88,25 @@ export function elementRoles(dayStem) {
 
 // ── 月令格 ───────────────────────────────────────────────────
 
+// 四墓（杂气）月：辰戌丑未所藏多、用神不一，取用先看透干，再看会支。
+// 会支只认三合局——子平真诠十六「逢申与子会局」的例子即三合，三会方与兼透兼用仍不纳入。
+const ZA_MONTHS = ['辰', '未', '戌', '丑'];
+
+function huiCandidate(pillars, monthBranch, cands) {
+  if (!ZA_MONTHS.includes(monthBranch)) return null;
+  const group = sanheGroupOf(monthBranch);
+  if (!group) return null;
+  const others = ['year', 'day', 'hour'];
+  const need = group.branches.filter((b) => b !== monthBranch);
+  if (!need.every((b) => others.some((k) => pillars[k].branch === b))) return null;
+  const cand = cands.find((c) => STEM_ELEMENT[c.stem] === group.element);
+  if (!cand) return null;
+  const where = others
+    .filter((k) => need.includes(pillars[k].branch))
+    .map((k) => `${({ year: '年', day: '日', hour: '时' })[k]}支${pillars[k].branch}`);
+  return { ...cand, group, where };
+}
+
 function monthPattern(pillars, dayStem, monthBranch) {
   const hidden = HIDDEN[monthBranch] || [];
   const cands = hidden.map((stem, i) => ({
@@ -98,10 +118,13 @@ function monthPattern(pillars, dayStem, monthBranch) {
   const others = ['year', 'month', 'hour'];
   const exposedKey = others.find((k) => cands.some((c) => c.stem === pillars[k].stem));
   const base = cands[0];
-  const use = exposedKey ? cands.find((c) => c.stem === pillars[exposedKey].stem) : base;
+  const hui = exposedKey ? null : huiCandidate(pillars, monthBranch, cands);
+  const use = exposedKey ? cands.find((c) => c.stem === pillars[exposedKey].stem) : (hui || base);
+  const usedBy = exposedKey ? '透干' : (hui ? '会支' : '本气');
   const exposedPos = exposedKey ? { year: '年', month: '月', hour: '时' }[exposedKey] : null;
 
-  if (base.god === '比肩') {
+  // 建禄只认日干的禄位；戊土辰月、己土未月这类「本气比肩但不在禄位」的杂气月不再冒称建禄
+  if (base.god === '比肩' && LUSHEN_BRANCH[dayStem] === monthBranch) {
     return {
       name: '建禄格',
       kind: '月令格',
@@ -118,10 +141,31 @@ function monthPattern(pillars, dayStem, monthBranch) {
     }
     return { name: '月劫格', kind: '月令格', evidence: `月令${monthBranch}本气${base.stem}为劫财` };
   }
+  if (usedBy === '本气' && base.god === '比肩') {
+    return {
+      name: '比肩格',
+      kind: '月令格',
+      evidence: `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}为比肩，但${dayStem}禄在${LUSHEN_BRANCH[dayStem]}、不在${monthBranch}，属杂气月比肩当权`,
+    };
+  }
+  // 子平十六：「透乙则用月劫」——杂气月由透干或会支取到劫财时，仍作月劫论
+  if (usedBy !== '本气' && use.god === '劫财') {
+    const via = exposedKey ? `透于${exposedPos}干` : `${hui.where.join('、')}会成${hui.group.element}局`;
+    return {
+      name: '月劫格',
+      kind: '月令格',
+      evidence: `月令${monthBranch}藏${hidden.join('')}，${use.pos}${use.stem}（劫财）${via}，劫财为用，作月劫论`,
+    };
+  }
   const name = `${use.god}格`;
-  const ex = exposedKey
-    ? `月令${monthBranch}藏${hidden.join('')}，${use.pos}${use.stem}（${use.god}）透于${exposedPos}干`
-    : `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}（${base.god}）未透干，以月令本气取格`;
+  let ex;
+  if (exposedKey) {
+    ex = `月令${monthBranch}藏${hidden.join('')}，${use.pos}${use.stem}（${use.god}）透于${exposedPos}干`;
+  } else if (hui) {
+    ex = `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}（${base.god}）未透干，而${hui.where.join('、')}会成${hui.group.element}局，取${use.pos}${use.stem}（${use.god}）为用`;
+  } else {
+    ex = `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}（${base.god}）未透干，以月令本气取格`;
+  }
   return { name, kind: '月令格', evidence: ex };
 }
 

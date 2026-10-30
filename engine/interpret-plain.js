@@ -90,6 +90,19 @@ function jinTuiPlain(r) {
   return `动爻的进退还要看时令：${jp.lines.map((l) => `${l.position}爻${l.from}→${l.to}${l.type}，${sayOf(l)}`).join('；')}。`;
 }
 
+// 应期线索 → 一句白话：只给快慢与可留意的支，不换算日期
+function yingqiPlain(r) {
+  const yq = r && r.yingqi;
+  if (!yq || !Array.isArray(yq.triggers) || !yq.triggers.length) return '';
+  const when = yq.tempo === '偏速' ? '大体偏近，近事更容易先见分晓'
+    : yq.tempo === '偏缓' ? '大体偏远，别指望立刻见分晓'
+      : yq.tempo === '待解' ? '眼下还有月破或旬空，得先等条件解除'
+        : '缺月建，快慢暂不定';
+  const branches = yq.triggers.map((t) => t.branch).join('、');
+  const fu = yq.viaFushen ? '（用神是伏神，先要出得来）' : '';
+  return `应期上${when}；传统会留意${branches}这几个地支${fu}——这只是提示，不换算成具体哪天。`;
+}
+
 // 全卦逐爻旺衰 → 一句白话：整张卦的气偏在哪一头（与用神那一句分开说）
 function hexStrengthPlain(hs) {
   if (!hs || !hs.counts) return '';
@@ -200,7 +213,7 @@ export function buildAnswer(r, ask, ctx = {}) {
       head + `先说结论：本卦是${s(ben.name, '—')}` +
         `${ben.palace ? `（${ben.palace}）` : ''}` +
         `${moving.length ? `，第 ${moving.join('、')} 爻动，变为${s(bian.name, '—')}` : '，六爻安静没有动爻'}。` +
-        `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
+        `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${yingqiPlain(r)}${hexStrengthPlain(r.hexStrength)}`,
       '断卦的落点在「世爻」（代表你）和「动爻」（事情的推动点），下面「看盘顺序」就按这个次序展开。',
     ].join('');
   }
@@ -268,7 +281,7 @@ export function buildPlain(r, ask, ctx = {}) {
     const plainBody = bodyPlainOf(labels);
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
-      `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
+      `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${yingqiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
   }
   return '';
 }

@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { compute } from '../engine/index.js';
-import { CLASSICS, CLASSIC_BOOKS, classicOf, classicsFor } from '../engine/classics.js';
+import { CLASSICS, CLASSIC_BOOKS, classicOf, classicsFor, suiyunClassicOf } from '../engine/classics.js';
 import { KNOWLEDGE } from '../engine/interpret-knowledge.js';
 
 let pass = 0; let fail = 0;
@@ -17,11 +17,11 @@ const SMT_SPECIAL = SMT.filter((e) => SMT_SPECIAL_IDS.includes(e.id));
 
 // —— 书目与条目
 ok('三命通会已登记', CLASSIC_BOOKS.sanming && CLASSIC_BOOKS.sanming.name === '三命通会' && CLASSIC_BOOKS.sanming.author === '明·万民英');
-ok('三命通会条目 16 条（8 论十神 + 7 格局篇 + 1 官煞去留）', SMT.length === 16 && SMT_TEN.length === 8 && SMT_SPECIAL.length === 7 && SMT.filter((e) => e.id === 'smt-guansha-liu').length === 1);
+ok('三命通会条目 17 条（8 论十神 + 7 格局篇 + 1 官煞去留 + 1 总论岁运）', SMT.length === 17 && SMT_TEN.length === 8 && SMT_SPECIAL.length === 7 && SMT.filter((e) => e.id === 'smt-guansha-liu').length === 1 && SMT.filter((e) => e.id === 'smt-suiyun').length === 1);
 ok('论十神章名都以「论」立题', SMT_TEN.every((e) => /^卷[五六]·论/.test(e.chapter)));
 ok('七杀对照篇按本本章名照录', classicOf('smt-guansha-liu').chapter === '卷五·官煞去留杂论');
 ok('条目 id 全局唯一', new Set(CLASSICS.map((e) => e.id)).size === CLASSICS.length);
-ok('章节都标到卷', SMT.every((e) => /^卷[五六]·/.test(e.chapter)));
+ok('章节都标到卷', SMT.every((e) => /^卷[二五六]·/.test(e.chapter)));
 ok('出处都是典藏网三命通会', SMT.every((e) => /^https:\/\/www\.diancang\.xyz\/xuanxuewushu\/sanmingtonghui\/\d+\.html$/.test(e.url)));
 ok('出处逐条不同（没有共用链接）', new Set(SMT.map((e) => e.url)).size === SMT.length);
 ok('原文不省略、不改写', SMT.every((e) => !e.quote.includes('…') && !e.quote.includes('...') && e.quote.length >= 20));
@@ -85,6 +85,30 @@ const html = box.window.__PP.baziHTML(R);
 ok('面板书名不再误标为滴天髓', html.includes('三命通会·卷六·论偏财') && !html.includes('滴天髓·卷六·论偏财'));
 ok('面板偏财格不引正财章', !html.includes('三命通会·卷六·论正财'));
 ok('面板条目数与匹配数一致', (html.match(/mp-cl-e/g) || []).length === R.classics.length);
+
+// —— 岁运提示的原文（卷二·总论岁运）：不占五条上限，只在盘面有岁运信号时随「岁运提示」出现
+const syE = classicOf('smt-suiyun');
+ok('岁运条目原文抽检', !!syE && syE.quote.includes('最怕行运与太岁冲克') && syE.quote.includes('谓之返吟') && syE.quote.includes('谓之伏吟'));
+ok('岁运条目章名与典藏网链接', !!syE && syE.chapter === '卷二·总论岁运' && syE.url === 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html');
+ok('岁运条目自成一个景、不挂格局 tag', !!syE && syE.scene === '岁运' && syE.tags.length === 0);
+ok('岁运条目白话点明与本插件口径不同', !!syE && syE.plain.includes('返吟') && syE.plain.includes('伏吟') && syE.plain.includes('不是同一套定义'));
+ok('岁运条目不进五条取条表', classicsFor(R).every((e) => e.id !== 'smt-suiyun') && R.classics.every((e) => e.id !== 'smt-suiyun'));
+ok('有信号的盘把原文挂到结果上', !!R.suiyunClassic && R.suiyunClassic.id === 'smt-suiyun' && R.suiyunClassic.bookName === '三命通会');
+ok('摘要的岁运提示带出处', R.summary.includes('岁运提示') && R.summary.includes('古籍见《三命通会·卷二·总论岁运》'));
+ok('suiyunClassicOf 只认信号、不认空盘', suiyunClassicOf(null) === null && suiyunClassicOf({ liunian: [{ year: 2030, suiyun: { signals: [] } }] }) === null && suiyunClassicOf(R).id === 'smt-suiyun');
+const NO_SIG = compute({ system: 'bazi', datetime: '1984-10-18T06:20', gender: 'male' });
+ok('无信号的盘不挂原文（结果层）', !NO_SIG.suiyunClassic && !NO_SIG.summary.includes('总论岁运'));
+const itSy = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'male', withInterpret: true }).interpret;
+const sySec = (itSy.sections || []).find((s) => s.key === 'suiyun');
+ok('解析层岁运节带原文与白话', !!sySec && sySec.text.includes('《三命通会·卷二·总论岁运》') && sySec.text.includes(syE.quote) && sySec.text.includes('白话：'));
+const noSySec = compute({ system: 'bazi', datetime: '1984-10-18T06:20', gender: 'male', withInterpret: true }).interpret.sections.find((s) => s.key === 'suiyun');
+ok('无信号的解析层不出原文', !!noSySec && !noSySec.text.includes('总论岁运'));
+ok('面板岁运提示下有原文', html.includes('pp-sy-src') && html.includes('谓之返吟'));
+ok('无信号的面板不渲染原文块', !box.window.__PP.baziHTML(NO_SIG).includes('pp-sy-src'));
+ok('知识卡 bazi-suiyun 出处带典藏网链接', (() => {
+  const k = KNOWLEDGE.find((x) => x.id === 'bazi-suiyun');
+  return !!k && k.source.includes('三命通会') && k.source.includes('7539.html') && k.detail.includes('不是同一套定义');
+})());
 
 // —— 知识卡
 const card = KNOWLEDGE.find((k) => k.id === 'bazi-sanming-duizhao');

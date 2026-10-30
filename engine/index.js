@@ -1,6 +1,6 @@
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 import { buildBazi } from './bazi.js';
-import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower } from './liuyao.js';
+import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower, yingqiWindow } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } from './ziwei.js';
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
@@ -13,7 +13,7 @@ import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 import { followup, askPrompt } from './followup.js';
-import { crossCheck, crossText } from './crosscheck.js';
+import { crossCheck, crossText, crossSection } from './crosscheck.js';
 import { pastSignals, verifyFit } from './verify.js';
 import { rectifyBirth } from './rectify.js';
 import { buildAlmanac } from './almanac.js';
@@ -24,7 +24,7 @@ import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
 import { buildMbti, mbtiPaper } from './mbti.js';
 import { buildConvert } from './convert.js';
-import { classicsFor, classicsText } from './classics.js';
+import { classicsFor, classicsText, suiyunClassicOf, CLASSIC_BOOKS } from './classics.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
@@ -126,6 +126,10 @@ function baziText(r) {
     ? `神煞（${r.shensha.count} 见）：` + r.shensha.groups.map((g) =>
       `${g.cat}｜` + g.items.map((i) => `${i.name}(${i.pillars.map((k) => SHORT[k]).join('')})`).join('、')).join('；')
     : '神煞：—';
+  const ry = r.renyuan;
+  const renyuanLine = ry
+    ? `人元：${ry.month}月第${ry.day}日，${ry.active}${ry.activeElement}司权（${ry.segments.map((s) => `${s.stem}${s.from}–${s.to}`).join(' ')}）${ry.beyond ? '；已过 30 日表，按本气算' : ''}`
+    : '';
   const gejuLine = r.frame ? [
     `格局：${r.frame.primary ? `${r.frame.primary.name}（${r.frame.primary.evidence}）` : '—'}`,
     `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}]`).join('　')}`,
@@ -148,6 +152,7 @@ function baziText(r) {
     shenshaLine,
     `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）　晚子时：${r.input.lateZi ? '23:00 后算次日' : '23:00 后仍算当日'}`,
     `节气：上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`,
+    ...(renyuanLine ? [renyuanLine] : []),
     `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运${jiao}`,
     `　${dayun}`,
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
@@ -155,8 +160,10 @@ function baziText(r) {
       const hits = r.liunian.filter((l) => l.suiyun && l.suiyun.signals && l.suiyun.signals.length);
       if (!hits.length) return '岁运提示：近十年无岁运并临、运年反吟或流年伏吟/反吟（只标干支，不判吉凶）';
       const label = (s) => `${s.type}${s.type.startsWith('流年') && s.target ? `(${s.target})` : ''}`;
+      const e = suiyunClassicOf(r);
+      const src = e ? `｜古籍见《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》` : '';
       return '岁运提示（只标干支变动，不判吉凶）：' + hits
-        .map((l) => `${l.year}${l.ganzhi} ${l.suiyun.signals.map(label).join('/')}`).join('；');
+        .map((l) => `${l.year}${l.ganzhi} ${l.suiyun.signals.map(label).join('/')}`).join('；') + src;
     })(),
     '（格局、用神、行运吉凶为扶抑＋简化调候的量化提示，非断语。）',
   ].join('\n') + near;
@@ -408,6 +415,11 @@ function liuyaoText(r) {
   if (jt && Array.isArray(jt.lines) && jt.lines.length) {
     out.push(`进退力重：${jt.lines.map((l) => `${l.position}爻${l.from}→${l.to}${l.type}·${l.verdict}`).join(' · ')}`);
   }
+  // 应期线索：只列地支与快慢，不给日期
+  const yq = r.yingqi;
+  if (yq && Array.isArray(yq.triggers) && yq.triggers.length) {
+    out.push(`应期线索：${yq.tempo} · ${yq.triggers.map((t) => `${t.labels.join('/')}${t.branch}`).join(' · ')}（只列地支，不出日期）`);
+  }
   return out.filter(Boolean).join('\n');
 }
 
@@ -428,6 +440,9 @@ export function compute(args = {}) {
     r.classics = classicsFor(r);
     const ct = classicsText(r.classics);
     if (ct) r.summary = `${r.summary}\n【古籍】\n${ct}`;
+    // 岁运提示的原文不占五条上限：只在盘面真有岁运信号时挂到结果上，摘要、解析层与面板各自取用
+    const syc = suiyunClassicOf(r);
+    if (syc) r.suiyunClassic = { ...syc, bookName: CLASSIC_BOOKS[syc.book].name };
   }
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
@@ -462,7 +477,7 @@ export function compute(args = {}) {
       : buildBazi({ ...common, lateZi: args.lateZi !== false, nowYear: asOf ? asOf.year : undefined });
     r.cross = crossCheck(r.system === 'bazi' ? r : other, r.system === 'ziwei' ? r : other);
     if (r.interpret) {
-      r.interpret.sections.push({ key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: crossText(r.cross) });
+      r.interpret.sections.push(crossSection(r.cross));
     }
   }
   // 验前事：把过去若干年的流年信号摊开（只读，不改盘）
@@ -745,6 +760,9 @@ function computeRaw(args = {}) {
       // 伏神出伏条件：飞伏生克叠月建日辰，只判条件、不出应期
       const chufu = fushenAccess(result, ug, { monthBranch, dayBranch: result.dayGanZhi.branch });
       if (chufu) result.fushenAccess = chufu;
+      // 应期线索：只列逢值/逢冲/逢合与旬空的出空/冲空，再给快慢方向，不换算日期
+      const yq = yingqiWindow(result, ug, { monthBranch });
+      if (yq) result.yingqi = yq;
     }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
@@ -1196,7 +1214,7 @@ export { geocodeAddress, resolveAddress };
 export { buildBazi, buildLiuyao, tossLines };
 export { followup, askPrompt };
 export { pastSignals, verifyFit, rectifyBirth };
-export { crossCheck, crossText };
+export { crossCheck, crossText, crossSection };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName };
 

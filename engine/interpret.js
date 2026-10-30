@@ -395,6 +395,19 @@ function baziInterpret(r) {
         `⑤ 落到维度：工作看喜用五行与十神权重；感情看配偶星与日支；健康看最旺与最弱的五行。五维度都只是这套推导的应用，不是另一套算法。`,
       ].join('\n'),
     },
+    ...(r.renyuan ? [(() => {
+      const ry = r.renyuan;
+      const table = ry.segments.map((s) => `${s.stem}${s.from}–${s.to}`).join(' / ');
+      const nextSeg = ry.next ? `，第 ${ry.next.from} 日起交 ${ry.next.stem}${ry.next.element}` : '';
+      const outside = ry.inHidden ? '' : ` 表里的 ${ry.active} 不在本柱藏干表中（属余气口径），两表各照原样，不互相改写。`;
+      const beyond = ry.beyond ? ' 你生在第 31 日以后，已超出 30 日表，按本气算，不硬分摊。' : '';
+      return {
+        key: 'renyuan', label: '人元司权',
+        text: `生于${ry.month}月第 ${ry.day} 日（从${ry.term ? ry.term.name : '节'}起算，节当日为第 1 日，日差按本盘所用时刻所在日计）：这一日由 **${ry.active}${ry.activeElement}** 司权，第 ${ry.segment.from}–${ry.segment.to} 日属它${nextSeg}。\n`
+          + '月令这一个月里，余气、中气、本气轮值，不是整月同一个五行当值——所以「月令是什么」，还要看生在第几日。\n'
+          + `**口径**：本插件固定 30 日表（${table}）；另有 7/7/16、9/3/18 等分法，各家不一。分日只作解释层的一层细节，**不改取格**：取格仍按本气、透干与会支判定。${outside}${beyond}`,
+      };
+    })()] : []),
     {
       key: 'timeline', label: '时间窗',
       text: (() => {
@@ -415,6 +428,8 @@ function baziInterpret(r) {
     { key: 'advice', label: '专业建议', text: adviceText },
     (() => {
       const hits = (r.liunian || []).filter((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
+      const e = suiyunClassicOf(r);
+      const src = e ? `\n原文：《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》「${e.quote}」\n白话：${e.plain}` : '';
       return {
         key: 'suiyun', label: '岁运提示',
         text: hits.length
@@ -422,7 +437,7 @@ function baziInterpret(r) {
             const stem = (l.suiyun.dayun || []).map((d) => `第${d.step}步${d.ganzhi}`).join('、');
             return `${l.year} ${l.ganzhi}（${stem || '未到起运'}）：${l.suiyun.signals.map((s) => s.detail).join('；')}`;
           }).join('\n') +
-            '\n读法：岁运并临、运年反吟与流年伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。'
+            '\n读法：岁运并临、运年反吟与流年伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。' + src
           : '近十年没有岁运并临、运年反吟或流年伏吟/反吟。「岁运并临主大凶」这类说法流传很广，本插件只把它当变动提示，没有命中就不作额外解读。',
       };
     })(),
@@ -1207,8 +1222,30 @@ function liuyaoInterpret(r, ask) {
       useText.push(`时令对用神：${head}，日辰 ${strength.day ? `${strength.day.branch}（${strength.day.element}）` : '—'}。${body.join('；')}。`);
       useText.push('月建看这一段时令站在哪一边，日辰看当天那股力量是扶还是克；两处同时看，只报状态，不折成分数。');
     }
-    useText.push('这一层只把用神、卦体与时令对起来，应期与成败还要看动爻变化与月建日辰的进退节奏，所以这里不折成分数、不断成败。');
+    useText.push('这一层只把用神、卦体与时令对起来，不折成分数、不断成败；应期另在「应期线索」一节只给触发支与快慢。');
     sections.push({ key: 'yongshen', label: '用神落位与卦体', text: useText.join('\n') });
+  }
+
+  // 应期线索：只给触发支与快慢方向，不给日期
+  {
+    const yq = r.yingqi;
+    if (yq && Array.isArray(yq.items) && yq.items.length) {
+      const rows = yq.items.map((it) => {
+        const flags = [
+          it.monthState && it.monthState !== 'unknown' ? `月建${it.monthState}` : '',
+          it.monthChong ? '月破' : '',
+          it.kong ? '旬空' : '',
+        ].filter(Boolean).join('、');
+        return `${it.position}爻${it.branch}${it.element}${flags ? `（${flags}）` : ''}：${it.tempoSay}`;
+      });
+      sections.push({
+        key: 'yingqi',
+        label: '应期线索',
+        text: `应期快慢：${yq.tempoSay}。${rows.join('；')}。可留意的地支：${yq.triggers.map((t) => `${t.branch}（${t.labels.join('、')}）`).join('；')}。` +
+          `${yq.viaFushen ? '用神不上卦，这里的支取自伏神；伏神要先得出才算数。' : ''}` +
+          '这一节只把传统的「逢值、逢冲、逢合」与旬空的出空、冲空摆出来，不换算成具体日期、不排先后、也不判忌神受制；近事以日计、远事以月计，用哪把尺取决于事情本身。',
+      });
+    }
   }
 
   // 全卦逐爻旺衰：不挑用神，六爻都过一遍，看整张卦的气压在哪一头
@@ -1240,7 +1277,7 @@ function liuyaoInterpret(r, ask) {
 
   sections.push({
     key: 'limits', label: '未纳入',
-    text: '本卦没有计算：用神两现时该取哪一爻的权重、伏神出伏的应期（出伏条件已判，应期仍未做）。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数，也不叠动变连环；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
+    text: '本卦没有计算：用神两现时该取哪一爻的权重、应期的具体日期（只给逢值/逢冲/逢合的触发支与快慢方向）、忌神受制的时点、动变连环。化进/化退的力重只按月建五态给「得令/失令」这类档位，不折成加权分数；这些都会改变"旺不旺"的判断，所以这里只给取象与方向。',
   });
 
   const dimensions = [
@@ -1666,7 +1703,7 @@ const BUILDERS = {
 import { interpretQimen } from './qimen-interpret.js';
 import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
 import { knowledgeFor, caveatsFor, STATUS_LABEL } from './interpret-knowledge.js';
-import { CLASSIC_BOOKS } from './classics.js';
+import { CLASSIC_BOOKS, suiyunClassicOf } from './classics.js';
 
 /**
  * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。

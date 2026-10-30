@@ -79,5 +79,7 @@ ok('切 tab 时同步分组卡片高亮',
   /document\.querySelectorAll\('\.tool'\)\.forEach\(\(b\) => b\.classList\.toggle\('on', b\.dataset\.tab === tab\)\)/.test(ui));
 
 // ── ⑧ 深色与打印 ───────────────────────────────────────────────
-ok('深色下选中卡片文字反色', /\.tool\.on,\.tool\.on b\{color:#14130f\}/.test(html));
+// 0.49.3：强调面改用变量（旧的深色元素规则写在基础规则之前、被同优先级覆盖，实际没生效）
+ok('选中卡片文字走 --on-accent / --on-accent-soft',
+  /\.tool\.on b\{color:var\(--on-accent\)\}/.test(html) && /\.tool\.on span\{color:var\(--on-accent-soft\)\}/.test(html));
 ok('打印时隐藏首屏分组与视图开关', /\.start,\.view-switch\{display:none!important\}/.test(html));

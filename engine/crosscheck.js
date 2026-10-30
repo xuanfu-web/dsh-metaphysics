@@ -106,16 +106,33 @@ export function crossCheck(bazi, zw) {
     const bad = ['忌', '大忌'];
     const baziGood = good.includes(t);
     const baziBad = bad.includes(t);
+    const baziKnown = t !== '—';
     const ziweiHeavy = sha >= 2;
+    const ziweiKnown = !!d;
     let stance = '有张力';
-    let note = '一边顺、一边压，按「大方向跟顺的一边、具体动作避开压的年份」处理';
-    if ((baziGood && !ziweiHeavy) || (baziBad && ziweiHeavy) || (!baziGood && !baziBad && !ziweiHeavy)) {
+    let note = '';
+    if (!baziKnown || !ziweiKnown) {
+      // 一边没取到就谈不上「同向 / 有张力」——只并列现有的一侧，并写清缺的是哪边
+      stance = '互补';
+      const missing = !baziKnown && !ziweiKnown
+        ? '八字当前大运与紫微当前大限都没取到'
+        : !baziKnown
+          ? `八字当前大运未取到（${t}），只有紫微一侧可参考`
+          : '紫微当前大限未取到，只有八字一侧可参考';
+      note = `${missing}：这一项只作提醒，不下两边对照的结论`;
+    } else if (baziGood && ziweiHeavy) {
+      note = '八字这边顺、紫微大限煞星偏多：大方向可参考八字，具体动作按紫微标出的位置收一收';
+    } else if (baziBad && !ziweiHeavy) {
+      note = '八字这边偏紧、紫微大限没见到明显煞星：先按八字收着走，紫微一侧的平静不等于没有压力';
+    } else if (!baziGood && !baziBad && ziweiHeavy) {
+      note = '八字大运为平、紫微大限煞星偏多：只把紫微这一侧当作提醒，不据此判断阶段好坏';
+    } else {
       stance = '同向';
       note = '两边对当前阶段的松紧判断接近';
     }
     push('rhythm', '当前节奏',
       `大运档位 ${t}`,
-      `${d ? `大限在${d.palace}` : '大限未取到'}${sha ? `；煞星 ${sha} 颗` : '；无煞星'}`,
+      d ? `大限在${d.palace}${sha ? `；煞星 ${sha} 颗` : '；无煞星'}` : '大限未取到',
       stance, note);
   }
 
@@ -130,4 +147,13 @@ export function crossText(cross) {
   return cross.items
     .map((i) => `· ${i.label}：八字——${i.bazi}；紫微——${i.ziwei}；判断：${i.stance}（${i.note}）`)
     .join('\n');
+}
+
+/**
+ * 交叉验证分节。文本给 Markdown/工具输出，items 给面板画对照卡——
+ * 同一份数据两个去处，免得面板再去拆文本。
+ */
+export function crossSection(cross) {
+  const items = cross && Array.isArray(cross.items) ? cross.items : [];
+  return { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: crossText(cross), items };
 }

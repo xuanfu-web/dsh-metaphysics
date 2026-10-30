@@ -73,7 +73,40 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
 // ── 三、页面层深色 ──────────────────────────────────────────────
 {
   ok(/@media screen and \(prefers-color-scheme:dark\)\{[\s\S]{0,400}--bg:#12110d/.test(HTML), '页面层有深色变量覆盖');
-  ok(/\.tab\.on,\.seg button\.on,\.go\{color:#14130f\}/.test(HTML), '深色下强调色实心底上的文字反色');
+  // 强调色实心底上的文字必须靠变量反色：深色块原先写的是元素规则，位置在基础规则之前，
+  // 同优先级被后面的 color:#fff 盖掉，实际仍是白字压浅珊瑚底（约 3:1）。改为变量后两套配色各自成立。
+  const rootDecl = HTML.slice(HTML.indexOf(':root{'), HTML.indexOf('/* 深色：跟随系统'));
+  const darkDecl = HTML.slice(HTML.indexOf('@media screen and (prefers-color-scheme:dark){'), HTML.indexOf('*{box-sizing:border-box}'));
+  ok(/--on-accent:#fff/.test(rootDecl), '浅色定义 --on-accent:#fff');
+  ok(/--on-accent:#14130f/.test(darkDecl), '深色定义 --on-accent:#14130f');
+  ok(/--accent-bg:#[0-9a-f]{6}/.test(rootDecl) && /--accent-bg:#[0-9a-f]{6}/.test(darkDecl), '两套配色都定义强调面 --accent-bg');
+  ok(/\.tab\.on\{[^}]*color:var\(--on-accent\)/.test(HTML), '选中 tab 的文字走 --on-accent');
+  ok(/\.go\{[^}]*color:var\(--on-accent\)/.test(HTML), '主按钮的文字走 --on-accent');
+  ok(!/color:#fff/.test(HTML), '页面样式里不再有硬编码白字（打印底色 #fff 不算文字色）');
+
+  // 强调面上的文字按 WCAG 逐端复算：渐变两端都要 ≥4.5:1，副文字（半透明）按叠色后的实际颜色算
+  const rgbOf = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const R = (rgb) => 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+  const contrast = (a, b) => { const [x, y] = [R(a), R(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+  const varsOf = (txt) => Object.fromEntries([...txt.matchAll(/--([a-z0-9-]+):#([0-9a-fA-F]{3,6})\b/g)]
+    .map((m) => [m[1], '#' + (m[2].length === 3 ? m[2].split('').map((c) => c + c).join('') : m[2])]));
+  for (const [theme, decl] of [['浅色', rootDecl], ['深色', darkDecl]]) {
+    const v = varsOf(decl);
+    const on = rgbOf(v['on-accent']);
+    const softMatch = decl.match(/--on-accent-soft:rgba\((\d+),(\d+),(\d+),([0-9.]+)\)/);
+    ok(!!softMatch, `${theme}定义 --on-accent-soft`);
+    const soft = softMatch ? softMatch.slice(1, 4).map(Number) : [255, 255, 255];
+    const alpha = softMatch ? Number(softMatch[4]) : 1;
+    for (const key of ['accent-bg', 'accent-bg2']) {
+      const surface = rgbOf(v[key]);
+      const main = contrast(on, surface);
+      ok(main >= 4.5, `${theme}·${key} 上的主文字 ${main.toFixed(2)}:1 ≥ 4.5`);
+      const blend = soft.map((c, i) => Math.round(alpha * c + (1 - alpha) * surface[i]));
+      const sub = contrast(blend, surface);
+      ok(sub >= 4.5, `${theme}·${key} 上的副文字 ${sub.toFixed(2)}:1 ≥ 4.5`);
+    }
+  }
 }
 
 // ── 四、导出 PDF：打印样式 ─────────────────────────────────────

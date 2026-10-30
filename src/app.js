@@ -673,8 +673,8 @@ function App() {
         : undefined;
       const it = Engine.interpret ? Engine.interpret(r, ask) : null;
       // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节（与独立页同一渲染路径）
-      if (it && r.cross && Engine.crossText) {
-        it.sections = [...(it.sections || []), { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: Engine.crossText(r.cross) }];
+      if (it && r.cross && Engine.crossSection) {
+        it.sections = [...(it.sections || []), Engine.crossSection(r.cross)];
       }
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');

@@ -3,9 +3,10 @@
 // 提供：农历日期、年/月/日干支（年按立春界，另列春节界生肖）、节气、建除十二神、
 // 冲煞（冲什么生肖 / 煞在何方）、财神与喜神方位、建除简表宜忌、每日一卦。
 //
-// 诚实边界：本插件不依赖 lunar-javascript，逐日神煞（吉神凶煞）、二十八宿值日、
-// 彭祖百忌、胎神等全量黄历数据未收录——输出里如实标注「未收录」，不臆造。
-// 宜忌只按「建除十二神」通行简表给出（传统择日的第一层判据），不是逐日全量黄历。
+// 诚实边界：本插件不依赖 lunar-javascript；逐日全量吉神凶煞与彭祖百忌未收录——
+// 输出里如实标注「未收录」，不臆造。值日十二神、二十八宿、胎神、吉神方位按通行表收录
+// （见返回值的 scope）。宜忌只按「建除十二神」通行简表给出（传统择日的第一层判据），
+// 不是逐日全量黄历。
 import { solarToLunar } from './lunar.js';
 import { nayinOf } from './nayin.js';
 import {
@@ -110,7 +111,7 @@ export function tianShenOf(branch, anchorBranch) {
   return { name, type, luck: type === '黄道' ? '吉' : '凶' };
 }
 
-/** 二十八宿：值日宿按「日支 + 星期」轮转（四组各七宿）。 */
+/** 二十八宿：值日宿按「日支 + 星期」轮转（四组各七宿）。宿名按通行「宿·五行·动物」写法（壁水貐、胃土雉）。 */
 export const MANSIONS = {
   角: { luck: '吉', zheng: '木', animal: '蛟', gong: '东' }, 亢: { luck: '凶', zheng: '金', animal: '龙', gong: '东' },
   氐: { luck: '凶', zheng: '土', animal: '貉', gong: '东' }, 房: { luck: '吉', zheng: '日', animal: '兔', gong: '东' },
@@ -118,9 +119,9 @@ export const MANSIONS = {
   箕: { luck: '吉', zheng: '水', animal: '豹', gong: '东' }, 斗: { luck: '吉', zheng: '木', animal: '獬', gong: '北' },
   牛: { luck: '凶', zheng: '金', animal: '牛', gong: '北' }, 女: { luck: '凶', zheng: '土', animal: '蝠', gong: '北' },
   虚: { luck: '凶', zheng: '日', animal: '鼠', gong: '北' }, 危: { luck: '凶', zheng: '月', animal: '燕', gong: '北' },
-  室: { luck: '吉', zheng: '火', animal: '猪', gong: '北' }, 壁: { luck: '吉', zheng: '水', animal: '獝', gong: '北' },
+  室: { luck: '吉', zheng: '火', animal: '猪', gong: '北' }, 壁: { luck: '吉', zheng: '水', animal: '貐', gong: '北' },
   奎: { luck: '凶', zheng: '木', animal: '狼', gong: '西' }, 娄: { luck: '吉', zheng: '金', animal: '狗', gong: '西' },
-  胃: { luck: '吉', zheng: '土', animal: '彘', gong: '西' }, 昴: { luck: '凶', zheng: '日', animal: '鸡', gong: '西' },
+  胃: { luck: '吉', zheng: '土', animal: '雉', gong: '西' }, 昴: { luck: '凶', zheng: '日', animal: '鸡', gong: '西' },
   毕: { luck: '吉', zheng: '月', animal: '乌', gong: '西' }, 觜: { luck: '凶', zheng: '火', animal: '猴', gong: '西' },
   参: { luck: '吉', zheng: '水', animal: '猿', gong: '西' }, 井: { luck: '吉', zheng: '木', animal: '犴', gong: '南' },
   鬼: { luck: '凶', zheng: '金', animal: '羊', gong: '南' }, 柳: { luck: '凶', zheng: '土', animal: '獐', gong: '南' },

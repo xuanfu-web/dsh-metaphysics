@@ -236,8 +236,8 @@
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
     } catch (e) { it = null; }
     // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节，保证与真实报告同一渲染路径
-    if (it && last.r && last.r.cross && window.Engine.crossText) {
-      it.sections = [...(it.sections || []), { key: 'crossSystem', label: '八字 × 紫微 交叉验证', text: window.Engine.crossText(last.r.cross) }];
+    if (it && last.r && last.r.cross && window.Engine.crossSection) {
+      it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
@@ -465,7 +465,7 @@
     if (tab === 'convert') {
       args.mode = convMode;
       if (convMode === 'lunar2solar') {
-        const m = /^(d{4})-(d{1,2})-(d{1,2})$/.exec(String(el('lunardate').value).trim());
+        const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(el('lunardate').value).trim());
         if (!m) { el('out').innerHTML = '<div class="err">农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。</div>'; return; }
         args.lunarYear = Number(m[1]); args.lunarMonth = Number(m[2]); args.lunarDay = Number(m[3]);
         args.isLeapMonth = !!(el('leapm') && el('leapm').checked);
@@ -613,12 +613,14 @@
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
     const castLabel = tab === 'qimen';
-    const dateLabel = tab === 'almanac' || tab === 'zeri' || tab === 'star' || tab === 'numerology';
+    // 与 TIME_KIND 的 date 类共用一处口径：农历（convert）原先漏在名单外，标签错写成「起卦日期」
+    const dateLabel = kindOf(tab) === 'date';
     el('lbl-date').textContent = birth ? '出生日期（公历）' : dateLabel ? '日期（公历）' : (castLabel ? '起局日期（公历）' : '起卦日期（公历）');
     el('lbl-time').textContent = birth ? '出生时刻' : (castLabel ? '起局时刻' : '起卦时刻');
     const qk = el('for-quick');
     if (qk) {
       el('qk-zeri').style.display = tab === 'zeri' ? '' : 'none';
+      el('qk-convert').style.display = tab === 'convert' ? '' : 'none';
       el('qk-xiaoliuren').style.display = tab === 'xiaoliuren' ? '' : 'none';
       el('qk-trend').style.display = tab === 'trend' ? '' : 'none';
       el('qk-fengshui').style.display = tab === 'fengshui' ? '' : 'none';
