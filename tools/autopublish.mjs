@@ -256,6 +256,17 @@ function commitAndPush(version, cfg) {
     log('git commit 失败：\n' + c.stdout + c.stderr);
     fail('git commit 失败');
   }
+  // 远端在两次运行之间前进过：先 rebase 再接上（冲突就放弃本轮，下一轮重试）
+  git(['fetch', 'origin', '--quiet']);
+  const behind = git(['rev-list', '--count', 'HEAD..origin/main']);
+  if (behind.status === 0 && Number(behind.stdout.trim()) > 0) {
+    const rb = git(['pull', '--rebase', 'origin', 'main']);
+    if (rb.status !== 0) {
+      git(['rebase', '--abort']);
+      log('rebase 失败，放弃本轮：\n' + rb.stdout + rb.stderr);
+      fail('git pull --rebase 失败（下一轮重试）');
+    }
+  }
   const push = git(authArgs(cfg).concat(['push', 'origin', 'main']));
   if (push.status !== 0) {
     log('git push 失败：\n' + push.stdout + push.stderr);
