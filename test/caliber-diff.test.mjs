@@ -229,7 +229,7 @@ ok('面板调 Engine.caliberCompare', APP.includes('Engine.caliberCompare'));
 ok('面板渲染 caliberHTML', APP.includes('PP.caliberHTML(result.caliber)'));
 ok('独立页调 caliberCompare', UI.includes('window.Engine.caliberCompare'));
 ok('独立页渲染 caliberHTML', UI.includes('window.__PP.caliberHTML(last.caliber)'));
-ok('客户端打包 diff 模块', BUILD.includes("'fail', 'diff', 'validate'"), BUILD.slice(0, 160));
+ok('客户端打包 diff 模块', BUILD.includes("'fail', 'diff', 'fingerprint', 'validate'"), BUILD.slice(0, 160));
 
 let def = null;
 hostApply({ tools: { register: (d) => { def = d; } }, effect: (fn) => fn() });

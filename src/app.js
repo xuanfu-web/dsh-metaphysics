@@ -28,6 +28,10 @@ function HISTORY_LABEL(kind, r) {
 }
 // Client 半：命理排盘面板。由 build-client.mjs 注入 React / h / Engine / __PP。
 const PP = window.__PP;
+// 独立页与旧宿主没有分块加载器：把现成的完整 Engine 当作已加载
+const ensureEngine = typeof window.__mpEnsureEngine === 'function'
+  ? window.__mpEnsureEngine
+  : async () => window.Engine;
 const CSS = `
 .mp-wrap{height:100%;width:100%;box-sizing:border-box;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px}
 /* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
@@ -247,6 +251,8 @@ function mbtiInfo() {
   let p = null;
   try { p = Engine.compute({ system: 'mbti' }); } catch (e) { p = null; }
   const questions = (p && p.questions) || [];
+  // 分块还没加载时先不缓存空题，加载完成后下一次渲染能重新取到题面
+  if (!questions.length) return { total: 0, questions: [], scale: {} };
   MBTI_INFO = { total: (p && p.total) || questions.length, questions, scale: (p && p.scale) || {} };
   return MBTI_INFO;
 }
@@ -564,6 +570,7 @@ function App() {
   const [replayArgs, setReplayArgs] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [engineLoading, setEngineLoading] = useState(false);
   const [count, setCount] = useState('3');
   const [question, setQuestion] = useState('');
   const [direction, setDirection] = useState('general');
@@ -600,8 +607,22 @@ function App() {
     const addressV = over && typeof over.address === 'string' ? over.address : address;
     setNotice('');   // 上一次的提示（如「先答满 12 题」）不该跟着新结果一起留下
     try {
+      setEngineLoading(true);
+      try {
+        await ensureEngine(k);
+      } catch (e) {
+        setError(e && e.message ? e.message : String(e));
+        setResult(null);
+        return;
+      } finally {
+        setEngineLoading(false);
+      }
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
+      // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
+      args.shadow = k !== 'mbti';
+      // 推导链只覆盖六爻 / 八字 / 紫微；其余体系没有中间层可摊
+      args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei';
       if (k !== 'tarot') args.datetime = datetime;
       if (k === 'bazi' || k === 'ziwei' || k === 'hepan') {
         // 合盘的主方同样需要性别与出生地：漏掉这两个字段会让合盘拿不到性别（引擎已改为必填），
@@ -716,6 +737,8 @@ function App() {
         }
         setAskInvalid(false);
         args.question = question.trim();
+        // 六爻的用神由「询问方向」定；不传给 compute 的话，盘面与推导链都会退成综合
+        if (k === 'liuyao') args.direction = direction;
       }
       if (k === 'meihua') {
         args.mode = mh;
@@ -737,6 +760,9 @@ function App() {
         }
       }
       const r = Engine.compute(args);
+      // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
+      let shadowDiff = null;
+      try { shadowDiff = PP.shadowTrack ? PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
       // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend，确定性、无网络
       let trend = null;
       if (k === 'bazi') {
@@ -768,7 +794,7 @@ function App() {
       }
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
-      setResult({ kind: k, r, it, at: dt, timed, trend, caliber });
+      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff });
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌；人格的输入是 24 个答案、没存进来，重放也没法还原。两者都不入历史
@@ -795,17 +821,21 @@ function App() {
   };
 
   /** 切 tab：起卦类自动取当前时刻、命盘类回到示例默认；用户在这类下改过则保留他的值 */
-  const switchTo = (next) => {
+  const switchTo = async (next) => {
     const k = kindOf(next);
-    setTab(next);
     setError('');
-    // 人格 tab 的输入就是问卷本身：没答够时不要自动算（否则一进来就报「至少 12 题」）
+    // 人格 tab 的输入就是问卷本身：题面在引擎分块里，先加载再切，避免先渲染出空问卷
     if (next === 'mbti') {
       setNotice('');
+      setEngineLoading(true);
+      try { await ensureEngine(next); } catch (e) { setError(e && e.message ? e.message : String(e)); }
+      finally { setEngineLoading(false); }
+      setTab(next);
       if (mbAns.filter((v) => v != null).length >= MBTI_MIN) run(next);
       else setResult(null);
       return;
     }
+    setTab(next);
     if (k === 'none') { run(next); return; } // 塔罗不看时间，直接抽牌（与 web-ui 一致）
     const v = manual[k] || (k === 'cast' ? nowParts() : { date: SAMPLE.date, time: SAMPLE.time });
     setDate(v.date);
@@ -899,8 +929,63 @@ function App() {
   const isNarrow = () => !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
   const defaultFolded = () => (foldPref === null ? isNarrow() : foldPref);
 
+  /** 影子盘 ID 一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
+  const copyShadowId = (btn) => {
+    const text = btn.getAttribute('data-shadow-copy') || '';
+    if (!text) return;
+    const done = (ok) => {
+      btn.textContent = ok ? '已复制' : '复制失败';
+      setTimeout(() => { btn.textContent = '复制 ID'; }, 1400);
+    };
+    const legacy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = !!(document.execCommand && document.execCommand('copy'));
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => done(true), () => done(legacy()));
+        return;
+      }
+    } catch (e) { /* 走下面的兜底 */ }
+    done(legacy());
+  };
+
+  /** 推导链抽屉：打开时锁住背景滚动并把焦点交给关闭按钮；关闭后焦点回入口 */
+  const traceOpen = () => {
+    const layer = document.getElementById('mp-trace-layer');
+    if (!layer) return;
+    layer.classList.add('open');
+    layer.setAttribute('aria-hidden', 'false');
+    const close = layer.querySelector('[data-trace-close]');
+    if (close && close.focus) close.focus();
+  };
+  const traceClose = () => {
+    const layer = document.getElementById('mp-trace-layer');
+    if (!layer) return;
+    layer.classList.remove('open');
+    layer.setAttribute('aria-hidden', 'true');
+    const trigger = document.querySelector('[data-trace-open]');
+    if (trigger && trigger.focus) trigger.focus();
+  };
+
   /** 解析模块折叠：标题栏整栏可点（内容由 innerHTML 渲染，用委托处理） */
   const onFoldClick = (e) => {
+    const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
+    if (copyBtn) { copyShadowId(copyBtn); return; }
+    const traceBtn = e.target && e.target.closest ? e.target.closest('[data-trace-open]') : null;
+    if (traceBtn) { traceOpen(); return; }
+    const traceBack = e.target && e.target.closest ? e.target.closest('[data-trace-close]') : null;
+    if (traceBack) { traceClose(); return; }
     const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
     if (!head) return;
     const box = head.closest('.mp-it');
@@ -921,7 +1006,15 @@ function App() {
       direction: dir === undefined ? direction : dir,
     };
     const it = Engine.interpret ? Engine.interpret(result.r, ask) : null;
-    setResult(Object.assign({}, result, { it }));
+    // 六爻改方向只重出解读、不重摇；推导链里的用神 / 旺衰 / 伏神也要按新方向重算
+    let r = result.r;
+    if (tab === 'liuyao' && r && r.trace && Engine.buildTrace) {
+      try {
+        const trace = Engine.buildTrace(r, { direction: ask.direction, gender: (r.useGod && r.useGod.gender) || 'male', refresh: true });
+        if (trace) r = Object.assign({}, r, { trace });
+      } catch (e) { /* 保留起卦时的推导链 */ }
+    }
+    setResult(Object.assign({}, result, { r, it }));
   };
 
   /** 结果头部的一行「起卦时刻」，只在真正用到时间的起卦 tab 显示 */
@@ -1056,6 +1149,15 @@ function App() {
     setReplayArgs(null);
     run(k);
   }, [replayArgs]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      const layer = document.getElementById('mp-trace-layer');
+      if (layer && layer.classList.contains('open')) traceClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const recentList = (recent || []).filter((x) => x && TABS.some((t) => t.k === x.tab)).slice(0, RECENT_MAX);
   const tabLabel = (k) => (TABS.find((t) => t.k === k) || {}).label || k;
@@ -1341,6 +1443,7 @@ function App() {
 
     error ? h('div', { key: 'err', className: 'mp-err', role: 'alert' }, error) : null,
     notice ? h('div', { key: 'ntc', className: 'mp-note', role: 'status' }, notice) : null,
+    engineLoading ? h('div', { key: 'load', className: 'mp-note', role: 'status' }, '正在加载本页需要的引擎…') : null,
 
     (!result && !error) ? h('div', { key: 'empty', className: 'mp-empty' },
       h('b', null, tab === 'ziwei' || tab === 'bazi' ? '填好出生信息，点「排盘」'
@@ -1361,7 +1464,8 @@ function App() {
       'aria-live': 'polite',
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
-        __html: castAtHTML(result) + PP.resultWithInterpret(
+        __html: castAtHTML(result) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
+          + PP.traceHTML(result.r.trace, result.r.system) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
             : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend) : ''))
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)

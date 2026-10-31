@@ -5,6 +5,16 @@
 import { compute, renderText, geocodeAddress, caliberCompare } from './engine/index.js';
 import { createLru } from './engine/lru.js';
 import { cacheMetrics } from './engine/calendar.js';
+import fs from 'node:fs';
+
+/** 版本注入影子盘：工具侧没有 window.__MP_VER，只能从包元数据取 */
+const PKG_VERSION = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
+  } catch {
+    return 'dev';
+  }
+})();
 
 export const inject = ['tools'];
 
@@ -23,7 +33,7 @@ const DESCRIPTION = [
   '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
-  '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。',
+  '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。需要回放或对拍时传 shadow: true，结果带影子盘 ID（同参数同 ID；baseId 不含版本，可跨版本比对字段变化）。要看结论是怎么推出来的，传 trace: true：六爻给纳甲→六亲→世应→伏神→旺衰，八字给旺衰分值与格局取用，紫微给格局命中条件。',
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
 
@@ -56,6 +66,7 @@ export function apply(ctx) {
       throw bad(`geocode 只能是 offline / online，收到「${args.geocode}」`);
     }
     const next = { ...args };
+    if (next.shadow === true && !next.shadowVersion) next.shadowVersion = PKG_VERSION;
     // 默认离线：内置表覆盖到地级市，足够真太阳时用；联网是把出生地原文发给第三方，必须显式开启
     const wantsOnline = next.geocode === 'online';
     const resolveGeo = async (person) => {
@@ -217,6 +228,14 @@ export function apply(ctx) {
         diff: {
           type: 'boolean',
           description: '口径对照（bazi / ziwei / qimen）：同一组输入分别按当前口径与另一档各排一次，列出根因字段（如日柱、命宫、局数）与连带变化数。只列差异，不判哪套口径更准，也不改盘面。',
+        },
+        shadow: {
+          type: 'boolean',
+          description: '影子盘：为结果附一个短 ID。同一组归一化参数在任何参数顺序下得到同一 ID；baseId 不含版本，跨版本复用 baseId 即可自动 diff 字段变化。写回、对拍、回放时使用，默认 false。',
+        },
+        trace: {
+          type: 'boolean',
+          description: '推导链：六爻返回纳甲→六亲→世应→伏神→旺衰，八字返回旺衰分值与格局取用，紫微返回格局命中条件。每层含 field / rule / inputs / result / source；只读盘面，不重算、不改盘。默认 false。',
         },
         verifyPast: {
           type: 'number',

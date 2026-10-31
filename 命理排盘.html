@@ -169,7 +169,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .seg button.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));color:var(--on-accent);font-weight:600}
 /* 结果入场：只做一次轻微上浮，不做循环动画 */
 #out{animation:mp-rise .3s cubic-bezier(.2,.7,.3,1) both}
-@keyframes mp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 只做淡入：曾用 translateY，但 #out 上有 transform 动画会为 fixed 子元素
+   建立 containing block，推导链抽屉会被关在结果卡片里而不是贴着视口右侧。 */
+@keyframes mp-rise{from{opacity:0}to{opacity:1}}
 /* 奇门换局规则：fieldset + 原生 radio（语义优先，外观沿用页面浅色块） */
 .qmrule{grid-column:1 / -1;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .qmrule legend{padding:0;font-size:13.5px;color:var(--dim)}
@@ -344,7 +346,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.50.5</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.53.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -611,7 +613,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：103 个测试文件 / 4593 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：106 个测试文件 / 4812 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -946,6 +948,87 @@ const CALIBER_SWITCHES = {
 return { diffObjects, labelOf, categoryOf, rootOf, sortDiffs, summarize, formatValue, renderDiff, CALIBER_SWITCHES };
 })();
 
+__mods.fingerprint = (function () {
+// 影子盘指纹：同一组归一化参数 + 同一引擎版本 → 同一个短 ID。
+//
+// 两层 ID：
+//   baseId —— 只含参数（system / 归一化参数 / seed / asOf），跨版本不变；
+//   id     —— 再叠引擎版本，版本一变 ID 就变。
+// 版本升级后重排同一张盘，baseId 相同、id 不同，据此自动对盘。
+//
+// 这里只做纯函数：不读时间、不读随机、不读 locale，保证换机器/换时区结果一致。
+
+const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford base32（去掉 I/L/O/U）
+
+/** 稳定序列化：键排序、NFC、去 undefined、-0 → 0；不依赖 locale。 */
+function canonicalJson(value) {
+  return JSON.stringify(sortValue(value));
+}
+
+function sortValue(value) {
+  if (value === null) return null;
+  const t = typeof value;
+  if (t === 'string') return typeof value.normalize === 'function' ? value.normalize('NFC') : value;
+  if (t === 'number') return Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : null;
+  if (t === 'boolean') return value;
+  if (Array.isArray(value)) return value.map(sortValue);
+  if (t === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) {
+      const item = value[key];
+      if (item === undefined || typeof item === 'function' || typeof item === 'symbol') continue;
+      out[key] = sortValue(item);
+    }
+    return out;
+  }
+  return null;
+}
+
+/** 35 位短哈希，编码成 7 个 base32 字符；纯字符运算，跨 Node / 浏览器一致。 */
+function shortHash(text) {
+  const s = String(text);
+  let h1 = 0x811c9dc5;
+  let h2 = 0x9e3779b9;
+  for (let i = 0; i < s.length; i += 1) {
+    const code = s.charCodeAt(i);
+    for (const byte of [code & 0xff, code >>> 8]) {
+      h1 = Math.imul(h1 ^ byte, 0x01000193);
+      h2 = Math.imul(h2 ^ byte, 0x85ebca6b);
+    }
+  }
+  let n = (h1 >>> 0) * 8 + (h2 >>> 29); // < 2^35，Number 精确
+  let out = '';
+  for (let i = 0; i < 7; i += 1) {
+    out = ALPHABET[n % 32] + out;
+    n = Math.floor(n / 32);
+  }
+  return out;
+}
+
+/**
+ * @param {{system:string, params:object, seed?:number|null, asOf?:string|null, version?:string}} input
+ * @returns {{id:string, baseId:string, version:string, system:string, payload:string}}
+ */
+function fingerprintOf(input = {}) {
+  const system = String(input.system || '');
+  const version = String(input.version || 'dev');
+  const seed = input.seed === undefined || input.seed === null || input.seed === '' ? null : Number(input.seed);
+  const asOf = input.asOf ? String(input.asOf) : null;
+  const params = input.params && typeof input.params === 'object' ? input.params : {};
+  const basePayload = canonicalJson({ system, params, seed, asOf });
+  const fullPayload = canonicalJson({ base: basePayload, version });
+  return {
+    id: `LY-${shortHash(fullPayload)}`,
+    baseId: `LY-${shortHash(basePayload)}`,
+    version,
+    system,
+    payload: basePayload,
+  };
+}
+
+return { canonicalJson, shortHash, fingerprintOf };
+})();
+
 __mods.validate = (function () {
 // 引擎边界的入参守卫。
 //
@@ -955,7 +1038,7 @@ __mods.validate = (function () {
 // 调用方只能看见 "Cannot read properties of null"，不知道是自己传错了什么。
 //
 // 这里统一在入口判一次，失败一律 E_INPUT，并在文案里写清「该传什么」。
-const { fail } = __mods.fail;
+const { fail } = (__mods.fail || {});
 
 /** 支持的公历年份范围：更早的年份时区与历法口径都不可靠，宁可拒绝 */
 const MIN_YEAR = 1600;
@@ -1187,8 +1270,8 @@ return { earthL };
 })();
 
 __mods.calendar = (function () {
-const { earthL } = __mods['vsop-earth'];
-const { createLru } = __mods.lru;
+const { earthL } = (__mods['vsop-earth'] || {});
+const { createLru } = (__mods.lru || {});
 // 历法底座：儒略日、干支、二十四节气、真太阳时
 // 全部为纯函数，不依赖 DOM / Node API，Host 与 Client 可共用。
 
@@ -1518,7 +1601,7 @@ return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryI
 
 __mods.lunar = (function () {
 // 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
-const { toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor, OFFSET_MODERN } = __mods.calendar;
+const { toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor, OFFSET_MODERN } = (__mods.calendar || {});
 
 const SYNODIC = 29.530588861;
 const NEW_MOON_EPOCH = 2451550.09766;
@@ -1935,7 +2018,7 @@ __mods.dst = (function () {
 // 这六年春夏钟表拨快 1 小时：出生证上的时间多数是「夏令时钟面时间」，
 // 不校正则时辰（乃至日柱）整体错一档。区间为通行口径（春季 02:00 起，秋季 02:00 止，含头不含尾）。
 // 依据：国务院 1986–1991 年夏令时通告；与公开万年历对拍一致。
-const { daysInMonth } = __mods.validate;
+const { daysInMonth } = (__mods.validate || {});
 
 /** 历年夏令时区间：[起始日, 结束日]（本地钟面时间）。 */
 const DST_SPANS = {
@@ -2009,7 +2092,7 @@ __mods.shensha = (function () {
 //  · 同一神煞有多派查法时，在 rule 文本里注明，避免「算法黑箱」；
 //  · 命中按柱记录，同时给出按类别归并的 chart 级视图，供 UI 分组展示。
 // 神煞只作参考，不可直接断吉凶——吉凶仍须看格局、旺衰、行运。
-const { BRANCHES } = __mods.calendar;
+const { BRANCHES } = (__mods.calendar || {});
 
 const PILLAR_KEYS = ['year', 'month', 'day', 'hour'];
 const PILLAR_LABEL = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
@@ -4309,9 +4392,9 @@ __mods.geju = (function () {
 // 取舍：格局派别差异极大，这里只给「规则可复核」的判定，evidence 写明依据；
 // 调候由 tiaohou.js 独立判定，与扶抑冲突时显式裁决并写明理由，不静默取用。
 
-const { judgeClimate, arbitrate } = __mods.tiaohou;
-const { qtOf } = __mods.qiongtong;
-const { sanheGroupOf } = __mods.sanhe;
+const { judgeClimate, arbitrate } = (__mods.tiaohou || {});
+const { qtOf } = (__mods.qiongtong || {});
+const { sanheGroupOf } = (__mods.sanhe || {});
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -4781,14 +4864,14 @@ return { tenGod, elementRoles, tongguanOf, scoreLuck, analyzeBaziFrame };
 
 __mods.bazi = (function () {
 // 四柱八字引擎
-const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex, termWindow, previousJie, nextJie, equationOfTime, formatJd, xunKongOf } = __mods.calendar;
-const { resolveAddress } = __mods.geo;
-const { computeBaziShensha } = __mods.shensha;
-const { assertCivil, daysInMonth } = __mods.validate;
-const { applyDst } = __mods.dst;
-const { nayinOf } = __mods.nayin;
-const { SANHE } = __mods.sanhe;
-const { analyzeBaziFrame, scoreLuck } = __mods.geju;
+const { STEMS, BRANCHES, TERM_NAMES, ganzhiName, dayGanzhiIndex, jdToParts, partsToJd, sexagenaryIndex, termWindow, previousJie, nextJie, equationOfTime, formatJd, xunKongOf } = (__mods.calendar || {});
+const { resolveAddress } = (__mods.geo || {});
+const { computeBaziShensha } = (__mods.shensha || {});
+const { assertCivil, daysInMonth } = (__mods.validate || {});
+const { applyDst } = (__mods.dst || {});
+const { nayinOf } = (__mods.nayin || {});
+const { SANHE } = (__mods.sanhe || {});
+const { analyzeBaziFrame, scoreLuck } = (__mods.geju || {});
 
 // 地支藏干（本气 / 中气 / 余气）
 const HIDDEN_STEMS = {
@@ -5445,7 +5528,7 @@ return { HIDDEN_STEMS, RENYUAN_TABLE, STEM_ELEMENT, BRANCH_ELEMENT, buildRelatio
 
 __mods.liuyao = (function () {
 // 六爻（纳甲）引擎：摇卦、装卦、六亲、六神、世应、变卦
-const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xunKongOf } = __mods.calendar;
+const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xunKongOf } = (__mods.calendar || {});
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -6482,13 +6565,13 @@ return { jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramF
 
 __mods.ziwei = (function () {
 // 紫微斗数安星：命身宫 → 五行局 → 紫微/天府 → 十四主星 → 诸辅煞杂曜 → 十二宫 → 四化 → 大限小限流年 → 格局
-const { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } = __mods.calendar;
-const { solarToLunar } = __mods.lunar;
-const { applyTrueSolar } = __mods.bazi;
-const { applyDst } = __mods.dst;
-const { assertCivil } = __mods.validate;
-const { nayinOf } = __mods.nayin;
-const { resolveAddress } = __mods.geo;
+const { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } = (__mods.calendar || {});
+const { solarToLunar } = (__mods.lunar || {});
+const { applyTrueSolar } = (__mods.bazi || {});
+const { applyDst } = (__mods.dst || {});
+const { assertCivil } = (__mods.validate || {});
+const { nayinOf } = (__mods.nayin || {});
+const { resolveAddress } = (__mods.geo || {});
 
 const fix = (i) => ((i % 12) + 12) % 12;
 
@@ -8130,10 +8213,10 @@ return { MAJOR, SUITS, MINOR, ROMAN, SPREADS, tarotDeck, tarotReading, drawTarot
 
 __mods.meihua = (function () {
 // 梅花易数：时间/数字起卦、体用、互卦、变卦、错综卦
-const { BRANCHES } = __mods.calendar;
-const { solarToLunar } = __mods.lunar;
-const { fail } = __mods.fail;
-const { hexagramFromBits } = __mods.liuyao;
+const { BRANCHES } = (__mods.calendar || {});
+const { solarToLunar } = (__mods.lunar || {});
+const { fail } = (__mods.fail || {});
+const { hexagramFromBits } = (__mods.liuyao || {});
 
 // 先天八卦数：乾1 兑2 离3 震4 巽5 坎6 艮7 坤8
 const TRI_NAME = ['', '乾', '兑', '离', '震', '巽', '坎', '艮', '坤'];
@@ -8274,9 +8357,9 @@ __mods.daliuren = (function () {
 // 大六壬：天地盘、四课、九宗门三传。
 // 算法移植自本地 MIT 授权插件 @dhicoc/dsh-chinese-traditional-wisdom-skill 的
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
-const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } = __mods.calendar;
-const { assertCivil } = __mods.validate;
-const { SANHE_ELEMENT } = __mods.sanhe;
+const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } = (__mods.calendar || {});
+const { assertCivil } = (__mods.validate || {});
+const { SANHE_ELEMENT } = (__mods.sanhe || {});
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -8618,10 +8701,10 @@ __mods.hepan = (function () {
 // 合盘（合婚）：日主关系 + 夫妻宫关系 + 五行互补。
 // 口径：日主取五行生克（双向平均），夫妻宫取日支的六合/三合/冲/害/刑/破，
 // 五行互补看「一方喜用是否正是另一方所旺」。各派取法不同，这里只给通用版结论。
-const { buildBazi, tenGod } = __mods.bazi;
-const { STEMS, BRANCHES } = __mods.calendar;
-const { assertCivil } = __mods.validate;
-const { SANHE_GROUPS } = __mods.sanhe;
+const { buildBazi, tenGod } = (__mods.bazi || {});
+const { STEMS, BRANCHES } = (__mods.calendar || {});
+const { assertCivil } = (__mods.validate || {});
+const { SANHE_GROUPS } = (__mods.sanhe || {});
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -8853,8 +8936,8 @@ __mods.trend = (function () {
 //
 // 口径：这是一套**简化启发式**——十神计分表固定、正负号随日主旺衰方向翻转，
 // 只用于看形态与相对起伏；分高不等于真实吉凶，旺衰落在换档边界时连排序都不给。
-const { buildBazi, HIDDEN_STEMS, tenGod } = __mods.bazi;
-const { ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = __mods.calendar;
+const { buildBazi, HIDDEN_STEMS, tenGod } = (__mods.bazi || {});
+const { ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = (__mods.calendar || {});
 
 // ── 十神计分表 ────────────────────────────────────────────────
 // 三张表各自求和接近 0，保证分数有正负双向起伏；符号随日主旺衰方向翻转：
@@ -9049,9 +9132,9 @@ __mods.fengshui = (function () {
 // 风水：八宅命卦 + 大游年八星 + 年家紫白飞星 + 24 山门主灶布局倾向（纯本地确定性）。
 // 口径：大游年歌与 24 山归属为八宅通行口径，吉凶名词照传统转述；不做现场勘舆结论。
 // 参照公开通行表实现（与常见八宅/玄空入门资料一致），年紫白用纯公式，不依赖任何第三方历法库。
-const { partsToJd, termInstantJd } = __mods.calendar;
-const { applyDst } = __mods.dst;
-const { fail } = __mods.fail;
+const { partsToJd, termInstantJd } = (__mods.calendar || {});
+const { applyDst } = (__mods.dst || {});
+const { fail } = (__mods.fail || {});
 
 /** 九星名称表：数 → {name, color, element, star(北斗名), lucky}。 */
 const NINE_STARS = {
@@ -9764,9 +9847,9 @@ __mods.name = (function () {
 //       喜用倾向取八字旺衰的简化判定（偏强喜克泄耗、偏弱喜生扶、中和不筛）。
 //       五格按康熙字典繁体笔画计（见 name-data.js 的口径说明），81 数理取通行本；
 //       音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断。
-const { buildBazi } = __mods.bazi;
-const { assertCivil } = __mods.validate;
-const { READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81 } = __mods['name-data'];
+const { buildBazi } = (__mods.bazi || {});
+const { assertCivil } = (__mods.validate || {});
+const { READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81 } = (__mods['name-data'] || {});
 
 const SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
 const KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
@@ -10464,8 +10547,8 @@ __mods['ziwei-hepan'] = (function () {
 // 口径：把一方的「命宫 / 夫妻宫」地支落到对方盘的宫位上，判断影响落在对方哪一领域；
 // 再把一方生年四化所化的星，找它在对方盘的位置，判断「你的某种特质会引动对方哪一宫」。
 // 这是并排对照的读法，不涉及两盘叠加安星（那是另一派做法，本文不采用）。
-const { buildZiwei } = __mods.ziwei;
-const { assertCivil } = __mods.validate;
+const { buildZiwei } = (__mods.ziwei || {});
+const { assertCivil } = (__mods.validate || {});
 
 const NAMES = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '官禄', '田宅', '福德', '父母'];
 const MUT_MEAN = {
@@ -10592,9 +10675,9 @@ __mods.qimen = (function () {
 // 算法移植自 MIT 许可的 qimendunjia-standalone@0.1.0（作者：见其 LICENSE），
 // 保留其定局/排盘口径（符头定三元、值符值使推演、天盘随值符旋转、中五宫寄坤二），
 // 只把历法层换成本插件自己的 calendar/lunar 模块——节气、干支、农历都走同一套已验证的源码。
-const { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = __mods.calendar;
-const { solarToLunar } = __mods.lunar;
-const { assertCivil } = __mods.validate;
+const { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = (__mods.calendar || {});
+const { solarToLunar } = (__mods.lunar || {});
+const { assertCivil } = (__mods.validate || {});
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -11167,7 +11250,7 @@ __mods['qimen-interpret'] = (function () {
 // 奇门断语：分层输出「可复算事实 → 传统解释 → 关系 → 条件式倾向」。
 // 依据：「宫制其门不为迫，门制其宫门迫凶」——门迫严格限定同一宫内门五行克宫五行，
 // 宫克门是「宫制门（制）」，不是门迫。措辞一律条件式，禁止「必成/必败/绝对」。
-const { wuxingRelation, gatePalaceRelation } = __mods.qimen;
+const { wuxingRelation, gatePalaceRelation } = (__mods.qimen || {});
 
 const GATE_MEAN = {
   休门: '休为休息、蓄势，传统上主养精与谈判',
@@ -11650,11 +11733,11 @@ __mods.almanac = (function () {
 // 输出里如实标注「未收录」，不臆造。值日十二神、二十八宿、胎神、吉神方位按通行表收录
 // （见返回值的 scope）。宜忌只按「建除十二神」通行简表给出（传统择日的第一层判据），
 // 不是逐日全量黄历。
-const { solarToLunar } = __mods.lunar;
-const { nayinOf } = __mods.nayin;
-const { toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES } = __mods.calendar;
-const { HEX64 } = __mods['interpret-data'];
-const { assertCivil, daysInMonth } = __mods.validate;
+const { solarToLunar } = (__mods.lunar || {});
+const { nayinOf } = (__mods.nayin || {});
+const { toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES } = (__mods.calendar || {});
+const { HEX64 } = (__mods['interpret-data'] || {});
+const { assertCivil, daysInMonth } = (__mods.validate || {});
 
 /** 建除十二神（按日支相对月支顺数）。 */
 const ZHIXING = ['建', '除', '满', '平', '定', '执', '破', '危', '成', '收', '开', '闭'];
@@ -11996,7 +12079,7 @@ return { ZHIXING, ZHIXING_YI, ZHIXING_JI, SHENGXIAO, hourToBranch, zhixingOf, lu
 __mods.star = (function () {
 // 星座档案 + 当日娱乐向基调：纯本地确定性（同一天同一星座结果永远一致）。
 // 星座按太阳过宫的通行日期区间（公历）；当日基调由日期哈希生成，不是随机数。
-const { daysInMonth } = __mods.validate;
+const { daysInMonth } = (__mods.validate || {});
 
 /** 12 星座（区间含起止日；摩羯跨年由两端分别匹配）。 */
 const SIGNS = [
@@ -12083,7 +12166,7 @@ return { SIGNS, signOfDate, buildStar };
 __mods.numerology = (function () {
 // 生命数字（西方数字学）：生命路径数 / 生日数 / 态度数，11、22、33 主数保留。
 // 纯本地确定性；与八字/紫微是两套不可互证的体系，输出里明确提示。
-const { daysInMonth } = __mods.validate;
+const { daysInMonth } = (__mods.validate || {});
 
 /** 1–9 与主数 11/22/33 的数义（白话提炼）。 */
 const NUMBER_MEANING = {
@@ -12149,7 +12232,7 @@ __mods.mbti = (function () {
 // 十六型人格问卷（MBTI 风格）：四维度各 6 题，李克特 1–5 计分，按维度净分定字母。
 // 说明：这是「MBTI 风格」的问卷式测算，不是官方 MBTI 量表（未使用其题目、常模与评鉴许可），
 // 也不适合用来做招聘、晋升、诊断等对人的判定。纯本地确定性计算，同样的问题给出同样的结果。
-const { fail } = __mods.fail;
+const { fail } = (__mods.fail || {});
 
 /** 四维度：两位字母、白话说明、平手时偏向哪一侧。 */
 const DIMENSIONS = [
@@ -12570,10 +12653,10 @@ return { DIMENSIONS, QUESTIONS, FUNCTION_STACKS, FUNCTIONS, TYPES, mbtiPaper, bu
 __mods.chenggu = (function () {
 // 袁天罡称骨：按农历年/月/日/时辰四柱骨重求和，查通行本《称骨歌》原文，附白话释义。
 // 骨重表与歌诀均为通行本口径（各版本有异文，此处照录通行本）；释义是白话自撰，不是原文。
-const { solarToLunar } = __mods.lunar;
-const { ganzhiName, toJDN, dayGanzhiIndex } = __mods.calendar;
-const { assertCivil } = __mods.validate;
-const { hourToBranch } = __mods.almanac;
+const { solarToLunar } = (__mods.lunar || {});
+const { ganzhiName, toJDN, dayGanzhiIndex } = (__mods.calendar || {});
+const { assertCivil } = (__mods.validate || {});
+const { hourToBranch } = (__mods.almanac || {});
 
 /** 六十甲子年骨重（单位：钱；索引 = (农历年 - 4) mod 60，0 = 甲子）。 */
 const YEAR_WEIGHT = [
@@ -12771,9 +12854,9 @@ return { YEAR_WEIGHT, MONTH_WEIGHT, DAY_WEIGHT, HOUR_WEIGHT, formatWeight, lunar
 __mods.xiaoliuren = (function () {
 // 小六壬（诸葛马前课）：月/日/时（或报三个数）掐指落宫，六宫循环。
 // 口径：通行掌诀；断语为白话提炼（非原文照录）。轻量快占，属民俗参考。
-const { solarToLunar } = __mods.lunar;
-const { hourToBranch } = __mods.almanac;
-const { BRANCHES } = __mods.calendar;
+const { solarToLunar } = (__mods.lunar || {});
+const { hourToBranch } = (__mods.almanac || {});
+const { BRANCHES } = (__mods.calendar || {});
 
 /** 六宫：吉凶 + 白话断语。 */
 const PALACES = {
@@ -12840,8 +12923,8 @@ return { PALACES, PALACE_ORDER, buildXiaoliuren };
 __mods.zeri = (function () {
 // 择日：逐日按黄历「建除简表宜忌」+ 建除神适配 + 冲属相排除打分排序。
 // 口径透明：这是排序引导，不是吉凶断语；未收录逐日神煞，冲煞按日支对生肖。
-const { fromJDN, toJDN } = __mods.calendar;
-const { buildAlmanac, SHENGXIAO } = __mods.almanac;
+const { fromJDN, toJDN } = (__mods.calendar || {});
+const { buildAlmanac, SHENGXIAO } = (__mods.almanac || {});
 
 /** 支持的事项：直接宜词 + 关联宜词（黄历措辞）。 */
 const TASKS = {
@@ -13006,10 +13089,10 @@ __mods.convert = (function () {
 //
 // 诚实边界：只处理 1900–2100 的本地历法覆盖范围（与 lunar.js 一致）；闰月必须显式给出，
 // 不猜「第一个同名月」；农历日期越界（如小月三十）如实报错，不静默回退。
-const { solarToLunar } = __mods.lunar;
-const { fromJDN, toJDN } = __mods.calendar;
-const { buildAlmanac } = __mods.almanac;
-const { assertCivil, daysInMonth } = __mods.validate;
+const { solarToLunar } = (__mods.lunar || {});
+const { fromJDN, toJDN } = (__mods.calendar || {});
+const { buildAlmanac } = (__mods.almanac || {});
+const { assertCivil, daysInMonth } = (__mods.validate || {});
 
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const MONTH_TEXT = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
@@ -14453,15 +14536,15 @@ __mods.interpret = (function () {
 //   sections：体系专属的附加解读（卦辞爻辞、塔罗整体叙事等）
 // 文案口径：第二人称、温和、只给倾向与建议，不作绝对判断。
 
-const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE, LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER } = __mods['interpret-data'];
+const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, WUXING_INDUSTRY, WUXING_ORGAN, TENGOD_STYLE, LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER } = (__mods['interpret-data'] || {});
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
-const { MUTAGEN } = __mods.ziwei;
+const { MUTAGEN } = (__mods.ziwei || {});
 // 紫微的词库单列一处：宫位取象、主星细节、双星、煞星辅星、四化措辞、庙旺语气、格局读法
-const { palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA } = __mods['ziwei-words'];
+const { palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA } = (__mods['ziwei-words'] || {});
 // 八字的画像词库：日主取象、十神画像、命局基调与地支关系说法
-const { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } = __mods['bazi-words'];
+const { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } = (__mods['bazi-words'] || {});
 // 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
-const { bodyLabels, yongshenOf } = __mods.liuyao;
+const { bodyLabels, yongshenOf } = (__mods.liuyao || {});
 
 // ── 固定五维度 ────────────────────────────────────────────
 const DIMENSIONS = [
@@ -16143,10 +16226,10 @@ const BUILDERS = {
  *                 传了就把最贴近的维度提前、在该维度点明问题与方向，并给出回显串
  * @returns {object|null} 结构化解析对象
  */
-const { interpretQimen } = __mods['qimen-interpret'];
-const { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } = __mods['interpret-plain'];
-const { knowledgeFor, caveatsFor, STATUS_LABEL } = __mods['interpret-knowledge'];
-const { CLASSIC_BOOKS, suiyunClassicOf, classicOf } = __mods.classics;
+const { interpretQimen } = (__mods['qimen-interpret'] || {});
+const { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } = (__mods['interpret-plain'] || {});
+const { knowledgeFor, caveatsFor, STATUS_LABEL } = (__mods['interpret-knowledge'] || {});
+const { CLASSIC_BOOKS, suiyunClassicOf, classicOf } = (__mods.classics || {});
 
 /**
  * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。
@@ -16311,7 +16394,7 @@ __mods.followup = (function () {
 //
 // 约束：这里不重新排盘、不调用模型、不引入新算法——只从盘面已有字段里取数，
 // 并明确写出「依据的是哪一条」。找不到就直说找不到，并给出可问的范围。
-const { ZIWEI_STARS } = __mods['interpret-data'];
+const { ZIWEI_STARS } = (__mods['interpret-data'] || {});
 
 const TOPICS = [
   { key: 'career', label: '事业', words: ['事业', '工作', '跳槽', '升职', '创业', '职业', '岗位', '离职', '加薪', '面试', 'offer'] },
@@ -16570,7 +16653,7 @@ __mods.crosscheck = (function () {
 //
 // 注意口径：这不是数学意义上的「一致性检验」，两套体系的取象单位不同（十神 vs 星曜宫位）。
 // 这里只做三件事：把两边对同一维度的说法并列、标出方向、注明各自的依据。
-const { ZIWEI_STARS } = __mods['interpret-data'];
+const { ZIWEI_STARS } = (__mods['interpret-data'] || {});
 
 const groupsOf = (bazi) => (bazi && bazi.frame && bazi.frame.godStats && bazi.frame.godStats.groups) || {};
 const topOf = (groups) => Object.entries(groups).sort((a, b) => Number(b[1]) - Number(a[1]))[0] || null;
@@ -16804,7 +16887,7 @@ __mods.rectify = (function () {
 //   1. 这是**缩小范围**的参考，不替代出生记录；命中数相同或接近时，不要硬选一个；
 //   2. 只有时柱（以及跨 23:00 时的日柱）会变，年/月柱通常不变，所以候选之间的差异集中在晚运、子女、事业后半段；
 //   3. 打分规则是显式、固定的（见 matchEvent），不是拟合；换一套规则排序可能变。
-const { buildBazi } = __mods.bazi;
+const { buildBazi } = (__mods.bazi || {});
 
 const KINDS = ['career', 'wealth', 'love', 'move', 'health', 'other'];
 const HOURS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23];
@@ -16931,40 +17014,317 @@ const RECTIFY_KINDS = KINDS;
 return { matchEvent, rectifyBirth, RECTIFY_KINDS };
 })();
 
+__mods.trace = (function () {
+// A1 推导链：把排盘过程中真正用到的中间层摊开，每层给
+// { field, rule, inputs, result, source }。
+//
+// 只读结果、不重算、不读时间与随机：trace 开着或关掉，盘面必须逐字节一致。
+// 目前覆盖六爻（纳甲→六亲→世应→伏神→旺衰）、八字（旺衰分值、格局取用）
+// 与紫微（格局命中条件）；其余体系不产出 trace。
+const { PATTERN_TONE } = (__mods.ziwei || {});
+const { yongshenOf, yongshenStrength, fushenAccess } = (__mods.liuyao || {});
+
+const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微' };
+
+const text = (v, fallback = '—') => {
+  if (v === undefined || v === null || v === '') return fallback;
+  return String(v);
+};
+const list = (v, fallback = '—') => (Array.isArray(v) ? v.filter((x) => x !== undefined && x !== null && x !== '').join('、') : '') || fallback;
+const pairs = (rows) => rows.map(([label, value]) => ({ label: String(label), value: text(value) }));
+const step = (key, field, rule, inputs, result, source) => ({
+  key,
+  field,
+  rule: text(rule, ''),
+  inputs: pairs(inputs),
+  result: text(result, ''),
+  source: text(source, ''),
+});
+
+function lineAt(lines, position) {
+  return (Array.isArray(lines) ? lines : []).find((l) => l.position === position) || null;
+}
+
+function liuyaoTrace(r, opts = {}) {
+  const ben = r.ben && typeof r.ben === 'object' ? r.ben : {};
+  const lines = Array.isArray(ben.lines) ? ben.lines : [];
+  const bian = r.bian && typeof r.bian === 'object' ? r.bian : null;
+  const moving = Array.isArray(r.cast && r.cast.movingPositions) ? r.cast.movingPositions : [];
+  const ug = r.useGod && typeof r.useGod === 'object' ? r.useGod : null;
+  const direction = (ug && ug.direction) || opts.direction || 'general';
+  const us = r.useGodStrength && typeof r.useGodStrength === 'object' ? r.useGodStrength : null;
+  const hs = r.hexStrength && typeof r.hexStrength === 'object' ? r.hexStrength : null;
+  const fa = r.fushenAccess && typeof r.fushenAccess === 'object' ? r.fushenAccess : null;
+  const shi = lineAt(lines, ben.shi);
+  const ying = lineAt(lines, ben.ying);
+  const month = (us && us.month) || (hs && hs.month) || null;
+  const day = (us && us.day) || (hs && hs.day) || null;
+
+  const najia = step(
+    'najia',
+    '纳甲',
+    '京房纳甲：八经卦各配天干与三爻地支，内卦取前三爻、外卦取后三爻；动爻再成变卦。',
+    [
+      ['本卦', `${text(ben.name)}（上${text(ben.upper)}·下${text(ben.lower)}）`],
+      ['动爻', moving.length ? `${moving.join('、')}爻` : '无（静卦）'],
+      ['变卦', bian ? `${text(bian.name)}（上${text(bian.upper)}·下${text(bian.lower)}）` : '无'],
+    ],
+    lines.map((l) => `${l.position}爻 ${text(l.ganzhi)}${text(l.element)}`).join('｜'),
+    '京房纳甲诀；engine/liuyao.js · NAJIA',
+  );
+
+  const liuqin = step(
+    'liuqin',
+    '六亲',
+    '以卦宫五行为「我」：同我为兄弟、生我为父母、我生为子孙、克我为官鬼、我克为妻财。',
+    [
+      ['卦宫', `${text(ben.palace)}（${text(ben.palaceElement)}）`],
+      ['爻五行', list([...new Set(lines.map((l) => l.element))])],
+      ['日干起六神', `${text(r.dayGanZhi && r.dayGanZhi.stem)}日`],
+    ],
+    lines.map((l) => `${l.position}爻 ${text(l.liuqin)}（${text(l.element)}）`).join('｜'),
+    '五行生克；engine/liuyao.js · liuqin()',
+  );
+
+  const shiying = step(
+    'shiying',
+    '世应',
+    '八宫首卦世在上爻，一世至五世依次初至五爻，游魂四爻、归魂三爻；应爻与世相隔三位。',
+    [
+      ['卦名', `${text(ben.name)}（${text(ben.palace)}）`],
+      ['世位', `${text(ben.shi)}爻`],
+      ['应位', `${text(ben.ying)}爻`],
+    ],
+    `${text(ben.shi)}爻${shi ? ` ${text(shi.liuqin)}·${text(shi.ganzhi)}${text(shi.element)}` : ''}为世，`
+      + `${text(ben.ying)}爻${ying ? ` ${text(ying.liuqin)}·${text(ying.ganzhi)}${text(ying.element)}` : ''}为应`,
+    '八宫世应诀；engine/liuyao.js · SHI_POSITION',
+  );
+
+  let fushen;
+  if (!ug || !ug.liuqin) {
+    const why = direction === 'general'
+      ? '未选询问方向（当前为综合），未取用神'
+      : '未取到用神';
+    fushen = step(
+      'fushen',
+      '伏神',
+      '用神不上卦时，回本宫首卦的同位取伏神；飞伏之间只判生克与助压。',
+      [['用神', ug && ug.ask ? ug.ask : '未取']],
+      `${why}；本层不适用。`,
+      'engine/liuyao.js · yongshenOf()',
+    );
+  } else if (ug.missing) {
+    const hidden = (ug.fushen || []).map((f) => {
+      const fei = f.fei ? `${text(f.fei.ganzhi)}${text(f.fei.element)}（${text(f.fei.liuqin)}）` : '—';
+      return `${f.position}爻 ${text(f.ganzhi)}${text(f.element)}（${text(f.liuqin)}），飞神 ${fei}，${text(f.relation)}`;
+    }).join('；');
+    const access = fa && Array.isArray(fa.items)
+      ? fa.items.map((i) => `${i.position}爻${text(i.verdict)}`).join('、')
+      : '';
+    fushen = step(
+      'fushen',
+      '伏神',
+      '用神不上卦时，回本宫首卦的同位取伏神；飞伏之间只判生克，再叠月建日辰给出伏条件，不换算应期。',
+      [
+        ['用神', `${ug.liuqin}（不上卦）`],
+        ['伏位', list((ug.fushen || []).map((f) => `${f.position}爻`))],
+        ['月建 / 日辰', `${text(month && month.branch)} / ${text(day && day.branch)}`],
+      ],
+      `${hidden || '本卦无此六亲，首卦同位也未取到伏神'}${access ? `；出伏：${access}` : ''}`,
+      '本宫首卦取伏；engine/liuyao.js · fushenAccess()',
+    );
+  } else {
+    fushen = step(
+      'fushen',
+      '伏神',
+      '用神已在卦上时不取伏神；伏神层只在本卦找不到用神时启用。',
+      [
+        ['用神', ug.liuqin],
+        ['在位', list((ug.found || []).map((l) => `${l.position}爻`))],
+      ],
+      `用神 ${ug.liuqin} 已在 ${list((ug.found || []).map((l) => `${l.position}爻`))}，无需伏神。`,
+      'engine/liuyao.js · yongshenOf()',
+    );
+  }
+
+  const useStrength = us && Array.isArray(us.lines)
+    ? us.lines.map((l) => `${l.position}爻${text(l.branch)}${text(l.element)}：月${text(l.monthState)}·${text(l.dayRelation)}`).join('；')
+    : '';
+  const wangsheng = step(
+    'wangsheng',
+    '旺衰',
+    '月建主这一段的旺衰（旺相休囚死），日辰看当天的生克扶压；只给状态标签，不折分数、不单独断吉凶。',
+    [
+      ['月建', month ? `${text(month.branch)}（${text(month.element)}）` : '缺'],
+      ['日辰', day ? `${text(day.branch)}（${text(day.element)}）` : '缺'],
+      ['用神', ug && ug.liuqin ? ug.liuqin : '未取'],
+      ['旬空', list(r.xunKong)],
+    ],
+    [
+      useStrength ? `用神：${useStrength}${us.labels && us.labels.length ? `（${us.labels.join('、')}）` : ''}` : '用神：未取，只看全卦',
+      hs && hs.labels && hs.labels.length ? `全卦：${hs.labels.join('、')}` : '',
+    ].filter(Boolean).join('；'),
+    '月建主旺衰、日辰司生克；engine/liuyao.js · yongshenStrength / hexagramStrength',
+  );
+
+  return [najia, liuqin, shiying, fushen, wangsheng];
+}
+
+function baziTrace(r) {
+  const s = r.strength && typeof r.strength === 'object' ? r.strength : {};
+  const parts = s.parts && typeof s.parts === 'object' ? s.parts : {};
+  const season = parts.season && typeof parts.season === 'object' ? parts.season : {};
+  const frame = r.frame && typeof r.frame === 'object' ? r.frame : {};
+  const ys = frame.yongshen && typeof frame.yongshen === 'object' ? frame.yongshen : {};
+  const primary = frame.primary && typeof frame.primary === 'object' ? frame.primary : null;
+  const climate = r.climate && typeof r.climate === 'object' ? r.climate : {};
+  const godGroups = frame.godStats && frame.godStats.groups ? frame.godStats.groups : {};
+
+  const strength = step(
+    'strength',
+    '旺衰分值',
+    text(s.method, '月令权重 + 地支藏干通根 + 天干帮扶，量化后分档。'),
+    [
+      ['日主', r.dayMaster ? `${text(r.dayMaster.stem)}（${text(r.dayMaster.element)}）` : '—'],
+      ['月令', `${text(season.branch)}（${text(season.element)}·${text(season.word)}，权重 ${text(season.weight)}）`],
+      ['通根', `${list(parts.roots)}（${text(parts.rootScore)}）`],
+      ['天干帮扶 / 耗泄', `帮 ${list(parts.helpers)}；泄 ${list(parts.drainers)}（${text(parts.helpScore)}）`],
+    ],
+    `${text(s.level)}（${text(s.score)} 分）：${text(s.detail)}`,
+    'engine/bazi.js · 旺衰量化（月令权重 + 藏干通根 + 天干帮扶）',
+  );
+
+  const primaryName = text(frame.primaryName || (primary && primary.name), '未取格局');
+  const extraGeju = list((frame.geju || []).map((g) => g && g.name).filter((name) => name && name !== primaryName), '');
+  const favor = list(ys.favor);
+  const avoid = list(ys.avoid);
+  const disputed = list((ys.disputed || []).map((d) => d && d.element), '');
+  const tiaohou = ys.tiaohou && typeof ys.tiaohou === 'object' ? ys.tiaohou : climate;
+  const need = tiaohou && tiaohou.need ? tiaohou.need : null;
+  const resultParts = [
+    primaryName === '未取格局' ? primaryName : `主格 ${primaryName}${extraGeju ? `；兼格 ${extraGeju}` : ''}`,
+    `喜 ${favor}，忌 ${avoid}`,
+    disputed ? `有争议 ${disputed}` : '',
+    tiaohou && tiaohou.kind
+      ? `调候 ${text(tiaohou.kind)}${need && need.element ? `，取 ${text(need.element)}` : ''}${tiaohou.avoidElement && tiaohou.avoidElement !== '—' ? `，忌 ${text(tiaohou.avoidElement)}` : ''}`
+      : '',
+  ].filter(Boolean).join('；');
+
+  const geju = step(
+    'geju',
+    '格局取用',
+    text(ys.method, '先按月令与透干取格，再以扶抑为主、调候校验取用。'),
+    [
+      ['月令格', primary ? `${text(primary.name)}（${text(primary.kind)}）` : '—'],
+      ['取格依据', primary ? text(primary.evidence) : '—'],
+      ['十神分量', Object.entries(godGroups).map(([k, v]) => `${k}${v}`).join(' / ') || '—'],
+      ['调候', tiaohou && tiaohou.kind ? `${text(tiaohou.kind)}${need && need.element ? ` → ${text(need.element)}` : ''}` : '—'],
+    ],
+    `${resultParts}`,
+    '子平真诠 · 月令取格；engine/geju.js · yongshenOf()',
+  );
+
+  return [strength, geju];
+}
+
+function ziweiTrace(r) {
+  const patterns = Array.isArray(r.patterns) ? r.patterns : [];
+  const total = Object.keys(PATTERN_TONE).length;
+  const soul = r.soul && typeof r.soul === 'object' ? r.soul : {};
+  const bureau = r.bureau && typeof r.bureau === 'object' ? r.bureau : {};
+  const hit = patterns.map((p) => `${text(p.name)}：${text(p.evidence)}`).join('；');
+  return [step(
+    'patterns',
+    '格局命中条件',
+    `已收录 ${total} 条格局，逐条校验命宫三方四正的星曜组合；只判结构成立与否，不折吉凶。`,
+    [
+      ['命宫', text(soul.ganzhi)],
+      ['五行局', text(bureau.name)],
+      ['命主 / 身主', `${text(r.lifeMaster)} / ${text(r.bodyMaster)}`],
+      ['命中数', `${patterns.length} / ${total}`],
+    ],
+    patterns.length ? `命中 ${patterns.length} 条：${hit}` : '未命中已收录的格局条件（不表示命盘无结构，只是不在已收录清单内）。',
+    '紫微斗数全书 · 格局条件；engine/ziwei.js · detectPatterns()',
+  )];
+}
+
+/**
+ * @param {object} result compute 的结果
+ * @param {{direction?:string, gender?:string, refresh?:boolean}} [opts]
+ *   refresh=true 时按当前询问方向重算六爻的用神 / 旺衰 / 伏神层（只重建 trace，不改盘面）
+ * @returns {Array<{key:string, field:string, rule:string, inputs:Array<{label:string,value:string}>, result:string, source:string}>|null}
+ */
+function buildTrace(result, opts = {}) {
+  if (!result || typeof result !== 'object') return null;
+  let layers = null;
+  if (result.system === 'liuyao') {
+    let view = result;
+    // 面板改了「询问方向」但不想重摇一卦：只按新方向重算用神相关三层
+    if (opts.refresh === true) {
+      try {
+        const ug = yongshenOf(result, { direction: opts.direction, gender: opts.gender });
+        const monthBranch = (result.hexStrength && result.hexStrength.month && result.hexStrength.month.branch)
+          || (result.useGodStrength && result.useGodStrength.month && result.useGodStrength.month.branch)
+          || null;
+        const dayBranch = result.dayGanZhi ? result.dayGanZhi.branch : null;
+        if (ug.liuqin) {
+          const us = yongshenStrength(result, ug, { monthBranch, dayBranch });
+          const fa = fushenAccess(result, ug, { monthBranch, dayBranch });
+          view = { ...result, useGod: ug, useGodStrength: us || undefined, fushenAccess: fa || undefined };
+        } else {
+          view = { ...result, useGod: undefined, useGodStrength: undefined, fushenAccess: undefined };
+        }
+      } catch (e) {
+        view = result;
+      }
+    }
+    layers = liuyaoTrace(view, opts);
+  } else if (result.system === 'bazi') layers = baziTrace(result);
+  else if (result.system === 'ziwei') layers = ziweiTrace(result);
+  return layers && layers.length ? layers : null;
+}
+
+
+
+return { SYSTEM_LABEL, buildTrace };
+})();
+
 __mods.index = (function () {
 // 统一入口：解析参数、分派到各体系、生成可读摘要
-const { buildBazi } = __mods.bazi;
-const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower, yingqiWindow } = __mods.liuyao;
-const { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } = __mods.ziwei;
-const { drawTarot } = __mods.tarot;
-const { buildMeihua } = __mods.meihua;
-const { buildDaliuren } = __mods.daliuren;
-const { buildHepan } = __mods.hepan;
-const { buildZiweiHepan } = __mods['ziwei-hepan'];
-const { buildQimen, buildSnapshot } = __mods.qimen;
-const { geocodeAddress, resolveAddress } = __mods.geo;
-const { toJDN, ganzhiName, dayGanzhiIndex } = __mods.calendar;
-const { randomOf, isSeed } = __mods.random;
-const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = __mods.interpret;
-const { followup, askPrompt } = __mods.followup;
-const { crossCheck, crossText, crossSection } = __mods.crosscheck;
-const { pastSignals, verifyFit } = __mods.verify;
-const { rectifyBirth } = __mods.rectify;
-const { buildAlmanac } = __mods.almanac;
-const { buildZeri } = __mods.zeri;
-const { buildChenggu } = __mods.chenggu;
-const { buildXiaoliuren } = __mods.xiaoliuren;
-const { buildStar } = __mods.star;
-const { buildNumerology } = __mods.numerology;
-const { buildMbti, mbtiPaper } = __mods.mbti;
-const { buildConvert } = __mods.convert;
-const { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } = __mods.classics;
-const { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES } = __mods.diff;
-const { buildTrend } = __mods.trend;
-const { buildFengshui } = __mods.fengshui;
-const { buildName } = __mods.name;
-const { fail } = __mods.fail;
-const { assertCivil } = __mods.validate;
+const { buildBazi } = (__mods.bazi || {});
+const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower, yingqiWindow } = (__mods.liuyao || {});
+const { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } = (__mods.ziwei || {});
+const { drawTarot } = (__mods.tarot || {});
+const { buildMeihua } = (__mods.meihua || {});
+const { buildDaliuren } = (__mods.daliuren || {});
+const { buildHepan } = (__mods.hepan || {});
+const { buildZiweiHepan } = (__mods['ziwei-hepan'] || {});
+const { buildQimen, buildSnapshot } = (__mods.qimen || {});
+const { geocodeAddress, resolveAddress } = (__mods.geo || {});
+const { toJDN, ganzhiName, dayGanzhiIndex } = (__mods.calendar || {});
+const { randomOf, isSeed } = (__mods.random || {});
+const { interpret, DIRECTIONS, DIRECTION_DEFAULT } = (__mods.interpret || {});
+const { followup, askPrompt } = (__mods.followup || {});
+const { crossCheck, crossText, crossSection } = (__mods.crosscheck || {});
+const { pastSignals, verifyFit } = (__mods.verify || {});
+const { rectifyBirth } = (__mods.rectify || {});
+const { buildAlmanac } = (__mods.almanac || {});
+const { buildZeri } = (__mods.zeri || {});
+const { buildChenggu } = (__mods.chenggu || {});
+const { buildXiaoliuren } = (__mods.xiaoliuren || {});
+const { buildStar } = (__mods.star || {});
+const { buildNumerology } = (__mods.numerology || {});
+const { buildMbti, mbtiPaper } = (__mods.mbti || {});
+const { buildConvert } = (__mods.convert || {});
+const { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } = (__mods.classics || {});
+const { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES } = (__mods.diff || {});
+const { canonicalJson, fingerprintOf } = (__mods.fingerprint || {});
+const { buildTrend } = (__mods.trend || {});
+const { buildFengshui } = (__mods.fengshui || {});
+const { buildName } = (__mods.name || {});
+const { buildTrace, SYSTEM_LABEL } = (__mods.trace || {});
+const { fail } = (__mods.fail || {});
+const { assertCivil } = (__mods.validate || {});
 
 
 
@@ -17369,6 +17729,214 @@ function jsonSafe(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+// ── 影子盘：同一组归一化参数 + 同一版本 → 同一个短 ID ──────────────
+// 只收影响盘面的参数：地址换成有效经度后不再把原文算进去，问事/方向按体系保留。
+const SHADOW_IGNORE = new Set([
+  'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'cross', 'verifyPast', 'rectify', 'events',
+  'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf',
+]);
+
+const num6 = (n) => {
+  if (n === undefined || n === null || n === '') return null;
+  const v = Number(n);
+  return Number.isFinite(v) ? Number(v.toFixed(6)) : null;
+};
+
+function shadowDateTime(value) {
+  if (value === undefined || value === null || value === '') return null;
+  try {
+    const d = parseDateTime(value);
+    return { y: d.year, m: d.month, d: d.day, h: d.hour, mi: d.minute, precision: d.precision };
+  } catch {
+    return String(value).trim();
+  }
+}
+
+function shadowPerson(person = {}) {
+  const out = {};
+  if (person.datetime) out.datetime = shadowDateTime(person.datetime);
+  if (person.gender) out.gender = String(person.gender).toLowerCase();
+  if (person.longitude !== undefined) out.longitude = num6(person.longitude);
+  else if (person.address) out.address = String(person.address).trim();
+  if (person.lateZi !== undefined) out.lateZi = person.lateZi !== false;
+  if (person.trueSolar !== undefined) out.trueSolar = person.trueSolar !== false;
+  if (person.dst !== undefined) out.dst = person.dst !== false;
+  return out;
+}
+
+function qimenLateMode(args) {
+  if (args.lateZiHourMode === 'next-day' || args.lateZi === true) return 'next-day';
+  return 'same-day';
+}
+
+function shadowParams(args, result) {
+  const system = String((result && result.system) || args.system || '');
+  const input = result && result.input && typeof result.input === 'object' ? result.input : null;
+  if (system === 'bazi' && input) {
+    return {
+      civil: input.civil,
+      gender: input.gender,
+      longitude: num6(input.longitude),
+      lateZi: input.lateZi !== false,
+      trueSolar: input.trueSolar !== false,
+      dst: !!(input.dst && input.dst.applied),
+    };
+  }
+  if (system === 'ziwei' && input) {
+    return {
+      civil: { year: input.year, month: input.month, day: input.day, hour: input.hour, minute: input.minute },
+      gender: input.gender,
+      longitude: num6(input.longitude),
+      leapMonth: input.leapMonth || 'split',
+      leapAsNext: input.leapAsNext === true,
+      schools: input.schools || ZIWEI_SCHOOL_DEFAULTS,
+      trueSolar: input.trueSolar !== false,
+      dst: !!(input.dst && input.dst.applied),
+    };
+  }
+  if (system === 'qimen') {
+    return {
+      datetime: shadowDateTime(args.datetime),
+      juMethod: args.juMethod || 'chaibu',
+      lateZiHourMode: qimenLateMode(args),
+    };
+  }
+  if (system === 'hepan') {
+    return {
+      chart: args.chart === 'ziwei' ? 'ziwei' : 'bazi',
+      a: shadowPerson({ ...args, datetime: args.datetime }),
+      b: shadowPerson(args.partner || {}),
+    };
+  }
+
+  // 其余体系：只剔除解析/附加模块参数，其余原样归一化
+  const params = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (SHADOW_IGNORE.has(key) || value === undefined) continue;
+    if (key === 'datetime') params.datetime = shadowDateTime(value);
+    else if (key === 'partner') params.partner = shadowPerson(value);
+    else if (key === 'gender') params.gender = String(value).toLowerCase();
+    else if (key === 'address') continue; // 调用侧先把地址换成经度，再由 longitude 参与；这里不收原文
+    else if (typeof value === 'number') params[key] = Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : null;
+    else if (typeof value === 'string') params[key] = value.trim();
+    else params[key] = value;
+  }
+  if (system === 'daliuren' && params.lateZi === undefined) params.lateZi = true;
+  if (system === 'tarot' && params.count === undefined) params.count = 3;
+  if (system === 'meihua' && params.mode === undefined) params.mode = 'time';
+  if (system === 'xiaoliuren' && params.mode === undefined) params.mode = 'time';
+  if (system === 'convert' && params.mode === undefined) params.mode = 'solar2lunar';
+  if (system === 'fengshui' && params.action === undefined) params.action = 'natal';
+  // 随机起卦 / 抽牌：同参数不等于同一副牌，把实际抽到的牌面 / 爻值算进来，
+  // 否则两次不同的抽牌会撞成同一个 ID（有 seed 时本来就能复现，这里只是多一层同构校验）。
+  if (system === 'tarot' && result && Array.isArray(result.cards) && result.cards.length) {
+    params.cards = result.cards.map((c) => `${c.name || ''}|${c.upright ? '正' : '逆'}`);
+  }
+  if (system === 'liuyao' && result && result.cast && Array.isArray(result.cast.lines)) {
+    params.cast = result.cast.lines.join('');
+  }
+  return params;
+}
+
+function shadowMeta(system, args) {
+  const seed = args.seed;
+  const seeded = !(seed === undefined || seed === null || seed === '');
+  // 六爻给定了六爻值就是确定性起卦，不需要 seed 也能复算
+  if (system === 'liuyao' && Array.isArray(args.lines) && args.lines.length === 6) {
+    return { reproducible: true };
+  }
+  if ((system === 'tarot' || system === 'liuyao') && !seeded) {
+    return { reproducible: false, reason: '未给 seed：重算会变成另一副牌 / 另一卦' };
+  }
+  if (system === 'bazi' || system === 'ziwei' || system === 'trend' || system === 'fengshui') {
+    return { reproducible: true, asOfPinned: !!args.asOf };
+  }
+  return { reproducible: true };
+}
+
+/**
+ * 影子盘指纹。版本优先级：显式 opts.version → 构建注入的全局 __MP_VER → dev。
+ * @returns {{id:string, baseId:string, version:string, system:string, payload:string,
+ *   reproducible:boolean, asOfPinned?:boolean, reason?:string}}
+ */
+function chartFingerprint(args = {}, opts = {}) {
+  const result = opts.result || null;
+  const system = String((result && result.system) || args.system || '');
+  const version = String(opts.version || (typeof globalThis !== 'undefined' && globalThis.__MP_VER) || 'dev');
+  const fp = fingerprintOf({
+    system,
+    params: shadowParams(args, result),
+    seed: args.seed,
+    asOf: args.asOf ? String(args.asOf) : null,
+    version,
+  });
+  return { ...fp, ...shadowMeta(system, args), system, version };
+}
+
+const SHADOW_DIFF_IGNORE = new Set([
+  'shadow', 'trace', 'traceError', 'interpret', 'summary', 'classics', 'suiyunClassic', 'renyuanClassic', 'cross',
+  'past', 'rectify', 'followup', 'caliber', 'input', 'reading', 'knowledge', 'outline',
+  'sections', 'answer', 'plain', 'tables', 'glossary', 'caveats', 'lead', 'dimensions',
+  'moduleType', 'technique', 'disclaimer', 'ask', 'followups', 'knowledgeCount', 'title',
+  'systemLabel',
+]);
+
+function shadowChart(result) {
+  const out = {};
+  for (const [key, value] of Object.entries(result || {})) {
+    if (!SHADOW_DIFF_IGNORE.has(key)) out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * 存档用的轻量快照：只留影子盘信息与盘面字段（解析/古籍/验前事等不参与 diff）。
+ * 页面侧把它写进本地存储，下次同 baseId 重排时直接与它比对。
+ */
+function shadowSnapshot(result) {
+  if (!result || !result.shadow || !result.shadow.baseId) return null;
+  return { snapshot: true, shadow: result.shadow, data: shadowChart(result) };
+}
+
+/**
+ * 同一 baseId 的两次结果对比；版本不同时自动落到具体字段。
+ * previous / current 可以是完整结果，也可以是 shadowSnapshot() 的存档。
+ */
+function shadowDiff(previous, current, opts = {}) {
+  const a = previous && previous.shadow;
+  const b = current && current.shadow;
+  if (!a || !b) return { sameId: false, total: 0, reason: '缺少影子盘信息' };
+  if (a.baseId && b.baseId && a.baseId !== b.baseId) {
+    return { sameId: false, total: 0, fromId: a.id, toId: b.id, fromBaseId: a.baseId, toBaseId: b.baseId, reason: '基础指纹不同，不是同一张盘' };
+  }
+  const pick = (x) => (x.snapshot === true && x.data && typeof x.data === 'object' ? x.data : shadowChart(x));
+  const diffs = diffObjects(pick(previous), pick(current));
+  const roots = sortDiffs(diffs.filter((d) => rootOf(d.path))).map((d) => ({
+    path: d.path, label: labelOf(d.path), from: formatValue(d.from), to: formatValue(d.to),
+  }));
+  const counts = new Map();
+  for (const d of diffs) {
+    const cat = categoryOf(d.path) || '其他';
+    counts.set(cat, (counts.get(cat) || 0) + 1);
+  }
+  const categories = [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((x, y) => y.count - x.count || x.name.localeCompare(y.name, 'zh-Hans-CN'));
+  const fromVersion = opts.fromVersion || a.version || '';
+  const toVersion = opts.toVersion || b.version || '';
+  return {
+    sameId: true,
+    versionChanged: fromVersion !== toVersion,
+    fromVersion,
+    toVersion,
+    total: diffs.length,
+    summary: summarize(diffs),
+    roots,
+    categories,
+    diffs,
+  };
+}
+
 /**
  * 统一排盘入口
  * @param {object} args
@@ -17465,6 +18033,23 @@ function compute(args = {}) {
   }
   // 追问：围绕已算好的盘回答「某一年 / 某方面」的具体问题
   if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
+  // 推导链：只读结果、不重算；生成失败不影响盘面，单独留一条错误信息
+  if (args.trace === true) {
+    try {
+      const layers = buildTrace(r, { direction: args.direction, gender: args.gender });
+      if (layers) r.trace = layers;
+    } catch (e) {
+      r.traceError = String((e && e.message) || e);
+    }
+  }
+  // 影子盘 ID：同一组归一化参数 + 同一版本 → 同一个短 ID；显式要时才挂，避免默认输出变长
+  if (args.shadow === true) {
+    try {
+      r.shadow = chartFingerprint(args, { result: r, version: args.shadowVersion });
+    } catch (e) {
+      r.shadow = { error: String((e && e.message) || e) };
+    }
+  }
   return r;
 }
 
@@ -18192,6 +18777,17 @@ function nameText(r) {
 function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
   const parts = [base];
+  if (result.shadow && result.shadow.id) {
+    const s = result.shadow;
+    parts.push(`【影子盘】${s.id}（同参数同 ID；版本 ${s.version}）`
+      + `\n　基础指纹 ${s.baseId}（不含版本，跨版本可比对）`
+      + (s.reproducible === false ? `\n　⚠ 不可复算：${s.reason}` : '')
+      + (s.reproducible === true && s.asOfPinned === false && (s.system === 'bazi' || s.system === 'ziwei') ? '\n　提示：未固定 asOf，流年/流月随「此刻」变化；要比对请传 asOf。' : ''));
+  }
+  if (Array.isArray(result.trace) && result.trace.length) {
+    parts.push(`【推导链】${SYSTEM_LABEL[result.system] || result.system} · ${result.trace.length} 层\n`
+      + result.trace.map((t, i) => `${i + 1}. ${t.field}｜${t.result}\n　规则：${t.rule}　出处：${t.source}`).join('\n'));
+  }
   if (result.interpret) {
     const extra = interpretText(result.interpret);
     if (extra) parts.push(extra);
@@ -18245,10 +18841,12 @@ function renderText(result) {
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, caliberCompare, renderText };
+
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildTrace, parseDateTime, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, renderText };
 })();
 
 window.Engine = __mods.index;
+window.__MP_VER = "0.53.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -18295,7 +18893,7 @@ window.Engine = __mods.index;
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -18316,7 +18914,7 @@ window.Engine = __mods.index;
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -18889,6 +19487,84 @@ window.Engine = __mods.index;
   .mp-cdiff>summary{cursor:auto}
   .mp-cdiff-more{display:none}
   .mp-cdiff{break-inside:avoid}
+}
+/* 影子盘：ID + 版本 + 与上次同盘（同 baseId）的自动比对。
+   ID 用等宽字体、可一键复制；比对默认只在版本变化或真有字段变化时展开。 */
+.mp-shadow{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:9px 13px;font-family:system-ui,sans-serif}
+.mp-shadow-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-shadow-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
+.mp-shadow-id{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink);letter-spacing:.04em;background:var(--band);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.mp-shadow-copy{margin-left:auto;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:12px;cursor:pointer}
+.mp-shadow-copy:hover{border-color:var(--ke);color:var(--ke)}
+.mp-shadow-copy:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-shadow-meta{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:3px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-shadow-meta b{font-weight:600;color:var(--ink2)}
+.mp-shadow-warn{margin-top:6px;padding:5px 8px;border-left:3px solid var(--quan);background:color-mix(in srgb,var(--quan) 8%,transparent);font-size:11.5px;line-height:1.65;color:var(--ink2)}
+.mp-shadow-hint{margin-top:4px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-shadow-diff{margin-top:8px;border-top:1px dashed var(--line)}
+.mp-shadow-diff>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:44px;padding:4px 0 0;cursor:pointer;list-style:none;font-size:12.5px;color:var(--ink2)}
+.mp-shadow-diff>summary::-webkit-details-marker{display:none}
+.mp-shadow-diff>summary::before{content:'▸';color:var(--ke);font-size:12px}
+.mp-shadow-diff[open]>summary::before{content:'▾'}
+.mp-shadow-diff b{color:var(--ink);font-weight:700}
+.mp-shadow-diff .tag{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.mp-shadow-diff .same{margin-top:4px;font-size:12px;color:var(--muted)}
+.mp-shadow-diff .note{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
+@media (max-width:640px){
+  .mp-shadow{padding:8px 11px}
+  .mp-shadow-copy{margin-left:0;min-height:44px}
+  .mp-shadow-diff b{font-size:12px}
+}
+@media print{
+  .mp-shadow-diff:not([open])>*{display:block!important}
+  .mp-shadow-diff>summary{cursor:auto}
+  .mp-shadow-copy{display:none}
+  .mp-shadow{break-inside:avoid}
+}
+/* 推导链：结果顶部的入口，点开是右侧抽屉；每层可单独展开规则 / 输入 / 结果 / 出处。 */
+.mp-trace-card{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin:12px 0 0;padding:9px 13px;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--band);color:var(--ink2);font:inherit;font-size:12.5px;line-height:1.6;text-align:left;cursor:pointer}
+.mp-trace-card:hover{border-color:var(--ke)}
+.mp-trace-card:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-trace-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
+.mp-trace-flow{color:var(--muted)}
+.mp-trace-count{margin-left:auto;color:var(--label);font-size:11.5px;white-space:nowrap}
+.mp-trace-layer{position:fixed;inset:0;z-index:2147483000;display:none;font-family:system-ui,sans-serif;color:var(--ink)}
+.mp-trace-layer.open{display:block}
+.mp-trace-back{position:absolute;inset:0;background:rgba(20,18,12,.46)}
+.mp-trace-drawer{position:absolute;top:0;right:0;bottom:0;width:min(440px,92vw);display:flex;flex-direction:column;background:var(--card);border-left:1px solid var(--line);box-shadow:-18px 0 40px -30px rgba(0,0,0,.6)}
+.mp-trace-head{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--band)}
+.mp-trace-head b{display:block;font-size:15px;color:var(--ink);letter-spacing:.03em}
+.mp-trace-head span{display:block;margin-top:2px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-trace-close{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:16px;cursor:pointer}
+.mp-trace-close:hover{border-color:var(--ke);color:var(--ke)}
+.mp-trace-close:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-trace-body{flex:1;overflow:auto;padding:10px 14px 24px;overscroll-behavior:contain}
+.mp-trace-step{margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
+.mp-trace-step>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 11px;cursor:pointer;list-style:none}
+.mp-trace-step>summary::-webkit-details-marker{display:none}
+.mp-trace-step>summary::after{content:'▸';margin-left:8px;color:var(--dimline)}
+.mp-trace-step[open]>summary::after{content:'▾'}
+.mp-trace-no{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:color-mix(in srgb,var(--ke) 14%,transparent);color:var(--ke);font-size:11.5px;font-weight:700}
+.mp-trace-field{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--ink)}
+.mp-trace-res{min-width:0;margin-left:auto;max-width:56%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11.5px}
+.mp-trace-detail{padding:0 11px 11px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.75}
+.mp-trace-rule{margin-top:8px;color:var(--ink2)}
+.mp-trace-rule b,.mp-trace-result b,.mp-trace-src b{display:inline-block;margin-right:6px;color:var(--label);font-size:10.5px;letter-spacing:.1em}
+.mp-trace-inputs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:8px 0;padding:7px 9px;border:1px solid var(--hair);border-radius:8px;background:var(--band)}
+.mp-trace-inputs dt{color:var(--label);font-size:11px}
+.mp-trace-inputs dd{margin:0;color:var(--ink2);word-break:break-word}
+.mp-trace-result{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);color:var(--ink)}
+.mp-trace-src{margin-top:6px;color:var(--muted);font-size:11.5px}
+@media (max-width:640px){
+  .mp-trace-card{padding:8px 11px}
+  .mp-trace-drawer{width:100vw;border-left:none}
+  .mp-trace-head{padding:12px}
+  .mp-trace-body{padding:8px 10px 24px}
+  .mp-trace-res{max-width:46%}
+}
+@media print{
+  .mp-trace-layer{display:none!important}
+  .mp-trace-card{break-inside:avoid}
 }
 /* 三张表：横向可滚动，避免窄栏撑破 */
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
@@ -20854,6 +21530,131 @@ window.Engine = __mods.index;
   };
 
   /**
+   * 影子盘卡：短 ID + 版本 + 基础指纹，必要时附「与上次同盘比对」。
+   * 只在 compute({ shadow: true }) 的结果上渲染；没有影子盘信息时返回空串。
+   */
+  pp.shadowHTML = function (shadow, diff) {
+    if (!shadow || !shadow.id) return '';
+    const meta = [];
+    if (shadow.version) meta.push(`版本 <b>${esc(shadow.version)}</b>`);
+    if (shadow.baseId) meta.push(`基础指纹 <b>${esc(shadow.baseId)}</b>`);
+    meta.push('同参数同 ID');
+    const warn = [];
+    if (shadow.reproducible === false) warn.push(`不可复算：${esc(shadow.reason || '参数不足')}`);
+    const hint = (shadow.reproducible === true && shadow.asOfPinned === false
+      && (shadow.system === 'bazi' || shadow.system === 'ziwei'))
+      ? '<div class="mp-shadow-hint">未固定 asOf：流年 / 流月随「此刻」变化；要逐字比对请在输入里固定 asOf。</div>'
+      : '';
+    const showDiff = diff && diff.sameId !== false && (diff.versionChanged || Number(diff.total) > 0);
+    let diffHTML = '';
+    if (showDiff) {
+      const total = Number(diff.total) || 0;
+      const fromV = esc(diff.fromVersion || '—');
+      const toV = esc(diff.toVersion || shadow.version || '—');
+      const roots = Array.isArray(diff.roots) ? diff.roots : [];
+      const shown = roots.slice(0, 8);
+      const rootHTML = shown.length
+        ? `<div class="mp-cdiff-roots">${shown.map((r) => `<div class="mp-cdiff-root">`
+          + `<span class="mp-cdiff-k">${esc(r.label)}</span><span class="mp-cdiff-from">${esc(r.from)}</span>`
+          + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-to">${esc(r.to)}</span></div>`).join('')}`
+          + (roots.length > shown.length ? `<div class="same">另 ${roots.length - shown.length} 处根因</div>` : '') + '</div>'
+        : `<div class="same">${total ? '无单一根因；逐字段变化 ' + total + ' 处' : '字段 0 处变化：同一张盘跨版本逐字一致'}</div>`;
+      const cats = Array.isArray(diff.categories) ? diff.categories : [];
+      const catHTML = cats.length
+        ? `<div class="mp-cdiff-cats">${cats.slice(0, 6).map((c) => `<span class="mp-cdiff-cat">${esc(c.name)} ${Number(c.count) || 0} 处</span>`).join('')}`
+          + (cats.length > 6 ? `<span class="mp-cdiff-cat">另 ${cats.length - 6} 类</span>` : '') + '</div>'
+        : '';
+      diffHTML = `<details class="mp-shadow-diff"${total > 0 ? ' open' : ''}>
+        <summary><b>与上次同盘比对</b><span class="tag">${fromV} → ${toV} · ${total ? `${total} 处变化` : '0 处变化'}</span></summary>
+        ${rootHTML}${catHTML}
+        <div class="note">同一 baseId（同一组归一化参数）的两次结果；只比盘面字段，不含摘要、解析与古籍等文本层。</div>
+      </details>`;
+    }
+    return `<section class="mp-shadow" aria-label="影子盘">
+      <div class="mp-shadow-head"><span class="mp-shadow-title">影子盘</span><code class="mp-shadow-id">${esc(shadow.id)}</code>
+        <button type="button" class="mp-shadow-copy" data-shadow-copy="${esc(shadow.id)}" aria-label="复制影子盘 ID">复制 ID</button></div>
+      <div class="mp-shadow-meta">${meta.join('<span aria-hidden="true">·</span>')}</div>
+      ${warn.map((w) => `<div class="mp-shadow-warn">⚠ ${w}</div>`).join('')}
+      ${hint}
+      ${diffHTML}
+    </section>`;
+  };
+
+  /**
+   * 记下本次影子盘快照，并返回与同一 baseId 上一次结果的 diff；首次/无引擎时返回 null。
+   * 存在 localStorage 的 mp-shadow-v1 下，最多留 24 张盘，避免无限增长。
+   */
+  pp.shadowTrack = function (result) {
+    const E = window.Engine || (window.__PP && window.__PP.Engine);
+    if (!E || !E.shadowSnapshot || !E.shadowDiff) return null;
+    let snap = null;
+    try { snap = E.shadowSnapshot(result); } catch (e) { return null; }
+    if (!snap || !snap.shadow || !snap.shadow.baseId) return null;
+    const KEY = 'mp-shadow-v1';
+    let store = {};
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(KEY) : null;
+      const parsed = raw ? JSON.parse(raw) : {};
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) store = parsed;
+    } catch (e) { store = {}; }
+    const prev = store[snap.shadow.baseId];
+    let diff = null;
+    if (prev) {
+      try { diff = E.shadowDiff(prev, snap); } catch (e) { diff = null; }
+    }
+    snap.at = Date.now();
+    store[snap.shadow.baseId] = snap;
+    try {
+      const keys = Object.keys(store);
+      if (keys.length > 24) {
+        keys.sort((a, b) => (Number(store[a] && store[a].at) || 0) - (Number(store[b] && store[b].at) || 0));
+        for (const k of keys.slice(0, keys.length - 24)) delete store[k];
+      }
+      if (window.localStorage) window.localStorage.setItem(KEY, JSON.stringify(store));
+    } catch (e) { /* 存储满/被禁用时只影响跨次比对，不影响本次结果 */ }
+    return diff;
+  };
+
+  /**
+   * 推导链：入口卡 + 右侧抽屉。数据来自 Engine.compute({ trace: true }) 的 r.trace。
+   * 每层只读展示 {field, rule, inputs, result, source}，不重算、不改盘。
+   */
+  pp.traceHTML = function (trace, system) {
+    if (!Array.isArray(trace) || !trace.length) return '';
+    const sys = ({ liuyao: '六爻', bazi: '八字', ziwei: '紫微' })[system] || '命盘';
+    const flow = trace.map((t) => t && t.field).filter(Boolean).join(' → ');
+    const clip = (v, n) => {
+      const s = String(v == null ? '' : v);
+      return s.length > n ? `${s.slice(0, n)}…` : s;
+    };
+    const steps = trace.map((t, i) => {
+      const inputs = Array.isArray(t.inputs) ? t.inputs : [];
+      return `<details class="mp-trace-step"${i === 0 ? ' open' : ''}>
+        <summary><span class="mp-trace-no">${i + 1}</span><span class="mp-trace-field">${esc(t.field)}</span><span class="mp-trace-res">${esc(clip(t.result, 44))}</span></summary>
+        <div class="mp-trace-detail">
+          <div class="mp-trace-rule"><b>规则</b>${esc(t.rule)}</div>
+          ${inputs.length ? `<dl class="mp-trace-inputs">${inputs.map((x) => `<dt>${esc(x.label)}</dt><dd>${esc(x.value)}</dd>`).join('')}</dl>` : ''}
+          <div class="mp-trace-result"><b>结果</b>${esc(t.result)}</div>
+          ${t.source ? `<div class="mp-trace-src"><b>出处</b>${esc(t.source)}</div>` : ''}
+        </div>
+      </details>`;
+    }).join('');
+    return `<button type="button" class="mp-trace-card" data-trace-open aria-haspopup="dialog" aria-controls="mp-trace-layer">
+        <span class="mp-trace-title">推导链</span><span class="mp-trace-flow">${esc(flow)}</span><span class="mp-trace-count">${trace.length} 层 · 查看</span>
+      </button>
+      <div class="mp-trace-layer" id="mp-trace-layer" data-trace-layer aria-hidden="true">
+        <div class="mp-trace-back" data-trace-close></div>
+        <aside class="mp-trace-drawer" role="dialog" aria-modal="true" aria-labelledby="mp-trace-title">
+          <div class="mp-trace-head">
+            <div><b id="mp-trace-title">推导链 · ${esc(sys)}</b><span>${trace.length} 层 · 每层给出规则、输入、结果与出处；只读，不重算</span></div>
+            <button type="button" class="mp-trace-close" data-trace-close aria-label="关闭推导链">✕</button>
+          </div>
+          <div class="mp-trace-body">${steps}</div>
+        </aside>
+      </div>`;
+  };
+
+  /**
    * 黄历卡片：日期/农历 + 干支值日 + 宜忌 + 四格（二十八宿/胎神/纳音/冲煞）
    * + 吉神方位 + 时辰吉凶 + 吉配生肖 + 每日一卦。数据全由引擎给，渲染只做排版。
    */
@@ -21407,6 +22208,55 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     return `<div class="cast-at">起卦时刻：<b>${d} ${t}</b>　<span>（来自本机时间，点「此刻」可重新取当下）</span></div>`;
   }
 
+  /** 影子盘 ID 一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
+  function copyShadow(btn) {
+    const text = btn.getAttribute('data-shadow-copy') || '';
+    if (!text) return;
+    const done = (ok) => {
+      btn.textContent = ok ? '已复制' : '复制失败';
+      setTimeout(() => { btn.textContent = '复制 ID'; }, 1400);
+    };
+    const legacy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = !!(document.execCommand && document.execCommand('copy'));
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => done(true), () => done(legacy()));
+        return;
+      }
+    } catch (e) { /* 走下面的兜底 */ }
+    done(legacy());
+  }
+
+  /** 推导链抽屉：打开时把焦点交给关闭按钮，关闭后回到入口 */
+  function traceOpen() {
+    const layer = document.getElementById('mp-trace-layer');
+    if (!layer) return;
+    layer.classList.add('open');
+    layer.setAttribute('aria-hidden', 'false');
+    const close = layer.querySelector('[data-trace-close]');
+    if (close && close.focus) close.focus();
+  }
+  function traceClose() {
+    const layer = document.getElementById('mp-trace-layer');
+    if (!layer) return;
+    layer.classList.remove('open');
+    layer.setAttribute('aria-hidden', 'true');
+    const trigger = document.querySelector('[data-trace-open]');
+    if (trigger && trigger.focus) trigger.focus();
+  }
+
   // 上一次的卦象：改「所问之事 / 询问方向」时用它重出解读，不重摇一卦
   let last = null;
 
@@ -21422,6 +22272,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
+      + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)
+      + window.__PP.traceHTML(last.r.trace, last.r.system)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
       + window.__PP.caliberHTML(last.caliber)
       + followupBar()
@@ -21571,6 +22423,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
     markAskInvalid(false);
     const args = { system: tab };
+    // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
+    args.shadow = tab !== 'mbti';
+    // 推导链只覆盖六爻 / 八字 / 紫微
+    args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
@@ -21685,8 +22541,13 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
     // 问题与卦象一起交给解读：解读按它展开，并在开头回显供你确认
     if (needAsk(tab)) args.question = el('question').value.trim();
+    // 六爻的用神由「询问方向」定；不传给 compute 的话，盘面与推导链都会退成综合
+    if (tab === 'liuyao') args.direction = el('direction').value;
     try {
       const r = window.Engine.compute(args);
+      // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
+      let shadowDiff = null;
+      try { shadowDiff = window.__PP.shadowTrack ? window.__PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
       // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend（确定性、无网络）
       let trend = null;
       if (tab === 'bazi') {
@@ -21720,7 +22581,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
-      last = { r, html, tab, date, time, timed, trend, caliber };
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff };
       paint();
     } catch (e) {
       last = null;
@@ -22118,9 +22979,29 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (mClose && mSec) mClose.addEventListener('click', () => { mSec.hidden = true; });
     // 改问题或方向：只重出解读，不重摇一卦
     el('question').addEventListener('change', () => { if (needAsk(tab)) paint(); });
-    el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });
+    // 改方向：只重出解读、不重摇一卦；六爻推导链按新方向重算用神相关层
+    el('direction').addEventListener('change', () => {
+      if (!needAsk(tab)) return;
+      if (tab === 'liuyao' && last && last.r && last.r.trace && window.Engine.buildTrace) {
+        try {
+          const trace = window.Engine.buildTrace(last.r, {
+            direction: el('direction').value,
+            gender: (last.r.useGod && last.r.useGod.gender) || 'male',
+            refresh: true,
+          });
+          if (trace) last.r.trace = trace;
+        } catch (e) { /* 保留起卦时的推导链 */ }
+      }
+      paint();
+    });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
+      if (copyBtn) { copyShadow(copyBtn); return; }
+      const traceBtn = e.target && e.target.closest ? e.target.closest('[data-trace-open]') : null;
+      if (traceBtn) { traceOpen(); return; }
+      const traceBack = e.target && e.target.closest ? e.target.closest('[data-trace-close]') : null;
+      if (traceBack) { traceClose(); return; }
       const pm = e.target && e.target.closest ? e.target.closest('[data-pmark]') : null;
       if (pm) { pastMarks[pm.dataset.pmark] = pm.dataset.mark; const vb = el('vbox'); if (vb) vb.innerHTML = verifyHTML(); return; }
       const cf = e.target && e.target.closest ? e.target.closest('[data-calfit]') : null;
@@ -22147,6 +23028,12 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       const hint = head.querySelector('.mp-it-hint');
       if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
       foldPref = folded;
+    });
+    // 推导链抽屉：Esc 关闭（点遮罩与关闭按钮走上面的委托）
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const layer = document.getElementById('mp-trace-layer');
+      if (layer && layer.classList.contains('open')) traceClose();
     });
     // 追问输入框回车提交
     el('out').addEventListener('keydown', (e) => {

@@ -225,6 +225,55 @@
     return `<div class="cast-at">起卦时刻：<b>${d} ${t}</b>　<span>（来自本机时间，点「此刻」可重新取当下）</span></div>`;
   }
 
+  /** 影子盘 ID 一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
+  function copyShadow(btn) {
+    const text = btn.getAttribute('data-shadow-copy') || '';
+    if (!text) return;
+    const done = (ok) => {
+      btn.textContent = ok ? '已复制' : '复制失败';
+      setTimeout(() => { btn.textContent = '复制 ID'; }, 1400);
+    };
+    const legacy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = !!(document.execCommand && document.execCommand('copy'));
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => done(true), () => done(legacy()));
+        return;
+      }
+    } catch (e) { /* 走下面的兜底 */ }
+    done(legacy());
+  }
+
+  /** 推导链抽屉：打开时把焦点交给关闭按钮，关闭后回到入口 */
+  function traceOpen() {
+    const layer = document.getElementById('mp-trace-layer');
+    if (!layer) return;
+    layer.classList.add('open');
+    layer.setAttribute('aria-hidden', 'false');
+    const close = layer.querySelector('[data-trace-close]');
+    if (close && close.focus) close.focus();
+  }
+  function traceClose() {
+    const layer = document.getElementById('mp-trace-layer');
+    if (!layer) return;
+    layer.classList.remove('open');
+    layer.setAttribute('aria-hidden', 'true');
+    const trigger = document.querySelector('[data-trace-open]');
+    if (trigger && trigger.focus) trigger.focus();
+  }
+
   // 上一次的卦象：改「所问之事 / 询问方向」时用它重出解读，不重摇一卦
   let last = null;
 
@@ -240,6 +289,8 @@
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
+      + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)
+      + window.__PP.traceHTML(last.r.trace, last.r.system)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
       + window.__PP.caliberHTML(last.caliber)
       + followupBar()
@@ -389,6 +440,10 @@
     }
     markAskInvalid(false);
     const args = { system: tab };
+    // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
+    args.shadow = tab !== 'mbti';
+    // 推导链只覆盖六爻 / 八字 / 紫微
+    args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
@@ -503,8 +558,13 @@
     }
     // 问题与卦象一起交给解读：解读按它展开，并在开头回显供你确认
     if (needAsk(tab)) args.question = el('question').value.trim();
+    // 六爻的用神由「询问方向」定；不传给 compute 的话，盘面与推导链都会退成综合
+    if (tab === 'liuyao') args.direction = el('direction').value;
     try {
       const r = window.Engine.compute(args);
+      // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
+      let shadowDiff = null;
+      try { shadowDiff = window.__PP.shadowTrack ? window.__PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
       // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend（确定性、无网络）
       let trend = null;
       if (tab === 'bazi') {
@@ -538,7 +598,7 @@
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
-      last = { r, html, tab, date, time, timed, trend, caliber };
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff };
       paint();
     } catch (e) {
       last = null;
@@ -936,9 +996,29 @@
     if (mClose && mSec) mClose.addEventListener('click', () => { mSec.hidden = true; });
     // 改问题或方向：只重出解读，不重摇一卦
     el('question').addEventListener('change', () => { if (needAsk(tab)) paint(); });
-    el('direction').addEventListener('change', () => { if (needAsk(tab)) paint(); });
+    // 改方向：只重出解读、不重摇一卦；六爻推导链按新方向重算用神相关层
+    el('direction').addEventListener('change', () => {
+      if (!needAsk(tab)) return;
+      if (tab === 'liuyao' && last && last.r && last.r.trace && window.Engine.buildTrace) {
+        try {
+          const trace = window.Engine.buildTrace(last.r, {
+            direction: el('direction').value,
+            gender: (last.r.useGod && last.r.useGod.gender) || 'male',
+            refresh: true,
+          });
+          if (trace) last.r.trace = trace;
+        } catch (e) { /* 保留起卦时的推导链 */ }
+      }
+      paint();
+    });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
+      if (copyBtn) { copyShadow(copyBtn); return; }
+      const traceBtn = e.target && e.target.closest ? e.target.closest('[data-trace-open]') : null;
+      if (traceBtn) { traceOpen(); return; }
+      const traceBack = e.target && e.target.closest ? e.target.closest('[data-trace-close]') : null;
+      if (traceBack) { traceClose(); return; }
       const pm = e.target && e.target.closest ? e.target.closest('[data-pmark]') : null;
       if (pm) { pastMarks[pm.dataset.pmark] = pm.dataset.mark; const vb = el('vbox'); if (vb) vb.innerHTML = verifyHTML(); return; }
       const cf = e.target && e.target.closest ? e.target.closest('[data-calfit]') : null;
@@ -965,6 +1045,12 @@
       const hint = head.querySelector('.mp-it-hint');
       if (hint) hint.textContent = folded ? '点击展开' : '点击收起';
       foldPref = folded;
+    });
+    // 推导链抽屉：Esc 关闭（点遮罩与关闭按钮走上面的委托）
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const layer = document.getElementById('mp-trace-layer');
+      if (layer && layer.classList.contains('open')) traceClose();
     });
     // 追问输入框回车提交
     el('out').addEventListener('keydown', (e) => {

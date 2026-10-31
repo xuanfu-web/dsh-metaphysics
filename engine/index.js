@@ -26,9 +26,11 @@ import { buildMbti, mbtiPaper } from './mbti.js';
 import { buildConvert } from './convert.js';
 import { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } from './classics.js';
 import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES } from './diff.js';
+import { canonicalJson, fingerprintOf } from './fingerprint.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
+import { buildTrace, SYSTEM_LABEL } from './trace.js';
 import { fail } from './fail.js';
 import { assertCivil } from './validate.js';
 
@@ -435,6 +437,214 @@ function jsonSafe(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+// ── 影子盘：同一组归一化参数 + 同一版本 → 同一个短 ID ──────────────
+// 只收影响盘面的参数：地址换成有效经度后不再把原文算进去，问事/方向按体系保留。
+const SHADOW_IGNORE = new Set([
+  'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'cross', 'verifyPast', 'rectify', 'events',
+  'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf',
+]);
+
+const num6 = (n) => {
+  if (n === undefined || n === null || n === '') return null;
+  const v = Number(n);
+  return Number.isFinite(v) ? Number(v.toFixed(6)) : null;
+};
+
+function shadowDateTime(value) {
+  if (value === undefined || value === null || value === '') return null;
+  try {
+    const d = parseDateTime(value);
+    return { y: d.year, m: d.month, d: d.day, h: d.hour, mi: d.minute, precision: d.precision };
+  } catch {
+    return String(value).trim();
+  }
+}
+
+function shadowPerson(person = {}) {
+  const out = {};
+  if (person.datetime) out.datetime = shadowDateTime(person.datetime);
+  if (person.gender) out.gender = String(person.gender).toLowerCase();
+  if (person.longitude !== undefined) out.longitude = num6(person.longitude);
+  else if (person.address) out.address = String(person.address).trim();
+  if (person.lateZi !== undefined) out.lateZi = person.lateZi !== false;
+  if (person.trueSolar !== undefined) out.trueSolar = person.trueSolar !== false;
+  if (person.dst !== undefined) out.dst = person.dst !== false;
+  return out;
+}
+
+function qimenLateMode(args) {
+  if (args.lateZiHourMode === 'next-day' || args.lateZi === true) return 'next-day';
+  return 'same-day';
+}
+
+function shadowParams(args, result) {
+  const system = String((result && result.system) || args.system || '');
+  const input = result && result.input && typeof result.input === 'object' ? result.input : null;
+  if (system === 'bazi' && input) {
+    return {
+      civil: input.civil,
+      gender: input.gender,
+      longitude: num6(input.longitude),
+      lateZi: input.lateZi !== false,
+      trueSolar: input.trueSolar !== false,
+      dst: !!(input.dst && input.dst.applied),
+    };
+  }
+  if (system === 'ziwei' && input) {
+    return {
+      civil: { year: input.year, month: input.month, day: input.day, hour: input.hour, minute: input.minute },
+      gender: input.gender,
+      longitude: num6(input.longitude),
+      leapMonth: input.leapMonth || 'split',
+      leapAsNext: input.leapAsNext === true,
+      schools: input.schools || ZIWEI_SCHOOL_DEFAULTS,
+      trueSolar: input.trueSolar !== false,
+      dst: !!(input.dst && input.dst.applied),
+    };
+  }
+  if (system === 'qimen') {
+    return {
+      datetime: shadowDateTime(args.datetime),
+      juMethod: args.juMethod || 'chaibu',
+      lateZiHourMode: qimenLateMode(args),
+    };
+  }
+  if (system === 'hepan') {
+    return {
+      chart: args.chart === 'ziwei' ? 'ziwei' : 'bazi',
+      a: shadowPerson({ ...args, datetime: args.datetime }),
+      b: shadowPerson(args.partner || {}),
+    };
+  }
+
+  // 其余体系：只剔除解析/附加模块参数，其余原样归一化
+  const params = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (SHADOW_IGNORE.has(key) || value === undefined) continue;
+    if (key === 'datetime') params.datetime = shadowDateTime(value);
+    else if (key === 'partner') params.partner = shadowPerson(value);
+    else if (key === 'gender') params.gender = String(value).toLowerCase();
+    else if (key === 'address') continue; // 调用侧先把地址换成经度，再由 longitude 参与；这里不收原文
+    else if (typeof value === 'number') params[key] = Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : null;
+    else if (typeof value === 'string') params[key] = value.trim();
+    else params[key] = value;
+  }
+  if (system === 'daliuren' && params.lateZi === undefined) params.lateZi = true;
+  if (system === 'tarot' && params.count === undefined) params.count = 3;
+  if (system === 'meihua' && params.mode === undefined) params.mode = 'time';
+  if (system === 'xiaoliuren' && params.mode === undefined) params.mode = 'time';
+  if (system === 'convert' && params.mode === undefined) params.mode = 'solar2lunar';
+  if (system === 'fengshui' && params.action === undefined) params.action = 'natal';
+  // 随机起卦 / 抽牌：同参数不等于同一副牌，把实际抽到的牌面 / 爻值算进来，
+  // 否则两次不同的抽牌会撞成同一个 ID（有 seed 时本来就能复现，这里只是多一层同构校验）。
+  if (system === 'tarot' && result && Array.isArray(result.cards) && result.cards.length) {
+    params.cards = result.cards.map((c) => `${c.name || ''}|${c.upright ? '正' : '逆'}`);
+  }
+  if (system === 'liuyao' && result && result.cast && Array.isArray(result.cast.lines)) {
+    params.cast = result.cast.lines.join('');
+  }
+  return params;
+}
+
+function shadowMeta(system, args) {
+  const seed = args.seed;
+  const seeded = !(seed === undefined || seed === null || seed === '');
+  // 六爻给定了六爻值就是确定性起卦，不需要 seed 也能复算
+  if (system === 'liuyao' && Array.isArray(args.lines) && args.lines.length === 6) {
+    return { reproducible: true };
+  }
+  if ((system === 'tarot' || system === 'liuyao') && !seeded) {
+    return { reproducible: false, reason: '未给 seed：重算会变成另一副牌 / 另一卦' };
+  }
+  if (system === 'bazi' || system === 'ziwei' || system === 'trend' || system === 'fengshui') {
+    return { reproducible: true, asOfPinned: !!args.asOf };
+  }
+  return { reproducible: true };
+}
+
+/**
+ * 影子盘指纹。版本优先级：显式 opts.version → 构建注入的全局 __MP_VER → dev。
+ * @returns {{id:string, baseId:string, version:string, system:string, payload:string,
+ *   reproducible:boolean, asOfPinned?:boolean, reason?:string}}
+ */
+export function chartFingerprint(args = {}, opts = {}) {
+  const result = opts.result || null;
+  const system = String((result && result.system) || args.system || '');
+  const version = String(opts.version || (typeof globalThis !== 'undefined' && globalThis.__MP_VER) || 'dev');
+  const fp = fingerprintOf({
+    system,
+    params: shadowParams(args, result),
+    seed: args.seed,
+    asOf: args.asOf ? String(args.asOf) : null,
+    version,
+  });
+  return { ...fp, ...shadowMeta(system, args), system, version };
+}
+
+const SHADOW_DIFF_IGNORE = new Set([
+  'shadow', 'trace', 'traceError', 'interpret', 'summary', 'classics', 'suiyunClassic', 'renyuanClassic', 'cross',
+  'past', 'rectify', 'followup', 'caliber', 'input', 'reading', 'knowledge', 'outline',
+  'sections', 'answer', 'plain', 'tables', 'glossary', 'caveats', 'lead', 'dimensions',
+  'moduleType', 'technique', 'disclaimer', 'ask', 'followups', 'knowledgeCount', 'title',
+  'systemLabel',
+]);
+
+function shadowChart(result) {
+  const out = {};
+  for (const [key, value] of Object.entries(result || {})) {
+    if (!SHADOW_DIFF_IGNORE.has(key)) out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * 存档用的轻量快照：只留影子盘信息与盘面字段（解析/古籍/验前事等不参与 diff）。
+ * 页面侧把它写进本地存储，下次同 baseId 重排时直接与它比对。
+ */
+export function shadowSnapshot(result) {
+  if (!result || !result.shadow || !result.shadow.baseId) return null;
+  return { snapshot: true, shadow: result.shadow, data: shadowChart(result) };
+}
+
+/**
+ * 同一 baseId 的两次结果对比；版本不同时自动落到具体字段。
+ * previous / current 可以是完整结果，也可以是 shadowSnapshot() 的存档。
+ */
+export function shadowDiff(previous, current, opts = {}) {
+  const a = previous && previous.shadow;
+  const b = current && current.shadow;
+  if (!a || !b) return { sameId: false, total: 0, reason: '缺少影子盘信息' };
+  if (a.baseId && b.baseId && a.baseId !== b.baseId) {
+    return { sameId: false, total: 0, fromId: a.id, toId: b.id, fromBaseId: a.baseId, toBaseId: b.baseId, reason: '基础指纹不同，不是同一张盘' };
+  }
+  const pick = (x) => (x.snapshot === true && x.data && typeof x.data === 'object' ? x.data : shadowChart(x));
+  const diffs = diffObjects(pick(previous), pick(current));
+  const roots = sortDiffs(diffs.filter((d) => rootOf(d.path))).map((d) => ({
+    path: d.path, label: labelOf(d.path), from: formatValue(d.from), to: formatValue(d.to),
+  }));
+  const counts = new Map();
+  for (const d of diffs) {
+    const cat = categoryOf(d.path) || '其他';
+    counts.set(cat, (counts.get(cat) || 0) + 1);
+  }
+  const categories = [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((x, y) => y.count - x.count || x.name.localeCompare(y.name, 'zh-Hans-CN'));
+  const fromVersion = opts.fromVersion || a.version || '';
+  const toVersion = opts.toVersion || b.version || '';
+  return {
+    sameId: true,
+    versionChanged: fromVersion !== toVersion,
+    fromVersion,
+    toVersion,
+    total: diffs.length,
+    summary: summarize(diffs),
+    roots,
+    categories,
+    diffs,
+  };
+}
+
 /**
  * 统一排盘入口
  * @param {object} args
@@ -531,6 +741,23 @@ export function compute(args = {}) {
   }
   // 追问：围绕已算好的盘回答「某一年 / 某方面」的具体问题
   if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
+  // 推导链：只读结果、不重算；生成失败不影响盘面，单独留一条错误信息
+  if (args.trace === true) {
+    try {
+      const layers = buildTrace(r, { direction: args.direction, gender: args.gender });
+      if (layers) r.trace = layers;
+    } catch (e) {
+      r.traceError = String((e && e.message) || e);
+    }
+  }
+  // 影子盘 ID：同一组归一化参数 + 同一版本 → 同一个短 ID；显式要时才挂，避免默认输出变长
+  if (args.shadow === true) {
+    try {
+      r.shadow = chartFingerprint(args, { result: r, version: args.shadowVersion });
+    } catch (e) {
+      r.shadow = { error: String((e && e.message) || e) };
+    }
+  }
   return r;
 }
 
@@ -1258,6 +1485,17 @@ function nameText(r) {
 export function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
   const parts = [base];
+  if (result.shadow && result.shadow.id) {
+    const s = result.shadow;
+    parts.push(`【影子盘】${s.id}（同参数同 ID；版本 ${s.version}）`
+      + `\n　基础指纹 ${s.baseId}（不含版本，跨版本可比对）`
+      + (s.reproducible === false ? `\n　⚠ 不可复算：${s.reason}` : '')
+      + (s.reproducible === true && s.asOfPinned === false && (s.system === 'bazi' || s.system === 'ziwei') ? '\n　提示：未固定 asOf，流年/流月随「此刻」变化；要比对请传 asOf。' : ''));
+  }
+  if (Array.isArray(result.trace) && result.trace.length) {
+    parts.push(`【推导链】${SYSTEM_LABEL[result.system] || result.system} · ${result.trace.length} 层\n`
+      + result.trace.map((t, i) => `${i + 1}. ${t.field}｜${t.result}\n　规则：${t.rule}　出处：${t.source}`).join('\n'));
+  }
   if (result.interpret) {
     const extra = interpretText(result.interpret);
     if (extra) parts.push(extra);
@@ -1301,6 +1539,7 @@ export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText, crossSection };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName };
+export { buildTrace };
 
 
 

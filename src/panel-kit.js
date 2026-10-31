@@ -1,7 +1,7 @@
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -22,7 +22,7 @@
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -595,6 +595,84 @@
   .mp-cdiff>summary{cursor:auto}
   .mp-cdiff-more{display:none}
   .mp-cdiff{break-inside:avoid}
+}
+/* 影子盘：ID + 版本 + 与上次同盘（同 baseId）的自动比对。
+   ID 用等宽字体、可一键复制；比对默认只在版本变化或真有字段变化时展开。 */
+.mp-shadow{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:9px 13px;font-family:system-ui,sans-serif}
+.mp-shadow-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-shadow-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
+.mp-shadow-id{font:600 13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--ink);letter-spacing:.04em;background:var(--band);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+.mp-shadow-copy{margin-left:auto;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:12px;cursor:pointer}
+.mp-shadow-copy:hover{border-color:var(--ke);color:var(--ke)}
+.mp-shadow-copy:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-shadow-meta{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:3px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-shadow-meta b{font-weight:600;color:var(--ink2)}
+.mp-shadow-warn{margin-top:6px;padding:5px 8px;border-left:3px solid var(--quan);background:color-mix(in srgb,var(--quan) 8%,transparent);font-size:11.5px;line-height:1.65;color:var(--ink2)}
+.mp-shadow-hint{margin-top:4px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-shadow-diff{margin-top:8px;border-top:1px dashed var(--line)}
+.mp-shadow-diff>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:44px;padding:4px 0 0;cursor:pointer;list-style:none;font-size:12.5px;color:var(--ink2)}
+.mp-shadow-diff>summary::-webkit-details-marker{display:none}
+.mp-shadow-diff>summary::before{content:'▸';color:var(--ke);font-size:12px}
+.mp-shadow-diff[open]>summary::before{content:'▾'}
+.mp-shadow-diff b{color:var(--ink);font-weight:700}
+.mp-shadow-diff .tag{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+.mp-shadow-diff .same{margin-top:4px;font-size:12px;color:var(--muted)}
+.mp-shadow-diff .note{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
+@media (max-width:640px){
+  .mp-shadow{padding:8px 11px}
+  .mp-shadow-copy{margin-left:0;min-height:44px}
+  .mp-shadow-diff b{font-size:12px}
+}
+@media print{
+  .mp-shadow-diff:not([open])>*{display:block!important}
+  .mp-shadow-diff>summary{cursor:auto}
+  .mp-shadow-copy{display:none}
+  .mp-shadow{break-inside:avoid}
+}
+/* 推导链：结果顶部的入口，点开是右侧抽屉；每层可单独展开规则 / 输入 / 结果 / 出处。 */
+.mp-trace-card{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin:12px 0 0;padding:9px 13px;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--band);color:var(--ink2);font:inherit;font-size:12.5px;line-height:1.6;text-align:left;cursor:pointer}
+.mp-trace-card:hover{border-color:var(--ke)}
+.mp-trace-card:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-trace-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
+.mp-trace-flow{color:var(--muted)}
+.mp-trace-count{margin-left:auto;color:var(--label);font-size:11.5px;white-space:nowrap}
+.mp-trace-layer{position:fixed;inset:0;z-index:2147483000;display:none;font-family:system-ui,sans-serif;color:var(--ink)}
+.mp-trace-layer.open{display:block}
+.mp-trace-back{position:absolute;inset:0;background:rgba(20,18,12,.46)}
+.mp-trace-drawer{position:absolute;top:0;right:0;bottom:0;width:min(440px,92vw);display:flex;flex-direction:column;background:var(--card);border-left:1px solid var(--line);box-shadow:-18px 0 40px -30px rgba(0,0,0,.6)}
+.mp-trace-head{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--band)}
+.mp-trace-head b{display:block;font-size:15px;color:var(--ink);letter-spacing:.03em}
+.mp-trace-head span{display:block;margin-top:2px;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-trace-close{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:16px;cursor:pointer}
+.mp-trace-close:hover{border-color:var(--ke);color:var(--ke)}
+.mp-trace-close:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-trace-body{flex:1;overflow:auto;padding:10px 14px 24px;overscroll-behavior:contain}
+.mp-trace-step{margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
+.mp-trace-step>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 11px;cursor:pointer;list-style:none}
+.mp-trace-step>summary::-webkit-details-marker{display:none}
+.mp-trace-step>summary::after{content:'▸';margin-left:8px;color:var(--dimline)}
+.mp-trace-step[open]>summary::after{content:'▾'}
+.mp-trace-no{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:color-mix(in srgb,var(--ke) 14%,transparent);color:var(--ke);font-size:11.5px;font-weight:700}
+.mp-trace-field{flex:0 0 auto;font-size:13px;font-weight:700;color:var(--ink)}
+.mp-trace-res{min-width:0;margin-left:auto;max-width:56%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:11.5px}
+.mp-trace-detail{padding:0 11px 11px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.75}
+.mp-trace-rule{margin-top:8px;color:var(--ink2)}
+.mp-trace-rule b,.mp-trace-result b,.mp-trace-src b{display:inline-block;margin-right:6px;color:var(--label);font-size:10.5px;letter-spacing:.1em}
+.mp-trace-inputs{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin:8px 0;padding:7px 9px;border:1px solid var(--hair);border-radius:8px;background:var(--band)}
+.mp-trace-inputs dt{color:var(--label);font-size:11px}
+.mp-trace-inputs dd{margin:0;color:var(--ink2);word-break:break-word}
+.mp-trace-result{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);color:var(--ink)}
+.mp-trace-src{margin-top:6px;color:var(--muted);font-size:11.5px}
+@media (max-width:640px){
+  .mp-trace-card{padding:8px 11px}
+  .mp-trace-drawer{width:100vw;border-left:none}
+  .mp-trace-head{padding:12px}
+  .mp-trace-body{padding:8px 10px 24px}
+  .mp-trace-res{max-width:46%}
+}
+@media print{
+  .mp-trace-layer{display:none!important}
+  .mp-trace-card{break-inside:avoid}
 }
 /* 三张表：横向可滚动，避免窄栏撑破 */
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
@@ -2557,6 +2635,131 @@
         <div class="mp-cdiff-note">同一组输入、只换一个开关；只列变化字段与根因，不判哪套口径更准，也不改上方盘面。</div>
       </div>
     </details>`;
+  };
+
+  /**
+   * 影子盘卡：短 ID + 版本 + 基础指纹，必要时附「与上次同盘比对」。
+   * 只在 compute({ shadow: true }) 的结果上渲染；没有影子盘信息时返回空串。
+   */
+  pp.shadowHTML = function (shadow, diff) {
+    if (!shadow || !shadow.id) return '';
+    const meta = [];
+    if (shadow.version) meta.push(`版本 <b>${esc(shadow.version)}</b>`);
+    if (shadow.baseId) meta.push(`基础指纹 <b>${esc(shadow.baseId)}</b>`);
+    meta.push('同参数同 ID');
+    const warn = [];
+    if (shadow.reproducible === false) warn.push(`不可复算：${esc(shadow.reason || '参数不足')}`);
+    const hint = (shadow.reproducible === true && shadow.asOfPinned === false
+      && (shadow.system === 'bazi' || shadow.system === 'ziwei'))
+      ? '<div class="mp-shadow-hint">未固定 asOf：流年 / 流月随「此刻」变化；要逐字比对请在输入里固定 asOf。</div>'
+      : '';
+    const showDiff = diff && diff.sameId !== false && (diff.versionChanged || Number(diff.total) > 0);
+    let diffHTML = '';
+    if (showDiff) {
+      const total = Number(diff.total) || 0;
+      const fromV = esc(diff.fromVersion || '—');
+      const toV = esc(diff.toVersion || shadow.version || '—');
+      const roots = Array.isArray(diff.roots) ? diff.roots : [];
+      const shown = roots.slice(0, 8);
+      const rootHTML = shown.length
+        ? `<div class="mp-cdiff-roots">${shown.map((r) => `<div class="mp-cdiff-root">`
+          + `<span class="mp-cdiff-k">${esc(r.label)}</span><span class="mp-cdiff-from">${esc(r.from)}</span>`
+          + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-to">${esc(r.to)}</span></div>`).join('')}`
+          + (roots.length > shown.length ? `<div class="same">另 ${roots.length - shown.length} 处根因</div>` : '') + '</div>'
+        : `<div class="same">${total ? '无单一根因；逐字段变化 ' + total + ' 处' : '字段 0 处变化：同一张盘跨版本逐字一致'}</div>`;
+      const cats = Array.isArray(diff.categories) ? diff.categories : [];
+      const catHTML = cats.length
+        ? `<div class="mp-cdiff-cats">${cats.slice(0, 6).map((c) => `<span class="mp-cdiff-cat">${esc(c.name)} ${Number(c.count) || 0} 处</span>`).join('')}`
+          + (cats.length > 6 ? `<span class="mp-cdiff-cat">另 ${cats.length - 6} 类</span>` : '') + '</div>'
+        : '';
+      diffHTML = `<details class="mp-shadow-diff"${total > 0 ? ' open' : ''}>
+        <summary><b>与上次同盘比对</b><span class="tag">${fromV} → ${toV} · ${total ? `${total} 处变化` : '0 处变化'}</span></summary>
+        ${rootHTML}${catHTML}
+        <div class="note">同一 baseId（同一组归一化参数）的两次结果；只比盘面字段，不含摘要、解析与古籍等文本层。</div>
+      </details>`;
+    }
+    return `<section class="mp-shadow" aria-label="影子盘">
+      <div class="mp-shadow-head"><span class="mp-shadow-title">影子盘</span><code class="mp-shadow-id">${esc(shadow.id)}</code>
+        <button type="button" class="mp-shadow-copy" data-shadow-copy="${esc(shadow.id)}" aria-label="复制影子盘 ID">复制 ID</button></div>
+      <div class="mp-shadow-meta">${meta.join('<span aria-hidden="true">·</span>')}</div>
+      ${warn.map((w) => `<div class="mp-shadow-warn">⚠ ${w}</div>`).join('')}
+      ${hint}
+      ${diffHTML}
+    </section>`;
+  };
+
+  /**
+   * 记下本次影子盘快照，并返回与同一 baseId 上一次结果的 diff；首次/无引擎时返回 null。
+   * 存在 localStorage 的 mp-shadow-v1 下，最多留 24 张盘，避免无限增长。
+   */
+  pp.shadowTrack = function (result) {
+    const E = window.Engine || (window.__PP && window.__PP.Engine);
+    if (!E || !E.shadowSnapshot || !E.shadowDiff) return null;
+    let snap = null;
+    try { snap = E.shadowSnapshot(result); } catch (e) { return null; }
+    if (!snap || !snap.shadow || !snap.shadow.baseId) return null;
+    const KEY = 'mp-shadow-v1';
+    let store = {};
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(KEY) : null;
+      const parsed = raw ? JSON.parse(raw) : {};
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) store = parsed;
+    } catch (e) { store = {}; }
+    const prev = store[snap.shadow.baseId];
+    let diff = null;
+    if (prev) {
+      try { diff = E.shadowDiff(prev, snap); } catch (e) { diff = null; }
+    }
+    snap.at = Date.now();
+    store[snap.shadow.baseId] = snap;
+    try {
+      const keys = Object.keys(store);
+      if (keys.length > 24) {
+        keys.sort((a, b) => (Number(store[a] && store[a].at) || 0) - (Number(store[b] && store[b].at) || 0));
+        for (const k of keys.slice(0, keys.length - 24)) delete store[k];
+      }
+      if (window.localStorage) window.localStorage.setItem(KEY, JSON.stringify(store));
+    } catch (e) { /* 存储满/被禁用时只影响跨次比对，不影响本次结果 */ }
+    return diff;
+  };
+
+  /**
+   * 推导链：入口卡 + 右侧抽屉。数据来自 Engine.compute({ trace: true }) 的 r.trace。
+   * 每层只读展示 {field, rule, inputs, result, source}，不重算、不改盘。
+   */
+  pp.traceHTML = function (trace, system) {
+    if (!Array.isArray(trace) || !trace.length) return '';
+    const sys = ({ liuyao: '六爻', bazi: '八字', ziwei: '紫微' })[system] || '命盘';
+    const flow = trace.map((t) => t && t.field).filter(Boolean).join(' → ');
+    const clip = (v, n) => {
+      const s = String(v == null ? '' : v);
+      return s.length > n ? `${s.slice(0, n)}…` : s;
+    };
+    const steps = trace.map((t, i) => {
+      const inputs = Array.isArray(t.inputs) ? t.inputs : [];
+      return `<details class="mp-trace-step"${i === 0 ? ' open' : ''}>
+        <summary><span class="mp-trace-no">${i + 1}</span><span class="mp-trace-field">${esc(t.field)}</span><span class="mp-trace-res">${esc(clip(t.result, 44))}</span></summary>
+        <div class="mp-trace-detail">
+          <div class="mp-trace-rule"><b>规则</b>${esc(t.rule)}</div>
+          ${inputs.length ? `<dl class="mp-trace-inputs">${inputs.map((x) => `<dt>${esc(x.label)}</dt><dd>${esc(x.value)}</dd>`).join('')}</dl>` : ''}
+          <div class="mp-trace-result"><b>结果</b>${esc(t.result)}</div>
+          ${t.source ? `<div class="mp-trace-src"><b>出处</b>${esc(t.source)}</div>` : ''}
+        </div>
+      </details>`;
+    }).join('');
+    return `<button type="button" class="mp-trace-card" data-trace-open aria-haspopup="dialog" aria-controls="mp-trace-layer">
+        <span class="mp-trace-title">推导链</span><span class="mp-trace-flow">${esc(flow)}</span><span class="mp-trace-count">${trace.length} 层 · 查看</span>
+      </button>
+      <div class="mp-trace-layer" id="mp-trace-layer" data-trace-layer aria-hidden="true">
+        <div class="mp-trace-back" data-trace-close></div>
+        <aside class="mp-trace-drawer" role="dialog" aria-modal="true" aria-labelledby="mp-trace-title">
+          <div class="mp-trace-head">
+            <div><b id="mp-trace-title">推导链 · ${esc(sys)}</b><span>${trace.length} 层 · 每层给出规则、输入、结果与出处；只读，不重算</span></div>
+            <button type="button" class="mp-trace-close" data-trace-close aria-label="关闭推导链">✕</button>
+          </div>
+          <div class="mp-trace-body">${steps}</div>
+        </aside>
+      </div>`;
   };
 
   /**

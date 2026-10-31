@@ -1,13 +1,13 @@
 // 校验 client.js 的模块拼接与源码引擎等价
+import fs from 'node:fs';
 import vm from 'node:vm';
+import zlib from 'node:zlib';
 import { assemble } from '../tools/build-client.mjs';
 import * as srcEngine from '../engine/index.js';
-
-const ok = (label, cond, extra = '') =>
-  console.log(`${cond ? 'PASS' : 'FAIL'}  ${label}${extra ? '  -> ' + extra : ''}`);
+import { ok } from './_harness.mjs';
 
 // 1) 正式产物：factory 能执行，apply 注册两个槽
-const clientCode = (await import('node:fs')).readFileSync(
+const clientCode = fs.readFileSync(
   new URL('../client.js', import.meta.url), 'utf8',
 );
 let captured = null;
@@ -17,7 +17,7 @@ const sandbox = {
 };
 vm.runInNewContext(clientCode, sandbox, { filename: 'client.js' });
 const pkgName = JSON.parse(
-  (await import('node:fs')).readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+  fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 ).name;
 ok('client.js 的模块 id 与包名一致', captured && captured.id === pkgName, `${captured && captured.id} vs ${pkgName}`);
 
@@ -41,8 +41,15 @@ ok('对话桥挂在 conversation.input.right 上', registered.some((r) => r.opts
 ok('输入区 dock 另有安静探针座（桥缺席时的退路）', registered.some((r) => r.opts.name === 'conversation.composer.dock' && r.opts.id === 'metaphysics-dock'));
 ok('三个组件都是函数', registered.every((r) => typeof r.comp === 'function'));
 
+// 1c) 体积：压缩产物 + gzip 预算（防止退回只剥注释，或悄悄膨胀）
+const unminified = assemble();
+const gzipSize = zlib.gzipSync(Buffer.from(clientCode, 'utf8')).length;
+ok('client.js 已压缩（低于源码 80%）', clientCode.length < unminified.length * 0.8,
+  `${Math.round(clientCode.length / 1024)}KB / 源 ${Math.round(unminified.length / 1024)}KB`);
+ok('client.js gzip 预算 < 100KB（引擎已拆到分块）', gzipSize < 100 * 1024, `${Math.round(gzipSize / 1024)}KB`);
+
 // 1b) 「问进对话」这条链在源码里必须完整：生成提问 → 写草稿 → 走正常回车路径
-const appSrc = (await import('node:fs')).readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+const appSrc = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 ok('面板用 Engine.askPrompt 组装提问', appSrc.includes('Engine.askPrompt('));
 // 白话底稿必须由面板带进去：只传 r 的话模型拿不到「直答 / 说人话」
 ok('面板把解析对象传给 askPrompt', appSrc.includes('interpret: result.it') && appSrc.includes('interpret: LAST.it'));

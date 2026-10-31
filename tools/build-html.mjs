@@ -177,7 +177,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .seg button.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));color:var(--on-accent);font-weight:600}
 /* 结果入场：只做一次轻微上浮，不做循环动画 */
 #out{animation:mp-rise .3s cubic-bezier(.2,.7,.3,1) both}
-@keyframes mp-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* 只做淡入：曾用 translateY，但 #out 上有 transform 动画会为 fixed 子元素
+   建立 containing block，推导链抽屉会被关在结果卡片里而不是贴着视口右侧。 */
+@keyframes mp-rise{from{opacity:0}to{opacity:1}}
 /* 奇门换局规则：fieldset + 原生 radio（语义优先，外观沿用页面浅色块） */
 .qmrule{grid-column:1 / -1;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .qmrule legend{padding:0;font-size:13.5px;color:var(--dim)}
@@ -623,6 +625,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
 const __mods = {};
 ${modules}
 window.Engine = __mods.index;
+window.__MP_VER = ${JSON.stringify(VERSION)};
 </script>
 <script>
 ${core}

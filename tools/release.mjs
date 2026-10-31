@@ -35,7 +35,7 @@ async function verifyReleased() {
   const check = await verifyPublish({
     name: pkg.name,
     version: pkg.version,
-    expectFiles: ['package.json', 'client.js', '命理排盘.html'],
+    expectFiles: ['package.json', 'client.js', 'client.chart.js', 'client.mbti.js', '命理排盘.html'],
     onWait: ({ waitedMs, lastReason }) => step(`仍在处理…（已等 ${Math.round(waitedMs / 1000)}s）：${lastReason}`),
   });
   if (!check.ok) {
@@ -98,11 +98,11 @@ if (skipTests) {
 }
 
 // ── 2. 构建 + 产物校验 ─────────────────────────────────────
-step('重建 client.js 与单文件 HTML');
-run(process.execPath, [path.join(root, 'tools', 'build-client.mjs')], '构建 client.js');
+step('重建 client.js、引擎分块与单文件 HTML');
+run(process.execPath, [path.join(root, 'tools', 'build-client.mjs')], '构建 client.js 与分块');
 run(process.execPath, [path.join(root, 'tools', 'build-html.mjs')], '构建 HTML');
 step('校验构建产物与源码一致');
-run('git', ['diff', '--exit-code', '--', 'client.js'], '校验 client.js（未提交的产物差异）');
+run('git', ['diff', '--exit-code', '--', 'client.js', 'client.*.js'], '校验 client.js 与分块（未提交的产物差异）');
 
 // ── 3. 发布前检查 ──────────────────────────────────────────
 const token = process.env.NPM_TOKEN || '';
