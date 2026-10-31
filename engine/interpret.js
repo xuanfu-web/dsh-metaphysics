@@ -170,6 +170,7 @@ function baziInterpret(r) {
   const level = pick(st, 'level', '中和');
   const favor = Array.isArray(ys.favor) ? ys.favor : [];
   const avoid = Array.isArray(ys.avoid) ? ys.avoid : [];
+  const disputed = Array.isArray(ys.disputed) ? ys.disputed : [];
   const primary = pick(frame, 'primaryName', '未取定');
   const gender = pick(r.input, 'gender', '');
   const isMale = gender === 'male';
@@ -401,11 +402,13 @@ function baziInterpret(r) {
       const nextSeg = ry.next ? `，第 ${ry.next.from} 日起交 ${ry.next.stem}${ry.next.element}` : '';
       const outside = ry.inHidden ? '' : ` 表里的 ${ry.active} 不在本柱藏干表中（属余气口径），两表各照原样，不互相改写。`;
       const beyond = ry.beyond ? ' 你生在第 31 日以后，已超出 30 日表，按本气算，不硬分摊。' : '';
+      const ryc = r.renyuanClassic || classicOf('smt-renyuan');
+      const src = ryc ? `\n原文：《${CLASSIC_BOOKS[ryc.book].name}·${ryc.chapter}》「${ryc.quote}」\n白话：${ryc.plain}` : '';
       return {
         key: 'renyuan', label: '人元司权',
         text: `生于${ry.month}月第 ${ry.day} 日（从${ry.term ? ry.term.name : '节'}起算，节当日为第 1 日，日差按本盘所用时刻所在日计）：这一日由 **${ry.active}${ry.activeElement}** 司权，第 ${ry.segment.from}–${ry.segment.to} 日属它${nextSeg}。\n`
           + '月令这一个月里，余气、中气、本气轮值，不是整月同一个五行当值——所以「月令是什么」，还要看生在第几日。\n'
-          + `**口径**：本插件固定 30 日表（${table}）；另有 7/7/16、9/3/18 等分法，各家不一。分日只作解释层的一层细节，**不改取格**：取格仍按本气、透干与会支判定。${outside}${beyond}`,
+          + `**口径**：本插件固定通行 30 日表（${table}）；另有 7/7/16、9/3/18 等分法，三命通会此本又作 5/5/20（见下原文），各家不一。分日只作解释层的一层细节，**不改取格**：取格仍按本气、透干与会支判定。${outside}${beyond}` + src,
       };
     })()] : []),
     {
@@ -437,8 +440,8 @@ function baziInterpret(r) {
             const stem = (l.suiyun.dayun || []).map((d) => `第${d.step}步${d.ganzhi}`).join('、');
             return `${l.year} ${l.ganzhi}（${stem || '未到起运'}）：${l.suiyun.signals.map((s) => s.detail).join('；')}`;
           }).join('\n') +
-            '\n读法：岁运并临、运年反吟与流年伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。' + src
-          : '近十年没有岁运并临、运年反吟或流年伏吟/反吟。「岁运并临主大凶」这类说法流传很广，本插件只把它当变动提示，没有命中就不作额外解读。',
+            '\n读法：岁运并临、运年反吟、大运与流年的伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。大运与本命四柱的伏吟/反吟整步大运都在，会连续多年出现，不当成逐年加重。' + src
+          : '近十年没有岁运并临、运年反吟或大运/流年伏吟、反吟。「岁运并临主大凶」这类说法流传很广，本插件只把它当变动提示，没有命中就不作额外解读。',
       };
     })(),
     {
@@ -475,7 +478,7 @@ function baziInterpret(r) {
     ...(cli ? [{
       key: 'climate', label: '寒暖燥湿',
       text: `${cli.narration}${cli.need
-        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : '与扶抑同向'}`
+        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}${disputed.some((d) => d.element === cli.avoidElement) ? '（有争议：该行在扶抑中为喜，见用神节）' : ''}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : disputed.some((d) => d.element === cli.avoidElement) ? '调候所忌在扶抑里为喜，两说并存' : '与扶抑同向'}`
         : '气候平和，调候不作主取'}。`,
     }] : []),
     ...(ys.qt ? [{
@@ -1703,7 +1706,7 @@ const BUILDERS = {
 import { interpretQimen } from './qimen-interpret.js';
 import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
 import { knowledgeFor, caveatsFor, STATUS_LABEL } from './interpret-knowledge.js';
-import { CLASSIC_BOOKS, suiyunClassicOf } from './classics.js';
+import { CLASSIC_BOOKS, suiyunClassicOf, classicOf } from './classics.js';
 
 /**
  * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。

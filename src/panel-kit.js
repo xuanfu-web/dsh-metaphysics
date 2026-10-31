@@ -1,7 +1,7 @@
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -22,7 +22,7 @@
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -549,6 +549,53 @@
 .mp-cross-cell{font-size:12.5px;line-height:1.75;color:var(--ink2)}
 .mp-cross-cell b{display:block;font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:1px}
 .mp-cross-note{margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:12px;line-height:1.7;color:var(--muted)}
+/* 口径对照：结果下方一块可折叠的「换一个开关会变哪几个字」。
+   默认收起，summary 一行给出「几组影响此盘」；展开后先列根因，再列连带分类。
+   与盘面同一套变量，深色下只换变量；summary 保持 44px 触摸目标。 */
+.mp-cdiff{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;font-family:system-ui,sans-serif}
+.mp-cdiff>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:44px;padding:8px 13px;cursor:pointer;list-style:none;color:var(--ink2);font-size:12.5px;line-height:1.6}
+.mp-cdiff>summary::-webkit-details-marker{display:none}
+.mp-cdiff>summary::before{content:'▸';color:var(--red);font-size:12px}
+.mp-cdiff[open]>summary::before{content:'▾'}
+.mp-cdiff-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--red)}
+.mp-cdiff-lead{color:var(--muted)}
+.mp-cdiff-more{margin-left:auto;color:var(--label);font-size:11.5px;white-space:nowrap}
+.mp-cdiff[open] .mp-cdiff-more{display:none}
+.mp-cdiff-body{padding:0 13px 12px;border-top:1px dashed var(--line)}
+.mp-cdiff-row{padding:9px 0;border-bottom:1px dashed var(--line)}
+.mp-cdiff-row:last-of-type{border-bottom:none}
+.mp-cdiff-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mp-cdiff-h b{font-size:12.5px;color:var(--ink);font-weight:700}
+.mp-cdiff-count{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mp-cdiff-count.on{color:var(--red)}
+.mp-cdiff-ab{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px;font-size:11.5px;color:var(--muted)}
+.mp-cdiff-pill{border:1px solid var(--line);border-radius:999px;padding:1px 8px;background:var(--band)}
+.mp-cdiff-pill.now{color:var(--lu);border-color:rgba(var(--lu-rgb),.4);background:color-mix(in srgb,var(--lu) 10%,transparent)}
+.mp-cdiff-pill.alt{color:var(--red);border-color:rgba(var(--red-rgb),.4);background:color-mix(in srgb,var(--red) 8%,transparent)}
+.mp-cdiff-arrow{color:var(--dimline)}
+.mp-cdiff-roots{display:flex;flex-direction:column;gap:3px;margin-top:6px;font-size:12.5px;line-height:1.7}
+.mp-cdiff-root{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.mp-cdiff-k{color:var(--label);font-size:11px;letter-spacing:.08em;min-width:2.2em}
+.mp-cdiff-from{color:var(--ink2)}
+.mp-cdiff-to{color:var(--ink);font-weight:700}
+.mp-cdiff-cats{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
+.mp-cdiff-cat{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 7px;background:var(--band)}
+.mp-cdiff-same{font-size:12px;color:var(--muted);margin-top:4px}
+.mp-cdiff-note{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
+@media (max-width:640px){
+  .mp-cdiff>summary{padding:8px 11px}
+  /* 窄屏收起态只留标题与一句话总结；「展开」提示折行会把 summary 撑到 91px */
+  .mp-cdiff-more{display:none}
+  .mp-cdiff-body{padding:0 11px 10px}
+  .mp-cdiff-h b{font-size:12px}
+  .mp-cdiff-count{margin-left:0}
+}
+@media print{
+  .mp-cdiff:not([open])>*{display:block!important}
+  .mp-cdiff>summary{cursor:auto}
+  .mp-cdiff-more{display:none}
+  .mp-cdiff{break-inside:avoid}
+}
 /* 三张表：横向可滚动，避免窄栏撑破 */
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
 .mp-table-wrap{margin-bottom:12px}
@@ -2265,12 +2312,16 @@
     const ys = fr.yongshen ? `
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
+      ${(fr.yongshen.disputed || []).length
+        ? `<div class="pp-tl pp-dim">有争议：${fr.yongshen.disputed.map((d) => `${esc(d.element)}（扶抑为${esc(d.favorRole)}·${esc(d.favorVerb)}，${esc(d.climate)}盘调候忌${esc(d.element)}）`).join('、')}　保留在喜用，不列入忌</div>`
+        : ''}
       <div class="pp-tl pp-dim">${esc(fr.yongshen.detail)}</div>` : '';
     const cli = r.climate || (fr.yongshen && fr.yongshen.climate) || null;
     const cliCard = cli ? (() => {
       const pct = Math.max(2, Math.min(98, Math.round(((Number(cli.temp) || 0) + 3) / 6 * 100)));
       const need = cli.need ? `<em>调候取</em><b>${esc(cli.need.stem + cli.need.element)}</b>` : '<em>气候平和</em>';
-      const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>` : '';
+      const cliDis = !!(fr.yongshen && Array.isArray(fr.yongshen.disputed)) && fr.yongshen.disputed.some((d) => d.element === cli.avoidElement);
+      const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>${cliDis ? '<span class="pp-dim">（有争议）</span>' : ''}` : '';
       const ev = (cli.evidence || []).length ? `<em>依据</em><span>${esc(cli.evidence.join('、'))}</span>` : '';
       const pri = cli.priority === '调候优先' ? '<span class="mp-cli-p">调候优先</span>' : '<span class="mp-cli-p">扶抑为主</span>';
       const qt = r.frame && r.frame.yongshen && r.frame.yongshen.qt;
@@ -2305,7 +2356,7 @@
     const syc = r.suiyunClassic;
     const sySrc = syc ? `<div class="pp-dim pp-sy-src" title="${esc(syc.plain || '')}">《${esc(syc.bookName || '')}·${esc(syc.chapter || '')}》「${esc(syc.quote || '')}」</div>` : '';
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
-      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${x.type.startsWith('流年') && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
+      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${(x.type.startsWith('流年') || x.type.startsWith('大运')) && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
     const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
     const ssGroups = (r.shensha && r.shensha.groups) || [];
     const ssx = ssGroups.length ? `
@@ -2465,6 +2516,47 @@
   /** 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态） */
   pp.resultWithInterpret = function (html, it, opt) {
     return (html || '') + pp.interpretHTML(it, opt);
+  };
+
+  /**
+   * 口径对照卡：数据来自 Engine.caliberCompare（同一组输入只换一个开关）。
+   * 默认收起，summary 先给「几组影响此盘」；展开后列根因与连带分类。
+   */
+  pp.caliberHTML = function (caliber) {
+    const sws = caliber && Array.isArray(caliber.switches) ? caliber.switches.filter((s) => s && s.key) : [];
+    if (!sws.length) return '';
+    const affected = sws.filter((s) => !s.error && s.total > 0);
+    const lead = affected.length
+      ? `${sws.length} 组开关中 ${affected.length} 组影响此盘：${affected.map((s) => s.short || s.title).join('、')}。`
+      : `本盘对 ${sws.length} 组开关都不敏感：换成另一档也不变。`;
+    const rootsHTML = (row) => {
+      if (row.error) return `<div class="mp-cdiff-same">未能对照：${esc(row.error)}</div>`;
+      if (!row.total) return '<div class="mp-cdiff-same">无变化 · 此盘不受这一开关影响</div>';
+      const roots = Array.isArray(row.roots) ? row.roots : [];
+      if (!roots.length) return `<div class="mp-cdiff-same">无单一根因；逐字段差异 ${Number(row.total) || 0} 处</div>`;
+      return `<div class="mp-cdiff-roots">${roots.map((r) => `<div class="mp-cdiff-root">`
+        + `<span class="mp-cdiff-k">${esc(r.label)}</span><span class="mp-cdiff-from">${esc(r.from)}</span>`
+        + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-to">${esc(r.to)}</span></div>`).join('')}</div>`;
+    };
+    const catsHTML = (row) => {
+      const cats = Array.isArray(row.categories) ? row.categories : [];
+      if (row.error || !row.total || !cats.length) return '';
+      const shown = cats.slice(0, 6);
+      return `<div class="mp-cdiff-cats">${shown.map((c) => `<span class="mp-cdiff-cat">${esc(c.name)} ${Number(c.count) || 0} 处</span>`).join('')}`
+        + (cats.length > shown.length ? `<span class="mp-cdiff-cat">另 ${cats.length - shown.length} 类</span>` : '') + '</div>';
+    };
+    const rows = sws.map((row) => `<div class="mp-cdiff-row">`
+      + `<div class="mp-cdiff-h"><b>${esc(row.title)}</b>`
+      + `<span class="mp-cdiff-count${row.total > 0 ? ' on' : ''}">${row.error ? '未能对照' : row.total ? `${Number(row.total) || 0} 处` : '无变化'}</span></div>`
+      + `<div class="mp-cdiff-ab"><span class="mp-cdiff-pill now">当前 · ${esc(row.currentLabel)}</span>`
+      + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-pill alt">换成 · ${esc(row.altLabel)}</span></div>`
+      + `${rootsHTML(row)}${catsHTML(row)}</div>`).join('');
+    return `<details class="mp-cdiff" aria-label="口径对照">
+      <summary><span class="mp-cdiff-title">口径对照</span><span class="mp-cdiff-lead">${esc(lead)}</span><span class="mp-cdiff-more">展开逐字差异</span></summary>
+      <div class="mp-cdiff-body">${rows}
+        <div class="mp-cdiff-note">同一组输入、只换一个开关；只列变化字段与根因，不判哪套口径更准，也不改上方盘面。</div>
+      </div>
+    </details>`;
   };
 
   /**

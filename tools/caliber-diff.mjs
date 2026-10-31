@@ -3,9 +3,9 @@
 //   node tools/caliber-diff.mjs --datetime 1996-01-19T23:40 --gender male
 //   node tools/caliber-diff.mjs --datetime 1996-01-19T23:40 --system qimen
 //
-// 用法即演示：命理圈争的就是这几个开关，这里直接把「变在哪几个字」摊开。
-import { compute } from '../engine/index.js';
-import { diffObjects, renderDiff } from '../engine/diff.js';
+// 与面板、独立页共用 engine/index.js 的 caliberCompare：开关表只有一份，
+// 这里只负责把「当前口径 → 另一口径」的根因与连带影响打成文本。
+import { caliberCompare } from '../engine/index.js';
 
 function argOf(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
@@ -17,65 +17,32 @@ const gender = argOf('gender', 'male');
 const address = argOf('address', '安徽池州');
 const system = argOf('system', 'bazi');
 
-/** 需要对照的口径组：每次两组参数，只差一个维度 */
-const SWITCHES = {
-  bazi: [
-    {
-      name: '晚子时：23:00 后是否换日',
-      a: { lateZi: true },
-      b: { lateZi: false },
-    },
-    {
-      name: '真太阳时：是否按出生地经度修正',
-      a: { trueSolar: true },
-      b: { trueSolar: false },
-    },
-  ],
-  qimen: [
-    {
-      name: '取局流派：拆补 / 超神接气 / 置闰',
-      a: { juMethod: 'chaibu' },
-      b: { juMethod: 'zhirun' },
-    },
-    {
-      name: '晚子时归日：当日 / 次日',
-      a: { lateZiHourMode: 'same-day' },
-      b: { lateZiHourMode: 'next-day' },
-    },
-  ],
-  ziwei: [
-    {
-      name: '闰月：按日切分 / 整月归次月',
-      a: { leapMonth: 'split' },
-      b: { leapMonth: 'next' },
-    },
-    {
-      name: '闰月：整月归本月 / 整月归次月',
-      a: { leapMonth: 'prev' },
-      b: { leapMonth: 'next' },
-    },
-    {
-      name: '真太阳时：是否按出生地经度修正',
-      a: { trueSolar: true },
-      b: { trueSolar: false },
-    },
-  ],
-};
-
-const base = { system, datetime, gender, address };
-const switches = SWITCHES[system] || SWITCHES.bazi;
+const cmp = caliberCompare({ system, datetime, gender, address });
+if (!cmp.switches.length) {
+  console.log(`口径对照 · ${system}：这个体系没有可对照的口径开关（目前支持 bazi / ziwei / qimen）。`);
+  process.exit(0);
+}
 
 console.log(`口径对照 · ${system} · ${datetime}${system === 'bazi' || system === 'ziwei' ? ` · ${gender}` : ''}`);
-console.log('（同一组输入，只切换一个口径开关；下方只列变化的字段）\n');
+console.log('（同一组输入，只把当前口径换成另一档；下方只列变化字段与根因）\n');
 
-let totalChanged = 0;
-for (const sw of switches) {
-  const A = compute({ ...base, ...sw.a });
-  const B = compute({ ...base, ...sw.b });
-  const diffs = diffObjects(A, B);
-  totalChanged += diffs.length;
-  console.log(renderDiff(diffs, { title: sw.name }));
+for (const row of cmp.switches) {
+  console.log(`【${row.title}】`);
+  console.log(`  当前 · ${row.currentLabel}　→　另一口径 · ${row.altLabel}`);
+  if (row.error) {
+    console.log(`  未能对照：${row.error}\n`);
+    continue;
+  }
+  if (!row.total) {
+    console.log('  本盘不受此口径影响：所有字段一致。\n');
+    continue;
+  }
+  console.log(`  ${row.summary}`);
+  for (const r of row.roots) {
+    console.log(`    根因　${r.label} ${r.from} → ${r.to}`);
+  }
+  console.log(`    连带　${row.categories.map((c) => `${c.name} ${c.count} 处`).join('、')}`);
   console.log('');
 }
 
-console.log(`合计变化 ${totalChanged} 处。若为 0，说明该时刻对这几组口径不敏感（例如出生时刻不在子时、或无经度）。`);
+console.log(`合计变化 ${cmp.total} 处。若为 0，说明该时刻对这几组口径不敏感（例如出生时刻不在子时、或无经度）。`);

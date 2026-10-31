@@ -241,6 +241,7 @@
     }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
+      + window.__PP.caliberHTML(last.caliber)
       + followupBar()
       + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
       + exportBar();
@@ -517,6 +518,11 @@
           });
         } catch (e) { trend = null; }
       }
+      // 口径对照：只对 bazi / ziwei / qimen 有开关表；额外排 2–3 张盘，失败不影响主结果
+      let caliber = null;
+      if (window.Engine.caliberCompare) {
+        try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
+      }
       const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
@@ -532,7 +538,7 @@
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
-      last = { r, html, tab, date, time, timed, trend };
+      last = { r, html, tab, date, time, timed, trend, caliber };
       paint();
     } catch (e) {
       last = null;

@@ -1,10 +1,12 @@
-// 0.37.2：岁运并临 / 伏吟反吟的逐年提示。
+// 0.37.2 / 0.50.3：岁运并临 / 伏吟反吟的逐年提示。
 // 口径：流年按立春起算（该年立春到次年立春），当值大运取与这一区间相交的步；
-// 交运落在年内时前后两步并列。四类信号——岁运并临、运年反吟、流年伏吟、流年反吟——
-// 只标干支重复与天克地冲，不折分数、不判吉凶。
+// 交运落在年内时前后两步并列。六类信号——岁运并临、运年反吟、大运伏吟、大运反吟、
+// 流年伏吟、流年反吟——只标干支重复与天克地冲，不折分数、不判吉凶。
+// 大运与本命四柱的伏吟/反吟整步大运都在，随每年重复列出。
 //
-// 重点防四件事：①当值大运取错（用虚岁近似、漏掉年内交运）②天克地冲只判冲不判干克
-// ③伏吟/反吟对错了柱 ④只算引擎、不落到摘要/解析/白话/面板。
+// 重点防五件事：①当值大运取错（用虚岁近似、漏掉年内交运）②天克地冲只判冲不判干克
+// ③伏吟/反吟对错了柱 ④大运与本命柱的伏吟/反吟漏标或漏掉整步重复
+// ⑤只算引擎、不落到摘要/解析/白话/面板。
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { buildBazi } from '../engine/bazi.js';
@@ -51,6 +53,7 @@ const CASES = [
   { label: '2001-02-04 男', year: 2001, month: 2, day: 4, hour: 18, gender: 'male' },
   { label: '1999-12-31 女', year: 1999, month: 12, day: 31, hour: 23, gender: 'female' },
   { label: '1960-06-15 男', year: 1960, month: 6, day: 15, hour: 12, gender: 'male' },
+  { label: '1950-07-15 男', year: 1950, month: 7, day: 15, hour: 9, gender: 'male' },
 ];
 
 const build = (c, nowYear = 2026) => buildBazi({
@@ -70,9 +73,10 @@ for (const { c, r } of charts) {
   ok(`${c.label} 口径写明「不判吉凶」`, r.liunian.every((l) => /不判吉凶/.test(l.suiyun.note)));
   ok(`${c.label} 流年仍是 10 条`, r.liunian.length === 10, String(r.liunian.length));
   ok(`${c.label} 交运年内并列写进 note`, /交运落在年内/.test(r.liunian[0].suiyun.note));
+  ok(`${c.label} 同一年内没有重复的 type+target`, r.liunian.every((l) => new Set(l.suiyun.signals.map((s) => `${s.type}|${s.target}`)).size === l.suiyun.signals.length));
 }
 
-// ── 二、独立复算：大运干支、当值窗口、四类信号逐条比对 ───────────────
+// ── 二、独立复算：大运干支、当值窗口、六类信号逐条比对 ───────────────
 for (const { c, r } of charts) {
   const mi = sexagenaryIndex(
     STEMS.indexOf(r.pillars.month.stem),
@@ -102,6 +106,11 @@ for (const { c, r } of charts) {
     for (const w of refActive) {
       if (w.ganzhi === l.ganzhi) refSig.push(`岁运并临|第${w.step}步大运`);
       else if (tianKeDiChong(w.ganzhi, l.ganzhi)) refSig.push(`运年反吟|第${w.step}步大运`);
+      for (const k of NATAL) {
+        const g = r.pillars[k].ganzhi;
+        if (w.ganzhi === g) refSig.push(`大运伏吟|第${w.step}步大运·${NATAL_CN[k]}`);
+        else if (tianKeDiChong(w.ganzhi, g)) refSig.push(`大运反吟|第${w.step}步大运·${NATAL_CN[k]}`);
+      }
     }
     for (const k of NATAL) {
       const g = r.pillars[k].ganzhi;
@@ -120,17 +129,21 @@ for (const { c, r } of charts) {
     }
   }
   ok(`${c.label} 当值大运按立春区间独立复算`, activeOk);
-  ok(`${c.label} 四类信号逐条独立复算`, signalOk);
+  ok(`${c.label} 六类信号逐条独立复算`, signalOk);
 }
 
 // ── 三、规则：类型与事实必须对得上（扫描全部样本） ───────────────────
 {
   let binglin = 0;
   let yunFan = 0;
+  let yunFu = 0;
+  let yunFanNatal = 0;
   let liuFu = 0;
   let liuFan = 0;
   let binglinBad = 0;
   let yunFanBad = 0;
+  let yunFuBad = 0;
+  let yunFanNatalBad = 0;
   let liuFuBad = 0;
   let liuFanBad = 0;
   for (const { r } of charts) {
@@ -144,6 +157,15 @@ for (const { c, r } of charts) {
           const step = Number((s.target.match(/第(\d+)步/) || [])[1]);
           const d = l.suiyun.dayun.find((x) => x.step === step);
           if (!d || !tianKeDiChong(d.ganzhi, l.ganzhi)) yunFanBad += 1;
+        } else if (s.type === '大运伏吟' || s.type === '大运反吟') {
+          if (s.type === '大运伏吟') yunFu += 1; else yunFanNatal += 1;
+          const m = /^第(\d+)步大运·(.+)$/.exec(s.target);
+          const k = m ? NATAL.find((x) => NATAL_CN[x] === m[2]) : null;
+          const d = m ? l.suiyun.dayun.find((x) => x.step === Number(m[1])) : null;
+          const bad = !k || !d || (s.type === '大运伏吟'
+            ? d.ganzhi !== r.pillars[k].ganzhi
+            : !tianKeDiChong(d.ganzhi, r.pillars[k].ganzhi));
+          if (bad) { if (s.type === '大运伏吟') yunFuBad += 1; else yunFanNatalBad += 1; }
         } else if (s.type === '流年伏吟') {
           liuFu += 1;
           const k = NATAL.find((x) => NATAL_CN[x] === s.target);
@@ -156,11 +178,13 @@ for (const { c, r } of charts) {
       }
     }
   }
-  ok('样本里四类信号都被触发（防死规则）',
-    binglin > 0 && yunFan > 0 && liuFu > 0 && liuFan > 0,
-    `并临 ${binglin} / 运年反吟 ${yunFan} / 伏吟 ${liuFu} / 流年反吟 ${liuFan}`);
+  ok('样本里六类信号都被触发（防死规则）',
+    binglin > 0 && yunFan > 0 && yunFu > 0 && yunFanNatal > 0 && liuFu > 0 && liuFan > 0,
+    `并临 ${binglin} / 运年反吟 ${yunFan} / 大运伏吟 ${yunFu} / 大运反吟 ${yunFanNatal} / 流年伏吟 ${liuFu} / 流年反吟 ${liuFan}`);
   eq('岁运并临：当值大运与流年干支相同', binglinBad, 0);
   eq('运年反吟：所指大运与流年天克地冲', yunFanBad, 0);
+  eq('大运伏吟：所指大运与对应柱干支相同', yunFuBad, 0);
+  eq('大运反吟：所指大运与对应柱天克地冲', yunFanNatalBad, 0);
   eq('流年伏吟：对应柱干支相同', liuFuBad, 0);
   eq('流年反吟：对应柱天克地冲', liuFanBad, 0);
 }
@@ -182,6 +206,13 @@ for (const { c, r } of charts) {
   ok('起运前的流年没有当值大运', pre.length > 0 && pre.every((l) => l.suiyun.dayun.length === 0), JSON.stringify(pre.map((l) => [l.year, l.suiyun.dayun.length])));
   ok('起运前不会出岁运并临', pre.every((l) => !l.suiyun.signals.some((s) => s.type === '岁运并临')));
   ok('起运前的流年伏吟/反吟仍可单独成立', pre.every((l) => l.suiyun.signals.every((s) => s.type.startsWith('流年'))));
+
+  // 1950 年柱庚寅；第 7 步大运庚寅在 2026–2028 当值 → 整步大运逐年重复
+  const c1950 = CASES.find((c) => c.year === 1950);
+  const r50 = build(c1950, 2026);
+  const fu = r50.liunian.filter((l) => l.suiyun.signals.some((s) => s.type === '大运伏吟' && s.target === '第7步大运·年柱'));
+  eq('大运伏吟整步大运逐年列出（2026–2028）', fu.map((l) => l.year).join(','), '2026,2027,2028');
+  ok('大运伏吟不误记成流年伏吟', !r50.liunian.some((l) => l.suiyun.signals.some((s) => s.type === '流年伏吟' && s.target === '年柱')));
 
   // 1966-11-12 交运第 7 步；2026 立春到 2027 立春横跨交运日 → 第 6、7 步都在本年当过值
   const r26 = build(c1966, 2026);
@@ -207,10 +238,18 @@ for (const { c, r } of charts) {
   const r = compute(args);
   ok('摘要含岁运提示且标明不判吉凶', /岁运提示（只标干支变动，不判吉凶）/.test(r.summary), '');
   ok('摘要列出 2030 岁运并临', /2030庚戌 岁运并临/.test(r.summary), r.summary.split('\n').filter((x) => /岁运/.test(x)).join(''));
-  ok('摘要列出 2031 的流年反吟', /2031辛亥 岁运并临\/流年反吟\(日柱\)/.test(r.summary), '');
+  ok('摘要列出 2031 的流年反吟', /2031辛亥 岁运并临\/大运反吟\(第8步大运·日柱\)\/大运反吟\(第8步大运·时柱\)\/流年反吟\(日柱\)\/流年反吟\(时柱\)/.test(r.summary), '');
+  ok('摘要列出大运反吟及其柱位', /大运反吟\(第8步大运·日柱\)/.test(r.summary), '');
+  const r50 = compute({
+    system: 'bazi', datetime: '1950-07-15T09:30', gender: 'male',
+    trueSolar: false, dst: false, nowYear: 2026,
+  });
+  ok('摘要列出大运伏吟及其柱位', /2026丙午 大运伏吟\(第7步大运·年柱\)/.test(r50.summary), r50.summary.split('\n').filter((x) => /岁运/.test(x)).join(''));
   const sec = (r.interpret.sections || []).find((s) => s.key === 'suiyun');
   ok('解析有「岁运提示」一节', !!sec && sec.label === '岁运提示');
   ok('解析写清大运与流年同为庚戌', !!sec && /大运与流年同为庚戌/.test(sec.text));
+  ok('解析写清大运与日柱反吟', !!sec && /大运\S+与日柱\S+天克地冲/.test(sec.text));
+  ok('解析写明整步大运重复、不逐年加重', !!sec && /整步大运都在/.test(sec.text) && /不当成逐年加重/.test(sec.text));
   ok('解析写明只标变动、仍看用神', !!sec && /不据此判吉凶/.test(sec.text) && /用神/.test(sec.text));
   ok('文本输出含岁运提示', interpretText(r.interpret).includes('岁运提示：'));
   ok('白话加一句变化感提示（取最近一个命中）', /变化感强一点/.test(buildPlain(r)) && /2029/.test(buildPlain(r)), buildPlain(r));
@@ -223,6 +262,9 @@ for (const { c, r } of charts) {
   ok('面板出「岁运提示」行', /岁运提示（只标干支变动，不判吉凶）/.test(html));
   ok('面板 chip 带年份与类型', /2030 岁运并临/.test(html), '');
   ok('面板 chip 悬停给依据', /大运与流年同为庚戌/.test(html));
+  ok('面板 chip 带大运反吟的柱位', /大运反吟·第8步大运·日柱/.test(html));
+  const html50 = PP.baziHTML(r50);
+  ok('面板 chip 带大运伏吟的柱位', /大运伏吟·第7步大运·年柱/.test(html50));
 
   // 旧结果（没有 suiyun 字段）不能炸，也不能凭空多出一行
   const old = JSON.parse(JSON.stringify(r));
@@ -246,7 +288,7 @@ for (const { c, r } of charts) {
 {
   const card = KNOWLEDGE.find((k) => k.id === 'bazi-suiyun');
   ok('知识卡 bazi-suiyun 存在', !!card);
-  ok('知识卡写明四类信号', !!card && /岁运并临/.test(card.detail) && /运年反吟/.test(card.detail) && /伏吟/.test(card.detail));
+  ok('知识卡写明六类信号', !!card && /岁运并临/.test(card.detail) && /运年反吟/.test(card.detail) && /大运伏吟/.test(card.detail) && /大运反吟/.test(card.detail) && /流年伏吟/.test(card.detail) && /流年反吟/.test(card.detail));
   ok('知识卡 note 仍标「不判吉凶」', !!card && /不断吉凶|不判吉凶/.test(card.note));
-  ok('知识卡 note 诚实交代未逐年标大运与原局', !!card && /大运与原局之间的伏吟反吟未逐年标注/.test(card.note));
+  ok('知识卡 note 交代大运伏吟/反吟整步重复、不逐年加重', !!card && /连续多年出现/.test(card.note) && /不逐年加重/.test(card.note));
 }

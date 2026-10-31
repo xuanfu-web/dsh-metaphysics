@@ -280,11 +280,17 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const me = roles.me;
   const weak = strength.level === '身弱' || strength.level === '偏弱';
   const strong = strength.level === '身强' || strength.level === '偏强';
+  const roleName = (el) => (el === me ? '比劫' : el === roles.inMe ? '印'
+    : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
+  const ROLE_VERB = { 比劫: '帮身', 印: '生身', 食伤: '泄秀', 财: '耗', 官杀: '制' };
 
   const baseFavor = weak ? [roles.inMe, me] : strong ? [roles.shi, roles.cai, roles.guan] : [roles.inMe, me, roles.shi];
   const baseAvoid = weak ? [roles.shi, roles.cai, roles.guan] : strong ? [me, roles.inMe] : [roles.guan, roles.cai];
   let favor = baseFavor.slice();
   let avoid = baseAvoid.slice();
+  // 调候所忌若正好是扶抑所喜（弱土遇燥的火、寒湿盘的强土遇水），两边不能同时列。
+  // 本表保留在喜用、不列入忌，并单列「有争议」；否则摘要会出现同一行既喜又忌。
+  const disputed = [];
 
   // 先判气候，再决定要不要让调候压过扶抑
   const climate = judgeClimate({ monthBranch, dayStem, wuxing, branches });
@@ -295,27 +301,39 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     const needEl = climate.need.element;
     if (!favor.includes(needEl)) favor.unshift(needEl);
     avoid = avoid.filter((e) => e !== needEl);
-    if (climate.avoidElement && !avoid.includes(climate.avoidElement)) avoid.unshift(climate.avoidElement);
+    const badEl = climate.avoidElement;
+    if (badEl && favor.includes(badEl)) {
+      disputed.push({
+        element: badEl,
+        favorRole: roleName(badEl),
+        favorVerb: ROLE_VERB[roleName(badEl)],
+        climate: climate.label,
+        note: `调候忌${badEl}（${climate.label}），但它在扶抑里为${roleName(badEl)}；本表保留在喜用，不列入忌。`,
+      });
+    } else if (badEl && !avoid.includes(badEl)) {
+      avoid.unshift(badEl);
+    }
   }
 
-  const roleName = (el) => (el === me ? '比劫' : el === roles.inMe ? '印'
-    : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
   const expand = {
     比劫: ['比肩', '劫财'], 印: ['正印', '偏印'], 食伤: ['食神', '伤官'],
     财: ['正财', '偏财'], 官杀: ['正官', '七杀'],
   };
   const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
   const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
+  const disputedTenGods = Array.from(new Set(disputed.flatMap((d) => expand[roleName(d.element)] || [])));
   const tongguan = tongguanOf(favor, avoid, wuxing);
 
+  const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
+  const disputedText = disputed
+    .map((d) => `${d.element}（扶抑为${d.favorRole}·${d.favorVerb}；${d.climate}盘调候忌${d.element}，本表保留在喜用）`)
+    .join('、');
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
-    weak
-      ? `喜${roles.inMe}（印）生身、${me}（比劫）帮身；忌${roles.shi}（食伤）泄、${roles.cai}（财）耗、${roles.guan}（官杀）克。`
-      : strong
-        ? `喜${roles.shi}（食伤）泄秀、${roles.cai}（财）耗、${roles.guan}（官杀）制；忌${me}（比劫）与${roles.inMe}（印）再助。`
-        : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
-    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
+    `喜${favor.map(describe).join('、') || '—'}；忌${avoid.map(describe).join('、') || '—'}。`,
+    disputed.length ? `有争议：${disputedText}。` : '',
+    !weak && !strong ? '身中和，先取调候与通关，喜忌随大运流年动态变化。' : '',
+    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}${disputed.some((d) => d.element === climate.avoidElement) ? '（有争议）' : ''}` : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
     tongguan
       ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
@@ -335,10 +353,12 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     level: strength.level,
     favor,
     avoid,
+    disputed,
     favorRoles: favor.map(roleName),
     avoidRoles: avoid.map(roleName),
     favorTenGods,
     avoidTenGods,
+    disputedTenGods,
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,

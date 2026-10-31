@@ -2,7 +2,7 @@
  * Host 半：把排盘引擎注册成一个模型可调用的工具。
  * 纯计算；唯一的网络行为是按需把地址解析成经度（失败即退回内置坐标表）。
  */
-import { compute, renderText, geocodeAddress } from './engine/index.js';
+import { compute, renderText, geocodeAddress, caliberCompare } from './engine/index.js';
 import { createLru } from './engine/lru.js';
 import { cacheMetrics } from './engine/calendar.js';
 
@@ -98,7 +98,13 @@ export function apply(ctx) {
       && next.fortuneYear === undefined) {
       next.fortuneYear = now.getFullYear();
     }
-    return compute(next);
+    const out = compute(next);
+    // 显式要求时才做口径对照：每次要额外排 2–3 张盘，默认不付这笔开销
+    if (next.diff === true) {
+      const cmp = caliberCompare(next);
+      if (cmp.switches.length) out.caliber = cmp;
+    }
+    return out;
   }
 
   const definition = {
@@ -207,6 +213,10 @@ export function apply(ctx) {
         cross: {
           type: 'boolean',
           description: '八字 / 紫微专用：为同一份出生信息再排另一套盘，返回「八字 × 紫微 交叉验证」（同向 / 有张力 / 互补），不合并数值。',
+        },
+        diff: {
+          type: 'boolean',
+          description: '口径对照（bazi / ziwei / qimen）：同一组输入分别按当前口径与另一档各排一次，列出根因字段（如日柱、命宫、局数）与连带变化数。只列差异，不判哪套口径更准，也不改盘面。',
         },
         verifyPast: {
           type: 'number',

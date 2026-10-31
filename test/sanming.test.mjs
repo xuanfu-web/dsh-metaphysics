@@ -17,7 +17,7 @@ const SMT_SPECIAL = SMT.filter((e) => SMT_SPECIAL_IDS.includes(e.id));
 
 // —— 书目与条目
 ok('三命通会已登记', CLASSIC_BOOKS.sanming && CLASSIC_BOOKS.sanming.name === '三命通会' && CLASSIC_BOOKS.sanming.author === '明·万民英');
-ok('三命通会条目 17 条（8 论十神 + 7 格局篇 + 1 官煞去留 + 1 总论岁运）', SMT.length === 17 && SMT_TEN.length === 8 && SMT_SPECIAL.length === 7 && SMT.filter((e) => e.id === 'smt-guansha-liu').length === 1 && SMT.filter((e) => e.id === 'smt-suiyun').length === 1);
+ok('三命通会条目 18 条（8 论十神 + 7 格局篇 + 1 官煞去留 + 2 卷二条）', SMT.length === 18 && SMT_TEN.length === 8 && SMT_SPECIAL.length === 7 && SMT.filter((e) => e.id === 'smt-guansha-liu').length === 1 && SMT.filter((e) => e.id === 'smt-suiyun').length === 1 && SMT.filter((e) => e.id === 'smt-renyuan').length === 1);
 ok('论十神章名都以「论」立题', SMT_TEN.every((e) => /^卷[五六]·论/.test(e.chapter)));
 ok('七杀对照篇按本本章名照录', classicOf('smt-guansha-liu').chapter === '卷五·官煞去留杂论');
 ok('条目 id 全局唯一', new Set(CLASSICS.map((e) => e.id)).size === CLASSICS.length);
@@ -96,18 +96,36 @@ ok('岁运条目不进五条取条表', classicsFor(R).every((e) => e.id !== 'sm
 ok('有信号的盘把原文挂到结果上', !!R.suiyunClassic && R.suiyunClassic.id === 'smt-suiyun' && R.suiyunClassic.bookName === '三命通会');
 ok('摘要的岁运提示带出处', R.summary.includes('岁运提示') && R.summary.includes('古籍见《三命通会·卷二·总论岁运》'));
 ok('suiyunClassicOf 只认信号、不认空盘', suiyunClassicOf(null) === null && suiyunClassicOf({ liunian: [{ year: 2030, suiyun: { signals: [] } }] }) === null && suiyunClassicOf(R).id === 'smt-suiyun');
-const NO_SIG = compute({ system: 'bazi', datetime: '1984-10-18T06:20', gender: 'male' });
+const NO_SIG = compute({ system: 'bazi', datetime: '1996-02-18T06:20', gender: 'male' });
 ok('无信号的盘不挂原文（结果层）', !NO_SIG.suiyunClassic && !NO_SIG.summary.includes('总论岁运'));
 const itSy = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'male', withInterpret: true }).interpret;
 const sySec = (itSy.sections || []).find((s) => s.key === 'suiyun');
 ok('解析层岁运节带原文与白话', !!sySec && sySec.text.includes('《三命通会·卷二·总论岁运》') && sySec.text.includes(syE.quote) && sySec.text.includes('白话：'));
-const noSySec = compute({ system: 'bazi', datetime: '1984-10-18T06:20', gender: 'male', withInterpret: true }).interpret.sections.find((s) => s.key === 'suiyun');
+const noSySec = compute({ system: 'bazi', datetime: '1996-02-18T06:20', gender: 'male', withInterpret: true }).interpret.sections.find((s) => s.key === 'suiyun');
 ok('无信号的解析层不出原文', !!noSySec && !noSySec.text.includes('总论岁运'));
 ok('面板岁运提示下有原文', html.includes('pp-sy-src') && html.includes('谓之返吟'));
 ok('无信号的面板不渲染原文块', !box.window.__PP.baziHTML(NO_SIG).includes('pp-sy-src'));
 ok('知识卡 bazi-suiyun 出处带典藏网链接', (() => {
   const k = KNOWLEDGE.find((x) => x.id === 'bazi-suiyun');
   return !!k && k.source.includes('三命通会') && k.source.includes('7539.html') && k.detail.includes('不是同一套定义');
+})());
+
+// —— 人元司事的原文（卷二·论人元司事）：不占五条上限，随「人元司权」一节出现
+const ryE = classicOf('smt-renyuan');
+ok('人元条目原文抽检', !!ryE && ryE.quote.includes('谓之人元') && ryE.quote.includes('艮土用事五日') && ryE.quote.includes('乙木二十三日'));
+ok('人元条目章名与典藏网链接', !!ryE && ryE.chapter === '卷二·论人元司事' && ryE.url === 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7529.html');
+ok('人元条目自成一个景、不挂格局 tag', !!ryE && ryE.scene === '人元' && ryE.tags.length === 0);
+ok('人元条目白话点明与通行表不同', !!ryE && ryE.plain.includes('不是同一套分法') && ryE.plain.includes('7/7/16'));
+ok('人元条目不进五条取条表', classicsFor(R).every((e) => e.id !== 'smt-renyuan') && R.classics.every((e) => e.id !== 'smt-renyuan'));
+ok('每张八字盘都挂 renyuanClassic', !!R.renyuanClassic && R.renyuanClassic.id === 'smt-renyuan' && R.renyuanClassic.bookName === '三命通会');
+ok('摘要的人元行带出处', R.summary.includes('人元：') && R.summary.includes('原文见《三命通会·卷二·论人元司事》'));
+const rySec = (it.sections || []).find((s) => s.key === 'renyuan');
+ok('解析层人元节带原文与白话', !!rySec && rySec.text.includes('《三命通会·卷二·论人元司事》') && rySec.text.includes(ryE.quote) && rySec.text.includes('白话：'));
+ok('解析层人元节点明 5/5/20 与通行表不同', !!rySec && rySec.text.includes('5/5/20') && rySec.text.includes('7/7/16'));
+ok('面板人元节带原文', box.window.__PP.interpretHTML(it).includes('论人元司事') && box.window.__PP.interpretHTML(it).includes('艮土用事五日'));
+ok('知识卡 bazi-yueling-siquan 出处带 7529 与 5/5/20', (() => {
+  const k = KNOWLEDGE.find((x) => x.id === 'bazi-yueling-siquan');
+  return !!k && k.status === 'variant' && k.source.includes('7529') && k.note.includes('5/5/20');
 })());
 
 // —— 知识卡

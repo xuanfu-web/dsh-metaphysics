@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { GROUPS } from '../src/groups.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
-const ORDER = ['fail', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
+const ORDER = ['fail', 'diff', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
   'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'index'];
 
 export const MODULE_ORDER = ORDER;

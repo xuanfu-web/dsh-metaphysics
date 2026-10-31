@@ -15,7 +15,7 @@ ok('books 三部', Object.keys(CLASSIC_BOOKS).length === 3 && CLASSIC_BOOKS.zipi
 ok('条目数 ≥ 26', CLASSICS.length >= 26);
 ok('id 唯一', new Set(CLASSICS.map((e) => e.id)).size === CLASSICS.length);
 ok('每条都有书名/章名/原文/释义/出处', CLASSICS.every((e) => CLASSIC_BOOKS[e.book] && e.chapter.length >= 2 && e.quote.length >= 12 && e.plain.length >= 8 && /^https:\/\//.test(e.url)));
-ok('scene 取值合法', CLASSICS.every((e) => ['格局', '十神', '调候', '用神', '岁运'].includes(e.scene)));
+ok('scene 取值合法', CLASSICS.every((e) => ['格局', '十神', '调候', '用神', '岁运', '人元'].includes(e.scene)));
 ok('tags 都是字符串数组', CLASSICS.every((e) => Array.isArray(e.tags) && e.tags.every((t) => typeof t === 'string')));
 ok('原文不带省略号占位（不伪造断句）', CLASSICS.every((e) => !e.quote.includes('…') && !e.quote.includes('...')));
 
@@ -39,6 +39,9 @@ ok('杂气取用出自典藏网第十六章', classicOf('zp-zaji').chapter === '
 ok('总论岁运含「谓之返吟」「谓之伏吟」', classicOf('smt-suiyun').quote.includes('谓之返吟') && classicOf('smt-suiyun').quote.includes('谓之伏吟'));
 ok('总论岁运出自典藏网卷二', classicOf('smt-suiyun').book === 'sanming' && classicOf('smt-suiyun').chapter === '卷二·总论岁运' && classicOf('smt-suiyun').url === 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html');
 ok('岁运条文不冒充原文：plain 点明与本插件口径不同', classicOf('smt-suiyun').plain.includes('不是同一套定义'));
+ok('论人元司事含「谓之人元」「艮土用事五日」「乙木二十三日」', classicOf('smt-renyuan').quote.includes('谓之人元') && classicOf('smt-renyuan').quote.includes('艮土用事五日') && classicOf('smt-renyuan').quote.includes('乙木二十三日'));
+ok('论人元司事出自典藏网卷二', classicOf('smt-renyuan').book === 'sanming' && classicOf('smt-renyuan').chapter === '卷二·论人元司事' && classicOf('smt-renyuan').url === 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7529.html');
+ok('人元条不冒充通行表：plain 点明两表不是同一套分法', classicOf('smt-renyuan').plain.includes('不是同一套分法'));
 ok('未知 id 返回 null', classicOf('no-such') === null);
 
 // —— 匹配规则
@@ -55,6 +58,7 @@ ok('why 不拼出「论论」', rows.every((e) => !e.why.includes('论论')));
 ok('总纲位只出一条（总纲/变化/成败/杂气四选一）', ['zp-yongshen', 'zp-bianhua', 'zp-chengbai', 'zp-zaji'].filter((id) => rows.some((e) => e.id === id)).length === 1);
 ok('1996 盘有化气格，总纲位取「论用神变化」', rows.some((e) => e.id === 'zp-bianhua') && !rows.some((e) => e.id === 'zp-yongshen'));
 ok('1996 盘虽是丑月，化气仍优先于杂气', !rows.some((e) => e.id === 'zp-zaji'));
+ok('人元条不进五条取条表', rows.every((e) => e.id !== 'smt-renyuan') && R.classics.every((e) => e.id !== 'smt-renyuan'));
 const huagiRows = classicsFor({ geju: [{ name: '化土格', kind: '化气格' }], climate: { kind: '平和' } });
 ok('化气格 → 论用神变化', huagiRows.some((e) => e.id === 'zp-bianhua'));
 ok('化气格 why 点明合化', huagiRows.find((e) => e.id === 'zp-bianhua').why.includes('合化'));

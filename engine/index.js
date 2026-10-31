@@ -24,7 +24,8 @@ import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
 import { buildMbti, mbtiPaper } from './mbti.js';
 import { buildConvert } from './convert.js';
-import { classicsFor, classicsText, suiyunClassicOf, CLASSIC_BOOKS } from './classics.js';
+import { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } from './classics.js';
+import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES } from './diff.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
@@ -127,15 +128,21 @@ function baziText(r) {
       `${g.cat}｜` + g.items.map((i) => `${i.name}(${i.pillars.map((k) => SHORT[k]).join('')})`).join('、')).join('；')
     : '神煞：—';
   const ry = r.renyuan;
+  const rySrc = classicOf('smt-renyuan');
   const renyuanLine = ry
-    ? `人元：${ry.month}月第${ry.day}日，${ry.active}${ry.activeElement}司权（${ry.segments.map((s) => `${s.stem}${s.from}–${s.to}`).join(' ')}）${ry.beyond ? '；已过 30 日表，按本气算' : ''}`
+    ? `人元：${ry.month}月第${ry.day}日，${ry.active}${ry.activeElement}司权（${ry.segments.map((s) => `${s.stem}${s.from}–${s.to}`).join(' ')}）${ry.beyond ? '；已过 30 日表，按本气算' : ''}${rySrc ? `｜原文见《${CLASSIC_BOOKS[rySrc.book].name}·${rySrc.chapter}》` : ''}`
     : '';
+  const ysd = (r.frame && r.frame.yongshen && r.frame.yongshen.disputed) || [];
+  const disText = ysd.length
+    ? `　有争议：${ysd.map((d) => `${d.element}（${d.favorRole}；${d.climate}盘调候忌${d.element}）`).join('、')}`
+    : '';
+  const disEls = new Set(ysd.map((d) => d.element));
   const gejuLine = r.frame ? [
     `格局：${r.frame.primary ? `${r.frame.primary.name}（${r.frame.primary.evidence}）` : '—'}`,
     `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}]`).join('　')}`,
-    `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）　${r.frame.yongshen.method}`,
+    `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）${disText}　${r.frame.yongshen.method}`,
     `　　　${r.frame.yongshen.detail}`,
-    `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}` : ''}` : '—'}` +
+    `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}${disEls.has(r.climate.avoidElement) ? '（有争议）' : ''}` : ''}` : '—'}` +
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
@@ -158,8 +165,8 @@ function baziText(r) {
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
     (() => {
       const hits = r.liunian.filter((l) => l.suiyun && l.suiyun.signals && l.suiyun.signals.length);
-      if (!hits.length) return '岁运提示：近十年无岁运并临、运年反吟或流年伏吟/反吟（只标干支，不判吉凶）';
-      const label = (s) => `${s.type}${s.type.startsWith('流年') && s.target ? `(${s.target})` : ''}`;
+      if (!hits.length) return '岁运提示：近十年无岁运并临、运年反吟或大运/流年伏吟、反吟（只标干支，不判吉凶）';
+      const label = (s) => `${s.type}${(s.type.startsWith('流年') || s.type.startsWith('大运')) && s.target ? `(${s.target})` : ''}`;
       const e = suiyunClassicOf(r);
       const src = e ? `｜古籍见《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》` : '';
       return '岁运提示（只标干支变动，不判吉凶）：' + hits
@@ -443,6 +450,11 @@ export function compute(args = {}) {
     // 岁运提示的原文不占五条上限：只在盘面真有岁运信号时挂到结果上，摘要、解析层与面板各自取用
     const syc = suiyunClassicOf(r);
     if (syc) r.suiyunClassic = { ...syc, bookName: CLASSIC_BOOKS[syc.book].name };
+    // 人元司事的原文同样不进五条取条表：每张八字盘都有人元，随「人元司权」一节给出
+    if (r.renyuan) {
+      const ryc = classicOf('smt-renyuan');
+      if (ryc) r.renyuanClassic = { ...ryc, bookName: CLASSIC_BOOKS[ryc.book].name };
+    }
   }
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
@@ -561,6 +573,69 @@ export function interpretText(i) {
   }
   if (i.disclaimer) out.push(i.disclaimer);
   return out.join('\n');
+}
+
+/** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
+const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events'];
+
+/**
+ * 口径对照：同一组输入，只把某一个口径开关换成它的另一档，逐字段列出变化。
+ * 这一步不新增断法，也不改盘；返回根因字段、分类计数与一句话总结，供面板/独立页/工具共用。
+ */
+export function caliberCompare(args = {}, opts = {}) {
+  const system = opts.system || args.system;
+  const switches = opts.switches || CALIBER_SWITCHES[system] || [];
+  if (!switches.length) return { system, switches: [], affected: 0, total: 0 };
+  const base = { ...args };
+  for (const k of CALIBER_IGNORE_ARGS) delete base[k];
+  const rows = switches.map((sw) => {
+    const current = sw.read(base);
+    const alt = sw.alt(current);
+    let diffs = [];
+    let error = '';
+    try {
+      diffs = diffObjects(
+        compute({ ...base, [sw.key]: current }),
+        compute({ ...base, [sw.key]: alt }),
+      );
+    } catch (e) {
+      error = (e && e.message) || String(e);
+    }
+    const roots = sortDiffs(diffs.filter((d) => rootOf(d.path))).map((d) => ({
+      path: d.path,
+      label: labelOf(d.path),
+      from: formatValue(d.from),
+      to: formatValue(d.to),
+    }));
+    const counts = new Map();
+    for (const d of diffs) {
+      const c = categoryOf(d.path) || '其他';
+      counts.set(c, (counts.get(c) || 0) + 1);
+    }
+    const categories = [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-Hans-CN'));
+    return {
+      key: sw.key,
+      title: sw.title,
+      short: sw.short,
+      current,
+      alt,
+      currentLabel: sw.label(current),
+      altLabel: sw.label(alt),
+      total: diffs.length,
+      summary: error ? '' : summarize(diffs),
+      roots,
+      categories,
+      error,
+    };
+  });
+  return {
+    system,
+    switches: rows,
+    affected: rows.filter((r) => !r.error && r.total > 0).length,
+    total: rows.reduce((n, r) => n + r.total, 0),
+  };
 }
 
 const JU_METHODS = ['chaibu', 'chaoshen', 'zhirun'];
@@ -1188,6 +1263,15 @@ export function renderText(result) {
     if (extra) parts.push(extra);
   }
   if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);
+  if (result.caliber && Array.isArray(result.caliber.switches) && result.caliber.switches.length) {
+    const c = result.caliber;
+    parts.push('【口径对照】同一组输入，只换一个口径（不判哪套更准，也不改盘面）\n'
+      + c.switches.map((s) => {
+        if (s.error) return `· ${s.title}：未能对照（${s.error}）`;
+        if (!s.total) return `· ${s.title}：${s.currentLabel} → ${s.altLabel}，本盘无变化`;
+        return `· ${s.title}：${s.currentLabel} → ${s.altLabel}\n　${s.summary}`;
+      }).join('\n'));
+  }
   if (result.followup) {
     const f = result.followup;
     parts.push(`【追问】${f.question}\n${f.answer}${f.evidence && f.evidence.length ? `\n　依据：${f.evidence.join('；')}　置信度：${f.confidence}` : ''}`);

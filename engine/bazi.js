@@ -547,6 +547,16 @@ export function buildBazi(input) {
       } else if (tianKeDiChong(w.ganzhi, l.ganzhi)) {
         signals.push({ type: '运年反吟', target: `第${w.step}步大运`, detail: `大运${w.ganzhi}与流年${l.ganzhi}天克地冲` });
       }
+      // 大运与本命四柱的伏吟/反吟：整步大运都在，逐年列出，不按流年另算一次
+      for (const key of ['year', 'month', 'day', 'hour']) {
+        const g = pillars[key].ganzhi;
+        if (!g) continue;
+        if (w.ganzhi === g) {
+          signals.push({ type: '大运伏吟', target: `第${w.step}步大运·${NATAL_LABEL[key]}`, detail: `大运${w.ganzhi}与${NATAL_LABEL[key]}同干支` });
+        } else if (tianKeDiChong(w.ganzhi, g)) {
+          signals.push({ type: '大运反吟', target: `第${w.step}步大运·${NATAL_LABEL[key]}`, detail: `大运${w.ganzhi}与${NATAL_LABEL[key]}${g}天克地冲` });
+        }
+      }
     }
     for (const key of ['year', 'month', 'day', 'hour']) {
       const g = pillars[key].ganzhi;
@@ -560,7 +570,7 @@ export function buildBazi(input) {
     l.suiyun = {
       dayun: active.map((w) => ({ step: w.step, ganzhi: w.ganzhi })),
       signals,
-      note: '只标干支重复与天克地冲这类变动信号，不判吉凶；大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列',
+      note: '只标干支重复与天克地冲这类变动信号，不判吉凶；大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列；大运与本命四柱的伏吟/反吟整步大运都在，逐年重复列出',
     };
   }
 

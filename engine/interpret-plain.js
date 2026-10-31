@@ -239,6 +239,9 @@ export function buildPlain(r, ask, ctx = {}) {
     const ys = (r.frame && r.frame.yongshen) || {};
     const favor = join(ys.favor);
     const avoid = join(ys.avoid);
+    const dis = Array.isArray(ys.disputed) && ys.disputed.length
+      ? `有一点要说明：${ys.disputed.map((d) => d.element).join('、')}在扶抑里算${ys.disputed.map((d) => d.favorRole).join('、')}（能${ys.disputed.map((d) => d.favorVerb).join('、')}），按调候看又偏忌（${ys.disputed.map((d) => `${d.climate}盘忌${d.element}`).join('、')}），两派说法不一；实际用在什么时候，看季节和环境取舍，不必当成绝对的好或坏。`
+      : '';
     const strength = STRENGTH_PLAIN[st.level] || '力量偏中性';
     const tiaohou = ys.tiaohou && ys.tiaohou.note ? `另外，${ys.tiaohou.note}，所以「暖一点、亮一点」的环境通常更舒服。` : '';
     const sy = (r.liunian || []).find((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
@@ -247,7 +250,7 @@ export function buildPlain(r, ask, ctx = {}) {
       : '';
     return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
       `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
-      tiaohou + syPlain;
+      dis + tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
     const body = r.body || {};

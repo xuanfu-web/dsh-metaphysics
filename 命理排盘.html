@@ -344,7 +344,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.50.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.50.5</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -611,7 +611,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：102 个测试文件 / 4406 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：103 个测试文件 / 4593 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -638,6 +638,312 @@ const fail = (code, message) => {
 };
 
 return { fail };
+})();
+
+__mods.diff = (function () {
+// 口径差异：同一组参数在不同流派口径下排出的盘，逐字段比对
+//
+// 用途：口径（晚子时换日、真太阳时、拆补/超神接气/置闰、闰月归月）是命理圈争执最多的地方。
+// 多数工具切换后只给新结果，用户不知道「哪里变了」。这里把变化摊开：
+//   变化字段路径 + 旧值 → 新值 + 一句话总结。
+//
+// 只做结构化比对，不改动任何引擎的输出。
+
+/** 比对时忽略的字段：文案、时间戳、口径回显、内部儒略日数字 */
+const IGNORE_KEYS = new Set([
+  'summary', 'interpret', 'castAt', 'asOf', 'precision', 'disclaimer', 'note',
+  'trueSolarText', 'civilText', 'offsetMinutes',
+  'input', // 只是把调用参数回显出来，不是盘面变化
+  'jd',    // 内部儒略日，人类不可读；对外展示用 time 等格式化字段
+  // 奇门把「这次用了哪个取局流派 / 晚子时归哪一天」写在结果里；换了开关它必然变，
+  // 但它只是口径回显，不是盘面。不剔掉的话，两张完全相同的盘会被报成「2 处差异」。
+  'juMethod', 'juMethodNote', 'lateZiHourMode',
+  // 紫微把「闰月按哪种政策起盘」回显在 lunar 里；非闰月盘换政策时它也会变，
+  // 但农历月份与宫位一字未动，不该报成差异。
+  'leapPolicy',
+]);
+
+const isObject = (v) => v !== null && typeof v === 'object';
+
+/**
+ * 结构化差异
+ * @returns {{path:string, from:any, to:any}[]}
+ */
+function diffObjects(a, b, path = '', out = []) {
+  if (a === b) return out;
+  if (!isObject(a) || !isObject(b)) {
+    out.push({ path: path || '(root)', from: a, to: b });
+    return out;
+  }
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const k of keys) {
+    if (IGNORE_KEYS.has(k)) continue;
+    const p = path ? `${path}.${k}` : k;
+    const va = a[k];
+    const vb = b[k];
+    if (isObject(va) && isObject(vb)) {
+      diffObjects(va, vb, p, out);
+    } else if (JSON.stringify(va) !== JSON.stringify(vb)) {
+      out.push({ path: p, from: va, to: vb });
+    }
+  }
+  return out;
+}
+
+/** 路径 → 盘面栏位名；未命中细分规则时退回所属大类 */
+const LABELS = [
+  [/^pillars\.year\.ganzhi$/, '年柱'],
+  [/^pillars\.month\.ganzhi$/, '月柱'],
+  [/^pillars\.day\.ganzhi$/, '日柱'],
+  [/^pillars\.hour\.ganzhi$/, '时柱'],
+  [/^pillars\.\w+\.hidden/, '藏干'],
+  [/^pillars\.\w+\.stemTenGod$/, '十神'],
+  [/^pillars\.\w+\.kongwang/, '空亡'],
+  [/^pillars\.\w+\.dishi$|^pillars\.\w+\.zizuo$/, '十二长生'],
+  [/^pillars\.\w+\.nayin$/, '纳音'],
+  [/^dayMaster\./, '日主'],
+  [/^palaces\.(taiyuan|minggong|shengong)\./, '命身宫'],
+  [/^palaces\.\d+\.(palace|branch|stem|ganzhi)$/, '宫位'],
+  [/^palaces\.\d+\.stars\.\d+\.(name|brightness|type)$/, '星曜'],
+  [/^palaces\.\d+\.shensha\./, '神煞'],
+  [/^palaces\.\d+\.(daxian|xiaoxian)\./, '大限'],
+  [/^palaces\.\d+\.sanfang\./, '三方四正'],
+  [/^palaces\.\d+\./, '宫位'],
+  [/^palaces\./, '命身宫'],
+  [/^soul\./, '命宫'],
+  [/^body\./, '身宫'],
+  [/^doujun\./, '流年斗君'],
+  [/^siZhu\.year$/, '年柱'],
+  [/^siZhu\.month$/, '月柱'],
+  [/^siZhu\.day$/, '日柱'],
+  [/^siZhu\.time$/, '时柱'],
+  [/^ju$|^juNumber$/, '局数'],
+  [/^yuan$/, '三元'],
+  [/^dun$/, '阴阳遁'],
+  [/^daxian(List)?\./, '大限'],
+  [/^fly(Chains|Composite)?\./, '飞星'],
+  [/^pattern/, '格局'],
+  [/^schools\./, '流派回显'],
+  [/^dayun\.jiao\./, '起运'],
+  [/^dayun\.toNextJieDays$/, '起运时间'],
+  [/^dayun\.list\.(\d+)\.ganzhi$/, '大运干支'],
+  [/^dayun\.startAge\./, '起运时间'],
+  [/^dayun\./, '大运评分'],
+  [/^liunian\./, '流年'],
+  [/^jieqi\./, '节气边界'],
+  [/^solarTime\./, '真太阳时'],
+  [/^dayGanZhi$/, '日辰'],
+  [/^hourZhi$/, '时支'],
+  [/^yueJiang\./, '月将'],
+  [/^xunKong$/, '旬空'],
+  [/^lines\.(\d+)\./, '爻'],
+  [/^shensha\./, '神煞'],
+  [/^frame\./, '格局用神'],
+  [/^strength\./, '旺衰'],
+  [/^wuxing\./, '五行计数'],
+  [/^relations\./, '干支关系'],
+  [/^input\./, '输入回显'],
+];
+
+/** 大类：用于把几百处连带变化归成几句话 */
+const CATEGORY = [
+  [/^pillars\./, '四柱'],
+  [/^shensha\./, '神煞'],
+  [/^dayun\./, '大运'],
+  [/^liunian\./, '流年'],
+  [/^frame\./, '格局用神'],
+  [/^strength\./, '旺衰'],
+  [/^wuxing\./, '五行计数'],
+  [/^dayMaster\./, '日主'],
+  [/^relations\./, '干支关系'],
+  [/^palaces\.(taiyuan|minggong|shengong)\./, '命身宫'],
+  [/^palaces\.\d+\./, '宫位'],
+  [/^palaces\./, '命身宫'],
+  [/^soul\.|^body\.|^doujun\./, '命身宫'],
+  [/^siZhu\./, '四柱'],
+  [/^ju$|^juNumber$|^yuan$|^dun$/, '局数'],
+  [/^daxian/, '大限'],
+  [/^fly/, '飞星'],
+  [/^pattern/, '格局'],
+  [/^jieqi\./, '节气'],
+  [/^solarTime\./, '真太阳时'],
+  [/^input\./, '输入回显'],
+  [/^lines\./, '爻'],
+];
+
+/**
+ * 根因字段：真正被口径直接改动的干支/局数/爻。
+ * 其余几百处都是从这里派生出去的——把这层关系讲清楚，才是「口径对照」的价值。
+ */
+const ROOT = [
+  [/^pillars\.(year|month|day|hour)\.ganzhi$/, '柱'],
+  [/^palaces\.(minggong|shengong)\.ganzhi$/, '命身宫'],
+  [/^soul\.ganzhi$/, '命宫'],
+  [/^body\.branch$/, '身宫'],
+  [/^siZhu\.(year|month|day|time)$/, '柱'],
+  [/^dayun\.jiao\.at$/, '起运'],
+  [/^dayGanZhi$/, '日辰'],
+  [/^hourZhi$/, '时支'],
+  [/^ju$|^juNumber$|^juName$/, '局数'],
+  [/^dun$/, '阴阳遁'],
+  [/^lines\.\d+\.(ganzhi|yinYang|name)$/, '爻'],
+  [/^yueJiang\.(name|zhi)$/, '月将'],
+];
+
+function labelOf(path) {
+  for (const [re, label] of LABELS) {
+    if (re.test(path)) return label;
+  }
+  return categoryOf(path) || path;
+}
+
+function categoryOf(path) {
+  for (const [re, cat] of CATEGORY) {
+    if (re.test(path)) return cat;
+  }
+  return '';
+}
+
+function rootOf(path) {
+  for (const [re, label] of ROOT) {
+    if (re.test(path)) return label;
+  }
+  return '';
+}
+
+/** 自然排序：行运类按序号，其余按字符串 */
+function sortDiffs(diffs) {
+  return [...diffs].sort((x, y) => x.path.localeCompare(y.path, 'zh-Hans-CN', { numeric: true }));
+}
+
+/**
+ * 把一组变化归纳成因果式一句话：
+ * 「根因：日柱 丙子 → 乙亥；连带影响 四柱、神煞、大运、流年 等 6 类（共 407 处）」
+ */
+function summarize(diffs) {
+  if (!diffs.length) return '本盘不受此口径影响：所有字段一致。';
+  const roots = diffs.filter((d) => rootOf(d.path));
+  const cats = [...new Set(diffs.map((d) => categoryOf(d.path)).filter(Boolean))];
+  const head = roots.length
+    ? `根因 ${roots.length} 处：` + roots.slice(0, 4)
+      .map((d) => `${labelOf(d.path)} ${formatValue(d.from)}→${formatValue(d.to)}`).join('、')
+      + (roots.length > 4 ? ' 等' : '')
+    : '无单一根因';
+  const tail = cats.length
+    ? `；连带影响 ${cats.slice(0, 6).join('、')}${cats.length > 6 ? ' 等' : ''} ${cats.length} 类，共 ${diffs.length} 处`
+    : `；共 ${diffs.length} 处`;
+  return head + tail + '。';
+}
+
+const formatValue = (v) => {
+  if (v === undefined) return '—';
+  if (v === null) return 'null';
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v.join('') || '[]';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+};
+
+/**
+ * 文本版对照：先列根因，再列连带变化（默认最多 12 处，其余按类归并）
+ */
+function renderDiff(diffs, { title = '', limit = 12 } = {}) {
+  const lines = [];
+  if (title) lines.push(`【${title}】`);
+  lines.push(summarize(diffs));
+  if (!diffs.length) return lines.join('\n');
+
+  const roots = sortDiffs(diffs.filter((d) => rootOf(d.path)));
+  const rest = sortDiffs(diffs.filter((d) => !rootOf(d.path)));
+
+  if (roots.length) {
+    lines.push('');
+    lines.push('  根因（口径直接改动）：');
+    for (const d of roots) {
+      lines.push(`    ${labelOf(d.path).padEnd(6)} ${formatValue(d.from)} → ${formatValue(d.to)}`);
+    }
+  }
+  if (rest.length) {
+    lines.push('');
+    lines.push(`  连带变化（${rest.length} 处，展示前 ${Math.min(limit, rest.length)} 处）：`);
+    for (const d of rest.slice(0, limit)) {
+      lines.push(`    ${labelOf(d.path).padEnd(6)} ${formatValue(d.from)} → ${formatValue(d.to)}`);
+    }
+    if (rest.length > limit) {
+      const byCat = {};
+      for (const d of rest.slice(limit)) {
+        const c = categoryOf(d.path) || '其他';
+        byCat[c] = (byCat[c] || 0) + 1;
+      }
+      lines.push('    其余：' + Object.entries(byCat).map(([c, n]) => `${c} ${n} 处`).join('、'));
+    }
+  }
+  return lines.join('\n');
+}
+
+/**
+ * 口径开关表：每个体系 2–3 组「只差一个维度」的对照。
+ * read 取当前口径（没传时按引擎默认），alt 给另一口径，label 是给人看的短名。
+ * UI、CLI 与工具参数 diff 共用这一份，默认值不在别处再抄一遍。
+ */
+const CALIBER_SWITCHES = {
+  bazi: [
+    {
+      key: 'lateZi',
+      title: '晚子时：23:00 后是否换日',
+      short: '晚子时',
+      read: (a) => a.lateZi !== false,
+      alt: (v) => !v,
+      label: (v) => (v ? '换日' : '不换日'),
+    },
+    {
+      key: 'trueSolar',
+      title: '真太阳时：是否按出生地经度修正',
+      short: '真太阳时',
+      read: (a) => a.trueSolar !== false,
+      alt: (v) => !v,
+      label: (v) => (v ? '修正' : '不修正'),
+    },
+  ],
+  ziwei: [
+    {
+      key: 'leapMonth',
+      title: '闰月归月：按日切分 / 整月归次月',
+      short: '闰月归月',
+      read: (a) => (a.leapMonth === 'next' || a.leapMonth === 'prev' ? a.leapMonth : 'split'),
+      alt: (v) => (v === 'split' ? 'next' : 'split'),
+      label: (v) => ({ split: '按日切分', next: '整月归次月', prev: '整月归本月' }[v] || v),
+    },
+    {
+      key: 'trueSolar',
+      title: '真太阳时：是否按出生地经度修正',
+      short: '真太阳时',
+      read: (a) => a.trueSolar !== false,
+      alt: (v) => !v,
+      label: (v) => (v ? '修正' : '不修正'),
+    },
+  ],
+  qimen: [
+    {
+      key: 'juMethod',
+      title: '取局流派：拆补 / 超神接气 / 置闰',
+      short: '取局流派',
+      read: (a) => (['chaibu', 'chaoshen', 'zhirun'].includes(a.juMethod) ? a.juMethod : 'chaibu'),
+      alt: (v) => (v === 'chaibu' ? 'zhirun' : 'chaibu'),
+      label: (v) => ({ chaibu: '拆补法', chaoshen: '超神接气', zhirun: '置闰法' }[v] || v),
+    },
+    {
+      key: 'lateZiHourMode',
+      title: '晚子时：23:00 后归当日 / 次日',
+      short: '晚子时归日',
+      read: (a) => (a.lateZiHourMode === 'next-day' ? 'next-day' : 'same-day'),
+      alt: (v) => (v === 'next-day' ? 'same-day' : 'next-day'),
+      label: (v) => (v === 'next-day' ? '归次日' : '归当日'),
+    },
+  ],
+};
+
+return { diffObjects, labelOf, categoryOf, rootOf, sortDiffs, summarize, formatValue, renderDiff, CALIBER_SWITCHES };
 })();
 
 __mods.validate = (function () {
@@ -3853,6 +4159,19 @@ const CLASSICS = [
     plain: '大运以生月为起点，最怕与流年（太岁）冲克：原文说岁运冲月为祸，又把「岁运与日柱相对」叫返吟、「岁运压日」叫伏吟。这两句是按「对日柱」说的，与本插件「干支相同为伏吟、天克地冲为反吟」不是同一套定义（本插件取后者）；末句「不利六亲、破财」是旧说的重话，只作变动提示，不作断语。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html',
   },
+  // —— 三命通会 · 卷二 · 论人元司事：人元司权一节的原文出处。
+  // 此本的日数分法与本插件采用的通行 30 日表不同（寅月作 5/5/20、卯月作 7/23，本插件作 7/7/16 与 10/20），
+  // 两表各照原样并列，不改判。与「总论岁运」一样，不进五条上限的取条表：只在人元司权一节随结果出现。
+  {
+    id: 'smt-renyuan',
+    book: 'sanming',
+    chapter: '卷二·论人元司事',
+    scene: '人元',
+    tags: [],
+    quote: '故支吕所藏者主命，谓之人元，名为司事之神，以命术言之为月令。如正月建寅，寅中有艮土用事五日，丙火长生五日，甲木二十日；二月建卯，卯中有甲木用事七日，乙木二十三日；',
+    plain: '地支所藏为「人元」，按月令分日轮值。三命通会这一本给的是另一套日数：寅月艮土（戊土）五日、丙火五日、甲木二十日，卯月甲七日、乙二十三日。它与本插件采用的通行 30 日表（寅月戊7丙7甲16，即 7/7/16；卯月甲10乙20，即 10/20）不是同一套分法；两表各照原样并列，本插件仍按通行表给「第几日谁当权」，不改取格。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7529.html',
+  },
 ];
 
 const BY_ID = CLASSICS.reduce((m, e) => { m[e.id] = e; return m; }, {});
@@ -4263,11 +4582,17 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const me = roles.me;
   const weak = strength.level === '身弱' || strength.level === '偏弱';
   const strong = strength.level === '身强' || strength.level === '偏强';
+  const roleName = (el) => (el === me ? '比劫' : el === roles.inMe ? '印'
+    : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
+  const ROLE_VERB = { 比劫: '帮身', 印: '生身', 食伤: '泄秀', 财: '耗', 官杀: '制' };
 
   const baseFavor = weak ? [roles.inMe, me] : strong ? [roles.shi, roles.cai, roles.guan] : [roles.inMe, me, roles.shi];
   const baseAvoid = weak ? [roles.shi, roles.cai, roles.guan] : strong ? [me, roles.inMe] : [roles.guan, roles.cai];
   let favor = baseFavor.slice();
   let avoid = baseAvoid.slice();
+  // 调候所忌若正好是扶抑所喜（弱土遇燥的火、寒湿盘的强土遇水），两边不能同时列。
+  // 本表保留在喜用、不列入忌，并单列「有争议」；否则摘要会出现同一行既喜又忌。
+  const disputed = [];
 
   // 先判气候，再决定要不要让调候压过扶抑
   const climate = judgeClimate({ monthBranch, dayStem, wuxing, branches });
@@ -4278,27 +4603,39 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     const needEl = climate.need.element;
     if (!favor.includes(needEl)) favor.unshift(needEl);
     avoid = avoid.filter((e) => e !== needEl);
-    if (climate.avoidElement && !avoid.includes(climate.avoidElement)) avoid.unshift(climate.avoidElement);
+    const badEl = climate.avoidElement;
+    if (badEl && favor.includes(badEl)) {
+      disputed.push({
+        element: badEl,
+        favorRole: roleName(badEl),
+        favorVerb: ROLE_VERB[roleName(badEl)],
+        climate: climate.label,
+        note: `调候忌${badEl}（${climate.label}），但它在扶抑里为${roleName(badEl)}；本表保留在喜用，不列入忌。`,
+      });
+    } else if (badEl && !avoid.includes(badEl)) {
+      avoid.unshift(badEl);
+    }
   }
 
-  const roleName = (el) => (el === me ? '比劫' : el === roles.inMe ? '印'
-    : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
   const expand = {
     比劫: ['比肩', '劫财'], 印: ['正印', '偏印'], 食伤: ['食神', '伤官'],
     财: ['正财', '偏财'], 官杀: ['正官', '七杀'],
   };
   const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
   const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
+  const disputedTenGods = Array.from(new Set(disputed.flatMap((d) => expand[roleName(d.element)] || [])));
   const tongguan = tongguanOf(favor, avoid, wuxing);
 
+  const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
+  const disputedText = disputed
+    .map((d) => `${d.element}（扶抑为${d.favorRole}·${d.favorVerb}；${d.climate}盘调候忌${d.element}，本表保留在喜用）`)
+    .join('、');
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
-    weak
-      ? `喜${roles.inMe}（印）生身、${me}（比劫）帮身；忌${roles.shi}（食伤）泄、${roles.cai}（财）耗、${roles.guan}（官杀）克。`
-      : strong
-        ? `喜${roles.shi}（食伤）泄秀、${roles.cai}（财）耗、${roles.guan}（官杀）制；忌${me}（比劫）与${roles.inMe}（印）再助。`
-        : '身中和，先取调候与通关，喜忌随大运流年动态变化。',
-    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}` : '，气候平和'}。`,
+    `喜${favor.map(describe).join('、') || '—'}；忌${avoid.map(describe).join('、') || '—'}。`,
+    disputed.length ? `有争议：${disputedText}。` : '',
+    !weak && !strong ? '身中和，先取调候与通关，喜忌随大运流年动态变化。' : '',
+    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}${disputed.some((d) => d.element === climate.avoidElement) ? '（有争议）' : ''}` : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
     tongguan
       ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
@@ -4318,10 +4655,12 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     level: strength.level,
     favor,
     avoid,
+    disputed,
     favorRoles: favor.map(roleName),
     avoidRoles: avoid.map(roleName),
     favorTenGods,
     avoidTenGods,
+    disputedTenGods,
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,
@@ -4986,6 +5325,16 @@ function buildBazi(input) {
       } else if (tianKeDiChong(w.ganzhi, l.ganzhi)) {
         signals.push({ type: '运年反吟', target: `第${w.step}步大运`, detail: `大运${w.ganzhi}与流年${l.ganzhi}天克地冲` });
       }
+      // 大运与本命四柱的伏吟/反吟：整步大运都在，逐年列出，不按流年另算一次
+      for (const key of ['year', 'month', 'day', 'hour']) {
+        const g = pillars[key].ganzhi;
+        if (!g) continue;
+        if (w.ganzhi === g) {
+          signals.push({ type: '大运伏吟', target: `第${w.step}步大运·${NATAL_LABEL[key]}`, detail: `大运${w.ganzhi}与${NATAL_LABEL[key]}同干支` });
+        } else if (tianKeDiChong(w.ganzhi, g)) {
+          signals.push({ type: '大运反吟', target: `第${w.step}步大运·${NATAL_LABEL[key]}`, detail: `大运${w.ganzhi}与${NATAL_LABEL[key]}${g}天克地冲` });
+        }
+      }
     }
     for (const key of ['year', 'month', 'day', 'hour']) {
       const g = pillars[key].ganzhi;
@@ -4999,7 +5348,7 @@ function buildBazi(input) {
     l.suiyun = {
       dayun: active.map((w) => ({ step: w.step, ganzhi: w.ganzhi })),
       signals,
-      note: '只标干支重复与天克地冲这类变动信号，不判吉凶；大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列',
+      note: '只标干支重复与天克地冲这类变动信号，不判吉凶；大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列；大运与本命四柱的伏吟/反吟整步大运都在，逐年重复列出',
     };
   }
 
@@ -13031,6 +13380,9 @@ function buildPlain(r, ask, ctx = {}) {
     const ys = (r.frame && r.frame.yongshen) || {};
     const favor = join(ys.favor);
     const avoid = join(ys.avoid);
+    const dis = Array.isArray(ys.disputed) && ys.disputed.length
+      ? `有一点要说明：${ys.disputed.map((d) => d.element).join('、')}在扶抑里算${ys.disputed.map((d) => d.favorRole).join('、')}（能${ys.disputed.map((d) => d.favorVerb).join('、')}），按调候看又偏忌（${ys.disputed.map((d) => `${d.climate}盘忌${d.element}`).join('、')}），两派说法不一；实际用在什么时候，看季节和环境取舍，不必当成绝对的好或坏。`
+      : '';
     const strength = STRENGTH_PLAIN[st.level] || '力量偏中性';
     const tiaohou = ys.tiaohou && ys.tiaohou.note ? `另外，${ys.tiaohou.note}，所以「暖一点、亮一点」的环境通常更舒服。` : '';
     const sy = (r.liunian || []).find((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
@@ -13039,7 +13391,7 @@ function buildPlain(r, ask, ctx = {}) {
       : '';
     return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
       `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
-      tiaohou + syPlain;
+      dis + tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
     const body = r.body || {};
@@ -13192,10 +13544,10 @@ const KNOWLEDGE = [
     id: 'bazi-yueling-siquan',
     system: 'bazi', dims: ['overall', 'career'],
     gist: '月令不是「一个月」，是当月最有权的那一个字。',
-    detail: '月令藏干按本气、中气、余气分日用事，本气当权的时间最长。所以判旺衰先看日主在月令是得令还是失令——得令者未看全局，已有三分底气。本插件按 30 日表算出「生在本月第几日、哪一干当权」，给的是月内轮值这一层细节；旺衰与取格仍以月令本气、透干与会支为主，不随轮值改判。',
-    source: '《子平真诠》论用神；人元司权分日之说见《渊海子平》',
+    detail: '月令藏干按本气、中气、余气分日用事，本气当权的时间最长。所以判旺衰先看日主在月令是得令还是失令——得令者未看全局，已有三分底气。本插件按 30 日表算出「生在本月第几日、哪一干当权」，给的是月内轮值这一层细节；旺衰与取格仍以月令本气、透干与会支为主，不随轮值改判。三命通会卷二·论人元司事另列一套日数（寅月五日/五日/二十日），与本插件取的通行表不同；原文并列，不改判。',
+    source: '《子平真诠》论用神；人元司权分日之说见《渊海子平》；三命通会卷二·论人元司事（典藏网 7529）另列一套日数',
     status: 'variant',
-    note: '各家对中气、余气各主几日分法不同（有 7/7/16、9/3/18 等多说）；本插件固定通行 30 日表（如寅月戊7丙7甲16），节当日为第 1 日，第 31 日以后按本气算、不硬分摊。司权表与本柱藏干表口径不同（子月壬、卯月甲、午月丙、酉月庚、亥月戊只出现在司权表里），两表各照原样；取格不随轮值改判。',
+    note: '各家对中气、余气各主几日分法不同（有 7/7/16、9/3/18 等多说）；本插件固定通行 30 日表（如寅月戊7丙7甲16），节当日为第 1 日，第 31 日以后按本气算、不硬分摊。三命通会此本寅月作 5/5/20、卯月作 7/23，与通行表不同，两表各照原样。司权表与本柱藏干表口径不同（子月壬、卯月甲、午月丙、酉月庚、亥月戊只出现在司权表里），两表各照原样；取格不随轮值改判。',
   },
   {
     id: 'bazi-tonggen-tougan',
@@ -13243,10 +13595,10 @@ const KNOWLEDGE = [
     id: 'bazi-suiyun',
     system: 'bazi', dims: ['overall', 'career'],
     gist: '大运管十年基调，流年管当年触发。',
-    detail: '大运像换了条路，流年像这条路上某一段的天气。岁运并临（当值大运与流年干支相同）、运年反吟（大运与流年天克地冲）、流年伏吟（流年与原局某柱干支相同）与流年反吟（流年与原局某柱天克地冲），是传统上标记「变动较大」的年份，属于提示而非断语。本插件逐年标出四类信号：当值大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列；只标干支重复与对冲，不折分数。原文里「返吟」指岁运与日柱相对、「伏吟」指岁运压日，与本插件「干支相同为伏吟、天克地冲为反吟」不是同一套定义，两者并列、不合并。',
+    detail: '大运像换了条路，流年像这条路上某一段的天气。岁运并临（当值大运与流年干支相同）、运年反吟（大运与流年天克地冲）、大运伏吟（大运与原局某柱干支相同）、大运反吟（大运与原局某柱天克地冲）、流年伏吟（流年与原局某柱干支相同）、流年反吟（流年与原局某柱天克地冲），是传统上标记「变动较大」的年份，属于提示而非断语。本插件逐年标出六类信号：当值大运按该年立春到次年立春的区间取，交运落在年内时前后两步并列；大运与本命四柱的伏吟/反吟整步大运都在，会连续多年重复列出；只标干支重复与对冲，不折分数。原文里「返吟」指岁运与日柱相对、「伏吟」指岁运压日，与本插件「干支相同为伏吟、天克地冲为反吟」不是同一套定义，两者并列、不合并。',
     source: '《三命通会》卷二·总论岁运（https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html）；岁运并临之说出自《渊海子平》',
     status: 'variant',
-    note: '「岁运并临主大凶」是流传最广也最被滥用的说法，本插件只作变动提示，不断吉凶；大运与原局之间的伏吟反吟未逐年标注，四柱十神层面的引化也未叠入。',
+    note: '「岁运并临主大凶」是流传最广也最被滥用的说法，本插件只作变动提示，不断吉凶；大运与本命四柱的伏吟/反吟会连续多年出现，不逐年加重；四柱十神层面的引化也未叠入。',
   },
   {
     id: 'bazi-liuqin',
@@ -14258,6 +14610,7 @@ function baziInterpret(r) {
   const level = pick(st, 'level', '中和');
   const favor = Array.isArray(ys.favor) ? ys.favor : [];
   const avoid = Array.isArray(ys.avoid) ? ys.avoid : [];
+  const disputed = Array.isArray(ys.disputed) ? ys.disputed : [];
   const primary = pick(frame, 'primaryName', '未取定');
   const gender = pick(r.input, 'gender', '');
   const isMale = gender === 'male';
@@ -14489,11 +14842,13 @@ function baziInterpret(r) {
       const nextSeg = ry.next ? `，第 ${ry.next.from} 日起交 ${ry.next.stem}${ry.next.element}` : '';
       const outside = ry.inHidden ? '' : ` 表里的 ${ry.active} 不在本柱藏干表中（属余气口径），两表各照原样，不互相改写。`;
       const beyond = ry.beyond ? ' 你生在第 31 日以后，已超出 30 日表，按本气算，不硬分摊。' : '';
+      const ryc = r.renyuanClassic || classicOf('smt-renyuan');
+      const src = ryc ? `\n原文：《${CLASSIC_BOOKS[ryc.book].name}·${ryc.chapter}》「${ryc.quote}」\n白话：${ryc.plain}` : '';
       return {
         key: 'renyuan', label: '人元司权',
         text: `生于${ry.month}月第 ${ry.day} 日（从${ry.term ? ry.term.name : '节'}起算，节当日为第 1 日，日差按本盘所用时刻所在日计）：这一日由 **${ry.active}${ry.activeElement}** 司权，第 ${ry.segment.from}–${ry.segment.to} 日属它${nextSeg}。\n`
           + '月令这一个月里，余气、中气、本气轮值，不是整月同一个五行当值——所以「月令是什么」，还要看生在第几日。\n'
-          + `**口径**：本插件固定 30 日表（${table}）；另有 7/7/16、9/3/18 等分法，各家不一。分日只作解释层的一层细节，**不改取格**：取格仍按本气、透干与会支判定。${outside}${beyond}`,
+          + `**口径**：本插件固定通行 30 日表（${table}）；另有 7/7/16、9/3/18 等分法，三命通会此本又作 5/5/20（见下原文），各家不一。分日只作解释层的一层细节，**不改取格**：取格仍按本气、透干与会支判定。${outside}${beyond}` + src,
       };
     })()] : []),
     {
@@ -14525,8 +14880,8 @@ function baziInterpret(r) {
             const stem = (l.suiyun.dayun || []).map((d) => `第${d.step}步${d.ganzhi}`).join('、');
             return `${l.year} ${l.ganzhi}（${stem || '未到起运'}）：${l.suiyun.signals.map((s) => s.detail).join('；')}`;
           }).join('\n') +
-            '\n读法：岁运并临、运年反吟与流年伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。' + src
-          : '近十年没有岁运并临、运年反吟或流年伏吟/反吟。「岁运并临主大凶」这类说法流传很广，本插件只把它当变动提示，没有命中就不作额外解读。',
+            '\n读法：岁运并临、运年反吟、大运与流年的伏吟/反吟只说明干支层面重复或对冲，传统上当作「变动感较强」的信号；本插件不据此判吉凶，要落到具体年份，仍看该年是否动到用神。大运与本命四柱的伏吟/反吟整步大运都在，会连续多年出现，不当成逐年加重。' + src
+          : '近十年没有岁运并临、运年反吟或大运/流年伏吟、反吟。「岁运并临主大凶」这类说法流传很广，本插件只把它当变动提示，没有命中就不作额外解读。',
       };
     })(),
     {
@@ -14563,7 +14918,7 @@ function baziInterpret(r) {
     ...(cli ? [{
       key: 'climate', label: '寒暖燥湿',
       text: `${cli.narration}${cli.need
-        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : '与扶抑同向'}`
+        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}${disputed.some((d) => d.element === cli.avoidElement) ? '（有争议：该行在扶抑中为喜，见用神节）' : ''}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : disputed.some((d) => d.element === cli.avoidElement) ? '调候所忌在扶抑里为喜，两说并存' : '与扶抑同向'}`
         : '气候平和，调候不作主取'}。`,
     }] : []),
     ...(ys.qt ? [{
@@ -15791,7 +16146,7 @@ const BUILDERS = {
 const { interpretQimen } = __mods['qimen-interpret'];
 const { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } = __mods['interpret-plain'];
 const { knowledgeFor, caveatsFor, STATUS_LABEL } = __mods['interpret-knowledge'];
-const { CLASSIC_BOOKS, suiyunClassicOf } = __mods.classics;
+const { CLASSIC_BOOKS, suiyunClassicOf, classicOf } = __mods.classics;
 
 /**
  * 给任意体系的解析结果补上「白话四层」：直答 / 说人话 / 每维一句话 / 追问建议。
@@ -16603,7 +16958,8 @@ const { buildStar } = __mods.star;
 const { buildNumerology } = __mods.numerology;
 const { buildMbti, mbtiPaper } = __mods.mbti;
 const { buildConvert } = __mods.convert;
-const { classicsFor, classicsText, suiyunClassicOf, CLASSIC_BOOKS } = __mods.classics;
+const { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } = __mods.classics;
+const { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES } = __mods.diff;
 const { buildTrend } = __mods.trend;
 const { buildFengshui } = __mods.fengshui;
 const { buildName } = __mods.name;
@@ -16706,15 +17062,21 @@ function baziText(r) {
       `${g.cat}｜` + g.items.map((i) => `${i.name}(${i.pillars.map((k) => SHORT[k]).join('')})`).join('、')).join('；')
     : '神煞：—';
   const ry = r.renyuan;
+  const rySrc = classicOf('smt-renyuan');
   const renyuanLine = ry
-    ? `人元：${ry.month}月第${ry.day}日，${ry.active}${ry.activeElement}司权（${ry.segments.map((s) => `${s.stem}${s.from}–${s.to}`).join(' ')}）${ry.beyond ? '；已过 30 日表，按本气算' : ''}`
+    ? `人元：${ry.month}月第${ry.day}日，${ry.active}${ry.activeElement}司权（${ry.segments.map((s) => `${s.stem}${s.from}–${s.to}`).join(' ')}）${ry.beyond ? '；已过 30 日表，按本气算' : ''}${rySrc ? `｜原文见《${CLASSIC_BOOKS[rySrc.book].name}·${rySrc.chapter}》` : ''}`
     : '';
+  const ysd = (r.frame && r.frame.yongshen && r.frame.yongshen.disputed) || [];
+  const disText = ysd.length
+    ? `　有争议：${ysd.map((d) => `${d.element}（${d.favorRole}；${d.climate}盘调候忌${d.element}）`).join('、')}`
+    : '';
+  const disEls = new Set(ysd.map((d) => d.element));
   const gejuLine = r.frame ? [
     `格局：${r.frame.primary ? `${r.frame.primary.name}（${r.frame.primary.evidence}）` : '—'}`,
     `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}]`).join('　')}`,
-    `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）　${r.frame.yongshen.method}`,
+    `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）${disText}　${r.frame.yongshen.method}`,
     `　　　${r.frame.yongshen.detail}`,
-    `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}` : ''}` : '—'}` +
+    `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}${disEls.has(r.climate.avoidElement) ? '（有争议）' : ''}` : ''}` : '—'}` +
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
@@ -16737,8 +17099,8 @@ function baziText(r) {
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
     (() => {
       const hits = r.liunian.filter((l) => l.suiyun && l.suiyun.signals && l.suiyun.signals.length);
-      if (!hits.length) return '岁运提示：近十年无岁运并临、运年反吟或流年伏吟/反吟（只标干支，不判吉凶）';
-      const label = (s) => `${s.type}${s.type.startsWith('流年') && s.target ? `(${s.target})` : ''}`;
+      if (!hits.length) return '岁运提示：近十年无岁运并临、运年反吟或大运/流年伏吟、反吟（只标干支，不判吉凶）';
+      const label = (s) => `${s.type}${(s.type.startsWith('流年') || s.type.startsWith('大运')) && s.target ? `(${s.target})` : ''}`;
       const e = suiyunClassicOf(r);
       const src = e ? `｜古籍见《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》` : '';
       return '岁运提示（只标干支变动，不判吉凶）：' + hits
@@ -17022,6 +17384,11 @@ function compute(args = {}) {
     // 岁运提示的原文不占五条上限：只在盘面真有岁运信号时挂到结果上，摘要、解析层与面板各自取用
     const syc = suiyunClassicOf(r);
     if (syc) r.suiyunClassic = { ...syc, bookName: CLASSIC_BOOKS[syc.book].name };
+    // 人元司事的原文同样不进五条取条表：每张八字盘都有人元，随「人元司权」一节给出
+    if (r.renyuan) {
+      const ryc = classicOf('smt-renyuan');
+      if (ryc) r.renyuanClassic = { ...ryc, bookName: CLASSIC_BOOKS[ryc.book].name };
+    }
   }
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
@@ -17140,6 +17507,69 @@ function interpretText(i) {
   }
   if (i.disclaimer) out.push(i.disclaimer);
   return out.join('\n');
+}
+
+/** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
+const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events'];
+
+/**
+ * 口径对照：同一组输入，只把某一个口径开关换成它的另一档，逐字段列出变化。
+ * 这一步不新增断法，也不改盘；返回根因字段、分类计数与一句话总结，供面板/独立页/工具共用。
+ */
+function caliberCompare(args = {}, opts = {}) {
+  const system = opts.system || args.system;
+  const switches = opts.switches || CALIBER_SWITCHES[system] || [];
+  if (!switches.length) return { system, switches: [], affected: 0, total: 0 };
+  const base = { ...args };
+  for (const k of CALIBER_IGNORE_ARGS) delete base[k];
+  const rows = switches.map((sw) => {
+    const current = sw.read(base);
+    const alt = sw.alt(current);
+    let diffs = [];
+    let error = '';
+    try {
+      diffs = diffObjects(
+        compute({ ...base, [sw.key]: current }),
+        compute({ ...base, [sw.key]: alt }),
+      );
+    } catch (e) {
+      error = (e && e.message) || String(e);
+    }
+    const roots = sortDiffs(diffs.filter((d) => rootOf(d.path))).map((d) => ({
+      path: d.path,
+      label: labelOf(d.path),
+      from: formatValue(d.from),
+      to: formatValue(d.to),
+    }));
+    const counts = new Map();
+    for (const d of diffs) {
+      const c = categoryOf(d.path) || '其他';
+      counts.set(c, (counts.get(c) || 0) + 1);
+    }
+    const categories = [...counts.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-Hans-CN'));
+    return {
+      key: sw.key,
+      title: sw.title,
+      short: sw.short,
+      current,
+      alt,
+      currentLabel: sw.label(current),
+      altLabel: sw.label(alt),
+      total: diffs.length,
+      summary: error ? '' : summarize(diffs),
+      roots,
+      categories,
+      error,
+    };
+  });
+  return {
+    system,
+    switches: rows,
+    affected: rows.filter((r) => !r.error && r.total > 0).length,
+    total: rows.reduce((n, r) => n + r.total, 0),
+  };
 }
 
 const JU_METHODS = ['chaibu', 'chaoshen', 'zhirun'];
@@ -17767,6 +18197,15 @@ function renderText(result) {
     if (extra) parts.push(extra);
   }
   if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);
+  if (result.caliber && Array.isArray(result.caliber.switches) && result.caliber.switches.length) {
+    const c = result.caliber;
+    parts.push('【口径对照】同一组输入，只换一个口径（不判哪套更准，也不改盘面）\n'
+      + c.switches.map((s) => {
+        if (s.error) return `· ${s.title}：未能对照（${s.error}）`;
+        if (!s.total) return `· ${s.title}：${s.currentLabel} → ${s.altLabel}，本盘无变化`;
+        return `· ${s.title}：${s.currentLabel} → ${s.altLabel}\n　${s.summary}`;
+      }).join('\n'));
+  }
   if (result.followup) {
     const f = result.followup;
     parts.push(`【追问】${f.question}\n${f.answer}${f.evidence && f.evidence.length ? `\n　依据：${f.evidence.join('；')}　置信度：${f.confidence}` : ''}`);
@@ -17806,7 +18245,7 @@ function renderText(result) {
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, parseDateTime, compute, interpretText, caliberCompare, renderText };
 })();
 
 window.Engine = __mods.index;
@@ -17856,7 +18295,7 @@ window.Engine = __mods.index;
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -17877,7 +18316,7 @@ window.Engine = __mods.index;
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -18404,6 +18843,53 @@ window.Engine = __mods.index;
 .mp-cross-cell{font-size:12.5px;line-height:1.75;color:var(--ink2)}
 .mp-cross-cell b{display:block;font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:1px}
 .mp-cross-note{margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:12px;line-height:1.7;color:var(--muted)}
+/* 口径对照：结果下方一块可折叠的「换一个开关会变哪几个字」。
+   默认收起，summary 一行给出「几组影响此盘」；展开后先列根因，再列连带分类。
+   与盘面同一套变量，深色下只换变量；summary 保持 44px 触摸目标。 */
+.mp-cdiff{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;font-family:system-ui,sans-serif}
+.mp-cdiff>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:44px;padding:8px 13px;cursor:pointer;list-style:none;color:var(--ink2);font-size:12.5px;line-height:1.6}
+.mp-cdiff>summary::-webkit-details-marker{display:none}
+.mp-cdiff>summary::before{content:'▸';color:var(--red);font-size:12px}
+.mp-cdiff[open]>summary::before{content:'▾'}
+.mp-cdiff-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--red)}
+.mp-cdiff-lead{color:var(--muted)}
+.mp-cdiff-more{margin-left:auto;color:var(--label);font-size:11.5px;white-space:nowrap}
+.mp-cdiff[open] .mp-cdiff-more{display:none}
+.mp-cdiff-body{padding:0 13px 12px;border-top:1px dashed var(--line)}
+.mp-cdiff-row{padding:9px 0;border-bottom:1px dashed var(--line)}
+.mp-cdiff-row:last-of-type{border-bottom:none}
+.mp-cdiff-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mp-cdiff-h b{font-size:12.5px;color:var(--ink);font-weight:700}
+.mp-cdiff-count{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mp-cdiff-count.on{color:var(--red)}
+.mp-cdiff-ab{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px;font-size:11.5px;color:var(--muted)}
+.mp-cdiff-pill{border:1px solid var(--line);border-radius:999px;padding:1px 8px;background:var(--band)}
+.mp-cdiff-pill.now{color:var(--lu);border-color:rgba(var(--lu-rgb),.4);background:color-mix(in srgb,var(--lu) 10%,transparent)}
+.mp-cdiff-pill.alt{color:var(--red);border-color:rgba(var(--red-rgb),.4);background:color-mix(in srgb,var(--red) 8%,transparent)}
+.mp-cdiff-arrow{color:var(--dimline)}
+.mp-cdiff-roots{display:flex;flex-direction:column;gap:3px;margin-top:6px;font-size:12.5px;line-height:1.7}
+.mp-cdiff-root{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.mp-cdiff-k{color:var(--label);font-size:11px;letter-spacing:.08em;min-width:2.2em}
+.mp-cdiff-from{color:var(--ink2)}
+.mp-cdiff-to{color:var(--ink);font-weight:700}
+.mp-cdiff-cats{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
+.mp-cdiff-cat{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 7px;background:var(--band)}
+.mp-cdiff-same{font-size:12px;color:var(--muted);margin-top:4px}
+.mp-cdiff-note{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
+@media (max-width:640px){
+  .mp-cdiff>summary{padding:8px 11px}
+  /* 窄屏收起态只留标题与一句话总结；「展开」提示折行会把 summary 撑到 91px */
+  .mp-cdiff-more{display:none}
+  .mp-cdiff-body{padding:0 11px 10px}
+  .mp-cdiff-h b{font-size:12px}
+  .mp-cdiff-count{margin-left:0}
+}
+@media print{
+  .mp-cdiff:not([open])>*{display:block!important}
+  .mp-cdiff>summary{cursor:auto}
+  .mp-cdiff-more{display:none}
+  .mp-cdiff{break-inside:avoid}
+}
 /* 三张表：横向可滚动，避免窄栏撑破 */
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
 .mp-table-wrap{margin-bottom:12px}
@@ -20120,12 +20606,16 @@ window.Engine = __mods.index;
     const ys = fr.yongshen ? `
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
+      ${(fr.yongshen.disputed || []).length
+        ? `<div class="pp-tl pp-dim">有争议：${fr.yongshen.disputed.map((d) => `${esc(d.element)}（扶抑为${esc(d.favorRole)}·${esc(d.favorVerb)}，${esc(d.climate)}盘调候忌${esc(d.element)}）`).join('、')}　保留在喜用，不列入忌</div>`
+        : ''}
       <div class="pp-tl pp-dim">${esc(fr.yongshen.detail)}</div>` : '';
     const cli = r.climate || (fr.yongshen && fr.yongshen.climate) || null;
     const cliCard = cli ? (() => {
       const pct = Math.max(2, Math.min(98, Math.round(((Number(cli.temp) || 0) + 3) / 6 * 100)));
       const need = cli.need ? `<em>调候取</em><b>${esc(cli.need.stem + cli.need.element)}</b>` : '<em>气候平和</em>';
-      const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>` : '';
+      const cliDis = !!(fr.yongshen && Array.isArray(fr.yongshen.disputed)) && fr.yongshen.disputed.some((d) => d.element === cli.avoidElement);
+      const avoid = cli.need ? `<em>忌</em><b>${esc(cli.avoidElement)}</b>${cliDis ? '<span class="pp-dim">（有争议）</span>' : ''}` : '';
       const ev = (cli.evidence || []).length ? `<em>依据</em><span>${esc(cli.evidence.join('、'))}</span>` : '';
       const pri = cli.priority === '调候优先' ? '<span class="mp-cli-p">调候优先</span>' : '<span class="mp-cli-p">扶抑为主</span>';
       const qt = r.frame && r.frame.yongshen && r.frame.yongshen.qt;
@@ -20160,7 +20650,7 @@ window.Engine = __mods.index;
     const syc = r.suiyunClassic;
     const sySrc = syc ? `<div class="pp-dim pp-sy-src" title="${esc(syc.plain || '')}">《${esc(syc.bookName || '')}·${esc(syc.chapter || '')}》「${esc(syc.quote || '')}」</div>` : '';
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
-      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${x.type.startsWith('流年') && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
+      `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${(x.type.startsWith('流年') || x.type.startsWith('大运')) && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
     const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
     const ssGroups = (r.shensha && r.shensha.groups) || [];
     const ssx = ssGroups.length ? `
@@ -20320,6 +20810,47 @@ window.Engine = __mods.index;
   /** 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态） */
   pp.resultWithInterpret = function (html, it, opt) {
     return (html || '') + pp.interpretHTML(it, opt);
+  };
+
+  /**
+   * 口径对照卡：数据来自 Engine.caliberCompare（同一组输入只换一个开关）。
+   * 默认收起，summary 先给「几组影响此盘」；展开后列根因与连带分类。
+   */
+  pp.caliberHTML = function (caliber) {
+    const sws = caliber && Array.isArray(caliber.switches) ? caliber.switches.filter((s) => s && s.key) : [];
+    if (!sws.length) return '';
+    const affected = sws.filter((s) => !s.error && s.total > 0);
+    const lead = affected.length
+      ? `${sws.length} 组开关中 ${affected.length} 组影响此盘：${affected.map((s) => s.short || s.title).join('、')}。`
+      : `本盘对 ${sws.length} 组开关都不敏感：换成另一档也不变。`;
+    const rootsHTML = (row) => {
+      if (row.error) return `<div class="mp-cdiff-same">未能对照：${esc(row.error)}</div>`;
+      if (!row.total) return '<div class="mp-cdiff-same">无变化 · 此盘不受这一开关影响</div>';
+      const roots = Array.isArray(row.roots) ? row.roots : [];
+      if (!roots.length) return `<div class="mp-cdiff-same">无单一根因；逐字段差异 ${Number(row.total) || 0} 处</div>`;
+      return `<div class="mp-cdiff-roots">${roots.map((r) => `<div class="mp-cdiff-root">`
+        + `<span class="mp-cdiff-k">${esc(r.label)}</span><span class="mp-cdiff-from">${esc(r.from)}</span>`
+        + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-to">${esc(r.to)}</span></div>`).join('')}</div>`;
+    };
+    const catsHTML = (row) => {
+      const cats = Array.isArray(row.categories) ? row.categories : [];
+      if (row.error || !row.total || !cats.length) return '';
+      const shown = cats.slice(0, 6);
+      return `<div class="mp-cdiff-cats">${shown.map((c) => `<span class="mp-cdiff-cat">${esc(c.name)} ${Number(c.count) || 0} 处</span>`).join('')}`
+        + (cats.length > shown.length ? `<span class="mp-cdiff-cat">另 ${cats.length - shown.length} 类</span>` : '') + '</div>';
+    };
+    const rows = sws.map((row) => `<div class="mp-cdiff-row">`
+      + `<div class="mp-cdiff-h"><b>${esc(row.title)}</b>`
+      + `<span class="mp-cdiff-count${row.total > 0 ? ' on' : ''}">${row.error ? '未能对照' : row.total ? `${Number(row.total) || 0} 处` : '无变化'}</span></div>`
+      + `<div class="mp-cdiff-ab"><span class="mp-cdiff-pill now">当前 · ${esc(row.currentLabel)}</span>`
+      + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-pill alt">换成 · ${esc(row.altLabel)}</span></div>`
+      + `${rootsHTML(row)}${catsHTML(row)}</div>`).join('');
+    return `<details class="mp-cdiff" aria-label="口径对照">
+      <summary><span class="mp-cdiff-title">口径对照</span><span class="mp-cdiff-lead">${esc(lead)}</span><span class="mp-cdiff-more">展开逐字差异</span></summary>
+      <div class="mp-cdiff-body">${rows}
+        <div class="mp-cdiff-note">同一组输入、只换一个开关；只列变化字段与根因，不判哪套口径更准，也不改上方盘面。</div>
+      </div>
+    </details>`;
   };
 
   /**
@@ -20892,6 +21423,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
+      + window.__PP.caliberHTML(last.caliber)
       + followupBar()
       + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
       + exportBar();
@@ -21168,6 +21700,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
           });
         } catch (e) { trend = null; }
       }
+      // 口径对照：只对 bazi / ziwei / qimen 有开关表；额外排 2–3 张盘，失败不影响主结果
+      let caliber = null;
+      if (window.Engine.caliberCompare) {
+        try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
+      }
       const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
@@ -21183,7 +21720,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
-      last = { r, html, tab, date, time, timed, trend };
+      last = { r, html, tab, date, time, timed, trend, caliber };
       paint();
     } catch (e) {
       last = null;

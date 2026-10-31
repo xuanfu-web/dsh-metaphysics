@@ -5,6 +5,7 @@
 import { compute } from '../engine/index.js';
 import { buildBazi, RENYUAN_TABLE, renyuanOf, HIDDEN_STEMS, STEM_ELEMENT } from '../engine/bazi.js';
 import { analyzeBaziFrame } from '../engine/geju.js';
+import { classicOf } from '../engine/classics.js';
 import { KNOWLEDGE } from '../engine/interpret-knowledge.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -170,3 +171,19 @@ ok('知识卡写明 30 日表', card.note.includes('30 日表'));
 ok('知识卡写明不改取格', card.detail.includes('不改取格') || card.detail.includes('不随轮值改判'));
 ok('知识卡写明第 31 日口径', card.note.includes('第 31 日'));
 ok('知识卡无绝对化', !abs.test(card.detail + card.note));
+
+// ── ⑨ 古籍原文：三命通会此本日数不同，原文并列、不改判 ──────────────────
+const ryc = classicOf('smt-renyuan');
+ok('三命通会人元条已登记', !!ryc && ryc.book === 'sanming' && ryc.chapter === '卷二·论人元司事');
+ok('原文照录、不带省略号', !!ryc && ryc.quote.length >= 12 && !ryc.quote.includes('…') && !ryc.quote.includes('...'));
+ok('此本寅月作 5/5/20（本插件通行表 7/7/16）',
+  ryc.quote.includes('艮土用事五日') && ryc.quote.includes('甲木二十日') && RENYUAN_TABLE.寅.map(([, d]) => d).join('/') === '7/7/16');
+ok('此本卯月作 7/23（本插件通行表 10/20）',
+  ryc.quote.includes('甲木用事七日') && ryc.quote.includes('乙木二十三日') && RENYUAN_TABLE.卯.map(([, d]) => d).join('/') === '10/20');
+ok('白话点明两表不是同一套分法', ryc.plain.includes('不是同一套分法') && ryc.plain.includes('不改取格'));
+ok('结果挂 renyuanClassic', A.renyuanClassic && A.renyuanClassic.id === 'smt-renyuan' && A.renyuanClassic.bookName === '三命通会');
+ok('摘要人元行带原文出处', A.summary.includes('原文见《三命通会·卷二·论人元司事》'));
+ok('解析人元节附原文与白话', asec.text.includes('《三命通会·卷二·论人元司事》') && asec.text.includes(ryc.quote) && asec.text.includes('白话：'));
+ok('解析人元节点明 5/5/20', asec.text.includes('5/5/20'));
+ok('人元条不进五条取条表', A.classics.every((e) => e.id !== 'smt-renyuan'));
+ok('知识卡出处带典藏网 7529', card.source.includes('7529') && card.note.includes('5/5/20'));

@@ -751,6 +751,11 @@ function App() {
           });
         } catch (e) { trend = null; }
       }
+      // 口径对照：只对 bazi / ziwei / qimen 有开关表；额外排 2–3 张盘，失败不影响主结果
+      let caliber = null;
+      if (Engine.caliberCompare) {
+        try { caliber = Engine.caliberCompare(args); } catch (e) { caliber = null; }
+      }
       // 问题与方向一并与卦象交给解读：解读按它展开，并在开头回显供确认。
       // 奇门虽然不问事，但「询问方向」决定取哪个门/星作用神，所以也要传。
       const ask = (needAsk(k) || k === 'qimen')
@@ -763,7 +768,7 @@ function App() {
       }
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
-      setResult({ kind: k, r, it, at: dt, timed, trend });
+      setResult({ kind: k, r, it, at: dt, timed, trend, caliber });
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌；人格的输入是 24 个答案、没存进来，重放也没法还原。两者都不入历史
@@ -1374,7 +1379,7 @@ function App() {
                         : PP.quickHTML(result.r),
           result.it,
           { folded: defaultFolded() },
-        ),
+        ) + PP.caliberHTML(result.caliber),
       },
     }) : null,
 
