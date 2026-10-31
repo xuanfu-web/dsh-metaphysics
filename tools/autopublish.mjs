@@ -1,20 +1,20 @@
 #!/usr/bin/env node
-// 每 24 小时自动检查并发布 dsh-metaphysics。
+// 每 24 小时自动检查并推送 dsh-metaphysics。
 //
-// 行为：
+// 行为（2026-10-31 起：只提交 + 推送，不自动发 npm）：
 //   1. 对「会进 npm 包的源码/配置」做指纹（package.json、engine、src、index.js、locale、构建脚本等）；
-//   2. 指纹与上次成功发布时保存的一致 → 静默退出（不打印、不提交、不发布）；
-//   3. 指纹有变 → 跑七道闸 → 重建 client.js / 命理排盘.html → 必要时升 patch 版本
-//      → 提交并推送到 origin/main → 打 tag → 发布 npm → 核对 tarball → 写回指纹。
+//   2. 指纹与上次成功推送时保存的一致 → 静默退出（不打印、不提交、不推送）；
+//   3. 指纹有变 → 跑七道闸 → 重建产物 → 提交并推送到 origin/main → 写回指纹。
+//      版本号不动、不打 tag、不发 npm：按主题攒够后，发版时手动走 tools/release.mjs。
 //
 // 用法：
-//   node tools/autopublish.mjs            # 自动检查/发布（定时任务用这个）
+//   node tools/autopublish.mjs            # 自动检查/推送（定时任务用这个）
 //   node tools/autopublish.mjs --dry-run  # 只报告会做什么，不改任何东西
-//   node tools/autopublish.mjs --init     # 只把当前指纹记为基线，不发布
-//   node tools/autopublish.mjs --force    # 忽略指纹，强制走发布流程
+//   node tools/autopublish.mjs --init     # 只把当前指纹记为基线，不推送
+//   node tools/autopublish.mjs --force    # 忽略指纹，强制走提交推送流程
 //
 // 依赖：<用户目录>/.dsh/metaphysics-autopublish.json（npmToken / githubUser / githubToken），
-//       发布用的临时 .npmrc 用后即删；指纹、锁与日志都在 .gitignore 里。
+//       指纹、锁与日志都在 .gitignore 里。
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -85,8 +85,6 @@ function findGit() {
   return 'git';
 }
 
-const npmCli = path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-
 function walkFiles(dir, out = []) {
   let entries;
   try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return out; }
@@ -121,26 +119,6 @@ function readJson(file, fallback) {
 function writeJson(file, obj) {
   fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n');
 }
-
-function verParts(v) {
-  return String(v).split('.').map((x) => parseInt(x, 10) || 0);
-}
-
-function verGt(a, b) {
-  const A = verParts(a);
-  const B = verParts(b);
-  for (let i = 0; i < 3; i++) {
-    if ((A[i] || 0) !== (B[i] || 0)) return (A[i] || 0) > (B[i] || 0);
-  }
-  return false;
-}
-
-function bumpPatch(v) {
-  const p = verParts(v);
-  return `${p[0]}.${p[1]}.${(p[2] || 0) + 1}`;
-}
-
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function npmLatest() {
   try {
@@ -190,16 +168,6 @@ function loadConfig() {
   return c;
 }
 
-/** 工作区干净且当前提交已推送（用于「外部已发布，别再补一版」的判断） */
-function cleanAndPushed() {
-  const st = git(['status', '--porcelain']);
-  if (st.status !== 0 || st.stdout.trim()) return false;
-  git(['fetch', 'origin', '--quiet']); // 网络失败就用现有的 remote-tracking 判断
-  const r = git(['rev-list', '--count', 'origin/main..HEAD']);
-  if (r.status !== 0) return false;
-  return Number(r.stdout.trim()) === 0;
-}
-
 function authArgs(cfg) {
   const b64 = Buffer.from(`${cfg.githubUser || 'xuanfu-web'}:${cfg.githubToken}`).toString('base64');
   return ['-c', 'credential.helper=', '-c', `http.https://github.com/.extraheader=Authorization: Basic ${b64}`];
@@ -214,47 +182,20 @@ function runStep(label, cmd, cmdArgs, opts) {
   return r;
 }
 
-async function publish(version, cfg) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mp-autopub-'));
-  const npmrc = path.join(tmp, '.npmrc');
-  fs.writeFileSync(npmrc, `//registry.npmjs.org/:_authToken=${cfg.npmToken}\n`, { mode: 0o600 });
-  try {
-    const r = runStep('npm publish', process.execPath, [
-      npmCli, 'publish', '--access', 'public', '--ignore-scripts', '--userconfig', npmrc,
-    ]);
-    log('npm publish 输出：\n' + r.stdout + r.stderr);
-  } finally {
-    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* 删不掉不影响 */ }
+/** 推送带重试：GitHub 连接间歇性失败（甚至整段 443 被阻断），失败三次才放弃本轮 */
+function pushWithRetry(args, label) {
+  for (let i = 1; i <= 3; i++) {
+    const r = git(args);
+    if (r.status === 0) return r;
+    log(`${label} 第 ${i} 次失败：\n${r.stdout}${r.stderr}`);
+    if (i < 3) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, i * 15000);
   }
-  // 核对：版本条目 + tarball 能下载且 shasum 一致
-  for (let i = 0; i < 40; i++) {
-    try {
-      const res = await fetch(`https://registry.npmjs.org/${NAME}?cb=${Date.now()}`);
-      if (res.ok) {
-        const m = await res.json();
-        const doc = m.versions && m.versions[version];
-        if (doc) {
-          const t = await fetch(doc.dist.tarball + '?cb=' + Date.now());
-          if (t.ok) {
-            const buf = Buffer.from(await t.arrayBuffer());
-            const got = createHash('sha1').update(buf).digest('hex');
-            if (!doc.dist.shasum || got === doc.dist.shasum) {
-              log(`发布核对通过 ${NAME}@${version} shasum=${got}`);
-              return { ok: true, shasum: got, fileCount: doc.dist.fileCount };
-            }
-            fail(`tarball shasum 不一致：registry ${doc.dist.shasum} / 实际 ${got}`);
-          }
-        }
-      }
-    } catch (e) { /* 还没落盘，继续等 */ }
-    await sleep(15000);
-  }
-  fail(`发布核对超时：${NAME}@${version} 的 tarball 一直不可用`);
+  fail(`${label} 连续 3 次失败（检查 GitHub 443 是否可达；必要时改用 SSH deploy key）`);
 }
 
-function commitAndPush(version, cfg) {
+function commitAndPush(cfg) {
   git(['add', '-A']);
-  const msg = `chore(release): 自动发布 v${version}\n\n由 tools/autopublish.mjs 定时任务生成：构建 client.js 与命理排盘.html，提交并发布 npm。`;
+  const msg = 'chore(autopublish): 自动构建并推送\n\n由 tools/autopublish.mjs 定时任务生成：跑七道闸、重建 client.js 与命理排盘.html 后提交推送。不发 npm、不改版本号、不打 tag——发版按主题攒够后手动走 tools/release.mjs。';
   const c = git(['-c', 'core.autocrlf=false', 'commit', '-m', msg]);
   if (c.status !== 0 && !/nothing to commit/i.test(c.stdout + c.stderr)) {
     log('git commit 失败：\n' + c.stdout + c.stderr);
@@ -271,24 +212,8 @@ function commitAndPush(version, cfg) {
       fail('git pull --rebase 失败（下一轮重试）');
     }
   }
-  const push = git(authArgs(cfg).concat(['push', 'origin', 'main']));
-  if (push.status !== 0) {
-    log('git push 失败：\n' + push.stdout + push.stderr);
-    fail('git push 失败');
-  }
-  log(`已推送 main（${version}）`);
-  const tag = `v${version}`;
-  const t = git(['tag', '-a', tag, '-m', `${version}：自动发布`]);
-  if (t.status !== 0 && !/already exists/i.test(t.stderr)) {
-    log('打 tag 失败：\n' + t.stderr);
-    fail('git tag 失败');
-  }
-  const tp = git(authArgs(cfg).concat(['push', 'origin', tag]));
-  if (tp.status !== 0 && !/up to date|already exists/i.test(tp.stderr)) {
-    log('推送 tag 失败：\n' + tp.stderr);
-    fail('git push tag 失败');
-  }
-  log(`已推送 tag ${tag}`);
+  pushWithRetry(authArgs(cfg).concat(['push', 'origin', 'main']), 'git push');
+  log(`已推送 main（版本仍为 ${PKG.version}，未发布 npm）`);
 }
 
 async function main() {
@@ -322,40 +247,17 @@ async function main() {
   }
 
   const latest = await npmLatest();
-  // 外部已经把当前版本发上去了（例如人手动发过），且工作区干净、提交已推送：
-  // 没有新内容可发，只补记基线，静默退出。
-  if (!FORCE && latest && latest === PKG.version && cleanAndPushed()) {
-    writeJson(STATE, { hash, version: PKG.version, npmLatest: latest, at: new Date().toISOString() });
-    log(`npm 上已是 ${PKG.version} 且工作区干净，无新内容可发`);
-    return;
-  }
-
   const cfg = loadConfig();
-  let version = PKG.version;
-  if (!verGt(version, latest || '0.0.0')) {
-    version = bumpPatch(verGt(latest || '0.0.0', version) ? latest : version);
-  }
 
   if (DRY) {
     console.log(JSON.stringify({
-      action: 'publish', reason: FORCE ? 'force' : '源码/配置有改动',
-      currentVersion: PKG.version, nextVersion: version, npmLatest: latest,
-      hash: hash.slice(0, 12),
+      action: 'commit-push', reason: FORCE ? 'force' : '源码/配置有改动',
+      version: PKG.version, npmLatest: latest, hash: hash.slice(0, 12),
     }, null, 2));
     return;
   }
 
-  log(`检测到改动：${state ? '指纹变化 ' + (state.hash || '').slice(0, 12) + ' → ' : '首次 '}${hash.slice(0, 12)}；准备发布 v${version}`);
-
-  // 版本号写回 package.json（只有确实需要时才改）
-  if (version !== PKG.version) {
-    const pkgPath = path.join(root, 'package.json');
-    const text = fs.readFileSync(pkgPath, 'utf8').replace(
-      /"version"\s*:\s*"[^"]+"/, `"version": "${version}"`,
-    );
-    fs.writeFileSync(pkgPath, text);
-    log(`版本号 ${PKG.version} → ${version}`);
-  }
+  log(`检测到改动：${state ? '指纹变化 ' + (state.hash || '').slice(0, 12) + ' → ' : '首次 '}${hash.slice(0, 12)}；提交并推送（不发 npm）`);
 
   const gates = [
     ['build-client', ['tools/build-client.mjs']],
@@ -372,11 +274,10 @@ async function main() {
   }
 
   const finalHash = fingerprint();
-  commitAndPush(version, cfg);
-  const pub = await publish(version, cfg);
-  writeJson(STATE, { hash: finalHash, version, npmLatest: version, shasum: pub.shasum, at: new Date().toISOString() });
-  log(`完成：${NAME}@${version} 已发布并推送（${pub.fileCount || '?'} 个文件，shasum ${pub.shasum}）`);
-  console.log(`${NAME}@${version} 已发布并推送（shasum ${pub.shasum}，${pub.fileCount || '?'} 个文件）`);
+  commitAndPush(cfg);
+  writeJson(STATE, { hash: finalHash, version: PKG.version, npmLatest: latest, at: new Date().toISOString() });
+  log(`完成：已推送 main（版本 ${PKG.version} 未发 npm；npm latest ${latest || '未知'}）`);
+  console.log(`已推送 main（版本 ${PKG.version}，未发 npm；npm latest ${latest || '未知'}）`);
 }
 
 main().catch((e) => {

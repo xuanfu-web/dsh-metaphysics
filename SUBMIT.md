@@ -89,17 +89,19 @@ npm publish --access public
 
 改了 `client.js`（浏览器端产物）之后，刷新页面即可；改了 Host 侧（`index.js` / `engine/`）需要重启 dsh web。
 
-## 六、自动发布（每 24 小时）
+## 六、自动发布（每 24 小时，只提交 + 推送）
+
+> 2026-10-31 起：发布节奏改为「按主题攒够再发版」。定时任务只负责把 main 推上去，**不再自动升版本号、打 tag 或发 npm**。
 
 - **计划任务**：Windows「DSHMetaphysicsAutopublish」，每天 **12:00**（中午；当前用户登录时运行；关机/睡眠错过会在恢复后补跑，最多 30 分钟）。
   - 查询：`Get-ScheduledTask -TaskName DSHMetaphysicsAutopublish`
   - 删除：`Unregister-ScheduledTask -TaskName DSHMetaphysicsAutopublish -Confirm:$false`
 - **入口**：`tools/autopublish.cmd` → `tools/autopublish.mjs`（也可手动 `node tools/autopublish.mjs`）。
 - **配置**：`~/.dsh/metaphysics-autopublish.json`（`npmToken` / `githubUser` / `githubToken`，ACL 只留当前用户；不入库）。
-- **判定**：对 `package.json`、`index.js`、`engine/`、`src/`、`locale/`、`cordis.patch.yml`、`icon.svg`、两个构建脚本做 SHA-1 指纹，与上次成功发布时保存的指纹比较。
-  - 指纹一致 → **静默退出**：不打印、不提交、不推送、不发布；
-  - 指纹有变 → 七道闸 → 重建 `client.js` / `命理排盘.html` → 需要时补丁升版 → `git commit` + push `main` + 打 tag → `npm publish` → 核对 tarball → 写回指纹；
-  - 若 npm 上已经是当前版本、工作区干净且提交已推送（外部手动发过）→ 只补记指纹，静默退出。
-- **状态与日志**：`.autopublish-state.json`（基线指纹）、`.autopublish.lock`（防并发）、`tools/.autopublish.log`（改动/错误日志）；三者都已 gitignore。
-- **手动演练**：`node tools/autopublish.mjs --dry-run`（只报告会做什么）、`--init`（重置基线）、`--force`（忽略指纹强制发一版）。
-- **前置**：`git` 用 DSH 自带的 bash-ipc 里的 git.exe（脚本自动找），npm 用当前 node 目录下的 `npm-cli.js`；发布失败时脚本不更新指纹，下一轮会重试。
+- **判定**：对 `package.json`、`index.js`、`engine/`、`src/`、`locale/`、`cordis.patch.yml`、`icon.svg`、构建脚本与对拍 fixture 做 SHA-1 指纹，与上次成功推送时保存的指纹比较。
+  - 指纹一致 → **静默退出**：不打印、不提交、不推送；
+  - 指纹有变 → 七道闸 → 重建 `client.js` / `命理排盘.html` → `git commit` + push `main`（失败重试 3 次）→ 写回指纹。**版本号不动、不打 tag、不发 npm**。
+- **发版（手动）**：按主题攒够后，先在 CHANGELOG 顶部「未发布」段整理条目、把 `package.json` 版本号改成目标版本，再跑 `node tools/release.mjs`，然后 `git tag`/`git push`/GitHub release。
+- **状态与日志**：`.autopublish-state.json`（基线指纹 + 上次推送时的版本与 npm latest）、`.autopublish.lock`（防并发）、`tools/.autopublish.log`（改动/错误日志）；三者都已 gitignore。
+- **手动演练**：`node tools/autopublish.mjs --dry-run`（只报告会做什么）、`--init`（重置基线）、`--force`（忽略指纹强制提交推送）。
+- **前置**：`git` 用 DSH 自带的 bash-ipc 里的 git.exe（脚本自动找）；push 目前走 HTTPS token——GitHub 443 被阻断时会连续失败 3 次后报错，需临时改用 SSH deploy key。
