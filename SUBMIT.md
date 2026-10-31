@@ -64,11 +64,11 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-31 更新）
 
-- **当前版本**：`0.55.0`（本地已构建、七道闸全绿；A1 推导链 + A2 口径对照（紫微含九派） + A3 公开对拍报告 + A4 影子盘 + D1 `client.js` 压缩与按 tab 拆包）。尚未推送 / 发布 npm。
+- **当前版本**：`0.55.0`（已推送并发布；A1 推导链 + A2 口径对照（紫微含九派） + A3 公开对拍报告（奇门 20 例） + A4 影子盘 + D1 `client.js` 压缩与按 tab 拆包）。
 - **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并；#10557 也已合并（条目同步到 0.46 能力）。0.47–0.55.0（应期、杂气、人元、口径对照、喜忌争议、影子盘、推导链、按 tab 懒加载分块、公开对拍报告、紫微九派口径）的市场描述仍需下一次 PR 补。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.50.5`（2026-10-31，`dist-tags.latest = 0.50.5`，shasum `6f6a6f0d25379353ebaf896b57d7916c22accbc3`，62 个文件；0.50.2–0.50.4 随它一并发布）。0.50.5 修 issue #1 的「喜忌与调候同一五行重叠」；上一版是 0.50.1。
-- **仓库同步**：`main` 已推送到 docs 提交（0.50.5 记录），tag `v0.50.5`，GitHub release：https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.50.5
+- **已发布**：npm `dsh-metaphysics@0.55.0`（2026-10-31，`dist-tags.latest = 0.55.0`，shasum `a8640df32d5451078bd15bf94d7b95da0547f698`，80 个文件，tarball 2.4MB；0.51.0–0.54.0 并入本版，未单独发布）。上一版是 `0.50.5`。
+- **仓库同步**：`main` 推到 `2a9c85c`（0.55.0 交付提交，随后补一次文档回写提交），tag `v0.55.0`，GitHub release：https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.55.0
 - **仓库修复（2026-10-30）**：`.git` 的 `HEAD` / `config` / `index` 丢失（只剩 `objects`、`refs`、`ORIG_HEAD`），git 报 "not a git repository"；按 `refs/heads/main`（6e4966f）补回 `HEAD` 与 `config` 后 `git reset` 重建索引，工作区内容未被改动。
 - **CDN 小坑**：发布后本机通过 `registry.npmjs.org` 查到的 packument 与 tarball 可能还是旧的（边缘缓存），表现为新版本查不到、tarball 404；加一个随机查询串（`?cb=<随机>`）或带 token 访问即能拿到新内容，等几分钟自然过期。
 - **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布走 `node tools/release.mjs`（须设 `NPM_CLI=<node>/node_modules/npm/bin/npm-cli.js`，否则 Windows 上 `spawnSync npm` 报 ENOENT），token 走临时 `.npmrc`（0600），发布后立即删除；`npm run` 在 PowerShell 下会撞执行策略，用 `cmd /c "npm run ..."` 或直接 `node tools/*.mjs`。
