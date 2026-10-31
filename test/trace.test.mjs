@@ -51,13 +51,16 @@ ok('refresh 回综合时重新标未取', buildTrace(noAsk, { direction: 'genera
 
 // ── ② 八字：旺衰分值与格局取用 ─────────────────────────────────
 const b = compute({ system: 'bazi', datetime: '1990-05-06T08:30', gender: 'male', trace: true });
-ok('八字返回两层', b.trace.length === 2 && b.trace.map((t) => t.key).join(',') === 'strength,geju', b.trace.map((t) => t.key).join(','));
+ok('八字返回三层', b.trace.length === 3 && b.trace.map((t) => t.key).join(',') === 'strength,geju,palaces', b.trace.map((t) => t.key).join(','));
 ok('旺衰层结果与 strength 一致', b.trace[0].result.includes(b.strength.level) && b.trace[0].result.includes(String(b.strength.score)), b.trace[0].result);
 ok('旺衰层输入含日主与月令', b.trace[0].inputs.some((x) => x.label === '日主') && b.trace[0].inputs.some((x) => x.label === '月令'));
 ok('格局层结果含主格', b.trace[1].result.includes(b.frame.primaryName), b.trace[1].result);
 ok('格局层结果含喜忌', b.frame.yongshen.favor.every((e) => b.trace[1].result.includes(e)) && b.frame.yongshen.avoid.every((e) => b.trace[1].result.includes(e)), b.trace[1].result);
 ok('格局层输入含取格依据', b.trace[1].inputs.some((x) => x.label === '取格依据' && x.value.length > 6));
 ok('有争议时格局层标出', b.trace[1].result.includes('有争议'), b.trace[1].result);
+ok('胎命身层与 palaces 一致', b.trace[2].result.includes(b.palaces.taiyuan.ganzhi) && b.trace[2].result.includes(b.palaces.taixi.ganzhi)
+  && b.trace[2].result.includes(b.palaces.minggong.ganzhi) && b.trace[2].result.includes(b.palaces.shengong.ganzhi), b.trace[2].result);
+ok('胎命身层输入含生月与生时', b.trace[2].inputs.some((x) => x.label === '生月 / 生时' && x.value === `${b.pillars.month.branch} / ${b.pillars.hour.branch}`), JSON.stringify(b.trace[2].inputs));
 
 // ── ③ 紫微：格局命中条件 ──────────────────────────────────────
 const z = compute({ system: 'ziwei', datetime: '1990-05-06T08:30', gender: 'male', trace: true });

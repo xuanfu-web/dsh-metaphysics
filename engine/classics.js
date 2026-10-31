@@ -511,7 +511,13 @@ export function classicsFor(r, limit = 5) {
   };
   const gejuList = Array.isArray(r.geju) ? r.geju : (r.frame && Array.isArray(r.frame.geju) ? r.frame.geju : []);
   // 专旺或从格是这张盘的定义性结构，先占位；命中的单章原文在 5 条上限里不被气候/总纲挤掉。
+  // 已判破格的结构不再占位：它已见官杀/财星破格，不能挤掉月令与总纲。
+  // 待定（成势而月令不助）仍保留，原文正是用来看「还差什么」。
+  // 同一盘既有化气格又有假从时，让化气先占位：化气直接改用神，假从只是「运助身则不从」的备选。
+  const hasHuagi = gejuList.some((g) => g && g.kind === '化气格');
   for (const g of gejuList) {
+    if (g && g.status === '破格') continue;
+    if (hasHuagi && g && g.status === '假从') continue;
     const entry = g && SPECIAL_CLASSIC[g.name] ? classicOf(SPECIAL_CLASSIC[g.name]) : null;
     if (entry) push(entry, `本盘列有「${g.name}」，故取${CLASSIC_BOOKS[entry.book].name}「${chapterTitle(entry)}」一条`);
   }

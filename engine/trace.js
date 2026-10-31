@@ -210,7 +210,24 @@ function baziTrace(r) {
     '子平真诠 · 月令取格；engine/geju.js · yongshenOf()',
   );
 
-  return [strength, geju];
+  const p = r.palaces && typeof r.palaces === 'object' ? r.palaces : {};
+  const monthBranch = r.pillars && r.pillars.month ? text(r.pillars.month.branch) : '—';
+  const hourBranch = r.pillars && r.pillars.hour ? text(r.pillars.hour.branch) : '—';
+  const palaces = p.taiyuan ? step(
+    'palaces',
+    '胎元与命身宫',
+    '胎元＝月干进一、月支进三；胎息＝日干五合、日支六合；命宫＝27 减生月与生时支、取模后加二；身宫＝11 加两支、取模后加二；干支并入六十甲子。',
+    [
+      ['生月 / 生时', `${monthBranch} / ${hourBranch}`],
+      ['胎元', `${text(p.taiyuan.ganzhi)}（月干进一、月支进三）`],
+      ['胎息', p.taixi ? `${text(p.taixi.ganzhi)}（日干五合、日支六合）` : '—'],
+      ['命宫 / 身宫', `${text(p.minggong && p.minggong.ganzhi)} / ${text(p.shengong && p.shengong.ganzhi)}`],
+    ],
+    `胎元 ${text(p.taiyuan.ganzhi)}；${p.taixi ? `胎息 ${text(p.taixi.ganzhi)}；` : ''}命宫 ${text(p.minggong && p.minggong.ganzhi)}；身宫 ${text(p.shengong && p.shengong.ganzhi)}。四宫是辅助坐标，不单独折吉凶。`,
+    'Tyme 四宫口径；engine/bazi.js · palaces',
+  ) : null;
+
+  return [strength, geju, ...(palaces ? [palaces] : [])];
 }
 
 function ziweiTrace(r) {

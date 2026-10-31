@@ -613,7 +613,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：109 个测试文件 / 5030 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：111 个测试文件 / 5119 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -4381,7 +4381,13 @@ function classicsFor(r, limit = 5) {
   };
   const gejuList = Array.isArray(r.geju) ? r.geju : (r.frame && Array.isArray(r.frame.geju) ? r.frame.geju : []);
   // 专旺或从格是这张盘的定义性结构，先占位；命中的单章原文在 5 条上限里不被气候/总纲挤掉。
+  // 已判破格的结构不再占位：它已见官杀/财星破格，不能挤掉月令与总纲。
+  // 待定（成势而月令不助）仍保留，原文正是用来看「还差什么」。
+  // 同一盘既有化气格又有假从时，让化气先占位：化气直接改用神，假从只是「运助身则不从」的备选。
+  const hasHuagi = gejuList.some((g) => g && g.kind === '化气格');
   for (const g of gejuList) {
+    if (g && g.status === '破格') continue;
+    if (hasHuagi && g && g.status === '假从') continue;
     const entry = g && SPECIAL_CLASSIC[g.name] ? classicOf(SPECIAL_CLASSIC[g.name]) : null;
     if (entry) push(entry, `本盘列有「${g.name}」，故取${CLASSIC_BOOKS[entry.book].name}「${chapterTitle(entry)}」一条`);
   }
@@ -4445,7 +4451,7 @@ __mods.geju = (function () {
 
 const { judgeClimate, arbitrate } = (__mods.tiaohou || {});
 const { qtOf } = (__mods.qiongtong || {});
-const { sanheGroupOf } = (__mods.sanhe || {});
+const { SANHE_GROUPS, sanheGroupOf } = (__mods.sanhe || {});
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -4609,6 +4615,38 @@ function monthPattern(pillars, dayStem, monthBranch) {
 
 const ZHUANWANG = { 木: '曲直格', 火: '炎上格', 土: '稼穑格', 金: '从革格', 水: '润下格' };
 const CONG = { 财: '从财格', 官杀: '从杀格', 食伤: '从儿格', 印: '从强格', 比劫: '从强格' };
+const POS_LABEL = { year: '年', month: '月', day: '日', hour: '时' };
+
+// 日主根气：地支藏干里的同类（比劫）与生我（印），以及天干（日干除外）透出的比劫/印。
+// 只用于真从/假从：无根才是真从，有中气/余气微根或虚透只能算假从；
+// 见一个本气根（≥1 分）就不作从格——日主已能站住，再称从会误判。
+function rootProfile(pillars, dayStem) {
+  const me = STEM_ELEMENT[dayStem];
+  const out = { bi: 0, yin: 0, total: 0, details: [], helpers: [] };
+  for (const key of ['year', 'month', 'day', 'hour']) {
+    const branch = pillars[key].branch;
+    (HIDDEN[branch] || []).forEach((stem, i) => {
+      const el = STEM_ELEMENT[stem];
+      const w = HIDDEN_W[i] ?? 0.1;
+      if (el === me) {
+        out.bi += w;
+        out.details.push(`${POS_LABEL[key]}支${branch}藏${stem}（比劫 ${w}）`);
+      } else if (GENERATES[el] === me) {
+        out.yin += w;
+        out.details.push(`${POS_LABEL[key]}支${branch}藏${stem}（印 ${w}）`);
+      }
+    });
+  }
+  for (const key of ['year', 'month', 'hour']) {
+    const stem = pillars[key].stem;
+    const el = STEM_ELEMENT[stem];
+    if (el === me || GENERATES[el] === me) out.helpers.push(`${POS_LABEL[key]}干${stem}（${el === me ? '比劫' : '印'}）`);
+  }
+  out.bi = Math.round(out.bi * 10) / 10;
+  out.yin = Math.round(out.yin * 10) / 10;
+  out.total = Math.round((out.bi + out.yin) * 10) / 10;
+  return out;
+}
 
 function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) {
   const out = [];
@@ -4636,26 +4674,50 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
     break;
   }
 
-  // 专旺：日主之气独旺，官杀、财星皆弱
-  if ((strength.level === '身强' || strength.level === '偏强') && mine + yin >= 5 && guan <= 1.2 && cai <= 1.8) {
+  // 专旺：日主之气独旺，官杀、财星皆弱。
+  // 成格＝旺神得月令（同类或印）且不见破；待定＝气势已成但月令不助；破格＝官杀逆势或财星耗旺。
+  if ((strength.level === '身强' || strength.level === '偏强') && mine + yin >= 5) {
+    const breaks = [];
+    if (guan > 1.2) breaks.push(`官杀 ${guan} 分，逆旺势`);
+    if (cai > 1.8) breaks.push(`财 ${cai} 分，耗旺气`);
+    const monthEl = BRANCH_ELEMENT[monthBranch];
+    const monthSupport = monthEl === me || monthEl === roles.inMe;
+    const group = SANHE_GROUPS.find((g) => g.element === me);
+    const branches = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].branch);
+    const ju = group && group.branches.every((b) => branches.includes(b)) ? group.branches.join('') : null;
+    const status = breaks.length ? '破格' : monthSupport ? '成格' : '待定';
     out.push({
       name: ZHUANWANG[me],
       kind: '专旺格',
-      evidence: `日主${me}得${mine + yin}分（同类+印），官杀${guan}、财${cai}皆弱，成${ZHUANWANG[me]}之势`,
+      status,
+      breaks,
+      ju,
+      evidence: `日主${me}得${mine + yin}分（同类+印），官杀${guan}、财${cai}${breaks.length ? '' : '皆弱'}；`
+        + `${monthSupport ? `月令${monthBranch}${monthEl}助旺` : `月令${monthBranch}${monthEl}不助旺`}`
+        + `${ju ? `，地支${ju}成局` : ''}，${status === '成格' ? '成格' : status === '破格' ? '见破格条件' : '成势而条件未全'}`,
+      breakRule: breaks.length ? '专旺以官杀逆旺势、财星耗旺气为破；见其一即不纯' : undefined,
     });
   }
 
-  // 从格：日主无根而被他神主导
-  const hasRoot = ['year', 'month', 'day', 'hour'].some((key) =>
-    (HIDDEN[pillars[key].branch] || []).some((h) => STEM_ELEMENT[h] === me || GENERATES[STEM_ELEMENT[h]] === me));
-  if (!hasRoot && (strength.level === '身弱' || strength.level === '偏弱')) {
+  // 从格：日主无根而被他神主导。真从＝完全无根、无比劫印绶透出；
+  // 假从＝有微根或虚透，气势仍从，但行运助身则不再从。
+  const root = rootProfile(pillars, dayStem);
+  if (root.total < 1 && (strength.level === '身弱' || strength.level === '偏弱')) {
     const main = Object.entries({ 财: cai, 官杀: guan, 食伤: shi, 印: yin })
       .sort((a, b) => b[1] - a[1])[0];
     if (main[1] >= 2.5) {
+      const fake = root.total > 0 || root.helpers.length > 0;
+      const reasons = [...root.details, ...root.helpers.map((h) => `天干${h}虚透`)];
       out.push({
         name: CONG[main[0]],
         kind: '从格',
-        evidence: `日主无根（四支藏干无同类与印），${main[0]}占 ${main[1]} 分最旺，从${main[0]}之势`,
+        status: fake ? '假从' : '真从',
+        breaks: fake ? reasons : [],
+        rootWeight: root.total,
+        evidence: fake
+          ? `日主有微根或虚透（${reasons.join('；')}），${main[0]}占 ${main[1]} 分最旺，假从${main[0]}；行运助身则不从`
+          : `日主无根（四支藏干无同类与印、天干无比劫印绶），${main[0]}占 ${main[1]} 分最旺，真从${main[0]}`,
+        breakRule: fake ? '从格以日主有根、比劫印绶透出为破；有根而从者称假从，运助身则不从' : undefined,
       });
     }
   }
@@ -5489,22 +5551,24 @@ function buildBazi(input) {
 
   const p = jdToParts(jd);
 
-  // ── 胎元 / 命宫 / 身宫 ──
+  // ── 胎元 / 胎息 / 命宫 / 身宫 ──
   // 胎元：月柱天干进一位、地支进三位（受胎之月的干支）
   const mStemIdx = STEMS.indexOf(pillars.month.stem);
   const mBranchIdx = BRANCHES.indexOf(pillars.month.branch);
   const taiyuan = ganzhiName(sexagenaryIndex((mStemIdx + 1) % 10, (mBranchIdx + 3) % 12));
-  // 命宫：以子月起正月顺数至生月，再自该宫起子时逆数至生时
+  // 胎息：日柱天干五合、地支六合（六合两支序数之和恒为 1 mod 12）
+  const dayStemIdx = STEMS.indexOf(pillars.day.stem);
+  const dayBranchIdx = BRANCHES.indexOf(pillars.day.branch);
+  const taixi = ganzhiName(sexagenaryIndex((dayStemIdx + 5) % 10, (1 - dayBranchIdx + 12) % 12));
+  // 命宫 / 身宫：以生月、生时两支的合数定宫（Tyme 口径）。
+  // 命宫：27 − 月支 − 时支，取模后 +2；身宫：11 + 月支 + 时支，取模后 +2。
+  // 两支合数落 0–11 后并入六十甲子，天干随年干自然对齐，无需另推五虎遁。
   const hourBrIdxForGong = BRANCHES.indexOf(pillars.hour.branch);
-  const soulIdx = (((mBranchIdx - hourBrIdxForGong) % 12) + 12) % 12;
-  // 命宫天干按五虎遁从年干起（寅为正月）
-  const yinStem = ((STEMS.indexOf(pillars.year.stem) % 5) * 2 + 2) % 10;
-  const soulStemIdx = (yinStem + ((soulIdx - 2 + 12) % 12)) % 10;
-  const minggong = ganzhiName(sexagenaryIndex(soulStemIdx, soulIdx));
-  // 身宫：命宫对宫（相隔六位）
-  const bodyIdx = (soulIdx + 6) % 12;
-  const bodyStemIdx = (yinStem + ((bodyIdx - 2 + 12) % 12)) % 10;
-  const shengong = ganzhiName(sexagenaryIndex(bodyStemIdx, bodyIdx));
+  const yearStemIdxForGong = STEMS.indexOf(pillars.year.stem);
+  const mingIdx = (((yearStemIdxForGong * 12 + ((27 - mBranchIdx - hourBrIdxForGong) % 12) + 2) % 60) + 60) % 60;
+  const bodyIdx = (((yearStemIdxForGong * 12 + ((11 + mBranchIdx + hourBrIdxForGong) % 12) + 2) % 60) + 60) % 60;
+  const minggong = ganzhiName(mingIdx);
+  const shengong = ganzhiName(bodyIdx);
 
   // 人元司权：按节令到出生日的日差定当权藏干（节当日为第 1 日）
   const renyuan = renyuanOf(BRANCHES[monthBranchIdx], jdnBase, prevJieTerm.jd);
@@ -5515,8 +5579,9 @@ function buildBazi(input) {
     relations: buildRelations(pillars),
     palaces: {
       taiyuan: { ganzhi: taiyuan.name, note: '月干进一、月支进三' },
-      minggong: { ganzhi: minggong.name, branch: minggong.branch, note: '子月起正月顺数至生月，再逆数至生时；干按五虎遁' },
-      shengong: { ganzhi: shengong.name, branch: shengong.branch, note: '命宫对宫' },
+      taixi: { ganzhi: taixi.name, note: '日干五合、日支六合' },
+      minggong: { ganzhi: minggong.name, branch: minggong.branch, note: '生月与生时支合数定宫（27 减，取模后 +2）；干随六十甲子' },
+      shengong: { ganzhi: shengong.name, branch: shengong.branch, note: '生月与生时支合数定宫（11 加，取模后 +2）；干随六十甲子' },
     },
     input: {
       civil: { year, month, day, hour, minute },
@@ -15499,9 +15564,17 @@ function baziInterpret(r) {
       text: `${ys.qt.label}：用神 ${ys.qt.yong.join('、')}（首取 ${ys.qt.primary}）。原文：「${ys.qt.quote}」` +
         `（《穷通宝鉴》第 ${ys.qt.chapter} 章${ys.qt.note ? '；' + ys.qt.note : ''}）`,
     }] : []),
+    ...(r.palaces ? [{
+      key: 'palaces', label: '胎命身',
+      text: `胎元 ${r.palaces.taiyuan.ganzhi}（月干进一、月支进三）；`
+        + `${r.palaces.taixi ? `胎息 ${r.palaces.taixi.ganzhi}（日干五合、日支六合）；` : ''}`
+        + `命宫 ${r.palaces.minggong.ganzhi}、身宫 ${r.palaces.shengong.ganzhi}（生月与生时两支合数定宫，天干随六十甲子）。`
+        + '四宫是读盘的辅助坐标，不单独折吉凶。',
+    }] : []),
     {
       key: 'geju', label: '格局依据',
-      text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
+      text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
+        `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局',
     },
     ...(Array.isArray(r.classics) && r.classics.length ? [{
       key: 'classics', label: '古籍原文',
@@ -17727,7 +17800,24 @@ function baziTrace(r) {
     '子平真诠 · 月令取格；engine/geju.js · yongshenOf()',
   );
 
-  return [strength, geju];
+  const p = r.palaces && typeof r.palaces === 'object' ? r.palaces : {};
+  const monthBranch = r.pillars && r.pillars.month ? text(r.pillars.month.branch) : '—';
+  const hourBranch = r.pillars && r.pillars.hour ? text(r.pillars.hour.branch) : '—';
+  const palaces = p.taiyuan ? step(
+    'palaces',
+    '胎元与命身宫',
+    '胎元＝月干进一、月支进三；胎息＝日干五合、日支六合；命宫＝27 减生月与生时支、取模后加二；身宫＝11 加两支、取模后加二；干支并入六十甲子。',
+    [
+      ['生月 / 生时', `${monthBranch} / ${hourBranch}`],
+      ['胎元', `${text(p.taiyuan.ganzhi)}（月干进一、月支进三）`],
+      ['胎息', p.taixi ? `${text(p.taixi.ganzhi)}（日干五合、日支六合）` : '—'],
+      ['命宫 / 身宫', `${text(p.minggong && p.minggong.ganzhi)} / ${text(p.shengong && p.shengong.ganzhi)}`],
+    ],
+    `胎元 ${text(p.taiyuan.ganzhi)}；${p.taixi ? `胎息 ${text(p.taixi.ganzhi)}；` : ''}命宫 ${text(p.minggong && p.minggong.ganzhi)}；身宫 ${text(p.shengong && p.shengong.ganzhi)}。四宫是辅助坐标，不单独折吉凶。`,
+    'Tyme 四宫口径；engine/bazi.js · palaces',
+  ) : null;
+
+  return [strength, geju, ...(palaces ? [palaces] : [])];
 }
 
 function ziweiTrace(r) {
@@ -18067,7 +18157,7 @@ function baziText(r) {
     + (p.shensha && p.shensha.length ? `　神煞 ${p.shensha.join('、')}` : '');
   const wuxing = Object.entries(r.wuxing).map(([k, v]) => `${k}${v}`).join(' ');
   const palaces = r.palaces
-    ? `【胎元】${r.palaces.taiyuan.ganzhi}　命宫 ${r.palaces.minggong.ganzhi}　身宫 ${r.palaces.shengong.ganzhi}`
+    ? `【胎元】${r.palaces.taiyuan.ganzhi}　胎息 ${r.palaces.taixi ? r.palaces.taixi.ganzhi : '—'}　命宫 ${r.palaces.minggong.ganzhi}　身宫 ${r.palaces.shengong.ganzhi}`
     : '';
   const dayun = r.dayun.list.slice(0, 8)
     .map((d) => `${d.startAge}岁 ${d.ganzhi}(${d.stemTenGod})${d.luck ? `·${d.luck.tier}` : ''}${d.relations && d.relations.length ? `[${d.relations.join('')}]` : ''}`).join('　');
@@ -18096,7 +18186,7 @@ function baziText(r) {
   const disEls = new Set(ysd.map((d) => d.element));
   const gejuLine = r.frame ? [
     `格局：${r.frame.primary ? `${r.frame.primary.name}（${r.frame.primary.evidence}）` : '—'}`,
-    `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}]`).join('　')}`,
+    `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}${g.status ? `·${g.status}` : ''}]`).join('　')}`,
     `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）${disText}　${r.frame.yongshen.method}`,
     `　　　${r.frame.yongshen.detail}`,
     `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}${disEls.has(r.climate.avoidElement) ? '（有争议）' : ''}` : ''}` : '—'}` +
@@ -21992,7 +22082,12 @@ window.__MP_VER = "0.55.0";
     const sect = (title, body) => (body ? `<div class="pp-sec"><div class="pp-sec-h">${title}</div>${body}</div>` : '');
     const gj = fr.geju && fr.geju.length ? `
       <div class="pp-tl">${fr.primary ? `主格 <b>${esc(fr.primary.name)}</b>　${esc(fr.primary.evidence)}` : ''}</div>
-      <div class="pp-chips">${fr.geju.map((g) => `<span class="pp-chip" title="${esc(g.evidence)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}</i></span>`).join('')}</div>` : '';
+      <div class="pp-chips">${fr.geju.map((g) => {
+        const broke = g.status === '破格';
+        const pending = g.status === '待定' || g.status === '假从';
+        const title = `${g.evidence || ''}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`;
+        return `<span class="pp-chip ${broke ? 'broken' : pending ? 'warn' : ''}" title="${esc(title)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}${g.status ? `·${esc(g.status)}` : ''}</i></span>`;
+      }).join('')}</div>` : '';
     const ys = fr.yongshen ? `
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
@@ -22068,10 +22163,11 @@ window.__MP_VER = "0.55.0";
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln + syRow) : ''}
-      ${r.palaces ? sect('胎元与命身宫', `<div class="pp-chips">
-        <span class="pp-chip" title="${r.palaces.taiyuan.note}">胎元 ${r.palaces.taiyuan.ganzhi}</span>
-        <span class="pp-chip" title="${r.palaces.minggong.note}">命宫 ${r.palaces.minggong.ganzhi}</span>
-        <span class="pp-chip" title="${r.palaces.shengong.note}">身宫 ${r.palaces.shengong.ganzhi}</span>
+      ${r.palaces ? sect('胎命身', `<div class="pp-chips">
+        <span class="pp-chip" title="${esc(r.palaces.taiyuan.note)}">胎元 ${esc(r.palaces.taiyuan.ganzhi)}</span>
+        ${r.palaces.taixi ? `<span class="pp-chip" title="${esc(r.palaces.taixi.note)}">胎息 ${esc(r.palaces.taixi.ganzhi)}</span>` : ''}
+        <span class="pp-chip" title="${esc(r.palaces.minggong.note)}">命宫 ${esc(r.palaces.minggong.ganzhi)}</span>
+        <span class="pp-chip" title="${esc(r.palaces.shengong.note)}">身宫 ${esc(r.palaces.shengong.ganzhi)}</span>
       </div>`) : ''}
       ${ssx}
       <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}</div>

@@ -577,22 +577,24 @@ export function buildBazi(input) {
 
   const p = jdToParts(jd);
 
-  // ── 胎元 / 命宫 / 身宫 ──
+  // ── 胎元 / 胎息 / 命宫 / 身宫 ──
   // 胎元：月柱天干进一位、地支进三位（受胎之月的干支）
   const mStemIdx = STEMS.indexOf(pillars.month.stem);
   const mBranchIdx = BRANCHES.indexOf(pillars.month.branch);
   const taiyuan = ganzhiName(sexagenaryIndex((mStemIdx + 1) % 10, (mBranchIdx + 3) % 12));
-  // 命宫：以子月起正月顺数至生月，再自该宫起子时逆数至生时
+  // 胎息：日柱天干五合、地支六合（六合两支序数之和恒为 1 mod 12）
+  const dayStemIdx = STEMS.indexOf(pillars.day.stem);
+  const dayBranchIdx = BRANCHES.indexOf(pillars.day.branch);
+  const taixi = ganzhiName(sexagenaryIndex((dayStemIdx + 5) % 10, (1 - dayBranchIdx + 12) % 12));
+  // 命宫 / 身宫：以生月、生时两支的合数定宫（Tyme 口径）。
+  // 命宫：27 − 月支 − 时支，取模后 +2；身宫：11 + 月支 + 时支，取模后 +2。
+  // 两支合数落 0–11 后并入六十甲子，天干随年干自然对齐，无需另推五虎遁。
   const hourBrIdxForGong = BRANCHES.indexOf(pillars.hour.branch);
-  const soulIdx = (((mBranchIdx - hourBrIdxForGong) % 12) + 12) % 12;
-  // 命宫天干按五虎遁从年干起（寅为正月）
-  const yinStem = ((STEMS.indexOf(pillars.year.stem) % 5) * 2 + 2) % 10;
-  const soulStemIdx = (yinStem + ((soulIdx - 2 + 12) % 12)) % 10;
-  const minggong = ganzhiName(sexagenaryIndex(soulStemIdx, soulIdx));
-  // 身宫：命宫对宫（相隔六位）
-  const bodyIdx = (soulIdx + 6) % 12;
-  const bodyStemIdx = (yinStem + ((bodyIdx - 2 + 12) % 12)) % 10;
-  const shengong = ganzhiName(sexagenaryIndex(bodyStemIdx, bodyIdx));
+  const yearStemIdxForGong = STEMS.indexOf(pillars.year.stem);
+  const mingIdx = (((yearStemIdxForGong * 12 + ((27 - mBranchIdx - hourBrIdxForGong) % 12) + 2) % 60) + 60) % 60;
+  const bodyIdx = (((yearStemIdxForGong * 12 + ((11 + mBranchIdx + hourBrIdxForGong) % 12) + 2) % 60) + 60) % 60;
+  const minggong = ganzhiName(mingIdx);
+  const shengong = ganzhiName(bodyIdx);
 
   // 人元司权：按节令到出生日的日差定当权藏干（节当日为第 1 日）
   const renyuan = renyuanOf(BRANCHES[monthBranchIdx], jdnBase, prevJieTerm.jd);
@@ -603,8 +605,9 @@ export function buildBazi(input) {
     relations: buildRelations(pillars),
     palaces: {
       taiyuan: { ganzhi: taiyuan.name, note: '月干进一、月支进三' },
-      minggong: { ganzhi: minggong.name, branch: minggong.branch, note: '子月起正月顺数至生月，再逆数至生时；干按五虎遁' },
-      shengong: { ganzhi: shengong.name, branch: shengong.branch, note: '命宫对宫' },
+      taixi: { ganzhi: taixi.name, note: '日干五合、日支六合' },
+      minggong: { ganzhi: minggong.name, branch: minggong.branch, note: '生月与生时支合数定宫（27 减，取模后 +2）；干随六十甲子' },
+      shengong: { ganzhi: shengong.name, branch: shengong.branch, note: '生月与生时支合数定宫（11 加，取模后 +2）；干随六十甲子' },
     },
     input: {
       civil: { year, month, day, hour, minute },

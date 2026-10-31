@@ -11,19 +11,28 @@ const ok = (name, cond, detail = '') => {
   else { fail++; console.log(`FAIL  ${name}${detail ? '  -> ' + detail : ''}`); }
 };
 
-// ── ① 八字胎元 / 命宫 / 身宫 ──
+// ── ① 八字胎元 / 胎息 / 命宫 / 身宫 ──
 const b = compute({ system: 'bazi', datetime: '1996-01-19T07:40', gender: 'male', trueSolar: false });
-ok('八字输出含三宫', !!(b.palaces && b.palaces.taiyuan && b.palaces.minggong && b.palaces.shengong),
-  `${b.palaces.taiyuan.ganzhi} ${b.palaces.minggong.ganzhi} ${b.palaces.shengong.ganzhi}`);
+ok('八字输出四宫', !!(b.palaces && b.palaces.taiyuan && b.palaces.taixi && b.palaces.minggong && b.palaces.shengong),
+  `${b.palaces.taiyuan.ganzhi} ${b.palaces.taixi.ganzhi} ${b.palaces.minggong.ganzhi} ${b.palaces.shengong.ganzhi}`);
 // 月柱己丑 → 胎元 = 庚辰（干进一、支进三）
 ok('胎元＝月干进一、月支进三', b.palaces.taiyuan.ganzhi === '庚辰', b.palaces.taiyuan.ganzhi);
-ok('命宫与身宫相隔六位', (() => {
+// 日柱乙卯 → 胎息 = 庚戌（乙庚合、卯戌合）
+ok('胎息＝日干五合、日支六合', b.palaces.taixi.ganzhi === '庚戌', b.palaces.taixi.ganzhi);
+// Tyme / ziwei.pub 口径：命宫支与身宫支序数之和恒为 6（子起 0）
+ok('命宫与身宫两支合数为六', (() => {
   const BR = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
   const a = BR.indexOf(b.palaces.minggong.branch);
   const c = BR.indexOf(b.palaces.shengong.branch);
-  return ((c - a + 12) % 12) === 6;
-})(), `${b.palaces.minggong.branch} vs ${b.palaces.shengong.branch}`);
-ok('三宫进入文本摘要', b.summary.includes('胎元') && b.summary.includes('命宫') && b.summary.includes('身宫'));
+  return (a + c) % 12 === 6;
+})(), `${b.palaces.minggong.branch} + ${b.palaces.shengong.branch}`);
+const palaceSample = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'female', trueSolar: false });
+ok('1990-05-12 14:30 四宫与紫微派一致', palaceSample.palaces.taiyuan.ganzhi === '壬申'
+  && palaceSample.palaces.taixi.ganzhi === '壬子'
+  && palaceSample.palaces.minggong.ganzhi === '辛巳'
+  && palaceSample.palaces.shengong.ganzhi === '己丑',
+  `${palaceSample.palaces.taiyuan.ganzhi}/${palaceSample.palaces.taixi.ganzhi}/${palaceSample.palaces.minggong.ganzhi}/${palaceSample.palaces.shengong.ganzhi}`);
+ok('四宫进入文本摘要', b.summary.includes('胎元') && b.summary.includes('胎息') && b.summary.includes('命宫') && b.summary.includes('身宫'));
 
 // ── ② 六壬神煞 ──
 const d = compute({ system: 'daliuren', datetime: '1996-01-19T07:40' });

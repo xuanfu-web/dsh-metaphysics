@@ -486,9 +486,17 @@ function baziInterpret(r) {
       text: `${ys.qt.label}：用神 ${ys.qt.yong.join('、')}（首取 ${ys.qt.primary}）。原文：「${ys.qt.quote}」` +
         `（《穷通宝鉴》第 ${ys.qt.chapter} 章${ys.qt.note ? '；' + ys.qt.note : ''}）`,
     }] : []),
+    ...(r.palaces ? [{
+      key: 'palaces', label: '胎命身',
+      text: `胎元 ${r.palaces.taiyuan.ganzhi}（月干进一、月支进三）；`
+        + `${r.palaces.taixi ? `胎息 ${r.palaces.taixi.ganzhi}（日干五合、日支六合）；` : ''}`
+        + `命宫 ${r.palaces.minggong.ganzhi}、身宫 ${r.palaces.shengong.ganzhi}（生月与生时两支合数定宫，天干随六十甲子）。`
+        + '四宫是读盘的辅助坐标，不单独折吉凶。',
+    }] : []),
     {
       key: 'geju', label: '格局依据',
-      text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) => `${g.name}（${g.kind}）：${g.evidence}`).join('；') || '未取到格局',
+      text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
+        `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局',
     },
     ...(Array.isArray(r.classics) && r.classics.length ? [{
       key: 'classics', label: '古籍原文',

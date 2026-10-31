@@ -2394,7 +2394,12 @@
     const sect = (title, body) => (body ? `<div class="pp-sec"><div class="pp-sec-h">${title}</div>${body}</div>` : '');
     const gj = fr.geju && fr.geju.length ? `
       <div class="pp-tl">${fr.primary ? `主格 <b>${esc(fr.primary.name)}</b>　${esc(fr.primary.evidence)}` : ''}</div>
-      <div class="pp-chips">${fr.geju.map((g) => `<span class="pp-chip" title="${esc(g.evidence)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}</i></span>`).join('')}</div>` : '';
+      <div class="pp-chips">${fr.geju.map((g) => {
+        const broke = g.status === '破格';
+        const pending = g.status === '待定' || g.status === '假从';
+        const title = `${g.evidence || ''}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`;
+        return `<span class="pp-chip ${broke ? 'broken' : pending ? 'warn' : ''}" title="${esc(title)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}${g.status ? `·${esc(g.status)}` : ''}</i></span>`;
+      }).join('')}</div>` : '';
     const ys = fr.yongshen ? `
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
@@ -2470,10 +2475,11 @@
       ${sect('五行与十神', `<div class="pp-chips">${wx}</div>${gods}`)}
       ${sect('大运', `${pp.curveHTML(r)}<div class="pp-chips">${dy}</div>`)}
       ${ln ? sect('流年', ln + syRow) : ''}
-      ${r.palaces ? sect('胎元与命身宫', `<div class="pp-chips">
-        <span class="pp-chip" title="${r.palaces.taiyuan.note}">胎元 ${r.palaces.taiyuan.ganzhi}</span>
-        <span class="pp-chip" title="${r.palaces.minggong.note}">命宫 ${r.palaces.minggong.ganzhi}</span>
-        <span class="pp-chip" title="${r.palaces.shengong.note}">身宫 ${r.palaces.shengong.ganzhi}</span>
+      ${r.palaces ? sect('胎命身', `<div class="pp-chips">
+        <span class="pp-chip" title="${esc(r.palaces.taiyuan.note)}">胎元 ${esc(r.palaces.taiyuan.ganzhi)}</span>
+        ${r.palaces.taixi ? `<span class="pp-chip" title="${esc(r.palaces.taixi.note)}">胎息 ${esc(r.palaces.taixi.ganzhi)}</span>` : ''}
+        <span class="pp-chip" title="${esc(r.palaces.minggong.note)}">命宫 ${esc(r.palaces.minggong.ganzhi)}</span>
+        <span class="pp-chip" title="${esc(r.palaces.shengong.note)}">身宫 ${esc(r.palaces.shengong.ganzhi)}</span>
       </div>`) : ''}
       ${ssx}
       <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}</div>

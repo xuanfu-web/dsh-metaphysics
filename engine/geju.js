@@ -9,7 +9,7 @@
 
 import { judgeClimate, arbitrate } from './tiaohou.js';
 import { qtOf } from './qiongtong.js';
-import { sanheGroupOf } from './sanhe.js';
+import { SANHE_GROUPS, sanheGroupOf } from './sanhe.js';
 
 const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -173,6 +173,38 @@ function monthPattern(pillars, dayStem, monthBranch) {
 
 const ZHUANWANG = { 木: '曲直格', 火: '炎上格', 土: '稼穑格', 金: '从革格', 水: '润下格' };
 const CONG = { 财: '从财格', 官杀: '从杀格', 食伤: '从儿格', 印: '从强格', 比劫: '从强格' };
+const POS_LABEL = { year: '年', month: '月', day: '日', hour: '时' };
+
+// 日主根气：地支藏干里的同类（比劫）与生我（印），以及天干（日干除外）透出的比劫/印。
+// 只用于真从/假从：无根才是真从，有中气/余气微根或虚透只能算假从；
+// 见一个本气根（≥1 分）就不作从格——日主已能站住，再称从会误判。
+function rootProfile(pillars, dayStem) {
+  const me = STEM_ELEMENT[dayStem];
+  const out = { bi: 0, yin: 0, total: 0, details: [], helpers: [] };
+  for (const key of ['year', 'month', 'day', 'hour']) {
+    const branch = pillars[key].branch;
+    (HIDDEN[branch] || []).forEach((stem, i) => {
+      const el = STEM_ELEMENT[stem];
+      const w = HIDDEN_W[i] ?? 0.1;
+      if (el === me) {
+        out.bi += w;
+        out.details.push(`${POS_LABEL[key]}支${branch}藏${stem}（比劫 ${w}）`);
+      } else if (GENERATES[el] === me) {
+        out.yin += w;
+        out.details.push(`${POS_LABEL[key]}支${branch}藏${stem}（印 ${w}）`);
+      }
+    });
+  }
+  for (const key of ['year', 'month', 'hour']) {
+    const stem = pillars[key].stem;
+    const el = STEM_ELEMENT[stem];
+    if (el === me || GENERATES[el] === me) out.helpers.push(`${POS_LABEL[key]}干${stem}（${el === me ? '比劫' : '印'}）`);
+  }
+  out.bi = Math.round(out.bi * 10) / 10;
+  out.yin = Math.round(out.yin * 10) / 10;
+  out.total = Math.round((out.bi + out.yin) * 10) / 10;
+  return out;
+}
 
 function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) {
   const out = [];
@@ -200,26 +232,50 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
     break;
   }
 
-  // 专旺：日主之气独旺，官杀、财星皆弱
-  if ((strength.level === '身强' || strength.level === '偏强') && mine + yin >= 5 && guan <= 1.2 && cai <= 1.8) {
+  // 专旺：日主之气独旺，官杀、财星皆弱。
+  // 成格＝旺神得月令（同类或印）且不见破；待定＝气势已成但月令不助；破格＝官杀逆势或财星耗旺。
+  if ((strength.level === '身强' || strength.level === '偏强') && mine + yin >= 5) {
+    const breaks = [];
+    if (guan > 1.2) breaks.push(`官杀 ${guan} 分，逆旺势`);
+    if (cai > 1.8) breaks.push(`财 ${cai} 分，耗旺气`);
+    const monthEl = BRANCH_ELEMENT[monthBranch];
+    const monthSupport = monthEl === me || monthEl === roles.inMe;
+    const group = SANHE_GROUPS.find((g) => g.element === me);
+    const branches = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].branch);
+    const ju = group && group.branches.every((b) => branches.includes(b)) ? group.branches.join('') : null;
+    const status = breaks.length ? '破格' : monthSupport ? '成格' : '待定';
     out.push({
       name: ZHUANWANG[me],
       kind: '专旺格',
-      evidence: `日主${me}得${mine + yin}分（同类+印），官杀${guan}、财${cai}皆弱，成${ZHUANWANG[me]}之势`,
+      status,
+      breaks,
+      ju,
+      evidence: `日主${me}得${mine + yin}分（同类+印），官杀${guan}、财${cai}${breaks.length ? '' : '皆弱'}；`
+        + `${monthSupport ? `月令${monthBranch}${monthEl}助旺` : `月令${monthBranch}${monthEl}不助旺`}`
+        + `${ju ? `，地支${ju}成局` : ''}，${status === '成格' ? '成格' : status === '破格' ? '见破格条件' : '成势而条件未全'}`,
+      breakRule: breaks.length ? '专旺以官杀逆旺势、财星耗旺气为破；见其一即不纯' : undefined,
     });
   }
 
-  // 从格：日主无根而被他神主导
-  const hasRoot = ['year', 'month', 'day', 'hour'].some((key) =>
-    (HIDDEN[pillars[key].branch] || []).some((h) => STEM_ELEMENT[h] === me || GENERATES[STEM_ELEMENT[h]] === me));
-  if (!hasRoot && (strength.level === '身弱' || strength.level === '偏弱')) {
+  // 从格：日主无根而被他神主导。真从＝完全无根、无比劫印绶透出；
+  // 假从＝有微根或虚透，气势仍从，但行运助身则不再从。
+  const root = rootProfile(pillars, dayStem);
+  if (root.total < 1 && (strength.level === '身弱' || strength.level === '偏弱')) {
     const main = Object.entries({ 财: cai, 官杀: guan, 食伤: shi, 印: yin })
       .sort((a, b) => b[1] - a[1])[0];
     if (main[1] >= 2.5) {
+      const fake = root.total > 0 || root.helpers.length > 0;
+      const reasons = [...root.details, ...root.helpers.map((h) => `天干${h}虚透`)];
       out.push({
         name: CONG[main[0]],
         kind: '从格',
-        evidence: `日主无根（四支藏干无同类与印），${main[0]}占 ${main[1]} 分最旺，从${main[0]}之势`,
+        status: fake ? '假从' : '真从',
+        breaks: fake ? reasons : [],
+        rootWeight: root.total,
+        evidence: fake
+          ? `日主有微根或虚透（${reasons.join('；')}），${main[0]}占 ${main[1]} 分最旺，假从${main[0]}；行运助身则不从`
+          : `日主无根（四支藏干无同类与印、天干无比劫印绶），${main[0]}占 ${main[1]} 分最旺，真从${main[0]}`,
+        breakRule: fake ? '从格以日主有根、比劫印绶透出为破；有根而从者称假从，运助身则不从' : undefined,
       });
     }
   }
