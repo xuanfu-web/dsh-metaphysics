@@ -1,5 +1,5 @@
-// 紫微 · 九类流派开关：默认盘必须一字不变，显式切换才改盘。
-// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时。
+// 紫微 · 十类流派开关：默认盘必须一字不变，显式切换才改盘。
+// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时；身主两派另见 ziwei-shenzhu.test.mjs。
 import { compute } from '../engine/index.js';
 import {
   buildZiwei, ziweiSchoolsOf, schoolBrightness,
@@ -21,7 +21,7 @@ const mutagens = (r) => r.palaces.flatMap((p) => p.stars)
   .filter((s) => s.mutagen).map((s) => `${s.name}${s.mutagen}`).sort();
 
 // ── 一、开关表与默认值 ─────────────────────────────────────
-eq('九类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).length, 9);
+eq('十类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).length, 10);
 ok('默认值都在可选范围内', Object.entries(ZIWEI_SCHOOL_DEFAULTS)
   .every(([k, v]) => ZIWEI_SCHOOL_OPTIONS[k].includes(v)));
 eq('全部走默认', ziweiSchoolsOf({}), { ...ZIWEI_SCHOOL_DEFAULTS });

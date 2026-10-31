@@ -33,7 +33,7 @@ const ensureEngine = typeof window.__mpEnsureEngine === 'function'
   ? window.__mpEnsureEngine
   : async () => window.Engine;
 const CSS = `
-.mp-wrap{height:100%;width:100%;box-sizing:border-box;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px}
+.mp-wrap{height:100%;width:100%;box-sizing:border-box;overflow:auto;padding:20px 24px 40px;color:var(--dsw-alias-label-primary);font-size:14px;container-type:inline-size}
 /* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
 .mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
 /* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
@@ -43,6 +43,8 @@ const CSS = `
 .mp-lbl{display:block;height:18px;line-height:18px;font-size:12.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-checks{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px;font-size:12.5px;color:var(--dsw-alias-label-secondary)}
 .mp-checks label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+/* 输入区第五项（交叉验证勾选）独占一行：留在四列里会空出半格，窄栏下又把日期挤成一条 */
+.mp-row>.mp-checks{grid-column:1/-1;margin-top:0}
 .mp-askblock{margin-top:14px;display:flex;flex-direction:column;gap:5px}
 .mp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 /* ── 首屏：最近用过 / 分组卡片 / 分组↔平铺（与独立页同一套信息架构） ── */
@@ -96,12 +98,13 @@ const CSS = `
 .mp-tab:hover{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary)}
 .mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
-.mp-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px;
+/* box-sizing 必须写明：Chrome 下 select 默认 border-box、input 默认 content-box，同为 36px 时 input 实高 50px，底对齐后性别下拉的顶边比日期框低 14px */
+.mp-input{box-sizing:border-box;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px;
   transition:border-color .14s,box-shadow .14s,background .14s}
 .mp-input:hover{border-color:color-mix(in srgb,var(--dsw-alias-border-l1) 45%,var(--dsw-alias-brand-primary))}
 .mp-input:focus{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent)}
 /* 所问之事：多行文本，视觉与其他输入框一致 */
-.mp-textarea{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:8px 11px;font-size:14px;outline:none;width:100%;min-width:0;resize:vertical;line-height:1.5;font-family:inherit;
+.mp-textarea{box-sizing:border-box;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:8px 11px;font-size:14px;outline:none;width:100%;min-width:0;resize:vertical;line-height:1.5;font-family:inherit;
   transition:border-color .14s,box-shadow .14s}
 .mp-textarea:hover{border-color:color-mix(in srgb,var(--dsw-alias-border-l1) 45%,var(--dsw-alias-brand-primary))}
 .mp-textarea:focus{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent)}
@@ -199,9 +202,15 @@ const CSS = `
 /* 结果头部的「起卦时刻」一行 */
 .mp-cast{margin:0 0 14px;padding-left:2px;font-size:12.5px;line-height:1.7;color:var(--dsw-alias-label-secondary)}
 .mp-cast b{color:var(--dsw-alias-label-primary);font-weight:600}
-/* ── 窄屏 / 手机：网格降列，按钮占满 ── */
-@media (max-width:860px){
+/* ── 窄屏 / 手机：网格降列，按钮占满 ──
+   侧栏宽度不等于窗口宽度：面板常被拖到 600px 左右而宿主窗口仍是 1200px，
+   用视口媒体查询会继续排四列，输入框被压成 117px、标签截断。
+   改按 .mp-wrap 的容器宽度降列（容器查询见下方），媒体查询只保留给整页布局。 */
+@container (max-width:860px){
   .mp-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@container (max-width:480px){
+  .mp-row{grid-template-columns:1fr}
 }
 @media (max-width:720px){
   .mp-wrap{padding:14px 14px 36px}
@@ -222,9 +231,6 @@ const CSS = `
   .mp-hint,.mp-auto,.mp-cast{font-size:12.5px}
   .mp-empty{margin-top:18px;padding:24px 16px;font-size:12.5px}
   .mp-bar{flex-wrap:wrap}
-}
-@media (max-width:480px){
-  .mp-row{grid-template-columns:1fr}
 }
 @media (max-width:420px){
   .mp-wrap{padding:12px 10px 32px}
@@ -1395,9 +1401,8 @@ function App() {
       isBirth ? h('div', { className: 'mp-checks' },
         h('label', { title: '按出生地经度把钟表时间换算成真太阳时' },
           h('input', { type: 'checkbox', checked: trueSolar, onChange: (e) => setTrueSolar(e.target.checked) }), '真太阳时'),
-        isBirth ? h('label', { className: 'mp-field mp-checks' },
-          h('input', { type: 'checkbox', checked: lateZi, onChange: (e) => setLateZi(e.target.checked) }),
-          h('span', { className: 'mp-lbl' }, '晚子时换日')) : null,
+        h('label', { title: '23:00–23:59 出生时：勾选=按次日日柱起时柱；不勾=仍用当日日柱' },
+          h('input', { type: 'checkbox', checked: lateZi, onChange: (e) => setLateZi(e.target.checked) }), '晚子时换日'),
         h('label', { title: '开启后会请求 OpenStreetMap，把区县/村落到更精确的坐标' },
           h('input', { type: 'checkbox', checked: onlineGeo, onChange: (e) => setOnlineGeo(e.target.checked) }), '联网精确到区县')) : null,
       // 所问之事独占一行：它是问事体系的核心输入，不该挤在字段堆里

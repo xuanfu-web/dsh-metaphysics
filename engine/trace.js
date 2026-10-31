@@ -174,10 +174,12 @@ function baziTrace(r) {
       ['日主', r.dayMaster ? `${text(r.dayMaster.stem)}（${text(r.dayMaster.element)}）` : '—'],
       ['月令', `${text(season.branch)}（${text(season.element)}·${text(season.word)}，权重 ${text(season.weight)}）`],
       ['通根', `${list(parts.roots)}（${text(parts.rootScore)}）`],
+      ['合会折根', list(parts.structure, '无')],
       ['天干帮扶 / 耗泄', `帮 ${list(parts.helpers)}；泄 ${list(parts.drainers)}（${text(parts.helpScore)}）`],
+      ['虚透', list(parts.virtualHelpers, '无')],
     ],
     `${text(s.level)}（${text(s.score)} 分）：${text(s.detail)}`,
-    'engine/bazi.js · 旺衰量化（月令权重 + 藏干通根 + 天干帮扶）',
+    'engine/bazi.js · 旺衰量化（月令权重 + 藏干通根，三会/三合/六合折根 + 天干虚透减半）',
   );
 
   const primaryName = text(frame.primaryName || (primary && primary.name), '未取格局');
@@ -332,6 +334,9 @@ function qimenTrace(r, opts = {}) {
     .map((k) => `${k} ${stemGroups.get(k).join('、')}`).join('；') || '—';
   const jiXing = (cond.jiXing || []).map((x) => `${x.palace}宫${text(x.stem)}`);
   const ruMu = (cond.ruMu || []).map((x) => `${x.palace}宫${text(x.stem)}`);
+  const liuYiRuMu = (cond.liuYiRuMu || []).map((x) => `${x.palace}宫${text(x.stem)}`);
+  const ganying = palaces.filter((p) => p.ganYing)
+    .map((p) => `${p.palace}宫 ${text(p.ganYing.tian)}加${text(p.ganYing.di)} ${text(p.ganYing.name)}`).join('；');
   const kongCells = palaces.filter((p) => p.kong).map((p) => `${p.palace}宫`);
 
   const relations = step(
@@ -342,11 +347,12 @@ function qimenTrace(r, opts = {}) {
       ['门迫', forced.join('、') || '无'],
       ['宫制门', controlled.join('、') || '无'],
       ['天盘干 × 宫', stemLine],
-      ['击刑 / 入墓', `${jiXing.join('、') || '无'} / ${ruMu.join('、') || '无'}`],
+      ['击刑 / 三奇入墓 / 六仪入墓', `${jiXing.join('、') || '无'} / ${ruMu.join('、') || '无'} / ${liuYiRuMu.join('、') || '无'}`],
+      ['十干克应', ganying || '—'],
       ['空亡', kongCells.join('、') || '无'],
     ],
-    `门迫 ${forced.length} 处、宫制门 ${controlled.length} 处；天盘干与宫：${stemLine}；击刑 ${jiXing.length} 处、入墓 ${ruMu.length} 处、落空 ${kongCells.length} 宫。`,
-    '门迫/宫制门；engine/qimen.js · gatePalaceRelation() / stemPalaceRelation()',
+    `门迫 ${forced.length} 处、宫制门 ${controlled.length} 处；天盘干与宫：${stemLine}；击刑 ${jiXing.length} 处、三奇入墓 ${ruMu.length} 处、六仪入墓 ${liuYiRuMu.length} 处、落空 ${kongCells.length} 宫。十干克应：${ganying || '—'}。`,
+    '门迫/宫制门；engine/qimen.js · gatePalaceRelation() / stemPalaceRelation()；十干克应 engine/qimen-ganying.js',
   );
 
   return [facts, yongshen, wangshuai, relations];

@@ -5,6 +5,7 @@
 import { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { assertCivil } from './validate.js';
+import { ganyingOf, LIUYI_RU_MU } from './qimen-ganying.js';
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -238,10 +239,21 @@ export function ruMuOf(palaces) {
   return out;
 }
 
-/** 供测试与文档引用：两张表的只读视图 */
+/** 天盘六仪入墓 → [{palace, stem, zhi, basis}] */
+export function liuYiRuMuOf(palaces) {
+  const out = [];
+  for (const p of palaces || []) {
+    const hit = LIUYI_RU_MU[p.tianPan];
+    if (hit && hit.palace === String(p.palace)) out.push({ palace: p.palace, stem: p.tianPan, zhi: hit.zhi, basis: hit.basis });
+  }
+  return out;
+}
+
+/** 供测试与文档引用：三张表的只读视图 */
 export const QIMEN_CONDITION_TABLES = Object.freeze({
   jiXing: Object.freeze(Object.fromEntries(Object.entries(JI_XING).map(([k, v]) => [k, { ...v }]))),
   ruMu: Object.freeze(Object.fromEntries(Object.entries(RU_MU).map(([k, v]) => [k, { ...v }]))),
+  liuYiRuMu: Object.freeze(Object.fromEntries(Object.entries(LIUYI_RU_MU).map(([k, v]) => [k, { ...v }]))),
 });
 
 // ── 月令旺衰：门与星对月令的五态 ─────────────────────────────
@@ -481,6 +493,7 @@ export function buildQimen(input) {
     stemElement: STEM_ELEMENT[tianPan['5']] || null,
     gateRelation: { type: 'unknown', note: '中宫无门，不参与门宫关系' },
     stemRelation: stemPalaceRelation(tianPan['5'], '5'),
+    ganYing: ganyingOf(tianPan['5'], diPan['5']),
     starState: monthState(STAR_ELEMENT['天禽'], monthElement),
     stemState: monthState(STEM_ELEMENT[tianPan['5']], monthElement),
     kong: false,
@@ -502,6 +515,7 @@ export function buildQimen(input) {
     stemElement: STEM_ELEMENT[tianPan[gong]] || null,
     gateRelation: gatePalaceRelation(bm.baMen[gong], gong),
     stemRelation: stemPalaceRelation(tianPan[gong], gong),
+    ganYing: ganyingOf(tianPan[gong], diPan[gong]),
     gateState: monthState(GATE_ELEMENT[bm.baMen[gong]], monthElement),
     starState: monthState(STAR_ELEMENT[jx.jiuXing[gong]], monthElement),
     stemState: monthState(STEM_ELEMENT[tianPan[gong]], monthElement),
@@ -537,6 +551,7 @@ export function buildQimen(input) {
     conditions: {
       jiXing: jiXingOf(palaces),
       ruMu: ruMuOf(palaces),
+      liuYiRuMu: liuYiRuMuOf(palaces),
     },
     // 月令与门/星旺衰：按月支五行判旺相休囚死，只报强弱、不折吉凶
     month: { branch: monthBranch, element: monthElement },

@@ -564,6 +564,9 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
         <label class="field" id="fs-advise" style="display:none">坐山<input id="sitting" placeholder="如 子 / 乾" value="子"></label>
         <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
         <label class="field" id="fs-period" style="display:none">运（1–9）<input id="fsperiod" type="number" min="1" max="9" value="9"></label>
+        <label class="field" id="fs-offset" style="display:none">兼向度数<input id="fsoffset" type="number" min="-7.5" max="7.5" step="0.5" placeholder="0 = 正向；±4.5 以上用替卦"></label>
+        <label class="field" id="fs-date" style="display:none">飞星日期<input id="fsdate" type="date"></label>
+        <label class="field" id="fs-time" style="display:none">时刻<input id="fstime" type="time" value="12:00"></label>
       </div>
       <!-- 人格问卷：4 题一页、1–5 打分。题目与 1–5 的说明由 web-ui 从引擎取，
            这里只放容器与翻页骨架，避免题目在页面和引擎里各抄一份 -->

@@ -45,7 +45,7 @@ ok('当运落宫写成方位', h.includes('山星9落 坎宫正北；向星9落 
 ok('合十列出向星艮、山星无', h.includes('山星：无；向星：艮'));
 ok('盘面与表法两个 chip 各表各的', h.includes('盘面：未到山到向') && h.includes('表法：未列'));
 ok('表法写明本运无局', h.includes('本运表法无局。'));
-ok('玄空免责声明在卡内', h.includes('玄空下卦为传统通行口径'));
+ok('玄空免责声明在卡内', h.includes('玄空排盘为传统通行口径'));
 
 // ── ② 玄空 8 运 乾巽：到山到向、表法在列、两处高亮 ────────────────
 const xk8 = compute({ system: 'fengshui', action: 'xuankong', period: 8, sitting: '乾', facing: '巽' });
@@ -55,6 +55,18 @@ ok('8运乾巽 表法在列', h8.includes('表法：在列') && h8.includes('本
 ok('8运乾巽 山星8落乾、向星8落巽', h8.includes('山星8落 乾宫西北') && h8.includes('向星8落 巽宫东南'));
 ok('8运乾巽 全盘高亮三处（中宫运8 + 山8 + 向8）', (h8.match(/ class="on"/g) || []).length === 3, String((h8.match(/ class="on"/g) || []).length));
 ok('8运乾巽 表法说明与盘面一致', h8.includes('盘面与表法一致：本局到山到向。'));
+
+// ── ②b 玄空替卦 + 年月日时：标题、替卦事实、飞星事实 ─────────────
+const xjt = compute({
+  system: 'fengshui', action: 'xuankong', period: 9, sitting: '子', facing: '午',
+  sittingOffset: 6, fortuneDate: '2026-10-31', fortuneTime: '12:00',
+});
+const hjt = PP.fengshuiHTML(xjt);
+ok('替卦卡标题', hjt.includes('<b>玄空替卦</b>'), hjt.slice(0, 120));
+ok('替卦 chip 写兼山与度数', hjt.includes('兼癸 6° · 替卦'));
+ok('替卦事实与用替结果', hjt.includes('<dt>替卦</dt>') && hjt.includes('原运星 5，已替'));
+ok('表法 chip 写替卦不套', hjt.includes('表法：替卦不套'));
+ok('年月日时事实在卡内', hjt.includes('<dt>年月日时</dt>') && hjt.includes('年一白（顺飞）') && hjt.includes('月九紫（顺飞）'));
 
 // ── ③ 八宅命卦：八向格、四吉四凶、年紫白 ─────────────────────────
 const natal = compute({ system: 'fengshui', datetime: '1990-05-12T14:30', gender: 'female' });

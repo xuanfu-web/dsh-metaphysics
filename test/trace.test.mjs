@@ -57,7 +57,9 @@ ok('旺衰层输入含日主与月令', b.trace[0].inputs.some((x) => x.label ==
 ok('格局层结果含主格', b.trace[1].result.includes(b.frame.primaryName), b.trace[1].result);
 ok('格局层结果含喜忌', b.frame.yongshen.favor.every((e) => b.trace[1].result.includes(e)) && b.frame.yongshen.avoid.every((e) => b.trace[1].result.includes(e)), b.trace[1].result);
 ok('格局层输入含取格依据', b.trace[1].inputs.some((x) => x.label === '取格依据' && x.value.length > 6));
-ok('有争议时格局层标出', b.trace[1].result.includes('有争议'), b.trace[1].result);
+// 争议盘单独取：旺衰折根后 b 这盘已无喜忌重叠，仍用 1962 燥盘（火在扶抑为印、调候却忌火）
+const bd = compute({ system: 'bazi', datetime: '1962-03-22T12:00', gender: 'male', address: '安徽池州', trace: true });
+ok('有争议时格局层标出', bd.trace[1].result.includes('有争议'), bd.trace[1].result);
 ok('胎命身层与 palaces 一致', b.trace[2].result.includes(b.palaces.taiyuan.ganzhi) && b.trace[2].result.includes(b.palaces.taixi.ganzhi)
   && b.trace[2].result.includes(b.palaces.minggong.ganzhi) && b.trace[2].result.includes(b.palaces.shengong.ganzhi), b.trace[2].result);
 ok('胎命身层输入含生月与生时', b.trace[2].inputs.some((x) => x.label === '生月 / 生时' && x.value === `${b.pillars.month.branch} / ${b.pillars.hour.branch}`), JSON.stringify(b.trace[2].inputs));
@@ -90,7 +92,7 @@ ok('奇门 refresh 只重建不修改原结果', (() => {
 })(), buildTrace(q, { direction: 'study' })[1].result);
 ok('奇门旺衰层带月令', q.trace[2].inputs.some((x) => x.label === '月令') && q.trace[2].result.includes('门：') && q.trace[2].result.includes('星：') && q.trace[2].result.includes('天盘干：'));
 ok('奇门宫位生克层给门迫与干宫', q.trace[3].result.includes('门迫') && q.trace[3].result.includes('天盘干与宫'), q.trace[3].result);
-ok('奇门宫位生克层带条件', q.trace[3].inputs.some((x) => x.label === '击刑 / 入墓') && q.trace[3].inputs.some((x) => x.label === '空亡'));
+ok('奇门宫位生克层带条件', q.trace[3].inputs.some((x) => x.label === '击刑 / 三奇入墓 / 六仪入墓') && q.trace[3].inputs.some((x) => x.label === '十干克应') && q.trace[3].inputs.some((x) => x.label === '空亡'), q.trace[3].inputs.map((x) => x.label).join('、'));
 const qPlain = compute({ system: 'qimen', datetime: '2026-10-31T10:00', direction: 'career' });
 const qWithTrace = JSON.parse(JSON.stringify(q));
 delete qWithTrace.trace;

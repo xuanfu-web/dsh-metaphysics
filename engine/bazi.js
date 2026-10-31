@@ -81,6 +81,68 @@ const XING_SELF = ['辰', '午', '酉', '亥'];
 
 const hasPair = (list, a, b) => list.includes(a + b) || list.includes(b + a);
 
+// 旺衰用的合会折根：三会成方、三合成局时，参与支按化神折去本气；
+// 六合折半；已并入会/合局的支归该局，六合只折局外那一支（否则「巳午未会火 + 午未合土」会把火局自己折掉，
+// 「亥子丑会水 + 寅亥合木」也会把壬日的亥水比劫折半）。
+// 只参与旺衰量化，不改盘面关系列表；半合/半会不折，避免把「有合意」当成「已成局」。
+function branchRootFactors(pillars, me) {
+  const inMe = Object.keys(GENERATES).find((k) => GENERATES[k] === me);
+  const branches = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].branch);
+  const set = new Set(branches);
+  const factor = {};
+  for (const b of branches) factor[b] = 1;
+  const notes = [];
+  const inJu = new Set();
+  const apply = (key, el, f, kind) => {
+    const hit = [];
+    for (const b of [...key]) {
+      if ((factor[b] ?? 1) > f) { factor[b] = f; hit.push(b); }
+      inJu.add(b);
+    }
+    if (hit.length && f < 1) notes.push(`${key}${kind}${el}，${hit.join('')}根气按${Math.round(f * 10)}成计`);
+  };
+  for (const [k, el] of Object.entries(SANHUI)) {
+    if (![...k].every((c) => set.has(c))) continue;
+    apply(k, el, el === me ? 1 : el === inMe ? 0.6 : 0.1, '三会');
+  }
+  for (const [k, el] of Object.entries(SANHE)) {
+    if (![...k].every((c) => set.has(c))) continue;
+    apply(k, el, el === me ? 1 : el === inMe ? 0.6 : 0.2, '三合');
+  }
+  for (let i = 0; i < branches.length; i++) {
+    for (let j = i + 1; j < branches.length; j++) {
+      const a = branches[i];
+      const b = branches[j];
+      const el = BRANCH_HE[a + b] || BRANCH_HE[b + a];
+      if (!el) continue;
+      if (inJu.has(a) && inJu.has(b)) continue;
+      const f = el === me ? 1 : el === inMe ? 0.8 : 0.5;
+      const hit = [];
+      for (const x of [a, b]) {
+        if (inJu.has(x)) continue;
+        if ((factor[x] ?? 1) > f) { factor[x] = f; hit.push(x); }
+      }
+      if (hit.length && f < 1) notes.push(`${a}${b}合${el}，${hit.join('')}根气按${Math.round(f * 10)}成计`);
+    }
+  }
+  return { factor, notes, inJu };
+}
+
+// 天干生扶是否真有根：折根后同类藏干累计 ≥0.3 才算有根（余气 0.3 折半后不足，作虚透）。
+const ROOT_EFFECTIVE_MIN = 0.3;
+function rootedWeightOf(pillars, el, factor) {
+  let w = 0;
+  for (const k of ['year', 'month', 'day', 'hour']) {
+    const pl = pillars[k];
+    const f = factor[pl.branch] ?? 1;
+    if (f <= 0.1) continue;
+    pl.hidden.forEach((h, i) => {
+      if (STEM_ELEMENT[h.stem] === el) w += (ROOT_HIDDEN_WEIGHT[i] ?? 0.1) * f;
+    });
+  }
+  return w;
+}
+
 /** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑 */
 export function buildRelations(pillars) {
   const stems = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].stem);
@@ -444,14 +506,16 @@ export function buildBazi(input) {
   else if (OVERCOMES[me] === seasonEl) { monthW = 0.5; monthWord = '囚'; }
   else { monthW = 0; monthWord = '死'; }
 
+  const factorInfo = branchRootFactors(pillars, me);
   let rootScore = 0;
   const rootBranches = [];
   for (const key of ['year', 'month', 'day', 'hour']) {
     const pl = pillars[key];
+    const f = factorInfo.factor[pl.branch] ?? 1;
     let hit = false;
     pl.hidden.forEach((h, i) => {
-      if (STEM_ELEMENT[h.stem] === me) { rootScore += ROOT_HIDDEN_WEIGHT[i] ?? 0.1; hit = true; }
-      else if (GENERATES[STEM_ELEMENT[h.stem]] === me) { rootScore += (ROOT_HIDDEN_WEIGHT[i] ?? 0.1) * 0.4; hit = true; }
+      if (STEM_ELEMENT[h.stem] === me) { rootScore += (ROOT_HIDDEN_WEIGHT[i] ?? 0.1) * f; hit = true; }
+      else if (GENERATES[STEM_ELEMENT[h.stem]] === me) { rootScore += (ROOT_HIDDEN_WEIGHT[i] ?? 0.1) * 0.4 * f; hit = true; }
     });
     if (hit) rootBranches.push(pl.branch);
   }
@@ -459,23 +523,30 @@ export function buildBazi(input) {
   let helpScore = 0;
   const helpers = [];
   const drainers = [];
+  const virtualHelpers = [];
   for (const key of ['year', 'month', 'hour']) {
     const st = pillars[key].stem;
     const el2 = STEM_ELEMENT[st];
-    if (el2 === me) { helpScore += 1; helpers.push(st); }
-    else if (GENERATES[el2] === me) { helpScore += 0.8; helpers.push(st); }
-    else if (OVERCOMES[el2] === me) { helpScore -= 1; drainers.push(st); }
+    if (el2 === me || GENERATES[el2] === me) {
+      // 天干有根才出得上力；虚透（折根后不足 0.3）只按半力计
+      const base = el2 === me ? 1 : 0.8;
+      if (rootedWeightOf(pillars, el2, factorInfo.factor) >= ROOT_EFFECTIVE_MIN) helpScore += base;
+      else { helpScore += base * 0.5; virtualHelpers.push(st); }
+      helpers.push(st);
+    } else if (OVERCOMES[el2] === me) { helpScore -= 1; drainers.push(st); }
     else if (OVERCOMES[me] === el2) { helpScore -= 0.8; drainers.push(st); }
     else { helpScore -= 0.5; drainers.push(st); }
   }
 
   const total = Math.round((monthW + rootScore + helpScore) * 10) / 10;
   const level = total >= 4 ? '身强' : total >= 2.5 ? '偏强' : total >= 1.5 ? '中和' : total >= 0.5 ? '偏弱' : '身弱';
+  const structureText = factorInfo.notes.length ? `；合会折根：${factorInfo.notes.join('、')}` : '';
+  const virtualText = virtualHelpers.length ? `；虚透${virtualHelpers.join('')}帮扶减半` : '';
   const strength = {
     level,
     score: total,
-    detail: `月令${monthBranch}${seasonEl}，日主${me}${monthWord}(${monthW})；通根${rootBranches.join('') || '无'}(${rootScore.toFixed(1)})；天干帮扶${helpers.join('') || '无'}／耗泄${drainers.join('') || '无'}(${helpScore.toFixed(1)})`,
-    method: '月令权重 3/2/1/0.5/0 + 地支藏干通根 + 天干帮扶，量化后分档；属简化算法，非唯一流派',
+    detail: `月令${monthBranch}${seasonEl}，日主${me}${monthWord}(${monthW})；通根${rootBranches.join('') || '无'}(${rootScore.toFixed(1)})；天干帮扶${helpers.join('') || '无'}／耗泄${drainers.join('') || '无'}(${helpScore.toFixed(1)})${structureText}${virtualText}`,
+    method: '月令权重 3/2/1/0.5/0 + 地支藏干通根（三会/三合/六合折根）+ 天干帮扶（虚透减半），量化后分档；属简化算法，非唯一流派',
     parts: {
       season: { branch: monthBranch, element: seasonEl, word: monthWord, weight: monthW },
       roots: rootBranches,
@@ -483,6 +554,8 @@ export function buildBazi(input) {
       helpers,
       drainers,
       helpScore: Math.round(helpScore * 10) / 10,
+      structure: factorInfo.notes,
+      virtualHelpers,
     },
   };
 

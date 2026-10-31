@@ -93,7 +93,7 @@ npm publish --access public
 
 > 2026-10-31 起：发布节奏改为「按主题攒够再发版」。定时任务只负责把 main 推上去，**不再自动升版本号、打 tag 或发 npm**。
 
-- **计划任务**：Windows「DSHMetaphysicsAutopublish」，每天 **12:00**（中午；当前用户登录时运行；关机/睡眠错过会在恢复后补跑，最多 30 分钟）。
+- **计划任务**：Windows「DSHMetaphysicsAutopublish」，每天 **23:00**（当前用户登录时运行；关机/睡眠错过会在恢复后补跑，最多 30 分钟）。
   - 查询：`Get-ScheduledTask -TaskName DSHMetaphysicsAutopublish`
   - 删除：`Unregister-ScheduledTask -TaskName DSHMetaphysicsAutopublish -Confirm:$false`
 - **入口**：`tools/autopublish.cmd` → `tools/autopublish.mjs`（也可手动 `node tools/autopublish.mjs`）。

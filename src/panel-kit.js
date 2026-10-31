@@ -1340,7 +1340,7 @@
         <div class="ct-t2">公历 ${r.input.year}-${String(r.input.month).padStart(2, '0')}-${String(r.input.day).padStart(2, '0')} ${String(r.input.hour).padStart(2, '0')}:${String(r.input.minute).padStart(2, '0')}</div>
         <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? `闰${r.lunar.monthRaw || r.lunar.month}` : r.lunar.month}月${r.lunar.day}日${r.hourBranch}时${r.lunar.isLeap && r.lunar.monthRaw && r.lunar.month !== r.lunar.monthRaw ? `（按${r.lunar.month}月起盘）` : ''}</div>
         ${sizhuOf(r) ? `<div class="ct-t3">${sizhuOf(r)}</div>` : ''}
-        <div class="ct-t4">命主 ${r.lifeMaster}　身主 ${r.bodyMaster}</div>
+        <div class="ct-t4">命主 ${r.lifeMaster}　身主 ${r.bodyMaster}${r.bodyMasterNote ? `<span class="pp-dim" title="${esc(r.bodyMasterNote)}">＊</span>` : ''}</div>
         <div class="ct-t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
         <div class="ct-t4">子年斗君 ${r.doujun ? r.doujun.zinian : '—'}　流年斗君 ${ln && ln.doujun ? ln.doujun : '—'}</div>
         <div class="ct-t4">紫微 ${r.ziwei}　天府 ${r.tianfu}　${kind === 'da' ? '大限命宫 ' + BR[dxIdx] : kind === 'ln' ? '流年命宫 ' + BR[lnIdx] : '本命命宫 ' + r.soul.branch}</div>
@@ -1854,8 +1854,14 @@
       ['晚子时', r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'],
       ['击刑', (r.conditions && r.conditions.jiXing && r.conditions.jiXing.length)
         ? r.conditions.jiXing.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
-      ['入墓', (r.conditions && r.conditions.ruMu && r.conditions.ruMu.length)
+      ['三奇入墓', (r.conditions && r.conditions.ruMu && r.conditions.ruMu.length)
         ? r.conditions.ruMu.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
+      ['六仪入墓', (r.conditions && r.conditions.liuYiRuMu && r.conditions.liuYiRuMu.length)
+        ? r.conditions.liuYiRuMu.map((x) => `${x.palace}宫${x.stem}`).join('、') : '本盘无'],
+      ['十干克应', (() => {
+        const cells = [...(r.palaces || []), r.centerPalace].filter((p) => p && p.ganYing);
+        return cells.map((p) => `${p.palace}宫 ${p.ganYing.tian}加${p.ganYing.di}「${p.ganYing.name}」`).join('；') || '—';
+      })()],
       ['月令', r.month && r.month.branch ? `${r.month.branch}（${r.month.element}）` : '—'],
       ['门旺衰', stateCell(r.states && r.states.gate)],
       ['星旺衰', stateCell(r.states && r.states.star)],
@@ -1895,6 +1901,7 @@
         <div class="pp-qm-mid"><span class="dp">${p.diPan || ''}</span><span class="gate">${p.gate || ''}</span></div>
         <div class="pp-qm-bot"><span>${p.anGan || ''}</span><span class="no">${g}</span></div>
         <div class="pp-qm-bot"><span class="dim">${(p.stemRelation && p.stemRelation.type !== 'unknown') ? p.stemRelation.type : ''}</span><span class="dim">${p.stemState || ''}</span></div>
+        <div class="pp-qm-bot"><span class="dim">${p.ganYing ? esc(`${p.ganYing.tian}加${p.ganYing.di} ${p.ganYing.name}`) : ''}</span></div>
       </div>`;
     };
     return `<div class="pp mp-qm">
@@ -2914,20 +2921,29 @@
         return fsCell(g, '', `<div class="mp-fs-nums">${nums}</div>`);
       }).join('')).join('') + '</div>';
     const w = r.wangShanWangXiang || {};
+    const jian = m.jianXiang || {};
+    const tf = r.timeFlying || null;
     const chips = [
+      fsChip(jian.active ? `兼${jian.jian} ${jian.offset}° · 替卦` : '正向 · 下卦', jian.active ? 'ok' : ''),
       fsChip(`山盘 ${m.shanCenter.star}${m.shanCenter.name} · ${m.shanCenter.fly}`),
       fsChip(`向盘 ${m.xiangCenter.star}${m.xiangCenter.name} · ${m.xiangCenter.fly}`),
       fsChip(w.byChart ? '盘面：到山到向' : '盘面：未到山到向', w.byChart ? 'ok' : ''),
-      fsChip(w.byTable ? '表法：在列' : '表法：未列', w.byTable ? 'ok' : ''),
+      fsChip(w.byTable === null ? '表法：替卦不套' : w.byTable ? '表法：在列' : '表法：未列', w.byTable ? 'ok' : ''),
     ];
+    const centerText = (c, name) => `${name} ${c.star}${c.name}（${c.fly}，${c.basis}${c.mode === '替卦' ? `；原运星 ${c.original}${c.replaced ? '，已替' : '，用替而未替'}` : ''}）`;
+    const tfLine = tf
+      ? [['year', '年'], ['month', '月'], ['day', '日'], ['hour', '时']].filter(([k]) => tf[k])
+        .map(([k, label]) => `${label}${tf[k].centerName}（${tf[k].fly}）`).join('　')
+      : '';
     const facts = fsFacts([
-      ['入中', `山盘 ${m.shanCenter.star}${m.shanCenter.name}（${m.shanCenter.fly}，${m.shanCenter.basis}）；`
-        + `向盘 ${m.xiangCenter.star}${m.xiangCenter.name}（${m.xiangCenter.fly}，${m.xiangCenter.basis}）`],
+      ...(jian.active ? [['替卦', `${jian.note}${w.byTable === null ? ' 正向旺山旺向表不适用于替卦。' : ''}`]] : []),
+      ['入中', `${centerText(m.shanCenter, '山盘')}；${centerText(m.xiangCenter, '向盘')}`],
       ['当运', `山星${period}落 ${r.dangYun.shan.text}；向星${period}落 ${r.dangYun.xiang.text}`],
       ['合十', `山星：${(r.heshi.shan || []).join('、') || '无'}；向星：${(r.heshi.xiang || []).join('、') || '无'}`],
       ['表法', `${w.note || ''}${(w.table || []).length ? ` 本运所列：${w.table.join('、')}。` : ' 本运表法无局。'}`],
+      ...(tfLine ? [['年月日时', `${tfLine}${tf.meta && tf.meta.note ? `　${tf.meta.note}` : ''}`]] : []),
     ]);
-    return fsSection('玄空下卦', `${m.periodLabel} · 坐${m.sitting} · 向${m.facing}`, chips, grid, facts, [m.note, r.disclaimer]);
+    return fsSection(jian.active ? '玄空替卦' : '玄空下卦', `${m.periodLabel} · 坐${m.sitting} · 向${m.facing}`, chips, grid, facts, [m.note, r.disclaimer]);
   }
 
   function fsNatal(r, m) {

@@ -285,6 +285,7 @@ export const CARD_CITATIONS = {
   'qimen-wangshuai': { status: 'general', book: '奇门遁甲统宗 / 五行大义', chapter: '门星旺衰条', reason: '原文待录入' },
   'qimen-wangshuai-yong': { status: 'general', book: '奇门遁甲统宗 / 烟波钓叟歌', chapter: '门宫生克注', reason: '原文待录入' },
   'qimen-gan-shengke': { status: 'general', book: '奇门遁甲统宗 / 烟波钓叟歌', chapter: '干宫生克条', reason: '原文待录入' },
+  'qimen-ganying': { status: 'general', book: '奇门十干应克 / 奇门遁甲元灵经', chapter: '通行 100 组表 / 卷二·天盘加地盘吉凶', reason: '100 组为通行表汇编，元灵经只存甲、乙、丙三组，非单条原文' },
   'tarot-orientation': { status: 'general', book: '韦特塔罗', chapter: '逆位读法', reason: '韦特体系无中文古籍原文，逆位读法属近代流派' },
 };
 

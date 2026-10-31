@@ -1,7 +1,9 @@
 // 风水：八宅命卦 + 大游年八星 + 年家紫白飞星 + 24 山门主灶布局倾向（纯本地确定性）。
 // 口径：大游年歌与 24 山归属为八宅通行口径，吉凶名词照传统转述；不做现场勘舆结论。
 // 参照公开通行表实现（与常见八宅/玄空入门资料一致），年紫白用纯公式，不依赖任何第三方历法库。
-import { partsToJd, termInstantJd } from './calendar.js';
+import {
+  partsToJd, termInstantJd, toJDN, dayGanzhiIndex, ganzhiName, termWindow, previousJie, BRANCHES,
+} from './calendar.js';
 import { applyDst } from './dst.js';
 import { fail } from './fail.js';
 
@@ -129,17 +131,120 @@ export function yearZibaiStar(year) {
 
 const PALACE_ORDER = ['坎', '坤', '震', '巽', '中', '乾', '兑', '艮', '离']; // 洛书数 1–9 对应宫
 
-/** 九宫飞星：年星入中顺飞。 */
-export function yearlyFlying(year) {
-  const center = yearZibaiStar(year);
+const norm9 = (n) => {
+  const r = ((n % 9) + 9) % 9;
+  return r === 0 ? 9 : r;
+};
+
+/** 紫白九宫：入中星按洛书轨迹飞布。forward=true 顺飞，false 逆飞。 */
+function zibaiChart(center, forward = true) {
   const palaces = [];
   for (const palace of PALACE_ORDER) {
     const k = PALACE_ORDER.indexOf(palace) + 1;
-    const num = ((((k - 5 + center - 1) % 9) + 9) % 9) + 1;
+    const num = norm9(k - 5 + center);
     const s = NINE_STARS[num];
     palaces.push({ palace, direction: palace === '中' ? '中宫' : PALACE_DIRECTION[palace], num, name: s.name, star: s.star, element: s.element, lucky: s.lucky });
   }
-  return { center, centerName: NINE_STARS[center].name, palaces };
+  return { center, centerName: NINE_STARS[center].name, forward, fly: forward ? '顺飞' : '逆飞', palaces };
+}
+
+/** 九宫飞星：年星入中顺飞。 */
+export function yearlyFlying(year) {
+  return zibaiChart(yearZibaiStar(year), true);
+}
+
+// ── 年、月、日、时紫白（公式派） ─────────────────────────────────
+// 年：年星逐年退一位，入中顺飞（与 yearZibaiStar 同一锚点）。
+// 月：子午卯酉年正月八白、辰戌丑未年正月五黄、寅申巳亥年正月二黑；逐月退一位，入中顺飞。
+// 日：冬至–夏至阳遁、夏至–冬至阴遁；三段（冬至/雨水/谷雨、夏至/处暑/霜降）分别起 1/7/4 与 9/3/6。
+// 时：冬至后四正日/四墓日/四生日子时起 1/7/4；夏至后起 9/3/6；阳遁时星顺行顺飞、阴遁时星逆行逆飞。
+// 口径说明：月按节气月（寅月为正月）；日按公历日、23:00 后归次日；各家另有「日星一律顺飞」「月按农历月」等说法，见 note。
+
+const JIE_MONTH_NUM = {
+  立春: 1, 惊蛰: 2, 清明: 3, 立夏: 4, 芒种: 5, 小暑: 6,
+  立秋: 7, 白露: 8, 寒露: 9, 立冬: 10, 大雪: 11, 小寒: 12,
+};
+const MONTH_START_BY_GROUP = { 四正: 8, 四墓: 5, 四生: 2 };
+const HOUR_START_WINTER = { 四正: 1, 四墓: 7, 四生: 4 };
+const HOUR_START_SUMMER = { 四正: 9, 四墓: 3, 四生: 6 };
+
+const branchGroupOf = (branch) => (
+  ['子', '午', '卯', '酉'].includes(branch) ? '四正'
+    : ['辰', '戌', '丑', '未'].includes(branch) ? '四墓' : '四生'
+);
+
+const yearBranchOf = (year) => ganzhiName((((year - 4) % 60) + 60) % 60).branch;
+
+function latestTerm(terms, name, jd) {
+  let found = null;
+  for (const t of terms) {
+    if (t.jd > jd) break;
+    if (t.name === name) found = t;
+  }
+  return found;
+}
+
+/** 冬至/夏至分阴阳遁，再按雨水/谷雨或处暑/霜降分上中下元。 */
+function zibaiHalfAt(terms, jd) {
+  const dz = latestTerm(terms, '冬至', jd);
+  const xz = latestTerm(terms, '夏至', jd);
+  const yang = Boolean(dz) && (!xz || dz.jd > xz.jd);
+  if (yang) {
+    const gy = latestTerm(terms, '谷雨', jd);
+    const ys = latestTerm(terms, '雨水', jd);
+    if (gy && dz && gy.jd > dz.jd) return { half: '阳遁', segment: '谷雨–夏至（下元）', offset: 3, boundary: '冬至后阳遁，谷雨至上元转下元' };
+    if (ys && dz && ys.jd > dz.jd) return { half: '阳遁', segment: '雨水–谷雨（中元）', offset: 6, boundary: '冬至后阳遁，雨水至上元转中元' };
+    return { half: '阳遁', segment: '冬至–雨水（上元）', offset: 0, boundary: '冬至后阳遁上元' };
+  }
+  const sj = latestTerm(terms, '霜降', jd);
+  const cs = latestTerm(terms, '处暑', jd);
+  if (sj && xz && sj.jd > xz.jd) return { half: '阴遁', segment: '霜降–冬至（下元）', offset: 3, boundary: '夏至后阴遁，霜降至上元转下元' };
+  if (cs && xz && cs.jd > xz.jd) return { half: '阴遁', segment: '处暑–霜降（中元）', offset: 6, boundary: '夏至后阴遁，处暑至上元转中元' };
+  return { half: '阴遁', segment: '夏至–处暑（上元）', offset: 0, boundary: '夏至后阴遁上元' };
+}
+
+/**
+ * 年月日时紫白飞星。
+ * @param {{year:number,month:number,day:number,hour?:number,minute?:number}} at 公历日期与时刻
+ */
+export function timeFlyingOf(at) {
+  const year = Number(at.year); const month = Number(at.month); const day = Number(at.day);
+  const hour = Number.isInteger(at.hour) ? at.hour : 12;
+  const minute = Number.isInteger(at.minute) ? at.minute : 0;
+  const jd = partsToJd({ year, month, day, hour, minute });
+  const terms = termWindow(year);
+  const guaYear = guaYearOf(year, month, day);
+  const yearBranch = yearBranchOf(guaYear);
+  const yearGroup = branchGroupOf(yearBranch);
+  const prevJie = previousJie(terms, jd);
+  const monthNum = JIE_MONTH_NUM[prevJie ? prevJie.name : '立春'] || 1;
+  const half = zibaiHalfAt(terms, jd);
+  const jdn = toJDN(year, month, day) + (hour >= 23 ? 1 : 0);
+  const dayIdx = dayGanzhiIndex(jdn);
+  const dayName = ganzhiName(dayIdx).name;
+  const dayBranch = ganzhiName(dayIdx).branch;
+  const dayGroup = branchGroupOf(dayBranch);
+  const hourIdx = Math.floor(((hour + 1) % 24) / 2);
+
+  const yearCenter = yearZibaiStar(guaYear);
+  const monthCenter = norm9(MONTH_START_BY_GROUP[yearGroup] - (monthNum - 1));
+  const dayBase = norm9(dayIdx + 1 + half.offset);
+  const dayCenter = half.half === '阳遁' ? dayBase : norm9(10 - dayBase);
+  const hourStart = half.half === '阳遁' ? HOUR_START_WINTER[dayGroup] : HOUR_START_SUMMER[dayGroup];
+  const hourCenter = norm9(hourStart + (half.half === '阳遁' ? hourIdx : -hourIdx));
+
+  return {
+    year: { ...zibaiChart(yearCenter, true), basis: `${guaYear} 年（立春界）年星 ${NINE_STARS[yearCenter].name} 入中顺飞` },
+    month: { ...zibaiChart(monthCenter, true), basis: `${yearBranch}年（${yearGroup}）${prevJie ? prevJie.name : '立春'}月，${monthNum} 月 ${NINE_STARS[monthCenter].name} 入中顺飞` },
+    day: { ...zibaiChart(dayCenter, half.half === '阳遁'), basis: `${half.half}·${half.segment}，${dayName}日第 ${dayIdx + 1} 位，${NINE_STARS[dayCenter].name} 入中${half.half === '阳遁' ? '顺' : '逆'}飞` },
+    hour: { ...zibaiChart(hourCenter, half.half === '阳遁'), basis: `${half.half}·${half.segment}，${dayGroup}日 ${BRANCHES[hourIdx]}时，${NINE_STARS[hourCenter].name} 入中${half.half === '阳遁' ? '顺' : '逆'}飞` },
+    meta: {
+      guaYear, yearBranch, yearGroup, monthNum, monthJie: prevJie ? prevJie.name : '立春',
+      dayGanzhi: dayName, daySeq: dayIdx + 1, dayGroup,
+      hourBranch: BRANCHES[hourIdx], half: half.half, segment: half.segment, boundary: half.boundary,
+      note: '月按节气月（寅月为正月）；日按公历日、23:00 后归次日；日/时星入中后的顺逆取「冬至顺、夏至逆」。另有「一律顺飞」与「月按农历月」派，本插件不合并，差异见本注。',
+    },
+  };
 }
 
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -195,6 +300,46 @@ function flightOf(mount, center) {
   return { forward: hm.yinYang === '阳', basis: `${center}${home}宫取${mount.yuan}${hm.m}（${hm.yinYang}）` };
 }
 
+// ── 兼向替卦 ─────────────────────────────────────────────────────
+// 兼向超过 4.5°（离山界 3° 以内）用替卦：山星/向星改以该山的替星入中，顺逆仍按
+// 「替星本宫同元龙」的阴阳定。替星取《沈氏玄空学》坤壬乙诀（1/2/6/7/9 五星）；
+// 三碧、四绿、八白在此诀中不作替星，属各家分歧，见 note。
+export const TIGUA_SOURCE = '《沈氏玄空学》坤壬乙诀（子癸甲申一白、壬卯乙未坤二黑、乾亥辰巽巳戌六白、酉辛丑艮丙七赤、寅午庚丁九紫）';
+
+export const TIGUA_TABLE = Object.freeze({
+  子: 1, 癸: 1, 甲: 1, 申: 1,
+  壬: 2, 卯: 2, 乙: 2, 未: 2, 坤: 2,
+  乾: 6, 亥: 6, 辰: 6, 巽: 6, 巳: 6, 戌: 6,
+  酉: 7, 辛: 7, 丑: 7, 艮: 7, 丙: 7,
+  寅: 9, 午: 9, 庚: 9, 丁: 9,
+});
+
+export const JIAN_XIANG_THRESHOLD = 4.5;
+
+/** 兼向判定：offset 为坐山相对本山中心的度数，正数向下一山（顺时针）。 */
+export function jianXiangOf(sitting, offset = 0) {
+  const off = Number(offset) || 0;
+  if (Math.abs(off) <= JIAN_XIANG_THRESHOLD) {
+    return {
+      active: false, offset: off, threshold: JIAN_XIANG_THRESHOLD,
+      sitting: sitting.m, jian: null, kind: null, sameYinYang: null,
+      note: `坐山偏离中心 ${off}°，未超 ${JIAN_XIANG_THRESHOLD}°，按正向下卦排盘。`,
+    };
+  }
+  const idx = MOUNTAINS_24.findIndex((x) => x.m === sitting.m);
+  const neighbor = MOUNTAINS_24[(idx + (off > 0 ? 1 : -1) + 24) % 24];
+  const sMeta = MOUNTAIN_META[sitting.m];
+  const nMeta = MOUNTAIN_META[neighbor.m];
+  const sameGua = neighbor.gua === sitting.gua;
+  return {
+    active: true, offset: off, threshold: JIAN_XIANG_THRESHOLD,
+    sitting: sitting.m, jian: neighbor.m, side: off > 0 ? '右' : '左',
+    kind: sameGua ? '同卦兼' : '出卦兼',
+    sameYinYang: nMeta.yinYang === sMeta.yinYang,
+    note: `坐山偏离中心 ${off}°，兼${neighbor.m}（${sameGua ? '同卦兼' : '出卦兼'}${sameGua && nMeta.yinYang === sMeta.yinYang ? '，同阴同阳' : ''}）；按沈氏替卦，山星以 ${TIGUA_TABLE[sitting.m]} 入中。`,
+  };
+}
+
 /** 通行二十四山旺山旺向表（每项含正反两向；一运、九运无局）。 */
 export const WANG_SHAN_WANG_XIANG = {
   1: [],
@@ -211,18 +356,22 @@ export const WANG_SHAN_WANG_XIANG = {
 export const XUANKONG_SOURCES = [
   '三元九运（1864 年起一运、每运 20 年，九运 180 年一轮）',
   '玄空下卦挨星（运盘顺飞；山盘/向盘以入中运星本宫同元龙阴阳定顺逆，五黄入中按本山阴阳）',
-  '二十四山旺山旺向通行表（每项含正反两向；一运、九运无局）',
+  '兼向替卦：坐山偏离中心超 4.5° 用《沈氏玄空学》坤壬乙诀替星入中，顺逆按替星本宫同元龙',
+  '年月日时紫白（公式派：年逐年退一位；月按年支三组起 8/5/2；日按冬至夏至三段起 1/7/4 与 9/3/6；时按日支三组子时起 1/7/4 与 9/3/6）',
+  '二十四山旺山旺向通行表（每项含正反两向；一运、九运无局；只对正向下卦）',
 ];
 
-export const XUANKONG_DISCLAIMER = '玄空下卦为传统通行口径的本地排盘，属民俗参考，不构成现场勘舆结论，仅供娱乐；替卦/兼向、年月日时飞星与形峦不在本工具范围内。';
+export const XUANKONG_DISCLAIMER = '玄空排盘为传统通行口径的本地计算，属民俗参考，不构成现场勘舆结论，仅供娱乐；兼向超 4.5° 按沈氏替卦，年月日时紫白按公式派；各家另有异说，形峦与现场勘舆不在本工具范围内。';
 
-/** 玄空下卦排盘：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向。 */
-export function xuankongChart(period, sitting, facing) {
+/** 玄空排盘：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向；兼向超阈值改用替卦。 */
+export function xuankongChart(period, sitting, facing, opts = {}) {
   const sit = MOUNTAIN_META[sitting];
   const face = MOUNTAIN_META[facing];
+  const offset = Number(opts.offset) || 0;
+  const jianXiang = jianXiangOf(sit, offset);
   const yun = fly(period, true);
-  const sCenter = yun[sit.gua];
-  const fCenter = yun[face.gua];
+  const sCenter = jianXiang.active ? TIGUA_TABLE[sit.m] : yun[sit.gua];
+  const fCenter = jianXiang.active ? TIGUA_TABLE[face.m] : yun[face.gua];
   const sFly = flightOf(sit, sCenter);
   const fFly = flightOf(face, fCenter);
   const shan = fly(sCenter, sFly.forward);
@@ -239,13 +388,19 @@ export function xuankongChart(period, sitting, facing) {
   const pairs = WANG_SHAN_WANG_XIANG[period];
   const hit = pairs.find(([a, b]) => (sit.m === a && face.m === b) || (sit.m === b && face.m === a));
   const byChart = shan[sit.gua] === period && xiang[face.gua] === period;
-  const note = byChart && hit
-    ? '盘面与表法一致：本局到山到向。'
-    : byChart
-      ? '盘面到山到向，但不在通行表法所列之局（表法与盘面口径不同，并列不合并）。'
-      : hit
-        ? '通行表法列为旺山旺向，但本盘当运山星/向星未同时落坐向（表法与盘面口径不同，并列不合并）。'
-        : '本局既未到山到向，也不在表法旺山旺向之列。';
+  const replaced = {
+    shan: jianXiang.active && sCenter !== yun[sit.gua],
+    xiang: jianXiang.active && fCenter !== yun[face.gua],
+  };
+  const note = jianXiang.active
+    ? `替卦盘不套正向旺山旺向表；${byChart ? '本盘当运山星/向星仍到坐向。' : '本盘当运山星/向星未同时到坐向。'}${!replaced.shan && !replaced.xiang ? '山向两替星均「用替而未替」，实际仍按原卦气。' : ''}`
+    : byChart && hit
+      ? '盘面与表法一致：本局到山到向。'
+      : byChart
+        ? '盘面到山到向，但不在通行表法所列之局（表法与盘面口径不同，并列不合并）。'
+        : hit
+          ? '通行表法列为旺山旺向，但本盘当运山星/向星未同时落坐向（表法与盘面口径不同，并列不合并）。'
+          : '本局既未到山到向，也不在表法旺山旺向之列。';
   return {
     palaces,
     sitting: sit,
@@ -254,14 +409,30 @@ export function xuankongChart(period, sitting, facing) {
     shan,
     xiang,
     yunCenter: period,
-    shanCenter: { star: sCenter, ...sFly },
-    xiangCenter: { star: fCenter, ...fFly },
+    jianXiang,
+    shanCenter: {
+      star: sCenter, ...sFly,
+      mode: jianXiang.active ? '替卦' : '下卦',
+      original: yun[sit.gua],
+      replaced: replaced.shan,
+    },
+    xiangCenter: {
+      star: fCenter, ...fFly,
+      mode: jianXiang.active ? '替卦' : '下卦',
+      original: yun[face.gua],
+      replaced: replaced.xiang,
+    },
     dangYun: { shan: wheres(shan), xiang: wheres(xiang) },
     heshi: {
       shan: PALACE_ORDER.filter((p) => shan[p] + yun[p] === 10),
       xiang: PALACE_ORDER.filter((p) => xiang[p] + yun[p] === 10),
     },
-    wangShanWangXiang: { byChart, byTable: Boolean(hit), table: pairs.map(([a, b]) => `${a}${b}`), note },
+    wangShanWangXiang: {
+      byChart,
+      byTable: jianXiang.active ? null : Boolean(hit),
+      table: pairs.map(([a, b]) => `${a}${b}`),
+      note,
+    },
   };
 }
 
@@ -417,9 +588,60 @@ function buildAdvise(input) {
   };
 }
 
-/** 玄空下卦：坐向 + 运 → 九宫盘、当运星、合十、表法旺山旺向。 */
+/** 兼向读数：接受坐/向的偏移度数或罗盘度数，两边都给时必须一致。 */
+function resolveOffset(input, sitting, facing) {
+  const present = (v) => v !== undefined && v !== null && v !== '';
+  const number = (v, label) => {
+    if (typeof v !== 'number' || !Number.isFinite(v)) throw fail('E_INPUT', `${label} 必须是数字（度），收到「${v}」`);
+    return v;
+  };
+  const degreeOffset = (v, mountain, label) => {
+    const deg = number(v, label);
+    if (deg < 0 || deg > 360) throw fail('E_INPUT', `${label} 必须在 0–360° 之间（罗盘度数），收到「${deg}」`);
+    const diff = ((deg - mountain.deg + 540) % 360) - 180;
+    if (Math.abs(diff) > 7.5 + 1e-9) throw fail('E_INPUT', `${label} ${deg}° 不在${mountain.m}山范围内（${mountain.m}中心 ${mountain.deg}°，每山 15°），请核对坐向。`);
+    return diff;
+  };
+  const values = [];
+  if (present(input.sittingOffset)) values.push(number(input.sittingOffset, 'sittingOffset'));
+  if (present(input.sittingDegree)) values.push(degreeOffset(input.sittingDegree, sitting, 'sittingDegree'));
+  if (present(input.facingOffset)) values.push(number(input.facingOffset, 'facingOffset'));
+  if (present(input.facingDegree)) values.push(degreeOffset(input.facingDegree, facing, 'facingDegree'));
+  if (!values.length) return { offset: 0, source: '未报兼向度数，按正向（0°）' };
+  const offset = values[0];
+  if (values.some((v) => Math.abs(v - offset) > 1e-9)) throw fail('E_INPUT', `坐向兼度不一致：${values.join('° / ')}°——坐与向应同向偏离，请只报一个偏移或核对度数。`);
+  if (Math.abs(offset) > 7.5 + 1e-9) throw fail('E_INPUT', `兼向偏移必须在 −7.5°–7.5°（相对本山中心），收到「${offset}」——超过 7.5° 已进入下一山。`);
+  return { offset, source: '按所报兼向度数' };
+}
+
+/** 飞星日期：fortuneDate=YYYY-MM-DD、fortuneTime=HH:MM；缺省 12:00。 */
+function parseFortuneAt(input) {
+  const present = (v) => v !== undefined && v !== null && v !== '';
+  if (!present(input.fortuneDate)) return null;
+  if (typeof input.fortuneDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(input.fortuneDate)) {
+    throw fail('E_INPUT', `fortuneDate 需为 YYYY-MM-DD，收到「${input.fortuneDate}」`);
+  }
+  const [year, month, day] = input.fortuneDate.split('-').map(Number);
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) {
+    throw fail('E_INPUT', `fortuneDate 不是有效日期：「${input.fortuneDate}」`);
+  }
+  const rawTime = present(input.fortuneTime) ? input.fortuneTime : '12:00';
+  if (typeof rawTime !== 'string' || !/^\d{2}:\d{2}$/.test(rawTime)) {
+    throw fail('E_INPUT', `fortuneTime 需为 HH:MM，收到「${rawTime}」`);
+  }
+  const [hour, minute] = rawTime.split(':').map(Number);
+  if (hour > 23 || minute > 59) throw fail('E_INPUT', `fortuneTime 超出范围（HH:MM）：「${rawTime}」`);
+  const dst = input.dst === false ? null : applyDst({ year, month, day, hour, minute });
+  const at = dst ? { year: dst.year, month: dst.month, day: dst.day, hour: dst.hour, minute: dst.minute } : { year, month, day, hour, minute };
+  return { at, dst };
+}
+
+/** 玄空排盘：坐向 + 运 → 九宫盘、当运星、合十、表法旺山旺向；兼向超阈值用替卦。 */
 function buildXuankong(input) {
   const { sitting, facing } = resolveSittingFacing(input);
+  const offsetInfo = resolveOffset(input, sitting, facing);
+  const fortune = parseFortuneAt(input);
   let period;
   let yearInfo = null;
   let note;
@@ -434,32 +656,53 @@ function buildXuankong(input) {
   } else if (Number.isInteger(input.fortuneYear)) {
     yearInfo = periodOfYear(input.fortuneYear);
     period = yearInfo.period;
+  } else if (fortune) {
+    yearInfo = periodOfYear(guaYearOf(fortune.at.year, fortune.at.month, fortune.at.day));
+    period = yearInfo.period;
+    note = `未显式给运：按飞星日期归入 ${yearInfo.label}。`;
   } else {
     period = 9;
     note = '未给运：默认按九运（2024–2043）排盘；可传 period（1–9）或 fortuneYear 指定。';
   }
-  const chart = xuankongChart(period, sitting.m, facing.m);
+  const chart = xuankongChart(period, sitting.m, facing.m, { offset: offsetInfo.offset });
   const sitMeta = MOUNTAIN_META[sitting.m];
   const faceMeta = MOUNTAIN_META[facing.m];
-  const center = (c) => ({ star: c.star, name: NINE_STARS[c.star].name, fly: c.forward ? '顺飞' : '逆飞', basis: c.basis });
-  const where = (list) => list.map((p) => `${p}宫${PALACE_DIRECTION[p]}`).join('、') || '无';
+  const center = (c) => ({
+    star: c.star, name: NINE_STARS[c.star].name, fly: c.forward ? '顺飞' : '逆飞', basis: c.basis,
+    mode: c.mode, original: c.original, replaced: c.replaced,
+  });
+  const where = (list) => list.map((p) => (p === '中' ? '中宫' : `${p}宫${PALACE_DIRECTION[p]}`)).join('、') || '无';
+  let timeFlying = null;
+  if (fortune) {
+    timeFlying = timeFlyingOf(fortune.at);
+    if (fortune.dst && fortune.dst.applied) timeFlying.meta.dst = fortune.dst.note;
+  } else if (Number.isInteger(input.fortuneYear)) {
+    const centerStar = yearZibaiStar(input.fortuneYear);
+    timeFlying = {
+      year: { ...zibaiChart(centerStar, true), basis: `${input.fortuneYear} 年紫白 ${NINE_STARS[centerStar].name} 入中顺飞` },
+      month: null, day: null, hour: null,
+      meta: { guaYear: input.fortuneYear, note: '只给年份：已排年紫白；补 fortuneDate（YYYY-MM-DD）与 fortuneTime（HH:MM）可排月、日、时。' },
+    };
+  }
   return {
     system: 'fengshui',
     meta: {
       action: 'xuankong',
       period,
       periodLabel: yearInfo ? yearInfo.label : `${period}运`,
-      ...(yearInfo ? { year: input.fortuneYear, periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
+      ...(yearInfo ? { year: input.fortuneYear || (fortune && fortune.at.year), periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
       sitting: `${sitting.m}山（罗盘 ${sitting.deg}°）`,
       facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
       sittingGua: sitting.gua,
       facingGua: facing.gua,
       sittingYuan: `${sitMeta.yuan}${sitMeta.yinYang}`,
       facingYuan: `${faceMeta.yuan}${faceMeta.yinYang}`,
+      sittingOffset: offsetInfo.offset,
+      jianXiang: chart.jianXiang,
       shanCenter: center(chart.shanCenter),
       xiangCenter: center(chart.xiangCenter),
       ...(note ? { note } : {}),
-      scope: '玄空下卦：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向；不含替卦/兼向、不含年月日时飞星、不含形峦与现场勘舆。',
+      scope: '玄空下卦/替卦：运盘 + 山盘 + 向盘 + 当运星 + 合十 + 表法旺山旺向；兼向超 4.5° 按沈氏替卦；年月日时紫白按公式派；不含形峦与现场勘舆。',
     },
     palaces: chart.palaces,
     dangYun: {
@@ -468,6 +711,7 @@ function buildXuankong(input) {
     },
     heshi: { shan: chart.heshi.shan, xiang: chart.heshi.xiang },
     wangShanWangXiang: chart.wangShanWangXiang,
+    ...(timeFlying ? { timeFlying } : {}),
     sources: XUANKONG_SOURCES,
     disclaimer: XUANKONG_DISCLAIMER,
   };

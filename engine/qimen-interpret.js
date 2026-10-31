@@ -152,15 +152,28 @@ export function interpretQimen(r, opts = {}) {
   const kongCells = r.palaces.filter((p) => p.kong).map((p) => `${p.palace}宫`);
   const jiXing = (r.conditions && r.conditions.jiXing) || [];
   const ruMu = (r.conditions && r.conditions.ruMu) || [];
+  const liuYiRuMu = (r.conditions && r.conditions.liuYiRuMu) || [];
   sections.push({
     key: 'conditions',
     label: '宫位条件',
     text: `门迫（同宫内门克宫）：${forced.length ? forced.join('、') : '本盘无'}；`
       + `宫制门（宫克门，属「制」不为迫）：${controlled.length ? controlled.join('、') : '无'}。`
       + `击刑（天盘六仪落刑宫）：${jiXing.length ? jiXing.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}；`
-      + `入墓（天盘三奇落墓宫）：${ruMu.length ? ruMu.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}。`
+      + `三奇入墓（天盘乙丙丁落墓宫）：${ruMu.length ? ruMu.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}；`
+      + `六仪入墓（天盘戊己庚辛壬癸落墓宫）：${liuYiRuMu.length ? liuYiRuMu.map((x) => `${x.palace}宫${x.stem}（${x.basis}）`).join('、') : '本盘无'}。`
       + (kongCells.length ? `空亡：${kongCells.join('、')}——落空之宫事多不实。` : '无落空之宫。')
-      + `这三项都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
+      + `这些条件都只作宫位条件：门迫、击刑、入墓不自动等同于用神受制，取象时看它们落在哪个符号上。`,
+  });
+
+  // ⑤a 十干克应：天盘干加地盘干的 100 组成象，逐宫列出
+  const gyCells = [...r.palaces, r.centerPalace].filter((p) => p && p.ganYing);
+  sections.push({
+    key: 'ganying',
+    label: '十干克应',
+    text: (gyCells.length
+      ? gyCells.map((p) => `${p.palace}宫 天${p.ganYing.tian}加地${p.ganYing.di}「${p.ganYing.name}」：${p.ganYing.text}`).join('；')
+      : '本盘没有可判的天盘干加地盘干。')
+      + '十干克应只作取象与读盘线索，与门宫、干宫生克并列，不自动折吉凶；同一组落在不同门星神下，轻重也不同。',
   });
 
   // ⑤b 月令旺衰：门、星、天盘干按月支五行判五态（与门迫这类宫位关系分开）
@@ -195,7 +208,7 @@ export function interpretQimen(r, opts = {}) {
       key: 'tendency',
       label: '最终倾向',
       text: `在当前输入、规则集与所问之事下：若以「${primary.key}」为用神，用神宫对值符宫为「${rel}」，整体${tone}；`
-        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。未决项：天盘干与地盘的十干克应（100 组）未纳入本规则集，干宫生克只作落宫条件。`,
+        + `若${ys.label}实际取另一个候选，或时间范围不同，解读边界随之变化。干宫生克与十干克应已并列取象，仍只作落宫条件与读盘线索，不折吉凶。`,
     });
   }
 

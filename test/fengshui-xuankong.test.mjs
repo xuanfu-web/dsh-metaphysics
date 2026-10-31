@@ -164,8 +164,8 @@ eq('显式 period 压过 fortuneYear', buildFengshui({ action: 'xuankong', sitti
 const pd = buildFengshui({ action: 'xuankong', sitting: '子' });
 eq('缺省运 = 9', pd.meta.period, 9);
 ok('缺省运有提示', typeof pd.meta.note === 'string' && pd.meta.note.includes('未给运'), pd.meta.note);
-ok('玄空 scope 声明未含替卦', pd.meta.scope.includes('不含替卦'), pd.meta.scope);
-eq('玄空来源三条', pd.sources.length, 3);
+ok('玄空 scope 声明含替卦与年月日时', pd.meta.scope.includes('兼向超 4.5° 按沈氏替卦') && pd.meta.scope.includes('年月日时紫白'), pd.meta.scope);
+eq('玄空来源五条', pd.sources.length, 5);
 
 // ── 输入边界 ───────────────────────────────────────────────────
 throwsMsg('玄空缺坐向报错', () => buildFengshui({ action: 'xuankong' }), '缺少坐向');

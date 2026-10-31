@@ -144,9 +144,9 @@ const zwNon = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T14:30', ge
   .switches.find((x) => x.key === 'leapMonth');
 eq('非闰月盘闰月开关无变化', zwNon.total, 0);
 
-// 紫微九类流派开关：默认档与另一档都取自引擎枚举，且每一项真的能改盘
+// 紫微十类流派开关：默认档与另一档都取自引擎枚举，且每一项真的能改盘
 const ZW_SWITCHES = CALIBER_SWITCHES.ziwei;
-eq('紫微 11 组口径（2 基础 + 9 流派）', ZW_SWITCHES.length, 11);
+eq('紫微 12 组口径（2 基础 + 10 流派）', ZW_SWITCHES.length, 12);
 const zwKeys = ZW_SWITCHES.map((x) => x.key);
 for (const key of Object.keys(ZIWEI_SCHOOL_OPTIONS)) {
   ok(`口径表含 ${key}`, zwKeys.includes(key), zwKeys.join(','));
@@ -161,7 +161,7 @@ eq('平铺优先于嵌套', ZW_SWITCHES.find((x) => x.key === 'kuiyueSchool').re
 eq('流派回显不计盘面差异', diffObjects({ schools: { a: 'x' }, rules: { schools: 'a' } }, { schools: { a: 'y' }, rules: { schools: 'b' } }).length, 0);
 
 const zwBase = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' });
-eq('紫微对照 11 组', zwBase.switches.length, 11);
+eq('紫微对照 12 组', zwBase.switches.length, 12);
 const zwBaseRow = (key) => zwBase.switches.find((x) => x.key === key);
 for (const key of ['brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool']) {
   ok(`${key} 能检出盘面变化`, zwBaseRow(key).total > 0, `${zwBaseRow(key).currentLabel} → ${zwBaseRow(key).altLabel}：${zwBaseRow(key).total} 处`);
@@ -179,6 +179,10 @@ ok('火土派土五局能检出变化', zwChang.total > 0, `${zwChang.total} 处
 const zwLate = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T23:30', gender: 'male', dst: false })
   .switches.find((x) => x.key === 'lateZishi');
 ok('紫微晚子时能检出变化', zwLate.total > 0, `${zwLate.total} 处`);
+const zwShenZi = caliberCompare({ system: 'ziwei', datetime: '1996-06-15T10:00', gender: 'male' })
+  .switches.find((x) => x.key === 'shenzhuSchool');
+ok('子年身主两派能检出变化', zwShenZi.total > 0, `${zwShenZi.total} 处`);
+eq('午年身主两派同为火星、无差异', zwBaseRow('shenzhuSchool').total, 0);
 const zwNested = caliberCompare({
   system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', schools: { kuiyueSchool: 'qs2' },
 }).switches.find((x) => x.key === 'kuiyueSchool');
@@ -237,7 +241,7 @@ ok('渲染 details 容器', /^<details class="mp-cdiff"/.test(html.trim()), html
 ok('summary 先给一句话总结', html.includes('组开关中') && html.includes('影响此盘'), html.slice(0, 300));
 eq('两组开关两行', (html.match(/class="mp-cdiff-row"/g) || []).length, 2);
 const zwHtml = PP.caliberHTML(zwBase);
-eq('紫微口径卡 11 行', (zwHtml.match(/class="mp-cdiff-row"/g) || []).length, 11);
+eq('紫微口径卡 12 行', (zwHtml.match(/class="mp-cdiff-row"/g) || []).length, 12);
 ok('紫微口径卡列全九派', ['亮度表', '庚干四化', '天马', '天空', '截空旬空', '魁钺', '天伤天使', '长生', '晚子时']
   .every((t) => zwHtml.includes(t)), zwHtml.slice(0, 400));
 ok('根因旧值→新值', html.includes('丙辰') && html.includes('乙卯') && html.includes('mp-cdiff-to'));

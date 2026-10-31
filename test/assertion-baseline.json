@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 5119,
+  "total": 5366,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -11,7 +11,7 @@
       "fail": 0
     },
     "ask-prompt.test.mjs": {
-      "pass": 67,
+      "pass": 81,
       "fail": 0
     },
     "ask.test.mjs": {
@@ -34,6 +34,10 @@
       "pass": 28,
       "fail": 0
     },
+    "bazi-strength-structure.test.mjs": {
+      "pass": 32,
+      "fail": 0
+    },
     "bazi-words.test.mjs": {
       "pass": 46,
       "fail": 0
@@ -51,7 +55,7 @@
       "fail": 0
     },
     "caliber-diff.test.mjs": {
-      "pass": 205,
+      "pass": 213,
       "fail": 0
     },
     "caliber.test.mjs": {
@@ -122,8 +126,12 @@
       "pass": 26,
       "fail": 0
     },
+    "fengshui-tigua-zibai.test.mjs": {
+      "pass": 102,
+      "fail": 0
+    },
     "fengshui-ui.test.mjs": {
-      "pass": 43,
+      "pass": 48,
       "fail": 0
     },
     "fengshui-xuankong.test.mjs": {
@@ -258,8 +266,16 @@
       "pass": 40,
       "fail": 0
     },
+    "panel-form-align.test.mjs": {
+      "pass": 11,
+      "fail": 0
+    },
     "qimen-gan.test.mjs": {
       "pass": 53,
+      "fail": 0
+    },
+    "qimen-ganying.test.mjs": {
+      "pass": 46,
       "fail": 0
     },
     "qimen-golden.test.mjs": {
@@ -436,6 +452,10 @@
     },
     "ziwei-schools.test.mjs": {
       "pass": 73,
+      "fail": 0
+    },
+    "ziwei-shenzhu.test.mjs": {
+      "pass": 29,
       "fail": 0
     },
     "ziwei-words.test.mjs": {

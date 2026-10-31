@@ -89,6 +89,7 @@ export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   tianshiTianshang: 'normal',
   changshengSchool: 'yin-yang-shun-ni',
   lateZishi: 'current-day',
+  shenzhuSchool: 'common',
 });
 
 export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
@@ -101,6 +102,7 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   tianshiTianshang: ['normal', 'zhongzhou'],
   changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
   lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
+  shenzhuSchool: ['common', 'verse'],
 });
 
 export function ziweiSchoolsOf(input = {}) {
@@ -257,10 +259,15 @@ export const MING_ZHU = {
   午: '破军', 未: '武曲', 申: '廉贞', 酉: '文曲', 戌: '禄存', 亥: '巨门',
 };
 
-/** 身主：按生年地支 */
+// 身主：按生年地支。子/午两派并存——
+//   · common（默认，通行表 / 多数排盘软件）：子午皆火星；
+//   · verse（安身主诀「子午安身铃火宿」逐字配对）：子铃星、午火星。
+// 此诀见于通行安星诀；维基文库本《紫微斗数全书》卷一、卷三未见，不标作《全书》原文。
+// 其余十支两派一致。用 shenzhuSchool 切换。
+const SHEN_ZHU_TAIL = { 丑: '天相', 寅: '天梁', 卯: '天同', 辰: '文昌', 巳: '天机', 未: '天相', 申: '天梁', 酉: '天同', 戌: '文昌', 亥: '天机' };
 export const SHEN_ZHU = {
-  子: '铃星', 丑: '天相', 寅: '天梁', 卯: '天同', 辰: '文昌', 巳: '天机',
-  午: '火星', 未: '天相', 申: '天梁', 酉: '天同', 戌: '文昌', 亥: '天机',
+  common: { 子: '火星', 午: '火星', ...SHEN_ZHU_TAIL },
+  verse: { 子: '铃星', 午: '火星', ...SHEN_ZHU_TAIL },
 };
 
 // 三合局（寅午戌 / 申子辰 / 巳酉丑 / 亥卯未）
@@ -717,7 +724,13 @@ export function buildZiwei(input) {
     },
     body: { palace: '身宫', branch: BRANCHES[bodyIndex], lands: palaceNames[bodyIndex] },
     lifeMaster: MING_ZHU[BRANCHES[soulIndex]],
-    bodyMaster: SHEN_ZHU[BRANCHES[yb]],
+    bodyMaster: SHEN_ZHU[schools.shenzhuSchool][BRANCHES[yb]],
+    bodyMasterSchool: schools.shenzhuSchool,
+    ...((yb === 0 || yb === 6) ? {
+      bodyMasterNote: schools.shenzhuSchool === 'common'
+        ? '子午皆火星（通行表）；另有安身主诀「子午安身铃火宿」逐字取子铃星、午火星一派'
+        : '安身主诀「子午安身铃火宿」逐字：子铃星、午火星；另有子午皆火星的通行表',
+    } : {}),
     doujun: {
       zinian: BRANCHES[fix(hb - (lunarMonth - 1))],
       rule: '流年支起正月，逆数至生月，再起子时顺数至生时',
@@ -741,7 +754,7 @@ export function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}；庚干四化只作用于生年四化`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）；庚干四化只作用于生年四化`,
       leapMonth: '闰月默认按日切分（1–15 归本月、16 起归次月，主流排盘口径）；可传 leapMonth: next（整月归次月）或 prev（整月归本月），leapAsNext: true 等同 next',
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',

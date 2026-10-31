@@ -2,7 +2,7 @@
 //
 // 这一层的价值在于「发出去的那段话」本身要可核对：体系名要翻成人话、
 // 问题要原样带进去、摘要要带得动又别太长、绝对化表述不能混进去。
-import { askPrompt } from '../engine/followup.js';
+import { askPrompt, readingOrderOf, READING_ORDERS } from '../engine/followup.js';
 import { compute } from '../engine/index.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -30,7 +30,11 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
   ok('问题出现在【所问】那行', p.text.includes('所问：2027 年事业怎么样'));
   ok('带【盘面摘要】小节', p.text.includes('——盘面摘要——'));
   ok('摘要真的搬进来了（取盘面首句片段）', p.text.includes('【四柱】'));
-  ok('带【回答要求】小节与 1–4 编号', p.text.includes('——回答要求——') && /1\)/.test(p.text) && /2\)/.test(p.text) && /3\)/.test(p.text) && /4\)/.test(p.text));
+  ok('带【回答要求】小节与 1–5 编号', p.text.includes('——回答要求——') && /1\)/.test(p.text) && /2\)/.test(p.text) && /3\)/.test(p.text) && /4\)/.test(p.text) && /5\)/.test(p.text));
+  ok('先给盘面层次，再给摘要', p.text.includes('——盘面层次（从上到下读，别跳层）——') && p.text.indexOf('——盘面层次') < p.text.indexOf('——盘面摘要——'));
+  ok('层次行写的是本体系的阅读顺序', p.text.includes('八字（四柱）：基本信息 → 四柱（日主/十神/藏干）'), p.text.split('\n').find((l) => l.startsWith('八字（四柱）：')));
+  ok('层次要求不跳层', /上一层没交代清楚，不要跳到下一层/.test(p.text));
+  ok('第二段先复述骨架再判断', /只复述盘面骨架/.test(p.text) && /按上面的层次/.test(p.text) && /不掺倾向/.test(p.text));
   ok('先交代读者不懂命理', /读者不懂命理/.test(p.text));
   ok('四行骨架齐全（盘面/白话/倾向/边界）', ['盘面｜', '白话｜', '倾向｜', '边界｜'].every((k) => p.text.includes(k)));
   ok('骨架里先要一句无术语的结论', /开头一句结论/.test(p.text) && /不用术语/.test(p.text));
@@ -141,4 +145,21 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
   // 传了解析也要保持确定性（同一盘同一问逐字相同）
   const again = askPrompt(rich, { question: '今年考运', interpret: it });
   eq('带底稿时输出仍逐字相同', again.text, p.text);
+}
+
+// ⑨ 阅读层次：先事实、再结构、后时间与依据；参考 ziwei.pub/bazi 的分区顺序
+{
+  eq('八字层次固定', readingOrderOf('bazi').join(' → '), '基本信息 → 四柱（日主/十神/藏干） → 旺衰·格局·用神 → 合冲·神煞 → 起运·大运·流年 → 古籍依据');
+  eq('紫微层次先命身再十二宫', readingOrderOf('ziwei').slice(0, 3).join(' → '), '基本信息 → 命宫/身宫与五行局 → 十二宫（主星/辅煞/四化）');
+  eq('紫微层次收在古籍', readingOrderOf('ziwei').slice(-1)[0], '古籍依据');
+  eq('六爻先定用神', readingOrderOf('liuyao')[0], '所问与用神');
+  ok('奇门层次含九宫与克应', readingOrderOf('qimen').some((x) => x.includes('九宫')) && readingOrderOf('qimen').some((x) => x.includes('十干克应')));
+  eq('大六壬按天地盘→四课→三传', readingOrderOf('daliuren').slice(0, 3).join(' → '), '天地盘（月将/贵人） → 四课 → 三传');
+
+  ok('每个已登记体系都有非空层次', Object.values(READING_ORDERS).every((a) => Array.isArray(a) && a.length >= 4 && a.every((x) => typeof x === 'string' && x.length)));
+  ok('同一体系层次不重复', Object.values(READING_ORDERS).every((a) => new Set(a).size === a.length));
+  eq('未知体系走通用兜底', readingOrderOf('no-such-system').join(' → '), '基本信息 → 盘面事实 → 结构与关系 → 倾向 → 边界');
+
+  const unknown = askPrompt({ system: 'no-such-system', summary: 'x' }, { question: 'q' });
+  ok('未知体系的提问也带层次行', unknown.text.includes('no-such-system：基本信息 → 盘面事实'));
 }

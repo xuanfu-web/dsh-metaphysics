@@ -541,7 +541,15 @@
         args.sitting = el('sitting').value.trim();
         args.facing = el('facing').value.trim();
         delete args.datetime;
-        if (fsMode === 'xuankong') args.period = Number(el('fsperiod').value) || 9;
+        if (fsMode === 'xuankong') {
+          args.period = Number(el('fsperiod').value) || 9;
+          const off = el('fsoffset') ? el('fsoffset').value.trim() : '';
+          if (off !== '') args.sittingOffset = Number(off);
+          const fd = el('fsdate') ? el('fsdate').value.trim() : '';
+          if (fd) args.fortuneDate = fd;
+          const ft = el('fstime') ? el('fstime').value.trim() : '';
+          if (ft) args.fortuneTime = ft;
+        }
       }
     }
     if (tab === 'name') {
@@ -729,7 +737,9 @@
     document.querySelectorAll('#fsmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === fsMode));
     el('fs-advise').style.display = fsMode !== 'natal' ? '' : 'none';
     el('fs-advise2').style.display = fsMode !== 'natal' ? '' : 'none';
-    if (el('fs-period')) el('fs-period').style.display = fsMode === 'xuankong' ? '' : 'none';
+    for (const id of ['fs-period', 'fs-offset', 'fs-date', 'fs-time']) {
+      if (el(id)) el(id).style.display = fsMode === 'xuankong' ? '' : 'none';
+    }
     document.querySelectorAll('#nnmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === nnMode));
     el('nn-assess').style.display = nnMode === 'assess' ? '' : 'none';
     el('nn-generate').style.display = nnMode === 'generate' ? '' : 'none';
@@ -998,7 +1008,7 @@
     seg('#fsmode button', (v) => { fsMode = v; });
     seg('#nnmode button', (v) => { nnMode = v; });
     seg('#convertmode button', (v) => { convMode = v; syncQuick(); run(); });
-    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
+    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'fsoffset', 'fsdate', 'fstime', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
       .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', run); });
     // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');

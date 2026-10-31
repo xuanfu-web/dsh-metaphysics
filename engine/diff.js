@@ -18,9 +18,9 @@ const IGNORE_KEYS = new Set([
   // 紫微把「闰月按哪种政策起盘」回显在 lunar 里；非闰月盘换政策时它也会变，
   // 但农历月份与宫位一字未动，不该报成差异。
   'leapPolicy',
-  // 九类流派开关的回显（含 rules.schools 那行说明）同理：换开关必然改这段话，
-  // 真正要看的是星位、四化、宫位有没有动。
-  'schools',
+  // 十类流派开关的回显（含 rules.schools 那行说明）同理：换开关必然改这段话，
+  // 真正要看的是星位、四化、宫位有没有动。身主两派的口径名与说明同属回显。
+  'schools', 'bodyMasterSchool', 'bodyMasterNote',
 ]);
 
 const isObject = (v) => v !== null && typeof v === 'object';
@@ -324,6 +324,9 @@ export const CALIBER_SWITCHES = {
     }),
     ziweiSchoolSwitch('lateZishi', '晚子时：归当日 / 归次日', '晚子时', 'current-day', 'next-day', {
       'current-day': '归当日', 'next-day': '归次日', 'all-current': '全归当日', 'day-cur-time-next': '日归当日·时归次日',
+    }),
+    ziweiSchoolSwitch('shenzhuSchool', '身主：子午皆火星 / 子铃午火', '身主', 'common', 'verse', {
+      common: '子午皆火星', verse: '子铃午火（安身主诀逐字）',
     }),
   ],
   qimen: [

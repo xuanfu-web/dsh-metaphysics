@@ -360,10 +360,15 @@ export function apply(ctx) {
           enum: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
           description: '紫微斗数：晚子时口径。current-day（默认，23:00 后仍按当日）、next-day（起盘日顺延次日）；另两个别名保留为兼容值。',
         },
+        shenzhuSchool: {
+          type: 'string',
+          enum: ['common', 'verse'],
+          description: '紫微斗数：身主安法（只影响子/午年生人）。common（默认，通行表）子午皆火星；verse 按安身主诀「子午安身铃火宿」逐字取子铃星、午火星。',
+        },
         action: {
           type: 'string',
           enum: ['natal', 'advise', 'xuankong', 'assess', 'generate'],
-          description: '子动作。fengshui：natal（默认，算八宅命卦+流年飞星，需生日与性别）、advise（算宅卦门主灶布局，需 sitting 或 facing，出生信息可选）、xuankong（玄空下卦九宫盘，需 sitting 或 facing，运由 period 或 fortuneYear 定，缺省九运并注明）；name：assess（默认，评估已有名字，需 surname + givenName）、generate（生成候选名，需生辰，可选 surname / limit）。',
+          description: '子动作。fengshui：natal（默认，算八宅命卦+流年飞星，需生日与性别）、advise（算宅卦门主灶布局，需 sitting 或 facing，出生信息可选）、xuankong（玄空下卦/替卦九宫盘，需 sitting 或 facing，运由 period 或 fortuneYear 定，缺省九运并注明；兼向报 sittingOffset/degree，飞星报 fortuneDate/fortuneTime）；name：assess（默认，评估已有名字，需 surname + givenName）、generate（生成候选名，需生辰，可选 surname / limit）。',
         },
         toAge: {
           type: 'number',
@@ -377,7 +382,31 @@ export function apply(ctx) {
         },
         period: {
           type: 'number',
-          description: '仅 fengshui xuankong：三元九运的运（1–9）。优先于 fortuneYear；省略时按 fortuneYear 定，再缺省按九运（2024–2043）并注明。',
+          description: '仅 fengshui xuankong：三元九运的运（1–9）。优先于 fortuneYear 与飞星日期；省略时按 fortuneYear 定，再缺省按九运（2024–2043）并注明。',
+        },
+        sittingOffset: {
+          type: 'number',
+          description: '仅 fengshui xuankong：坐山偏离本山中心的度数（−7.5–7.5，正数向下一山）。超过 4.5° 自动按沈氏替卦排盘。与 sittingDegree 二选一；坐向都给须一致。',
+        },
+        sittingDegree: {
+          type: 'number',
+          description: '仅 fengshui xuankong：坐山罗盘度数（0–360）。引擎换算为相对本山中心的偏移，超过 4.5° 用替卦。',
+        },
+        facingOffset: {
+          type: 'number',
+          description: '仅 fengshui xuankong：向山偏离本山中心的度数（−7.5–7.5）。给了 sittingOffset/degree 时可省略；两者都给须一致。',
+        },
+        facingDegree: {
+          type: 'number',
+          description: '仅 fengshui xuankong：向山罗盘度数（0–360）。用于反推兼向，与坐山读数须一致。',
+        },
+        fortuneDate: {
+          type: 'string',
+          description: '仅 fengshui xuankong：飞星日期 YYYY-MM-DD（公历）。给了才排月/日/时紫白；只给 fortuneYear 时只排年星。',
+        },
+        fortuneTime: {
+          type: 'string',
+          description: '仅 fengshui xuankong：飞星时刻 HH:MM（默认 12:00）；日星 23:00 后归次日。',
         },
         surname: { type: 'string', description: '仅 name 使用：姓氏，如「李」（复姓整体写，如「欧阳」）。' },
         givenName: { type: 'string', description: '仅 name assess 使用：名（1–2 个汉字）。' },

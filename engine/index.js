@@ -60,7 +60,7 @@ function requireGender(value, who = '') {
 
 const ZIWEI_SCHOOL_KEYS = [
   'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
-  'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi',
+  'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool',
 ];
 
 /** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
@@ -189,7 +189,7 @@ function ziweiText(r) {
     const labels = {
       brightnessSchool: '亮度', gengYearSihua: '庚干四化', tianmaSchool: '天马', tiankongSchool: '天空',
       jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
-      changshengSchool: '长生', lateZishi: '晚子时',
+      changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主',
     };
     const diff = Object.entries(labels)
       .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])
@@ -244,7 +244,7 @@ function ziweiText(r) {
     `【农历】${lunarText}（月首 ${r.lunar.monthStart}）　时支：${r.hourBranch}　年干支：${r.yearGanzhi}`,
     `【时刻】${r.solarTime ? `${r.solarTime.civilText} → 真太阳时 ${r.solarTime.trueSolarText}${r.input.geo ? '（' + r.input.geo.note + '）' : ''}` : ''}`,
     `【命宫】${r.soul.branch}（${r.soul.ganzhi}·${r.soul.nayin}）　【身宫】${r.body.branch}（落${r.body.lands}）　【五行局】${r.bureau.name}`,
-    `【紫微】${r.ziwei}　【天府】${r.tianfu}　【命主】${r.lifeMaster}　【身主】${r.bodyMaster}`,
+    `【紫微】${r.ziwei}　【天府】${r.tianfu}　【命主】${r.lifeMaster}　【身主】${r.bodyMaster}${r.bodyMasterNote ? `（${r.bodyMasterSchool === 'common' ? '子午皆火星' : '子铃午火'}）` : ''}`,
     `【大限】${r.daxian.rule}，${r.daxian.startAge}岁起　【小限】${r.xiaoxianRule.direction}`,
     schoolLine,
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,
@@ -282,7 +282,8 @@ function qimenText(r) {
     `【局数】${r.ju}　节气 ${r.jieqi}（${r.jieqiTime}）`,
     `【值符】${r.zhiFu.star}（${r.zhiFu.gong}宫）　【值使】${r.zhiShi.gate}（${r.zhiShi.gong}宫）　旬首 ${r.xunshou}`,
     `【空亡】${r.kongWang.join('') || '—'}　驿马 ${r.ma.zhi || '—'}（${r.ma.gong || '—'}宫）`,
-    `【宫位条件】击刑 ${(r.conditions && r.conditions.jiXing || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　入墓 ${(r.conditions && r.conditions.ruMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}`,
+    `【宫位条件】击刑 ${(r.conditions && r.conditions.jiXing || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　三奇入墓 ${(r.conditions && r.conditions.ruMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}　六仪入墓 ${(r.conditions && r.conditions.liuYiRuMu || []).map((x) => `${x.palace}宫${x.stem}`).join('、') || '无'}`,
+    `【十干克应】${[...P, r.centerPalace].filter((p) => p && p.ganYing).map((p) => `${p.palace}宫 ${p.ganYing.tian}加${p.ganYing.di} ${p.ganYing.name}`).join('　') || '—'}`,
     `【旺衰】${stateLine(r)}`,
     `【九宫】${P.map(cell).join('　')}`,
     `※ 晚子时：${r.lateZiHourMode === 'next-day' ? '23:00 后归次日' : '23:00 后仍归当日'}（可用 lateZiHourMode / lateZi 指定）`,
@@ -1216,6 +1217,13 @@ function computeRaw(args = {}) {
         facing: args.facing,
         ...(args.period !== undefined ? { period: args.period } : {}),
         ...(Number.isInteger(args.fortuneYear) ? { fortuneYear: args.fortuneYear } : {}),
+        ...(typeof args.sittingOffset === 'number' ? { sittingOffset: args.sittingOffset } : {}),
+        ...(typeof args.sittingDegree === 'number' ? { sittingDegree: args.sittingDegree } : {}),
+        ...(typeof args.facingOffset === 'number' ? { facingOffset: args.facingOffset } : {}),
+        ...(typeof args.facingDegree === 'number' ? { facingDegree: args.facingDegree } : {}),
+        ...(typeof args.fortuneDate === 'string' ? { fortuneDate: args.fortuneDate } : {}),
+        ...(typeof args.fortuneTime === 'string' ? { fortuneTime: args.fortuneTime } : {}),
+        dst: args.dst !== false,
       });
       return { ...result, summary: fengshuiText(result) };
     }
@@ -1445,13 +1453,21 @@ function fengshuiText(r) {
     };
     const row = (names) => names.map(cell).join('　');
     const w = r.wangShanWangXiang;
+    const jian = r.meta.jianXiang;
+    const tf = r.timeFlying;
+    const tfLine = tf
+      ? `【年月日时】${[['year', '年'], ['month', '月'], ['day', '日'], ['hour', '时']]
+        .filter(([k]) => tf[k]).map(([k, label]) => `${label}${tf[k].centerName}${tf[k].fly ? `·${tf[k].fly}` : ''}`).join('　')}${tf.meta && tf.meta.note ? `（${tf.meta.note}）` : ''}`
+      : '';
     return [
-      `【玄空】${r.meta.periodLabel}　坐 ${r.meta.sitting}　向 ${r.meta.facing}`,
-      `【入中】山盘 ${r.meta.shanCenter.star}${r.meta.shanCenter.name}（${r.meta.shanCenter.fly}，${r.meta.shanCenter.basis}）；向盘 ${r.meta.xiangCenter.star}${r.meta.xiangCenter.name}（${r.meta.xiangCenter.fly}，${r.meta.xiangCenter.basis}）`,
+      `【玄空】${r.meta.periodLabel}${jian && jian.active ? '·替卦' : '·下卦'}　坐 ${r.meta.sitting}　向 ${r.meta.facing}`,
+      ...(jian && jian.active ? [`【替卦】${jian.note}`] : []),
+      `【入中】山盘 ${r.meta.shanCenter.star}${r.meta.shanCenter.name}（${r.meta.shanCenter.fly}，${r.meta.shanCenter.basis}${r.meta.shanCenter.mode === '替卦' ? `；原运星 ${r.meta.shanCenter.original}${r.meta.shanCenter.replaced ? '，已替' : '，用替而未替'}` : ''}）；向盘 ${r.meta.xiangCenter.star}${r.meta.xiangCenter.name}（${r.meta.xiangCenter.fly}，${r.meta.xiangCenter.basis}${r.meta.xiangCenter.mode === '替卦' ? `；原运星 ${r.meta.xiangCenter.original}${r.meta.xiangCenter.replaced ? '，已替' : '，用替而未替'}` : ''}）`,
       `【九宫】${row(['巽', '离', '坤'])}｜${row(['震', '中', '兑'])}｜${row(['艮', '坎', '乾'])}`,
       `【当运】山星${p}到${r.dangYun.shan.text}；向星${p}到${r.dangYun.xiang.text}`,
-      `【表法】${w.table.length ? w.table.join('、') : '无'}；${w.note}`,
+      `【表法】${w.byTable === null ? '替卦不套正向表；' : ''}${w.table.length ? w.table.join('、') : '无'}；${w.note}`,
       `【合十】山星合十 ${r.heshi.shan.join('、') || '无'}；向星合十 ${r.heshi.xiang.join('、') || '无'}`,
+      ...(tfLine ? [tfLine] : []),
       ...(r.meta.note ? [`※ ${r.meta.note}`] : []),
       `※ ${r.disclaimer}`,
     ].join('\n');
