@@ -2,12 +2,15 @@
 // { field, rule, inputs, result, source }。
 //
 // 只读结果、不重算、不读时间与随机：trace 开着或关掉，盘面必须逐字节一致。
-// 目前覆盖六爻（纳甲→六亲→世应→伏神→旺衰）、八字（旺衰分值、格局取用）
-// 与紫微（格局命中条件）；其余体系不产出 trace。
+// 目前覆盖六爻（纳甲→六亲→世应→伏神→旺衰）、八字（旺衰分值、格局取用）、
+// 紫微（格局命中条件）、奇门（盘面事实→用神落宫→门/星/干旺衰→宫位生克）
+// 与大六壬（天地盘→四课→三传）；其余体系不产出 trace。
 import { PATTERN_TONE } from './ziwei.js';
 import { yongshenOf, yongshenStrength, fushenAccess } from './liuyao.js';
+import { qimenYongshen } from './qimen-interpret.js';
+import { GAN_JI_GONG } from './daliuren.js';
 
-const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微' };
+const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微', qimen: '奇门', daliuren: '大六壬' };
 
 const text = (v, fallback = '—') => {
   if (v === undefined || v === null || v === '') return fallback;
@@ -231,6 +234,164 @@ function ziweiTrace(r) {
   )];
 }
 
+function qimenTrace(r, opts = {}) {
+  const palaces = Array.isArray(r.palaces) ? r.palaces : [];
+  const month = r.month && typeof r.month === 'object' ? r.month : {};
+  const states = r.states && typeof r.states === 'object' ? r.states : {};
+  const cond = r.conditions && typeof r.conditions === 'object' ? r.conditions : {};
+  const zf = r.zhiFu && typeof r.zhiFu === 'object' ? r.zhiFu : {};
+  const zs = r.zhiShi && typeof r.zhiShi === 'object' ? r.zhiShi : {};
+  const ma = r.ma && typeof r.ma === 'object' ? r.ma : {};
+  const sz = r.siZhu && typeof r.siZhu === 'object' ? r.siZhu : {};
+
+  const facts = step(
+    'facts',
+    '盘面事实',
+    '时家转盘奇门：节气与三元定阴阳遁与局数，旬首定值符星与值使门；值符随时干落宫，八神按阴阳遁顺布或逆布。',
+    [
+      ['四柱', `${text(sz.year)} ${text(sz.month)} ${text(sz.day)} ${text(sz.time)}`],
+      ['节气 / 局', `${text(r.jieqi)} · ${text(r.dun)}${text(r.juNumber)}局（${text(r.juMethod)}）`],
+      ['旬首', text(r.xunshou)],
+      ['值符 / 值使', `${text(zf.star)}落${text(zf.gong)}宫 / ${text(zs.gate)}落${text(zs.gong)}宫`],
+      ['空亡 / 驿马', `${list(r.kongWang)} / ${text(ma.zhi)}${ma.gong ? `（${ma.gong}宫）` : ''}`],
+    ],
+    palaces.map((p) => `${p.palace}宫 天${text(p.tianPan)}·${text(p.star)}·${text(p.gate)}·${text(p.god)}`).join('｜') || '无九宫数据',
+    'engine/qimen.js · buildQimen()',
+  );
+
+  const ys = qimenYongshen(r, opts.direction);
+  const found = ys.rows.filter((x) => x.palace);
+  const missing = ys.rows.filter((x) => !x.palace).map((x) => x.key);
+  const primary = found[0] || null;
+  const yongshen = step(
+    'yongshen',
+    '用神落宫',
+    '按所问之事取用神：先取主用神、再取辅用神；以所落之宫的干、门、星、神整体取象，不单凭门名断事。',
+    [
+      ['询问方向', ys.label],
+      ['主用神', primary ? `${primary.key} → ${primary.palace.palace}宫` : '未上盘'],
+      ['辅用神', found.slice(1).map((x) => `${x.key} → ${x.palace.palace}宫`).join('；') || '无'],
+      ['主用神落宫', primary ? `${text(primary.palace.star)}·${text(primary.palace.gate)}·${text(primary.palace.god)}·天盘${text(primary.palace.tianPan)}` : '—'],
+    ],
+    found.length
+      ? `${ys.note}；${found.map((x) => `${x.key} 落 ${x.palace.palace}宫（${text(x.palace.star)}·${text(x.palace.gate)}·${text(x.palace.god)}）`).join('，')}`
+        + (missing.length ? `；${missing.join('、')} 未上盘` : '')
+      : `${ys.label}的用神均未上盘，属未决项；先按值符落宫参照。`,
+    '奇门用神取象；engine/qimen-interpret.js · qimenYongshen()',
+  );
+
+  const order = ['旺', '相', '休', '囚', '死'];
+  const stateLine = (g) => order.filter((k) => g && Array.isArray(g[k]) && g[k].length)
+    .map((k) => `${k} ${g[k].join('、')}`).join('；') || '—';
+  const wangshuai = step(
+    'states',
+    '门/星/干旺衰',
+    '月令定五态：同月令之气为旺，月令所生为相，生月令为休，克月令为囚，月令所克为死；只判力量强弱，不合吉凶。',
+    [
+      ['月令', `${text(month.branch)}（${text(month.element)}）`],
+      ['门', stateLine(states.gate)],
+      ['星', stateLine(states.star)],
+      ['天盘干', stateLine(states.stem)],
+    ],
+    `门：${stateLine(states.gate)}；星：${stateLine(states.star)}；天盘干：${stateLine(states.stem)}`,
+    '月令五行五态；engine/qimen.js · groupByState()',
+  );
+
+  const forced = [];
+  const controlled = [];
+  const stemGroups = new Map();
+  for (const p of palaces) {
+    const rel = p.gateRelation || {};
+    if (rel.type === '门迫') forced.push(`${p.palace}宫${text(p.gate)}`);
+    else if (rel.type === '宫制门') controlled.push(`${p.palace}宫${text(p.gate)}`);
+    const sr = p.stemRelation || {};
+    if (p.tianPan && sr.type && sr.type !== 'unknown') {
+      if (!stemGroups.has(sr.type)) stemGroups.set(sr.type, []);
+      stemGroups.get(sr.type).push(`${p.palace}宫${p.tianPan}`);
+    }
+  }
+  const stemOrder = ['干克宫', '宫克干', '干生宫', '宫生干', '比和'];
+  const stemLine = stemOrder.filter((k) => stemGroups.has(k))
+    .map((k) => `${k} ${stemGroups.get(k).join('、')}`).join('；') || '—';
+  const jiXing = (cond.jiXing || []).map((x) => `${x.palace}宫${text(x.stem)}`);
+  const ruMu = (cond.ruMu || []).map((x) => `${x.palace}宫${text(x.stem)}`);
+  const kongCells = palaces.filter((p) => p.kong).map((p) => `${p.palace}宫`);
+
+  const relations = step(
+    'relations',
+    '宫位生克',
+    '门与宫同宫论生克：门克宫为门迫，宫克门为宫制门；天盘干对宫另论生克；击刑、入墓、空亡只作宫位条件，不单独断吉凶。',
+    [
+      ['门迫', forced.join('、') || '无'],
+      ['宫制门', controlled.join('、') || '无'],
+      ['天盘干 × 宫', stemLine],
+      ['击刑 / 入墓', `${jiXing.join('、') || '无'} / ${ruMu.join('、') || '无'}`],
+      ['空亡', kongCells.join('、') || '无'],
+    ],
+    `门迫 ${forced.length} 处、宫制门 ${controlled.length} 处；天盘干与宫：${stemLine}；击刑 ${jiXing.length} 处、入墓 ${ruMu.length} 处、落空 ${kongCells.length} 宫。`,
+    '门迫/宫制门；engine/qimen.js · gatePalaceRelation() / stemPalaceRelation()',
+  );
+
+  return [facts, yongshen, wangshuai, relations];
+}
+
+function daliurenTrace(r) {
+  const pan = Array.isArray(r.pan) ? r.pan : [];
+  const ke = Array.isArray(r.siKe) ? r.siKe : [];
+  const sc = r.sanChuan && typeof r.sanChuan === 'object' ? r.sanChuan : {};
+  const yj = r.yueJiang && typeof r.yueJiang === 'object' ? r.yueJiang : {};
+  const gr = r.guiren && typeof r.guiren === 'object' ? r.guiren : {};
+  const geju = r.geJu && typeof r.geJu === 'object' ? r.geJu : {};
+  const dayGz = text(r.dayGanZhi, '');
+
+  const tiandipan = step(
+    'tiandipan',
+    '天地盘',
+    '月将加时：中气换将，月将加于占时之上，顺布十二支成天盘；十二天将以日干昼夜贵人为起点，阳顺阴逆布于天盘。',
+    [
+      ['日干支', dayGz],
+      ['时支', `${text(r.hourZhi)}时`],
+      ['月将', `${text(yj.zhi)}（${text(yj.name)}）`],
+      ['昼夜 / 贵人', `${text(r.dayNight)} / ${text(gr.zhi)}（${gr.reverse ? '逆布' : '顺布'}）`],
+    ],
+    pan.map((p) => `${p.di}→${p.tian}${p.jiang ? `（${text(p.jiang)}）` : ''}`).join('｜') || '无天地盘数据',
+    '大六壬月将加时；engine/daliuren.js · tianDiPan()',
+  );
+
+  const sike = step(
+    'sike',
+    '四课',
+    '四课：日干寄宫取第一课，日干上神再取第二课；日支取第三课，日支上神再取第四课；每课以上下五行论生克。',
+    [
+      ['日干 / 日支', `${text(dayGz[0])} / ${text(dayGz[1])}`],
+      ['日干寄宫', text(GAN_JI_GONG[dayGz[0]])],
+      ['四课', ke.map((k) => `${k.position}课 ${text(k.shang)}上${text(k.xia)}下`).join('；') || '—'],
+    ],
+    ke.map((k) => `${k.position}课 ${text(k.shang)}上${text(k.xia)}下${k.jiang ? `·${text(k.jiang)}` : ''}：${text(k.relation)}`).join('；') || '无四课数据',
+    'engine/daliuren.js · siKe()',
+  );
+
+  const chuanLine = (c) => (c
+    ? `${text(c.position)}${text(c.zhi)}（${text(c.liuQin)}${c.xunKong ? '·旬空' : ''}，${text(c.jiang)}${c.jiangFull ? `·${text(c.jiangFull)}` : ''}）`
+    : '—');
+  const sanchuan = step(
+    'sanchuan',
+    '三传',
+    '三传：先取贼克（下贼上优先），无则比用、涉害、遥克、昴星，再八专、伏吟、返吟；初传既定，中末以天盘依次递取。',
+    [
+      ['课体', `${text(geju.name)}（${text(geju.detail)}）`],
+      ['初传', chuanLine(sc.chu)],
+      ['中传', chuanLine(sc.zhong)],
+      ['末传', chuanLine(sc.mo)],
+    ],
+    `${chuanLine(sc.chu)} → ${chuanLine(sc.zhong)} → ${chuanLine(sc.mo)}`,
+    'engine/daliuren.js · chuan()',
+  );
+
+  return [tiandipan, sike, sanchuan];
+}
+
+
 /**
  * @param {object} result compute 的结果
  * @param {{direction?:string, gender?:string, refresh?:boolean}} [opts]
@@ -264,6 +425,8 @@ export function buildTrace(result, opts = {}) {
     layers = liuyaoTrace(view, opts);
   } else if (result.system === 'bazi') layers = baziTrace(result);
   else if (result.system === 'ziwei') layers = ziweiTrace(result);
+  else if (result.system === 'qimen') layers = qimenTrace(result, opts);
+  else if (result.system === 'daliuren') layers = daliurenTrace(result);
   return layers && layers.length ? layers : null;
 }
 

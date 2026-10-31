@@ -258,7 +258,7 @@ function ziweiText(r) {
     '流年（前 6 年，完整 12 年在结构化数据里）：',
     ...liunian,
     `【格局】${patterns}`,
-    r.patternSummary ? `【结构统计】吉格 ${r.patternSummary.good.length}、中性 ${r.patternSummary.neutral.length}、忌格 ${r.patternSummary.bad.length}；${r.patternSummary.note}` : '',
+    r.patternSummary ? `【结构统计】吉格 ${r.patternSummary.good.length}、中性 ${r.patternSummary.neutral.length}、忌格 ${r.patternSummary.bad.length}${r.patternSummary.broken.length ? `、破格 ${r.patternSummary.broken.length}（${r.patternSummary.broken.join('、')}）` : ''}；${r.patternSummary.note}` : '',
     r.lunar.note ? `注：${r.lunar.note}` : '',
   ].filter(Boolean).join('\n');
 }

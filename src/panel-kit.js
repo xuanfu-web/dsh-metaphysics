@@ -82,6 +82,7 @@
 .pp-chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--line);color:var(--muted);background:var(--bg)}
 .pp-chip.ok{color:var(--lu);border-color:var(--lu)}
 .pp-chip.warn{color:var(--quan);border-color:var(--quan)}
+.pp-chip.broken{color:var(--quan);border-color:var(--quan);border-style:dashed}
 .pp-sec{margin-top:10px}
 /* 流月/流日/流时：一层层往外推的三级时间盘 */
 .pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif}
@@ -1361,7 +1362,11 @@
       <span class="pp-chip ${cq.absorb.label === '杂' ? 'warn' : 'ok'}">吸收·${cq.absorb.label}</span>
     </div>` : '';
     const pats = (r.patterns || []).length
-      ? `<div class="pp-chips">${r.patterns.map((p) => `<span class="pp-chip ${p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${esc(p.evidence || '')}">${p.name}</span>`).join('')}</div>` : '';
+      ? `<div class="pp-chips">${r.patterns.map((p) => {
+        const broke = p.status === 'broken' && Array.isArray(p.breaks) && p.breaks.length;
+        const title = `${p.evidence || ''}${broke ? `；破格：${p.breaks.join('；')}` : ''}`;
+        return `<span class="pp-chip ${broke ? 'broken' : p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${esc(title)}">${p.name}${broke ? '（破格）' : ''}</span>`;
+      }).join('')}</div>` : '';
     const dxs = (r.daxianList || []).length
       ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length

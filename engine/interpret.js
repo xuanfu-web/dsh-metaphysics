@@ -833,7 +833,10 @@ function ziweiInterpret(r) {
       tone: t.tone === 'neutral' ? 'watch' : t.tone,
       text: list.map((p) => {
         const rd = patternReadOf(p.name, p.tone);
-        return `**${p.name}**　${rd.gist}\n　依据：${p.evidence}\n　做法：${rd.advice}`;
+        const broke = p.status === 'broken' && Array.isArray(p.breaks) && p.breaks.length
+          ? `\n　破格：${p.breaks.join('；')}${p.breakRule ? `（${p.breakRule}）` : ''}`
+          : '';
+        return `**${p.name}**　${rd.gist}\n　依据：${p.evidence}${broke}\n　做法：${rd.advice}`;
       }).join('\n'),
     };
   }).filter(Boolean);
@@ -1706,6 +1709,7 @@ const BUILDERS = {
 import { interpretQimen } from './qimen-interpret.js';
 import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
 import { knowledgeFor, caveatsFor, STATUS_LABEL } from './interpret-knowledge.js';
+import { citationSourceOf } from './citations.js';
 import { CLASSIC_BOOKS, suiyunClassicOf, classicOf } from './classics.js';
 
 /**
@@ -1734,15 +1738,21 @@ function enrichPlain(result, r, ask) {
     const know = knowledgeFor(r.system, d.key)
       .filter((k) => !seen.has(k.id))
       .slice(0, KNOW_PER_DIM)
-      .map((k) => ({
-        id: k.id,
-        gist: k.gist,
-        detail: k.detail,
-        source: k.source,
-        status: k.status,
-        statusLabel: STATUS_LABEL[k.status] || k.status,
-        note: k.note || '',
-      }));
+      .map((k) => {
+        const cs = citationSourceOf(k.id, k.source);
+        return {
+          id: k.id,
+          gist: k.gist,
+          detail: k.detail,
+          source: cs.source,
+          citations: cs.citations,
+          citationStatus: cs.status,
+          citationReason: cs.reason || '',
+          status: k.status,
+          statusLabel: STATUS_LABEL[k.status] || k.status,
+          note: k.note || '',
+        };
+      });
     for (const k of know) seen.add(k.id);
     if (know.length) d.knowledge = know;
   }

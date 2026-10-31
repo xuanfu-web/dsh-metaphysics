@@ -765,7 +765,10 @@ export function buildZiwei(input) {
     good: chart.patterns.filter((p) => p.tone === 'good').map((p) => p.name),
     neutral: chart.patterns.filter((p) => p.tone === 'neutral').map((p) => p.name),
     bad: chart.patterns.filter((p) => p.tone === 'bad').map((p) => p.name),
-    note: '格局只描述结构，不作吉凶断语；同一命盘可并存吉格、中性结构与忌格',
+    broken: chart.patterns.filter((p) => p.status === 'broken').map((p) => p.name),
+    formed: chart.patterns.filter((p) => p.status === 'formed').map((p) => p.name),
+    notGraded: chart.patterns.filter((p) => p.status === 'n/a').map((p) => p.name),
+    note: '格局只描述结构，不作吉凶断语；同一命盘可并存吉格、中性结构与忌格。破格只判吉格是否被三方四正的煞忌空劫冲破，忌格不另判破格',
   };
   return chart;
 }
@@ -908,12 +911,105 @@ export function detectPatterns(chart) {
   }
   if (soulIdx === 0 && inSoul('贪狼')) add('泛水桃花', '贪狼在子守命');
 
-  // 同名的结构只保留第一条（evidence 已足够说明），并标注倾向
+  // 同名的结构只保留第一条（evidence 已足够说明），并标注倾向与破格状态
   const seen = new Set();
+  const nearMeta = new Map();
+  for (const b of sanfang) {
+    for (const s of (palaceAt(chart, b)?.stars ?? [])) {
+      if (!nearMeta.has(s.name)) nearMeta.set(s.name, { branch: BRANCHES[b], mutagen: s.mutagen || null });
+    }
+  }
+  const nearNames = [...nearMeta.keys()];
+  const hasAny = (list) => list.filter((n) => nearMeta.has(n));
+  const withBranch = (names) => names.map((n) => `${n}（${nearMeta.get(n).branch}）`).join('、');
+  const jiNames = nearNames.filter((n) => nearMeta.get(n).mutagen === '忌');
+  const breakOf = (name) => {
+    const rule = PATTERN_BREAK_RULES[name];
+    if (!rule) return { status: 'n/a', breaks: [], breakRule: '未收录破格条件', citationIds: [] };
+    if (rule.kind) return { status: 'n/a', breaks: [], breakRule: rule.note, citationIds: [] };
+    const hits = [];
+    for (const token of rule.breakers || []) {
+      if (token === 'sha') {
+        const names = hasAny(BREAK_SHA).filter((n) => !(rule.exclude || []).includes(n));
+        if (names.length) hits.push(`三方见煞星 ${withBranch(names)}`);
+      } else if (token === 'kong') {
+        const names = hasAny(BREAK_KONG);
+        if (names.length) hits.push(`三方见空劫 ${withBranch(names)}`);
+      } else if (token === 'ji') {
+        if (jiNames.length) hits.push(`三方见化忌 ${withBranch(jiNames)}`);
+      } else if (token === 'yangTuo') {
+        const names = hasAny(['擎羊', '陀罗']);
+        if (names.length) hits.push(`羊陀冲守 ${withBranch(names)}`);
+      } else if (token === 'tuo') {
+        if (nearMeta.has('陀罗')) hits.push(`陀罗同会（${nearMeta.get('陀罗').branch}）`);
+      } else if (token === 'noKelu') {
+        const hasKe = nearNames.some((n) => nearMeta.get(n).mutagen === '科');
+        const hasLu = nearNames.some((n) => nearMeta.get(n).mutagen === '禄') || nearMeta.has('禄存');
+        if (!hasKe && !hasLu) hits.push('三方无化科、化禄或禄存照');
+      } else if (token.startsWith('starJi:')) {
+        const star = token.slice(7);
+        const meta = nearMeta.get(star);
+        if (meta?.mutagen === '忌') hits.push(`${star}化忌（${meta.branch}）`);
+      }
+    }
+    return {
+      status: hits.length ? 'broken' : 'formed',
+      breaks: hits,
+      breakRule: rule.rule || '',
+      citationIds: rule.citationIds || [],
+    };
+  };
   return out
     .filter((p) => (seen.has(p.name) ? false : (seen.add(p.name), true)))
-    .map((p) => ({ ...p, tone: PATTERN_TONE[p.name] || 'neutral' }));
+    .map((p) => ({ ...p, tone: PATTERN_TONE[p.name] || 'neutral', ...breakOf(p.name) }));
 }
+
+const BREAK_SHA = ['擎羊', '陀罗', '火星', '铃星'];
+const BREAK_KONG = ['地空', '地劫'];
+const GENERIC_BREAK = '命宫三方四正见煞星（擎羊、陀罗、火星、铃星）、地空地劫或化忌，吉格减色乃至不成格。';
+const STRUCTURAL_NOTE = '这是结构标签，不是吉格，不判成格/破格。';
+const INAUSPICIOUS_NOTE = '忌格本身就是风险结构，不再判「破格」；轻重与应期另看大限流年。';
+
+// 34 条格局的破格条件。breakers 是可机械复算的星位/四化判据：
+//   sha 三方煞星 / kong 三方空劫 / ji 三方化忌 / yangTuo 羊陀 / tuo 陀罗 /
+//   noKelu 三方无科禄 / starJi:<星> 指定星化忌。
+// 引文见 engine/citations.js，原文子串由 test/citations.test.mjs 核验。
+export const PATTERN_BREAK_RULES = {
+  紫府同宫: { breakers: ['kong', 'starJi:紫微', 'starJi:天府'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  紫府朝垣: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  君臣庆会: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  极向离明: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  七杀朝斗: { breakers: ['kong', 'starJi:七杀'], rule: '七杀在子午守命而见空劫或七杀化忌，杀曜之威不聚。', citationIds: ['zw-poge-ruge'] },
+  英星入庙: { breakers: ['kong', 'starJi:破军'], rule: '破军在子午守命而见空劫或破军化忌，英星入庙减色。', citationIds: ['zw-poge-ruge'] },
+  石中隐玉: { breakers: ['noKelu', 'kong', 'starJi:巨门'], rule: '三方无化科、化禄或禄存照，或见空劫、巨门化忌，则石中隐玉不成立。', citationIds: ['zw-shiyin', 'zw-poge-ruge'] },
+  巨日同宫: { breakers: ['sha', 'kong', 'ji'], rule: '巨日同宫而三方见擎羊等煞星、空劫或化忌，光明被掩。', citationIds: ['zw-poge-sanfang', 'zw-jiju-poge'] },
+  日月夹命: { breakers: ['yangTuo', 'starJi:太阳', 'starJi:太阴'], rule: '羊陀冲守，或日月任一带化忌，夹局减色。', citationIds: ['zw-riyue-jia'] },
+  日月对照: { breakers: ['sha', 'kong', 'starJi:太阳', 'starJi:太阴'], rule: '日月对照见煞空，或日月任一带化忌，对照不美。', citationIds: ['zw-riyue-jia', 'zw-poge-sanfang'] },
+  左右夹命: { breakers: ['kong', 'ji'], rule: '命宫三方见空劫或化忌，辅弼之夹被冲。', citationIds: ['zw-poge-sanfang'] },
+  昌曲夹命: { breakers: ['sha', 'kong'], rule: '三方见羊陀火铃空劫，昌曲夹命亦主虚誉。', citationIds: ['zw-changqu'] },
+  魁钺夹命: { breakers: ['sha', 'kong'], rule: '魁钺夹命而三方杀凑，贵气减等。', citationIds: ['zw-kuiyue'] },
+  三奇嘉会: { breakers: ['sha', 'ji'], rule: '三奇同会而兼四杀或化忌，发财功名亦多阻滞。', citationIds: ['zw-sihua-ji'] },
+  双禄朝垣: { breakers: ['kong', 'ji'], rule: '双禄朝垣见空劫或化忌，禄被劫夺。', citationIds: ['zw-poge-sanfang'] },
+  府相朝垣: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  禄马交驰: { breakers: ['kong', 'sha'], rule: '禄马逢空为死马、遇陀罗为折足马，见刑杀亦减力。', citationIds: ['zw-luma'] },
+  月朗天门: { breakers: ['kong', 'starJi:太阴'], rule: '太阴在亥守命而见空劫或太阴化忌，月被云遮。', citationIds: ['zw-poge-ruge'] },
+  日出扶桑: { breakers: ['kong', 'starJi:太阳'], rule: '太阳在卯守命而见空劫或太阳化忌，日出扶桑减色。', citationIds: ['zw-poge-ruge'] },
+  机月同梁: { breakers: ['sha', 'kong', 'ji'], rule: '机月同梁遇凶杀、空劫或化忌，则降为下格。', citationIds: ['zw-jiyue'] },
+  武贪同行: { breakers: ['starJi:武曲', 'starJi:贪狼'], rule: '武贪同行须无化忌；任一颗化忌则作下格论。', citationIds: ['zw-tanwu'] },
+  双禄交流: { breakers: ['kong', 'ji'], rule: '双禄交流见空劫或化忌，禄来难守。', citationIds: ['zw-poge-sanfang'] },
+  火贪铃贪: { breakers: ['sha', 'kong', 'starJi:贪狼'], exclude: ['火星', '铃星'], rule: '三方有凶杀或空劫，火贪铃贪不发；贪狼化忌亦减力。', citationIds: ['zw-huotan'] },
+  命无正曜: { kind: 'structural', note: STRUCTURAL_NOTE },
+  杀破狼: { kind: 'structural', note: STRUCTURAL_NOTE },
+  火铃夹命: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  羊陀夹命: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  羊陀夹忌: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  铃昌陀武: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  命里逢空: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  马头带箭: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  天罗地网: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  刑囚夹印: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  泛水桃花: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+};
 
 export const PATTERN_TONE = {
   紫府同宫: 'good', 紫府朝垣: 'good', 君臣庆会: 'good', 极向离明: 'good',

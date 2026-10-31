@@ -88,6 +88,8 @@ export const CLASSICS = [
     scene: '格局',
     tags: ['劫财', '阳刃'],
     quote: '阳刃者，劫我正财之神，乃正财之七煞也。禄前一位，惟五阳有之，故为阳刃。不曰劫而曰刃，劫之甚也。刃宜伏制，官煞皆宜，财印相随，尤为贵显。',
+    verifiedQuote: '阳刃者，劫我正财之神，乃正财之七煞也。禄前一位，惟五阳有之',
+    variantNote: '典藏网此页把「故为阳刃」刻作「故为旭刃」，与通行本异文；前段仍可逐字核验',
     plain: '阳刃是劫财之极（只有五阳干有），宜用官煞制伏；财印相随而不相碍，格局更显。',
     url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53663.html',
   },

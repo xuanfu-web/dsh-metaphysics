@@ -35,7 +35,7 @@ async function verifyReleased() {
   const check = await verifyPublish({
     name: pkg.name,
     version: pkg.version,
-    expectFiles: ['package.json', 'client.js', 'client.chart.js', 'client.mbti.js', '命理排盘.html', 'docs/assets/verification-badge.svg'],
+    expectFiles: ['package.json', 'client.js', 'client.bazi.js', 'client.mbti.js', '命理排盘.html', 'docs/assets/verification-badge.svg'],
     onWait: ({ waitedMs, lastReason }) => step(`仍在处理…（已等 ${Math.round(waitedMs / 1000)}s）：${lastReason}`),
   });
   if (!check.ok) {

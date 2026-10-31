@@ -65,6 +65,7 @@
     "build:html": "node tools/build-html.mjs",
     "build:desktop": "node tools/build-html.mjs --desktop",
     "build:verification": "node tools/verification.mjs",
+    "build:citations": "node tools/citations.mjs",
     "test": "node tools/test-all.mjs",
     "test:ci": "node tools/build-client.mjs && node tools/check-bundle.mjs && node tools/test-all.mjs && node tools/check-assertions.mjs && node tools/verify-tests-can-fail.mjs && node tools/check-html-sinks.mjs && node tools/check-patterns.mjs",
     "test:baseline": "node tools/check-assertions.mjs --update",

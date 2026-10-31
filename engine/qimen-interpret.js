@@ -58,9 +58,22 @@ const REL_TEXT = {
 const findPalace = (r, key) => r.palaces.find((p) => p.star === key || p.gate === key || p.god === key || p.palace === key) || null;
 const cell = (p) => `${p.palace}宫（${p.star}·${p.gate}·${p.god}）`;
 
+/** 按询问方向取用神及其落宫；解读与推导链共用这一张表，避免两处各写一份 */
+export function qimenYongshen(r, direction) {
+  const dir = YONG_SHEN[direction] ? direction : 'general';
+  const ys = YONG_SHEN[dir];
+  return {
+    direction: dir,
+    label: ys.label,
+    note: ys.note,
+    rows: [...ys.primary, ...ys.secondary].map((key) => ({ key, palace: findPalace(r, key) })),
+  };
+}
+
 export function interpretQimen(r, opts = {}) {
   if (!r || r.system !== 'qimen') return null;
-  const dir = YONG_SHEN[opts.direction] ? opts.direction : 'general';
+  const ysInfo = qimenYongshen(r, opts.direction);
+  const dir = ysInfo.direction;
   const ys = YONG_SHEN[dir];
   const sections = [];
   const unresolved = [];
@@ -96,11 +109,7 @@ export function interpretQimen(r, opts = {}) {
   }
 
   // ③ 用神候选
-  const yongList = [];
-  for (const key of [...ys.primary, ...ys.secondary]) {
-    const p = findPalace(r, key);
-    if (p) yongList.push({ key, palace: p });
-  }
+  const yongList = ysInfo.rows.filter((x) => x.palace);
   if (!yongList.length) unresolved.push(`${ys.label}的用神未上盘`);
   if (yongList.length > 1) unresolved.push(`用神有 ${yongList.length} 个候选（${yongList.map((x) => x.key).join('、')}）`);
   sections.push({

@@ -8,7 +8,7 @@ Engine.compute = () => {
 const MP_ENGINE_CACHE = Object.create(null);
 
 function mpChunkOf(tab) {
-  return __MP_CHUNKS__[tab] || __MP_CHUNKS__.ziwei || 'client.chart.js';
+  return __MP_CHUNKS__[tab] || __MP_CHUNKS__.bazi || 'client.bazi.js';
 }
 
 async function __mpEnsureEngine(tab) {

@@ -8,22 +8,39 @@ import { DIRECTIONS } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'index'];
+  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
 // 拆包：入口只带界面与懒加载器，各 tab 的引擎按组落到 client.<name>.js。
 // 分块之间不共享代码（宿主的 chunk 协议只支持自包含分块），所以公共模块按需重复。
 const COMMON = ['fail', 'validate', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random'];
-const INTERPRET = ['interpret-data', 'interpret-knowledge', 'interpret-plain', 'interpret'];
+const INTERPRET = ['interpret-data', 'interpret-knowledge', 'interpret-plain', 'citations', 'interpret'];
 const ASK = ['followup'];
+// 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎
+const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', ...INTERPRET];
+const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', ...INTERPRET];
 
 export const CHUNKS = {
-  chart: {
-    tabs: ['bazi', 'ziwei', 'trend', 'hepan'],
-    modules: [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'trend',
-      'ziwei', 'ziwei-words', 'ziwei-hepan', 'hepan', 'classics', ...INTERPRET,
-      'crosscheck', 'verify', 'rectify', 'trace', ...ASK],
+  bazi: {
+    tabs: ['bazi'],
+    // 八字页内嵌人生 K 线、可开紫微交叉验证；两项都在本块内完成
+    modules: [...BAZI_STACK, 'trend', 'ziwei', 'ziwei-words', 'crosscheck', 'verify', 'rectify', 'trace', ...ASK],
+  },
+  ziwei: {
+    tabs: ['ziwei'],
+    // 紫微页可开八字交叉验证；不带人生 K 线与验证/校正
+    modules: [...ZIWEI_STACK, 'crosscheck', 'trace', ...ASK],
+  },
+  hepan: {
+    tabs: ['hepan'],
+    // 合盘双方可能是八字或紫微，两套引擎 + 合盘模板都在本块内
+    modules: [...ZIWEI_STACK, 'ziwei-hepan', 'hepan', 'trace', ...ASK],
+  },
+  trend: {
+    tabs: ['trend'],
+    // 人生 K 线只需要八字与流年，不背紫微
+    modules: [...BAZI_STACK, 'trend', 'trace', ...ASK],
   },
   name: {
     tabs: ['name'],
@@ -32,8 +49,8 @@ export const CHUNKS = {
   },
   fengshui: { tabs: ['fengshui'], modules: [...COMMON, 'fengshui', ...ASK] },
   liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'liuyao', 'meihua', ...INTERPRET, ...ASK, 'trace'] },
-  qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK] },
-  daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK] },
+  qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK, 'trace'] },
+  daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK, 'trace'] },
   tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot', ...INTERPRET, ...ASK] },
   almanac: { tabs: ['almanac'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', ...ASK] },
   convert: { tabs: ['convert'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'convert', ...ASK] },
@@ -45,7 +62,7 @@ export const CHUNKS = {
   mbti: { tabs: ['mbti'], modules: [...COMMON, 'classics', 'mbti', ...ASK] },
 };
 
-/** tab → 分块文件名；未列出的 tab 回落到 chart（19 个 tab 全覆盖由测试兜底） */
+/** tab → 分块文件名；未列出的 tab 回落到 bazi（19 个 tab 全覆盖由测试兜底） */
 export const CHUNK_OF_TAB = Object.fromEntries(
   Object.entries(CHUNKS).flatMap(([name, def]) => def.tabs.map((tab) => [tab, `client.${name}.js`])),
 );

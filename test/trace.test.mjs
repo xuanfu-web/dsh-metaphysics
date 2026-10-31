@@ -66,6 +66,52 @@ ok('紫微命中数与 patterns 一致', z.trace[0].inputs.some((x) => x.label =
 ok('紫微结果逐个列命中条件', z.patterns.every((p) => z.trace[0].result.includes(p.name)), z.trace[0].result.slice(0, 160));
 ok('紫微层给出命宫与五行局', z.trace[0].inputs.some((x) => x.label === '命宫') && z.trace[0].inputs.some((x) => x.label === '五行局'));
 
+// ── ③b 奇门：盘面事实 → 用神落宫 → 门/星/干旺衰 → 宫位生克 ─────
+const q = compute({ system: 'qimen', datetime: '2026-10-31T10:00', direction: 'career', trace: true });
+ok('奇门返回四层', Array.isArray(q.trace) && q.trace.length === 4, q.trace && q.trace.length);
+ok('奇门层序固定', q.trace.map((t) => t.key).join(',') === 'facts,yongshen,states,relations', q.trace.map((t) => t.key).join(','));
+ok('奇门层名', q.trace.map((t) => t.field).join('→') === '盘面事实→用神落宫→门/星/干旺衰→宫位生克', q.trace.map((t) => t.field).join('→'));
+ok('奇门每层字段齐全', q.trace.every((t) => ['field', 'rule', 'inputs', 'result', 'source'].every((k) => k in t)));
+ok('奇门每层 rule 非空', q.trace.every((t) => typeof t.rule === 'string' && t.rule.length >= 8));
+ok('奇门每层 source 指向引擎', q.trace.every((t) => /engine\//.test(t.source)), q.trace.map((t) => t.source).join(' | '));
+ok('奇门盘面事实带四柱与局', q.trace[0].result.length > 0 && q.trace[0].inputs.some((x) => x.label === '四柱') && q.trace[0].inputs.some((x) => x.label === '节气 / 局'));
+ok('奇门盘面事实与盘面一致', q.trace[0].inputs.some((x) => x.value.includes(q.dun) && x.value.includes(String(q.juNumber))));
+ok('奇门用神层按方向取用神', q.trace[1].inputs.some((x) => x.label === '询问方向' && x.value === '事业') && q.trace[1].result.includes('开门'), q.trace[1].result);
+ok('奇门用神层给出落宫', /落 \d宫/.test(q.trace[1].result), q.trace[1].result);
+const qLove = compute({ system: 'qimen', datetime: '2026-10-31T10:00', direction: 'love', trace: true });
+ok('奇门换方向换用神', qLove.trace[1].result.includes('休门') && qLove.trace[1].result !== q.trace[1].result, qLove.trace[1].result);
+ok('奇门 refresh 只重建不修改原结果', (() => {
+  const before = JSON.stringify(q);
+  const layers = buildTrace(q, { direction: 'study' });
+  return JSON.stringify(q) === before && layers[1].result.includes('景门');
+})(), buildTrace(q, { direction: 'study' })[1].result);
+ok('奇门旺衰层带月令', q.trace[2].inputs.some((x) => x.label === '月令') && q.trace[2].result.includes('门：') && q.trace[2].result.includes('星：') && q.trace[2].result.includes('天盘干：'));
+ok('奇门宫位生克层给门迫与干宫', q.trace[3].result.includes('门迫') && q.trace[3].result.includes('天盘干与宫'), q.trace[3].result);
+ok('奇门宫位生克层带条件', q.trace[3].inputs.some((x) => x.label === '击刑 / 入墓') && q.trace[3].inputs.some((x) => x.label === '空亡'));
+const qPlain = compute({ system: 'qimen', datetime: '2026-10-31T10:00', direction: 'career' });
+const qWithTrace = JSON.parse(JSON.stringify(q));
+delete qWithTrace.trace;
+ok('奇门 trace 不改盘面', JSON.stringify(qWithTrace) === JSON.stringify(qPlain));
+
+// ── ③c 大六壬：天地盘 → 四课 → 三传 ────────────────────────────
+const d = compute({ system: 'daliuren', datetime: '2026-10-31T10:00', trace: true });
+ok('大六壬返回三层', Array.isArray(d.trace) && d.trace.length === 3, d.trace && d.trace.length);
+ok('大六壬层序固定', d.trace.map((t) => t.key).join(',') === 'tiandipan,sike,sanchuan', d.trace.map((t) => t.key).join(','));
+ok('大六壬层名', d.trace.map((t) => t.field).join('→') === '天地盘→四课→三传', d.trace.map((t) => t.field).join('→'));
+ok('大六壬每层字段齐全', d.trace.every((t) => ['field', 'rule', 'inputs', 'result', 'source'].every((k) => k in t) && t.rule.length >= 8 && /engine\//.test(t.source)));
+ok('大六壬天地盘带日干支与时支', d.trace[0].inputs.some((x) => x.label === '日干支' && x.value === d.dayGanZhi) && d.trace[0].inputs.some((x) => x.label === '时支' && x.value.startsWith(d.hourZhi)));
+ok('大六壬天地盘十二支齐全', (d.trace[0].result.match(/→/g) || []).length === 12, d.trace[0].result);
+ok('大六壬天地盘带月将与贵人', d.trace[0].inputs.some((x) => x.label === '月将' && x.value.includes(d.yueJiang.zhi)) && d.trace[0].inputs.some((x) => x.label === '昼夜 / 贵人'));
+ok('大六壬四课逐课给生克', ['1课', '2课', '3课', '4课'].every((x) => d.trace[1].result.includes(x)) && d.siKe.every((k) => d.trace[1].result.includes(k.relation)), d.trace[1].result);
+ok('大六壬四课带日干寄宫', d.trace[1].inputs.some((x) => x.label === '日干寄宫' && x.value.length === 1));
+ok('大六壬三传与盘面一致', d.trace[2].result.includes(d.sanChuan.chu.zhi) && d.trace[2].result.includes(d.sanChuan.zhong.zhi) && d.trace[2].result.includes(d.sanChuan.mo.zhi), d.trace[2].result);
+ok('大六壬三传带课体与六亲', d.trace[2].inputs.some((x) => x.label === '课体' && x.value.includes(d.geJu.name)) && d.trace[2].result.includes(d.sanChuan.chu.liuQin));
+const dPlain = compute({ system: 'daliuren', datetime: '2026-10-31T10:00' });
+const dWithTrace = JSON.parse(JSON.stringify(d));
+delete dWithTrace.trace;
+ok('大六壬 trace 不改盘面', JSON.stringify(dWithTrace) === JSON.stringify(dPlain));
+
+
 // ── ④ 只读：trace 开关不改盘面、不改影子盘 ID ───────────────────
 const plain = compute({ system: 'liuyao', lines: LINES, question: '今年能否换工作', direction: 'career', datetime: '2026-10-31T10:00' });
 const withTrace = JSON.parse(JSON.stringify(l));
@@ -81,6 +127,8 @@ const text = renderText(l);
 ok('文本含推导链标题与层数', text.includes('【推导链】六爻 · 5 层'));
 ok('文本列出每层规则与出处', text.includes('规则：') && text.includes('出处：engine/liuyao.js'));
 ok('文本含分隔后的层名', ['纳甲', '六亲', '世应', '伏神', '旺衰'].every((x) => text.includes(`. ${x}｜`)));
+ok('奇门文本层给四层', renderText(q).includes('【推导链】奇门 · 4 层') && renderText(q).includes('. 用神落宫｜'));
+ok('大六壬文本层给三层', renderText(d).includes('【推导链】大六壬 · 3 层') && renderText(d).includes('. 三传｜'));
 
 // ── ⑥ 面板：入口卡 + 右侧抽屉 + 逐层 details ──────────────────
 const sandbox = { window: {}, document: {}, console };
@@ -104,15 +152,19 @@ ok('推导链文本全部转义', !evilHTML.includes('<img src=x') && !evilHTML.
 const appSrc = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 const uiSrc = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
 ok('面板渲染 traceHTML', appSrc.includes('PP.traceHTML(result.r.trace, result.r.system)'));
-ok('面板请求 trace', appSrc.includes("args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei'"));
+ok('面板请求 trace', appSrc.includes("args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei' || k === 'qimen' || k === 'daliuren'"));
 ok('面板处理抽屉开关', appSrc.includes('data-trace-open') && appSrc.includes('data-trace-close'));
 ok('独立页渲染 traceHTML', uiSrc.includes('window.__PP.traceHTML(last.r.trace, last.r.system)'));
-ok('独立页请求 trace', uiSrc.includes("args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei'"));
+ok('独立页请求 trace', uiSrc.includes("args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren'"));
 ok('独立页处理抽屉开关', uiSrc.includes('data-trace-open') && uiSrc.includes('data-trace-close'));
 ok('面板改方向时重算推导链', appSrc.includes('Engine.buildTrace') && appSrc.includes('refresh: true'));
 ok('独立页改方向时重算推导链', uiSrc.includes('window.Engine.buildTrace') && uiSrc.includes('refresh: true'));
 ok('面板把方向传给六爻 compute', appSrc.includes("if (k === 'liuyao') args.direction = direction"));
 ok('独立页把方向传给六爻 compute', uiSrc.includes("if (tab === 'liuyao') args.direction = el('direction').value"));
+ok('面板把方向传给奇门 compute', appSrc.includes('args.juMethod = qimenRule; args.lateZiHourMode = qLateZi; args.direction = direction'));
+ok('独立页把方向传给奇门 compute', uiSrc.includes("if (tab === 'qimen') args.direction = el('qdir').value"));
+ok('面板改方向时重算奇门用神层', appSrc.includes("(tab === 'liuyao' || tab === 'qimen')") && appSrc.includes('Engine.buildTrace(r, { direction: ask.direction })'));
+ok('独立页改方向时重算奇门用神层', uiSrc.includes('window.Engine.buildTrace(last.r, { direction: qdir.value })'));
 
 // ── ⑧ 宿主工具 ────────────────────────────────────────────────
 let def = null;

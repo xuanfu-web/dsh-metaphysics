@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>引文索引 · dsh-metaphysics</title>
+<style>
+:root{--bg:#fbfaf7;--fg:#221f1a;--muted:#7a7367;--line:#ded8cc;--ok:#2f6b45;--warn:#8a5a1f;--card:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#12110d;--fg:#e8e2d6;--muted:#9b9384;--line:#3a352d;--ok:#7fbf95;--warn:#d8a45c;--card:#1a1813}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.65 system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:22px;margin:0 0 6px}
+h2{font-size:16px;margin:30px 0 10px}
+p{color:var(--muted);margin:6px 0}
+.sum{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.sum div{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+.sum b{font-size:18px;display:block}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+th{font-weight:600;color:var(--muted);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.id{font-family:ui-monospace,Consolas,monospace;font-size:12px;white-space:nowrap}
+.quote{max-width:360px}
+.plain{max-width:260px;color:var(--muted)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:0 7px;margin:1px 3px 1px 0;font-size:11.5px;color:var(--muted)}
+.st{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 8px;white-space:nowrap}
+.st.verified{color:var(--ok);border-color:var(--ok)}
+.st.general{color:var(--warn);border-color:var(--warn)}
+.st.todo,.st.missing{color:var(--warn);border-color:var(--warn);border-style:dashed}
+.muted{color:var(--muted)}
+a{color:var(--ok)}
+.wrap{overflow:auto;border-radius:9px}
+@media(max-width:760px){.quote,.plain{max-width:none}}
+</style>
+</head>
+<body><main>
+<h1>引文索引</h1>
+<p>每张知识卡都指到一处出处：已定位到原文的，给书名、卷章、原文与链接，并由 CI 核验原文子串；属于通行说或尚未录入的，明确标出，不冒充原文。</p>
+<div class="sum">
+  <div><b>52</b>知识卡</div>
+  <div><b>17</b>已定位原文</div>
+  <div><b>34</b>通行说</div>
+  <div><b>1</b>待补</div>
+  <div><b>64</b>引文条目</div>
+</div>
+<p>原文核验数据：<code>test/fixtures/citation-sources.json</code>（公共领域古籍，由 <code>tools/sync-citation-sources.mjs</code> 抓取）；测试：<code>test/citations.test.mjs</code>。</p>
+
+<h2>引文库</h2>
+<div class="wrap"><table>
+<thead><tr><th>ID</th><th>出处</th><th>原文</th><th>白话</th><th>用于</th><th>链接</th></tr></thead>
+<tbody><tr>
+    <td class="id">zp-yongshen</td>
+    <td>《子平真诠·八、论用神》</td>
+    <td class="quote">八字用神，专求月令，以日干配月令地支，而生克不同，格局分焉。财官印食，此用神之善而顺用之者也；煞伤劫刃，用神之不善而逆用之者也。</td>
+    <td class="plain">用神从月令里找：财、官、印、食四吉神顺用（生之护之），煞、伤、劫、刃四凶神逆用（制之化之）。</td>
+    <td><span class="chip">bazi-geju</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53628.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-zhenguan</td>
+    <td>《子平真诠·三十一、论正官》</td>
+    <td class="quote">以刑冲破害为忌，则以生之护之为喜矣。存其喜而去其忌则贵，而贵之中又有高低者，何也？</td>
+    <td class="plain">正官格最忌刑冲破害，喜财生官、印护官；去忌存喜才谈得上贵，贵的层次还要看财印是否并透、有无伤官七煞混杂。</td>
+    <td><span class="chip">bazi-sanming-duizhao</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53651.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-cai</td>
+    <td>《子平真诠·三十三、论财》</td>
+    <td class="quote">财为我克，使用之物也，以能生官，所以为美。为财帛，为妻妾，为才能，为驿马，皆财类也。</td>
+    <td class="plain">财是我所克、能为我用之物，因能生官而美；它同时代表钱财、配偶、才能、走动，不只「钱」一项。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53653.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-yin</td>
+    <td>《子平真诠·三十五、论印绶》</td>
+    <td class="quote">印绶喜其生身，正偏同为美格，故财与印不分偏正，同为一格而论之。</td>
+    <td class="plain">印能生身，正印偏印都算美格，不分偏正而论；印格的关键在身印强弱与官杀、食伤、财的配合。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53655.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-shishen</td>
+    <td>《子平真诠·三十七、论食神》</td>
+    <td class="quote">食神本属泄气，以其能生正财，所以喜之。故食神生财，美格也。财要有根，不必偏正叠出，如身强食旺而财透，大贵之格。</td>
+    <td class="plain">食神本是泄气，可贵在能生财；食神生财要财有根，身强、食旺、财透三者齐，格局才大。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53657.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-pianguan</td>
+    <td>《子平真诠·三十九、论偏官》</td>
+    <td class="quote">煞以攻身，似非美物，百大贵之格，多存七煞。盖控制得宜，煞为我用，如大英雄大豪杰，似难驾驭，而处之有方，则惊天动地之功，忽焉而就。</td>
+    <td class="plain">七煞攻身，看着不美，但大贵之格多有七煞——能控制住就为我所用，像驾驭豪杰，处之有方就能成大事。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53659.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-shangguan</td>
+    <td>《子平真诠·四十一、论伤官》</td>
+    <td class="quote">伤官虽非吉神，实为秀气，故文人学士，多于伤官格内得之。而夏木见水，冬金见火，则又为秀之尤秀者也。</td>
+    <td class="plain">伤官不是吉神，却是秀气所在，文人多出伤官格；夏木得水、冬金得火，是秀气里更秀的两种。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53661.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-yangren</td>
+    <td>《子平真诠·四十三、论阳刃》</td>
+    <td class="quote">阳刃者，劫我正财之神，乃正财之七煞也。禄前一位，惟五阳有之，故为阳刃。不曰劫而曰刃，劫之甚也。刃宜伏制，官煞皆宜，财印相随，尤为贵显。</td>
+    <td class="plain">阳刃是劫财之极（只有五阳干有），宜用官煞制伏；财印相随而不相碍，格局更显。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53663.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-lujie</td>
+    <td>《子平真诠·四十五、论建禄月劫》</td>
+    <td class="quote">故建禄与月劫，可同一格，不必加分，皆以透干支，别取财官煞食为用。</td>
+    <td class="plain">建禄、月劫同看一格，月令本身不算用神，要另看透出的财官煞食取用。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53665.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-qihou</td>
+    <td>《子平真诠·十四、论用神配气候得失》</td>
+    <td class="quote">论命惟以月令用神为主，然亦须配气候而互参之。譬如英雄豪杰，生得其时，自然事半功倍；遭时不顺，虽有奇才，成功不易。</td>
+    <td class="plain">月令用神为主，但必须配气候参看；同样的格局，生在得时的气候里事半功倍，逆着气候就费劲。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53634.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-chengbai</td>
+    <td>《子平真诠·九、论用神成败救应》</td>
+    <td class="quote">成中有败，必是带忌；败中有成，全凭救应。</td>
+    <td class="plain">成格不等于一路顺：成中带忌（官逢财又逢伤、官被合之类）就打了折；败格也未必无救——印来解伤、合来清煞，败中还能转成。</td>
+    <td><span class="chip">bazi-geju-chengbai</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53629.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-zaji</td>
+    <td>《子平真诠·十六、论杂气如何取用》</td>
+    <td class="quote">何谓透干？如甲生辰月，透戊则用偏财，透癸则用正印，透乙则用月劫是也。何谓会支？如甲生辰月，逢申与子会局，则用水印是也。一透则一用，兼透则兼用，透而又会，则透与会并用。</td>
+    <td class="plain">四墓（辰戌丑未）所藏不止一气，所以叫杂气：取用先看哪一藏干透到天干，透一个用一个；没有透干，再看地支有没有与月支会成三合局，会成什么局就取局中那一气。透干与会支同时成立时两样并用。原文对「兼透」只给原则，没有给取舍次序。</td>
+    <td><span class="chip">bazi-zaji-quyong</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53636.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zp-bianhua</td>
+    <td>《子平真诠·十、论用神变化》</td>
+    <td class="quote">故若丁生亥月，本为正官，支全卯未，则化为印。己生申月，本属伤官。藏庚透壬，则化为财。凡此之类皆用神之变化也。</td>
+    <td class="plain">用神本从月令取，但月令藏干不一：丁生亥月本为正官，支会卯未就化为印；己生申月本属伤官，庚藏壬透就化为财。起点相同，合化一变，取用也跟着变（原文只说变化之由，不断定某盘必化）。</td>
+    <td><span class="chip">bazi-huagi-bianhua</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53630.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-hannuan</td>
+    <td>《滴天髓·通神论·寒暖》</td>
+    <td class="quote">天道有寒暖，生育万物，人道行之，不可过也。</td>
+    <td class="plain">天有寒暖才能生养万物，人命里寒暖也不能过——过寒过热都要调。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-zaoshi</td>
+    <td>《滴天髓·通神论·燥湿》</td>
+    <td class="quote">地道有燥湿，生成品汇，人道得之，不可偏也。</td>
+    <td class="plain">地有燥湿才有品类生成，人命得燥湿之气也不能偏。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-shuaiwang</td>
+    <td>《滴天髓·通神论·衰旺》</td>
+    <td class="quote">能知旺衰之真机，其于三命之奥，思过半矣。</td>
+    <td class="plain">真正看懂旺衰的机关，命理之奥就过了一半——旺衰不是数个数，要看真机。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-zhonghe</td>
+    <td>《滴天髓·通神论·中和》</td>
+    <td class="quote">既识中和之正理，而于五行之妙，有全能焉。</td>
+    <td class="plain">懂得中和的道理，五行的妙处就都在其中了。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-guansha</td>
+    <td>《滴天髓·通神论·官杀》</td>
+    <td class="quote">官杀混杂来问我，有可有不可。</td>
+    <td class="plain">官杀混杂不是一律不好，要看能不能去留取清。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-shangguan</td>
+    <td>《滴天髓·通神论·伤官》</td>
+    <td class="quote">伤官见官最难辨，可见不可见。</td>
+    <td class="plain">伤官见官是最难分辨的一条：有的能见，有的不能见，不能一句「伤官见官为祸百端」了事。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-yueling</td>
+    <td>《滴天髓·通神论·月令》</td>
+    <td class="quote">月令乃提纲之府，譬之宅也，人元为用事之神，宅之定向也，不可以不卜。</td>
+    <td class="plain">月令像宅子，藏干是用事之神，像宅子的朝向，必须细看。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-tiyong</td>
+    <td>《滴天髓·通神论·体用》</td>
+    <td class="quote">道有体用，不可以一端论也，要在扶之抑之得其宜。</td>
+    <td class="plain">体用不能只看一头，关键是扶抑得宜。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-jingshen</td>
+    <td>《滴天髓·通神论·精神》</td>
+    <td class="quote">人有精神，不可以一偏求也，要在损之益之得其中。</td>
+    <td class="plain">看精神不能偏执一端，要在损益之间求其中。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-tongguan</td>
+    <td>《滴天髓·通神论·通关》</td>
+    <td class="quote">关内有织女，关外有牛郎，此关若通也，相邀入洞房。</td>
+    <td class="plain">两股力隔着一道关相望：一边织女、一边牛郎，中间若有一行能把两边接上（一方生它、它再生另一方），对峙就化成相生。原文只给取象，哪一行为关要按五行生克定。</td>
+    <td><span class="chip">bazi-tongguan</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-zhenguan</td>
+    <td>《三命通会·卷五·论正官》</td>
+    <td class="quote">正官者，乃甲见辛、乙见庚之例。阴阳配合，相制有用，成其道也。故正官为六格之首，止许一位，多则不宜。</td>
+    <td class="plain">正官取「克我而阴阳相配」，有制而能成用；六格以正官居首，只宜一位，多见就杂。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7582.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-zhengcai</td>
+    <td>《三命通会·卷六·论正财》</td>
+    <td class="quote">正财者，乃甲见己、乙见戊之例。受我克制，为我之妻，譬人娶妻，妻赍财嫁我，我必精神康强，而后可享用，若衰微不振，虽妻财丰厚，但能目视，终不得用。</td>
+    <td class="plain">正财是我克制之物，古人以「娶妻带财」作比：自身精神康强才受用得起，身弱不振，财再厚也只是看着。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7645.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-piancai</td>
+    <td>《三命通会·卷六·论偏财》</td>
+    <td class="quote">何谓偏财？乃甲见戊、乙见己之例。非妻所带，乃众人之财也。切忌有姊妹兄弟分夺，柱无官星，祸患百出。</td>
+    <td class="plain">偏财取「我克而阴阳不同」：不是妻家带来的私财，而是众人之财，宜流通不宜独占。原文最忌比肩劫财来分夺，又说柱中无官星则多事（旧说的重话照录，本插件只记原文、不作断语）。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7650.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-yinshou</td>
+    <td>《三命通会·卷六·论印绶》</td>
+    <td class="quote">印绶者，乃五行生我之名。如甲乙在亥子月，丙丁在寅卯月之类，乃我气之源，为生气，为父母，能护我官星，使无伤克</td>
+    <td class="plain">印是生我之气，像源头与父母：它能护住官星，使官不受伤克；反过来说，印重就怕财来破。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7655.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-shishen</td>
+    <td>《三命通会·卷六·论食神》</td>
+    <td class="quote">凡命遇财煞之地，食神旺相，煞被食制，不敢为祸，财被食生，充裕不竭，故食神一名寿星，一名爵星，良有以也。</td>
+    <td class="plain">食神旺，一头制煞、一头生财：煞被制住不敢为祸，财被生起不至枯竭；所以食神又叫寿星、爵星。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7663.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-shangguan</td>
+    <td>《三命通会·卷六·论伤官》</td>
+    <td class="quote">伤官虽凶，乃我所生，自家之物，伤尽则能生财，财旺则能生官，造化展转有情。</td>
+    <td class="plain">伤官虽称凶，却是我自己生出来的：伤尽（柱中不见官星）反能生财，财旺再生官，辗转还是有情。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7662.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-yangren</td>
+    <td>《三命通会·卷六·论阳刃》</td>
+    <td class="quote">阳者，阴阳之阳，刃者，刀刃之刃，即禄前一位，言旺越其分，故险。</td>
+    <td class="plain">阳刃指禄前一位，旺过了本分，所以险；甲丙戊庚壬五阳干才有刃，阴干见伤官同论。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7671.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-jianlu</td>
+    <td>《三命通会·卷六·论建禄》</td>
+    <td class="quote">凡命月令建禄，难招祖业，必主平生见财不聚，却病少寿长，行运再见比肩，克妻妨父损子</td>
+    <td class="plain">月令建禄是日主临官之地，身旺而财官难取：古说难承祖业、见财不聚，但病少寿长；再走比肩运，古书说克妻妨父损子（属于旧说的重话，本插件只记原文、不作断语）。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7672.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-guansha-liu</td>
+    <td>《三命通会·卷五·官煞去留杂论》</td>
+    <td class="quote">凡看去留，要详柱中官煞孰重孰轻，天干透者易去，月支所藏者难去，须伤官食神去官煞之物众而有力，方才去得。</td>
+    <td class="plain">官煞混见时先比谁重谁轻：天干透出的容易去，月支藏着的难去；用来去官煞的伤官食神要成众、有根有力，才真去得掉。七杀格遇正官混杂，就按这一篇看取舍。</td>
+    <td><span class="chip">bazi-sanming-duizhao</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7599.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-quzhi</td>
+    <td>《三命通会·卷六·曲直》</td>
+    <td class="quote">甲乙日得亥卯未局，柱中须有亥字带印为入格，若无亥有卯，止是木之本气，却要见金土为贵，既无亥字，又无金土，则木不秀不实，难以言贵。</td>
+    <td class="plain">曲直格要木局成方（亥卯未）且带亥字为印，才算入格；只有卯、没有亥，只是木的本气，得另见金土才谈得上贵；两样都没有，木虽旺而无成，难称贵格。</td>
+    <td><span class="chip">bazi-zhuanwang-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7630.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-yanshang</td>
+    <td>《三命通会·卷六·炎上》</td>
+    <td class="quote">丙丁日遇寅午戌局，柱中须有寅字带印为入格，无寅止是九流近贵之命，若火自旺，无亥水相济，不贵。喜东北方运，忌见辰丑戊己，晦火光明，多主眼疾，或患风气，柱有木制成贵，忌水金乡，怕冲。</td>
+    <td class="plain">炎上格要火局成方（寅午戌）且带寅字为印才入格；无寅只是偏贵的命。火自旺还要一点水相济，过燥不贵；行运喜东北、忌湿土晦火，也怕冲。原文另带「多主眼疾」一句，属于旧说，本插件只记原文、不作健康判断。</td>
+    <td><span class="chip">bazi-zhuanwang-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7631.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-congge</td>
+    <td>《三命通会·卷六·从革》</td>
+    <td class="quote">庚辛日见巳酉丑局，须带丙丁巳午一二位方成其器，但不可火多。如辛巳、辛酉、辛丑三日不喜五月生，被火所伤，宜八月或水土养育食神印绶为吉。</td>
+    <td class="plain">从革格是金局成方（巳酉丑），但金要火炼才成器：须带丙丁或巳午一二位，火又不能多。辛巳、辛酉、辛丑三日出身在五月（火旺）被伤，原文说宜八月或水土养育。</td>
+    <td><span class="chip">bazi-zhuanwang-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7632.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-runxia</td>
+    <td>《三命通会·卷六·润下》</td>
+    <td class="quote">壬癸日见申子辰全，忌引卯巳死绝之地，三刑四冲之乡，死绝则不流，冲刑则横流，岁运同。或曰水太泛须柱有土神一两位制之，得成堤岸，既有土怕会木为凶，如有木伤土要金印救解，终是一生成败。</td>
+    <td class="plain">润下格是水局三合全（申子辰），最忌卯巳死绝与三刑四冲：死绝水不流，冲刑水横流，行运也一样看。水太泛要一两位土作堤，有土又怕木来破堤，木伤土再用金印解救——原文把成败条件摊开讲。</td>
+    <td><span class="chip">bazi-zhuanwang-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7633.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-jiasi</td>
+    <td>《三命通会·卷六·稼穑》</td>
+    <td class="quote">赋云：戊己忻逢四季，乃为稼穑之名。是戊己生逢季月，喜见木为官，止得一木为妙，木多则土虚，主虚诈为破家不仁之人。</td>
+    <td class="plain">稼穑格取戊己生于四季月（辰戌丑未）。原文说喜见一木为官，木多则土虚；后半对木多之人的评语是旧说的重话，本插件只照录条件、不拿来评价人。</td>
+    <td><span class="chip">bazi-zhuanwang-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7634.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-congsha</td>
+    <td>《三命通会·卷五·弃命从煞》</td>
+    <td class="quote">《独步》云：弃命从煞，须要会煞从财，忌煞从煞。盖言从煞格，以煞神太重，身无所归，不得已从之，要行煞旺及财乡，四柱无一点比肩印绶方论，如遇运扶身旺，与煞为敌，从煞不专，故为祸患。</td>
+    <td class="plain">从煞格是煞太重、日主无所归才「弃命」相从：条件是四柱没有一点比肩印绶扶身，行运喜煞旺与财乡；一旦走扶身之运，与煞为敌，就从得不专。本插件只作结构说明，不据此断寿夭。</td>
+    <td><span class="chip">bazi-congge-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7598.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-congcai</td>
+    <td>《三命通会·卷六·弃命从财》</td>
+    <td class="quote">《独步》云：弃命从财，须要会财，若逢根气，命损无猜。假如丁生酉月，柱多庚辛，日干无气，只得弃命相从，运入北方财官旺地，乃为入格，南行灾。</td>
+    <td class="plain">从财格要财会成局、日干无气；一见根气就破格，原文用「命损无猜」这种重话写明。以丁生酉月、柱多庚辛为例：只能弃命相从，行北方财官旺地为入格，南行则灾。</td>
+    <td><span class="chip">bazi-congge-yuanwen</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7652.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-suiyun</td>
+    <td>《三命通会·卷二·总论岁运》</td>
+    <td class="quote">行运以生月为运元，最怕行运与太岁冲克，若岁运冲月必祸；若岁运与日相对，谓之返吟，岁运压日，谓之伏吟，二者不利六亲，非横破财，不为吉兆。</td>
+    <td class="plain">大运以生月为起点，最怕与流年（太岁）冲克：原文说岁运冲月为祸，又把「岁运与日柱相对」叫返吟、「岁运压日」叫伏吟。这两句是按「对日柱」说的，与本插件「干支相同为伏吟、天克地冲为反吟」不是同一套定义（本插件取后者）；末句「不利六亲、破财」是旧说的重话，只作变动提示，不作断语。</td>
+    <td><span class="chip">bazi-suiyun</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">smt-renyuan</td>
+    <td>《三命通会·卷二·论人元司事》</td>
+    <td class="quote">故支吕所藏者主命，谓之人元，名为司事之神，以命术言之为月令。如正月建寅，寅中有艮土用事五日，丙火长生五日，甲木二十日；二月建卯，卯中有甲木用事七日，乙木二十三日；</td>
+    <td class="plain">地支所藏为「人元」，按月令分日轮值。三命通会这一本给的是另一套日数：寅月艮土（戊土）五日、丙火五日、甲木二十日，卯月甲七日、乙二十三日。它与本插件采用的通行 30 日表（寅月戊7丙7甲16，即 7/7/16；卯月甲10乙20，即 10/20）不是同一套分法；两表各照原样并列，本插件仍按通行表给「第几日谁当权」，不改取格。</td>
+    <td><span class="chip">bazi-yueling-siquan</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7529.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-poge-sanfang</td>
+    <td>《紫微斗数全书·卷三·谈星要论》</td>
+    <td class="quote">及命宫星辰庙旺，三方有恶星守照破格。</td>
+    <td class="plain">命宫主星虽庙旺，三方四正见恶星也会破格。</td>
+    <td><span class="chip">ziwei-poge</span><span class="chip">格局·紫府同宫</span><span class="chip">格局·紫府朝垣</span><span class="chip">格局·君臣庆会</span><span class="chip">格局·极向离明</span><span class="chip">格局·巨日同宫</span><span class="chip">格局·日月对照</span><span class="chip">格局·左右夹命</span><span class="chip">格局·双禄朝垣</span><span class="chip">格局·府相朝垣</span><span class="chip">格局·双禄交流</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-poge-ruge</td>
+    <td>《紫微斗数全书·卷三·论人命入格》</td>
+    <td class="quote">若居陷地又加杀化忌，为下格之命，不以入格而论也。</td>
+    <td class="plain">星落陷地又见煞星、化忌，就不按入格来论。</td>
+    <td><span class="chip">ziwei-poge</span><span class="chip">格局·紫府同宫</span><span class="chip">格局·紫府朝垣</span><span class="chip">格局·君臣庆会</span><span class="chip">格局·极向离明</span><span class="chip">格局·七杀朝斗</span><span class="chip">格局·英星入庙</span><span class="chip">格局·石中隐玉</span><span class="chip">格局·府相朝垣</span><span class="chip">格局·月朗天门</span><span class="chip">格局·日出扶桑</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-poge-huaxiong</td>
+    <td>《紫微斗数全书·卷三·论人命入格》</td>
+    <td class="quote">又入格不化吉而化凶，只以本命吉凶多寡而断之。</td>
+    <td class="plain">入了格却化吉少、化凶多，只能按原局吉凶的多寡来断。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-shiyin</td>
+    <td>《紫微斗数全书·卷一·增补太微赋》</td>
+    <td class="quote">巨门子午二宫逢，身命逢之必贵荣，更得三方科禄照，石中隐玉是丰隆。</td>
+    <td class="plain">巨门在子午守命，要三方有化科、化禄照会，石中隐玉才成格。</td>
+    <td><span class="chip">格局·石中隐玉</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-jiju-poge</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">因甲禄到寅卯宫有擎羊破格耳。</td>
+    <td class="plain">巨机本可取贵，但擎羊落宫会把格局破掉。</td>
+    <td><span class="chip">格局·巨日同宫</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-riyue-jia</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">加羊陀冲守，宜僧。</td>
+    <td class="plain">日月夹命再加羊陀冲守，吉意大减。</td>
+    <td><span class="chip">格局·日月夹命</span><span class="chip">格局·日月对照</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-changqu</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">昌曲陷宫凶杀破虚誉之隆  凶杀即羊陀空劫。</td>
+    <td class="plain">昌曲落陷再逢凶杀，名声易成虚誉；这里的凶杀指羊陀空劫。</td>
+    <td><span class="chip">格局·昌曲夹命</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-kuiyue</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">魁钺重逢杀凑痼疾尤多  杀乃羊铃空劫。</td>
+    <td class="plain">魁钺夹命再凑煞星，贵气减等；煞指羊铃空劫。</td>
+    <td><span class="chip">格局·魁钺夹命</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-jiyue</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">机月同梁作吏人  命在寅申方论，加吉不论，无吉无杀亦是平常人，凶杀空劫化忌为下格。</td>
+    <td class="plain">机月同梁要在寅申论；无吉无杀只是平常，逢凶杀空劫化忌则降为下格。</td>
+    <td><span class="chip">格局·机月同梁</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-tanwu</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">贪武申宫为下格  化忌方论。</td>
+    <td class="plain">武贪在申本可论格，但带化忌才作下格论。</td>
+    <td><span class="chip">格局·武贪同行</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-huotan</td>
+    <td>《紫微斗数全书·卷一·增补太微赋》</td>
+    <td class="quote">火遇贪狼照命宫，封侯食禄是英雄，三方倘若无凶杀，到老应知福寿隆。</td>
+    <td class="plain">火贪照命本是贵格，前提是三方没有凶杀；见煞则破。</td>
+    <td><span class="chip">格局·火贪铃贪</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-luma</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问天马星所主若何》</td>
+    <td class="quote">如与禄存同宫，谓之禄马交驰，又曰折鞭马</td>
+    <td class="plain">禄存与天马同宫才叫禄马交驰。</td>
+    <td><span class="chip">格局·禄马交驰</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-luma-kong</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问天马星所主若何》</td>
+    <td class="quote">逢空亡谓之死马、亡马</td>
+    <td class="plain">禄马逢空亡，称死马、亡马，奔走之力被劫。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-luma-tuo</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问天马星所主若何》</td>
+    <td class="quote">遇陀罗谓之折足马</td>
+    <td class="plain">禄马遇陀罗，称折足马，动而受阻。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-sihua-ji</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问化忌星所主若何》</td>
+    <td class="quote">如会紫府、昌曲、左右、科权禄，与忌同宫又兼四杀共处，即发财亦不佳，功名亦不成就。</td>
+    <td class="plain">吉星与化忌、四杀同处，即使发财也不好，功名难成。</td>
+    <td><span class="chip">ziwei-sihua</span><span class="chip">格局·三奇嘉会</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-sihua-lu</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问化禄星所主若何》</td>
+    <td class="quote">禄为福德之神。守身命官禄之位，科权相逢必作大臣之职。</td>
+    <td class="plain">化禄主福，与科权相会可论官职。</td>
+    <td><span class="chip">ziwei-sihua</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-sihua-quan</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问化权星所主若何》</td>
+    <td class="quote">权星掌判生杀之神。守身命科禄相逢出将入相。</td>
+    <td class="plain">化权主掌判，与科禄相会主权位。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-sihua-ke</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问化科星所主若何》</td>
+    <td class="quote">科星上界应试，主掌文墨之星。守身命权禄相逢宰臣之贵。</td>
+    <td class="plain">化科主文墨名声，与权禄相会主贵。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-sanfang</td>
+    <td>《紫微斗数全书·卷三·谈星要论》</td>
+    <td class="quote">三看迁移财帛官禄三方星辰刑冲克破。</td>
+    <td class="plain">第三步就看迁移、财帛、官禄这组三方有没有刑冲克破。</td>
+    <td><span class="chip">ziwei-sanfang</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-shenming</td>
+    <td>《紫微斗数全书·卷三·谈星要论》</td>
+    <td class="quote">看身安命禄马不落空亡天空截空最紧，旬空次之。</td>
+    <td class="plain">看身命先看禄马有没有落空亡、天空、截空。</td>
+    <td><span class="chip">ziwei-shengong</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-daxian</td>
+    <td>《紫微斗数全书·卷三·论大限十年祸福何如》</td>
+    <td class="quote">如宫分星缠全吉庙旺得地，无擎羊陀罗火铃空劫者，主十年安静，人财全美。</td>
+    <td class="plain">大限宫吉星庙旺且不见羊陀火铃空劫，十年较安稳。</td>
+    <td><span class="chip">ziwei-daxian</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-miaowang</td>
+    <td>《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</td>
+    <td class="quote">天机 庙子午 旺辰酉 陷丑未</td>
+    <td class="plain">天机的庙旺陷地：子午庙、辰酉旺、丑未陷。</td>
+    <td><span class="chip">ziwei-miaowang</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zw-kongjie</td>
+    <td>《紫微斗数全书·卷一·诸星问答论·问天空地劫所主若何》</td>
+    <td class="quote">二星守身命，遇吉则吉，遇凶则凶。如四杀冲照，轻者下贱，重者六畜之命。</td>
+    <td class="plain">空劫守身命，吉凶随会照而定；再逢四杀冲照则加重。</td>
+    <td><span class="chip">ziwei-kongjie</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr></tbody>
+</table></div>
+
+<h2>知识卡 → 出处</h2>
+<div class="wrap"><table>
+<thead><tr><th>知识卡</th><th>体系</th><th>状态</th><th>出处 / 说明</th></tr></thead>
+<tbody><tr>
+    <td class="id">bazi-yueling-siquan</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7529.html" target="_blank" rel="noreferrer noopener">《三命通会·卷二·论人元司事》</a></td>
+  </tr><tr>
+    <td class="id">bazi-tonggen-tougan</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>滴天髓·通神论<div class="muted">原文为「天干得一比肩，不如得支中一墓库」一路的取象，未定位到单一整句</div></td>
+  </tr><tr>
+    <td class="id">bazi-wangxiang</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>五行大义·旺相休囚死<div class="muted">通行五行旺衰说，未见可照录的单条原文</div></td>
+  </tr><tr>
+    <td class="id">bazi-shensha</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>三命通会·神煞篇<div class="muted">神煞散见诸卷，未定位到单一条文</div></td>
+  </tr><tr>
+    <td class="id">bazi-geju</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53628.html" target="_blank" rel="noreferrer noopener">《子平真诠·八、论用神》</a></td>
+  </tr><tr>
+    <td class="id">bazi-tiaohou</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>穷通宝鉴·调候用神<div class="muted">调候表按日干月令分散，未定位到单一条文</div></td>
+  </tr><tr>
+    <td class="id">bazi-suiyun</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7539.html" target="_blank" rel="noreferrer noopener">《三命通会·卷二·总论岁运》</a></td>
+  </tr><tr>
+    <td class="id">bazi-liuqin</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>子平真诠 / 滴天髓·六亲<div class="muted">星宫同参为两书通义，未定位到单一条文</div></td>
+  </tr><tr>
+    <td class="id">bazi-kongwang</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>渊海子平·旬空<div class="muted">旬空出空为通行说，未定位到单一条文</div></td>
+  </tr><tr>
+    <td class="id">bazi-xingchong</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>三命通会·论刑冲合害<div class="muted">刑冲合害散见诸卷，未定位到单一条文</div></td>
+  </tr><tr>
+    <td class="id">bazi-sanming-duizhao</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53651.html" target="_blank" rel="noreferrer noopener">《子平真诠·三十一、论正官》</a><br><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7599.html" target="_blank" rel="noreferrer noopener">《三命通会·卷五·官煞去留杂论》</a></td>
+  </tr><tr>
+    <td class="id">bazi-geju-chengbai</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53629.html" target="_blank" rel="noreferrer noopener">《子平真诠·九、论用神成败救应》</a></td>
+  </tr><tr>
+    <td class="id">bazi-huagi-bianhua</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53630.html" target="_blank" rel="noreferrer noopener">《子平真诠·十、论用神变化》</a></td>
+  </tr><tr>
+    <td class="id">bazi-zaji-quyong</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53636.html" target="_blank" rel="noreferrer noopener">《子平真诠·十六、论杂气如何取用》</a></td>
+  </tr><tr>
+    <td class="id">bazi-zhuanwang-yuanwen</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7630.html" target="_blank" rel="noreferrer noopener">《三命通会·卷六·曲直》</a><br><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7631.html" target="_blank" rel="noreferrer noopener">《三命通会·卷六·炎上》</a><br><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7632.html" target="_blank" rel="noreferrer noopener">《三命通会·卷六·从革》</a><br><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7633.html" target="_blank" rel="noreferrer noopener">《三命通会·卷六·润下》</a><br><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7634.html" target="_blank" rel="noreferrer noopener">《三命通会·卷六·稼穑》</a></td>
+  </tr><tr>
+    <td class="id">bazi-congge-yuanwen</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7598.html" target="_blank" rel="noreferrer noopener">《三命通会·卷五·弃命从煞》</a><br><a href="https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7652.html" target="_blank" rel="noreferrer noopener">《三命通会·卷六·弃命从财》</a></td>
+  </tr><tr>
+    <td class="id">bazi-tongguan</td>
+    <td>八字</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" target="_blank" rel="noreferrer noopener">《滴天髓·通神论·通关》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-sanfang</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷三·谈星要论》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-poge</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷三·论人命入格》</a><br><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷三·谈星要论》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-sihua</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷一·诸星问答论·问化禄星所主若何》</a><br><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷一·诸星问答论·问化忌星所主若何》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-miaowang</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷三·论诸星同垣各司所宜分别富贵贫贱夭寿》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-daxian</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷三·论大限十年祸福何如》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-shengong</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷三" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷三·谈星要论》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-kongjie</td>
+    <td>紫微</td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/紫微斗數全書/卷一" target="_blank" rel="noreferrer noopener">《紫微斗数全书·卷一·诸星问答论·问天空地劫所主若何》</a></td>
+  </tr><tr>
+    <td class="id">ziwei-feixing</td>
+    <td>紫微</td>
+    <td><span class="st general">通行说</span></td>
+    <td>紫微斗数全书 / 飞星派·四化篇<div class="muted">宫干飞化属飞星派传法，非《全书》单条原文</div></td>
+  </tr><tr>
+    <td class="id">ziwei-sanfang-fei</td>
+    <td>紫微</td>
+    <td><span class="st general">通行说</span></td>
+    <td>紫微斗数全书 / 飞星派·四化篇<div class="muted">三方四正同飞属飞星派读法，未定位到单条原文</div></td>
+  </tr><tr>
+    <td class="id">ziwei-jichuanji</td>
+    <td>紫微</td>
+    <td><span class="st general">通行说</span></td>
+    <td>紫微斗数全书 / 飞星派·四化篇<div class="muted">忌转忌串连属飞星派读法，未定位到单条原文</div></td>
+  </tr><tr>
+    <td class="id">liuyao-yongshen</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗 / 增删卜易·用神章、伏神章<div class="muted">原文待录入；当前按通行用神法实现</div></td>
+  </tr><tr>
+    <td class="id">liuyao-wangshuai</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗·月建日辰章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-dongbian</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗 / 增删卜易·动变章、进神退神<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-fushen</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗 / 增删卜易·伏神章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-yongshen-shuai</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>增删卜易 / 卜筮正宗·月建章、日辰章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-quanggu-shuai</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>增删卜易 / 卜筮正宗·六爻旺衰论<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-yingqi</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗 / 增删卜易·应期章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-liushen</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗·六神章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-liuchong</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗 / 增删卜易·六冲章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-liuhe</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>卜筮正宗·六合章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-fanyin</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>增删卜易 / 卜筮正宗·反吟伏吟篇<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-fuyin</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>增删卜易 / 卜筮正宗·伏吟篇<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-jintui</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>增删卜易·进神退神章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">liuyao-jintui-yong</td>
+    <td>六爻</td>
+    <td><span class="st general">通行说</span></td>
+    <td>增删卜易·进神退神章、用神章<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">meihua-tiyong</td>
+    <td>梅花</td>
+    <td><span class="st general">通行说</span></td>
+    <td>梅花易数·体用篇<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">daliuren-sike</td>
+    <td>大六壬</td>
+    <td><span class="st general">通行说</span></td>
+    <td>大六壬大全·九宗门取传法<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">qimen-yinyang</td>
+    <td>奇门</td>
+    <td><span class="st general">通行说</span></td>
+    <td>烟波钓叟歌 / 奇门遁甲统宗·阴阳遁与拆补<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">qimen-jixing</td>
+    <td>奇门</td>
+    <td><span class="st general">通行说</span></td>
+    <td>烟波钓叟歌 / 奇门遁甲统宗·刑格注<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">qimen-rumu</td>
+    <td>奇门</td>
+    <td><span class="st general">通行说</span></td>
+    <td>奇门遁甲统宗 / 五行大义·三奇入墓条<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">qimen-wangshuai</td>
+    <td>奇门</td>
+    <td><span class="st general">通行说</span></td>
+    <td>奇门遁甲统宗 / 五行大义·门星旺衰条<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">qimen-wangshuai-yong</td>
+    <td>奇门</td>
+    <td><span class="st general">通行说</span></td>
+    <td>奇门遁甲统宗 / 烟波钓叟歌·门宫生克注<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">qimen-gan-shengke</td>
+    <td>奇门</td>
+    <td><span class="st general">通行说</span></td>
+    <td>奇门遁甲统宗 / 烟波钓叟歌·干宫生克条<div class="muted">原文待录入</div></td>
+  </tr><tr>
+    <td class="id">tarot-orientation</td>
+    <td>塔罗</td>
+    <td><span class="st general">通行说</span></td>
+    <td>韦特塔罗·逆位读法<div class="muted">韦特体系无中文古籍原文，逆位读法属近代流派</div></td>
+  </tr><tr>
+    <td class="id">bazi-dayun-jiaoqi</td>
+    <td>八字</td>
+    <td><span class="st general">通行说</span></td>
+    <td>渊海子平·起运法<div class="muted">三日折一年为通行起运法，未定位到单一条文</div></td>
+  </tr><tr>
+    <td class="id">liuyao-yingqi-exact</td>
+    <td>六爻</td>
+    <td><span class="st todo">待补</span></td>
+    <td>卜筮正宗·应期章<div class="muted">逐条应期尚未实现，等 20+ 条有应验日期的卦例</div></td>
+  </tr></tbody>
+</table></div>
+<p class="muted">说明：标「通行说」的条目，本插件按通行取法实现，但尚未定位到可逐字核验的单一条文；标「待补」的条目尚未完成实现或录入。两者都不算已核验引文。</p>
+</main></body></html>

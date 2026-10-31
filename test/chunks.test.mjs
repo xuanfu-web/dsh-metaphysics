@@ -68,16 +68,16 @@ const surface = entryReg.factory(requireStub);
 ok('入口 factory 返回 apply', typeof surface.apply === 'function');
 
 const cases = {
-  bazi: { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'female', longitude: 116.4, shadow: true, trace: true, verifyPast: 6, withInterpret: true, question: 'r', direction: 'career' },
-  ziwei: { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', shadow: true, trace: true, withInterpret: true },
+  bazi: { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'female', longitude: 116.4, shadow: true, trace: true, verifyPast: 6, cross: true, withInterpret: true, question: 'r', direction: 'career' },
+  ziwei: { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', shadow: true, trace: true, cross: true, withInterpret: true },
   trend: { system: 'trend', datetime: '1990-05-12T14:30', gender: 'female' },
   hepan: { system: 'hepan', datetime: '1990-05-12T14:30', gender: 'female', partner: { datetime: '1992-08-15T10:00', gender: 'female', trueSolar: true } },
   name: { system: 'name', action: 'evaluate', surname: '张', givenName: '三', datetime: '1990-05-12T14:30', gender: 'female' },
   fengshui: { system: 'fengshui', action: 'natal', datetime: '1990-05-12T14:30', gender: 'female' },
   liuyao: { system: 'liuyao', lines: [9, 7, 8, 8, 7, 6], question: 'x', shadow: true, trace: true, withInterpret: true, direction: 'career' },
   meihua: { system: 'meihua', datetime: '2026-10-31T12:00', question: 'x', withInterpret: true },
-  qimen: { system: 'qimen', datetime: '2026-10-31T12:00', question: 'x', withInterpret: true },
-  daliuren: { system: 'daliuren', datetime: '2026-10-31T12:00', question: 'x', withInterpret: true },
+  qimen: { system: 'qimen', datetime: '2026-10-31T12:00', question: 'x', trace: true, direction: 'career', withInterpret: true },
+  daliuren: { system: 'daliuren', datetime: '2026-10-31T12:00', question: 'x', trace: true, withInterpret: true },
   tarot: { system: 'tarot', count: 3, question: 'x', withInterpret: true, seed: 42 },
   almanac: { system: 'almanac', datetime: '2026-10-31T12:00' },
   convert: { system: 'convert', mode: 'solar2lunar', datetime: '2026-10-31T12:00' },
@@ -103,12 +103,16 @@ for (const [tab, args] of Object.entries(cases)) {
   }
 }
 ok('19 个体系的分块引擎与源码逐字节一致', same === 19, `一致 ${same}/19${diffs.length ? '，差异 ' + diffs.join('；') : ''}`);
-ok('按需拉取对应分块', requested.includes('./client.chart.js') && requested.includes('./client.mbti.js'), requested.join(','));
+// 合盘有八字/紫微两条路径，紫微合盘也要在 hepan 分块里复算一致
+await sandbox.window.__mpEnsureEngine('hepan');
+const hpZiwei = { system: 'hepan', chart: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', partner: { datetime: '1992-08-15T10:00', gender: 'female', trueSolar: true } };
+ok('紫微合盘在 hepan 分块内可复算', JSON.stringify(srcEngine.compute(hpZiwei)) === JSON.stringify(sandbox.window.Engine.compute(hpZiwei)));
+ok('按需拉取对应分块', requested.includes('./client.bazi.js') && requested.includes('./client.mbti.js'), requested.join(','));
 ok('无 interpret 的分块不会抹掉 DIRECTIONS', Array.isArray(sandbox.window.Engine.DIRECTIONS) && sandbox.window.Engine.DIRECTIONS.length === 7,
   String(sandbox.window.Engine.DIRECTIONS && sandbox.window.Engine.DIRECTIONS.length));
 
-// 切回 chart：上一次加载的是 mbti 分块，入口必须把 chart 的 Engine 重新合并回来
+// 切回紫微分块：上一次加载的是 mbti，入口必须把紫微分块的 Engine 重新合并回来
 await sandbox.window.__mpEnsureEngine('ziwei');
 const z = sandbox.window.Engine.compute(cases.ziwei);
 ok('切换分块后仍能排紫微', z && z.system === 'ziwei' && z.palaces && z.palaces.length === 12);
-ok('分块缓存不重复拉取', requested.filter((x) => x === './client.chart.js').length === 1, requested.join(','));
+ok('分块缓存不重复拉取', requested.filter((x) => x === './client.ziwei.js').length === 1, requested.join(','));

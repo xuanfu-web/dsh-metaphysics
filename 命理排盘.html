@@ -613,7 +613,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：107 个测试文件 / 4925 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：109 个测试文件 / 5030 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -3958,6 +3958,8 @@ const CLASSICS = [
     scene: '格局',
     tags: ['劫财', '阳刃'],
     quote: '阳刃者，劫我正财之神，乃正财之七煞也。禄前一位，惟五阳有之，故为阳刃。不曰劫而曰刃，劫之甚也。刃宜伏制，官煞皆宜，财印相随，尤为贵显。',
+    verifiedQuote: '阳刃者，劫我正财之神，乃正财之七煞也。禄前一位，惟五阳有之',
+    variantNote: '典藏网此页把「故为阳刃」刻作「故为旭刃」，与通行本异文；前段仍可逐字核验',
     plain: '阳刃是劫财之极（只有五阳干有），宜用官煞制伏；财印相随而不相碍，格局更显。',
     url: 'https://www.diancang.xyz/xuanxuewushu/zipingzhenquan/53663.html',
   },
@@ -7381,7 +7383,10 @@ function buildZiwei(input) {
     good: chart.patterns.filter((p) => p.tone === 'good').map((p) => p.name),
     neutral: chart.patterns.filter((p) => p.tone === 'neutral').map((p) => p.name),
     bad: chart.patterns.filter((p) => p.tone === 'bad').map((p) => p.name),
-    note: '格局只描述结构，不作吉凶断语；同一命盘可并存吉格、中性结构与忌格',
+    broken: chart.patterns.filter((p) => p.status === 'broken').map((p) => p.name),
+    formed: chart.patterns.filter((p) => p.status === 'formed').map((p) => p.name),
+    notGraded: chart.patterns.filter((p) => p.status === 'n/a').map((p) => p.name),
+    note: '格局只描述结构，不作吉凶断语；同一命盘可并存吉格、中性结构与忌格。破格只判吉格是否被三方四正的煞忌空劫冲破，忌格不另判破格',
   };
   return chart;
 }
@@ -7524,12 +7529,105 @@ function detectPatterns(chart) {
   }
   if (soulIdx === 0 && inSoul('贪狼')) add('泛水桃花', '贪狼在子守命');
 
-  // 同名的结构只保留第一条（evidence 已足够说明），并标注倾向
+  // 同名的结构只保留第一条（evidence 已足够说明），并标注倾向与破格状态
   const seen = new Set();
+  const nearMeta = new Map();
+  for (const b of sanfang) {
+    for (const s of (palaceAt(chart, b)?.stars ?? [])) {
+      if (!nearMeta.has(s.name)) nearMeta.set(s.name, { branch: BRANCHES[b], mutagen: s.mutagen || null });
+    }
+  }
+  const nearNames = [...nearMeta.keys()];
+  const hasAny = (list) => list.filter((n) => nearMeta.has(n));
+  const withBranch = (names) => names.map((n) => `${n}（${nearMeta.get(n).branch}）`).join('、');
+  const jiNames = nearNames.filter((n) => nearMeta.get(n).mutagen === '忌');
+  const breakOf = (name) => {
+    const rule = PATTERN_BREAK_RULES[name];
+    if (!rule) return { status: 'n/a', breaks: [], breakRule: '未收录破格条件', citationIds: [] };
+    if (rule.kind) return { status: 'n/a', breaks: [], breakRule: rule.note, citationIds: [] };
+    const hits = [];
+    for (const token of rule.breakers || []) {
+      if (token === 'sha') {
+        const names = hasAny(BREAK_SHA).filter((n) => !(rule.exclude || []).includes(n));
+        if (names.length) hits.push(`三方见煞星 ${withBranch(names)}`);
+      } else if (token === 'kong') {
+        const names = hasAny(BREAK_KONG);
+        if (names.length) hits.push(`三方见空劫 ${withBranch(names)}`);
+      } else if (token === 'ji') {
+        if (jiNames.length) hits.push(`三方见化忌 ${withBranch(jiNames)}`);
+      } else if (token === 'yangTuo') {
+        const names = hasAny(['擎羊', '陀罗']);
+        if (names.length) hits.push(`羊陀冲守 ${withBranch(names)}`);
+      } else if (token === 'tuo') {
+        if (nearMeta.has('陀罗')) hits.push(`陀罗同会（${nearMeta.get('陀罗').branch}）`);
+      } else if (token === 'noKelu') {
+        const hasKe = nearNames.some((n) => nearMeta.get(n).mutagen === '科');
+        const hasLu = nearNames.some((n) => nearMeta.get(n).mutagen === '禄') || nearMeta.has('禄存');
+        if (!hasKe && !hasLu) hits.push('三方无化科、化禄或禄存照');
+      } else if (token.startsWith('starJi:')) {
+        const star = token.slice(7);
+        const meta = nearMeta.get(star);
+        if (meta?.mutagen === '忌') hits.push(`${star}化忌（${meta.branch}）`);
+      }
+    }
+    return {
+      status: hits.length ? 'broken' : 'formed',
+      breaks: hits,
+      breakRule: rule.rule || '',
+      citationIds: rule.citationIds || [],
+    };
+  };
   return out
     .filter((p) => (seen.has(p.name) ? false : (seen.add(p.name), true)))
-    .map((p) => ({ ...p, tone: PATTERN_TONE[p.name] || 'neutral' }));
+    .map((p) => ({ ...p, tone: PATTERN_TONE[p.name] || 'neutral', ...breakOf(p.name) }));
 }
+
+const BREAK_SHA = ['擎羊', '陀罗', '火星', '铃星'];
+const BREAK_KONG = ['地空', '地劫'];
+const GENERIC_BREAK = '命宫三方四正见煞星（擎羊、陀罗、火星、铃星）、地空地劫或化忌，吉格减色乃至不成格。';
+const STRUCTURAL_NOTE = '这是结构标签，不是吉格，不判成格/破格。';
+const INAUSPICIOUS_NOTE = '忌格本身就是风险结构，不再判「破格」；轻重与应期另看大限流年。';
+
+// 34 条格局的破格条件。breakers 是可机械复算的星位/四化判据：
+//   sha 三方煞星 / kong 三方空劫 / ji 三方化忌 / yangTuo 羊陀 / tuo 陀罗 /
+//   noKelu 三方无科禄 / starJi:<星> 指定星化忌。
+// 引文见 engine/citations.js，原文子串由 test/citations.test.mjs 核验。
+const PATTERN_BREAK_RULES = {
+  紫府同宫: { breakers: ['kong', 'starJi:紫微', 'starJi:天府'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  紫府朝垣: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  君臣庆会: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  极向离明: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  七杀朝斗: { breakers: ['kong', 'starJi:七杀'], rule: '七杀在子午守命而见空劫或七杀化忌，杀曜之威不聚。', citationIds: ['zw-poge-ruge'] },
+  英星入庙: { breakers: ['kong', 'starJi:破军'], rule: '破军在子午守命而见空劫或破军化忌，英星入庙减色。', citationIds: ['zw-poge-ruge'] },
+  石中隐玉: { breakers: ['noKelu', 'kong', 'starJi:巨门'], rule: '三方无化科、化禄或禄存照，或见空劫、巨门化忌，则石中隐玉不成立。', citationIds: ['zw-shiyin', 'zw-poge-ruge'] },
+  巨日同宫: { breakers: ['sha', 'kong', 'ji'], rule: '巨日同宫而三方见擎羊等煞星、空劫或化忌，光明被掩。', citationIds: ['zw-poge-sanfang', 'zw-jiju-poge'] },
+  日月夹命: { breakers: ['yangTuo', 'starJi:太阳', 'starJi:太阴'], rule: '羊陀冲守，或日月任一带化忌，夹局减色。', citationIds: ['zw-riyue-jia'] },
+  日月对照: { breakers: ['sha', 'kong', 'starJi:太阳', 'starJi:太阴'], rule: '日月对照见煞空，或日月任一带化忌，对照不美。', citationIds: ['zw-riyue-jia', 'zw-poge-sanfang'] },
+  左右夹命: { breakers: ['kong', 'ji'], rule: '命宫三方见空劫或化忌，辅弼之夹被冲。', citationIds: ['zw-poge-sanfang'] },
+  昌曲夹命: { breakers: ['sha', 'kong'], rule: '三方见羊陀火铃空劫，昌曲夹命亦主虚誉。', citationIds: ['zw-changqu'] },
+  魁钺夹命: { breakers: ['sha', 'kong'], rule: '魁钺夹命而三方杀凑，贵气减等。', citationIds: ['zw-kuiyue'] },
+  三奇嘉会: { breakers: ['sha', 'ji'], rule: '三奇同会而兼四杀或化忌，发财功名亦多阻滞。', citationIds: ['zw-sihua-ji'] },
+  双禄朝垣: { breakers: ['kong', 'ji'], rule: '双禄朝垣见空劫或化忌，禄被劫夺。', citationIds: ['zw-poge-sanfang'] },
+  府相朝垣: { breakers: ['sha', 'kong', 'ji'], rule: GENERIC_BREAK, citationIds: ['zw-poge-sanfang', 'zw-poge-ruge'] },
+  禄马交驰: { breakers: ['kong', 'sha'], rule: '禄马逢空为死马、遇陀罗为折足马，见刑杀亦减力。', citationIds: ['zw-luma'] },
+  月朗天门: { breakers: ['kong', 'starJi:太阴'], rule: '太阴在亥守命而见空劫或太阴化忌，月被云遮。', citationIds: ['zw-poge-ruge'] },
+  日出扶桑: { breakers: ['kong', 'starJi:太阳'], rule: '太阳在卯守命而见空劫或太阳化忌，日出扶桑减色。', citationIds: ['zw-poge-ruge'] },
+  机月同梁: { breakers: ['sha', 'kong', 'ji'], rule: '机月同梁遇凶杀、空劫或化忌，则降为下格。', citationIds: ['zw-jiyue'] },
+  武贪同行: { breakers: ['starJi:武曲', 'starJi:贪狼'], rule: '武贪同行须无化忌；任一颗化忌则作下格论。', citationIds: ['zw-tanwu'] },
+  双禄交流: { breakers: ['kong', 'ji'], rule: '双禄交流见空劫或化忌，禄来难守。', citationIds: ['zw-poge-sanfang'] },
+  火贪铃贪: { breakers: ['sha', 'kong', 'starJi:贪狼'], exclude: ['火星', '铃星'], rule: '三方有凶杀或空劫，火贪铃贪不发；贪狼化忌亦减力。', citationIds: ['zw-huotan'] },
+  命无正曜: { kind: 'structural', note: STRUCTURAL_NOTE },
+  杀破狼: { kind: 'structural', note: STRUCTURAL_NOTE },
+  火铃夹命: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  羊陀夹命: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  羊陀夹忌: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  铃昌陀武: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  命里逢空: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  马头带箭: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  天罗地网: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  刑囚夹印: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+  泛水桃花: { kind: 'inauspicious', note: INAUSPICIOUS_NOTE },
+};
 
 const PATTERN_TONE = {
   紫府同宫: 'good', 紫府朝垣: 'good', 君臣庆会: 'good', 极向离明: 'good',
@@ -7854,7 +7952,7 @@ function flowOf(chart, asOf) {
   };
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_TONE, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, enrichLiunian, asOfParts, flowOf };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_BREAK_RULES, PATTERN_TONE, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, enrichLiunian, asOfParts, flowOf };
 })();
 
 __mods.tarot = (function () {
@@ -11357,9 +11455,22 @@ const REL_TEXT = {
 const findPalace = (r, key) => r.palaces.find((p) => p.star === key || p.gate === key || p.god === key || p.palace === key) || null;
 const cell = (p) => `${p.palace}宫（${p.star}·${p.gate}·${p.god}）`;
 
+/** 按询问方向取用神及其落宫；解读与推导链共用这一张表，避免两处各写一份 */
+function qimenYongshen(r, direction) {
+  const dir = YONG_SHEN[direction] ? direction : 'general';
+  const ys = YONG_SHEN[dir];
+  return {
+    direction: dir,
+    label: ys.label,
+    note: ys.note,
+    rows: [...ys.primary, ...ys.secondary].map((key) => ({ key, palace: findPalace(r, key) })),
+  };
+}
+
 function interpretQimen(r, opts = {}) {
   if (!r || r.system !== 'qimen') return null;
-  const dir = YONG_SHEN[opts.direction] ? opts.direction : 'general';
+  const ysInfo = qimenYongshen(r, opts.direction);
+  const dir = ysInfo.direction;
   const ys = YONG_SHEN[dir];
   const sections = [];
   const unresolved = [];
@@ -11395,11 +11506,7 @@ function interpretQimen(r, opts = {}) {
   }
 
   // ③ 用神候选
-  const yongList = [];
-  for (const key of [...ys.primary, ...ys.secondary]) {
-    const p = findPalace(r, key);
-    if (p) yongList.push({ key, palace: p });
-  }
+  const yongList = ysInfo.rows.filter((x) => x.palace);
   if (!yongList.length) unresolved.push(`${ys.label}的用神未上盘`);
   if (yongList.length > 1) unresolved.push(`用神有 ${yongList.length} 个候选（${yongList.map((x) => x.key).join('、')}）`);
   sections.push({
@@ -11509,7 +11616,7 @@ function interpretQimen(r, opts = {}) {
   };
 }
 
-return { interpretQimen };
+return { qimenYongshen, interpretQimen };
 })();
 
 __mods['interpret-data'] = (function () {
@@ -13834,6 +13941,15 @@ const KNOWLEDGE = [
     status: 'settled',
   },
   {
+    id: 'ziwei-poge',
+    system: 'ziwei', dims: ['overall', 'career'],
+    gist: '格局成立不等于落定：三方四正见煞忌空劫，吉格也会破格。',
+    detail: '《紫微斗数全书》论人命入格说「若居陷地又加杀化忌，为下格之命，不以入格而论也」；谈星要论也说「及命宫星辰庙旺，三方有恶星守照破格」。本插件因此把「成格」与「破格」分开判：吉格先按星位成立，再看命宫三方四正是否有擎羊、陀罗、火星、铃星、地空、地劫或化忌；有则标破格并写明是哪颗星落在哪一宫。忌格本身是风险结构，不另判破格。',
+    source: '《紫微斗数全书》卷三·论人命入格、谈星要论',
+    status: 'variant',
+    note: '破格判据本插件统一取「三方四正见煞忌空劫」，未逐格细分煞轻煞重；各派对「入格」宽严亦有异说，故只作结构提示。',
+  },
+  {
     id: 'ziwei-sihua',
     system: 'ziwei', dims: ['overall', 'career'],
     gist: '四化是变化的方向，不是吉凶等级。',
@@ -14146,6 +14262,330 @@ const STATUS_LABEL = {
 };
 
 return { KNOWLEDGE, knowledgeFor, caveatsFor, STATUS_LABEL };
+})();
+
+__mods.citations = (function () {
+// B6 引文索引：把「知识卡 → 书名 / 卷章 / 原文 / 链接」做成一张可核验的表。
+//
+// 两类来源：
+//   ① CLASSICS（engine/classics.js）：八字三书，已有原文、卷章与典藏网链接；
+//   ② CITATIONS（本文件）：紫微斗数全书，原文取自维基文库，链接到卷页。
+//
+// CARD_CITATIONS 给每张知识卡一个去处：
+//   refs    已定位到可核验原文，测试会核验 quote 是否是来源正文的子串；
+//   general 属于通行说 / 尚未定位到单一条文，明确标出why，不冒充原文；
+//   todo    尚未实现或尚未录入。
+// test/citations.test.mjs 会逐条检查，并把索引导出到 docs/citations.html。
+
+const { CLASSICS, CLASSIC_BOOKS } = (__mods.classics || {});
+const { KNOWLEDGE } = (__mods['interpret-knowledge'] || {});
+const { PATTERN_BREAK_RULES } = (__mods.ziwei || {});
+
+const CITATION_BOOKS = {
+  ziwei: {
+    name: '紫微斗数全书',
+    author: '宋·陈抟（传）',
+    base: 'https://zh.wikisource.org/wiki/紫微斗數全書',
+  },
+};
+
+// 紫微原文条目：quote 按维基文库通行本照录，plain 是本站自撰白话。
+const CITATIONS = [
+  {
+    id: 'zw-poge-sanfang',
+    book: 'ziwei',
+    chapter: '卷三·谈星要论',
+    quote: '及命宫星辰庙旺，三方有恶星守照破格。',
+    plain: '命宫主星虽庙旺，三方四正见恶星也会破格。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-poge-ruge',
+    book: 'ziwei',
+    chapter: '卷三·论人命入格',
+    quote: '若居陷地又加杀化忌，为下格之命，不以入格而论也。',
+    plain: '星落陷地又见煞星、化忌，就不按入格来论。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-poge-huaxiong',
+    book: 'ziwei',
+    chapter: '卷三·论人命入格',
+    quote: '又入格不化吉而化凶，只以本命吉凶多寡而断之。',
+    plain: '入了格却化吉少、化凶多，只能按原局吉凶的多寡来断。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-shiyin',
+    book: 'ziwei',
+    chapter: '卷一·增补太微赋',
+    quote: '巨门子午二宫逢，身命逢之必贵荣，更得三方科禄照，石中隐玉是丰隆。',
+    plain: '巨门在子午守命，要三方有化科、化禄照会，石中隐玉才成格。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-jiju-poge',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '因甲禄到寅卯宫有擎羊破格耳。',
+    plain: '巨机本可取贵，但擎羊落宫会把格局破掉。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-riyue-jia',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '加羊陀冲守，宜僧。',
+    plain: '日月夹命再加羊陀冲守，吉意大减。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-changqu',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '昌曲陷宫凶杀破虚誉之隆  凶杀即羊陀空劫。',
+    plain: '昌曲落陷再逢凶杀，名声易成虚誉；这里的凶杀指羊陀空劫。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-kuiyue',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '魁钺重逢杀凑痼疾尤多  杀乃羊铃空劫。',
+    plain: '魁钺夹命再凑煞星，贵气减等；煞指羊铃空劫。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-jiyue',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '机月同梁作吏人  命在寅申方论，加吉不论，无吉无杀亦是平常人，凶杀空劫化忌为下格。',
+    plain: '机月同梁要在寅申论；无吉无杀只是平常，逢凶杀空劫化忌则降为下格。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-tanwu',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '贪武申宫为下格  化忌方论。',
+    plain: '武贪在申本可论格，但带化忌才作下格论。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-huotan',
+    book: 'ziwei',
+    chapter: '卷一·增补太微赋',
+    quote: '火遇贪狼照命宫，封侯食禄是英雄，三方倘若无凶杀，到老应知福寿隆。',
+    plain: '火贪照命本是贵格，前提是三方没有凶杀；见煞则破。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-luma',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问天马星所主若何',
+    quote: '如与禄存同宫，谓之禄马交驰，又曰折鞭马',
+    plain: '禄存与天马同宫才叫禄马交驰。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-luma-kong',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问天马星所主若何',
+    quote: '逢空亡谓之死马、亡马',
+    plain: '禄马逢空亡，称死马、亡马，奔走之力被劫。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-luma-tuo',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问天马星所主若何',
+    quote: '遇陀罗谓之折足马',
+    plain: '禄马遇陀罗，称折足马，动而受阻。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-sihua-ji',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问化忌星所主若何',
+    quote: '如会紫府、昌曲、左右、科权禄，与忌同宫又兼四杀共处，即发财亦不佳，功名亦不成就。',
+    plain: '吉星与化忌、四杀同处，即使发财也不好，功名难成。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-sihua-lu',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问化禄星所主若何',
+    quote: '禄为福德之神。守身命官禄之位，科权相逢必作大臣之职。',
+    plain: '化禄主福，与科权相会可论官职。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-sihua-quan',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问化权星所主若何',
+    quote: '权星掌判生杀之神。守身命科禄相逢出将入相。',
+    plain: '化权主掌判，与科禄相会主权位。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-sihua-ke',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问化科星所主若何',
+    quote: '科星上界应试，主掌文墨之星。守身命权禄相逢宰臣之贵。',
+    plain: '化科主文墨名声，与权禄相会主贵。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-sanfang',
+    book: 'ziwei',
+    chapter: '卷三·谈星要论',
+    quote: '三看迁移财帛官禄三方星辰刑冲克破。',
+    plain: '第三步就看迁移、财帛、官禄这组三方有没有刑冲克破。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-shenming',
+    book: 'ziwei',
+    chapter: '卷三·谈星要论',
+    quote: '看身安命禄马不落空亡天空截空最紧，旬空次之。',
+    plain: '看身命先看禄马有没有落空亡、天空、截空。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-daxian',
+    book: 'ziwei',
+    chapter: '卷三·论大限十年祸福何如',
+    quote: '如宫分星缠全吉庙旺得地，无擎羊陀罗火铃空劫者，主十年安静，人财全美。',
+    plain: '大限宫吉星庙旺且不见羊陀火铃空劫，十年较安稳。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-miaowang',
+    book: 'ziwei',
+    chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
+    quote: '天机 庙子午 旺辰酉 陷丑未',
+    plain: '天机的庙旺陷地：子午庙、辰酉旺、丑未陷。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-kongjie',
+    book: 'ziwei',
+    chapter: '卷一·诸星问答论·问天空地劫所主若何',
+    quote: '二星守身命，遇吉则吉，遇凶则凶。如四杀冲照，轻者下贱，重者六畜之命。',
+    plain: '空劫守身命，吉凶随会照而定；再逢四杀冲照则加重。',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+];
+
+const BOOK_OF = {
+  ...Object.fromEntries(Object.entries(CLASSIC_BOOKS).map(([k, v]) => [k, v])),
+  ...CITATION_BOOKS,
+};
+
+function citationOf(id) {
+  const hit = CITATIONS.find((c) => c.id === id) || CLASSICS.find((c) => c.id === id);
+  if (!hit) return null;
+  const book = BOOK_OF[hit.book];
+  return {
+    ...hit,
+    bookName: book ? book.name : hit.book,
+    bookAuthor: book ? book.author : '',
+  };
+}
+
+// 每张知识卡的去处。refs 为已定位原文；general / todo 必须写 reason，不冒充引文。
+const CARD_CITATIONS = {
+  // ── 八字：已定位（子平真诠 / 滴天髓 / 三命通会）
+  'bazi-yueling-siquan': { refs: ['smt-renyuan'] },
+  'bazi-geju': { refs: ['zp-yongshen'] },
+  'bazi-suiyun': { refs: ['smt-suiyun'] },
+  'bazi-sanming-duizhao': { refs: ['zp-zhenguan', 'smt-guansha-liu'] },
+  'bazi-geju-chengbai': { refs: ['zp-chengbai'] },
+  'bazi-huagi-bianhua': { refs: ['zp-bianhua'] },
+  'bazi-zaji-quyong': { refs: ['zp-zaji'] },
+  'bazi-zhuanwang-yuanwen': { refs: ['smt-quzhi', 'smt-yanshang', 'smt-congge', 'smt-runxia', 'smt-jiasi'] },
+  'bazi-congge-yuanwen': { refs: ['smt-congsha', 'smt-congcai'] },
+  'bazi-tongguan': { refs: ['dt-tongguan'] },
+  // ── 八字：通行说，暂未定位单一条文
+  'bazi-tonggen-tougan': { status: 'general', book: '滴天髓', chapter: '通神论', reason: '原文为「天干得一比肩，不如得支中一墓库」一路的取象，未定位到单一整句' },
+  'bazi-wangxiang': { status: 'general', book: '五行大义', chapter: '旺相休囚死', reason: '通行五行旺衰说，未见可照录的单条原文' },
+  'bazi-shensha': { status: 'general', book: '三命通会', chapter: '神煞篇', reason: '神煞散见诸卷，未定位到单一条文' },
+  'bazi-tiaohou': { status: 'general', book: '穷通宝鉴', chapter: '调候用神', reason: '调候表按日干月令分散，未定位到单一条文' },
+  'bazi-liuqin': { status: 'general', book: '子平真诠 / 滴天髓', chapter: '六亲', reason: '星宫同参为两书通义，未定位到单一条文' },
+  'bazi-kongwang': { status: 'general', book: '渊海子平', chapter: '旬空', reason: '旬空出空为通行说，未定位到单一条文' },
+  'bazi-xingchong': { status: 'general', book: '三命通会', chapter: '论刑冲合害', reason: '刑冲合害散见诸卷，未定位到单一条文' },
+  'bazi-dayun-jiaoqi': { status: 'general', book: '渊海子平', chapter: '起运法', reason: '三日折一年为通行起运法，未定位到单一条文' },
+  // ── 紫微：已定位（紫微斗数全书）
+  'ziwei-sanfang': { refs: ['zw-sanfang'] },
+  'ziwei-sihua': { refs: ['zw-sihua-lu', 'zw-sihua-ji'] },
+  'ziwei-miaowang': { refs: ['zw-miaowang'] },
+  'ziwei-daxian': { refs: ['zw-daxian'] },
+  'ziwei-shengong': { refs: ['zw-shenming'] },
+  'ziwei-kongjie': { refs: ['zw-kongjie'] },
+  'ziwei-poge': { refs: ['zw-poge-ruge', 'zw-poge-sanfang'] },
+  // ── 紫微：飞星派读法不在《全书》原文内
+  'ziwei-feixing': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '宫干飞化属飞星派传法，非《全书》单条原文' },
+  'ziwei-sanfang-fei': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '三方四正同飞属飞星派读法，未定位到单条原文' },
+  'ziwei-jichuanji': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '忌转忌串连属飞星派读法，未定位到单条原文' },
+  // ── 六爻：条目未录入原文，先标通行说
+  'liuyao-yongshen': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '用神章、伏神章', reason: '原文待录入；当前按通行用神法实现' },
+  'liuyao-wangshuai': { status: 'general', book: '卜筮正宗', chapter: '月建日辰章', reason: '原文待录入' },
+  'liuyao-dongbian': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '动变章、进神退神', reason: '原文待录入' },
+  'liuyao-fushen': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '伏神章', reason: '原文待录入' },
+  'liuyao-yongshen-shuai': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '月建章、日辰章', reason: '原文待录入' },
+  'liuyao-quanggu-shuai': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '六爻旺衰论', reason: '原文待录入' },
+  'liuyao-yingqi': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '应期章', reason: '原文待录入' },
+  'liuyao-liushen': { status: 'general', book: '卜筮正宗', chapter: '六神章', reason: '原文待录入' },
+  'liuyao-liuchong': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '六冲章', reason: '原文待录入' },
+  'liuyao-liuhe': { status: 'general', book: '卜筮正宗', chapter: '六合章', reason: '原文待录入' },
+  'liuyao-fanyin': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '反吟伏吟篇', reason: '原文待录入' },
+  'liuyao-fuyin': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '伏吟篇', reason: '原文待录入' },
+  'liuyao-jintui': { status: 'general', book: '增删卜易', chapter: '进神退神章', reason: '原文待录入' },
+  'liuyao-jintui-yong': { status: 'general', book: '增删卜易', chapter: '进神退神章、用神章', reason: '原文待录入' },
+  'liuyao-yingqi-exact': { status: 'todo', book: '卜筮正宗', chapter: '应期章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
+  // ── 其他体系：原文待录入
+  'meihua-tiyong': { status: 'general', book: '梅花易数', chapter: '体用篇', reason: '原文待录入' },
+  'daliuren-sike': { status: 'general', book: '大六壬大全', chapter: '九宗门取传法', reason: '原文待录入' },
+  'qimen-yinyang': { status: 'general', book: '烟波钓叟歌 / 奇门遁甲统宗', chapter: '阴阳遁与拆补', reason: '原文待录入' },
+  'qimen-jixing': { status: 'general', book: '烟波钓叟歌 / 奇门遁甲统宗', chapter: '刑格注', reason: '原文待录入' },
+  'qimen-rumu': { status: 'general', book: '奇门遁甲统宗 / 五行大义', chapter: '三奇入墓条', reason: '原文待录入' },
+  'qimen-wangshuai': { status: 'general', book: '奇门遁甲统宗 / 五行大义', chapter: '门星旺衰条', reason: '原文待录入' },
+  'qimen-wangshuai-yong': { status: 'general', book: '奇门遁甲统宗 / 烟波钓叟歌', chapter: '门宫生克注', reason: '原文待录入' },
+  'qimen-gan-shengke': { status: 'general', book: '奇门遁甲统宗 / 烟波钓叟歌', chapter: '干宫生克条', reason: '原文待录入' },
+  'tarot-orientation': { status: 'general', book: '韦特塔罗', chapter: '逆位读法', reason: '韦特体系无中文古籍原文，逆位读法属近代流派' },
+};
+
+function allCitations() {
+  return [...CLASSICS.map((c) => citationOf(c.id)), ...CITATIONS.map((c) => citationOf(c.id))];
+}
+
+/** 把知识卡的 source 补成「原 source + 可核验引文索引」；general/todo 不伪造原文 */
+function citationSourceOf(cardId, fallback = '') {
+  const entry = CARD_CITATIONS[cardId];
+  if (!entry) {
+    return { source: fallback, citations: [], status: 'general', reason: '未建立引文索引' };
+  }
+  if (Array.isArray(entry.refs) && entry.refs.length) {
+    const citations = entry.refs.map(citationOf).filter(Boolean);
+    const index = citations.map((c) => `《${c.bookName}·${c.chapter}》${c.url}`).join('；');
+    return { source: `${fallback}（原文索引：${index}）`, citations, status: 'verified' };
+  }
+  return {
+    source: `${fallback}（${entry.status === 'todo' ? '待补原文' : '通行说，原文待补'}：${entry.book || ''}${entry.chapter ? `·${entry.chapter}` : ''}）`,
+    citations: [],
+    status: entry.status || 'general',
+    reason: entry.reason || '',
+  };
+}
+
+/** 破格规则的引文：给测试与报告页共用 */
+function patternCitations() {
+  return Object.entries(PATTERN_BREAK_RULES)
+    .filter(([, rule]) => Array.isArray(rule.citationIds) && rule.citationIds.length)
+    .map(([name, rule]) => ({ name, citationIds: rule.citationIds, citations: rule.citationIds.map(citationOf).filter(Boolean) }));
+}
+
+return { CITATION_BOOKS, CITATIONS, citationOf, CARD_CITATIONS, allCitations, citationSourceOf, patternCitations };
 })();
 
 __mods['ziwei-words'] = (function () {
@@ -15406,7 +15846,10 @@ function ziweiInterpret(r) {
       tone: t.tone === 'neutral' ? 'watch' : t.tone,
       text: list.map((p) => {
         const rd = patternReadOf(p.name, p.tone);
-        return `**${p.name}**　${rd.gist}\n　依据：${p.evidence}\n　做法：${rd.advice}`;
+        const broke = p.status === 'broken' && Array.isArray(p.breaks) && p.breaks.length
+          ? `\n　破格：${p.breaks.join('；')}${p.breakRule ? `（${p.breakRule}）` : ''}`
+          : '';
+        return `**${p.name}**　${rd.gist}\n　依据：${p.evidence}${broke}\n　做法：${rd.advice}`;
       }).join('\n'),
     };
   }).filter(Boolean);
@@ -16279,6 +16722,7 @@ const BUILDERS = {
 const { interpretQimen } = (__mods['qimen-interpret'] || {});
 const { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } = (__mods['interpret-plain'] || {});
 const { knowledgeFor, caveatsFor, STATUS_LABEL } = (__mods['interpret-knowledge'] || {});
+const { citationSourceOf } = (__mods.citations || {});
 const { CLASSIC_BOOKS, suiyunClassicOf, classicOf } = (__mods.classics || {});
 
 /**
@@ -16307,15 +16751,21 @@ function enrichPlain(result, r, ask) {
     const know = knowledgeFor(r.system, d.key)
       .filter((k) => !seen.has(k.id))
       .slice(0, KNOW_PER_DIM)
-      .map((k) => ({
-        id: k.id,
-        gist: k.gist,
-        detail: k.detail,
-        source: k.source,
-        status: k.status,
-        statusLabel: STATUS_LABEL[k.status] || k.status,
-        note: k.note || '',
-      }));
+      .map((k) => {
+        const cs = citationSourceOf(k.id, k.source);
+        return {
+          id: k.id,
+          gist: k.gist,
+          detail: k.detail,
+          source: cs.source,
+          citations: cs.citations,
+          citationStatus: cs.status,
+          citationReason: cs.reason || '',
+          status: k.status,
+          statusLabel: STATUS_LABEL[k.status] || k.status,
+          note: k.note || '',
+        };
+      });
     for (const k of know) seen.add(k.id);
     if (know.length) d.knowledge = know;
   }
@@ -17069,12 +17519,15 @@ __mods.trace = (function () {
 // { field, rule, inputs, result, source }。
 //
 // 只读结果、不重算、不读时间与随机：trace 开着或关掉，盘面必须逐字节一致。
-// 目前覆盖六爻（纳甲→六亲→世应→伏神→旺衰）、八字（旺衰分值、格局取用）
-// 与紫微（格局命中条件）；其余体系不产出 trace。
+// 目前覆盖六爻（纳甲→六亲→世应→伏神→旺衰）、八字（旺衰分值、格局取用）、
+// 紫微（格局命中条件）、奇门（盘面事实→用神落宫→门/星/干旺衰→宫位生克）
+// 与大六壬（天地盘→四课→三传）；其余体系不产出 trace。
 const { PATTERN_TONE } = (__mods.ziwei || {});
 const { yongshenOf, yongshenStrength, fushenAccess } = (__mods.liuyao || {});
+const { qimenYongshen } = (__mods['qimen-interpret'] || {});
+const { GAN_JI_GONG } = (__mods.daliuren || {});
 
-const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微' };
+const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微', qimen: '奇门', daliuren: '大六壬' };
 
 const text = (v, fallback = '—') => {
   if (v === undefined || v === null || v === '') return fallback;
@@ -17298,6 +17751,164 @@ function ziweiTrace(r) {
   )];
 }
 
+function qimenTrace(r, opts = {}) {
+  const palaces = Array.isArray(r.palaces) ? r.palaces : [];
+  const month = r.month && typeof r.month === 'object' ? r.month : {};
+  const states = r.states && typeof r.states === 'object' ? r.states : {};
+  const cond = r.conditions && typeof r.conditions === 'object' ? r.conditions : {};
+  const zf = r.zhiFu && typeof r.zhiFu === 'object' ? r.zhiFu : {};
+  const zs = r.zhiShi && typeof r.zhiShi === 'object' ? r.zhiShi : {};
+  const ma = r.ma && typeof r.ma === 'object' ? r.ma : {};
+  const sz = r.siZhu && typeof r.siZhu === 'object' ? r.siZhu : {};
+
+  const facts = step(
+    'facts',
+    '盘面事实',
+    '时家转盘奇门：节气与三元定阴阳遁与局数，旬首定值符星与值使门；值符随时干落宫，八神按阴阳遁顺布或逆布。',
+    [
+      ['四柱', `${text(sz.year)} ${text(sz.month)} ${text(sz.day)} ${text(sz.time)}`],
+      ['节气 / 局', `${text(r.jieqi)} · ${text(r.dun)}${text(r.juNumber)}局（${text(r.juMethod)}）`],
+      ['旬首', text(r.xunshou)],
+      ['值符 / 值使', `${text(zf.star)}落${text(zf.gong)}宫 / ${text(zs.gate)}落${text(zs.gong)}宫`],
+      ['空亡 / 驿马', `${list(r.kongWang)} / ${text(ma.zhi)}${ma.gong ? `（${ma.gong}宫）` : ''}`],
+    ],
+    palaces.map((p) => `${p.palace}宫 天${text(p.tianPan)}·${text(p.star)}·${text(p.gate)}·${text(p.god)}`).join('｜') || '无九宫数据',
+    'engine/qimen.js · buildQimen()',
+  );
+
+  const ys = qimenYongshen(r, opts.direction);
+  const found = ys.rows.filter((x) => x.palace);
+  const missing = ys.rows.filter((x) => !x.palace).map((x) => x.key);
+  const primary = found[0] || null;
+  const yongshen = step(
+    'yongshen',
+    '用神落宫',
+    '按所问之事取用神：先取主用神、再取辅用神；以所落之宫的干、门、星、神整体取象，不单凭门名断事。',
+    [
+      ['询问方向', ys.label],
+      ['主用神', primary ? `${primary.key} → ${primary.palace.palace}宫` : '未上盘'],
+      ['辅用神', found.slice(1).map((x) => `${x.key} → ${x.palace.palace}宫`).join('；') || '无'],
+      ['主用神落宫', primary ? `${text(primary.palace.star)}·${text(primary.palace.gate)}·${text(primary.palace.god)}·天盘${text(primary.palace.tianPan)}` : '—'],
+    ],
+    found.length
+      ? `${ys.note}；${found.map((x) => `${x.key} 落 ${x.palace.palace}宫（${text(x.palace.star)}·${text(x.palace.gate)}·${text(x.palace.god)}）`).join('，')}`
+        + (missing.length ? `；${missing.join('、')} 未上盘` : '')
+      : `${ys.label}的用神均未上盘，属未决项；先按值符落宫参照。`,
+    '奇门用神取象；engine/qimen-interpret.js · qimenYongshen()',
+  );
+
+  const order = ['旺', '相', '休', '囚', '死'];
+  const stateLine = (g) => order.filter((k) => g && Array.isArray(g[k]) && g[k].length)
+    .map((k) => `${k} ${g[k].join('、')}`).join('；') || '—';
+  const wangshuai = step(
+    'states',
+    '门/星/干旺衰',
+    '月令定五态：同月令之气为旺，月令所生为相，生月令为休，克月令为囚，月令所克为死；只判力量强弱，不合吉凶。',
+    [
+      ['月令', `${text(month.branch)}（${text(month.element)}）`],
+      ['门', stateLine(states.gate)],
+      ['星', stateLine(states.star)],
+      ['天盘干', stateLine(states.stem)],
+    ],
+    `门：${stateLine(states.gate)}；星：${stateLine(states.star)}；天盘干：${stateLine(states.stem)}`,
+    '月令五行五态；engine/qimen.js · groupByState()',
+  );
+
+  const forced = [];
+  const controlled = [];
+  const stemGroups = new Map();
+  for (const p of palaces) {
+    const rel = p.gateRelation || {};
+    if (rel.type === '门迫') forced.push(`${p.palace}宫${text(p.gate)}`);
+    else if (rel.type === '宫制门') controlled.push(`${p.palace}宫${text(p.gate)}`);
+    const sr = p.stemRelation || {};
+    if (p.tianPan && sr.type && sr.type !== 'unknown') {
+      if (!stemGroups.has(sr.type)) stemGroups.set(sr.type, []);
+      stemGroups.get(sr.type).push(`${p.palace}宫${p.tianPan}`);
+    }
+  }
+  const stemOrder = ['干克宫', '宫克干', '干生宫', '宫生干', '比和'];
+  const stemLine = stemOrder.filter((k) => stemGroups.has(k))
+    .map((k) => `${k} ${stemGroups.get(k).join('、')}`).join('；') || '—';
+  const jiXing = (cond.jiXing || []).map((x) => `${x.palace}宫${text(x.stem)}`);
+  const ruMu = (cond.ruMu || []).map((x) => `${x.palace}宫${text(x.stem)}`);
+  const kongCells = palaces.filter((p) => p.kong).map((p) => `${p.palace}宫`);
+
+  const relations = step(
+    'relations',
+    '宫位生克',
+    '门与宫同宫论生克：门克宫为门迫，宫克门为宫制门；天盘干对宫另论生克；击刑、入墓、空亡只作宫位条件，不单独断吉凶。',
+    [
+      ['门迫', forced.join('、') || '无'],
+      ['宫制门', controlled.join('、') || '无'],
+      ['天盘干 × 宫', stemLine],
+      ['击刑 / 入墓', `${jiXing.join('、') || '无'} / ${ruMu.join('、') || '无'}`],
+      ['空亡', kongCells.join('、') || '无'],
+    ],
+    `门迫 ${forced.length} 处、宫制门 ${controlled.length} 处；天盘干与宫：${stemLine}；击刑 ${jiXing.length} 处、入墓 ${ruMu.length} 处、落空 ${kongCells.length} 宫。`,
+    '门迫/宫制门；engine/qimen.js · gatePalaceRelation() / stemPalaceRelation()',
+  );
+
+  return [facts, yongshen, wangshuai, relations];
+}
+
+function daliurenTrace(r) {
+  const pan = Array.isArray(r.pan) ? r.pan : [];
+  const ke = Array.isArray(r.siKe) ? r.siKe : [];
+  const sc = r.sanChuan && typeof r.sanChuan === 'object' ? r.sanChuan : {};
+  const yj = r.yueJiang && typeof r.yueJiang === 'object' ? r.yueJiang : {};
+  const gr = r.guiren && typeof r.guiren === 'object' ? r.guiren : {};
+  const geju = r.geJu && typeof r.geJu === 'object' ? r.geJu : {};
+  const dayGz = text(r.dayGanZhi, '');
+
+  const tiandipan = step(
+    'tiandipan',
+    '天地盘',
+    '月将加时：中气换将，月将加于占时之上，顺布十二支成天盘；十二天将以日干昼夜贵人为起点，阳顺阴逆布于天盘。',
+    [
+      ['日干支', dayGz],
+      ['时支', `${text(r.hourZhi)}时`],
+      ['月将', `${text(yj.zhi)}（${text(yj.name)}）`],
+      ['昼夜 / 贵人', `${text(r.dayNight)} / ${text(gr.zhi)}（${gr.reverse ? '逆布' : '顺布'}）`],
+    ],
+    pan.map((p) => `${p.di}→${p.tian}${p.jiang ? `（${text(p.jiang)}）` : ''}`).join('｜') || '无天地盘数据',
+    '大六壬月将加时；engine/daliuren.js · tianDiPan()',
+  );
+
+  const sike = step(
+    'sike',
+    '四课',
+    '四课：日干寄宫取第一课，日干上神再取第二课；日支取第三课，日支上神再取第四课；每课以上下五行论生克。',
+    [
+      ['日干 / 日支', `${text(dayGz[0])} / ${text(dayGz[1])}`],
+      ['日干寄宫', text(GAN_JI_GONG[dayGz[0]])],
+      ['四课', ke.map((k) => `${k.position}课 ${text(k.shang)}上${text(k.xia)}下`).join('；') || '—'],
+    ],
+    ke.map((k) => `${k.position}课 ${text(k.shang)}上${text(k.xia)}下${k.jiang ? `·${text(k.jiang)}` : ''}：${text(k.relation)}`).join('；') || '无四课数据',
+    'engine/daliuren.js · siKe()',
+  );
+
+  const chuanLine = (c) => (c
+    ? `${text(c.position)}${text(c.zhi)}（${text(c.liuQin)}${c.xunKong ? '·旬空' : ''}，${text(c.jiang)}${c.jiangFull ? `·${text(c.jiangFull)}` : ''}）`
+    : '—');
+  const sanchuan = step(
+    'sanchuan',
+    '三传',
+    '三传：先取贼克（下贼上优先），无则比用、涉害、遥克、昴星，再八专、伏吟、返吟；初传既定，中末以天盘依次递取。',
+    [
+      ['课体', `${text(geju.name)}（${text(geju.detail)}）`],
+      ['初传', chuanLine(sc.chu)],
+      ['中传', chuanLine(sc.zhong)],
+      ['末传', chuanLine(sc.mo)],
+    ],
+    `${chuanLine(sc.chu)} → ${chuanLine(sc.zhong)} → ${chuanLine(sc.mo)}`,
+    'engine/daliuren.js · chuan()',
+  );
+
+  return [tiandipan, sike, sanchuan];
+}
+
+
 /**
  * @param {object} result compute 的结果
  * @param {{direction?:string, gender?:string, refresh?:boolean}} [opts]
@@ -17331,6 +17942,8 @@ function buildTrace(result, opts = {}) {
     layers = liuyaoTrace(view, opts);
   } else if (result.system === 'bazi') layers = baziTrace(result);
   else if (result.system === 'ziwei') layers = ziweiTrace(result);
+  else if (result.system === 'qimen') layers = qimenTrace(result, opts);
+  else if (result.system === 'daliuren') layers = daliurenTrace(result);
   return layers && layers.length ? layers : null;
 }
 
@@ -17600,7 +18213,7 @@ function ziweiText(r) {
     '流年（前 6 年，完整 12 年在结构化数据里）：',
     ...liunian,
     `【格局】${patterns}`,
-    r.patternSummary ? `【结构统计】吉格 ${r.patternSummary.good.length}、中性 ${r.patternSummary.neutral.length}、忌格 ${r.patternSummary.bad.length}；${r.patternSummary.note}` : '',
+    r.patternSummary ? `【结构统计】吉格 ${r.patternSummary.good.length}、中性 ${r.patternSummary.neutral.length}、忌格 ${r.patternSummary.bad.length}${r.patternSummary.broken.length ? `、破格 ${r.patternSummary.broken.length}（${r.patternSummary.broken.join('、')}）` : ''}；${r.patternSummary.note}` : '',
     r.lunar.note ? `注：${r.lunar.note}` : '',
   ].filter(Boolean).join('\n');
 }
@@ -19067,6 +19680,7 @@ window.__MP_VER = "0.55.0";
 .pp-chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--line);color:var(--muted);background:var(--bg)}
 .pp-chip.ok{color:var(--lu);border-color:var(--lu)}
 .pp-chip.warn{color:var(--quan);border-color:var(--quan)}
+.pp-chip.broken{color:var(--quan);border-color:var(--quan);border-style:dashed}
 .pp-sec{margin-top:10px}
 /* 流月/流日/流时：一层层往外推的三级时间盘 */
 .pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif}
@@ -20346,7 +20960,11 @@ window.__MP_VER = "0.55.0";
       <span class="pp-chip ${cq.absorb.label === '杂' ? 'warn' : 'ok'}">吸收·${cq.absorb.label}</span>
     </div>` : '';
     const pats = (r.patterns || []).length
-      ? `<div class="pp-chips">${r.patterns.map((p) => `<span class="pp-chip ${p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${esc(p.evidence || '')}">${p.name}</span>`).join('')}</div>` : '';
+      ? `<div class="pp-chips">${r.patterns.map((p) => {
+        const broke = p.status === 'broken' && Array.isArray(p.breaks) && p.breaks.length;
+        const title = `${p.evidence || ''}${broke ? `；破格：${p.breaks.join('；')}` : ''}`;
+        return `<span class="pp-chip ${broke ? 'broken' : p.tone === 'good' ? 'ok' : p.tone === 'bad' ? 'warn' : ''}" title="${esc(title)}">${p.name}${broke ? '（破格）' : ''}</span>`;
+      }).join('')}</div>` : '';
     const dxs = (r.daxianList || []).length
       ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
@@ -22522,7 +23140,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
     args.shadow = tab !== 'mbti';
     // 推导链只覆盖六爻 / 八字 / 紫微
-    args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei';
+    args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
@@ -22639,6 +23257,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (needAsk(tab)) args.question = el('question').value.trim();
     // 六爻的用神由「询问方向」定；不传给 compute 的话，盘面与推导链都会退成综合
     if (tab === 'liuyao') args.direction = el('direction').value;
+    // 奇门的用神同样由方向定，推导链的「用神落宫」层要用到
+    if (tab === 'qimen') args.direction = el('qdir').value;
     try {
       const r = window.Engine.compute(args);
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
@@ -23056,7 +23676,17 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     // 奇门：换局规则改动重起局；询问方向改动只重出解读（用神跟着方向走）
     document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
     const qdir = el('qdir');
-    if (qdir) qdir.addEventListener('change', () => { if (tab === 'qimen') paint(); });
+    if (qdir) qdir.addEventListener('change', () => {
+      if (tab !== 'qimen') return;
+      // 方向决定用神：只重建「用神落宫」所在的推导链，不重新起局
+      if (last && last.r && last.r.trace && window.Engine.buildTrace) {
+        try {
+          const trace = window.Engine.buildTrace(last.r, { direction: qdir.value });
+          if (trace) last.r.trace = trace;
+        } catch (e) { /* 保留起局时的推导链 */ }
+      }
+      paint();
+    });
     // 速查类：分段按钮与输入改动都直接重算
     const seg = (sel, set) => document.querySelectorAll(sel).forEach((b) => b.addEventListener('click', () => {
       set(b.dataset.mode); syncQuick(); run();

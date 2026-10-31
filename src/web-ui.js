@@ -443,7 +443,7 @@
     // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
     args.shadow = tab !== 'mbti';
     // 推导链只覆盖六爻 / 八字 / 紫微
-    args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei';
+    args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
@@ -560,6 +560,8 @@
     if (needAsk(tab)) args.question = el('question').value.trim();
     // 六爻的用神由「询问方向」定；不传给 compute 的话，盘面与推导链都会退成综合
     if (tab === 'liuyao') args.direction = el('direction').value;
+    // 奇门的用神同样由方向定，推导链的「用神落宫」层要用到
+    if (tab === 'qimen') args.direction = el('qdir').value;
     try {
       const r = window.Engine.compute(args);
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
@@ -977,7 +979,17 @@
     // 奇门：换局规则改动重起局；询问方向改动只重出解读（用神跟着方向走）
     document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
     const qdir = el('qdir');
-    if (qdir) qdir.addEventListener('change', () => { if (tab === 'qimen') paint(); });
+    if (qdir) qdir.addEventListener('change', () => {
+      if (tab !== 'qimen') return;
+      // 方向决定用神：只重建「用神落宫」所在的推导链，不重新起局
+      if (last && last.r && last.r.trace && window.Engine.buildTrace) {
+        try {
+          const trace = window.Engine.buildTrace(last.r, { direction: qdir.value });
+          if (trace) last.r.trace = trace;
+        } catch (e) { /* 保留起局时的推导链 */ }
+      }
+      paint();
+    });
     // 速查类：分段按钮与输入改动都直接重算
     const seg = (sel, set) => document.querySelectorAll(sel).forEach((b) => b.addEventListener('click', () => {
       set(b.dataset.mode); syncQuick(); run();

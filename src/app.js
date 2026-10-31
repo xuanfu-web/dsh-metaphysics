@@ -622,7 +622,7 @@ function App() {
       // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
       args.shadow = k !== 'mbti';
       // 推导链只覆盖六爻 / 八字 / 紫微；其余体系没有中间层可摊
-      args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei';
+      args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei' || k === 'qimen' || k === 'daliuren';
       if (k !== 'tarot') args.datetime = datetime;
       if (k === 'bazi' || k === 'ziwei' || k === 'hepan') {
         // 合盘的主方同样需要性别与出生地：漏掉这两个字段会让合盘拿不到性别（引擎已改为必填），
@@ -647,7 +647,7 @@ function App() {
         if (parsed.lines) args.lines = parsed.lines;
         else if (parsed.warning) setNotice(parsed.warning);
       }
-      if (k === 'qimen') { args.juMethod = qimenRule; args.lateZiHourMode = qLateZi; }
+      if (k === 'qimen') { args.juMethod = qimenRule; args.lateZiHourMode = qLateZi; args.direction = direction; }
       // 八字：验前事只读信号随盘一起算（不改盘）
       if (k === 'bazi') args.verifyPast = 6;
       // 速查类：各体系自己的最小输入
@@ -1007,10 +1007,13 @@ function App() {
     };
     const it = Engine.interpret ? Engine.interpret(result.r, ask) : null;
     // 六爻改方向只重出解读、不重摇；推导链里的用神 / 旺衰 / 伏神也要按新方向重算
+    // 奇门的用神落宫同理由方向决定，重排这一层即可，不必重新起局
     let r = result.r;
-    if (tab === 'liuyao' && r && r.trace && Engine.buildTrace) {
+    if ((tab === 'liuyao' || tab === 'qimen') && r && r.trace && Engine.buildTrace) {
       try {
-        const trace = Engine.buildTrace(r, { direction: ask.direction, gender: (r.useGod && r.useGod.gender) || 'male', refresh: true });
+        const trace = tab === 'liuyao'
+          ? Engine.buildTrace(r, { direction: ask.direction, gender: (r.useGod && r.useGod.gender) || 'male', refresh: true })
+          : Engine.buildTrace(r, { direction: ask.direction });
         if (trace) r = Object.assign({}, r, { trace });
       } catch (e) { /* 保留起卦时的推导链 */ }
     }
