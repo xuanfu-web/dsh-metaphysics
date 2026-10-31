@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 4812,
+  "total": 4925,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -43,7 +43,7 @@
       "fail": 0
     },
     "caliber-diff.test.mjs": {
-      "pass": 129,
+      "pass": 205,
       "fail": 0
     },
     "caliber.test.mjs": {
@@ -55,7 +55,7 @@
       "fail": 0
     },
     "chunks.test.mjs": {
-      "pass": 101,
+      "pass": 102,
       "fail": 0
     },
     "classic-quotes.test.mjs": {
@@ -175,7 +175,7 @@
       "fail": 0
     },
     "layout.test.mjs": {
-      "pass": 66,
+      "pass": 68,
       "fail": 0
     },
     "liuyao-body.test.mjs": {
@@ -275,7 +275,7 @@
       "fail": 0
     },
     "relations.test.mjs": {
-      "pass": 21,
+      "pass": 27,
       "fail": 0
     },
     "renyuan.test.mjs": {
@@ -372,6 +372,10 @@
     },
     "upgrade.test.mjs": {
       "pass": 1,
+      "fail": 0
+    },
+    "verification.test.mjs": {
+      "pass": 28,
       "fail": 0
     },
     "verify-publish.test.mjs": {

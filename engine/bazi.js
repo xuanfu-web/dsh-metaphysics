@@ -93,7 +93,8 @@ export function buildRelations(pillars) {
       const b = stems[j];
       if (a === b) continue;
       const he = STEM_HE[a + b] || STEM_HE[b + a];
-      if (he) { stemOut.push({ text: `${a}${b}合化${he}`, rank: 0 }); continue; }
+      // 五合只是「有合」；是否真化要看月令、化神与争合妒合，不在这一层断言
+      if (he) { stemOut.push({ text: `${a}${b}合（化${he}待定）`, rank: 0 }); continue; }
       if (hasPair(STEM_CHONG_PAIRS, a, b)) { stemOut.push({ text: `${a}${b}相冲`, rank: 1 }); continue; }
       const ea = STEM_ELEMENT[a];
       const eb = STEM_ELEMENT[b];

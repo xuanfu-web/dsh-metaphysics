@@ -803,7 +803,8 @@ export function interpretText(i) {
 }
 
 /** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
-const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events'];
+// shadow / trace 是结果的派生展示，不是盘面口径；带进来会让影子盘回显把每组开关都算成「有变化」
+const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events', 'shadow', 'trace'];
 
 /**
  * 口径对照：同一组输入，只把某一个口径开关换成它的另一档，逐字段列出变化。

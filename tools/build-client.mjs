@@ -1,4 +1,4 @@
-// 把 engine/*.js 打成单个浏览器模块，供 client.js 内联使用。
+// 把 engine/*.js 打进浏览器产物：入口 client.js 只带界面，引擎按 tab 拆成 client.<name>.js。
 // 每个模块包在独立 IIFE 里，避免顶层同名冲突（NAYIN_NAMES / PALACE_NAMES / GENERATES 等）。
 import fs from 'node:fs';
 import path from 'node:path';
@@ -305,7 +305,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (/^client\..+\.js$/.test(f) && f !== 'client.debug.js' && !written.has(f)) fs.unlinkSync(path.join(root, f));
   }
   const gzip = zlib.gzipSync(Buffer.from(out, 'utf8')).length;
-  console.log(`client.js written: ${bytes(out)} bytes / gzip ${gzip} (原 ${bytes(raw)}，省 ${(100 - bytes(out) / bytes(raw) * 100).toFixed(1)}%), modules: ${ORDER.length}`);
+  console.log(`client.js written: ${bytes(out)} bytes / gzip ${gzip} (原 ${bytes(raw)}，省 ${(100 - bytes(out) / bytes(raw) * 100).toFixed(1)}%), engine modules: ${ORDER.length}`);
   console.log(`chunks: ${written.size} 个，合计 gzip ${chunkGzip}\n${lines.join('\n')}`);
 }
 

@@ -55,6 +55,9 @@
 /* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
 .pp-m.view{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 .pp-m.view.lu{color:var(--lu)}.pp-m.view.quan{color:var(--quan)}.pp-m.view.ke{color:var(--ke)}.pp-m.view.ji{color:var(--ji)}
+/* 自化：宫干化回本宫。只留色字 + 虚下划线，与生年实心、大限/流年空心分三层 */
+.pp-m.self{background:transparent;box-shadow:none;padding:0;text-decoration:underline dotted;text-underline-offset:2px}
+.pp-m.self.lu{color:var(--lu)}.pp-m.self.quan{color:var(--quan)}.pp-m.self.ke{color:var(--ke)}.pp-m.self.ji{color:var(--ji)}
 /* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
    避免与四化的实心彩色方块抢层次 */
 .pp-b{font-style:normal;font-size:11.5px;margin-left:4px;color:var(--muted);letter-spacing:0;opacity:.9}
@@ -1262,7 +1265,7 @@
     const ss = p.shensha || {};
     const pname = NAMES[fx(soulIdx - b)];
     const zh = (p.selfHua && p.selfHua.length)
-      ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')}</span>` : '';
+      ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')}</span>` : '';
     // 命无正曜：命宫无十四主星时，传统要借对宫（迁移宫）主星来看
     let borrow = '';
     if (b === soulIdx && allPalaces) {
@@ -1343,7 +1346,7 @@
         ${kind === 'da' || kind === 'ln' ? `<div class="ct-t4 pp-viewhua">${kind === 'da' ? '大限' : '流年'}四化　${(kind === 'da' ? huaByView.da : huaByView.ln) && Object.keys(kind === 'da' ? huaByView.da : huaByView.ln).length
           ? Object.entries(kind === 'da' ? huaByView.da : huaByView.ln).map(([s2, t]) => `${s2}化${t}`).join('　')
           : '<span class="pp-dim">未飞四化</span>'}</div>` : ''}
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　红框=命宫　浅底=三方四正</span></div>
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　虚下划线=自化　红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -1445,7 +1448,7 @@
     const bads = p.stars.filter((s) => s.type === '煞星');
     const misc = p.stars.filter((s) => !['主星', '吉星', '辅星', '煞星'].includes(s.type));
     const selfHua = (p.selfHua || []).length
-      ? p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')
+      ? p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')
       : '<span class="dt-empty">无</span>';
     // 三方四正：三合（+4/+8）与对宫（+6）
     const tri = [fx(b + 4), fx(b + 8), fx(b + 6)].map((idx) => {

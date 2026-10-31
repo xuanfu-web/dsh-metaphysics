@@ -346,7 +346,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.53.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.55.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -611,9 +611,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>八套体系，全部本地计算</h3>
     <ul><li>八字（四柱 · 藏干 · 十神 · 神煞 · 大运流年 · 格局用神）</li><li>紫微斗数（安星 · 四化 · 大限 · 流年/流月/流日/流时）</li><li>六爻纳甲（装卦 · 六亲 · 六神 · 世应 · 变卦 · 旬空）</li><li>梅花易数 · 大六壬 · 奇门遁甲 · 合盘 · 塔罗</li></ul>
     <h3>对拍：把典籍当期望值</h3>
-    <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li></ul>
+    <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：106 个测试文件 / 4812 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：107 个测试文件 / 4925 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -663,6 +663,9 @@ const IGNORE_KEYS = new Set([
   // 紫微把「闰月按哪种政策起盘」回显在 lunar 里；非闰月盘换政策时它也会变，
   // 但农历月份与宫位一字未动，不该报成差异。
   'leapPolicy',
+  // 九类流派开关的回显（含 rules.schools 那行说明）同理：换开关必然改这段话，
+  // 真正要看的是星位、四化、宫位有没有动。
+  'schools',
 ]);
 
 const isObject = (v) => v !== null && typeof v === 'object';
@@ -884,6 +887,22 @@ function renderDiff(diffs, { title = '', limit = 12 } = {}) {
 }
 
 /**
+ * 紫微九类流派开关：read 同时认平铺参数与 schools 嵌套，
+ * 非法值按引擎规则回落默认；alt 在默认与代表档之间来回切。
+ */
+const ziweiSchoolSwitch = (key, title, short, def, alt, labels) => ({
+  key,
+  title,
+  short,
+  read: (a) => {
+    const raw = a[key] !== undefined ? a[key] : (a.schools && a.schools[key]);
+    return labels[raw] ? raw : def;
+  },
+  alt: (v) => (v === alt ? def : alt),
+  label: (v) => labels[v] || v,
+});
+
+/**
  * 口径开关表：每个体系 2–3 组「只差一个维度」的对照。
  * read 取当前口径（没传时按引擎默认），alt 给另一口径，label 是给人看的短名。
  * UI、CLI 与工具参数 diff 共用这一份，默认值不在别处再抄一遍。
@@ -924,6 +943,33 @@ const CALIBER_SWITCHES = {
       alt: (v) => !v,
       label: (v) => (v ? '修正' : '不修正'),
     },
+    ziweiSchoolSwitch('brightnessSchool', '亮度表：默认 / QS 七档', '亮度表', 'default', 'QS', {
+      default: '默认', QS: 'QS（七档）', XD1: 'XD1（七档）', ZZ: 'ZZ（五档）', XD2: 'XD2（五档）',
+    }),
+    ziweiSchoolSwitch('gengYearSihua', '庚干四化：阳武阴同 / 同科阴忌', '庚干四化', 'GYWYT', 'GYWTY', {
+      GYWYT: '阳武阴同', GYWTY: '同科阴忌', GYWFT: '府科同忌', GYWFX: '府科相忌', GYWTX: '同科相忌',
+    }),
+    ziweiSchoolSwitch('tianmaSchool', '天马：按年支 / 按生月', '天马', 'year-branch', 'month-branch', {
+      'year-branch': '年支', 'month-branch': '生月',
+    }),
+    ziweiSchoolSwitch('tiankongSchool', '天空：不排 / 年支顺行', '天空', 'off', 'normal', {
+      off: '不排', normal: '年支顺行', 'shun-jia-shi': '加生时',
+    }),
+    ziweiSchoolSwitch('jiekongSchool', '截空旬空：不排 / 正副双星', '截空旬空', 'off', 'double', {
+      off: '不排', single: '单星', double: '正副双星', zhanyan: '占验派',
+    }),
+    ziweiSchoolSwitch('kuiyueSchool', '魁钺：qs1 / qs2', '魁钺', 'qs1', 'qs2', {
+      qs1: 'qs1', qs2: 'qs2', 'zhong-yiming': '中一鸣', network: '网络',
+    }),
+    ziweiSchoolSwitch('tianshiTianshang', '天伤天使：常规 / 中州互换', '天伤天使', 'normal', 'zhongzhou', {
+      normal: '常规', zhongzhou: '中州（阴男阳女互换）',
+    }),
+    ziweiSchoolSwitch('changshengSchool', '长生：阴阳顺逆 / 火土起寅', '长生', 'yin-yang-shun-ni', 'huo-tu', {
+      'yin-yang-shun-ni': '阴阳顺逆', 'shui-tu': '水二', 'huo-tu': '火土（土五局起寅）',
+    }),
+    ziweiSchoolSwitch('lateZishi', '晚子时：归当日 / 归次日', '晚子时', 'current-day', 'next-day', {
+      'current-day': '归当日', 'next-day': '归次日', 'all-current': '全归当日', 'day-cur-time-next': '日归当日·时归次日',
+    }),
   ],
   qimen: [
     {
@@ -4954,7 +5000,8 @@ function buildRelations(pillars) {
       const b = stems[j];
       if (a === b) continue;
       const he = STEM_HE[a + b] || STEM_HE[b + a];
-      if (he) { stemOut.push({ text: `${a}${b}合化${he}`, rank: 0 }); continue; }
+      // 五合只是「有合」；是否真化要看月令、化神与争合妒合，不在这一层断言
+      if (he) { stemOut.push({ text: `${a}${b}合（化${he}待定）`, rank: 0 }); continue; }
       if (hasPair(STEM_CHONG_PAIRS, a, b)) { stemOut.push({ text: `${a}${b}相冲`, rank: 1 }); continue; }
       const ea = STEM_ELEMENT[a];
       const eb = STEM_ELEMENT[b];
@@ -18095,7 +18142,8 @@ function interpretText(i) {
 }
 
 /** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
-const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events'];
+// shadow / trace 是结果的派生展示，不是盘面口径；带进来会让影子盘回显把每组开关都算成「有变化」
+const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events', 'shadow', 'trace'];
 
 /**
  * 口径对照：同一组输入，只把某一个口径开关换成它的另一档，逐字段列出变化。
@@ -18846,7 +18894,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.53.0";
+window.__MP_VER = "0.55.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -18947,6 +18995,9 @@ window.__MP_VER = "0.53.0";
 /* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
 .pp-m.view{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 .pp-m.view.lu{color:var(--lu)}.pp-m.view.quan{color:var(--quan)}.pp-m.view.ke{color:var(--ke)}.pp-m.view.ji{color:var(--ji)}
+/* 自化：宫干化回本宫。只留色字 + 虚下划线，与生年实心、大限/流年空心分三层 */
+.pp-m.self{background:transparent;box-shadow:none;padding:0;text-decoration:underline dotted;text-underline-offset:2px}
+.pp-m.self.lu{color:var(--lu)}.pp-m.self.quan{color:var(--quan)}.pp-m.self.ke{color:var(--ke)}.pp-m.self.ji{color:var(--ji)}
 /* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
    避免与四化的实心彩色方块抢层次 */
 .pp-b{font-style:normal;font-size:11.5px;margin-left:4px;color:var(--muted);letter-spacing:0;opacity:.9}
@@ -20154,7 +20205,7 @@ window.__MP_VER = "0.53.0";
     const ss = p.shensha || {};
     const pname = NAMES[fx(soulIdx - b)];
     const zh = (p.selfHua && p.selfHua.length)
-      ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')}</span>` : '';
+      ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')}</span>` : '';
     // 命无正曜：命宫无十四主星时，传统要借对宫（迁移宫）主星来看
     let borrow = '';
     if (b === soulIdx && allPalaces) {
@@ -20235,7 +20286,7 @@ window.__MP_VER = "0.53.0";
         ${kind === 'da' || kind === 'ln' ? `<div class="ct-t4 pp-viewhua">${kind === 'da' ? '大限' : '流年'}四化　${(kind === 'da' ? huaByView.da : huaByView.ln) && Object.keys(kind === 'da' ? huaByView.da : huaByView.ln).length
           ? Object.entries(kind === 'da' ? huaByView.da : huaByView.ln).map(([s2, t]) => `${s2}化${t}`).join('　')
           : '<span class="pp-dim">未飞四化</span>'}</div>` : ''}
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　红框=命宫　浅底=三方四正</span></div>
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　虚下划线=自化　红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -20337,7 +20388,7 @@ window.__MP_VER = "0.53.0";
     const bads = p.stars.filter((s) => s.type === '煞星');
     const misc = p.stars.filter((s) => !['主星', '吉星', '辅星', '煞星'].includes(s.type));
     const selfHua = (p.selfHua || []).length
-      ? p.selfHua.map((x) => `<i class="pp-m ${MUT[x.type]}">${x.type}</i>`).join('')
+      ? p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')
       : '<span class="dt-empty">无</span>';
     // 三方四正：三合（+4/+8）与对宫（+6）
     const tri = [fx(b + 4), fx(b + 8), fx(b + 6)].map((idx) => {

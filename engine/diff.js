@@ -18,6 +18,9 @@ const IGNORE_KEYS = new Set([
   // 紫微把「闰月按哪种政策起盘」回显在 lunar 里；非闰月盘换政策时它也会变，
   // 但农历月份与宫位一字未动，不该报成差异。
   'leapPolicy',
+  // 九类流派开关的回显（含 rules.schools 那行说明）同理：换开关必然改这段话，
+  // 真正要看的是星位、四化、宫位有没有动。
+  'schools',
 ]);
 
 const isObject = (v) => v !== null && typeof v === 'object';
@@ -239,6 +242,22 @@ export function renderDiff(diffs, { title = '', limit = 12 } = {}) {
 }
 
 /**
+ * 紫微九类流派开关：read 同时认平铺参数与 schools 嵌套，
+ * 非法值按引擎规则回落默认；alt 在默认与代表档之间来回切。
+ */
+const ziweiSchoolSwitch = (key, title, short, def, alt, labels) => ({
+  key,
+  title,
+  short,
+  read: (a) => {
+    const raw = a[key] !== undefined ? a[key] : (a.schools && a.schools[key]);
+    return labels[raw] ? raw : def;
+  },
+  alt: (v) => (v === alt ? def : alt),
+  label: (v) => labels[v] || v,
+});
+
+/**
  * 口径开关表：每个体系 2–3 组「只差一个维度」的对照。
  * read 取当前口径（没传时按引擎默认），alt 给另一口径，label 是给人看的短名。
  * UI、CLI 与工具参数 diff 共用这一份，默认值不在别处再抄一遍。
@@ -279,6 +298,33 @@ export const CALIBER_SWITCHES = {
       alt: (v) => !v,
       label: (v) => (v ? '修正' : '不修正'),
     },
+    ziweiSchoolSwitch('brightnessSchool', '亮度表：默认 / QS 七档', '亮度表', 'default', 'QS', {
+      default: '默认', QS: 'QS（七档）', XD1: 'XD1（七档）', ZZ: 'ZZ（五档）', XD2: 'XD2（五档）',
+    }),
+    ziweiSchoolSwitch('gengYearSihua', '庚干四化：阳武阴同 / 同科阴忌', '庚干四化', 'GYWYT', 'GYWTY', {
+      GYWYT: '阳武阴同', GYWTY: '同科阴忌', GYWFT: '府科同忌', GYWFX: '府科相忌', GYWTX: '同科相忌',
+    }),
+    ziweiSchoolSwitch('tianmaSchool', '天马：按年支 / 按生月', '天马', 'year-branch', 'month-branch', {
+      'year-branch': '年支', 'month-branch': '生月',
+    }),
+    ziweiSchoolSwitch('tiankongSchool', '天空：不排 / 年支顺行', '天空', 'off', 'normal', {
+      off: '不排', normal: '年支顺行', 'shun-jia-shi': '加生时',
+    }),
+    ziweiSchoolSwitch('jiekongSchool', '截空旬空：不排 / 正副双星', '截空旬空', 'off', 'double', {
+      off: '不排', single: '单星', double: '正副双星', zhanyan: '占验派',
+    }),
+    ziweiSchoolSwitch('kuiyueSchool', '魁钺：qs1 / qs2', '魁钺', 'qs1', 'qs2', {
+      qs1: 'qs1', qs2: 'qs2', 'zhong-yiming': '中一鸣', network: '网络',
+    }),
+    ziweiSchoolSwitch('tianshiTianshang', '天伤天使：常规 / 中州互换', '天伤天使', 'normal', 'zhongzhou', {
+      normal: '常规', zhongzhou: '中州（阴男阳女互换）',
+    }),
+    ziweiSchoolSwitch('changshengSchool', '长生：阴阳顺逆 / 火土起寅', '长生', 'yin-yang-shun-ni', 'huo-tu', {
+      'yin-yang-shun-ni': '阴阳顺逆', 'shui-tu': '水二', 'huo-tu': '火土（土五局起寅）',
+    }),
+    ziweiSchoolSwitch('lateZishi', '晚子时：归当日 / 归次日', '晚子时', 'current-day', 'next-day', {
+      'current-day': '归当日', 'next-day': '归次日', 'all-current': '全归当日', 'day-cur-time-next': '日归当日·时归次日',
+    }),
   ],
   qimen: [
     {

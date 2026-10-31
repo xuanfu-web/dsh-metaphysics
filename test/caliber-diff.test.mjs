@@ -5,6 +5,7 @@ import {
   diffObjects, summarize, renderDiff, labelOf, rootOf, categoryOf, CALIBER_SWITCHES,
 } from '../engine/diff.js';
 import { compute, caliberCompare, renderText } from '../engine/index.js';
+import { ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS } from '../engine/ziwei.js';
 import { apply as hostApply } from '../index.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -143,6 +144,46 @@ const zwNon = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T14:30', ge
   .switches.find((x) => x.key === 'leapMonth');
 eq('非闰月盘闰月开关无变化', zwNon.total, 0);
 
+// 紫微九类流派开关：默认档与另一档都取自引擎枚举，且每一项真的能改盘
+const ZW_SWITCHES = CALIBER_SWITCHES.ziwei;
+eq('紫微 11 组口径（2 基础 + 9 流派）', ZW_SWITCHES.length, 11);
+const zwKeys = ZW_SWITCHES.map((x) => x.key);
+for (const key of Object.keys(ZIWEI_SCHOOL_OPTIONS)) {
+  ok(`口径表含 ${key}`, zwKeys.includes(key), zwKeys.join(','));
+  const sw = ZW_SWITCHES.find((x) => x.key === key);
+  const cur = sw.read({});
+  eq(`${key} 默认读引擎默认`, cur, ZIWEI_SCHOOL_DEFAULTS[key]);
+  ok(`${key} 另一档在枚举内`, ZIWEI_SCHOOL_OPTIONS[key].includes(sw.alt(cur)), `${cur} -> ${sw.alt(cur)}`);
+}
+eq('非法流派值回默认', ZW_SWITCHES.find((x) => x.key === 'brightnessSchool').read({ brightnessSchool: 'nope' }), 'default');
+eq('嵌套 schools 也能读到当前档', ZW_SWITCHES.find((x) => x.key === 'kuiyueSchool').read({ schools: { kuiyueSchool: 'qs2' } }), 'qs2');
+eq('平铺优先于嵌套', ZW_SWITCHES.find((x) => x.key === 'kuiyueSchool').read({ kuiyueSchool: 'qs1', schools: { kuiyueSchool: 'qs2' } }), 'qs1');
+eq('流派回显不计盘面差异', diffObjects({ schools: { a: 'x' }, rules: { schools: 'a' } }, { schools: { a: 'y' }, rules: { schools: 'b' } }).length, 0);
+
+const zwBase = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' });
+eq('紫微对照 11 组', zwBase.switches.length, 11);
+const zwBaseRow = (key) => zwBase.switches.find((x) => x.key === key);
+for (const key of ['brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool']) {
+  ok(`${key} 能检出盘面变化`, zwBaseRow(key).total > 0, `${zwBaseRow(key).currentLabel} → ${zwBaseRow(key).altLabel}：${zwBaseRow(key).total} 处`);
+}
+ok('流派回显不进根因', !zwBaseRow('kuiyueSchool').roots.some((r) => r.path.startsWith('schools') || r.path.startsWith('rules.schools')),
+  JSON.stringify(zwBaseRow('kuiyueSchool').roots.slice(0, 3)));
+ok('流派回显不进总结', !zwBaseRow('kuiyueSchool').summary.includes('schools'), zwBaseRow('kuiyueSchool').summary);
+
+const zwTianshi = caliberCompare({ system: 'ziwei', datetime: '1991-05-12T10:00', gender: 'male' })
+  .switches.find((x) => x.key === 'tianshiTianshang');
+ok('天伤天使中州派能检出变化', zwTianshi.total > 0, `${zwTianshi.total} 处`);
+const zwChang = caliberCompare({ system: 'ziwei', datetime: '1990-02-25T10:00', gender: 'male' })
+  .switches.find((x) => x.key === 'changshengSchool');
+ok('火土派土五局能检出变化', zwChang.total > 0, `${zwChang.total} 处`);
+const zwLate = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T23:30', gender: 'male', dst: false })
+  .switches.find((x) => x.key === 'lateZishi');
+ok('紫微晚子时能检出变化', zwLate.total > 0, `${zwLate.total} 处`);
+const zwNested = caliberCompare({
+  system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', schools: { kuiyueSchool: 'qs2' },
+}).switches.find((x) => x.key === 'kuiyueSchool');
+eq('嵌套档位反向对照回默认', [zwNested.current, zwNested.alt], ['qs2', 'qs1']);
+
 // 奇门：置闰与拆补可差三元；晚子时改日柱
 const QM_ARGS = { system: 'qimen', datetime: '2026-06-09T10:40' };
 const qm = caliberCompare(QM_ARGS).switches.find((x) => x.key === 'juMethod');
@@ -165,6 +206,11 @@ eq('无开关时 affected=0', caliberCompare({ system: 'liuyao' }).affected, 0);
 // 解析/交叉参数不参与对照；调用参数不被修改；两次结果一致
 const withExtras = caliberCompare({ ...BZ_ARGS, cross: true, verifyPast: 6, withInterpret: true, question: 'x', direction: 'career' });
 eq('解析/交叉参数不参与对照', withExtras.switches[0].total, bzCmp.switches[0].total);
+const withDerived = caliberCompare({ ...BZ_ARGS, shadow: true, trace: true });
+eq('影子盘/推导链不参与对照', JSON.stringify(withDerived), JSON.stringify(bzCmp));
+eq('紫微影子盘/推导链不参与对照', JSON.stringify(caliberCompare({
+  system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', shadow: true, trace: true,
+})), JSON.stringify(zwBase));
 const frozen = { ...BZ_ARGS };
 caliberCompare(frozen);
 ok('不修改调用参数', frozen.lateZi === true && !('caliber' in frozen), JSON.stringify(frozen));
@@ -190,6 +236,10 @@ const html = PP.caliberHTML(bzCmp);
 ok('渲染 details 容器', /^<details class="mp-cdiff"/.test(html.trim()), html.slice(0, 60));
 ok('summary 先给一句话总结', html.includes('组开关中') && html.includes('影响此盘'), html.slice(0, 300));
 eq('两组开关两行', (html.match(/class="mp-cdiff-row"/g) || []).length, 2);
+const zwHtml = PP.caliberHTML(zwBase);
+eq('紫微口径卡 11 行', (zwHtml.match(/class="mp-cdiff-row"/g) || []).length, 11);
+ok('紫微口径卡列全九派', ['亮度表', '庚干四化', '天马', '天空', '截空旬空', '魁钺', '天伤天使', '长生', '晚子时']
+  .every((t) => zwHtml.includes(t)), zwHtml.slice(0, 400));
 ok('根因旧值→新值', html.includes('丙辰') && html.includes('乙卯') && html.includes('mp-cdiff-to'));
 ok('当前档与另一档并排', html.includes('当前 · 换日') && html.includes('换成 · 不换日'));
 ok('分类计数', /神煞 \d+ 处/.test(html), html.match(/神煞 \d+ 处/));

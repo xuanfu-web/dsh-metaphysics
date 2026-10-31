@@ -40,7 +40,11 @@ const NAME = PKG.name;
 // 因为它们是上面这些源码的生成物；测试与文档单独改不触发发布。
 const SOURCE_FILES = ['package.json', 'index.js', 'cordis.patch.yml', 'icon.svg'];
 const SOURCE_DIRS = ['engine', 'src', 'locale'];
-const BUILD_FILES = ['tools/build-client.mjs', 'tools/build-html.mjs'];
+// 报告生成器与对拍样本会改 docs/assets 里的徽章，必须一起进发布指纹
+const BUILD_FILES = [
+  'tools/build-client.mjs', 'tools/build-html.mjs', 'tools/verification.mjs',
+  'test/fixtures/classics.json', 'test/fixtures/qimen-20.json',
+];
 
 const log = (msg) => {
   try {

@@ -64,8 +64,8 @@ npm publish --access public
 
 ## 四、提交状态（2026-10-31 更新）
 
-- **当前版本**：`0.53.0`（本地已构建、七道闸全绿；A1 推导链 + A4 影子盘 + D1 `client.js` 压缩与按 tab 拆包，入口 gzip 71KB）。尚未推送 / 发布 npm。
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并；#10557 也已合并（条目同步到 0.46 能力）。0.47–0.53.0（应期、杂气、人元、口径对照、喜忌争议、影子盘、推导链、按 tab 懒加载分块）的市场描述仍需下一次 PR 补。
+- **当前版本**：`0.55.0`（本地已构建、七道闸全绿；A1 推导链 + A2 口径对照（紫微含九派） + A3 公开对拍报告 + A4 影子盘 + D1 `client.js` 压缩与按 tab 拆包）。尚未推送 / 发布 npm。
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并；#10557 也已合并（条目同步到 0.46 能力）。0.47–0.55.0（应期、杂气、人元、口径对照、喜忌争议、影子盘、推导链、按 tab 懒加载分块、公开对拍报告、紫微九派口径）的市场描述仍需下一次 PR 补。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
 - **已发布**：npm `dsh-metaphysics@0.50.5`（2026-10-31，`dist-tags.latest = 0.50.5`，shasum `6f6a6f0d25379353ebaf896b57d7916c22accbc3`，62 个文件；0.50.2–0.50.4 随它一并发布）。0.50.5 修 issue #1 的「喜忌与调候同一五行重叠」；上一版是 0.50.1。
 - **仓库同步**：`main` 已推送到 docs 提交（0.50.5 记录），tag `v0.50.5`，GitHub release：https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.50.5

@@ -25,6 +25,16 @@ for (const zhi of ['子', '丑', '寅', '卯', '巳', '未', '申', '戌']) {
 const four = rels(mk('甲辰', '丙辰', '戊辰', '庚辰')).filter((x) => x.includes('自刑'));
 ok('自刑去重（4 柱同支只 1 条）', four.length === 1, four.join(' '));
 
+// ── ①b 五合只写「有合」，不抢断「化」──────────────────────
+// 戊癸合火是否真化要看月令、化神与争合妒合；干支关系层不能直接写成「合化火」。
+const heStems = buildRelations(mk('戊辰', '癸亥', '甲子', '丙寅')).stems.filter((x) => x.includes('合'));
+ok('戊癸合标明化火待定', heStems.some((x) => x === '戊癸合（化火待定）'), heStems.join(' '));
+ok('不再直接写死合化火', !heStems.some((x) => x.includes('合化火')), heStems.join(' '));
+for (const [a, b] of [['甲', '己'], ['乙', '庚'], ['丙', '辛'], ['丁', '壬']]) {
+  const out = buildRelations(mk(`${a}子`, `${b}丑`, '戊辰', '庚申')).stems.filter((x) => x.includes(a) && x.includes(b));
+  ok(`${a}${b}合也标待定`, out.some((x) => x.includes('待定')), out.join(' '));
+}
+
 // ── ② 三刑 / 子卯刑 仍然成立 ───────────────────────────────
 ok('寅巳申三刑', rels(mk('甲寅', '丁巳', '庚申', '壬子')).filter((x) => x.includes('刑')).length >= 2);
 ok('子卯相刑', rels(mk('甲子', '丁卯', '庚午', '壬申')).some((x) => /子卯|卯子/.test(x)), rels(mk('甲子', '丁卯', '庚午', '壬申')).join(' '));

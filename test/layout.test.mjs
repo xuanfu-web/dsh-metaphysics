@@ -31,6 +31,8 @@ ok('三档 radio 齐全', ['ppm-ben', 'ppm-da', 'ppm-ln'].every((id) => out.incl
 ok('三个 pp-body 齐全', ['ben', 'da', 'ln'].every((k) => out.includes(`pp-body ${k}`)));
 ok('含斗君文案', out.includes('子年斗君') && out.includes('流年斗君'));
 ok('含自化标记', out.includes('pp-zh'), (out.match(/pp-zh/g) || []).length + ' 处');
+ok('自化与生年/大限/流年分层', out.includes('pp-m self') && out.includes('虚下划线=自化'), out.match(/pp-m self[^"]*/)?.[0] || '缺类名');
+ok('自化带读屏说明', out.includes('自化：宫干化回本宫'));
 ok('含三方底纹', out.includes('pp-tri'));
 ok('含 12 宫格 x3', (out.match(/pp-cell/g) || []).length === 36, String((out.match(/pp-cell/g) || []).length));
 
