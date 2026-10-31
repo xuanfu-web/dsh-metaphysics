@@ -5,6 +5,7 @@
 //  · 命中按柱记录，同时给出按类别归并的 chart 级视图，供 UI 分组展示。
 // 神煞只作参考，不可直接断吉凶——吉凶仍须看格局、旺衰、行运。
 import { BRANCHES } from './calendar.js';
+import { sanheGroupOf } from './sanhe.js';
 
 export const PILLAR_KEYS = ['year', 'month', 'day', 'hour'];
 export const PILLAR_LABEL = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
@@ -14,9 +15,11 @@ const STEMS_LIST = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬
 const STEM_VIA = { year: '年干', month: '月干', day: '日干', hour: '时干' };
 const BRANCH_VIA = { year: '年支', month: '月支', day: '日支', hour: '时支' };
 
-// 三合局（将星、驿马、桃花等以年支、日支双查）
-const SANHE = { 寅午戌: ['寅', '午', '戌'], 申子辰: ['申', '子', '辰'], 巳酉丑: ['巳', '酉', '丑'], 亥卯未: ['亥', '卯', '未'] };
-const trioKey = (b) => Object.keys(SANHE).find((k) => SANHE[k].includes(b));
+// 三合局（将星、驿马、桃花等以年支、日支双查）：成员表统一从 sanhe.js 取，避免两处分写走散
+const trioKey = (b) => {
+  const g = sanheGroupOf(b);
+  return g ? g.branches.join('') : undefined;
+};
 // 方局（孤辰、寡宿以年支查）
 const FANGJU = { 亥子丑: ['寅', '戌'], 寅卯辰: ['巳', '丑'], 巳午未: ['申', '辰'], 申酉戌: ['亥', '未'] };
 const fangjuKey = (b) => Object.keys(FANGJU).find((k) => k.includes(b));

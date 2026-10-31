@@ -8,6 +8,8 @@
 - **四化分层**（`src/panel-kit.js`）：生年四化实心、大限/流年四化空心、自化改为彩色字 + 虚下划线，图例补「虚下划线=自化」，宫位详情同步；自化块带读屏说明。
 - **公开对拍补奇门**（`tools/verification.mjs`）：接入 `test/fixtures/qimen-20.json` 的 20 个时辰 × 9 宫 = 180 个宫位，逐宫核四柱、局数、值符、值使、星门神与天盘干；报告从 457 行增到 **477 行**，新增「奇门」筛选与卡片。徽章改为披露「128 例 · 5 剔除 · 312 紫微 · 20 奇门 · 12 交运」。
 - **CI 同源加固**：构建产物与对拍报告的 `git diff` 前先 `git add -N`，新增的 `client.*.js`、报告页或徽章不再因 untracked 而漏检；`release` 走同一套判据。自动发布指纹补入报告生成器与两份对拍 fixture。
+- **工具输出克隆**（`engine/index.js`）：`jsonSafe` 不再 `JSON.parse(JSON.stringify())`，改为等价递归深拷贝（NaN→null、-0→0、Date→ISO、数组空位→null、对象内 undefined/函数丢键、循环引用抛错），省掉每次 `compute` 建一遍几百 KB 中间字符串。21 个体系 21 组样本改动前后输出逐字节相同、影子盘 ID 不变。
+- **三合表单源**（`engine/shensha.js` / `engine/almanac.js`）：将星/驿马/桃花的 `trioKey` 与黄历「三合吉配」「煞方」原本各自维护的三合成员表，改为从 `engine/sanhe.js` 的 `SANHE_GROUPS` 派生，全仓只剩一份三合成员表。
 - **测试**：`test/caliber-diff.test.mjs` 由 129 条扩到 205 条——11 组开关、默认档/另一档枚举、嵌套读取、回显忽略、九派逐项能改盘、shadow/trace 不参与对照、11 行渲染；`test/relations.test.mjs` 补五合「待定」与五组干合；`test/layout.test.mjs` 补自化分层与图例；`test/verification.test.mjs` 补奇门 20 例与改坏值符的检出。统计 **107 个测试文件 / 4925 条断言**，七道闸全绿。
 - **文档**：README 口径对照、精度与口径、公开对拍三处同步；独立页「方法与验证」补奇门 20 例。
 - **版本说明**：截至本版提交时，npm latest 仍是 **0.50.5**；0.51.0–0.54.0 未单独发布，能力均并入 0.55.0。发布后 latest 会从 0.50.5 直接跳到 0.55.0。

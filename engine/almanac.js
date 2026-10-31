@@ -13,6 +13,7 @@ import {
   toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES,
 } from './calendar.js';
 import { HEX64 } from './interpret-data.js';
+import { sanheGroupOf } from './sanhe.js';
 import { assertCivil, daysInMonth } from './validate.js';
 
 /** 建除十二神（按日支相对月支顺数）。 */
@@ -59,8 +60,8 @@ const XI_SHEN = { 甲: '东北', 乙: '西北', 丙: '西南', 丁: '正南', �
 export const SHENGXIAO = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
 const SHA_BY_GROUP = { 申子辰: '南', 寅午戌: '北', 巳酉丑: '东', 亥卯未: '西' };
 function shaOf(branch) {
-  for (const [g, v] of Object.entries(SHA_BY_GROUP)) if (g.includes(branch)) return v;
-  return null;
+  const g = sanheGroupOf(branch);
+  return g ? SHA_BY_GROUP[g.branches.join('')] || null : null;
 }
 
 /** 24 小时制 → 时辰地支。 */
@@ -172,7 +173,6 @@ const TAI_SHEN = {
 
 /** 六合 / 三合（对日支取吉配生肖）。 */
 const LIUHE = { 子: '丑', 丑: '子', 寅: '亥', 亥: '寅', 卯: '戌', 戌: '卯', 辰: '酉', 酉: '辰', 巳: '申', 申: '巳', 午: '未', 未: '午' };
-const SANHE = { 申: '申子辰', 子: '申子辰', 辰: '申子辰', 亥: '亥卯未', 卯: '亥卯未', 未: '亥卯未', 寅: '寅午戌', 午: '寅午戌', 戌: '寅午戌', 巳: '巳酉丑', 酉: '巳酉丑', 丑: '巳酉丑' };
 
 /** 每日一卦：日期哈希确定性映射到通行本 64 卦（同日同卦）。 */
 export function dailyHexagram(year, month, day) {
@@ -259,7 +259,7 @@ export function buildAlmanac(input) {
       luck: shen ? shen.luck : null,
     };
   });
-  const sanheGroup = SANHE[dayBranch] || '';
+  const sanheGroup = sanheGroupOf(dayBranch)?.branches.join('') || '';
   const liuheBranch = LIUHE[dayBranch] || null;
   const lucky = {
     liuhe: liuheBranch ? SHENGXIAO[BRANCHES.indexOf(liuheBranch)] : null,

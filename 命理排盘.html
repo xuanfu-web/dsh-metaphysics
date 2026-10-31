@@ -2139,6 +2139,7 @@ __mods.shensha = (function () {
 //  · 命中按柱记录，同时给出按类别归并的 chart 级视图，供 UI 分组展示。
 // 神煞只作参考，不可直接断吉凶——吉凶仍须看格局、旺衰、行运。
 const { BRANCHES } = (__mods.calendar || {});
+const { sanheGroupOf } = (__mods.sanhe || {});
 
 const PILLAR_KEYS = ['year', 'month', 'day', 'hour'];
 const PILLAR_LABEL = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
@@ -2148,9 +2149,11 @@ const STEMS_LIST = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬
 const STEM_VIA = { year: '年干', month: '月干', day: '日干', hour: '时干' };
 const BRANCH_VIA = { year: '年支', month: '月支', day: '日支', hour: '时支' };
 
-// 三合局（将星、驿马、桃花等以年支、日支双查）
-const SANHE = { 寅午戌: ['寅', '午', '戌'], 申子辰: ['申', '子', '辰'], 巳酉丑: ['巳', '酉', '丑'], 亥卯未: ['亥', '卯', '未'] };
-const trioKey = (b) => Object.keys(SANHE).find((k) => SANHE[k].includes(b));
+// 三合局（将星、驿马、桃花等以年支、日支双查）：成员表统一从 sanhe.js 取，避免两处分写走散
+const trioKey = (b) => {
+  const g = sanheGroupOf(b);
+  return g ? g.branches.join('') : undefined;
+};
 // 方局（孤辰、寡宿以年支查）
 const FANGJU = { 亥子丑: ['寅', '戌'], 寅卯辰: ['巳', '丑'], 巳午未: ['申', '辰'], 申酉戌: ['亥', '未'] };
 const fangjuKey = (b) => Object.keys(FANGJU).find((k) => k.includes(b));
@@ -11784,6 +11787,7 @@ const { solarToLunar } = (__mods.lunar || {});
 const { nayinOf } = (__mods.nayin || {});
 const { toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES } = (__mods.calendar || {});
 const { HEX64 } = (__mods['interpret-data'] || {});
+const { sanheGroupOf } = (__mods.sanhe || {});
 const { assertCivil, daysInMonth } = (__mods.validate || {});
 
 /** 建除十二神（按日支相对月支顺数）。 */
@@ -11830,8 +11834,8 @@ const XI_SHEN = { 甲: '东北', 乙: '西北', 丙: '西南', 丁: '正南', �
 const SHENGXIAO = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
 const SHA_BY_GROUP = { 申子辰: '南', 寅午戌: '北', 巳酉丑: '东', 亥卯未: '西' };
 function shaOf(branch) {
-  for (const [g, v] of Object.entries(SHA_BY_GROUP)) if (g.includes(branch)) return v;
-  return null;
+  const g = sanheGroupOf(branch);
+  return g ? SHA_BY_GROUP[g.branches.join('')] || null : null;
 }
 
 /** 24 小时制 → 时辰地支。 */
@@ -11943,7 +11947,6 @@ const TAI_SHEN = {
 
 /** 六合 / 三合（对日支取吉配生肖）。 */
 const LIUHE = { 子: '丑', 丑: '子', 寅: '亥', 亥: '寅', 卯: '戌', 戌: '卯', 辰: '酉', 酉: '辰', 巳: '申', 申: '巳', 午: '未', 未: '午' };
-const SANHE = { 申: '申子辰', 子: '申子辰', 辰: '申子辰', 亥: '亥卯未', 卯: '亥卯未', 未: '亥卯未', 寅: '寅午戌', 午: '寅午戌', 戌: '寅午戌', 巳: '巳酉丑', 酉: '巳酉丑', 丑: '巳酉丑' };
 
 /** 每日一卦：日期哈希确定性映射到通行本 64 卦（同日同卦）。 */
 function dailyHexagram(year, month, day) {
@@ -12030,7 +12033,7 @@ function buildAlmanac(input) {
       luck: shen ? shen.luck : null,
     };
   });
-  const sanheGroup = SANHE[dayBranch] || '';
+  const sanheGroup = sanheGroupOf(dayBranch)?.branches.join('') || '';
   const liuheBranch = LIUHE[dayBranch] || null;
   const lucky = {
     liuhe: liuheBranch ? SHENGXIAO[BRANCHES.indexOf(liuheBranch)] : null,
@@ -17771,9 +17774,51 @@ function liuyaoText(r) {
   return out.filter(Boolean).join('\n');
 }
 
-/** 工具输出必须是无损 JSON：去掉 undefined / 函数等不可序列化的值 */
+/**
+ * 工具输出必须是无损 JSON：去掉 undefined / 函数等不可序列化的值。
+ * 语义与 JSON.parse(JSON.stringify(v)) 一致（NaN→null、-0→0、Date→ISO、数组空位→null、
+ * 对象里的 undefined/函数丢键、循环引用抛错），但不建中间字符串——结果动辄几百 KB，
+ * 每次 compute 都序列化一遍纯属浪费。
+ */
 function jsonSafe(value) {
-  return JSON.parse(JSON.stringify(value));
+  const seen = new WeakSet();
+  const walk = (v, key) => {
+    if (v instanceof Number || v instanceof String || v instanceof Boolean) v = v.valueOf();
+    if (v && typeof v === 'object' && typeof v.toJSON === 'function') v = v.toJSON(key);
+    switch (typeof v) {
+      case 'string':
+      case 'boolean':
+        return v;
+      case 'number':
+        return Number.isFinite(v) ? (Object.is(v, -0) ? 0 : v) : null;
+      case 'bigint':
+        throw new TypeError('Do not know how to serialize a BigInt');
+      case 'object': {
+        if (v === null) return null;
+        if (seen.has(v)) throw new TypeError('Converting circular structure to JSON');
+        seen.add(v);
+        let out;
+        if (Array.isArray(v)) {
+          out = new Array(v.length);
+          for (let i = 0; i < v.length; i++) {
+            const c = walk(v[i], String(i));
+            out[i] = c === undefined ? null : c;
+          }
+        } else {
+          out = {};
+          for (const k of Object.keys(v)) {
+            const c = walk(v[k], k);
+            if (c !== undefined) out[k] = c;
+          }
+        }
+        seen.delete(v);
+        return out;
+      }
+      default:
+        return undefined;
+    }
+  };
+  return walk(value, '');
 }
 
 // ── 影子盘：同一组归一化参数 + 同一版本 → 同一个短 ID ──────────────

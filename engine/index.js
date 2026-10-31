@@ -432,9 +432,51 @@ function liuyaoText(r) {
   return out.filter(Boolean).join('\n');
 }
 
-/** 工具输出必须是无损 JSON：去掉 undefined / 函数等不可序列化的值 */
+/**
+ * 工具输出必须是无损 JSON：去掉 undefined / 函数等不可序列化的值。
+ * 语义与 JSON.parse(JSON.stringify(v)) 一致（NaN→null、-0→0、Date→ISO、数组空位→null、
+ * 对象里的 undefined/函数丢键、循环引用抛错），但不建中间字符串——结果动辄几百 KB，
+ * 每次 compute 都序列化一遍纯属浪费。
+ */
 function jsonSafe(value) {
-  return JSON.parse(JSON.stringify(value));
+  const seen = new WeakSet();
+  const walk = (v, key) => {
+    if (v instanceof Number || v instanceof String || v instanceof Boolean) v = v.valueOf();
+    if (v && typeof v === 'object' && typeof v.toJSON === 'function') v = v.toJSON(key);
+    switch (typeof v) {
+      case 'string':
+      case 'boolean':
+        return v;
+      case 'number':
+        return Number.isFinite(v) ? (Object.is(v, -0) ? 0 : v) : null;
+      case 'bigint':
+        throw new TypeError('Do not know how to serialize a BigInt');
+      case 'object': {
+        if (v === null) return null;
+        if (seen.has(v)) throw new TypeError('Converting circular structure to JSON');
+        seen.add(v);
+        let out;
+        if (Array.isArray(v)) {
+          out = new Array(v.length);
+          for (let i = 0; i < v.length; i++) {
+            const c = walk(v[i], String(i));
+            out[i] = c === undefined ? null : c;
+          }
+        } else {
+          out = {};
+          for (const k of Object.keys(v)) {
+            const c = walk(v[k], k);
+            if (c !== undefined) out[k] = c;
+          }
+        }
+        seen.delete(v);
+        return out;
+      }
+      default:
+        return undefined;
+    }
+  };
+  return walk(value, '');
 }
 
 // ── 影子盘：同一组归一化参数 + 同一版本 → 同一个短 ID ──────────────
