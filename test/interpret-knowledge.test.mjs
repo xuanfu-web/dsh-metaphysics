@@ -2,7 +2,7 @@
 //
 // 这套条目会在文末以「各家有异说 / 待核实」的形式直接展示给用户，
 // 所以它比普通文案更需要硬约束：没有出处的知识、没标注分歧的断言，都不该进库。
-import { KNOWLEDGE, knowledgeFor, caveatsFor, STATUS_LABEL } from '../engine/interpret-knowledge.js';
+import { KNOWLEDGE, knowledgeFor, caveatsFor, STATUS_LABEL, KNOWLEDGE_DISCLAIMER } from '../engine/interpret-knowledge.js';
 import { compute, interpretText } from '../engine/index.js';
 import { ok } from './_harness.mjs';
 
@@ -54,6 +54,18 @@ ok('caveats 覆盖有异说条目', c.some((k) => k.status === 'variant'), `${c.
 // 状态标签齐全
 ok('状态标签齐全', Object.keys(STATUS_LABEL).length === 3, JSON.stringify(STATUS_LABEL));
 
+// 0.59.0 起：标签必须自己说清「这讲的是文本」。
+// 以前写「诸家一致」，用户读成「这说法可靠」——实际含义只是「各书都这么写」。
+// 这两件事混在一个词里，是产品在无意中骗人。这条断言就是防止有人把它改回去。
+const bareLabel = Object.entries(STATUS_LABEL).filter(([, v]) => !/^文本·/.test(v)).map(([k]) => k);
+ok('状态标签必须显式限定在文本层', bareLabel.length === 0, bareLabel.join(','));
+
+// 效度声明必须同时否掉两件事：文本一致 ≠ 有效，插件不作保证
+const note = KNOWLEDGE_DISCLAIMER || '';
+ok('效度声明存在', note.length >= 30, `${note.length} 字`);
+ok('效度声明点明「不表示经过验证」', /不表示.*验证/.test(note), note);
+ok('效度声明点明「不作保证」', /不.*保证/.test(note), note);
+
 // ── 集成：知识条目要真的出现在解析结果里 ──
 const r = compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州', withInterpret: true, question: '今年考运', direction: 'study' });
 const it = r.interpret;
@@ -63,6 +75,22 @@ ok('八字：知识条目带出处', withKnow.every((d) => d.knowledge.every((k)
 ok('八字：有条目计数', it.knowledgeCount > 0, String(it.knowledgeCount));
 ok('八字：文末有可信度声明', (it.sections || []).some((s) => s.label === '这套规则有多稳'), '缺「这套规则有多稳」');
 ok('八字：caveats 数组存在', Array.isArray(it.caveats) && it.caveats.length > 0, `${it.caveats && it.caveats.length}`);
+
+// 0.59.0 起：分歧要分组——用户先要知道「我这盘有几处是取派分歧」，
+// 体系总账次要。只给一张大清单，等于把「你这盘踩到的」和「这派别来就吵的」混成一锅。
+{
+  const cav = (it.sections || []).find((s) => s.key === 'caveats');
+  const cavText = cav ? cav.text : '';
+  ok('分歧按「本盘涉及」分组', /本盘涉及 \d+ 处|本盘未踩到/.test(cavText), cavText.slice(0, 80));
+  // 标了「本盘涉及」的，必须真在这张盘的知识卡里出现过，不能虚标
+  const head = cavText.split('本体系另有')[0] || '';
+  const shownGists = new Set((it.dimensions || []).flatMap((d) => (d.knowledge || []).map((k) => k.gist.trim())));
+  const touchedLines = head.split('\n').filter((l) => l.startsWith('· '));
+  const ghost = touchedLines
+    .map((l) => l.replace(/^· /, '').replace(/（文本·[^）]*）\s*$/, '').trim())
+    .filter((g) => !shownGists.has(g));
+  ok('「本盘涉及」的条目都真的在卡里出现过', ghost.length === 0, ghost.slice(0, 2).join(' | '));
+}
 
 // 注解不刷屏：一张卡全报告只挂一次，每维最多 3 条——否则同一段规则会在五个维度里复读
 {

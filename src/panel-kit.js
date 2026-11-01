@@ -487,6 +487,11 @@
 .mp-it-gloss{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted)}
 .mp-it-gloss summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
 .mp-it-gloss span{color:var(--ink2);font-weight:600;margin-right:4px}
+/* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
+.mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
+.mp-it-limits div{margin-bottom:7px}
+.mp-it-limits b{display:block;color:var(--ink2);font-weight:600;margin-bottom:1px}
 /* 解析生成失败：这属于"这段没出来"，不是断语，用警示色单独一行 */
 .mp-it-err{margin:12px 16px;padding:9px 12px;border-left:2px solid var(--red);background:var(--soul);font-size:12.5px;line-height:1.8;color:var(--ink2)}
 .mp-it-err b{color:var(--red);margin-right:6px}
@@ -512,6 +517,8 @@
 .know-body b{display:block;font-size:12.5px;color:var(--ink);font-weight:600;margin-bottom:2px}
 .know-body i{display:block;font-style:normal;color:var(--muted);font-size:11.5px;margin-top:2px}
 .know-body em{display:block;font-style:normal;color:var(--warn);font-size:11.5px;margin-top:2px}
+/* 效度声明：标签讲的是文本一致度，这句把边界钉在区块末尾（全报告只出现一次） */
+.know-disc{margin-top:2px;padding-top:8px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
 .mp-it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
 .mp-it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
 .mp-it-sec{margin-bottom:11px}
@@ -2639,12 +2646,15 @@
     const hasBody = (it.dimensions && it.dimensions.length) || (it.sections && it.sections.length);
     if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
+    // 效度声明只挂一次：放在最后一个带知识卡的维度下面，逐维重复反而会被跳过不看
+    let lastKnowAt = -1;
+    (it.dimensions || []).forEach((d, i) => { if (d.knowledge && d.knowledge.length) lastKnowAt = i; });
     const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}${d.confidence ? `<span class="mp-it-conf c-${esc(d.confidence)}">置信度 ${esc(d.confidence)}</span>` : ''}</div>
       ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
       ${(d.evidence && d.evidence.length) ? `<details class="mp-it-ev"><summary>依据 · ${esc(d.evidence.length)} 条盘面事实</summary><div class="mp-it-ev-body">${d.evidence.map((x) => `<span class="mp-it-ev-item">${esc(x)}</span>`).join('')}<span class="mp-it-ev-tech">技法：${esc(it.technique || it.systemLabel || '')}</span></div></details>` : ''}
-      ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-know">${d.knowledge.map((k) => `<div class="know-row"><span class="know-status ${k.status}">${esc(k.statusLabel)}</span><span class="know-body"><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}</div>` : ''}
+      ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-know">${d.knowledge.map((k) => `<div class="know-row"><span class="know-status ${k.status}">${esc(k.statusLabel)}</span><span class="know-body"><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${i === lastKnowAt && it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
     // 一页读懂：报告顶部五条结论（整体/事业/财富/感情/节奏）
@@ -2693,6 +2703,11 @@
     const gloss = (it.glossary && it.glossary.length)
       ? `<details class="mp-it-gloss"><summary>名词解释（${it.glossary.length} 条）</summary>${it.glossary.map((g) => `<div><span>${esc(g.term)}</span>${esc(g.plain)}</div>`).join('')}</details>`
       : '';
+    // 能力边界：折叠放在最末，默认不占视线，但必须存在且可展开。
+    // 与下面的免责声明分工不同——免责声明是「别全当真」，这里是「具体哪几件我们不答、为什么」。
+    const limits = (it.limits && it.limits.length)
+      ? `<details class="mp-it-limits"><summary>本插件不回答什么（${it.limits.length} 条）</summary>${it.limits.map((l) => `<div><b>${esc(l.title)}</b>${esc(l.text)}</div>`).join('')}</details>`
+      : '';
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -2712,6 +2727,7 @@
         ${tables}
         ${fu}
         ${gloss}
+        ${limits}
         <div class="mp-it-dis">${esc(it.disclaimer)}</div>
       </div>
     </div>`;

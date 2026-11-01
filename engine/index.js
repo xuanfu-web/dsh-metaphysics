@@ -909,6 +909,11 @@ export function interpretText(i) {
   if (Array.isArray(i.glossary) && i.glossary.length) {
     out.push('名词解释：' + i.glossary.map((g) => `${g.term}＝${g.plain}`).join('　'));
   }
+  // 能力边界：这段是给调用方（模型）看的上下文，不是给用户直接念的。
+  // 写全比只写标题有用——模型知道「为什么不答」，才不会自己补一个答案出来。
+  if (Array.isArray(i.limits) && i.limits.length) {
+    out.push('【本插件不回答什么】' + i.limits.map((l) => `${l.title}——${l.text}`).join('\n'));
+  }
   if (i.disclaimer) out.push(i.disclaimer);
   return out.join('\n');
 }

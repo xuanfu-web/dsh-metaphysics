@@ -1720,8 +1720,9 @@ const BUILDERS = {
  */
 import { interpretQimen } from './qimen-interpret.js';
 import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain } from './interpret-plain.js';
-import { knowledgeFor, caveatsFor, STATUS_LABEL } from './interpret-knowledge.js';
+import { knowledgeFor, caveatsFor, STATUS_LABEL, KNOWLEDGE_DISCLAIMER } from './interpret-knowledge.js';
 import { citationSourceOf } from './citations.js';
+import { limitsFor } from './limits.js';
 import { CLASSIC_BOOKS, suiyunClassicOf, classicOf } from './classics.js';
 
 /**
@@ -1776,21 +1777,29 @@ function enrichPlain(result, r, ask) {
 
   // 文末的诚实声明：把「各家有异说 / 还没做」的部分摊开，而不是藏在专业感里。
   // 「待核实」的在下面单独成段（附原注），这里只列已定论/有异说的，避免同一句话写两遍。
-  // 已在上面展开过的只留条目名当索引；没展开的附原注，保证信息不丢。
+  // 分两组：本盘实际踩到的（seen 里记着上面展开过的卡），与仅属体系通行的。
+  // 用户先要知道「我这盘有几处是取派分歧」，前者才是他该看的；后者留作备查，不混在一堆里。
   const caveats = caveatsFor(r.system);
   const disputed = caveats.filter((k) => k.status !== 'todo');
+  const touched = disputed.filter((k) => seen.has(k.id));
+  const rest = disputed.filter((k) => !seen.has(k.id));
+  const fmtCaveat = (k) => `· ${k.gist}（${STATUS_LABEL[k.status] || k.status}）`;
   const caveatLine = disputed.length
-    ? disputed.map((k) => {
-      const tag = STATUS_LABEL[k.status] || k.status;
-      return `· ${k.gist}（${tag}）${seen.has(k.id) || !k.note ? '' : `——${k.note}`}`;
-    }).join('\n')
+    ? [
+      touched.length
+        ? `本盘涉及 ${touched.length} 处：\n${touched.map(fmtCaveat).join('\n')}`
+        : '本盘未踩到下面这些分歧，结论是按一派一路算下来的。',
+      rest.length
+        ? `本体系另有 ${rest.length} 处通行分歧（本盘未涉及，附原注备查）：\n${rest.map((k) => `${fmtCaveat(k)}${k.note ? `——${k.note}` : ''}`).join('\n')}`
+        : '',
+    ].filter(Boolean).join('\n\n')
     : '';
   const secs = [...(result.sections || [])];
   if (caveatLine) {
     secs.push({
       key: 'caveats',
       label: '这套规则有多稳',
-      text: `下列几条各家说法不一，本插件取其中一派并把分歧标出来，供你判断可信度（已在上面展开的只列条目，未展开的附原注）：\n${caveatLine}`,
+      text: `下列分歧属文本层：各书写法不同，引擎总得取一派，所以本插件取了一派并在此标明。先列你这张盘踩到的，再列本体系其余通行的。\n\n${caveatLine}\n\n这是「文本层」的分歧，不是谁对谁错的判定：同一现象各派解释路径不同，本插件不替它们裁决，也不据此声称哪一种说法更准。`,
     });
   }
   const todos = caveats.filter((k) => k.status === 'todo');
@@ -1811,6 +1820,7 @@ function enrichPlain(result, r, ask) {
     followups: buildFollowups(r, ask),
     glossary: buildGlossary(texts, r.system),
     knowledgeCount: dims.reduce((n, d) => n + ((d.knowledge || []).length), 0),
+    knowledgeNote: KNOWLEDGE_DISCLAIMER,
     caveats: caveats.map((k) => ({ id: k.id, gist: k.gist, status: k.status, statusLabel: STATUS_LABEL[k.status] || k.status })),
   };
 }
@@ -1845,6 +1855,8 @@ const withReportMeta = (body, r, ask) => enrichPlain({
   tables: body.tables || [],
   technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
   disclaimer: body.disclaimer || DISCLAIMER,
+  // 能力边界走公共收尾，奇门那条支路也能带上（它不经过正文组装）
+  limits: body.limits || limitsFor(r.system),
   ask,
 }, r, ask);
 

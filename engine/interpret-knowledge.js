@@ -495,9 +495,20 @@ export function caveatsFor(system) {
   return KNOWLEDGE.filter((k) => k.system === system && k.status !== 'settled');
 }
 
-/** 状态 → 展示用标签 */
+/**
+ * 状态 → 展示用标签。
+ *
+ * 这三个标签只描述**典籍文本**的一致程度，不描述技法效度：
+ *   settled＝各书都这么写；variant＝各书写法不同；todo＝这一条还没录进来。
+ * 前两个强制带「文本·」前缀，就是为了防止被读成「已验证有效」——
+ * 「诸家一致」说的是书里一致，不是世界里成立。这两件事以前共用一个词，
+ * 是产品在无意中骗人；0.59.0 起分开。
+ */
 export const STATUS_LABEL = {
-  settled: '诸家一致',
-  variant: '各家有异说',
-  todo: '待核实',
+  settled: '文本·诸家一致',
+  variant: '文本·各家有异说',
+  todo: '文本·未录入',
 };
+
+/** 知识卡区块底部那句统一声明：标签讲文本，效度不在此列 */
+export const KNOWLEDGE_DISCLAIMER = '以上标签只说明典籍文本的一致程度，不表示该技法经过验证；本插件不对任何技法的预测效度作保证。';
