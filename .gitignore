@@ -23,3 +23,6 @@ _*.png
 tools/.autopublish.log
 # 上一轮失败留下的标记：存在即说明没跑成，成功后自动删除
 tools/.autopublish-error
+
+# 测试用的独立锁（test/autopublish.test.mjs 生成）
+.qa-autopublish-test.lock

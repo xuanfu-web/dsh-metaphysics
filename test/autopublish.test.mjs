@@ -7,7 +7,12 @@ import { ok, eq } from './_harness.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (f) => fs.readFileSync(path.join(root, f), 'utf8');
-const run = (args) => spawnSync(process.execPath, ['tools/autopublish.mjs', ...args], { cwd: root, encoding: 'utf8' });
+// 测试自己也可能被「自动发布」调度起来跑（它会把整套测试跑一遍）：
+// 用独立的锁文件，避免外层实例占着锁、内层实例直接跳过而误判成通过。
+const TEST_LOCK = path.join(root, '.qa-autopublish-test.lock');
+const run = (args) => spawnSync(process.execPath, ['tools/autopublish.mjs', ...args], {
+  cwd: root, encoding: 'utf8', env: { ...process.env, AUTOPUBLISH_LOCK: TEST_LOCK },
+});
 
 const statePath = path.join(root, '.autopublish-state.json');
 const before = fs.existsSync(statePath) ? read('.autopublish-state.json') : null;
@@ -48,10 +53,15 @@ ok('SSH 兜底临时生成 ed25519', /'-t', 'ed25519'/.test(src));
 ok('SSH 兜底会注册并删除 deploy key', /\/keys`/.test(src) && /DELETE/.test(src));
 ok('SSH 兜底不落盘持久凭据（用完删临时目录）', /fs\.rmSync\(dir, \{ recursive: true, force: true \}\)/.test(src));
 ok('未捕获异常也留痕', /main\(\)\.catch[\s\S]{0,200}writeFileSync\(ERR/.test(src));
+// 自动发布自己跑测试时，测试里再起一个实例：共用一把锁会让内层直接跳过，测出假通过
+ok('锁路径可用环境变量换掉', /AUTOPUBLISH_LOCK/.test(src) && /process\.env\.AUTOPUBLISH_LOCK \|\|/.test(src));
+ok('测试用独立锁文件', /const TEST_LOCK = /.test(read('test/autopublish.test.mjs')));
 
 // 试跑一次：必须写「运行开始」，且不产生错误文件
 const hadErrBefore = fs.existsSync(ERR);
-const dry = spawnSync(process.execPath, ['tools/autopublish.mjs', '--dry-run'], { cwd: root, encoding: 'utf8' });
+const dry = spawnSync(process.execPath, ['tools/autopublish.mjs', '--dry-run'], {
+  cwd: root, encoding: 'utf8', env: { ...process.env, AUTOPUBLISH_LOCK: TEST_LOCK },
+});
 eq('dry-run 退出码 0', dry.status, 0);
 ok('dry-run 往日志写了运行开始', /运行开始（dry-run/.test(logText()), logText().slice(-120));
 ok('dry-run 不写错误文件', hadErrBefore ? true : !fs.existsSync(ERR));
@@ -60,12 +70,12 @@ ok('dry-run 不写错误文件', hadErrBefore ? true : !fs.existsSync(ERR));
 const badCfg = spawnSync(process.execPath, ['tools/autopublish.mjs', '--force'], {
   cwd: root,
   encoding: 'utf8',
-  env: { ...process.env, AUTOPUBLISH_CONFIG: path.join(root, '.qa-no-such-config.json') },
+  env: { ...process.env, AUTOPUBLISH_CONFIG: path.join(root, '.qa-no-such-config.json'), AUTOPUBLISH_LOCK: TEST_LOCK },
 });
 eq('配置缺失时退出码 1', badCfg.status, 1);
 ok('配置缺失时写错误文件', fs.existsSync(ERR), ERR);
 ok('错误文件写明原因', /缺少自动发布配置/.test(errText()), errText().slice(0, 80));
-eq('失败后不留锁', fs.existsSync(path.join(root, '.autopublish.lock')), false);
+eq('失败后不留锁', fs.existsSync(TEST_LOCK), false);
 const stateAfterFail = fs.existsSync(statePath) ? read('.autopublish-state.json') : null;
 ok('失败不改状态文件', stateAfterFail === after);
 // 收拾现场：错误文件是运行产物，别留在工作区里

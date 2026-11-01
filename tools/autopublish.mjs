@@ -39,7 +39,9 @@ const INIT = args.includes('--init');
 const FORCE = args.includes('--force');
 
 const STATE = path.join(root, '.autopublish-state.json');
-const LOCK = path.join(root, '.autopublish.lock');
+// 锁文件可用环境变量换掉：测试要在「自动发布自己正在跑」的时候再启一个实例，
+// 共用一把锁会让第二个实例直接跳过，测出来的「成功」其实是没干活。
+const LOCK = process.env.AUTOPUBLISH_LOCK || path.join(root, '.autopublish.lock');
 const LOG = path.join(root, 'tools', '.autopublish.log');
 /** 失败留痕：成功一次就删掉，看到这个文件就说明上一轮没成 */
 const ERR = path.join(root, 'tools', '.autopublish-error');
