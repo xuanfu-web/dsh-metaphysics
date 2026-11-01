@@ -26,3 +26,6 @@ tools/.autopublish-error
 
 # 测试用的独立锁（test/autopublish.test.mjs 生成）
 .qa-autopublish-test.lock
+
+# 宿主/自动化运行时写入的记忆与状态（本机产物，不入库）
+.workbuddy/
