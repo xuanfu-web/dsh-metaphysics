@@ -369,6 +369,19 @@
 
   // 上一次的卦象：改「所问之事 / 询问方向」时用它重出解读，不重摇一卦
   let last = null;
+  /** 把当前盘 + 问题打包成问事提示并复制：方向映射到问事类型，时间默认已知（盘已起出） */
+  function copyAskPrompt(btn) {
+    if (!last || !last.r || !window.Engine || !window.Engine.buildEventPrompt) return;
+    const Core = window.__MPCore || {};
+    const q = (el('question') && el('question').value || '').trim();
+    const dir = (askArgs && askArgs().direction) || 'general';
+    const kind = Core.kindOfDirection ? Core.kindOfDirection(dir) : 'other';
+    const gender = (el('gender') && el('gender').value) || 'male';
+    let p;
+    try { p = window.Engine.buildEventPrompt(last.r, { question: q, kind, gender, timeKnown: true }); }
+    catch (e) { p = null; }
+    if (p && p.text) copyPlain(btn, p.text, '已复制问事提示');
+  }
 
   /** 用缓存的卦象重新渲染：解读按当前的问题与方向重出，卦面本身不动 */
   function paint() {
@@ -397,6 +410,9 @@
       const perfHtml = window.__PP.perfHTML(last.perf);
       if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
     }
+     // 问事体系的「复制问事提示」按钮：paint 重绘后重新挂一次（innerHTML 会清掉旧监听）
+    const askBtn = el('out').querySelector('.mp-askcopy');
+    if (askBtn) askBtn.addEventListener('click', () => copyAskPrompt(askBtn));
   }
 
   /** 追问区：只对已算好的盘发问，不重新起盘 */

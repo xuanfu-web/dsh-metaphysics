@@ -1721,6 +1721,10 @@ export { buildTrace, traceMarkdown };
 export { encodeHandle, decodeHandle, resolveHandle };
 // C3 对话桥替代：深链编解码、表单还原、三档复制包（面板与独立页共用一份）
 export { askLink, parseAskLink, formOf, restNote, askPackages };
+// 问事解读提示：把一张盘打包成「先答他所问、不堆术语、回到现实核对」的提示，供面板一键复制
+// （本仓 esbuild 不接受 `export {} from`，先静态 import 再 export）
+import { buildEventPrompt, ASK_KINDS } from './event-prompt.js';
+export { buildEventPrompt, ASK_KINDS };
 
 
 

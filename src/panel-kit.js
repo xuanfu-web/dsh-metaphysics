@@ -512,6 +512,11 @@
 .mp-guide-parts li{margin:3px 0}
 .mp-guide-parts li span{display:inline-block;min-width:44px;color:var(--ink);font-weight:600}
 .mp-guide-close{margin:11px 0 0;color:var(--ink2);font-size:12px}
+/* 复制问事提示：只有问事体系渲染；命盘类不显示按钮本身 */
+.mp-askcopy-row{display:flex;align-items:center;gap:8px;margin:8px 0 0;padding:0;flex-wrap:wrap}
+.mp-askcopy{border:1px solid var(--red);background:transparent;color:var(--red);font:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;transition:background .14s,color .14s}
+.mp-askcopy:hover{background:var(--red);color:var(--on-accent)}
+.mp-askcopy-hint{color:var(--muted);font-size:11.5px}
 /* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
 .mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 .mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
@@ -2733,6 +2738,11 @@
     const limits = (it.limits && it.limits.length)
       ? `<details class="mp-it-limits"><summary>本插件不回答什么（${it.limits.length} 条）</summary>${it.limits.map((l) => `<div><b>${esc(l.title)}</b>${esc(l.text)}</div>`).join('')}</details>`
       : '';
+    // 问事体系才有「复制问事提示」：命盘类（八字/紫微/合盘/趋势/起名/风水/称骨/星座/数字/人格）不显示
+    const isAskSys = it.system && /^(liuyao|meihua|daliuren|qimen|tarot|xiaoliuren)$/.test(it.system);
+    const askCopy = isAskSys
+      ? `<div class="mp-askcopy-row"><button type="button" class="mp-askcopy" data-mp-askcopy="${esc(it.system)}">复制问事提示</button><span class="mp-askcopy-hint">把这张盘和你的问题打包成一段提示，粘到任何对话里都能用</span></div>`
+      : '';
         // 三层导读：最靠前，但默认收起——想读的人一进来就有，不想读的人不多占一屏。
     // 内容全部转义；这段只讲「哪层可复核、哪层要留个心眼」，不碰任何断语。
     const guide = it.guide ? `<details class="mp-guide">
@@ -2751,6 +2761,7 @@
         <span class="mp-it-hint">${folded ? '点击展开' : '点击收起'}</span>
       </button>
       <div class="mp-it-wrap">
+        ${askCopy}
         ${askLine}
         ${answer}
         ${plain}

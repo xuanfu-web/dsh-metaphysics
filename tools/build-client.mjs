@@ -8,7 +8,7 @@ import { DIRECTIONS } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'index'];
+  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -19,6 +19,8 @@ const COMMON = ['fail', 'validate', 'diff', 'fingerprint', 'lru', 'vsop-earth', 
 // guide 放三层导读：interpret 的结果要带它，所以同样并进解释栈（漏了会静默 undefined）
 const INTERPRET = ['interpret-data', 'interpret-knowledge', 'limits', 'guide', 'interpret-plain', 'citations', 'interpret'];
 const ASK = ['followup'];
+// 问事解读提示：liuyao/meihua/daliuren/qimen/tarot/xiaoliuren 这六个问事体系要带，命盘类不带
+const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
 // 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎
 const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', ...INTERPRET];
 const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', ...INTERPRET];
@@ -50,15 +52,15 @@ export const CHUNKS = {
       'classics', 'name-data', 'name', ...ASK],
   },
   fengshui: { tabs: ['fengshui'], modules: [...COMMON, 'fengshui', ...ASK] },
-  liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'liuyao', 'meihua', ...INTERPRET, ...ASK, 'trace'] },
-  qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen-ganying', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK, 'trace'] },
-  daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK, 'trace'] },
-  tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot', ...INTERPRET, ...ASK] },
+  liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'liuyao', 'meihua', ...INTERPRET, ...ASK, ...EVENT_PROMPT, 'trace'] },
+  qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen-ganying', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK, ...EVENT_PROMPT, 'trace'] },
+  daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK, ...EVENT_PROMPT, 'trace'] },
+  tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot', ...INTERPRET, ...ASK, ...EVENT_PROMPT] },
   almanac: { tabs: ['almanac'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', ...ASK] },
   convert: { tabs: ['convert'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'convert', ...ASK] },
   zeri: { tabs: ['zeri'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'zeri', ...ASK] },
   chenggu: { tabs: ['chenggu'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'chenggu', ...ASK] },
-  xiaoliuren: { tabs: ['xiaoliuren'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'xiaoliuren', ...ASK] },
+  xiaoliuren: { tabs: ['xiaoliuren'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'xiaoliuren', ...ASK, ...EVENT_PROMPT] },
   star: { tabs: ['star'], modules: [...COMMON, 'classics', 'star', ...ASK] },
   numerology: { tabs: ['numerology'], modules: [...COMMON, 'classics', 'numerology', ...ASK] },
   mbti: { tabs: ['mbti'], modules: [...COMMON, 'classics', 'mbti', ...ASK] },

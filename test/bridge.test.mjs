@@ -174,7 +174,7 @@ ok('独立页有复制提问按钮', /data-act="copyask"/.test(web));
 ok('独立页复制走同一份包', /window\.Engine\.askPackages/.test(web));
 
 const build = read('tools/build-client.mjs');
-ok('bridge 进了打包顺序', /'handle', 'bridge', 'index'/.test(build));
+ok('bridge 进了打包顺序', /'handle', 'bridge'[^]*?'index'\]/.test(build));
 ok('bridge 进了每个分块的公共栈', /'nayin', 'sanhe', 'random', 'handle', 'bridge'/.test(build));
 
 const idx = read('engine/index.js');

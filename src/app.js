@@ -1093,6 +1093,8 @@ function App() {
     if (traceBtn) { traceOpen(); return; }
     const traceCopy = e.target && e.target.closest ? e.target.closest('[data-trace-copy]') : null;
     if (traceCopy) { copyTraceMarkdown(traceCopy); return; }
+    const askCopyBtn = e.target && e.target.closest ? e.target.closest('[data-mp-askcopy]') : null;
+    if (askCopyBtn) { copyAskPrompt(); return; }
     const traceBack = e.target && e.target.closest ? e.target.closest('[data-trace-close]') : null;
     if (traceBack) { traceClose(); return; }
     const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
@@ -1141,6 +1143,15 @@ function App() {
       if (!text) return;
       navigator.clipboard.writeText(text).then(() => setCopied('已复制'), () => setCopied('复制失败'));
     } catch (e) { setCopied('复制失败'); }
+  };
+  /** 复制问事提示：把当前盘 + 问题打包，方向映射到问事类型；命盘类不会渲染这个按钮 */
+  const copyAskPrompt = () => {
+    if (!result || !result.r || !window.Engine || !window.Engine.buildEventPrompt) return;
+    const kind = (Core && Core.kindOfDirection ? Core.kindOfDirection(direction) : 'other');
+    let p;
+    try { p = window.Engine.buildEventPrompt(result.r, { question: (question || '').trim(), kind, gender, timeKnown: true }); }
+    catch (e) { p = null; }
+    if (p && p.text) navigator.clipboard.writeText(p.text).then(() => setCopied('已复制问事提示'), () => setCopied('复制失败'));
   };
 
   /** 追问：只从已算好的盘面取数，不重排 */

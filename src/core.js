@@ -8,6 +8,11 @@
   const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
   const needAsk = (kind) => !!NEED_ASK[kind];
 
+  // 询问方向（命盘用的七向）→ 问事类型（问事提示用的六类）。
+  // 命盘的「健康/学业」没有对应的问事类型：健康不越界、学业归到工作类。
+  const KIND_OF_DIR = { general: 'other', wealth: 'business', career: 'career', love: 'love', health: 'other', study: 'career', travel: 'action' };
+  const kindOfDirection = (d) => KIND_OF_DIR[d] || 'other';
+
   // ── 高亮块上的字色 ──────────────────────────────────────
   // 选中态一直是「品牌色底 + 白字」。深色主题下品牌色本身通常是浅色，
   // 白字压上去对比度掉到 1.x，等于没有字。所以不再写死，改由这里按对比度挑一侧。
@@ -83,5 +88,5 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber, parseRGB, hexToRGB, luminance, contrastRatio, pickOnColor, ON_DARK, ON_LIGHT };
+  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber, parseRGB, hexToRGB, luminance, contrastRatio, pickOnColor, ON_DARK, ON_LIGHT, kindOfDirection };
 })();

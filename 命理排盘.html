@@ -630,7 +630,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：133 个测试文件 / 6210 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：134 个测试文件 / 6225 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -19962,6 +19962,557 @@ function askPackages(result, opts = {}) {
 return { LINK_MAX_QUESTION, askLink, parseAskLink, formOf, restNote, askPackages };
 })();
 
+__mods['qimen-prompt'] = (function () {
+// 奇门问事解读提示：把「先问清事 → 再取用神 → 看落宫与组合 → 回到现实核对」固化成一段提示。
+//
+// 为什么要有这个文件：奇门的盘面符号极多（九宫、八门、九星、八神、天地盘干、十干应克），
+// 模型拿到一屏数据后最省力的写法就是「开门临生门，吉」——这不是解读，是把符号念一遍。
+// 所以提示里把「取哪个符号、为什么取它、它落在哪、和谁什么关系、回到现实查什么」写成硬步骤，
+// 并要求先给人话结论，再给依据。文案与取法分开存，取法可测，文案可改。
+const QIMEN_PROMPT_VERSION = 'qimen-1';
+
+/** 九宫序号 → 方位与领域（读「事情落在哪个领域」时用，不直接当吉凶） */
+const PALACE_FIELD = {
+  1: { dir: '正北', field: '坎宫：向内、暗中、流动、基础' },
+  2: { dir: '西南', field: '坤宫：承载、家庭、土地、执行方' },
+  3: { dir: '正东', field: '震宫：启动、动作、速度、竞争' },
+  4: { dir: '东南', field: '巽宫：沟通、文书、渐进、反复' },
+  5: { dir: '正中', field: '中宫：枢纽；无门无神，按寄宫（多寄坤二）取用，读时要说清是寄宫' },
+  6: { dir: '西北', field: '乾宫：上级、规则、外部权威、主导方' },
+  7: { dir: '正西', field: '兑宫：口舌、谈判、交易、愉悦' },
+  8: { dir: '东北', field: '艮宫：停滞、门槛、转向、积累' },
+  9: { dir: '正南', field: '离宫：显露、名声、扩散、明亮' },
+};
+
+/** 八门的现实含义。门名只是「这件事的形态」，不是吉凶判决 */
+const GATE_MEANING = {
+  开门: '启动、公开、对外推进、正式场合',
+  休门: '休息、等待、缓和、暂缓',
+  生门: '生长、收益、资源、可持续',
+  伤门: '损耗、冲突、风险、代价',
+  杜门: '阻碍、隐藏、不宜张扬、需要绕过',
+  景门: '信息、名声、曝光、文书往来',
+  死门: '停止、收尾、不可再推、需要换路',
+  惊门: '变动、惊吓、口舌、突发',
+};
+
+/**
+ * 问事类型 → 用神清单。subjects 的顺序就是「先讲清对方最关心哪个对象」的顺序：
+ * 第一个是本方（我），第二个通常是对方/事体，后面才是环境与条件。
+ * how 是取法（可复算），why 是取这个符号的理由（三追问第一问要能答出来）。
+ */
+const ASK_KINDS = {
+  career: {
+    label: '工作 / 事业',
+    gate: '开门',
+    subjects: [
+      { key: 'self', name: '我', how: 'dayStem', why: '日干代表提问者本人；先定位「我现在在哪一宫」，才谈得上后面谁克谁。' },
+      { key: 'job', name: '这份工作本身', how: 'gate:开门', why: '开门的本义是「开启、公开、正式」，对应岗位与正式机会，所以用它代表工作这个对象，而不是代表结果好坏。' },
+      { key: 'boss', name: '上司 / 决策人', how: 'zhiFu', why: '值符是全局主导之神，代表有拍板权的一方；谈成不成，最终看这一宫的状态与它和日干宫的关系。' },
+      { key: 'peer', name: '同事 / 竞争者', how: 'monthStem', why: '月干为同辈；同岗竞争、内部评价这类事落在这里。' },
+    ],
+  },
+  love: {
+    label: '感情 / 关系',
+    gate: '休门',
+    subjects: [
+      { key: 'self', name: '我', how: 'dayStem', why: '日干为我。' },
+      { key: 'other', name: '对方', how: 'hourStem', why: '时干代表所问之事与对方；感情里问「他怎么样」，时干就是那个人此刻的状态。' },
+      { key: 'bond', name: '你俩的连接', how: 'god:六合', why: '六合主结合、撮合、连结；看连接本身有没有被冲开或合住，比看单方态度更接近真相。' },
+    ],
+  },
+  business: {
+    label: '生意 / 合作',
+    gate: '生门',
+    subjects: [
+      { key: 'self', name: '我方', how: 'dayStem', why: '日干为我方。' },
+      { key: 'partner', name: '对方 / 合作方', how: 'hourStem', why: '时干代表对方与所谈之事。' },
+      { key: 'chance', name: '项目机会', how: 'gate:生门', why: '生门主生长与收益，用它代表「这个机会能不能长出东西」。' },
+      { key: 'resource', name: '资源与条件', how: 'gate:开门', why: '开门代表公开的资源、渠道、正式手续；有没有真资源，看这一宫有没有被制。' },
+      { key: 'deal', name: '契约 / 撮合', how: 'god:六合', why: '六合主合约与中间人；合作最怕的是「六合落空或受冲」，即说了不算。' },
+    ],
+  },
+  action: {
+    label: '某件事能不能推进',
+    gate: '开门',
+    subjects: [
+      { key: 'self', name: '我', how: 'dayStem', why: '日干为我。' },
+      { key: 'act', name: '这件事本身', how: 'hourStem', why: '时干为事体：你要问的那件事，当下的状态在时干这一宫。' },
+      { key: 'env', name: '外部条件', how: 'zhiShi', why: '值使门是「当下正在值班的门」，代表这件事所处的执行环境与节奏。' },
+    ],
+  },
+  day: {
+    label: '挑日子 / 看时机',
+    gate: '值使',
+    subjects: [
+      { key: 'act', name: '要办的事', how: 'hourStem', why: '时干为事体，先看它落在哪一宫、受不受制。' },
+      { key: 'env', name: '当天的执行环境', how: 'zhiShi', why: '值使门代表当值之门，是这一天的主导形态，不把它当吉凶。' },
+      { key: 'self', name: '办事的人', how: 'dayStem', why: '日干为办事人；人有空亡、受制，日子再好也执行不了。' },
+    ],
+  },
+  other: {
+    label: '其他具体事',
+    gate: '开门',
+    subjects: [
+      { key: 'self', name: '我', how: 'dayStem', why: '日干为我。' },
+      { key: 'act', name: '所问之事', how: 'hourStem', why: '时干为事体。' },
+      { key: 'env', name: '当下环境', how: 'zhiShi', why: '值使门代表当下的执行节奏。' },
+    ],
+  },
+};
+
+/** 回到现实要核对什么：按类型给具体清单，不写「请结合现实」这种空话 */
+const REALITY_CHECK = {
+  career: ['有没有书面邀约或正式通知？（口头承诺不算）', '岗位职责、汇报对象、试用期写清楚了吗？', '薪酬范围、发放方式、社保口径有没有落到纸面？', '最坏情况是什么：试用不过、岗位撤销，你损失多少？'],
+  love: ['对方有没有具体行动：约见、介绍给朋友、共同计划？', '这种投入持续了多久，还是一阵热？', '有没有第三方牵涉（前任、家人、异地）？', '你自己愿意为这段关系让渡什么，底线在哪？'],
+  business: ['资源清单能落到具体人、具体钱、具体渠道吗？', '合同条款：出资、分账、违约、退出，哪条没写？', '谁执行？执行人是全职还是顺手帮忙？', '如果对方撤了，你一个人能不能收场？'],
+  action: ['这件事有没有截止日期？谁定的？', '实际成本：钱、时间、人情，各多少？', '做错了能不能退回去？可逆性有多高？', '成功的样子长什么样，能不能用一句话说清？'],
+  day: ['当天必须到场的人确认了吗？', '场地、材料、审批这些硬约束排除了吗？', '有备选日期吗？排到第几位？', '这一天之前的准备来得及吗？'],
+  other: ['这件事成功的样子，能用一件可观察的事描述吗？', '有没有一个明确的时间点可以验证？', '如果没成，你会先怀疑哪一环？', '现在最该做的一件小事是什么？'],
+};
+
+/** 少用术语、面向提问者的表达要求 */
+const STYLE_RULES = [
+  '开头先用三到五句话回答他问的那件事，全用日常说法：不出现「用神、落宫、值符、生克」这些词。',
+  '每个术语第一次出现时，必须紧跟一句人话解释（例：「开门，就是这件事能不能摆到台面上正式推进」）。',
+  '不写「吉/凶」二字作结论，改写成人能执行的话：能推进 / 卡在谁那里 / 还缺什么条件 / 大概什么时候会有信号。',
+  '盘面给不出的东西（具体金额、对方心里怎么想、某天几点），直接说给不出，不要补。',
+];
+
+const HARD_RULES = [
+  '只使用下面「盘面事实」里出现的符号。没给的宫、门、星、神，一律不许自己补。',
+  '不许说「这是生门所以好」「这是白虎所以凶」。门名与神名只说明形态，吉凶要看它和日干宫、时干宫的关系，以及有没有空亡、受制、入墓。',
+  '不给医疗、法律、投资的具体结论；这些只能建议去找对应专业人士。',
+  '不给公历日期。奇门这里只谈「什么条件下会有信号」，不谈「几月几号」。',
+  '不确定就写不确定，并说明缺哪条信息才能确定。',
+];
+
+const stemOf = (siZhu, key) => {
+  const v = siZhu && siZhu[key];
+  return v ? String(v).charAt(0) : '';
+};
+
+/** 天盘某干落在哪一宫（日干/时干/月干定位都走这里） */
+function palaceOfStem(q, stem) {
+  if (!stem) return null;
+  const hit = (q.palaces || []).find((p) => p.tianPan === stem);
+  if (hit) return hit;
+  // 中五宫不在 palaces 里（它没有门、不参与门宫关系），天盘干可能只在这里。
+  // 中宫按「寄坤二宫」取，但要把「这是中宫」说出来，不能让读者以为是坤二本宫。
+  const c = q.centerPalace;
+  return c && c.tianPan === stem ? c : null;
+}
+
+function palaceOfGate(q, gate) {
+  if (!gate) return null;
+  return (q.palaces || []).find((p) => p.gate === gate) || null;
+}
+
+function palaceOfGod(q, god) {
+  if (!god) return null;
+  return (q.palaces || []).find((p) => p.god === god) || null;
+}
+
+/** 把 subjects 里的取法解析成 { palace, symbol }；解析不到就明确返回缺失原因 */
+function resolveSubject(q, sub) {
+  const si = q.siZhu || {};
+  const how = String(sub.how || '');
+  if (how === 'dayStem') {
+    const s = stemOf(si, 'day');
+    return { symbol: `日干 ${s}`, palace: palaceOfStem(q, s), missing: s ? '' : '四柱里没有日干' };
+  }
+  if (how === 'hourStem') {
+    const s = stemOf(si, 'time');
+    return { symbol: `时干 ${s}`, palace: palaceOfStem(q, s), missing: s ? '' : '四柱里没有时干' };
+  }
+  if (how === 'monthStem') {
+    const s = stemOf(si, 'month');
+    return { symbol: `月干 ${s}`, palace: palaceOfStem(q, s), missing: s ? '' : '四柱里没有月干' };
+  }
+  if (how === 'zhiFu') {
+    const g = q.zhiFu && q.zhiFu.gong;
+    return { symbol: `值符（${(q.zhiFu && q.zhiFu.star) || ''}）`, palace: (q.palaces || []).find((p) => p.palace === String(g)) || null, missing: g ? '' : '没有值符落宫' };
+  }
+  if (how === 'zhiShi') {
+    const g = q.zhiShi && q.zhiShi.gong;
+    return { symbol: `值使（${(q.zhiShi && q.zhiShi.gate) || ''}）`, palace: (q.palaces || []).find((p) => p.palace === String(g)) || null, missing: g ? '' : '没有值使落宫' };
+  }
+  if (how.startsWith('gate:')) {
+    const gate = how.slice(5);
+    const p = palaceOfGate(q, gate);
+    return { symbol: `${gate}`, palace: p, missing: p ? '' : `盘上没有${gate}` };
+  }
+  if (how.startsWith('god:')) {
+    const god = how.slice(4);
+    const p = palaceOfGod(q, god);
+    return { symbol: `${god}`, palace: p, missing: p ? '' : `盘上没有${god}` };
+  }
+  return { symbol: how, palace: null, missing: `未知取法 ${how}` };
+}
+
+/** 一宫的事实摘要：只写盘面上有的，不做判断 */
+function palaceFacts(p) {
+  if (!p) return '（这一项在盘上定位不到）';
+  const f = PALACE_FIELD[p.palace] || { dir: '', field: '' };
+  const bits = [
+    `${p.palace} 宫（${f.dir}）`,
+    p.center ? '中宫（无门无神，按寄宫取用）' : `门：${p.gate || '—'}${p.gateRelation && p.gateRelation.type ? `（${p.gateRelation.type}：${p.gateRelation.note || ''}）` : ''}`,
+    `星：${p.star || '—'}`,
+    p.center ? '' : `神：${p.god || '—'}`,
+    `天盘 ${p.tianPan || '—'} / 地盘 ${p.diPan || '—'}${p.stemRelation && p.stemRelation.type ? `（${p.stemRelation.type}）` : ''}`,
+  ];
+  if (p.kong) bits.push('空亡');
+  if (p.ma) bits.push('临马星');
+  if (p.ganYing && p.ganYing.name) bits.push(`十干应克：${p.ganYing.name}`);
+  return bits.join('　');
+}
+
+const CHECK_QUESTIONS = [
+  '你说「我」是哪个符号？为什么是它，不是别的？',
+  '机会在哪一宫、阻碍在哪一宫、对方态度在哪一宫？各自依据哪一条关系（生、克、合、冲、空、墓）？',
+  '盘上有没有相反提示？你为什么采信这一边，而不是那一边？',
+];
+
+/**
+ * 生成一段可直接交给模型的提示。
+ * @param {object} q 奇门盘（compute 结果里的 qimen 部分，或整个 r）
+ * @param {{question?:string, kind?:string, timeKnown?:boolean, askedAt?:string}} opts
+ * @returns {{version:string, kind:string, blocked:boolean, text:string, subjects:Array}}
+ */
+function buildQimenPrompt(q, opts = {}) {
+  const chart = q && q.palaces ? q : (q && q.qimen);
+  const kindKey = ASK_KINDS[opts.kind] ? opts.kind : 'other';
+  const kind = ASK_KINDS[kindKey];
+  const question = String(opts.question || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+
+  // 第一步永远是时间：奇门以「起局那一刻」定盘，时刻不明就没有盘，不能默认拿现在起。
+  if (opts.timeKnown === false || !chart) {
+    return {
+      version: QIMEN_PROMPT_VERSION,
+      kind: kindKey,
+      blocked: true,
+      subjects: [],
+      text: [
+        '先别起局——时间还不确定。',
+        '',
+        '奇门是按「起局那一刻」排盘的，时刻差一个时辰，九宫里的门、星、神全换一遍。所以先确认：',
+        '1）这盘是按现在这一刻起，还是按你打算行动的那一刻起？',
+        '2）你说的日期时间，是钟表时间还是农历？在哪个城市（真太阳时会差几分钟到十几分钟）？',
+        '',
+        '确认之后，再用同一句话把要问的事说清楚：主语 + 时间 + 可验证的结果，例如「下周三之前，这份工作的书面 offer 能不能拿到」。',
+        '在那之前，我不排盘，也不猜。',
+      ].join('\n'),
+    };
+  }
+
+  const subjects = kind.subjects.map((s) => {
+    const got = resolveSubject(chart, s);
+    return { ...s, symbol: got.symbol, palace: got.palace, missing: got.missing };
+  });
+
+  const si = chart.siZhu || {};
+  const head = [
+    `# 奇门问事解读（提示版本 ${QIMEN_PROMPT_VERSION}）`,
+    '',
+    '## 你要做的',
+    '先把这张盘翻译成「他能拿去用的话」，再给依据。顺序不能反：先结论（人话）→ 再盘面依据 → 再现实核对 → 最后说哪里不确定。',
+    '',
+    '## 一、先确认问的是哪一件事',
+    question
+      ? `他的问题是：「${question}」`
+      : '他还没说清要问什么。第一句先问清：要问的是哪一件具体的事（哪份工作、哪次沟通、哪笔合作），以及他希望看到什么结果。不要笼统答「运势如何」。',
+    `已按「${kind.label}」取用神。若他实际问的是别的事，先纠正类型再解读，不要硬套。`,
+    '',
+    '## 二、盘面事实（只能用这些，不许自行补算）',
+    `四柱：${si.year || '—'}年 ${si.month || '—'}月 ${si.day || '—'}日 ${si.time || '—'}时；局：${chart.dun || ''}${chart.juNumber || ''}局（${chart.yuan || ''}）；值符 ${(chart.zhiFu && chart.zhiFu.star) || '—'} 落 ${(chart.zhiFu && chart.zhiFu.gong) || '—'} 宫；值使 ${(chart.zhiShi && chart.zhiShi.gate) || '—'} 落 ${(chart.zhiShi && chart.zhiShi.gong) || '—'} 宫。`,
+    (chart.kongWang && chart.kongWang.length) ? `空亡：${chart.kongWang.join('、')}。` : '',
+    '',
+    '## 三、取哪个符号代表什么（每一项都要能说出「为什么是它」）',
+    ...subjects.map((s, i) => `${i + 1}. ${s.name} → ${s.symbol}${s.missing ? `（注意：${s.missing}）` : ''}\n   - 取法理由：${s.why}\n   - 盘面：${palaceFacts(s.palace)}`),
+    '',
+    '## 四、怎么读状态（这是最容易偷懒的地方）',
+    '1. 落宫先说「这件事落在哪个领域」：',
+    ...subjects.filter((s) => s.palace).map((s) => `   - ${s.name}：${(PALACE_FIELD[s.palace.palace] || {}).field || ''}`),
+    '2. 所遇之门说明「这件事现在是什么形态」，不是吉凶：',
+    ...Object.entries(GATE_MEANING).map(([g, mean]) => `   - ${g}：${mean}`),
+    '3. 关系只认四种，且都要指到具体两宫：',
+    '   - 生：得助（谁生谁，说清方向）',
+    '   - 克：受制（谁克谁，说清方向）',
+    '   - 合：连接、聚合（合住也可能意味着被拴住）',
+    '   - 冲：变动、对立、打破（冲开也可能意味着解脱）',
+    '4. 空亡、入墓、门迫、击刑这些「减分项」，要么明确说它压低了什么，要么别提——不要念一遍名字就过去。',
+    '',
+    '## 五、开口之前先自检这三问',
+    ...CHECK_QUESTIONS.map((q2, i) => `${i + 1}. ${q2}`),
+    '三问答不全，就还没到能下结论的程度，先把答不出的那条写出来。',
+    '',
+    '## 六、最后必须回到现实核对',
+    ...REALITY_CHECK[kindKey].map((x, i) => `${i + 1}. ${x}`),
+    '盘面只能给方向；上面这些是「他明天可以去查、去问、去要」的东西。核对完再回来谈结论。',
+    '',
+    '## 七、表达要求',
+    ...STYLE_RULES.map((x) => `- ${x}`),
+    '',
+    '## 八、禁止',
+    ...HARD_RULES.map((x) => `- ${x}`),
+    '',
+    '## 九、输出格式',
+    '1. **先给你要的答案**：三到五句人话，直接回答他问的那件事。',
+    '2. **盘上依据**：按「我 / 对方或事体 / 环境」三块列，每块一句符号 + 一句人话解释。',
+    '3. **现实里该去核对什么**：抄上面第六节里适用的项，不要全抄。',
+    '4. **相反提示与不确定处**：盘上哪些地方指向另一个方向，你为什么这样权衡。',
+    '5. **一句提醒**：这是参考，不替代你自己去核实和决定。',
+  ].filter((x) => x !== '').join('\n');
+
+  return { version: QIMEN_PROMPT_VERSION, kind: kindKey, blocked: false, subjects, text: head };
+}
+
+return { QIMEN_PROMPT_VERSION, PALACE_FIELD, GATE_MEANING, ASK_KINDS, REALITY_CHECK, STYLE_RULES, resolveSubject, buildQimenPrompt };
+})();
+
+__mods['event-prompt'] = (function () {
+// 问事解读提示：把「先问清事 → 取用神 → 看状态与关系 → 回到现实核对」推广到全部问事体系。
+//
+// 起点是奇门那套要求（engine/qimen-prompt.js），但问题不在奇门——六爻、梅花、六壬、塔罗、小六壬
+// 一样会被读成「符号念一遍」：世应旺相所以好、用生体所以吉、这张牌是死神所以完蛋。
+// 差别只在「哪一位符号代表我、代表事」，所以骨架共用，取用神各体系自己给。
+//
+// 三件事写死在这个文件里：
+//   1. 时间不明先问，不默认拿现在起局（问事体系全靠起课那一刻定盘）；
+//   2. 每个符号都要说出「为什么取它」，答不出就不许下结论；
+//   3. 最后必须拉回现实核对——盘面只给方向，给不了证据。
+const { buildQimenPrompt } = (__mods['qimen-prompt'] || {});
+
+const EVENT_PROMPT_VERSION = 'event-1';
+
+/** 问事类型：解读时要先落到这五类里的一类，笼统问「运势」不在此列 */
+const ASK_KINDS = {
+  career: {
+    label: '工作 / 事业',
+    reality: ['有没有书面邀约或正式通知？（口头承诺不算）', '岗位职责、汇报对象、试用期写清楚了吗？', '薪酬范围、发放方式有没有落到纸面？', '最坏情况：试用不过或岗位撤销，你损失多少？'],
+  },
+  love: {
+    label: '感情 / 关系',
+    reality: ['对方有没有具体行动：约见、介绍给朋友、共同计划？', '这种投入持续了多久，还是一阵热？', '有没有第三方牵涉（前任、家人、异地）？', '你愿意让渡什么，底线在哪？'],
+  },
+  business: {
+    label: '生意 / 合作',
+    reality: ['资源能落到具体人、具体钱、具体渠道吗？', '合同条款：出资、分账、违约、退出，哪条没写？', '谁执行？执行人是全职还是顺手帮忙？', '如果对方撤了，你一个人能不能收场？'],
+  },
+  action: {
+    label: '某件事能不能推进',
+    reality: ['这件事有没有截止日期？谁定的？', '实际成本：钱、时间、人情，各多少？', '做错了能不能退回去？', '成功的样子能不能用一句话说清？'],
+  },
+  day: {
+    label: '挑日子 / 看时机',
+    reality: ['当天必须到场的人确认了吗？', '场地、材料、审批这些硬约束排除了吗？', '有备选日期吗？排在第几位？', '这一天之前的准备来得及吗？'],
+  },
+  other: {
+    label: '其他具体事',
+    reality: ['成功的样子，能用一件可观察的事描述吗？', '有没有一个明确的时间点可以验证？', '如果没成，你会先怀疑哪一环？', '现在最该做的一件小事是什么？'],
+  },
+};
+
+const kindOf = (k) => (ASK_KINDS[k] ? k : 'other');
+
+// ── 各体系：谁是「我」、谁是「事」、用神怎么取 ──────────────────
+// 每一项都要能回答「为什么是它」——这是三追问里的第一问，含糊就等于没取。
+
+const LIUYAO_USE = {
+  career: { liuqin: '官鬼', why: '六爻问工作职位、上级压力，以官鬼为用神：官鬼既是管你的人，也是名位所在。' },
+  love: { liuqinByGender: { male: '妻财', female: '官鬼' }, why: '感情看配偶星：男命以妻财为妻，女命以官鬼为夫；再看世应两家是否相生相合。' },
+  business: { liuqin: '妻财', why: '合作看财：妻财代表可分的钱与利；同时看兄弟爻，兄弟动主分我之财。' },
+  action: { liuqin: '父母', why: '问一件事能不能推进，看父母：父母主文书、消息、答复，事之成否常落在一纸回话上。' },
+  day: { liuqin: '父母', why: '择日问的是「那一天办这件事顺不顺」，仍以所办之事的类象为主，先看日月建与世爻。' },
+  other: { liuqin: '官鬼', why: '事类不明时先以官鬼统摄「所问之事」，但必须请他确认事属哪一类，不要硬断。' },
+};
+
+const liuyaoShi = (r) => {
+  const shi = r.ben && r.ben.shi;
+  const ying = r.ben && r.ben.ying;
+  const line = (n) => (r.ben && r.ben.lines ? r.ben.lines.find((l) => l.position === n) : null);
+  return { shi: line(shi), ying: line(ying) };
+};
+
+const lineFact = (l) => (l
+  ? `${l.position}爻 ${l.ganzhi}（${l.liuqin || ''}${l.moving ? '·动' : ''}${l.liushen ? '·' + l.liushen : ''}）`
+  : '（本盘定位不到）');
+
+function liuyaoUse(r, kind, gender) {
+  const cfg = LIUYAO_USE[kind] || LIUYAO_USE.other;
+  const liuqin = cfg.liuqin || (cfg.liuqinByGender && (cfg.liuqinByGender[gender] || cfg.liuqinByGender.male)) || '官鬼';
+  const hits = (r.ben && r.ben.lines ? r.ben.lines : []).filter((l) => l.liuqin === liuqin);
+  const { shi, ying } = liuyaoShi(r);
+  const out = [
+    { name: '我', symbol: `世爻 ${lineFact(shi)}`, why: '世爻代表求测者本人：你的态度、你的处境，都从这一爻看。', fact: lineFact(shi) },
+    { name: '对方 / 事体', symbol: `应爻 ${lineFact(ying)}`, why: '应爻代表对方或所问之事：世应相生相合是能接上头，相冲相克是对不上。', fact: lineFact(ying) },
+    {
+      name: `用神（${liuqin}）`,
+      symbol: hits.length ? hits.map((l) => lineFact(l)).join('；') : `本盘无${liuqin}（可能伏藏）`,
+      why: cfg.why,
+      fact: hits.length ? hits.map((l) => lineFact(l)).join('；') : `没有${liuqin}明现，须看伏神或另取，不要假装有`,
+      warn: hits.length > 1 ? `用神两现（${hits.length}处）：不能随手挑一个。先看持世、临日月、发动者，挑不出来就明说「两现未定」。` : '',
+    },
+  ];
+  return out;
+}
+
+function meihuaUse(r) {
+  const bu = r.bodyUse || {};
+  const b = bu.body || {};
+  const u = bu.use || {};
+  return [
+    { name: '我（体卦）', symbol: `${b.trigram || '—'}（${b.element || ''}）`, why: '梅花以体卦为我：不动的那一卦是求测者自身。', fact: `${b.trigram || '—'} ${b.element || ''}` },
+    { name: '事（用卦）', symbol: `${u.trigram || '—'}（${u.element || ''}）`, why: '动爻所在为用卦，代表所问之事；体用之间的关系就是人与事的处境。', fact: `${u.trigram || '—'} ${u.element || ''}` },
+    { name: '体用关系', symbol: bu.relation || '—', why: '只看生克方向，不直接把「大吉」当结论——吉是条件好，不是结果已经发生。', fact: bu.level ? `本盘标为「${bu.level}」` : '' },
+  ];
+}
+
+function daliurenUse(r) {
+  const sc = r.sanChuan || {};
+  const gan = r.dayGanZhi ? String(r.dayGanZhi).charAt(0) : '';
+  const zhi = r.dayGanZhi ? String(r.dayGanZhi).slice(-1) : '';
+  return [
+    { name: '我（日干）', symbol: `日干 ${gan}`, why: '大六壬以日干为求测者本人，日支为对方或所问之事。', fact: `日干 ${gan}` },
+    { name: '对方 / 事（日支）', symbol: `日支 ${zhi}`, why: '日支是事情的落点，干上神与支上神的关系就是人与事的接口。', fact: `日支 ${zhi}` },
+    { name: '事之始（初传）', symbol: sc.chu ? `${sc.chu.zhi}（${sc.chu.liuQin || ''}·${sc.chu.jiangFull || ''}）` : '—', why: '三传看过程：初传是起因，中传是中途，末传是收尾，末传比初传更接近结果。', fact: sc.chu ? `${sc.chu.zhi} ${sc.chu.liuQin || ''}` : '' },
+    { name: '事之终（末传）', symbol: sc.mo ? `${sc.mo.zhi}（${sc.mo.liuQin || ''}·${sc.mo.jiangFull || ''}）` : '—', why: '末传落处是这件事最后停在哪儿，看它落在哪一类六亲上。', fact: sc.mo ? `${sc.mo.zhi} ${sc.mo.liuQin || ''}` : '' },
+  ];
+}
+
+function tarotUse(r) {
+  const cards = (r.cards || []).map((c) => ({
+    name: c.position || '牌位',
+    symbol: `${c.name}（${c.orientation || (c.upright ? '正位' : '逆位')}）`,
+    why: `${c.positionHint || '这一位代表它所标的那个阶段'}；牌位决定它代表什么，牌面只说明它是什么样子。`,
+    fact: `${c.core || ''}${(c.keywords && c.keywords.length) ? `　关键词：${c.keywords.join('、')}` : ''}`,
+  }));
+  return cards.length ? cards : [{ name: '牌面', symbol: '—', why: '没有抽到牌', fact: '' }];
+}
+
+function xiaoliurenUse(r) {
+  const res = r.result || {};
+  return [
+    { name: '所问之事', symbol: res.palace || '—', why: '小六壬只有一宫落位，它同时代表事与势：落宫决定这件事处在哪一类状态。', fact: res.text || '' },
+    { name: '我', symbol: '（本体系不单列）', why: '小六壬没有「我」的独立符号，所以它只能给势，给不了「我 vs 对方」的对比——这是它的口径，别硬补。', fact: '' },
+  ];
+}
+
+const PICK = { liuyao: liuyaoUse, meihua: meihuaUse, daliuren: daliurenUse, tarot: tarotUse, xiaoliuren: xiaoliurenUse };
+
+const STYLE = [
+  '开头先用三到五句话回答他问的那件事，全用日常说法：不出现「用神、世应、体用、落宫」这些词。',
+  '每个术语第一次出现时，紧跟一句人话解释（例：「用神，就是这件事在盘上对应哪一个符号」）。',
+  '不写「吉/凶」二字当结论，改成能执行的话：能推进 / 卡在谁那里 / 还缺什么 / 大概什么条件下会有信号。',
+  '盘面给不出的东西（具体金额、对方心里怎么想、某天几点），直接说给不出。',
+];
+
+const HARD = [
+  '只使用下面「盘面事实」里出现的符号；没给的，一律不许自己补。',
+  '不许「旺相所以好」「死神所以完蛋」这种一句话结论：符号只说明形态，好坏要看它与「我」这一位的关系。',
+  '不给医疗、法律、投资的具体结论；这些只能建议去找对应专业人士。',
+  '不给公历日期。应期只谈「什么条件下会出现信号」。',
+  '不确定就写不确定，并说明缺哪条信息才能确定。',
+];
+
+const THREE = [
+  '你说「我」是哪个符号？为什么是它？',
+  '机会、阻碍、对方态度各落在盘上哪一处？各自依据哪条关系（生、克、合、冲、空、墓）？',
+  '有没有相反提示？你为什么采信这一边？',
+];
+
+/**
+ * 生成一段可直接交给模型的问事解读提示。
+ * @param {object} r compute() 的结果（含各体系盘面）
+ * @param {{question?:string, kind?:string, gender?:'male'|'female', timeKnown?:boolean}} opts
+ */
+function buildEventPrompt(r, opts = {}) {
+  const system = (r && r.system) || 'other';
+  // 奇门有自己的取用神表（门/宫/干），复用它的实现，避免两套说法打架
+  if (system === 'qimen') return buildQimenPrompt(r, opts);
+
+  const k = kindOf(opts.kind);
+  const kind = ASK_KINDS[k];
+  const question = String(opts.question || (r && r.question) || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+
+  if (opts.timeKnown === false) {
+    return {
+      version: EVENT_PROMPT_VERSION,
+      system,
+      kind: k,
+      blocked: true,
+      subjects: [],
+      text: [
+        '先别起课——时间还不确定。',
+        '',
+        '问事体系全靠「起课那一刻」定盘：差一个时辰，日辰、旬空、月建全换，盘就不是这张盘了。先确认：',
+        '1）是按现在这一刻起，还是按你打算行动的那一刻起？',
+        '2）你给的是钟表时间还是农历？在哪个城市（真太阳时会差几分钟到十几分钟）？',
+        '',
+        '确认之后，把要问的事说成「主语 + 时间 + 可验证的结果」，例如「下周三之前这份工作能不能拿到书面 offer」。',
+        '在那之前，我不排盘，也不猜。',
+      ].join('\n'),
+    };
+  }
+
+  const pick = PICK[system];
+  if (!pick) {
+    return {
+      version: EVENT_PROMPT_VERSION,
+      system,
+      kind: k,
+      blocked: true,
+      subjects: [],
+      text: `「${system}」不是问事体系（或暂未接入取用神规则），用它对具体事下结论就是硬套。请改用六爻、梅花、大六壬、奇门或塔罗。`,
+    };
+  }
+
+  const subjects = pick(r, k, opts.gender);
+  const lines = [
+    `# 问事解读（提示版本 ${EVENT_PROMPT_VERSION}｜体系：${system}）`,
+    '',
+    '## 你要做的',
+    '先把这张盘翻译成「他明天能拿去用的话」，再给依据。顺序不能反：人话结论 → 盘面依据 → 现实核对 → 不确定处。',
+    '',
+    '## 一、先确认问的是哪一件事',
+    question ? `他的问题是：「${question}」` : '他还没说清要问什么。第一句先问清：要问的是哪一件具体的事，以及他希望看到什么结果。不要笼统答「运势如何」。',
+    `已按「${kind.label}」取用神。若实际问的是别的事，先纠正类型再解读，不要硬套。`,
+    '',
+    '## 二、取哪个符号代表什么（每一项都要能说出「为什么是它」）',
+    ...subjects.map((s, i) => `${i + 1}. ${s.name} → ${s.symbol}\n   - 取法理由：${s.why}${s.fact ? `\n   - 盘面：${s.fact}` : ''}${s.warn ? `\n   - 注意：${s.warn}` : ''}`),
+    '',
+    '## 三、怎么读状态（最容易偷懒的地方）',
+    '- 先说明这一位落在什么处境（旺/衰、空/实、动/静、被制/得助），再说这对他意味着什么。',
+    '- 关系只认四种，且都要指到具体两位符号：生（谁生谁）、克（谁克谁）、合（连在一起，合住也可能是拴住）、冲（变动、对立、打破）。',
+    '- 空亡、入墓、伏藏、用神两现这些「减分项」，要么说清压低了什么，要么别提——不要念一遍名字就过去。',
+    '',
+    '## 四、开口之前先自检这三问',
+    ...THREE.map((x, i) => `${i + 1}. ${x}`),
+    '三问答不全，就还没到能下结论的程度，先把答不出的那条写出来。',
+    '',
+    '## 五、最后必须回到现实核对',
+    ...kind.reality.map((x, i) => `${i + 1}. ${x}`),
+    '盘面只给方向；上面这些是他明天可以去查、去问、去要的东西。核对完再回来谈结论。',
+    '',
+    '## 六、表达要求',
+    ...STYLE.map((x) => `- ${x}`),
+    '',
+    '## 七、禁止',
+    ...HARD.map((x) => `- ${x}`),
+    '',
+    '## 八、输出格式',
+    '1. **先给你要的答案**：三到五句人话，直接回答他问的那件事。',
+    '2. **盘上依据**：按「我 / 对方或事体 / 环境」三块列，每块一句符号 + 一句人话。',
+    '3. **现实里该去核对什么**：抄第五节里适用的，不要全抄。',
+    '4. **相反提示与不确定处**：盘上哪里指向另一头，你为什么这样权衡。',
+    '5. **一句提醒**：这是参考，不替代你自己去核实和决定。',
+  ];
+  return { version: EVENT_PROMPT_VERSION, system, kind: k, blocked: false, subjects, text: lines.join('\n') };
+}
+
+return { EVENT_PROMPT_VERSION, ASK_KINDS, buildEventPrompt };
+})();
+
 __mods.index = (function () {
 // 统一入口：解析参数、分派到各体系、生成可读摘要
 const { buildBazi } = (__mods.bazi || {});
@@ -21686,6 +22237,9 @@ function renderText(result) {
 
 // C3 对话桥替代：深链编解码、表单还原、三档复制包（面板与独立页共用一份）
 
+// 问事解读提示：把一张盘打包成「先答他所问、不堆术语、回到现实核对」的提示，供面板一键复制
+// （本仓 esbuild 不接受 `export {} from`，先静态 import 再 export）
+const { buildEventPrompt, ASK_KINDS } = (__mods['event-prompt'] || {});
 
 
 
@@ -21696,7 +22250,8 @@ function renderText(result) {
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildTrace, traceMarkdown, encodeHandle, decodeHandle, resolveHandle, askLink, parseAskLink, formOf, restNote, askPackages, parseDateTime, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, renderText };
+
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildTrace, traceMarkdown, encodeHandle, decodeHandle, resolveHandle, askLink, parseAskLink, formOf, restNote, askPackages, buildEventPrompt, ASK_KINDS, parseDateTime, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, renderText };
 })();
 
 window.Engine = __mods.index;
@@ -21712,6 +22267,11 @@ window.__MP_VER = "0.59.0";
   // 问事的体系：不填「所问之事」就不出解读
   const NEED_ASK = { liuyao: true, meihua: true, daliuren: true, tarot: true };
   const needAsk = (kind) => !!NEED_ASK[kind];
+
+  // 询问方向（命盘用的七向）→ 问事类型（问事提示用的六类）。
+  // 命盘的「健康/学业」没有对应的问事类型：健康不越界、学业归到工作类。
+  const KIND_OF_DIR = { general: 'other', wealth: 'business', career: 'career', love: 'love', health: 'other', study: 'career', travel: 'action' };
+  const kindOfDirection = (d) => KIND_OF_DIR[d] || 'other';
 
   // ── 高亮块上的字色 ──────────────────────────────────────
   // 选中态一直是「品牌色底 + 白字」。深色主题下品牌色本身通常是浅色，
@@ -21788,7 +22348,7 @@ window.__MP_VER = "0.59.0";
     return Number.isFinite(n) ? n : null;
   }
 
-  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber, parseRGB, hexToRGB, luminance, contrastRatio, pickOnColor, ON_DARK, ON_LIGHT };
+  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber, parseRGB, hexToRGB, luminance, contrastRatio, pickOnColor, ON_DARK, ON_LIGHT, kindOfDirection };
 })();
 
 </script>
@@ -22307,6 +22867,11 @@ window.__MP_VER = "0.59.0";
 .mp-guide-parts li{margin:3px 0}
 .mp-guide-parts li span{display:inline-block;min-width:44px;color:var(--ink);font-weight:600}
 .mp-guide-close{margin:11px 0 0;color:var(--ink2);font-size:12px}
+/* 复制问事提示：只有问事体系渲染；命盘类不显示按钮本身 */
+.mp-askcopy-row{display:flex;align-items:center;gap:8px;margin:8px 0 0;padding:0;flex-wrap:wrap}
+.mp-askcopy{border:1px solid var(--red);background:transparent;color:var(--red);font:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;transition:background .14s,color .14s}
+.mp-askcopy:hover{background:var(--red);color:var(--on-accent)}
+.mp-askcopy-hint{color:var(--muted);font-size:11.5px}
 /* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
 .mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 .mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
@@ -24528,6 +25093,11 @@ window.__MP_VER = "0.59.0";
     const limits = (it.limits && it.limits.length)
       ? `<details class="mp-it-limits"><summary>本插件不回答什么（${it.limits.length} 条）</summary>${it.limits.map((l) => `<div><b>${esc(l.title)}</b>${esc(l.text)}</div>`).join('')}</details>`
       : '';
+    // 问事体系才有「复制问事提示」：命盘类（八字/紫微/合盘/趋势/起名/风水/称骨/星座/数字/人格）不显示
+    const isAskSys = it.system && /^(liuyao|meihua|daliuren|qimen|tarot|xiaoliuren)$/.test(it.system);
+    const askCopy = isAskSys
+      ? `<div class="mp-askcopy-row"><button type="button" class="mp-askcopy" data-mp-askcopy="${esc(it.system)}">复制问事提示</button><span class="mp-askcopy-hint">把这张盘和你的问题打包成一段提示，粘到任何对话里都能用</span></div>`
+      : '';
         // 三层导读：最靠前，但默认收起——想读的人一进来就有，不想读的人不多占一屏。
     // 内容全部转义；这段只讲「哪层可复核、哪层要留个心眼」，不碰任何断语。
     const guide = it.guide ? `<details class="mp-guide">
@@ -24546,6 +25116,7 @@ window.__MP_VER = "0.59.0";
         <span class="mp-it-hint">${folded ? '点击展开' : '点击收起'}</span>
       </button>
       <div class="mp-it-wrap">
+        ${askCopy}
         ${askLine}
         ${answer}
         ${plain}
@@ -25559,6 +26130,19 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 
   // 上一次的卦象：改「所问之事 / 询问方向」时用它重出解读，不重摇一卦
   let last = null;
+  /** 把当前盘 + 问题打包成问事提示并复制：方向映射到问事类型，时间默认已知（盘已起出） */
+  function copyAskPrompt(btn) {
+    if (!last || !last.r || !window.Engine || !window.Engine.buildEventPrompt) return;
+    const Core = window.__MPCore || {};
+    const q = (el('question') && el('question').value || '').trim();
+    const dir = (askArgs && askArgs().direction) || 'general';
+    const kind = Core.kindOfDirection ? Core.kindOfDirection(dir) : 'other';
+    const gender = (el('gender') && el('gender').value) || 'male';
+    let p;
+    try { p = window.Engine.buildEventPrompt(last.r, { question: q, kind, gender, timeKnown: true }); }
+    catch (e) { p = null; }
+    if (p && p.text) copyPlain(btn, p.text, '已复制问事提示');
+  }
 
   /** 用缓存的卦象重新渲染：解读按当前的问题与方向重出，卦面本身不动 */
   function paint() {
@@ -25587,6 +26171,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       const perfHtml = window.__PP.perfHTML(last.perf);
       if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
     }
+     // 问事体系的「复制问事提示」按钮：paint 重绘后重新挂一次（innerHTML 会清掉旧监听）
+    const askBtn = el('out').querySelector('.mp-askcopy');
+    if (askBtn) askBtn.addEventListener('click', () => copyAskPrompt(askBtn));
   }
 
   /** 追问区：只对已算好的盘发问，不重新起盘 */
