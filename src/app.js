@@ -66,7 +66,7 @@ const CSS = `
 .mp-viewsw{margin-left:auto;display:inline-flex;padding:3px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2)}
 .mp-viewsw button{border:none;background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;transition:background .14s,color .14s}
 .mp-viewsw button:hover{color:var(--dsw-alias-label-primary)}
-.mp-viewsw button.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-viewsw button.on{background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff)}
 .mp-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:10px}
 .mp-tgroup{padding:12px 12px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;
   background:linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));
@@ -82,7 +82,7 @@ const CSS = `
 .mp-tool span{font-size:11px;line-height:1.4;color:var(--dsw-alias-label-secondary)}
 .mp-tool:hover{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1)}
 .mp-tool.on{border-color:transparent;background:var(--dsw-alias-brand-primary);box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
-.mp-tool.on b,.mp-tool.on span{color:#fff}
+.mp-tool.on b,.mp-tool.on span{color:var(--mp-on-brand,#fff)}
 .mp-tool.wide{grid-column:1/-1}
 .mp-tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:7px;border:1px dashed var(--dsw-alias-border-l1);border-radius:9px;
   background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;cursor:pointer}
@@ -100,7 +100,7 @@ const CSS = `
 .mp-tab{padding:7px 10px;border-radius:999px;border:1px solid transparent;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 62%,transparent);color:var(--dsw-alias-label-secondary);cursor:pointer;font-size:13px;white-space:nowrap;
   transition:background .16s,color .16s,border-color .16s,box-shadow .16s}
 .mp-tab:hover{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary)}
-.mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
+.mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:var(--mp-on-brand,#fff);font-weight:600;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
 /* box-sizing 必须写明：Chrome 下 select 默认 border-box、input 默认 content-box，同为 36px 时 input 实高 50px，底对齐后性别下拉的顶边比日期框低 14px */
 .mp-input{box-sizing:border-box;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px;
@@ -131,15 +131,15 @@ const CSS = `
 .mp-quiz-o span{font-size:11px;line-height:1.3}
 .mp-quiz-o:hover{border-color:var(--dsw-alias-brand-primary)}
 .mp-quiz-o.on{border-color:transparent;background:var(--dsw-alias-brand-primary)}
-.mp-quiz-o.on b,.mp-quiz-o.on span{color:#fff}
+.mp-quiz-o.on b,.mp-quiz-o.on span{color:var(--mp-on-brand,#fff)}
 .mp-quiz-o:focus-within{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .mp-quiz-nav{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .mp-quiz-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12.5px;cursor:pointer;min-height:32px}
 .mp-quiz-btn:hover:not(:disabled){border-color:var(--dsw-alias-brand-primary)}
 .mp-quiz-btn:disabled{opacity:.42;cursor:not-allowed}
-.mp-quiz-btn.primary{border-color:transparent;background:var(--dsw-alias-brand-primary);color:#fff;font-weight:600}
+.mp-quiz-btn.primary{border-color:transparent;background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);font-weight:600}
 .mp-quiz-hint{margin-left:auto;font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.6}
-.mp-btn{padding:8px 22px;border-radius:9px;border:none;background:var(--dsw-alias-brand-primary);color:#fff;cursor:pointer;font-size:14px;font-weight:600;min-width:132px;
+.mp-btn{padding:8px 22px;border-radius:9px;border:none;background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);cursor:pointer;font-size:14px;font-weight:600;min-width:132px;
   box-shadow:0 10px 20px -14px var(--dsw-alias-brand-primary);transition:transform .14s,filter .14s,box-shadow .14s}
 .mp-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
 .mp-btn:active{transform:none;filter:brightness(.98)}
@@ -147,7 +147,7 @@ const CSS = `
 .mp-btn.ghost:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);filter:none}
 .mp-seg{display:flex;width:100%;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;overflow:hidden;height:36px}
 .mp-seg button{flex:1;padding:0 8px;background:transparent;border:none;color:var(--dsw-alias-label-secondary);font-size:13px;cursor:pointer}
-.mp-seg button.on{background:var(--dsw-alias-brand-primary);color:#fff}
+.mp-seg button.on{background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff)}
 /* 奇门「换局规则」：fieldset + 原生 radio（语义优先，外观沿用面板浅色块） */
 .mp-qmrule{grid-column:1 / -1;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .mp-qmrule legend{padding:0}
@@ -195,7 +195,7 @@ const CSS = `
 .mp-verify-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0}
 .mp-verify-btns{display:flex;gap:4px}
 .mp-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer}
-.mp-chip.on{background:var(--dsw-alias-brand-primary);color:#fff;border-color:transparent}
+.mp-chip.on{background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);border-color:transparent}
 .mp-verify-foot{display:flex;align-items:flex-start;gap:8px;margin-top:8px;flex-wrap:wrap}
 .mp-verify-fit{font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.7;flex:1;min-width:0}
 .mp-rect-row{display:flex;gap:6px;margin-bottom:6px}
@@ -1777,14 +1777,57 @@ function injectStyle(css) {
   }
 }
 
-// 客户端插件绝不能因为自身异常拖垮应用启动：注册失败只记日志。
-function safeApply(ctx) {
+// 品牌色上的字色：深色主题下品牌色本身常是浅色，选中块写死 #fff 就等于没有字。
+// 所以运行时量一次真实的品牌色，按 WCAG 对比度挑白或近黑，写进 --mp-on-brand；
+// CSS 只读这个变量（带 #fff 兜底），量不到也不会比原来更差。
+let onBrandWatched = false;
+function syncOnBrand() {
   try {
+    const root = document.documentElement;
+    if (!root || !document.body) return;
+    const probe = document.createElement('span');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:absolute;left:-9999px;top:0;width:0;height:0;pointer-events:none;'
+      + 'background:var(--dsw-alias-brand-primary)';
+    document.body.appendChild(probe);
+    const bg = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    const on = (Core && typeof Core.pickOnColor === 'function') ? Core.pickOnColor(bg) : '';
+    if (on && root.style && root.style.getPropertyValue('--mp-on-brand') !== on) {
+      root.style.setProperty('--mp-on-brand', on);
+    }
+  } catch (e) {
+    // 量不到（无 body / getComputedStyle 不可用）就让 CSS 的 #fff 兜底，不抛
+  }
+}
+function watchOnBrand() {
+  if (onBrandWatched) return;
+  onBrandWatched = true;
+  syncOnBrand();
+  try {
+    const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq && typeof mq.addEventListener === 'function') mq.addEventListener('change', syncOnBrand);
+  } catch (e) { /* 老宿主没有 matchMedia，忽略 */ }
+  // 宿主切换主题不一定是改系统偏好，也可能换 html 上的 class / data-theme
+  try {
+    if (typeof MutationObserver === 'function' && document.documentElement) {
+      new MutationObserver(syncOnBrand).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'data-theme'],
+      });
+    }
+  } catch (e) { /* 没有 MutationObserver 就只在首次与系统偏好变化时同步 */ }
+}
+
+// 客户端插件绝不能因为自身异常拖垮应用启动：注册失败只记日志。
+function safeApply(ctx) {  try {
     const dispose = injectStyle(CSS + (PP && PP.CSS ? PP.CSS : ''));
     if (typeof ctx.effect === 'function' && typeof dispose === 'function') ctx.effect(() => dispose);
   } catch (e) {
     console.error('[metaphysics] 样式注入失败', e);
   }
+  // 样式进页面之后再量品牌色：此刻 var(--dsw-alias-brand-primary) 才解析得出来
+  try { watchOnBrand(); } catch (e) { console.error('[metaphysics] 字色同步失败', e); }
 
   let slots = null;
   try {

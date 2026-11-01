@@ -142,6 +142,34 @@ const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8')
   ok(/\.go\.ghost\{grid-column:1\}\s*\.go\{grid-column:2\}/.test(narrow), '窄屏「看示例/排盘」在两列内并排，不生成额外轨道');
 }
 
+// ── 四、选中高亮块上的字色（0.59.1）─────────────────────────────
+// 症状：深色主题下点开侧栏，被选中的那个 tab / 工具项文字是白的，压在浅色品牌底上
+// 等于看不见。根因是选中态写死 color:#fff，而品牌色在深色主题里是浅色。
+{
+  const APP = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+  // 品牌色底后面（到本条规则结束为止）不得再出现写死的白字
+  const offenders = [];
+  const re = /background:var\(--dsw-alias-brand-primary\)/g;
+  let m;
+  while ((m = re.exec(APP))) {
+    const tail = APP.slice(m.index, APP.indexOf('}', m.index) + 1);
+    if (/color:\s*#fff/i.test(tail)) offenders.push(tail.replace(/\s+/g, ' ').slice(0, 80));
+  }
+  eq(offenders.length, 0, `品牌色底上不得写死白字（命中：${offenders.join(' | ')}）`);
+  // 选中态的字色必须走变量
+  ok(/\.mp-tab\.on\{[^}]*color:var\(--mp-on-brand,#fff\)/.test(APP), '选中 tab 的字色走 --mp-on-brand');
+  ok(/\.mp-tool\.on b,\.mp-tool\.on span\{color:var\(--mp-on-brand,#fff\)\}/.test(APP), '选中工具项的字色走 --mp-on-brand');
+  // 变量由运行时按对比度写入，不是再猜一个颜色
+  ok(/function syncOnBrand\(\)/.test(APP) && /pickOnColor/.test(APP), '运行时按对比度挑选字色');
+  ok(/probe\.style\.cssText[\s\S]{0,160}brand-primary/.test(APP) && /getComputedStyle\(probe\)/.test(APP),
+    '同步时量的是宿主真实品牌色（探针 + computedStyle）');
+  // 系统主题切换、宿主换 class/data-theme 都要重新量
+  ok(/prefers-color-scheme: dark/.test(APP) && /MutationObserver/.test(APP), '主题变化后重新计算');
+  ok(/try \{ watchOnBrand\(\); \}/.test(APP), '在样式注入后触发一次同步');
+  // 兜底：量不到时 CSS 里的 #fff 仍在，不会比改动前更差
+  ok(/#fff\)/.test(APP), '变量带 #fff 兜底');
+}
+
 if (fails.length) {
   console.log(`FAIL ${fails.length} 项：`);
   for (const f of fails.slice(0, 15)) console.log('  -', f);
