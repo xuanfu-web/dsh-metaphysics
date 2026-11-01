@@ -83,7 +83,7 @@ ok('handlePayload 剔除输出开关', (() => {
 })());
 
 // ── ⑦ 与影子盘互不干扰 ──────────────────────────────────────────
-const V = '0.56.0';
+const V = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 const fpA = chartFingerprint(BASE, { version: V });
 const fpB = chartFingerprint({ ...BASE, handle: a.handle }, { version: V });
 ok('handle 不进影子盘指纹', fpA.baseId === fpB.baseId, `${fpA.baseId} / ${fpB.baseId}`);
