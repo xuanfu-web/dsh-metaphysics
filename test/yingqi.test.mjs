@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildLiuyao } from '../engine/liuyao.js';
-import { yingqiState, yingqiPredict, yingqiSay, YINGQI_RULE_IDS, NOT_IMPLEMENTED } from '../engine/yingqi.js';
+import { yingqiState, yingqiPredict, yingqiSay, YINGQI_RULE_IDS, RULE_ORDER, NOT_IMPLEMENTED } from '../engine/yingqi.js';
 import { ok, eq } from './_harness.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -86,13 +86,34 @@ const predictFor = (branch, element, moving, ctx, bianBranch = null) => {
 }
 {
   // 月破喜填：子水遇午月 → 填实子、逢合丑
-  const p = predictFor('子', '水', false, { monthBranch: '午', dayBranch: '辰', kong: [] });
+  // 日辰取子（比和）而不是辰：辰是水墓，会把「入墓」拉进来抢主位，测的就不是月破了
+  const p = predictFor('子', '水', false, { monthBranch: '午', dayBranch: '子', kong: [] });
   ok('月破给填实与逢合', p.primary.id === 'yuepo-xi-tian' && p.branches.includes('子') && p.branches.includes('丑'), p.branches.join(''));
 }
 {
   // 旬空最爱填冲：子水旬空 → 子（填实）/ 午（冲空）
-  const p = predictFor('子', '水', false, { monthBranch: '寅', dayBranch: '辰', kong: ['子'] });
+  // 同上，日辰避开辰（水墓），否则先触「入墓喜冲开」
+  const p = predictFor('子', '水', false, { monthBranch: '寅', dayBranch: '子', kong: ['子'] });
   ok('旬空给填实与冲空', p.primary.id === 'xunkong-tian-chong' && p.branches.includes('子') && p.branches.includes('午'), p.branches.join(''));
+}
+{
+  // 0.59.0：规则顺序必须等于原文罗列次序。旧代码几乎把原文倒过来排，
+  // 还配了一句原文没有的「空 → 破 → 动 → 墓 → 太旺 → 衰绝 → 静」当依据——这句是编的。
+  // 这里把原文 19 条的顺序钉死：改排序必须有原文依据，不能按命中率调。
+  const ORIGINAL = [
+    'jing-zhi-chong', 'dong-he-zhi', 'taiwang-mu-chong', 'shuaijue-sheng-wang',
+    'rumu-chong-kai', 'liuhe-xiang-ji', 'yuepo-xi-tian', 'xunkong-tian-chong',
+    'jixiang-keshen-shouke', 'xiong-keshen-fengsheng',
+    'huajin-zhi-he', 'huatui-ji-zhi-chong', 'bianyao-dongyao',
+    'shikong-yuanshen-zhi', 'shishuai-yuanshen-chong',
+  ];
+  ok('规则顺序照原文罗列', RULE_ORDER.join(',') === ORIGINAL.join(','), RULE_ORDER.join(','));
+  ok('RULE_ORDER 与 RULE_IDS 同一批规则',
+    [...RULE_ORDER].sort().join(',') === [...YINGQI_RULE_IDS].sort().join(','),
+    RULE_ORDER.join(','));
+  // 多条规则同时命中时，primary 必须是原文次序里靠前的那条（这里：入墓 5 < 月破 7）
+  const p = predictFor('子', '水', false, { monthBranch: '午', dayBranch: '辰', kong: [] });
+  ok('同时命中按原文次序取主规则', p.primary.id === 'rumu-chong-kai', p.primary.id);
 }
 {
   // 化进神逢值逢合：申动化酉 → 申 / 巳（巳合申），与原文例句一致

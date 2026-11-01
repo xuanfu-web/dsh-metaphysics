@@ -36,6 +36,39 @@ export const YINGQI_RULE_IDS = [
   'huatui-ji-zhi-chong', 'bianyao-dongyao', 'shikong-yuanshen-zhi', 'shishuai-yuanshen-chong',
 ];
 
+/**
+ * 规则的排列顺序 = 原文《各門類應期總注章第又二十六》19 条的罗列次序。
+ *
+ * 这一条要写清楚，因为 0.59.0 之前这里是错的：
+ * 旧注释称「状态互斥优先级照应期总注的排列：空 → 破 → 动 → 墓 → 太旺 → 衰绝 → 静」，
+ * 但把原文逐条对下来，真实次序是——
+ *   静 → 动 → 太旺 → 衰绝 → 入墓 → 六合 → 月破 → 旬空 → 大象吉受克 → 大象凶受克
+ *   → 元神总纲 → 化进 → 化退 → 独发独静 → 变爻动爻 → 远近当分 → 再占 → 世空元动 → 世衰元静
+ * 旧代码几乎是把这串倒过来排的，而「空 → 破 → … → 静」这个说法原文里没有，是编的。
+ *
+ * 更要紧的一点：**原文是分类罗列，不是效力排序**。前八条是「常、常、病×6」，
+ * 后面又混进化进/化退与变爻动爻，章内找不到任何「哪条先判」的表述。
+ * 所以 primary 只表示「按原文顺序第一条生效的规则」，不表示「最可能应验的那条」——
+ * 对拍（tools/backtest-yingqi.mjs）也显示按这个顺序取第一条，命中率与随机基线无显著差异。
+ */
+export const RULE_ORDER = [
+  'jing-zhi-chong',
+  'dong-he-zhi',
+  'taiwang-mu-chong',
+  'shuaijue-sheng-wang',
+  'rumu-chong-kai',
+  'liuhe-xiang-ji',
+  'yuepo-xi-tian',
+  'xunkong-tian-chong',
+  'jixiang-keshen-shouke',
+  'xiong-keshen-fengsheng',
+  'huajin-zhi-he',
+  'huatui-ji-zhi-chong',
+  'bianyao-dongyao',
+  'shikong-yuanshen-zhi',
+  'shishuai-yuanshen-chong',
+];
+
 // 条文里给出、但落不到「某支」上的条目：列出来，避免被误以为已经做了
 export const NOT_IMPLEMENTED = [
   '問有應於獨發獨靜：詳獨發章（要判「獨發/獨靜」整卦只有一爻動，属整卦层，未并入单爻规则）',
@@ -47,8 +80,11 @@ export const NOT_IMPLEMENTED = [
 const uniq = (xs) => [...new Set(xs.filter(Boolean))];
 
 /**
- * 判用神当前状态。状态互斥优先级照应期总注的排列：
- * 空 → 破 → 动（化进/化退/化合/普通）→ 墓 → 太旺 → 衰绝 → 静
+ * 判用神当前状态。
+ *
+ * 各项**独立计算、不互斥**——同一爻可以既旬空又月破、又入墓，各条规则各自判断要不要给支。
+ * 0.59.0 之前的注释写成「状态互斥优先级：空 → 破 → 动 → 墓 → 太旺 → 衰绝 → 静」，
+ * 原文里没有这层互斥关系，那段话是编的；这里没有选择逻辑，所以改注释不改行为。
  * @param {object} line 用神爻（buildLiuyao 的 ben.lines 之一）
  * @param {object} bianLine 同位变爻（不动则为 null）
  * @param {{monthBranch?:string, dayBranch?:string, kong?:string[], sameElement?:number}} ctx
@@ -147,6 +183,13 @@ export function yingqiPredict(result, useGod, opts = {}) {
   if (yuanBranch && s.kongHit) {
     add('shikong-yuanshen-zhi', '待元神逢值', '世空元動，須待元神逢值…主亥日得財', [yuanBranch]);
   }
+
+  // 按原文罗列次序排（见 RULE_ORDER），primary 只是「第一条生效的」，不是「最可能应验的」
+  const rankOf = (id) => {
+    const i = RULE_ORDER.indexOf(id);
+    return i < 0 ? RULE_ORDER.length : i;
+  };
+  rules.sort((a, b) => rankOf(a.id) - rankOf(b.id));
 
   const primary = rules[0] || null;
   return {
