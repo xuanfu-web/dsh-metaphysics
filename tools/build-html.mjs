@@ -454,6 +454,17 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
           <button data-chart="ziwei">紫微</button>
         </div>
       </div>
+      <label class="field check" title="再加一个人：你×对方、你×第三方、对方×第三方三对并列，不合成三人总分">
+        <input id="h3on" type="checkbox"> 三方合盘（加入第三人）
+      </label>
+      <div class="grp" id="for-hepan3" style="display:none">
+        <label class="field">第三方出生日期<input id="p2date" type="date" value="1990-01-01"></label>
+        <label class="field">第三方出生时刻<input id="p2time" type="time" value="12:00"></label>
+        <label class="field">第三方性别
+          <select id="p2gender"><option value="female">女</option><option value="male">男</option></select>
+        </label>
+        <label class="field">第三方出生地（可空）<input id="p2addr" placeholder="如 广东广州"></label>
+      </div>
     </div>
     <!-- 奇门：换局规则（fieldset + 原生 radio）与取用方向；换规则会重起局 -->
     <div class="grp" id="for-qimen" style="display:none">
@@ -517,6 +528,9 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
           </select>
         </label>
         <label class="field">看多少天<input id="zdays" type="number" min="1" max="60" value="30"></label>
+        <label class="field">候选日（可空，只比这几天）
+          <input id="zcand" placeholder="如 2026-12-01, 2026-12-08, 2026-12-15">
+        </label>
         <label class="field">当事人属相（可空）
           <select id="zsheng">
             <option value="">不排除</option>

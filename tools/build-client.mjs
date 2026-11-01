@@ -8,13 +8,13 @@ import { DIRECTIONS } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'index'];
+  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
 // 拆包：入口只带界面与懒加载器，各 tab 的引擎按组落到 client.<name>.js。
 // 分块之间不共享代码（宿主的 chunk 协议只支持自包含分块），所以公共模块按需重复。
-const COMMON = ['fail', 'validate', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random'];
+const COMMON = ['fail', 'validate', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random', 'handle', 'bridge'];
 const INTERPRET = ['interpret-data', 'interpret-knowledge', 'interpret-plain', 'citations', 'interpret'];
 const ASK = ['followup'];
 // 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎

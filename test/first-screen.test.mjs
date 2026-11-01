@@ -53,7 +53,10 @@ ok('重复入口提到最前而不是记两条', /filter\(\(x\) => x && x\.tab &
 ok('点入口时记录', /function activate\(next\) \{[\s\S]{0,160}recordRecent\(next\)/.test(ui));
 ok('点主按钮起卦/排盘时也记录', /function goCast\(\) \{\s*recordRecent\(tab\);/.test(ui));
 ok('人格问卷答够提交时记录', /mbAnswered\(\) < MBTI_MIN\) \{ mbNudge\(\); return; \}\s*recordRecent\('mbti'\)/.test(ui));
-ok('首屏初始化不写最近记录', /setTab\('ziwei'\);\s*run\(\);/.test(ui));
+// C3 深链：启动改成「先读链接、没有再排默认盘」；仍然不能在初始化时写最近记录
+ok('启动时先看深链再排盘', /const deep = readDeepLink\(\);\s*setTab\(deep \? deep\.tab : 'ziwei'\)/.test(ui));
+const bootBlock = (ui.match(/const deep = readDeepLink\(\);[\s\S]*?Promise\.resolve\(run\(\)\)/) || [''])[0];
+ok('首屏初始化不写最近记录', !!bootBlock && !/recordRecent/.test(bootBlock), bootBlock.length ? bootBlock.slice(0, 60) : '没找到启动块');
 ok('没有记录时整行隐藏', /row\.hidden = list\.length === 0/.test(ui));
 ok('隐藏要显式写样式（display:flex 会盖掉 [hidden]）', /\.recent\[hidden\]\{display:none\}/.test(html));
 ok('存储里的 tab 先过白名单（不直接当选择器）', /labels\[x\.tab\]/.test(ui));

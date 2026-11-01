@@ -56,7 +56,7 @@ function liuyaoTrace(r, opts = {}) {
       ['变卦', bian ? `${text(bian.name)}（上${text(bian.upper)}·下${text(bian.lower)}）` : '无'],
     ],
     lines.map((l) => `${l.position}爻 ${text(l.ganzhi)}${text(l.element)}`).join('｜'),
-    '京房纳甲诀；engine/liuyao.js · NAJIA',
+    '京房纳甲（八宫纳甲表）；实现：engine/liuyao.js · NAJIA（规则表，本仓未录入古籍章页）',
   );
 
   const liuqin = step(
@@ -69,7 +69,7 @@ function liuyaoTrace(r, opts = {}) {
       ['日干起六神', `${text(r.dayGanZhi && r.dayGanZhi.stem)}日`],
     ],
     lines.map((l) => `${l.position}爻 ${text(l.liuqin)}（${text(l.element)}）`).join('｜'),
-    '五行生克；engine/liuyao.js · liuqin()',
+    '五行生克定六亲；取用可对读《增删卜易》卷一·用神章第八；实现：engine/liuyao.js · liuqin()',
   );
 
   const shiying = step(
@@ -83,7 +83,7 @@ function liuyaoTrace(r, opts = {}) {
     ],
     `${text(ben.shi)}爻${shi ? ` ${text(shi.liuqin)}·${text(shi.ganzhi)}${text(shi.element)}` : ''}为世，`
       + `${text(ben.ying)}爻${ying ? ` ${text(ying.liuqin)}·${text(ying.ganzhi)}${text(ying.element)}` : ''}为应`,
-    '八宫世应诀；engine/liuyao.js · SHI_POSITION',
+    '八宫世应诀（世爻序与应爻隔三位）；实现：engine/liuyao.js · SHI_POSITION（通行动诀，本仓未录入古籍章页）',
   );
 
   let fushen;
@@ -97,7 +97,7 @@ function liuyaoTrace(r, opts = {}) {
       '用神不上卦时，回本宫首卦的同位取伏神；飞伏之间只判生克与助压。',
       [['用神', ug && ug.ask ? ug.ask : '未取']],
       `${why}；本层不适用。`,
-      'engine/liuyao.js · yongshenOf()',
+      '取伏之法参《增删卜易》卷二·飛伏神章第二十八；实现：engine/liuyao.js · yongshenOf()',
     );
   } else if (ug.missing) {
     const hidden = (ug.fushen || []).map((f) => {
@@ -117,7 +117,7 @@ function liuyaoTrace(r, opts = {}) {
         ['月建 / 日辰', `${text(month && month.branch)} / ${text(day && day.branch)}`],
       ],
       `${hidden || '本卦无此六亲，首卦同位也未取到伏神'}${access ? `；出伏：${access}` : ''}`,
-      '本宫首卦取伏；engine/liuyao.js · fushenAccess()',
+      '《增删卜易》卷二·飛伏神章第二十八（用神不現，尋得伏神而遇生扶有用）；实现：engine/liuyao.js · fushenAccess()',
     );
   } else {
     fushen = step(
@@ -129,7 +129,7 @@ function liuyaoTrace(r, opts = {}) {
         ['在位', list((ug.found || []).map((l) => `${l.position}爻`))],
       ],
       `用神 ${ug.liuqin} 已在 ${list((ug.found || []).map((l) => `${l.position}爻`))}，无需伏神。`,
-      'engine/liuyao.js · yongshenOf()',
+      '取伏之法参《增删卜易》卷二·飛伏神章第二十八；实现：engine/liuyao.js · yongshenOf()',
     );
   }
 
@@ -150,7 +150,7 @@ function liuyaoTrace(r, opts = {}) {
       useStrength ? `用神：${useStrength}${us.labels && us.labels.length ? `（${us.labels.join('、')}）` : ''}` : '用神：未取，只看全卦',
       hs && hs.labels && hs.labels.length ? `全卦：${hs.labels.join('、')}` : '',
     ].filter(Boolean).join('；'),
-    '月建主旺衰、日辰司生克；engine/liuyao.js · yongshenStrength / hexagramStrength',
+    '《增删卜易》卷一·月將章第十六、日辰章第十七；实现：engine/liuyao.js · yongshenStrength / hexagramStrength',
   );
 
   return [najia, liuqin, shiying, fushen, wangsheng];
@@ -179,7 +179,7 @@ function baziTrace(r) {
       ['虚透', list(parts.virtualHelpers, '无')],
     ],
     `${text(s.level)}（${text(s.score)} 分）：${text(s.detail)}`,
-    'engine/bazi.js · 旺衰量化（月令权重 + 藏干通根，三会/三合/六合折根 + 天干虚透减半）',
+    '本仓量化规则（月令权重 3/2/1/0.5/0、藏干通根、三会/三合/六合折根、虚透减半；非古籍定数）；实现：engine/bazi.js · 旺衰量化',
   );
 
   const primaryName = text(frame.primaryName || (primary && primary.name), '未取格局');
@@ -211,7 +211,7 @@ function baziTrace(r) {
       ['调候', tiaohou && tiaohou.kind ? `${text(tiaohou.kind)}${need && need.element ? ` → ${text(need.element)}` : ''}` : '—'],
     ],
     `${resultParts}`,
-    '子平真诠 · 月令取格；engine/geju.js · yongshenOf()',
+    '《子平真诠》八、论用神（专求月令）；调候参《穷通宝鉴》五行总论；实现：engine/geju.js · yongshenOf()',
   );
 
   const p = r.palaces && typeof r.palaces === 'object' ? r.palaces : {};
@@ -228,7 +228,7 @@ function baziTrace(r) {
       ['命宫 / 身宫', `${text(p.minggong && p.minggong.ganzhi)} / ${text(p.shengong && p.shengong.ganzhi)}`],
     ],
     `胎元 ${text(p.taiyuan.ganzhi)}；${p.taixi ? `胎息 ${text(p.taixi.ganzhi)}；` : ''}命宫 ${text(p.minggong && p.minggong.ganzhi)}；身宫 ${text(p.shengong && p.shengong.ganzhi)}。四宫是辅助坐标，不单独折吉凶。`,
-    'Tyme 四宫口径；engine/bazi.js · palaces',
+    'Tyme 1.5.4 四宫口径（与 ziwei.pub 704 组日期对拍）；本仓未直接照录古籍章页；实现：engine/bazi.js · palaces',
   ) : null;
 
   return [strength, geju, ...(palaces ? [palaces] : [])];
@@ -251,7 +251,7 @@ function ziweiTrace(r) {
       ['命中数', `${patterns.length} / ${total}`],
     ],
     patterns.length ? `命中 ${patterns.length} 条：${hit}` : '未命中已收录的格局条件（不表示命盘无结构，只是不在已收录清单内）。',
-    '紫微斗数全书 · 格局条件；engine/ziwei.js · detectPatterns()',
+    '《紫微斗数全书》卷三·论人命入格、谈星要论；实现：engine/ziwei.js · detectPatterns()',
   )];
 }
 
@@ -277,7 +277,7 @@ function qimenTrace(r, opts = {}) {
       ['空亡 / 驿马', `${list(r.kongWang)} / ${text(ma.zhi)}${ma.gong ? `（${ma.gong}宫）` : ''}`],
     ],
     palaces.map((p) => `${p.palace}宫 天${text(p.tianPan)}·${text(p.star)}·${text(p.gate)}·${text(p.god)}`).join('｜') || '无九宫数据',
-    'engine/qimen.js · buildQimen()',
+    '《奇门遁甲统宗》卷一·奇门秘诀总赋（阴阳二遁、五日换元、超神接气）；实现：engine/qimen.js · buildQimen()',
   );
 
   const ys = qimenYongshen(r, opts.direction);
@@ -298,7 +298,7 @@ function qimenTrace(r, opts = {}) {
       ? `${ys.note}；${found.map((x) => `${x.key} 落 ${x.palace.palace}宫（${text(x.palace.star)}·${text(x.palace.gate)}·${text(x.palace.god)}）`).join('，')}`
         + (missing.length ? `；${missing.join('、')} 未上盘` : '')
       : `${ys.label}的用神均未上盘，属未决项；先按值符落宫参照。`,
-    '奇门用神取象；engine/qimen-interpret.js · qimenYongshen()',
+    '本仓用神表（按所问之事取用，非古籍原文）；实现：engine/qimen-interpret.js · qimenYongshen()',
   );
 
   const order = ['旺', '相', '休', '囚', '死'];
@@ -315,7 +315,7 @@ function qimenTrace(r, opts = {}) {
       ['天盘干', stateLine(states.stem)],
     ],
     `门：${stateLine(states.gate)}；星：${stateLine(states.star)}；天盘干：${stateLine(states.stem)}`,
-    '月令五行五态；engine/qimen.js · groupByState()',
+    '《奇门遁甲统宗》卷三（旺相休囚）；实现：engine/qimen.js · groupByState()',
   );
 
   const forced = [];
@@ -354,7 +354,7 @@ function qimenTrace(r, opts = {}) {
       ['空亡', kongCells.join('、') || '无'],
     ],
     `门迫 ${forced.length} 处、宫制门 ${controlled.length} 处；天盘干与宫：${stemLine}；击刑 ${jiXing.length} 处、三奇入墓 ${ruMu.length} 处、六仪入墓 ${liuYiRuMu.length} 处、落空 ${kongCells.length} 宫。十干克应：${ganying || '—'}。`,
-    '门迫/宫制门；engine/qimen.js · gatePalaceRelation() / stemPalaceRelation()；十干克应 engine/qimen-ganying.js',
+    '《奇门遁甲统宗》卷二（八门迫制）、卷十一·玄机赋（中）（六仪击刑、三奇入墓）；十干克应为本仓表；实现：engine/qimen.js · gatePalaceRelation() / stemPalaceRelation()、engine/qimen-ganying.js',
   );
 
   return [facts, yongshen, wangshuai, relations];
@@ -380,7 +380,7 @@ function daliurenTrace(r) {
       ['昼夜 / 贵人', `${text(r.dayNight)} / ${text(gr.zhi)}（${gr.reverse ? '逆布' : '顺布'}）`],
     ],
     pan.map((p) => `${p.di}→${p.tian}${p.jiang ? `（${text(p.jiang)}）` : ''}`).join('｜') || '无天地盘数据',
-    '大六壬月将加时；engine/daliuren.js · tianDiPan()',
+    '《大六壬大全》卷二·神将释（月将为十二支神，登明为首逆布）；加时布盘属通行口诀，未标卷次；实现：engine/daliuren.js · tianDiPan()',
   );
 
   const sike = step(
@@ -393,7 +393,7 @@ function daliurenTrace(r) {
       ['四课', ke.map((k) => `${k.position}课 ${text(k.shang)}上${text(k.xia)}下`).join('；') || '—'],
     ],
     ke.map((k) => `${k.position}课 ${text(k.shang)}上${text(k.xia)}下${k.jiang ? `·${text(k.jiang)}` : ''}：${text(k.relation)}`).join('；') || '无四课数据',
-    'engine/daliuren.js · siKe()',
+    '《大六壬大全》卷一·起例（十干寄宫）；四课余下三课按通行口诀；实现：engine/daliuren.js · siKe()',
   );
 
   const chuanLine = (c) => (c
@@ -410,7 +410,7 @@ function daliurenTrace(r) {
       ['末传', chuanLine(sc.mo)],
     ],
     `${chuanLine(sc.chu)} → ${chuanLine(sc.zhong)} → ${chuanLine(sc.mo)}`,
-    'engine/daliuren.js · chuan()',
+    '《大六壬大全》卷一·起例（贼克法为首法，比用、涉害、遥克、昴星、八专、伏吟、返吟依次列后）；实现：engine/daliuren.js · chuan()',
   );
 
   return [tiandipan, sike, sanchuan];

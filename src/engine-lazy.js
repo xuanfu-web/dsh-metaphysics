@@ -11,9 +11,13 @@ function mpChunkOf(tab) {
   return __MP_CHUNKS__[tab] || __MP_CHUNKS__.bazi || 'client.bazi.js';
 }
 
+const mpLazyNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+
 async function __mpEnsureEngine(tab) {
   const chunk = mpChunkOf(tab);
   let engine = MP_ENGINE_CACHE[chunk];
+  const cached = !!engine;
+  const t0 = mpLazyNow();
   if (!engine) {
     if (!require || typeof require.async !== 'function') {
       throw new Error('当前宿主不支持客户端分块加载（require.async 缺失），请升级 DeepSeek Harness');
@@ -32,6 +36,8 @@ async function __mpEnsureEngine(tab) {
   if (!Array.isArray(Engine.DIRECTIONS)) Engine.DIRECTIONS = __MP_DIRECTIONS__;
   window.Engine = Engine;
   window.__MP_ENGINE_READY__ = true;
+  // 只在本机回显耗时：不埋点上报、不发网络请求。cached 区分「首次取块」与「切回已载入的 tab」
+  window.__MP_LAST_LOAD = { tab, chunk, cached, ms: Math.round((mpLazyNow() - t0) * 10) / 10 };
   return Engine;
 }
 

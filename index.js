@@ -230,11 +230,16 @@ export function apply(ctx) {
         },
         startDate: {
           type: 'string',
-          description: '仅 zeri 使用：起算日（公历 YYYY-MM-DD）。省略则由宿主补今天。',
+          description: '仅 zeri 使用：起算日（公历 YYYY-MM-DD）。省略则由宿主补今天；给了 candidates 时不需要。',
         },
         days: {
           type: 'number',
-          description: '仅 zeri 使用：往后考察天数，1–60，默认 30。',
+          description: '仅 zeri 使用：往后考察天数，1–60，默认 30；给了 candidates 时忽略。',
+        },
+        candidates: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '仅 zeri 使用：候选日比较（2–12 个真实公历日期，如 ["2026-12-01","2026-12-08"]）。给了就只比这几天，结果多一个 compare（这一组最优、同分者、分差）与逐日并排；不替代 startDate 扫区间。',
         },
         shengXiao: {
           type: 'string',
@@ -327,6 +332,17 @@ export function apply(ctx) {
             gender: { type: 'string', enum: ['male', 'female'], description: '对方性别（决定对方大运/大限顺逆）' },
             address: { type: 'string', description: '对方出生地（省/市即可）' },
             trueSolar: { type: 'boolean', description: '对方是否启用真太阳时' },
+          },
+          required: ['datetime', 'gender'],
+        },
+        partner2: {
+          type: 'object',
+          description: '三方合盘（可选）：第三个人的出生信息，字段与 partner 相同。给了就多回 triple——你×对方、你×第三方、对方×第三方三对分数并列，不合成「三人总分」。仅 hepan 使用；null 与省略等价，不要传 null。',
+          properties: {
+            datetime: { type: 'string', description: '第三方公历本地时间，如 1988-09-09T08:00' },
+            gender: { type: 'string', enum: ['male', 'female'], description: '第三方性别' },
+            address: { type: 'string', description: '第三方出生地（省/市即可）' },
+            trueSolar: { type: 'boolean', description: '第三方是否启用真太阳时' },
           },
           required: ['datetime', 'gender'],
         },

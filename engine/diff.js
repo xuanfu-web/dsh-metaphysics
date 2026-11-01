@@ -353,3 +353,57 @@ export const CALIBER_SWITCHES = {
     },
   ],
 };
+
+/**
+ * 口径并排：把「换口径后哪几条结论变了」抽成两列表格。
+ * 只读结果里的既有字段，不重算、不判定哪套更准；字段缺省时留空，不编值。
+ */
+export const CALIBER_VIEWS = {
+  bazi: [
+    { path: 'pillars.day.ganzhi', label: '日柱' },
+    { path: 'pillars.hour.ganzhi', label: '时柱' },
+    { path: 'strength.level', label: '旺衰' },
+    { path: 'frame.primaryName', label: '格局' },
+    { path: 'frame.yongshen.favor', label: '喜用' },
+    { path: 'dayun.jiao.at', label: '起运' },
+  ],
+  ziwei: [
+    { path: 'soul.ganzhi', label: '命宫' },
+    { path: 'body.branch', label: '身宫支' },
+    { path: 'bureau.name', label: '五行局' },
+    { path: 'bodyMaster', label: '身主' },
+    { path: 'daxianList.0.ages', label: '起大限' },
+  ],
+  qimen: [
+    { path: 'siZhu.day', label: '日柱' },
+    { path: 'ju', label: '局数' },
+    { path: 'zhiFu.star', label: '值符' },
+    { path: 'zhiShi.gate', label: '值使' },
+  ],
+};
+
+function pickPath(obj, path) {
+  let cur = obj;
+  for (const seg of String(path).split('.')) {
+    if (cur === null || cur === undefined) return undefined;
+    cur = cur[seg];
+  }
+  return cur;
+}
+
+/** 并排单元格：数组用「、」串起，缺省留空，不把 undefined 写成字符串 */
+export function viewCell(value) {
+  if (value === undefined || value === null) return '—';
+  if (Array.isArray(value)) return value.join('、');
+  if (typeof value === 'object') return '—';
+  return String(value);
+}
+
+export function viewRows(system, current, alt) {
+  const defs = CALIBER_VIEWS[system] || [];
+  return defs.map((d) => {
+    const a = viewCell(pickPath(current, d.path));
+    const b = viewCell(pickPath(alt, d.path));
+    return { key: d.path, label: d.label, current: a, alt: b, changed: a !== b };
+  });
+}

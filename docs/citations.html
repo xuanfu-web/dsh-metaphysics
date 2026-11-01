@@ -39,10 +39,10 @@ a{color:var(--ok)}
 <p>每张知识卡都指到一处出处：已定位到原文的，给书名、卷章、原文与链接，并由 CI 核验原文子串；属于通行说或尚未录入的，明确标出，不冒充原文。</p>
 <div class="sum">
   <div><b>53</b>知识卡</div>
-  <div><b>43</b>已定位原文</div>
-  <div><b>9</b>通行说</div>
+  <div><b>45</b>已定位原文</div>
+  <div><b>7</b>通行说</div>
   <div><b>1</b>待补</div>
-  <div><b>90</b>引文条目</div>
+  <div><b>93</b>引文条目</div>
 </div>
 <p>原文核验数据：<code>test/fixtures/citation-sources.json</code>（公共领域古籍，由 <code>tools/sync-citation-sources.mjs</code> 抓取）；测试：<code>test/citations.test.mjs</code>。</p>
 
@@ -670,7 +670,7 @@ a{color:var(--ok)}
     <td>《增删卜易·卷二·進神退神章第二十九》</td>
     <td class="quote">進神退神者﹐爻之動而化也﹐化進化退﹐吉凶禍福有喜忌之分﹐所喜者宜於化進﹐所忌者宜化退神。</td>
     <td class="plain">进神退神是动爻化出同五行的顺次之支：化进主向前，化退主退气；喜用的宜化进，所忌的宜化退。</td>
-    <td><span class="chip">liuyao-jintui</span></td>
+    <td><span class="chip">liuyao-jintui</span><span class="chip">liuyao-jintui-yong</span></td>
     <td><a href="https://zh.wikisource.org/wiki/增刪卜易" rel="noreferrer noopener" target="_blank">原文</a></td>
   </tr><tr>
     <td class="id">zs-yingqi</td>
@@ -679,6 +679,27 @@ a{color:var(--ok)}
     <td class="plain">应期先分动静：静爻在逢值或逢冲之日应，动爻在逢合或逢值之日应；其余按入墓、旬空、月破等逐条推。</td>
     <td><span class="chip">liuyao-yingqi</span></td>
     <td><a href="https://zh.wikisource.org/wiki/增刪卜易/26又3" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dl-jigong</td>
+    <td>《大六壬大全·卷一·起例（十干寄宫）》</td>
+    <td class="quote">甲课寅兮乙课辰，丙戊课巳不须论。丁己课未庚申上，辛戌壬亥是其真。癸课原来丑宫坐，分明不用四正神。</td>
+    <td class="plain">十干寄宫是四课起手：甲寄寅、乙寄辰、丙戊寄巳、丁己寄未、庚寄申、辛寄戌、壬寄亥、癸寄丑；丙戊、丁己各同宫，子午卯酉四个正位不寄。</td>
+    <td><span class="chip">daliuren-sike</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/六壬大全/1" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dl-zeike</td>
+    <td>《大六壬大全·卷一·起例（贼克法）》</td>
+    <td class="quote">取课先从下贼呼，如无下贼上克初。初传之上名中次，中上加临是末居。三传既定天盘将，此是入式法第一。</td>
+    <td class="plain">九宗门取初传先看下贼上，没有下贼再看上克下；初传定后，中传取初传所乘之神，末传再顺取一位，三传齐了才布天盘天将。</td>
+    <td><span class="chip">daliuren-sike</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/六壬大全/1" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dl-yuejiang</td>
+    <td>《大六壬大全·卷二·神将释（月将）》</td>
+    <td class="quote">逆布者谓之月将，其实即十二神也。</td>
+    <td class="plain">月将就是十二支神，按太阳过宫排：以登明为首逆布十二宫；起课时把月将加在占时上，顺布成天盘。</td>
+    <td><span class="muted">—</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/六壬大全/2" rel="noreferrer noopener" target="_blank">原文</a></td>
   </tr></tbody>
 </table></div>
 
@@ -888,8 +909,8 @@ a{color:var(--ok)}
   </tr><tr>
     <td class="id">liuyao-jintui-yong</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>增删卜易·進神退神章、用神章<div class="muted">底本把进退落在「動而化」的吉凶喜忌与应期上，未见单列「用神化進／化退」条；按用神与忌神分档是本插件引申，不冒充原文</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易" target="_blank" rel="noreferrer noopener">《增删卜易·卷二·進神退神章第二十九》</a></td>
   </tr><tr>
     <td class="id">meihua-tiyong</td>
     <td>梅花</td>
@@ -898,8 +919,8 @@ a{color:var(--ok)}
   </tr><tr>
     <td class="id">daliuren-sike</td>
     <td>大六壬</td>
-    <td><span class="st general">通行说</span></td>
-    <td>大六壬大全·九宗门取传法<div class="muted">原文待录入；本环境无稳定可核验的公有领域章页</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/六壬大全/1" target="_blank" rel="noreferrer noopener">《大六壬大全·卷一·起例（十干寄宫）》</a><br><a href="https://zh.wikisource.org/wiki/六壬大全/1" target="_blank" rel="noreferrer noopener">《大六壬大全·卷一·起例（贼克法）》</a></td>
   </tr><tr>
     <td class="id">qimen-yinyang</td>
     <td>奇门</td>

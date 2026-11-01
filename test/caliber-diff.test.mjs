@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {
   diffObjects, summarize, renderDiff, labelOf, rootOf, categoryOf, CALIBER_SWITCHES,
+  CALIBER_VIEWS, viewCell, viewRows,
 } from '../engine/diff.js';
 import { compute, caliberCompare, renderText } from '../engine/index.js';
 import { ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS } from '../engine/ziwei.js';
@@ -220,6 +221,34 @@ caliberCompare(frozen);
 ok('不修改调用参数', frozen.lateZi === true && !('caliber' in frozen), JSON.stringify(frozen));
 eq('两次结果逐字一致', JSON.stringify(caliberCompare(BZ_ARGS)), JSON.stringify(bzCmp));
 
+// ── 口径并排：只抽会影响结论的几项，做成两列表格 ──
+eq('三个体系都有并排视图', Object.keys(CALIBER_VIEWS).sort().join(','), 'bazi,qimen,ziwei');
+eq('数组用顿号连接', viewCell(['木', '火']), '木、火');
+eq('缺省不编值', viewCell(undefined), '—');
+eq('对象不硬串成 JSON', viewCell({ a: 1 }), '—');
+eq('数字转字符串', viewCell(3), '3');
+const bzViews = lateRow.views;
+eq('八字并排行数固定', bzViews.length, CALIBER_VIEWS.bazi.length);
+const viewOf = (views, key) => views.find((v) => v.key === key);
+eq('日柱并排旧值来自当前盘', viewOf(bzViews, 'pillars.day.ganzhi').current, A.pillars.day.ganzhi);
+eq('日柱并排新值来自另一档盘', viewOf(bzViews, 'pillars.day.ganzhi').alt, B.pillars.day.ganzhi);
+eq('日柱标记为变化', viewOf(bzViews, 'pillars.day.ganzhi').changed, true);
+eq('格局取主格局名', viewOf(bzViews, 'frame.primaryName').current, A.frame.primaryName);
+eq('起运未变不标变化', viewOf(bzViews, 'dayun.jiao.at').changed, false);
+eq('真太阳时并排落在起运', viewOf(ts2.views, 'dayun.jiao.at').changed, true);
+ok('并排值没有空路径', bzViews.every((v) => v.current !== '—' && v.alt !== '—'), JSON.stringify(bzViews));
+eq('午年身主并排无变化项', zwBaseRow('shenzhuSchool').views.filter((v) => v.changed).length, 0);
+const zwShenView = viewOf(zwShenZi.views, 'bodyMaster');
+eq('子年身主并排标记变化', zwShenView.changed, true);
+eq('子年身主并排旧值', zwShenView.current, '火星');
+eq('子年身主并排新值', zwShenView.alt, '铃星');
+eq('紫微命宫并排不受身主派影响', viewOf(zwShenZi.views, 'soul.ganzhi').changed, false);
+ok('紫微并排不出现空值', zwShenZi.views.every((v) => v.current !== '—'), JSON.stringify(zwShenZi.views));
+eq('奇门晚子时并排落在日柱', viewOf(qlate.views, 'siZhu.day').changed, true);
+eq('奇门取局并排落在局数', viewOf(qm.views, 'ju').changed, true);
+eq('无开关表体系并排为空', viewRows('liuyao', {}, {}).length, 0);
+eq('并排重复调用一致', JSON.stringify(viewRows('bazi', A, B)), JSON.stringify(bzViews));
+
 // ── 文本渲染：只在显式要求时附带 ──
 const withCal = { ...compute(BZ_ARGS), caliber: bzCmp };
 const txt = renderText(withCal);
@@ -227,6 +256,11 @@ ok('文本含口径对照标题', txt.includes('【口径对照】'));
 ok('文本含当前档与另一档', txt.includes('换日 → 不换日'), txt.slice(-400));
 ok('文本含根因日柱', txt.includes('日柱') && txt.includes('丙辰') && txt.includes('乙卯'));
 ok('文本无 undefined', !txt.includes('undefined'));
+ok('文本给并排变化项', txt.includes('并排：日柱') && txt.includes('丙辰 → 乙卯'), txt.slice(-600));
+const lateLine = txt.split('\n').find((l) => l.includes('并排：日柱'));
+ok('晚子时并排不列未变化的起运', !!lateLine && !lateLine.includes('起运'), lateLine);
+ok('无变化时不出并排行',
+  !renderText({ ...compute({ ...BZ_ARGS, datetime: '1996-01-19T12:00' }), caliber: { switches: [noonLate] } }).includes('并排'), 'no 并排');
 ok('未要求时不出现口径对照', !renderText(compute(BZ_ARGS)).includes('【口径对照】'));
 
 // ── 渲染层：口径对照卡（panel-kit 在 vm 里直接跑）──
@@ -274,6 +308,38 @@ const xss = PP.caliberHTML({
 });
 ok('标题与档位名转义', !xss.includes('<script>') && xss.includes('&lt;script&gt;'), xss.slice(0, 200));
 ok('根因值转义', !xss.includes('<i>') && xss.includes('&lt;') && xss.includes('&gt;'), xss.slice(0, 400));
+
+// 并排表：只列变化项，两列各带档位名
+const viewHtml = PP.caliberHTML({
+  switches: [{
+    key: 'x', title: 'X', short: 'X', currentLabel: '换日', altLabel: '不换日', total: 2,
+    roots: [], categories: [], error: '',
+    views: [
+      { key: 'k', label: '日柱', current: '丙辰', alt: '乙卯', changed: true },
+      { key: 'j', label: '起运', current: 'x', alt: 'x', changed: false },
+    ],
+  }],
+});
+ok('并排表出现', viewHtml.includes('class="mp-cview"'), viewHtml.slice(0, 300));
+ok('并排表列名为项与两档', viewHtml.includes('>项<') && viewHtml.includes('>换日<') && viewHtml.includes('>不换日<'));
+ok('并排表只列变化项', viewHtml.includes('日柱') && viewHtml.includes('丙辰') && viewHtml.includes('乙卯') && !viewHtml.includes('起运'));
+const viewNone = PP.caliberHTML({
+  switches: [{
+    key: 'x', title: 'X', short: 'X', currentLabel: 'A', altLabel: 'B', total: 1,
+    roots: [], categories: [], error: '',
+    views: [{ key: 'j', label: '起运', current: 'x', alt: 'x', changed: false }],
+  }],
+});
+ok('全是未变项时不画空表', !viewNone.includes('mp-cview'), viewNone);
+const viewXss = PP.caliberHTML({
+  switches: [{
+    key: 'x', title: 'X', short: 'X', currentLabel: 'A', altLabel: 'B', total: 1,
+    roots: [], categories: [], error: '',
+    views: [{ key: 'k', label: '<img src=x>', current: '<svg onload=1>', alt: '"', changed: true }],
+  }],
+});
+ok('并排表标签与值转义',
+  !viewXss.includes('<img') && !viewXss.includes('<svg') && viewXss.includes('&lt;img src=x&gt;'), viewXss);
 
 // ── 接线：面板 / 独立页 / 客户端打包 / 宿主工具 ──
 const APP = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');

@@ -133,7 +133,7 @@ ok('不传 trace 时结果无 trace', plain.trace === undefined);
 // ── ⑤ 文本层 ──────────────────────────────────────────────────
 const text = renderText(l);
 ok('文本含推导链标题与层数', text.includes('【推导链】六爻 · 5 层'));
-ok('文本列出每层规则与出处', text.includes('规则：') && text.includes('出处：engine/liuyao.js'));
+ok('文本列出每层规则与出处', text.includes('规则：') && text.includes('出处：') && text.includes('实现：engine/liuyao.js'));
 ok('文本含分隔后的层名', ['纳甲', '六亲', '世应', '伏神', '旺衰'].every((x) => text.includes(`. ${x}｜`)));
 ok('奇门文本层给四层', renderText(q).includes('【推导链】奇门 · 4 层') && renderText(q).includes('. 用神落宫｜'));
 ok('大六壬文本层给三层', renderText(d).includes('【推导链】大六壬 · 3 层') && renderText(d).includes('. 三传｜'));

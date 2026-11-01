@@ -315,7 +315,19 @@
 .mp-hp-inter li b.m-科{background:var(--ke)}
 .mp-hp-inter li b.m-忌{background:var(--ji)}
 .mp-hp-inter li i{font-style:normal;color:var(--red);font-size:10px;margin-left:3px}.mp-hp-notes{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.7}
-.mp-hp-notes p{margin:2px 0}.mp-dl-ss{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:12px}
+.mp-hp-notes p{margin:2px 0}
+/* 三方合盘：三对并列的小表。不合并总分，所以没有「三人合计」那一行 */
+.mp-hp-triple{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.mp-hp-triple table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.7;margin-top:6px}
+.mp-hp-triple th,.mp-hp-triple td{text-align:left;padding:4px 6px;border-bottom:1px dashed var(--line);white-space:nowrap}
+.mp-hp-triple thead th{font-size:11px;color:var(--muted);font-weight:600}
+.mp-hp-triple tbody th{font-weight:600;color:var(--ink)}
+.mp-hp-triple tbody td{font-variant-numeric:tabular-nums;color:var(--ink2)}
+.mp-hp-triple tbody td:first-of-type{font-weight:700;color:var(--red)}
+.mp-hp-lv{margin-left:6px;font-size:11px;color:var(--muted);font-weight:400}
+.mp-hp-triple p{margin:6px 0 0;font-size:11px;color:var(--muted);line-height:1.7}
+.mp-hp-triple p b{color:var(--ink)}
+.mp-dl-ss{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline;font-size:12px}
 .mp-dl-ss b{font-weight:600;color:var(--muted);font-size:11px;letter-spacing:.1em}
 .mp-dl-ss span{color:var(--ink);cursor:help}
 .mp-dl-ss i{font-style:normal;color:var(--red);margin-left:2px;font-weight:600}.mp-dl-pan2{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(84px,auto));border:1px solid var(--line);background:var(--bg)}
@@ -586,6 +598,12 @@
 .mp-cdiff-cats{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
 .mp-cdiff-cat{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 7px;background:var(--band)}
 .mp-cdiff-same{font-size:12px;color:var(--muted);margin-top:4px}
+.mp-cview{width:100%;margin-top:7px;border-collapse:collapse;font-size:12px;line-height:1.6}
+.mp-cview th,.mp-cview td{text-align:left;padding:3px 6px;border-bottom:1px dashed var(--line);vertical-align:top}
+.mp-cview thead th{font-size:11px;font-weight:600;color:var(--label);letter-spacing:.04em;white-space:nowrap}
+.mp-cview tbody th{font-weight:400;color:var(--muted);white-space:nowrap}
+.mp-cview tbody td{color:var(--ink2);font-variant-numeric:tabular-nums}
+.mp-cview tbody td:last-child{color:var(--ink);font-weight:700}
 .mp-cdiff-note{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
 @media (max-width:640px){
   .mp-cdiff>summary{padding:8px 11px}
@@ -793,6 +811,33 @@
 .mp-fu.miss .mp-fu-h{color:var(--red)}
 .mp-fu-ev{margin-top:5px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-quick{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px}
+/* 择日候选比较：只在给了候选日时出表；窄屏横向滚动，不把理由挤成竖排 */
+.mp-zr{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
+.mp-zr-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.mp-zr-h b{font-size:14px;color:var(--red)}
+.mp-zr-h span{font-size:12px;color:var(--muted)}
+.mp-zr-lead{font-size:13px;color:var(--ink);margin-bottom:8px}
+.mp-zr-lead b{color:var(--red)}
+.mp-zr-t{width:100%;border-collapse:collapse;font-size:12px;line-height:1.7}
+.mp-zr-t th,.mp-zr-t td{text-align:left;padding:5px 7px;border-bottom:1px dashed var(--line);vertical-align:top}
+.mp-zr-t thead th{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
+.mp-zr-t tbody th{font-weight:600;color:var(--ink);white-space:nowrap}
+.mp-zr-t tbody th em,.mp-zr-t tbody td em{display:block;font-style:normal;font-size:11px;color:var(--muted);font-weight:400}
+.mp-zr-t tbody td b{color:var(--ink2)}
+.mp-zr-t tbody tr.top{background:color-mix(in srgb,var(--red) 7%,transparent)}
+.mp-zr-t tbody tr.off{opacity:.72}
+.mp-zr-best{display:inline-block;margin-left:6px;padding:0 5px;border-radius:3px;background:var(--red);color:var(--on-accent);font-size:10px;font-style:normal;line-height:16px;vertical-align:1px}
+.mp-zr-score{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+.mp-zr-v{display:inline-block;padding:0 6px;border-radius:3px;border:1px solid var(--line);font-size:11px;white-space:nowrap}
+.mp-zr-v.good{color:var(--lu);border-color:var(--lu)}
+.mp-zr-v.bad{color:var(--ji);border-color:var(--ji)}
+.mp-zr-why{color:var(--ink2);min-width:180px}
+.mp-zr-lists{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:11.5px;color:var(--ink2)}
+.mp-zr-lists em{font-style:normal;color:var(--muted);margin-right:4px}
+.mp-zr-note{margin:6px 0 0;font-size:11px;color:var(--muted);line-height:1.7}
+/* 首屏耗时：只回显本机实测，低调放在结果底部 */
+.mp-perf{margin:10px 0 0;font-size:11px;line-height:1.7;color:var(--muted);font-family:system-ui,sans-serif;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.mp-zr{margin:10px;padding:10px;overflow-x:auto}.mp-zr-t{min-width:560px}}
 .mp-cg{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-cg-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:9px}
 .mp-cg-h b{font-size:13px;color:var(--ink);font-weight:600}
@@ -1846,6 +1891,31 @@
     </div>`;
   };
 
+  // 三方合盘表：只并列三对，不给「三人合计」——合成总分会把「和谁相处」混为一谈
+  const hepanTripleHTML = (t) => {
+    if (!t || !Array.isArray(t.pairs) || !t.pairs.length) return '';
+    const dims = t.pairs[0].dimensions || [];
+    const head = `<tr><th scope="col">一对</th><th scope="col">契合度</th>`
+      + dims.map((d) => `<th scope="col">${esc(d.label)}</th>`).join('') + '</tr>';
+    const rows = t.pairs.map((p) => `<tr><th scope="row">${esc(p.a)} × ${esc(p.b)}</th>`
+      + `<td>${p.total == null ? '—' : `${esc(p.total)}/100`}`
+      + `<span class="mp-hp-lv">${esc(p.level || '')}</span></td>`
+      + (p.dimensions || []).map((d) => `<td>${d.score >= 0 ? '+' : ''}${esc(d.score)}</td>`).join('')
+      + '</tr>').join('');
+    const lead = t.spread >= 3 && t.best
+      ? `最顺：<b>${esc(t.best.a)} × ${esc(t.best.b)}</b>（${esc(t.best.total)}/100）`
+        + (t.hardest ? `；最需磨合：<b>${esc(t.hardest.a)} × ${esc(t.hardest.b)}</b>（${esc(t.hardest.total)}/100）` : '')
+      : `三对分数接近（相差 ${esc(t.spread)} 分），不排名`;
+    const focus = t.focus && t.focus.spread >= 3
+      ? `<p>差异最大的一维：<b>${esc(t.focus.label)}</b>（三对相差 ${esc(t.focus.spread)} 分）</p>` : '';
+    return `<div class="mp-hp-triple">
+      <div class="mp-hp-ith">三方合盘 · 三对并列</div>
+      <table><thead>${head}</thead><tbody>${rows}</tbody></table>
+      <p>${lead}</p>${focus}
+      <p>${esc(t.note || '')}</p>
+    </div>`;
+  };
+
   pp.hepanHTML = function (r) {
     const side = (x, who) => `<div class="mp-hp-side">
       <div class="mp-hp-who">${who}</div>
@@ -1863,6 +1933,7 @@
       <div class="mp-hp-head"><b>${r.score.level}</b><span>${r.score.total}/100</span></div>
       <div class="mp-hp-sides">${side(r.a, '你')}${side(r.b, '对方')}</div>
       <div class="mp-hp-dims">${dims}</div>
+      ${hepanTripleHTML(r.triple)}
       <div class="mp-hp-notes">${r.notes.map((n) => `<p>${n}</p>`).join('')}</div>
     </div>`;
   };
@@ -1980,6 +2051,7 @@
         <div><div class="mp-hp-ith">你的四化 落在对方</div><ul>${list('你') || '<li>无</li>'}</ul></div>
         <div><div class="mp-hp-ith">对方的四化 落在你</div><ul>${list('对方') || '<li>无</li>'}</ul></div>
       </div>
+      ${hepanTripleHTML(r.triple)}
       <div class="mp-hp-notes">${r.notes.map((n) => `<p>${n}</p>`).join('')}</div>
     </div>`;
   };
@@ -2683,6 +2755,14 @@
         + `<span class="mp-cdiff-k">${esc(r.label)}</span><span class="mp-cdiff-from">${esc(r.from)}</span>`
         + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-to">${esc(r.to)}</span></div>`).join('')}</div>`;
     };
+    const viewsHTML = (row) => {
+      const vs = (Array.isArray(row.views) ? row.views : []).filter((v) => v && v.changed);
+      if (row.error || !row.total || !vs.length) return '';
+      return `<table class="mp-cview"><thead><tr><th scope="col">项</th>`
+        + `<th scope="col">${esc(row.currentLabel)}</th><th scope="col">${esc(row.altLabel)}</th></tr></thead><tbody>`
+        + vs.map((v) => `<tr><th scope="row">${esc(v.label)}</th><td>${esc(v.current)}</td><td>${esc(v.alt)}</td></tr>`).join('')
+        + '</tbody></table>';
+    };
     const catsHTML = (row) => {
       const cats = Array.isArray(row.categories) ? row.categories : [];
       if (row.error || !row.total || !cats.length) return '';
@@ -2695,7 +2775,7 @@
       + `<span class="mp-cdiff-count${row.total > 0 ? ' on' : ''}">${row.error ? '未能对照' : row.total ? `${Number(row.total) || 0} 处` : '无变化'}</span></div>`
       + `<div class="mp-cdiff-ab"><span class="mp-cdiff-pill now">当前 · ${esc(row.currentLabel)}</span>`
       + `<span class="mp-cdiff-arrow" aria-hidden="true">→</span><span class="mp-cdiff-pill alt">换成 · ${esc(row.altLabel)}</span></div>`
-      + `${rootsHTML(row)}${catsHTML(row)}</div>`).join('');
+      + `${rootsHTML(row)}${viewsHTML(row)}${catsHTML(row)}</div>`).join('');
     return `<details class="mp-cdiff" aria-label="口径对照">
       <summary><span class="mp-cdiff-title">口径对照</span><span class="mp-cdiff-lead">${esc(lead)}</span><span class="mp-cdiff-more">展开逐字差异</span></summary>
       <div class="mp-cdiff-body">${rows}
@@ -3055,6 +3135,67 @@
     if (m.action === 'xuankong') return fsXuankong(r, m);
     if (m.action === 'advise') return fsAdvise(r, m);
     return fsNatal(r, m);
+  };
+
+  /**
+   * 首屏耗时：引擎取块 / 排盘 / 渲染三段，全部来自调用方实测。
+   * 只在本机显示，不上报；缺哪段就省略哪段，不编数字。
+   */
+  pp.perfHTML = function (p) {
+    if (!p) return '';
+    const ms = (v) => (typeof v === 'number' && isFinite(v) ? `${Math.max(0, Math.round(v))}ms` : '');
+    const cached = p.cached === true ? '（已缓存）' : p.cached === false ? '（首次加载）' : '';
+    const segs = [];
+    if (ms(p.engineMs)) segs.push(`引擎 ${ms(p.engineMs)}${cached}`);
+    if (ms(p.computeMs)) segs.push(`排盘 ${ms(p.computeMs)}`);
+    if (ms(p.renderMs)) segs.push(`渲染 ${ms(p.renderMs)}`);
+    const total = ms(p.totalMs);
+    if (!segs.length && !total) return '';
+    const head = total ? `首屏 ${total}` : '耗时';
+    const body = segs.length ? `${head}｜${segs.join(' · ')}` : head;
+    return `<div class="mp-perf" title="本机这一次的实测耗时，不含网络与服务端；换机器、首次加载与已缓存会不同">${body}</div>`;
+  };
+
+  /**
+   * 择日候选日并排：只在给了 candidates 时出表（区间模式仍用文字版，避免 60 行表淹没面板）。
+   * 逐日一行，标出这一组里的最优；表里只搬引擎已算好的分数与理由，不重新判吉凶。
+   */
+  pp.zeriHTML = function (r) {
+    if (!r || !r.compare || r.compare.mode !== 'candidates' || !Array.isArray(r.days)) return pp.quickHTML(r);
+    const meta = r.meta || {};
+    const bestDate = r.compare.best ? r.compare.best.date : '';
+    const rows = r.days.map((d) => {
+      const isBest = d.date === bestDate;
+      const cls = d.excluded || d.verdict === '回避' ? 'bad' : d.verdict === '推荐' ? 'good' : '';
+      return `<tr class="mp-zr-row${isBest ? ' top' : ''}${d.excluded ? ' off' : ''}">
+        <th scope="row"><b>${esc(d.date)}</b>${isBest ? '<i class="mp-zr-best">最优</i>' : ''}
+          <em>${esc(d.weekday)}　${esc(d.lunar)}</em></th>
+        <td><b>${esc(d.dayGanZhi)}</b><em>${esc(d.zhiXing)}日</em></td>
+        <td class="mp-zr-score">${esc(d.score)}</td>
+        <td><span class="mp-zr-v ${cls}">${esc(d.verdict)}</span></td>
+        <td class="mp-zr-why">${esc(d.reasons.join('；') || '无特别加减分')}</td>
+      </tr>`;
+    }).join('');
+    const list = (label, arr) => `<span><em>${esc(label)}</em>${arr.length ? esc(arr.join('、')) : '无'}</span>`;
+    const bestLead = r.compare.best
+      ? `这一组最优：<b>${esc(r.compare.best.date)}</b>（${esc(r.compare.best.score)} 分 · ${esc(r.compare.best.verdict)}）`
+        + (r.compare.best.ties.length > 1
+          ? `；同分 ${esc(r.compare.best.ties.filter((d) => d !== r.compare.best.date).join('、'))}` : '')
+      : '这一组都因冲属相被排除，没有可用的日子';
+    return `<section class="mp-zr" aria-label="择日候选比较">
+      <div class="mp-zr-h"><b>择日 · ${esc(meta.task || '')}</b>
+        <span>候选 ${esc(meta.days)} 天${meta.shengXiao ? `　当事人属${esc(meta.shengXiao)}` : '（未给属相，未做冲煞排除）'}</span></div>
+      <div class="mp-zr-lead">${bestLead}</div>
+      <table class="mp-zr-t"><thead><tr>
+        <th scope="col">日期</th><th scope="col">日干支 / 建除</th><th scope="col">分</th><th scope="col">结论</th><th scope="col">理由</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+      <div class="mp-zr-lists">
+        ${list('推荐', r.best)}${list('可用', r.usable)}${list('回避', r.avoid)}
+      </div>
+      <p class="mp-zr-note">${esc(r.compare.note || '')}</p>
+      <p class="mp-zr-note">${esc(meta.scope || '')}</p>
+      <p class="mp-zr-note">${esc(r.disclaimer || '')}</p>
+    </section>`;
   };
 
   pp.quickHTML = function (r) {

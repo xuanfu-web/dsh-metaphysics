@@ -11,6 +11,8 @@
 
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
+  // 首屏耗时只在本机显示，不上报
+  const mpNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
   // ── 首屏：最近用过 / 分组 ↔ 平铺 ────────────────────────────────
   // 只记「点过哪个入口」，不存任何输入内容；读写失败（隐私模式、禁用存储）就降级成不记。
@@ -258,9 +260,8 @@
     done(legacy());
   }
 
-  /** 影子盘 ID / 排盘句柄一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
-  function copyAttr(btn, attr, idle) {
-    const text = btn.getAttribute(attr) || '';
+  /** 任意文本一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
+  function copyPlain(btn, text, idle) {
     if (!text) return;
     const done = (ok) => {
       btn.textContent = ok ? '已复制' : '复制失败';
@@ -288,8 +289,65 @@
     } catch (e) { /* 走下面的兜底 */ }
     done(legacy());
   }
+  function copyAttr(btn, attr, idle) { return copyPlain(btn, btn.getAttribute(attr) || '', idle); }
   const copyShadow = (btn) => copyAttr(btn, 'data-shadow-copy', '复制 ID');
   const copyHandle = (btn) => copyAttr(btn, 'data-handle-copy', '复制句柄');
+
+  // ── C3 桥替代（独立页）：复制提问 / 深链 ────────────────────────
+  // 独立页没有对话输入框，这几档就是「把盘交给助手」的全部出口：
+  // 完整提问贴进任意对话窗、深链发给自己或别人。
+  const pageBase = () => {
+    try { return String(location.href).split('#')[0]; } catch (e) { return ''; }
+  };
+  function bridgePackages() {
+    if (!last || !last.r || !window.Engine || !window.Engine.askPackages) return null;
+    const q = el('question') ? el('question').value.trim() : '';
+    try { return window.Engine.askPackages(last.r, { question: q, base: pageBase() }); }
+    catch (e) { return null; }
+  }
+
+  // ── C3 深链：打开带 #mp= 的链接时还原同一张盘 ──────────────────
+  /** 读链接里的 #mp=；没有或不合法的返回 null（不报错，照旧排默认盘） */
+  function readDeepLink() {
+    try {
+      const href = String(location.href || '');
+      if (href.indexOf('mp=') < 0 || !window.Engine || !window.Engine.parseAskLink) return null;
+      const deep = window.Engine.parseAskLink(href);
+      if (!deep || !deep.ok) return null;
+      const form = window.Engine.formOf ? window.Engine.formOf(deep) : null;
+      if (!form || !form.tab) return null;
+      if (!document.querySelector('.tab[data-tab="' + form.tab + '"], .tool[data-tab="' + form.tab + '"]')) return null;
+      return { tab: form.tab, form, label: deep.label, question: deep.question };
+    } catch (e) { return null; }
+  }
+  /** 把链接里的参数填进表单（在 setTab 之后调用：setTab 会按体系改字段可见性） */
+  function fillDeepForm(form) {
+    if (!form) return;
+    const puts = [['date', form.date], ['time', form.time], ['gender', form.gender],
+      ['addr', typeof form.address === 'string' ? form.address : '']];
+    for (const pair of puts) {
+      const node = el(pair[0]);
+      if (node && pair[1]) node.value = pair[1];
+    }
+    if (typeof form.trueSolar === 'boolean' && el('ts')) el('ts').checked = form.trueSolar;
+    if (typeof form.lateZi === 'boolean' && el('latezi')) el('latezi').checked = form.lateZi;
+    if (form.lines !== undefined && el('lines')) {
+      el('lines').value = Array.isArray(form.lines) ? form.lines.join(' ') : String(form.lines);
+    }
+    if (form.question && el('question')) el('question').value = form.question;
+  }
+  /** 还原提示：写明哪张盘、什么问题，以及哪些参数没填回表单（不悄悄丢参数） */
+  function deepNote(deep) {
+    const out = el('out');
+    if (!out || !deep) return;
+    const rest = window.Engine && window.Engine.restNote ? window.Engine.restNote(deep.form) : '';
+    const line = '已按链接还原：' + deep.label + (deep.question ? '｜' + deep.question : '') + (rest ? '　' + rest : '');
+    // 用文本节点而不是拼 HTML：链接里的问题原样显示，也不会被当成标签解析
+    const note = document.createElement('div');
+    note.className = 'note';
+    note.textContent = line;
+    out.insertBefore(note, out.firstChild);
+  }
 
   /** 推导链抽屉：打开时把焦点交给关闭按钮，关闭后回到入口 */
   function traceOpen() {
@@ -334,6 +392,11 @@
       + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
       + exportBar();
     last.it = it;
+    // 耗时行跟盘走：方向切换等重绘会把 innerHTML 整个换掉，不在这里补一次就会丢
+    if (last.perf) {
+      const perfHtml = window.__PP.perfHTML(last.perf);
+      if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
+    }
   }
 
   /** 追问区：只对已算好的盘发问，不重新起盘 */
@@ -341,6 +404,7 @@
     return `<div class="askbox no-print">
       <input id="askq" maxlength="120" placeholder="追问：如 2027 年事业怎么样（回车提交）">
       <button type="button" data-act="ask">追问</button>
+      <button type="button" data-act="copyask" title="把这张盘和你的问题整理成一段提问，粘到任意对话窗都能用">复制提问</button>
       <span class="hint">只回答盘面能支持的部分；找不到会说找不到</span>
     </div><div id="fout"></div>`;
   }
@@ -424,7 +488,8 @@
       <button type="button" data-act="print">打印</button>
       <button type="button" data-act="md">导出 .md</button>
       <button type="button" data-act="png">存为摘要长图</button>
-      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表），适合直接发给别人；.md 可直接存档</span>
+      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制深链</button>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）</span>
     </div>`;
   }
 
@@ -433,6 +498,16 @@
     if (!b) return;
     if (b.dataset.act === 'md') { downloadReport(); return; }
     if (b.dataset.act === 'png') { downloadCard(); return; }
+    if (b.dataset.act === 'link') {
+      const pkg = bridgePackages();
+      if (!pkg || !pkg.link) {
+        b.textContent = '没有深链';
+        setTimeout(() => { b.textContent = '复制深链'; }, 1400);
+        return;
+      }
+      copyPlain(b, pkg.link, '复制深链');
+      return;
+    }
     window.print();
   }
 
@@ -464,6 +539,7 @@
   }
 
   async function run() {
+    const runStart = mpNow();
     const date = el('date').value;
     const time = el('time').value;
     let lineWarn = '';
@@ -506,6 +582,14 @@
         address: el('paddr').value.trim() || undefined,
         trueSolar: el('ts').checked,
       };
+      if (el('h3on') && el('h3on').checked) {
+        args.partner2 = {
+          datetime: `${el('p2date').value}T${el('p2time').value}`,
+          gender: el('p2gender').value,
+          address: el('p2addr').value.trim() || undefined,
+          trueSolar: el('ts').checked,
+        };
+      }
     }
     // 八字/紫微可勾选「交叉验证」：同一份出生信息再排另一套盘并列对照
     if ((tab === 'bazi' || tab === 'ziwei') && el('cross') && el('cross').checked) args.cross = true;
@@ -542,6 +626,8 @@
       args.task = el('ztask').value;
       args.days = Number(el('zdays').value) || 30;
       if (el('zsheng').value) args.shengXiao = el('zsheng').value;
+      const cand = el('zcand') ? el('zcand').value.split(/[,，、\s]+/).filter(Boolean) : [];
+      if (cand.length) args.candidates = cand;
     }
     if (tab === 'xiaoliuren') {
       args.mode = xlrMode;
@@ -608,7 +694,9 @@
     // 奇门的用神同样由方向定，推导链的「用神落宫」层要用到
     if (tab === 'qimen') args.direction = el('qdir').value;
     try {
+      const computeStart = mpNow();
       const r = window.Engine.compute(args);
+      const computeMs = mpNow() - computeStart;
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
       let shadowDiff = null;
       try { shadowDiff = window.__PP.shadowTrack ? window.__PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
@@ -639,6 +727,7 @@
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
                       : tab === 'almanac' ? window.__PP.almanacHTML(r)
+                      : tab === 'zeri' ? window.__PP.zeriHTML(r)
                       : tab === 'chenggu' ? window.__PP.chengguHTML(r)
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : tab === 'name' ? window.__PP.nameHTML(r)
@@ -646,7 +735,13 @@
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
       last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff };
+      const paintStart = mpNow();
       paint();
+      // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
+      const renderMs = mpNow() - paintStart;
+      last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
+      const perfHtml = window.__PP.perfHTML(last.perf);
+      if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
     } catch (e) {
       last = null;
       // 错误文案里会带出用户输入的原文（如非法的 datetime），只能走 textContent，不能拼进 innerHTML
@@ -1019,9 +1114,16 @@
       document.querySelectorAll('#hpchart button').forEach((x) => x.classList.toggle('on', x === b));
       run();
     }));
-    ['pdate', 'ptime', 'pgender', 'paddr'].forEach((id) => {
+    ['pdate', 'ptime', 'pgender', 'paddr', 'p2date', 'p2time', 'p2gender', 'p2addr'].forEach((id) => {
       const node = el(id);
       if (node) node.addEventListener('change', run);
+    });
+    // 三方合盘：勾选后才展开第三人的四个字段
+    const h3 = el('h3on');
+    if (h3) h3.addEventListener('change', () => {
+      const box = el('for-hepan3');
+      if (box) box.style.display = h3.checked ? '' : 'none';
+      run();
     });
     // 奇门：换局规则改动重起局；询问方向改动只重出解读（用神跟着方向走）
     document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
@@ -1045,7 +1147,7 @@
     seg('#fsmode button', (v) => { fsMode = v; });
     seg('#nnmode button', (v) => { nnMode = v; });
     seg('#convertmode button', (v) => { convMode = v; syncQuick(); run(); });
-    ['ztask', 'zdays', 'zsheng', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'fsoffset', 'fsdate', 'fstime', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
+    ['ztask', 'zdays', 'zsheng', 'zcand', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'fsoffset', 'fsdate', 'fstime', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
       .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', run); });
     // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');
@@ -1097,6 +1199,12 @@
       if (rc) { doRectify(); return; }
       const askBtn = e.target && e.target.closest ? e.target.closest('[data-act="ask"]') : null;
       if (askBtn) { doAsk(); return; }
+      const copyAsk = e.target && e.target.closest ? e.target.closest('[data-act="copyask"]') : null;
+      if (copyAsk) {
+        const pkg = bridgePackages();
+        if (pkg) copyPlain(copyAsk, pkg.full, '复制提问');
+        return;
+      }
       onExportClick(e);
       const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
       if (!head) return;
@@ -1123,7 +1231,10 @@
     document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => {
       if (needAsk(tab) && !el('question').value.trim() && el('question').focus) el('question').focus();
     }));
-    setTab('ziwei');
-    run();
+    // C3 深链：带 #mp= 打开时先还原那张盘；没有就照旧是默认示例盘
+    const deep = readDeepLink();
+    setTab(deep ? deep.tab : 'ziwei');
+    if (deep) fillDeepForm(deep.form);
+    Promise.resolve(run()).then(() => { if (deep) deepNote(deep); });
   });
 })();

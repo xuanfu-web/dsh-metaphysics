@@ -81,23 +81,68 @@ const VERDICT = (score, ctx) => {
  * @param {{task:string, startDate:string, days?:number, shengXiao?:string}} input
  *   startDate 必填（公历 YYYY-MM-DD），避免引擎在无时钟环境下静默取「今天」。
  */
+/** 严格解析公历日期：2 月 30 日这类不存在的日子直接判非法，不滚到下个月 */
+function parseYmd(raw) {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(raw || '').trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1) return null;
+  const back = fromJDN(toJDN(year, month, day));
+  return back.year === year && back.month === month && back.day === day ? { year, month, day } : null;
+}
+
+const ymd = (p) => `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+
+/**
+ * 择日主函数。
+ * @param {{task:string, startDate:string, days?:number, shengXiao?:string,
+ *   candidates?:string[]}} input
+ *   startDate 必填（公历 YYYY-MM-DD），避免引擎在无时钟环境下静默取「今天」。
+ *   candidates 给了就只比这几个候选日（2–12 个，去重、保持输入顺序），startDate 与 days 不参与。
+ */
 export function buildZeri(input) {
   const task = input.task;
   if (!TASKS[task]) throw new Error(`不支持的事项「${task}」。支持：${Object.keys(TASKS).join('、')}`);
-  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(input.startDate || '').trim());
-  if (!m) throw new Error('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
-  const start = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
-  const days = Math.max(1, Math.min(60, Number.isInteger(input.days) ? input.days : 30));
   const shengXiaoRaw = typeof input.shengXiao === 'string' ? input.shengXiao.trim() : '';
   const shengXiao = shengXiaoRaw || null;
   if (shengXiao && !SHENGXIAO.includes(shengXiao)) throw new Error(`shengXiao 须为生肖名：${SHENGXIAO.join('、')}`);
 
+  // 候选日模式：只比用户给的这几天，不再按区间扫
+  let candidates = null;
+  if (input.candidates !== undefined && input.candidates !== null) {
+    if (!Array.isArray(input.candidates)) {
+      throw new Error('candidates 须为日期数组，例如 ["2026-12-01","2026-12-08","2026-12-15"]');
+    }
+    if (input.candidates.length < 2) throw new Error('candidates 至少给 2 个候选日；只想看一天请用 startDate + days: 1');
+    if (input.candidates.length > 12) throw new Error('candidates 最多 12 个候选日；更多请用 startDate + days 扫区间');
+    const seen = new Set();
+    candidates = [];
+    for (const raw of input.candidates) {
+      const p = parseYmd(raw);
+      if (!p) throw new Error(`候选日不是真实存在的公历日期：「${raw}」，请用 2026-12-01 这种格式`);
+      const key = ymd(p);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      candidates.push(p);
+    }
+    if (candidates.length < 2) throw new Error('候选日去重后不足 2 天；至少要两个不同的日子才谈得上比较');
+  }
+
+  let start = null;
+  let days = 0;
+  if (!candidates) {
+    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(input.startDate || '').trim());
+    if (!m) throw new Error('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
+    start = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+    days = Math.max(1, Math.min(60, Number.isInteger(input.days) ? input.days : 30));
+  }
+
   const spec = TASKS[task];
   const zhixingSet = ZHIXING_FAVOR[spec.category];
-  const startJdn = toJDN(start.year, start.month, start.day);
-  const list = [];
-  for (let i = 0; i < days; i++) {
-    const p = fromJDN(startJdn + i);
+
+  const makeRow = (p) => {
     const a = buildAlmanac(p);
     let score = 0;
     const reasons = [];
@@ -114,7 +159,7 @@ export function buildZeri(input) {
     if (a.zhiXing === '危' && spec.category !== 'travel' && spec.category !== 'worship') { score -= 1; reasons.push('危日（-1）'); }
 
     const v = VERDICT(score, { chongSelf, jiHit });
-    list.push({
+    return {
       date: a.meta.date,
       weekday: a.meta.weekday,
       lunar: a.lunar.text,
@@ -128,17 +173,47 @@ export function buildZeri(input) {
       verdict: v.verdict,
       verdictText: v.text,
       ...(v.excluded ? { excluded: true } : {}),
-    });
-  }
+    };
+  };
+
+  const list = candidates
+    ? candidates.map(makeRow)
+    : Array.from({ length: days }, (_, i) => makeRow(fromJDN(toJDN(start.year, start.month, start.day) + i)));
 
   const ranked = list.slice().sort((x, y) => y.score - x.score || (x.date < y.date ? -1 : 1));
+  const startDate = candidates
+    ? candidates.slice().sort((x, y) => (ymd(x) < ymd(y) ? -1 : 1)).map(ymd)[0]
+    : ymd(start);
+
+  // 候选日比较：只在这几天里比，给出最高分和同分者；不换算成「好多少」
+  let compare = null;
+  if (candidates) {
+    const pool = ranked.filter((d) => !d.excluded);
+    const top = pool[0] || null;
+    const scores = list.map((d) => d.score);
+    compare = {
+      mode: 'candidates',
+      count: list.length,
+      best: top ? {
+        date: top.date,
+        score: top.score,
+        verdict: top.verdict,
+        ties: pool.filter((d) => d.score === top.score).map((d) => d.date),
+      } : null,
+      spread: Math.max(...scores) - Math.min(...scores),
+      note: '候选日只在这几天里比：分数来自建除宜忌与冲煞，胜出只表示更合所问事项，不代表「好多少」。',
+    };
+  }
+
   return {
     system: 'zeri',
     meta: {
       task,
-      startDate: `${start.year}-${String(start.month).padStart(2, '0')}-${String(start.day).padStart(2, '0')}`,
-      days,
+      mode: candidates ? 'candidates' : 'range',
+      startDate,
+      days: list.length,
       shengXiao,
+      ...(candidates ? { candidates: candidates.map(ymd) } : {}),
       scope: shengXiao
         ? `宜忌按建除简表；已给当事人属相（${shengXiao}），凡当日冲该属相径直排除。评分仅用于排序引导。`
         : '宜忌按建除简表；未给当事人属相，未做冲属相排除。评分仅用于排序引导。',
@@ -147,6 +222,7 @@ export function buildZeri(input) {
     usable: ranked.filter((d) => d.verdict === '可用' && !d.excluded).slice(0, 5).map((d) => d.date),
     avoid: list.filter((d) => d.verdict === '回避').map((d) => `${d.date}（${d.reasons.join('；') || '综合减分'}）`),
     days: list,
+    ...(compare ? { compare } : {}),
     excludedCount: list.filter((d) => d.excluded).length,
     sources: ['宜忌：建除十二神通行简表', '建除适配与冲煞：传统通行口径', '排序：宜忌加减分 + 属相排除（确定性）'],
     disclaimer: '择日为传统黄历口径的本地计算，属民俗参考；评分只用于排序，不构成择日结论。',

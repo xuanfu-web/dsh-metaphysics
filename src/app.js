@@ -28,6 +28,10 @@ function HISTORY_LABEL(kind, r) {
 }
 // Client 半：命理排盘面板。由 build-client.mjs 注入 React / h / Engine / __PP。
 const PP = window.__PP;
+// 计时统一走 performance.now，缺省退回 Date.now（老宿主 / vm 沙箱）
+const mpNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+// 只用来丢弃过期的首帧回调；不上报、不落盘
+let perfSeq = 0;
 // 独立页与旧宿主没有分块加载器：把现成的完整 Engine 当作已加载
 const ensureEngine = typeof window.__mpEnsureEngine === 'function'
   ? window.__mpEnsureEngine
@@ -180,6 +184,10 @@ const CSS = `
 /* 追问：输入 + 结果卡 */
 .mp-askbox{display:flex;gap:8px;align-items:center;margin-top:12px}
 .mp-askbox .mp-input{flex:1;min-width:0}
+/* C3 桥替代：一排小芯片（完整提问 / 精简追问 / 参数 / 深链），桥不可用时就是主通道 */
+.mp-bridge{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.mp-bridge-lbl{font-size:11.5px;color:var(--dsw-alias-label-secondary)}
+.mp-bridge .mp-chip{font-size:11.5px;padding:3px 9px}
 .mp-fx{margin-top:10px}
 /* 验前事 / 生时校正 */
 .mp-verify,.mp-rect{margin-top:12px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-2)}
@@ -522,6 +530,12 @@ function App() {
   const [pGender, setPGender] = useState('female');
   const [pAddress, setPAddress] = useState('');
   const [hpChart, setHpChart] = useState('bazi');
+  // 三方合盘：勾选后才把第三人交给引擎，避免多两个人口时表单无故多出一排空位
+  const [thirdOn, setThirdOn] = useState(false);
+  const [p2Date, setP2Date] = useState('1990-01-01');
+  const [p2Time, setP2Time] = useState('12:00');
+  const [p2Gender, setP2Gender] = useState('male');
+  const [p2Address, setP2Address] = useState('');
   // 奇门换局规则：chaibu 拆补 / chaoshen 超神接气 / zhirun 置闰（引擎三种取局口径）
   const [qimenRule, setQimenRule] = useState('chaibu');
   const [trueSolar, setTrueSolar] = useState(true);
@@ -542,6 +556,8 @@ function App() {
   const [task, setTask] = useState('开业');
   const [days, setDays] = useState('30');
   const [shengXiao, setShengXiao] = useState('');
+  // 择日候选日：用逗号/顿号/空格分隔；填了就不扫区间，只比这几天
+  const [zCand, setZCand] = useState('');
   const [convMode, setConvMode] = useState('solar2lunar');
   const [lunarDate, setLunarDate] = useState('');
   const [leapMonth, setLeapMonth] = useState(false);
@@ -562,6 +578,8 @@ function App() {
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
+  // 首屏耗时：引擎取块、排盘、首帧（rAF 两次）三段实测；只在本机显示
+  const [perf, setPerf] = useState(null);
   useEffect(() => {
     if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); LAST.it = result.it || null; }
   }, [result, askText]);
@@ -611,11 +629,25 @@ function App() {
     // over：示例等「临时覆盖」用，避免依赖 React 状态更新后再读（同一个 handler 里 setState 还没生效）
     const genderV = over && over.gender ? over.gender : gender;
     const addressV = over && typeof over.address === 'string' ? over.address : address;
+    // 深链还原：表单状态要等下一次渲染才生效，所以这几个值也允许经 over 直传（与 gender/address 同理）
+    const tsV = over && typeof over.trueSolar === 'boolean' ? over.trueSolar : trueSolar;
+    const lateZiV = over && typeof over.lateZi === 'boolean' ? over.lateZi : lateZi;
+    const linesV = over && typeof over.lines === 'string' ? over.lines : lines;
+    const questionV = over && typeof over.question === 'string' ? over.question : question;
+    // 首屏计时从点按钮这一刻起；runToken 防止连续点两次时旧的一次把新数字覆盖掉
+    const runStart = mpNow();
+    const runToken = ++perfSeq;
+    setPerf(null);
     setNotice('');   // 上一次的提示（如「先答满 12 题」）不该跟着新结果一起留下
     try {
+      let engineMs = 0;
+      let engineCached = null;
       setEngineLoading(true);
       try {
         await ensureEngine(k);
+        const load = window.__MP_LAST_LOAD;
+        engineMs = load && typeof load.ms === 'number' ? load.ms : mpNow() - runStart;
+        engineCached = load && typeof load.cached === 'boolean' ? load.cached : null;
       } catch (e) {
         setError(e && e.message ? e.message : String(e));
         setResult(null);
@@ -634,7 +666,7 @@ function App() {
         // 合盘的主方同样需要性别与出生地：漏掉这两个字段会让合盘拿不到性别（引擎已改为必填），
         // 或者在没有真太阳时的情况下排出与单盘不一致的四柱
         args.gender = genderV;
-        args.trueSolar = trueSolar;
+        args.trueSolar = tsV;
         if (addressV.trim()) {
           args.address = addressV.trim();
           try {
@@ -646,10 +678,10 @@ function App() {
         }
         // 交叉验证只对八字/紫微有意义：引擎会用同一份出生信息再排另一套盘
         if (k !== 'hepan') args.cross = crossOn;
-        args.lateZi = lateZi;
+        args.lateZi = lateZiV;
       }
       if (k === 'liuyao') {
-        const parsed = Core.parseLines(lines);
+        const parsed = Core.parseLines(linesV);
         if (parsed.lines) args.lines = parsed.lines;
         else if (parsed.warning) setNotice(parsed.warning);
       }
@@ -662,6 +694,8 @@ function App() {
         args.task = task;
         args.days = Number(days) || 30;
         if (shengXiao) args.shengXiao = shengXiao;
+        const cand = zCand.split(/[,，、\s]+/).filter(Boolean);
+        if (cand.length) args.candidates = cand;
       }
       if (k === 'xiaoliuren') {
         args.mode = xlrMode;
@@ -682,7 +716,7 @@ function App() {
         while (nums.length && nums[nums.length - 1] == null) nums.pop();
         if (nums.length) args.answers = nums;
       }
-      if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = trueSolar; args.lateZi = lateZi; }
+      if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = tsV; args.lateZi = lateZiV; }
       if (k === 'fengshui') {
         args.action = fsMode;
         if (fsMode === 'natal') { args.gender = genderV; }
@@ -698,7 +732,7 @@ function App() {
         args.surname = surname.trim();
         if (nnMode === 'generate') {
           args.gender = genderV; args.limit = Number(limitN) || 6;
-          args.trueSolar = trueSolar; args.lateZi = lateZi;
+          args.trueSolar = tsV; args.lateZi = lateZiV;
         } else {
           args.givenName = givenName.trim();
           // 生辰留着：填了就按喜用判、空着 engine 自己只评字面五行
@@ -732,17 +766,25 @@ function App() {
           address: pAddress.trim() || undefined,
           trueSolar,
         };
+        if (thirdOn) {
+          args.partner2 = {
+            datetime: `${p2Date}T${p2Time}`,
+            gender: p2Gender,
+            address: p2Address.trim() || undefined,
+            trueSolar,
+          };
+        }
       }
       // 所问之事必填：问事的体系不给一份没有落点的解读
       if (needAsk(k)) {
-        if (!question.trim()) {
+        if (!questionV.trim()) {
           setError('请先填写「所问之事」——一句话即可，例如：今年是否适合换工作？');
           setAskInvalid(true);
           setResult(null);
           return;
         }
         setAskInvalid(false);
-        args.question = question.trim();
+        args.question = questionV.trim();
         // 六爻的用神由「询问方向」定；不传给 compute 的话，盘面与推导链都会退成综合
         if (k === 'liuyao') args.direction = direction;
       }
@@ -765,7 +807,9 @@ function App() {
           if (changing !== '') args.changing = Number(changing);
         }
       }
+      const computeStart = mpNow();
       const r = Engine.compute(args);
+      const computeMs = mpNow() - computeStart;
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
       let shadowDiff = null;
       try { shadowDiff = PP.shadowTrack ? PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
@@ -775,7 +819,7 @@ function App() {
         try {
           trend = Engine.compute({
             system: 'trend', datetime, gender: genderV, toAge: 100,
-            trueSolar, lateZi,
+            trueSolar: tsV, lateZi: lateZiV,
             ...(args.dst !== undefined ? { dst: args.dst } : {}),
             ...(args.address ? { address: args.address } : {}),
             ...(typeof args.longitude === 'number' ? { longitude: args.longitude } : {}),
@@ -791,7 +835,7 @@ function App() {
       // 问题与方向一并与卦象交给解读：解读按它展开，并在开头回显供确认。
       // 奇门虽然不问事，但「询问方向」决定取哪个门/星作用神，所以也要传。
       const ask = (needAsk(k) || k === 'qimen')
-        ? { question: needAsk(k) ? question.trim() : '', direction }
+        ? { question: needAsk(k) ? questionV.trim() : '', direction }
         : undefined;
       const it = Engine.interpret ? Engine.interpret(r, ask) : null;
       // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节（与独立页同一渲染路径）
@@ -801,14 +845,24 @@ function App() {
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff });
+      // 首帧：等 React 提交并绘制两帧后再记总时长，避免把「还没画出来」算进渲染
+      const draw = (n) => {
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => (n > 1 ? draw(n - 1) : commitPerf()));
+        else setTimeout(commitPerf, 0);
+      };
+      const commitPerf = () => {
+        if (runToken !== perfSeq) return;
+        setPerf({ engineMs, computeMs, cached: engineCached, totalMs: mpNow() - runStart, renderMs: null });
+      };
+      draw(2);
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌；人格的输入是 24 个答案、没存进来，重放也没法还原。两者都不入历史
       if (k !== 'tarot' && k !== 'mbti') {
         const entry = {
           kind: k, date, time, gender, address,
-          lines: k === 'liuyao' ? lines : '',
-          question: needAsk(k) ? question.trim() : '',
+          lines: k === 'liuyao' ? linesV : '',
+          question: needAsk(k) ? questionV.trim() : '',
           direction, count,
           mhMode, upper, lower, changing,
           label: HISTORY_LABEL(k, r),
@@ -976,6 +1030,39 @@ function App() {
     const layer = btn.closest('.mp-trace-layer') || document.getElementById('mp-trace-layer');
     const box = layer && layer.querySelector('[data-trace-md]');
     copyTextTo(btn, box ? box.value : '', '复制 Markdown');
+  };
+
+  // ── C3 桥替代：三档复制 + 深链 ────────────────────────────────
+  // 桥（conversation.input.right）能用就先用桥；这几档是桥缺席时的退路，平时也在，
+  // 因为「复制参数给助手自己调」「发条链接给朋友」本身就是正经用法，不是只有坏掉时才想起来的东西。
+  const pageBase = () => {
+    try { return String(location.href).split('#')[0]; } catch (e) { return ''; }
+  };
+  const bridgePackages = () => {
+    if (!result || !result.r) return null;
+    try {
+      if (!Engine.askPackages) return null;
+      return Engine.askPackages(result.r, { question: askText.trim(), interpret: result.it, base: pageBase() });
+    } catch (e) { return null; }
+  };
+  const BRIDGE_KINDS = [
+    ['full', '复制提问', '完整提问：盘面摘要 + 阅读层次 + 回答骨架，粘进任何对话窗都能用'],
+    ['brief', '复制精简', '一句话版：体系 + 排盘句柄 + 你的问题，够助手认出是哪张盘'],
+    ['structured', '复制参数', '结构化参数（JSON）：助手可直接照 args 调 compute，不必解析自然语言'],
+    ['link', '复制深链', '深链：把这张盘的参数编进链接，打开即还原同一张盘（换台机器、发给朋友都行）'],
+  ];
+  const copyBridge = (kind, btn) => {
+    const pkg = bridgePackages();
+    if (!pkg) { setChatNote('还没有可以复制的盘：先排一张。'); return; }
+    const text = kind === 'link' ? pkg.link : pkg[kind];
+    if (!text) {
+      setChatNote(kind === 'link'
+        ? '这张盘没拿到句柄（随机抽牌只复现参数、不复现牌面），深链做不出来；用「复制提问」那一档。'
+        : '这一档暂时是空的，换一档试试。');
+      return;
+    }
+    copyTextTo(btn, text, BRIDGE_KINDS.find((x) => x[0] === kind)[1]);
+    if (kind === 'link') setChatNote('深链已复制：打开就还原这张盘，也可以直接发给别人。链接里是编码不是加密，别公开贴。');
   };
 
   /** 推导链抽屉：打开时锁住背景滚动并把焦点交给关闭按钮；关闭后焦点回入口 */
@@ -1167,7 +1254,60 @@ function App() {
   };
   const clearHist = () => { setHist([]); saveHistory([]); };
 
-  useEffect(() => { run('ziwei'); }, []);
+  /**
+   * C3 深链还原：把链接里的参数填回表单并立刻排一次。
+   * 表单 state 要等下一次渲染才生效，所以同一批值经 run 的 over 直传——
+   * 否则会「先按旧参数排一张，再按新参数排一张」，用户看到闪一下另一张盘。
+   */
+  const applyDeep = (deep) => {
+    const form = Engine.formOf ? Engine.formOf(deep) : null;
+    if (!form) { run('ziwei'); return; }
+    const k = TABS.some((t) => t.k === form.tab) ? form.tab : 'ziwei';
+    const dt = { date: form.date || date, time: form.time || time };
+    const linesStr = form.lines === undefined ? undefined
+      : (Array.isArray(form.lines) ? form.lines.join(' ') : String(form.lines));
+    if (form.date) setDate(form.date);
+    if (form.time) setTime(form.time);
+    if (form.gender) setGender(form.gender);
+    if (typeof form.address === 'string') setAddress(form.address);
+    if (typeof form.trueSolar === 'boolean') setTrueSolar(form.trueSolar);
+    if (typeof form.lateZi === 'boolean') setLateZi(form.lateZi);
+    if (linesStr !== undefined) setLines(linesStr);
+    if (form.question) setQuestion(form.question);
+    setTab(k);
+    const rest = Engine.restNote ? Engine.restNote(form) : '';
+    setChatNote(`已按深链还原：${deep.label}${form.question ? `｜${form.question}` : ''}${rest ? `　${rest}` : ''}`);
+    run(k, dt, undefined, {
+      gender: form.gender,
+      address: form.address,
+      trueSolar: form.trueSolar,
+      lateZi: form.lateZi,
+      lines: linesStr,
+      question: form.question,
+    });
+  };
+
+  // 首次打开：带 #mp= 的链接先还原那张盘；没有深链就照旧排默认示例盘。
+  // 解析放在引擎加载之后：链接解析要用到句柄编解码，那是引擎分块里的东西。
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let deep = null;
+      try {
+        await ensureEngine('bazi');
+        const href = typeof location !== 'undefined' ? String(location.href) : '';
+        if (href && href.indexOf('mp=') >= 0 && window.Engine && window.Engine.parseAskLink) {
+          deep = window.Engine.parseAskLink(href);
+        }
+      } catch (e) { deep = null; }
+      if (cancelled) return;
+      if (deep && deep.ok) {
+        try { applyDeep(deep); return; } catch (e) { /* 还原失败就走默认盘 */ }
+      }
+      run('ziwei');
+    })();
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => {
     if (!replayArgs) return;
     const k = replayArgs.kind;
@@ -1265,9 +1405,29 @@ function App() {
         }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
         tab === 'hepan' ? field('合盘方式', h('div', { className: 'mp-seg' },
           h('button', { className: hpChart === 'bazi' ? 'on' : '', onClick: () => setHpChart('bazi') }, '八字'),
-          h('button', { className: hpChart === 'ziwei' ? 'on' : '', onClick: () => setHpChart('ziwei') }, '紫微'))) : null,        tab === 'hepan' ? field('对方出生地（可空）', h('input', {
+          h('button', { className: hpChart === 'ziwei' ? 'on' : '', onClick: () => setHpChart('ziwei') }, '紫微'))) : null,
+        tab === 'hepan' ? field('对方出生地（可空）', h('input', {
           className: 'mp-input', placeholder: '如 四川成都', value: pAddress,
           onChange: (e) => setPAddress(e.target.value),
+        })) : null,
+        tab === 'hepan' ? h('label', { className: 'mp-field mp-checks' },
+          h('input', {
+            type: 'checkbox', checked: thirdOn,
+            onChange: (e) => setThirdOn(e.target.checked),
+          }),
+          h('span', { className: 'mp-lbl' }, '三方合盘（加入第三人）')) : null,
+        (tab === 'hepan' && thirdOn) ? field('第三方出生日期', h('input', {
+          className: 'mp-input', type: 'date', value: p2Date, onChange: (e) => setP2Date(e.target.value),
+        })) : null,
+        (tab === 'hepan' && thirdOn) ? field('第三方出生时刻', h('input', {
+          className: 'mp-input', type: 'time', value: p2Time, onChange: (e) => setP2Time(e.target.value),
+        })) : null,
+        (tab === 'hepan' && thirdOn) ? field('第三方性别', h('select', {
+          className: 'mp-input', value: p2Gender, onChange: (e) => setP2Gender(e.target.value),
+        }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,
+        (tab === 'hepan' && thirdOn) ? field('第三方出生地（可空）', h('input', {
+          className: 'mp-input', placeholder: '如 广东广州', value: p2Address,
+          onChange: (e) => setP2Address(e.target.value),
         })) : null,
         tab === 'qimen' ? h('fieldset', { key: 'qmr', className: 'mp-qmrule' },
           h('legend', { className: 'mp-lbl' }, '换局规则'),
@@ -1337,6 +1497,10 @@ function App() {
         tab === 'zeri' ? field('看多少天', h('input', {
           className: 'mp-input', type: 'number', min: 1, max: 60, value: days,
           onChange: (e) => setDays(e.target.value),
+        })) : null,
+        tab === 'zeri' ? field('候选日（可空，只比这几天）', h('input', {
+          className: 'mp-input', placeholder: '如 2026-12-01, 2026-12-08, 2026-12-15',
+          value: zCand, onChange: (e) => setZCand(e.target.value),
         })) : null,
         tab === 'zeri' ? field('当事人属相（可空）', h('select', {
           className: 'mp-input', value: shengXiao, onChange: (e) => setShengXiao(e.target.value),
@@ -1488,7 +1652,7 @@ function App() {
       'aria-live': 'polite',
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
-        __html: castAtHTML(result) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
+        __html: castAtHTML(result) + PP.perfHTML(perf) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
           + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
             : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend) : ''))
@@ -1500,6 +1664,7 @@ function App() {
                     : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
                       : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
                         : result.kind === 'almanac' ? PP.almanacHTML(result.r)
+                        : result.kind === 'zeri' ? PP.zeriHTML(result.r)
                         : result.kind === 'trend' ? PP.trendHTML(result.r)
                         : result.kind === 'name' ? PP.nameHTML(result.r)
                         : result.kind === 'mbti' ? PP.mbtiHTML(result.r)
@@ -1537,6 +1702,14 @@ function App() {
       }, '问进对话'),
       (COMPOSER.ref ? null : h('div', { key: 'bridgediag', className: 'mp-note', style: { marginTop: 6, fontSize: 11, flexBasis: '100%' } }, bridgeDiagText())),
       chatNote ? h('div', { key: 'chatnote', className: 'mp-note', style: { marginTop: 6, fontSize: 12, flexBasis: '100%' } }, chatNote) : null) : null,
+
+    // C3 桥替代：桥能用也留着——复制参数、发深链本身就是正经用法，不是只有桥坏掉才想起来
+    result ? h('div', { key: 'bridge', className: 'mp-bridge' },
+      h('span', { className: 'mp-bridge-lbl' }, COMPOSER.ref ? '桥可用；也可以：' : '桥未就绪，改走这几档：'),
+      BRIDGE_KINDS.map(([k, label, tip]) => h('button', {
+        key: k, type: 'button', className: 'mp-chip', 'data-bridge-copy': k, title: tip,
+        onClick: (e) => copyBridge(k, e.currentTarget),
+      }, label))) : null,
 
     fx ? h('div', { key: 'fx', className: 'mp-fx', dangerouslySetInnerHTML: { __html: PP.followupHTML(fx) } }) : null,
 

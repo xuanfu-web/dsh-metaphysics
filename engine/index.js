@@ -5,13 +5,14 @@ import { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } from
 import { drawTarot } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
-import { buildHepan } from './hepan.js';
+import { buildHepan, tripleOf } from './hepan.js';
 import { buildZiweiHepan } from './ziwei-hepan.js';
 import { buildQimen, buildSnapshot } from './qimen.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
 import { encodeHandle, decodeHandle, resolveHandle } from './handle.js';
+import { askLink, parseAskLink, formOf, restNote, askPackages } from './bridge.js';
 import { parseRevision, displayValue } from './revise.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 import { followup, askPrompt } from './followup.js';
@@ -27,7 +28,7 @@ import { buildNumerology } from './numerology.js';
 import { buildMbti, mbtiPaper } from './mbti.js';
 import { buildConvert } from './convert.js';
 import { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } from './classics.js';
-import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES } from './diff.js';
+import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES, viewRows } from './diff.js';
 import { canonicalJson, fingerprintOf } from './fingerprint.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
@@ -297,6 +298,26 @@ function qimenText(r) {
   ].join('\n');
 }
 
+function tripleText(t) {
+  if (!t || !Array.isArray(t.pairs) || !t.pairs.length) return [];
+  const lines = [
+    '【三方合盘】三对两两并列，不合成「三人总分」',
+    ...t.pairs.map((p) => `· ${p.a}–${p.b}：${p.level || '—'}（${p.total == null ? '—' : `${p.total}/100`}）`),
+  ];
+  if (t.best) {
+    // 差 1–2 分时点名「最顺/最需磨合」是假精确：三对分数接近就直说接近，不排名
+    if (t.spread >= 3) {
+      lines.push(`　最顺：${t.best.a}–${t.best.b}（${t.best.total}/100）`
+        + (t.hardest ? `；最需磨合：${t.hardest.a}–${t.hardest.b}（${t.hardest.total}/100）` : ''));
+    } else {
+      lines.push(`　三对分数接近（最高与最低相差 ${t.spread} 分），不排名`);
+    }
+  }
+  if (t.focus && t.focus.spread >= 3) lines.push(`　差异最大的一维：${t.focus.label}（三对相差 ${t.focus.spread} 分）`);
+  if (t.note) lines.push(`※ ${t.note}`);
+  return lines;
+}
+
 function hepanText(r) {
   if (r.chart === 'ziwei') {
     const d = (x) => `${x.label}：${x.score >= 0 ? '+' : ''}${x.score}　${x.text}`;
@@ -306,6 +327,7 @@ function hepanText(r) {
       `对方 命宫 ${r.b.soul.branch}（${r.b.soulStars.join('、') || '无主星'}）　夫妻 ${r.b.spouseStars.join('、') || '无主星'}　${r.b.bureau}`,
       ...r.dimensions.map(d),
       ...r.interactions.map((h) => `　· ${h.text}`),
+      ...tripleText(r.triple),
       ...r.notes.map((n) => `※ ${n}`),
     ].join('\n');
   }
@@ -329,6 +351,7 @@ function hepanText(r) {
       `年命纳音：${r.detail.nayin.a} / ${r.detail.nayin.b}（${r.detail.nayin.label}）——${r.detail.nayin.text}`,
       `吉凶象：吉 ${r.detail.tally.good} / 凶 ${r.detail.tally.bad}（${r.detail.tally.lean}；分档只数象，总分以上面三维度为准）`,
     ] : []),
+    ...tripleText(r.triple),
     ...r.notes.map((n) => `※ ${n}`),
   ].join('\n');
 }
@@ -559,11 +582,14 @@ function shadowParams(args, result) {
     };
   }
   if (system === 'hepan') {
-    return {
+    const params = {
       chart: args.chart === 'ziwei' ? 'ziwei' : 'bazi',
       a: shadowPerson({ ...args, datetime: args.datetime }),
       b: shadowPerson(args.partner || {}),
     };
+    // 第三方进指纹：同一对加上不同的第三人，是另一组盘
+    if (args.partner2) params.c = shadowPerson(args.partner2);
+    return params;
   }
 
   // 其余体系：只剔除解析/附加模块参数，其余原样归一化
@@ -719,6 +745,11 @@ export function compute(input = {}) {
       }),
       ignored: rev.ignored,
     };
+  }
+  // partner2: null 视同未传：先归一化再排盘，否则同一对盘会因为显式 null 多出一个句柄
+  if (args.partner2 === null) {
+    args = { ...args };
+    delete args.partner2;
   }
   const r = jsonSafe(computeRaw(args));
   if (revision) r.revision = revision;
@@ -901,11 +932,12 @@ export function caliberCompare(args = {}, opts = {}) {
     const alt = sw.alt(current);
     let diffs = [];
     let error = '';
+    let cur = null;
+    let altRes = null;
     try {
-      diffs = diffObjects(
-        compute({ ...base, [sw.key]: current }),
-        compute({ ...base, [sw.key]: alt }),
-      );
+      cur = compute({ ...base, [sw.key]: current });
+      altRes = compute({ ...base, [sw.key]: alt });
+      diffs = diffObjects(cur, altRes);
     } catch (e) {
       error = (e && e.message) || String(e);
     }
@@ -933,6 +965,7 @@ export function caliberCompare(args = {}, opts = {}) {
       altLabel: sw.label(alt),
       total: diffs.length,
       summary: error ? '' : summarize(diffs),
+      views: error ? [] : viewRows(system, cur, altRes),
       roots,
       categories,
       error,
@@ -1045,31 +1078,42 @@ function computeRaw(args = {}) {
     if (!partner.datetime) {
       throw fail('E_PARTNER', '缺少 partner.datetime（对方的公历出生时间），例如 partner: {"datetime":"1992-03-03T10:00","gender":"female"}');
     }
-    const pa = parseDateTime(args.datetime);
-    const pb = parseDateTime(partner.datetime);
+    const partner2 = args.partner2;
+    if (partner2 !== undefined && partner2 !== null) {
+      if (typeof partner2 !== 'object' || Array.isArray(partner2)) {
+        throw fail('E_PARTNER', 'partner2 需要 { datetime, gender, address? }；不想看三方就整段省略（null 视同未传）');
+      }
+      if (!partner2.datetime) {
+        throw fail('E_PARTNER', '缺少 partner2.datetime（第三方的公历出生时间），例如 partner2: {"datetime":"1988-09-09T08:00","gender":"male"}');
+      }
+    }
     const chart = args.chart === 'ziwei' ? 'ziwei' : 'bazi';
     // 性别决定双方大运/大限顺逆，两边都不能用默认值
-    const sideA = {
-      ...pa,
-      gender: requireGender(args.gender, '你（主方）'),
-      trueSolar: args.trueSolar,
-      lateZi: args.lateZi,
-      dst: args.dst !== false,
-      address: typeof args.address === 'string' ? args.address : undefined,
-      longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
-      geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+    const sideOf = (src, who) => {
+      const dt = parseDateTime(src.datetime);
+      return {
+        ...dt,
+        gender: requireGender(src.gender, who),
+        trueSolar: src.trueSolar,
+        lateZi: src.lateZi,
+        dst: src.dst !== false,
+        address: typeof src.address === 'string' ? src.address : undefined,
+        longitude: typeof src.longitude === 'number' ? src.longitude : undefined,
+        geo: src.geo && typeof src.geo === 'object' ? src.geo : undefined,
+      };
     };
-    const sideB = {
-      ...pb,
-      gender: requireGender(partner.gender, '对方'),
-      trueSolar: partner.trueSolar,
-      lateZi: partner.lateZi,
-      dst: partner.dst !== false,
-      address: typeof partner.address === 'string' ? partner.address : undefined,
-      longitude: typeof partner.longitude === 'number' ? partner.longitude : undefined,
-      geo: partner.geo && typeof partner.geo === 'object' ? partner.geo : undefined,
-    };
-    const result = chart === 'ziwei' ? buildZiweiHepan({ a: sideA, b: sideB }) : buildHepan({ a: sideA, b: sideB });
+    const sideA = sideOf(args, '你（主方）');
+    const sideB = sideOf(partner, '对方');
+    const build = (x, y) => (chart === 'ziwei' ? buildZiweiHepan({ a: x, b: y }) : buildHepan({ a: x, b: y }));
+    const result = build(sideA, sideB);
+    if (partner2) {
+      const sideC = sideOf(partner2, '第三方');
+      result.triple = tripleOf([
+        { key: 'a-b', a: '你', b: '对方', result },
+        { key: 'a-c', a: '你', b: '第三方', result: build(sideA, sideC) },
+        { key: 'b-c', a: '对方', b: '第三方', result: build(sideB, sideC) },
+      ]);
+    }
     return { ...result, summary: hepanText(result) };
   }
   if (system === 'meihua') {
@@ -1156,16 +1200,23 @@ function computeRaw(args = {}) {
     return { ...result, summary: almanacText(result) };
   }
   if (system === 'zeri') {
-    // startDate 必须显式：择日要「从哪天起看」，缺了不能拿本机今天静默代填
-    if (typeof args.startDate !== 'string' || !args.startDate.trim()) {
-      throw fail('E_INPUT', '择日需要 startDate（公历 YYYY-MM-DD，起算日）；可另给 days（1–60，默认 30）与 shengXiao（当事人属相）');
+    const candMode = args.candidates !== undefined && args.candidates !== null;
+    // startDate 必须显式：择日要「从哪天起看」，缺了不能拿本机今天静默代填；候选日模式改用 candidates
+    if (!candMode && (typeof args.startDate !== 'string' || !args.startDate.trim())) {
+      throw fail('E_INPUT', '择日需要 startDate（公历 YYYY-MM-DD，起算日）；可另给 days（1–60，默认 30）与 shengXiao（当事人属相）。只想比几天，改给 candidates: ["2026-12-01","2026-12-08"]');
     }
-    const result = buildZeri({
-      task: args.task,
-      startDate: args.startDate,
-      days: args.days,
-      shengXiao: args.shengXiao,
-    });
+    let result;
+    try {
+      result = buildZeri({
+        task: args.task,
+        startDate: args.startDate,
+        days: args.days,
+        shengXiao: args.shengXiao,
+        candidates: args.candidates,
+      });
+    } catch (e) {
+      throw fail('E_INPUT', (e && e.message) || String(e));
+    }
     return { ...result, summary: zeriText(result) };
   }
   if (system === 'chenggu') {
@@ -1355,16 +1406,27 @@ function almanacText(r) {
 
 /** 择日文本 */
 function zeriText(r) {
-  const head = `【择日·${r.meta.task}】${r.meta.startDate} 起 ${r.meta.days} 天${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`;
-  const top = r.days.slice().sort((a, b) => b.score - a.score).slice(0, 5)
+  const cand = r.compare && r.compare.mode === 'candidates';
+  const head = cand
+    ? `【择日·${r.meta.task}】候选 ${r.meta.days} 天：${r.meta.candidates.join('、')}${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`
+    : `【择日·${r.meta.task}】${r.meta.startDate} 起 ${r.meta.days} 天${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`;
+  const top = r.days.slice().sort((a, b) => b.score - a.score).slice(0, cand ? 12 : 5)
     .map((d) => `· ${d.date} ${d.weekday}　${d.verdict}（${d.score}分）　宜${d.yi.slice(0, 3).join('/')}　${d.reasons.join('；') || '无特别加减分'}`);
+  const bestLine = cand
+    ? (r.compare.best
+      ? `这一组里最优：${r.compare.best.date}（${r.compare.best.score}分，${r.compare.best.verdict}）`
+        + (r.compare.best.ties.length > 1 ? `；同分：${r.compare.best.ties.filter((d) => d !== r.compare.best.date).join('、')}` : '')
+      : '这一组都因冲属相被排除，没有可用的日子')
+    : `推荐日：${r.best.length ? r.best.join('、') : '本期无（都不够推荐分）'}`;
   return [
     head,
-    `推荐日：${r.best.length ? r.best.join('、') : '本期无（都不够推荐分）'}`,
+    bestLine,
+    `推荐日：${r.best.length ? r.best.join('、') : '无'}`,
     `可用日：${r.usable.length ? r.usable.join('、') : '无'}`,
     `回避日：${r.avoid.length ? r.avoid.slice(0, 6).join('、') : '无'}`,
-    '逐日排序：',
+    cand ? '候选日逐日：' : '逐日排序：',
     ...top,
+    ...(cand ? [`比较口径：${r.compare.note}`] : []),
     `口径：${r.meta.scope}`,
   ].join('\n');
 }
@@ -1614,7 +1676,11 @@ export function renderText(result) {
       + c.switches.map((s) => {
         if (s.error) return `· ${s.title}：未能对照（${s.error}）`;
         if (!s.total) return `· ${s.title}：${s.currentLabel} → ${s.altLabel}，本盘无变化`;
-        return `· ${s.title}：${s.currentLabel} → ${s.altLabel}\n　${s.summary}`;
+        const changed = (Array.isArray(s.views) ? s.views : []).filter((v) => v.changed);
+        const side = changed.length
+          ? `\n　并排：${changed.map((v) => `${v.label} ${v.current} → ${v.alt}`).join('；')}`
+          : '';
+        return `· ${s.title}：${s.currentLabel} → ${s.altLabel}\n　${s.summary}${side}`;
       }).join('\n'));
   }
   if (result.followup) {
@@ -1648,6 +1714,8 @@ export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buil
 export { buildTrend, buildFengshui, buildName };
 export { buildTrace, traceMarkdown };
 export { encodeHandle, decodeHandle, resolveHandle };
+// C3 对话桥替代：深链编解码、表单还原、三档复制包（面板与独立页共用一份）
+export { askLink, parseAskLink, formOf, restNote, askPackages };
 
 
 

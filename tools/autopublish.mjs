@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-// 每 24 小时自动检查并推送 dsh-metaphysics。
+// 每 24 小时自动检查并推送 dsh-metaphysics（每天 23:00 与 23:30 各跑一次，后者作兜底）。
 //
 // 行为（2026-10-31 起：只提交 + 推送，不自动发 npm）：
 //   1. 对「会进 npm 包的源码/配置」做指纹（package.json、engine、src、index.js、locale、构建脚本等）；
-//   2. 指纹与上次成功推送时保存的一致 → 静默退出（不打印、不提交、不推送）；
+//   2. 指纹与上次成功推送时保存的一致 → 不提交、不推送，但仍写一行日志（便于确认任务在跑）；
 //   3. 指纹有变 → 跑七道闸 → 重建产物 → 提交并推送到 origin/main → 写回指纹。
 //      版本号不动、不打 tag、不发 npm：按主题攒够后，发版时手动走 tools/release.mjs。
+//   4. 失败一律写 tools/.autopublish-error（成功则删掉），下次成功推送时自动清空；
+//   5. push 连续失败且像是 GitHub 443 被阻断时，自动生成临时 ed25519 → 注册 deploy key →
+//      走 ssh.github.com:443 推送 → 用完立刻删 key。全程不落盘持久凭据。
 //
 // 用法：
 //   node tools/autopublish.mjs            # 自动检查/推送（定时任务用这个）
@@ -14,7 +17,7 @@
 //   node tools/autopublish.mjs --force    # 忽略指纹，强制走提交推送流程
 //
 // 依赖：<用户目录>/.dsh/metaphysics-autopublish.json（npmToken / githubUser / githubToken），
-//       指纹、锁与日志都在 .gitignore 里。
+//       指纹、锁、日志与错误文件都在 .gitignore 里。
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -38,6 +41,10 @@ const FORCE = args.includes('--force');
 const STATE = path.join(root, '.autopublish-state.json');
 const LOCK = path.join(root, '.autopublish.lock');
 const LOG = path.join(root, 'tools', '.autopublish.log');
+/** 失败留痕：成功一次就删掉，看到这个文件就说明上一轮没成 */
+const ERR = path.join(root, 'tools', '.autopublish-error');
+const LOG_MAX_BYTES = 512 * 1024;
+const LOG_KEEP_LINES = 800;
 const CONFIG = process.env.AUTOPUBLISH_CONFIG
   || path.join(os.homedir(), '.dsh', 'metaphysics-autopublish.json');
 
@@ -54,16 +61,33 @@ const BUILD_FILES = [
   'test/fixtures/classics.json', 'test/fixtures/qimen-20.json',
 ];
 
+/** 日志只留最近一段：定时任务一天两跑，几个月就能把文件撑到几 MB */
+function trimLog() {
+  try {
+    if (fs.statSync(LOG).size <= LOG_MAX_BYTES) return;
+    const lines = fs.readFileSync(LOG, 'utf8').split('\n');
+    fs.writeFileSync(LOG, lines.slice(-LOG_KEEP_LINES).join('\n'));
+  } catch (e) { /* 没有日志文件或读不了：下次再修 */ }
+}
+
 const log = (msg) => {
   try {
     fs.appendFileSync(LOG, `[${new Date().toISOString()}] ${msg}\n`);
+    trimLog();
   } catch (e) { /* 日志写不了不影响主流程 */ }
 };
 
+/** 失败留痕：写文件 + 写日志 + stderr，三处都留，事后看哪一处都能查到 */
 function fail(msg) {
+  try { fs.writeFileSync(ERR, `[${new Date().toISOString()}] ${msg}\n`); } catch (e) { /* 只剩日志 */ }
   log('ERROR ' + msg);
   console.error(msg);
   process.exit(1);
+}
+
+/** 成功收尾：清掉上一轮的失败留痕（这个文件存在本身就是信号，不清会一直误报） */
+function clearError() {
+  try { fs.unlinkSync(ERR); } catch (e) { /* 本来就没有 */ }
 }
 
 function sh(cmd, cmdArgs, opts = {}) {
@@ -190,18 +214,118 @@ function runStep(label, cmd, cmdArgs, opts) {
   return r;
 }
 
-/** 推送带重试：GitHub 连接间歇性失败（甚至整段 443 被阻断），失败三次才放弃本轮 */
-function pushWithRetry(args, label) {
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+/** 这些字样说明是「连不上 GitHub」，不是「推被拒」——只有前者才值得换 SSH 再试 */
+const HTTPS_BLOCKED = /443|timed out|timeout|Could not resolve|Couldn't connect|Failed to connect|Connection was reset|early EOF|Empty reply|RPC failed|SSL|TLS/i;
+
+/** 仓库 slug：从 package.json 的 repository 读，读不出就不猜 */
+function repoSlug() {
+  const url = String((PKG.repository && (PKG.repository.url || PKG.repository)) || '');
+  const m = /github\.com[:/]([^/]+)\/([^/.]+)/.exec(url);
+  return m ? { owner: m[1], repo: m[2] } : null;
+}
+
+function findSshKeygen() {
+  const cands = [];
+  try {
+    const dir = path.dirname(process.env.AUTOPUBLISH_GIT || findGit());
+    cands.push(path.join(dir, process.platform === 'win32' ? 'ssh-keygen.exe' : 'ssh-keygen'));
+  } catch (e) { /* 没有就算了 */ }
+  if (process.platform === 'win32') {
+    cands.push(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'OpenSSH', 'ssh-keygen.exe'));
+  }
+  for (const p of cands) {
+    try { if (p && fs.existsSync(p)) return p; } catch (e) { /* 下一个 */ }
+  }
+  return 'ssh-keygen';
+}
+
+async function ghApi(cfg, method, apiPath, body) {
+  const res = await fetch(`https://api.github.com${apiPath}`, {
+    method,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `token ${cfg.githubToken}`,
+      'User-Agent': 'dsh-metaphysics-autopublish',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const text = await res.text();
+  let json = null;
+  try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; }
+  return { ok: res.ok, status: res.status, json, text };
+}
+
+/**
+ * GitHub 443 被阻断时的兜底：临时 ed25519 → 注册 deploy key（write）→
+ * 走 ssh.github.com:443 推送 → 无论成败都删 key、删本地私钥。
+ * 不落盘持久凭据：私钥只活在这一次运行的临时目录里。
+ */
+async function pushOverSsh(cfg, label) {
+  const slug = repoSlug();
+  if (!slug) { log('SSH 兜底跳过：package.json 里读不出 repository'); return false; }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-mp-ssh-'));
+  const key = path.join(dir, 'id_ed25519');
+  let keyId = null;
+  try {
+    const gen = sh(findSshKeygen(), ['-t', 'ed25519', '-N', '', '-C', 'dsh-metaphysics-autopublish', '-f', key]);
+    if (gen.status !== 0) { log('SSH 兜底失败：ssh-keygen 起不来\n' + gen.stderr); return false; }
+    const pub = fs.readFileSync(`${key}.pub`, 'utf8').trim();
+    const added = await ghApi(cfg, 'POST', `/repos/${slug.owner}/${slug.repo}/keys`, {
+      title: `autopublish ${new Date().toISOString()}`,
+      key: pub,
+      read_only: false,
+    });
+    if (!added.ok || !added.json || !added.json.id) {
+      log(`SSH 兜底失败：注册 deploy key 被拒（HTTP ${added.status}）\n${added.text.slice(0, 400)}`);
+      return false;
+    }
+    keyId = added.json.id;
+    const sshCmd = `ssh -i "${key.replace(/\\/g, '/')}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`;
+    const r = sh(process.env.AUTOPUBLISH_GIT || findGit(), [
+      '-c', `core.sshCommand=${sshCmd}`,
+      'push', `ssh://git@ssh.github.com:443/${slug.owner}/${slug.repo}.git`, 'HEAD:main',
+    ]);
+    if (r.status !== 0) { log(`${label} 走 SSH 兜底仍然失败：\n${r.stdout}${r.stderr}`); return false; }
+    log(`${label} 已改走 SSH 兜底并成功（ssh.github.com:443 + 临时 deploy key ${keyId}）`);
+    return true;
+  } catch (e) {
+    log('SSH 兜底异常：' + (e && e.message ? e.message : String(e)));
+    return false;
+  } finally {
+    if (keyId) {
+      let removed = false;
+      try {
+        const del = await ghApi(cfg, 'DELETE', `/repos/${slug.owner}/${slug.repo}/keys/${keyId}`);
+        removed = !!(del && del.ok);
+      } catch (e) { removed = false; }
+      log(removed ? `已删除临时 deploy key ${keyId}` : `临时 deploy key ${keyId} 删除失败，请手动到仓库 Settings → Deploy keys 删掉`);
+    }
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* 临时目录清不掉不影响结果 */ }
+  }
+}
+
+/** 推送带重试：GitHub 连接间歇性失败（甚至整段 443 被阻断），失败三次后换 SSH 再试一次 */
+async function pushWithRetry(args, label, cfg) {
+  let last = null;
   for (let i = 1; i <= 3; i++) {
     const r = git(args);
     if (r.status === 0) return r;
+    last = r;
     log(`${label} 第 ${i} 次失败：\n${r.stdout}${r.stderr}`);
-    if (i < 3) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, i * 15000);
+    if (i < 3) sleep(i * 15000);
   }
-  fail(`${label} 连续 3 次失败（检查 GitHub 443 是否可达；必要时改用 SSH deploy key）`);
+  const blob = `${(last && last.stdout) || ''}${(last && last.stderr) || ''}`;
+  if (cfg && HTTPS_BLOCKED.test(blob)) {
+    log(`${label} 连不上 GitHub HTTPS，自动改走 SSH deploy key 兜底`);
+    if (await pushOverSsh(cfg, label)) return { status: 0 };
+  }
+  fail(`${label} 连续 3 次失败（检查 GitHub 443 是否可达；SSH 兜底也没成）`);
 }
 
-function commitAndPush(cfg) {
+async function commitAndPush(cfg) {
   git(['add', '-A']);
   const msg = 'chore(autopublish): 自动构建并推送\n\n由 tools/autopublish.mjs 定时任务生成：跑七道闸、重建 client.js 与命理排盘.html 后提交推送。不发 npm、不改版本号、不打 tag——发版按主题攒够后手动走 tools/release.mjs。';
   const c = git(['-c', 'core.autocrlf=false', 'commit', '-m', msg]);
@@ -220,11 +344,13 @@ function commitAndPush(cfg) {
       fail('git pull --rebase 失败（下一轮重试）');
     }
   }
-  pushWithRetry(authArgs(cfg).concat(['push', 'origin', 'main']), 'git push');
+  await pushWithRetry(authArgs(cfg).concat(['push', 'origin', 'main']), 'git push', cfg);
   log(`已推送 main（版本仍为 ${PKG.version}，未发布 npm）`);
 }
 
 async function main() {
+  const mode = DRY ? 'dry-run' : INIT ? 'init' : FORCE ? 'force' : 'auto';
+  log(`运行开始（${mode}，pid ${process.pid}）`);
   if (!fs.existsSync(path.join(root, '.git'))) fail('不是 git 仓库：' + root);
   repairGit();
 
@@ -246,11 +372,14 @@ async function main() {
   if (INIT) {
     const latest = await npmLatest();
     writeJson(STATE, { hash, version: PKG.version, npmLatest: latest, at: new Date().toISOString() });
+    clearError();
+    log(`已记录基线：${PKG.version}（npm latest: ${latest || '未知'}）指纹 ${hash.slice(0, 12)}`);
     console.log(`已记录基线：${PKG.version}（npm latest: ${latest || '未知'}）指纹 ${hash.slice(0, 12)}`);
     return;
   }
   if (!FORCE && state && state.hash === hash) {
-    // 无改动：保持静默（不打印、不写日志）
+    // 无改动：不打印、不提交，但日志留一行——否则「任务到底跑没跑」事后查不出来
+    log(`无改动，跳过（指纹 ${hash.slice(0, 12)}，版本 ${PKG.version}）`);
     return;
   }
 
@@ -283,14 +412,17 @@ async function main() {
   }
 
   const finalHash = fingerprint();
-  commitAndPush(cfg);
+  await commitAndPush(cfg);
   writeJson(STATE, { hash: finalHash, version: PKG.version, npmLatest: latest, at: new Date().toISOString() });
+  clearError();
   log(`完成：已推送 main（版本 ${PKG.version} 未发 npm；npm latest ${latest || '未知'}）`);
   console.log(`已推送 main（版本 ${PKG.version}，未发 npm；npm latest ${latest || '未知'}）`);
 }
 
 main().catch((e) => {
-  log('未捕获异常：' + (e && e.stack ? e.stack : String(e)));
+  const msg = '未捕获异常：' + (e && e.stack ? e.stack : String(e));
+  try { fs.writeFileSync(ERR, `[${new Date().toISOString()}] ${msg}\n`); } catch (e2) { /* 只剩日志 */ }
+  log(msg);
   console.error(e && e.message ? e.message : String(e));
   process.exit(1);
 });

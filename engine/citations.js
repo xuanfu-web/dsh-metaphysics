@@ -25,6 +25,11 @@ export const CITATION_BOOKS = {
     author: '佚名',
     base: 'https://www.diancang.xyz/xuanxuewushu/qiongtongbaojian/',
   },
+  daliuren: {
+    name: '大六壬大全',
+    author: '明·郭载騋校（四库全书本）',
+    base: 'https://zh.wikisource.org/wiki/六壬大全',
+  },
   qimen: {
     name: '奇门遁甲统宗',
     author: '旧题诸葛亮（传）',
@@ -437,6 +442,30 @@ export const CITATIONS = [
     plain: '应期先分动静：静爻在逢值或逢冲之日应，动爻在逢合或逢值之日应；其余按入墓、旬空、月破等逐条推。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/26又3',
   },
+  {
+    id: 'dl-jigong',
+    book: 'daliuren',
+    chapter: '卷一·起例（十干寄宫）',
+    quote: '甲课寅兮乙课辰，丙戊课巳不须论。丁己课未庚申上，辛戌壬亥是其真。癸课原来丑宫坐，分明不用四正神。',
+    plain: '十干寄宫是四课起手：甲寄寅、乙寄辰、丙戊寄巳、丁己寄未、庚寄申、辛寄戌、壬寄亥、癸寄丑；丙戊、丁己各同宫，子午卯酉四个正位不寄。',
+    url: 'https://zh.wikisource.org/wiki/六壬大全/1',
+  },
+  {
+    id: 'dl-zeike',
+    book: 'daliuren',
+    chapter: '卷一·起例（贼克法）',
+    quote: '取课先从下贼呼，如无下贼上克初。初传之上名中次，中上加临是末居。三传既定天盘将，此是入式法第一。',
+    plain: '九宗门取初传先看下贼上，没有下贼再看上克下；初传定后，中传取初传所乘之神，末传再顺取一位，三传齐了才布天盘天将。',
+    url: 'https://zh.wikisource.org/wiki/六壬大全/1',
+  },
+  {
+    id: 'dl-yuejiang',
+    book: 'daliuren',
+    chapter: '卷二·神将释（月将）',
+    quote: '逆布者谓之月将，其实即十二神也。',
+    plain: '月将就是十二支神，按太阳过宫排：以登明为首逆布十二宫；起课时把月将加在占时上，顺布成天盘。',
+    url: 'https://zh.wikisource.org/wiki/六壬大全/2',
+  },
 ];
 
 const BOOK_OF = {
@@ -503,11 +532,13 @@ export const CARD_CITATIONS = {
   'liuyao-fuyin': { refs: ['zs-fuyin'] },
   'liuyao-jintui': { refs: ['zs-jintui'] },
   'liuyao-yingqi': { refs: ['zs-yingqi'] },
-  'liuyao-jintui-yong': { status: 'general', book: '增删卜易', chapter: '進神退神章、用神章', reason: '底本把进退落在「動而化」的吉凶喜忌与应期上，未见单列「用神化進／化退」条；按用神与忌神分档是本插件引申，不冒充原文' },
+  // 2026-11-01 复核：底本卷二·進神退神章第二十九原文「所喜者宜於化進，所忌者宜化退神」
+  // 已经把喜忌落在进退上，可作本条依据；把「喜／忌」具体落到用神／忌神两档仍是本插件的引申（见知识卡 note）
+  'liuyao-jintui-yong': { refs: ['zs-jintui'] },
   'liuyao-yingqi-exact': { status: 'todo', book: '增删卜易', chapter: '各門類應期總注章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
   // ── 其他体系
   'meihua-tiyong': { refs: ['mh-tiyong'] },
-  'daliuren-sike': { status: 'general', book: '大六壬大全', chapter: '九宗门取传法', reason: '原文待录入；本环境无稳定可核验的公有领域章页' },
+  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike'] },
   'qimen-yinyang': { refs: ['qm-yinyang'] },
   'qimen-jixing': { refs: ['qm-jixing'] },
   'qimen-rumu': { refs: ['qm-rumu'] },

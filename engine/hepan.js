@@ -61,6 +61,49 @@ function yearBranchRelation(a, b) {
   return { name: '无直接关系', score: 0, text: '属相之间没有合冲刑害，表层影响小，以日柱为主' };
 }
 
+/**
+ * 三方合盘：把三对两两结果并列，不合成「三人总分」。
+ * 任何两两关系都独立成立，合成一个数会把「和谁相处」混为一谈；
+ * 这里只做三件事：列出每对的分数与三维度、指出最顺/最需磨合的一对、找出差异最大的一维。
+ * @param {{key:string,a:string,b:string,result:object}[]} pairs 三对结果（顺序固定为 a-b、a-c、b-c）
+ */
+export function tripleOf(pairs) {
+  const brief = (r) => {
+    const s = (r && r.score) || {};
+    return {
+      total: typeof s.total === 'number' ? s.total : null,
+      level: s.level || '',
+      dimensions: (Array.isArray(r && r.dimensions) ? r.dimensions : [])
+        .map((d) => ({ key: d.key, label: d.label, score: typeof d.score === 'number' ? d.score : 0 })),
+    };
+  };
+  const rows = pairs.map((p) => ({ key: p.key, a: p.a, b: p.b, ...brief(p.result) }));
+  const sorted = rows.filter((x) => typeof x.total === 'number').sort((x, y) => y.total - x.total);
+  const best = sorted[0] || null;
+  const hardest = sorted[sorted.length - 1] || null;
+  // 同一维度在三对里差得最多的一维：三方之间最敏感的地方
+  let focus = null;
+  const keys = rows[0] ? rows[0].dimensions.map((d) => d.key) : [];
+  for (const key of keys) {
+    const vals = rows.map((r) => (r.dimensions.find((d) => d.key === key) || {}));
+    const scores = vals.map((d) => (typeof d.score === 'number' ? d.score : 0));
+    const spread = Math.max(...scores) - Math.min(...scores);
+    if (!focus || spread > focus.spread) {
+      focus = { key, label: (vals[0] && vals[0].label) || key, spread };
+    }
+  }
+  return {
+    pairs: rows,
+    best: best ? { key: best.key, a: best.a, b: best.b, total: best.total, level: best.level } : null,
+    hardest: hardest && hardest !== best
+      ? { key: hardest.key, a: hardest.a, b: hardest.b, total: hardest.total, level: hardest.level }
+      : null,
+    spread: best && hardest ? best.total - hardest.total : 0,
+    focus,
+    note: '三方只把三对两两关系并列，不合成「三人总分」：和不同的人相处是不同的事，合成一个数会把差异抹平。',
+  };
+}
+
 /** 合盘主函数 */
 export function buildHepan(input) {
   assertCivil(input && input.a, 'a');

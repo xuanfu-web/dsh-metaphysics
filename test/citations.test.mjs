@@ -52,6 +52,15 @@ ok('进神退神取卷二', citationOf('zs-jintui').chapter === '卷二·進神�
 ok('应期取总注章', citationOf('zs-yingqi').chapter === '卷一·各門類應期總注章第又二十六');
 ok('第四批条目不写省略号', refilled3.every((id) => !/[….](\.\.\.)?/.test(citationOf(CARD_CITATIONS[id].refs[0]).quote)));
 
+// B6 第五批：大六壬四课/三传承落到《大六壬大全》（维基文库四库全书本）
+ok('大六壬大全已登记', CITATION_BOOKS.daliuren && CITATION_BOOKS.daliuren.name === '大六壬大全'
+  && CITATION_BOOKS.daliuren.base.includes('zh.wikisource.org'));
+ok('大六壬四课三传卡已带 refs', Array.isArray(CARD_CITATIONS['daliuren-sike'].refs) && CARD_CITATIONS['daliuren-sike'].refs.length === 2);
+ok('十干寄宫取卷一', citationOf('dl-jigong').chapter === '卷一·起例（十干寄宫）' && /甲课寅兮乙课辰/.test(citationOf('dl-jigong').quote));
+ok('贼克法取卷一', citationOf('dl-zeike').chapter === '卷一·起例（贼克法）' && /取课先从下贼呼/.test(citationOf('dl-zeike').quote));
+ok('月将取卷二神将释', citationOf('dl-yuejiang').chapter === '卷二·神将释（月将）' && /月将/.test(citationOf('dl-yuejiang').quote));
+ok('大六壬条目不写省略号', ['dl-jigong', 'dl-zeike', 'dl-yuejiang'].every((id) => !/[….](\.\.\.)?/.test(citationOf(id).quote)));
+
 const missingText = [];
 const unverified = [];
 for (const c of [...CLASSICS, ...CITATIONS]) {
@@ -93,8 +102,13 @@ ok('忌格/结构标签不硬配破格引文', Object.entries(PATTERN_BREAK_RULE
 // ── ④ source 富化 ──────────────────────────────────────────
 const vs = citationSourceOf('bazi-geju', '《子平真诠》「论用神」');
 ok('已定位卡片的 source 带卷章与链接', vs.status === 'verified' && vs.source.includes('原文索引') && vs.source.includes('https://') && vs.citations.length > 0, vs.source);
-const gs = citationSourceOf('liuyao-jintui-yong', '《增删卜易》进神退神章、用神章');
+const gs = citationSourceOf('bazi-tonggen-tougan', '《滴天髓》通神论');
 ok('通行说卡片标明原文待补，不伪造链接', gs.status === 'general' && gs.source.includes('通行说') && !gs.source.includes('http'), gs.source);
+// 2026-11-01 复核：用神化进退的喜忌分档已落到《增删卜易》卷二進神退神章原文
+ok('用神化进退已落到進神退神章', Array.isArray(CARD_CITATIONS['liuyao-jintui-yong'].refs)
+  && CARD_CITATIONS['liuyao-jintui-yong'].refs[0] === 'zs-jintui');
+ok('用神化进退的 source 带原文索引', citationSourceOf('liuyao-jintui-yong').status === 'verified');
+ok('通行说剩七张（另有 1 张待补）', generalCards.length === 7 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
 const ts = citationSourceOf('liuyao-yingqi-exact', '待补');
 ok('待补卡片标明 todo', ts.status === 'todo' && ts.source.includes('待补原文'), ts.source);
 const z = compute({ system: 'ziwei', datetime: '1955-01-02T00:00', gender: 'male', withInterpret: true });

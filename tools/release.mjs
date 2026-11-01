@@ -17,6 +17,7 @@ import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { verifyPublish } from './verify-publish.mjs';
+import { rollbackPlan, formatPlan } from './release-rollback.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -28,9 +29,37 @@ const verifyOnly = args.includes('--verify-only');
 const step = (msg) => console.log(`\n▸ ${msg}`);
 const fail = (msg) => { console.error(`\n✗ ${msg}\n`); process.exit(1); };
 
+// registry 上发版前的 latest：发布失败时用它把 latest 指回去
+let previousLatest = '';
+
+function printRollback(reason) {
+  const plan = rollbackPlan({
+    name: pkg.name,
+    version: pkg.version,
+    previous: previousLatest,
+    reason,
+    tagged: false,
+  });
+  console.error(`\n回滚步骤（reasons: ${plan.reason}；以下只打印，不自动执行）：\n`);
+  console.error(formatPlan(plan));
+  console.error('\n也可单独跑：node tools/release-rollback.mjs --version ' + pkg.version
+    + (previousLatest ? ' --previous ' + previousLatest : '') + ' --reason ' + reason);
+}
+
 // 发布后核对：附件能下载、字节与 registry 记的 shasum 一致、关键文件在包里。
 // 单独抽出来是因为 --verify-only 也要用同一套判据。
 async function verifyReleased() {
+  // --verify-only 没走过发布前那一步：这里补取 latest，且只在它不是本版本时才当回滚目标
+  if (!previousLatest) {
+    try {
+      const res = await fetch(`https://registry.npmjs.org/${pkg.name}`, { headers: { accept: 'application/json' } });
+      if (res.ok) {
+        const meta = await res.json();
+        const latest = (meta['dist-tags'] && meta['dist-tags'].latest) || '';
+        if (latest && latest !== pkg.version) previousLatest = latest;
+      }
+    } catch (e) { /* 取不到就让回滚步骤自己给取法 */ }
+  }
   step(`核对 registry 上的 ${pkg.name}@${pkg.version}`);
   const check = await verifyPublish({
     name: pkg.name,
@@ -41,11 +70,8 @@ async function verifyReleased() {
   if (!check.ok) {
     console.error(`\n✗ 发布核对没通过：${check.reason}`);
     console.error('  版本条目已在 registry 上，但附件不可用——装包的人会失败。');
-    console.error('  处理办法（按 npm 的规则，unpublish/deprecate 属于绕过 2FA 的破坏性动作，');
-    console.error('  granular token 会被 403 拒绝，需要在 npm 网页上用 2FA 手动做，或换 automation token）：');
-    console.error('    1) 网页 https://www.npmjs.com/package/' + pkg.name + '/access 删除该版本；');
-    console.error('    2) 或把 package.json 升到下一个补丁号重新发；');
-    console.error('    3) 若只是还没落盘，等 10 分钟后再跑：node tools/release.mjs --verify-only');
+    console.error('  若只是附件还没落盘，可等 10 分钟再跑：node tools/release.mjs --verify-only');
+    printRollback('verify-failed');
     process.exit(1);
   }
   console.log(`  tarball: ${check.tarball}`);
@@ -67,8 +93,14 @@ const npmArgs = (rest) => (NPM_CLI ? [NPM_CLI, ...rest] : rest);
 
 function run(cmd, cmdArgs, label, opts = {}) {
   const r = spawnSync(cmd, cmdArgs, { cwd: root, stdio: opts.capture ? 'pipe' : 'inherit', encoding: 'utf8' });
-  if (r.error) fail(`${label} 无法执行：${r.error.message}`);
-  if (r.status !== 0) fail(`${label} 失败（退出码 ${r.status}）`);
+  if (r.error) {
+    if (opts.onFail) opts.onFail();
+    fail(`${label} 无法执行：${r.error.message}`);
+  }
+  if (r.status !== 0) {
+    if (opts.onFail) opts.onFail();
+    fail(`${label} 失败（退出码 ${r.status}）`);
+  }
   return r.stdout ?? '';
 }
 
@@ -130,6 +162,7 @@ try {
   const res = await fetch(`https://registry.npmjs.org/${pkg.name}`, { headers: { accept: 'application/json' } });
   if (res.ok) {
     const meta = await res.json();
+    previousLatest = (meta['dist-tags'] && meta['dist-tags'].latest) || '';
     if (meta.versions && meta.versions[pkg.version]) {
       fail(`registry 上已有 ${pkg.name}@${pkg.version}：请先在 package.json 里升版本（npm version patch）`);
     }
@@ -146,7 +179,9 @@ if (dryRun) {
 
 // ── 4. 发布 ────────────────────────────────────────────────
 step(`发布 ${pkg.name}@${pkg.version} 到 npm`);
-npm(['publish', '--access', 'public', '--ignore-scripts', '--userconfig', npmrc], 'npm publish');
+npm(['publish', '--access', 'public', '--ignore-scripts', '--userconfig', npmrc], 'npm publish', {
+  onFail: () => printRollback('publish-failed'),
+});
 
 // ── 5. 发布后核对 ──────────────────────────────────────────
 // npm 的发布是异步的：版本条目先可见，tarball 附件可能晚几分钟才落盘。
