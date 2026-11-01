@@ -40,6 +40,18 @@ ok('门星旺衰取统宗卷三', citationOf('qm-wangshuai').chapter === '卷三
 ok('体用取梅花易数卷二', citationOf('mh-tiyong').bookName === '梅花易数' && citationOf('mh-tiyong').chapter === '卷二·体用生克');
 ok('第三批条目不写省略号', refilled2.every((id) => !/[….](\.\.\.)?/.test(citationOf(CARD_CITATIONS[id].refs[0]).quote)));
 
+// B6 第四批：六爻十三张落到《增删卜易》（维基文库本，繁体照录）
+const refilled3 = ['liuyao-yongshen', 'liuyao-fushen', 'liuyao-wangshuai', 'liuyao-yongshen-shuai', 'liuyao-quanggu-shuai', 'liuyao-dongbian', 'liuyao-liushen', 'liuyao-liuhe', 'liuyao-liuchong', 'liuyao-fanyin', 'liuyao-fuyin', 'liuyao-jintui', 'liuyao-yingqi'];
+ok('增删卜易已登记', CITATION_BOOKS.liuyao.name === '增删卜易' && CITATION_BOOKS.liuyao.base.includes('zh.wikisource.org'));
+ok('B6 第四批卡片已带 refs', refilled3.every((id) => Array.isArray(CARD_CITATIONS[id].refs) && CARD_CITATIONS[id].refs.length));
+ok('用神与伏神分取两章', citationOf('zs-yongshen').chapter === '卷一·用神章第八' && citationOf('zs-fushen').chapter === '卷二·飛伏神章第二十八');
+ok('月建日辰分取两章', citationOf('zs-yuejian').chapter === '卷一·月將章第十六' && citationOf('zs-richen').chapter === '卷一·日辰章第十七');
+ok('六冲六合取本章', citationOf('zs-liuchong').chapter === '卷一·六沖章第二十' && citationOf('zs-liuhe').chapter === '卷一·六合章第十九');
+ok('反吟伏吟同出反伏章', citationOf('zs-fanyin').chapter === '卷一·反伏章第二十五' && citationOf('zs-fuyin').chapter === '卷一·反伏章第二十五');
+ok('进神退神取卷二', citationOf('zs-jintui').chapter === '卷二·進神退神章第二十九');
+ok('应期取总注章', citationOf('zs-yingqi').chapter === '卷一·各門類應期總注章第又二十六');
+ok('第四批条目不写省略号', refilled3.every((id) => !/[….](\.\.\.)?/.test(citationOf(CARD_CITATIONS[id].refs[0]).quote)));
+
 const missingText = [];
 const unverified = [];
 for (const c of [...CLASSICS, ...CITATIONS]) {
@@ -81,7 +93,7 @@ ok('忌格/结构标签不硬配破格引文', Object.entries(PATTERN_BREAK_RULE
 // ── ④ source 富化 ──────────────────────────────────────────
 const vs = citationSourceOf('bazi-geju', '《子平真诠》「论用神」');
 ok('已定位卡片的 source 带卷章与链接', vs.status === 'verified' && vs.source.includes('原文索引') && vs.source.includes('https://') && vs.citations.length > 0, vs.source);
-const gs = citationSourceOf('liuyao-liuhe', '《卜筮正宗》六合章');
+const gs = citationSourceOf('liuyao-jintui-yong', '《增删卜易》进神退神章、用神章');
 ok('通行说卡片标明原文待补，不伪造链接', gs.status === 'general' && gs.source.includes('通行说') && !gs.source.includes('http'), gs.source);
 const ts = citationSourceOf('liuyao-yingqi-exact', '待补');
 ok('待补卡片标明 todo', ts.status === 'todo' && ts.source.includes('待补原文'), ts.source);

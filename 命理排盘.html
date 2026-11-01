@@ -616,7 +616,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：121 个测试文件 / 5635 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：121 个测试文件 / 5645 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -14901,6 +14901,11 @@ const CITATION_BOOKS = {
     author: '宋·邵雍（传）',
     base: 'https://www.diancang.xyz/xuanxuewushu/meihuayishu/',
   },
+  liuyao: {
+    name: '增删卜易',
+    author: '清·野鹤老人',
+    base: 'https://zh.wikisource.org/wiki/增刪卜易',
+  },
 };
 
 // 紫微原文条目：quote 按维基文库通行本照录，plain 是本站自撰白话。
@@ -15194,6 +15199,110 @@ const CITATIONS = [
     plain: '体卦代表自己、主静；用卦代表所问之事、主动。用生体或体用比和为顺，体生用（泄气）与用克体为不顺；再看互卦、变卦与旺衰定轻重。',
     url: 'https://www.diancang.xyz/xuanxuewushu/meihuayishu/37734.html',
   },
+  {
+    id: 'zs-yongshen',
+    book: 'liuyao',
+    chapter: '卷一·用神章第八',
+    quote: '父母爻：占父母卽以卦中之父母爻爲神。',
+    plain: '六亲各有用神：问父母就以父母爻为用神，兄弟、妻财、子孙、官鬼也各按所问的人与事取爻。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/8',
+  },
+  {
+    id: 'zs-fushen',
+    book: 'liuyao',
+    chapter: '卷二·飛伏神章第二十八',
+    quote: '此卦寅木妻財在二爻﹐卽以此寅木伏於姤卦亥水之下﹐姤卦二爻之亥水卽爲飛神﹐寅木妻財卽爲伏神﹐亥水而生寅木﹐謂之飛來生伏得長生﹐此用神不現﹐尋得伏神而遇生扶有用﹐亦爲用神﹐便作吉斷﹐餘仿此。',
+    plain: '用神不上卦时，到本宫首卦里找伏神：伏在下面的叫伏神，压在它上面的叫飞神。伏神得日月或飞神生扶，才算有用。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易',
+  },
+  {
+    id: 'zs-yuejian',
+    book: 'liuyao',
+    chapter: '卷一·月將章第十六',
+    quote: '月將卽是月建又爲月令。掌一月之權，司三旬之令。',
+    plain: '月建就是月令，掌一月的时令、管三旬的旺衰；它能扶起衰弱的爻，也能制住动爻与变爻。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/16',
+  },
+  {
+    id: 'zs-yuejian-zhuli',
+    book: 'liuyao',
+    chapter: '卷一·月將章第十六',
+    quote: '爻之衰弱者能生之合之、比之、拱之、扶之，衰而亦旺。',
+    plain: '月建对衰弱的爻能生、合、比、拱、扶，衰的也可以转旺；反过来对强旺的爻能冲、克、刑、破，旺的也会转衰。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/16',
+  },
+  {
+    id: 'zs-richen',
+    book: 'liuyao',
+    chapter: '卷一·日辰章第十七',
+    quote: '日辰爲六爻之主宰，司四時之旺相。',
+    plain: '日辰是六爻之主宰，四时都能当令，与月建同功；日冲旺相静爻为暗动，冲衰弱静爻为日破。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/17',
+  },
+  {
+    id: 'zs-dongbian',
+    book: 'liuyao',
+    chapter: '卷一·動變生克沖合章第十五',
+    quote: '卦有動爻，動而必變，夫變出之爻能生克沖合本位之動爻，不能生克他爻，而他爻與本位之動爻，亦不能生克變爻。',
+    plain: '动爻变出的爻，只与本位动爻发生生克冲合，不直接作用于其他爻；其他爻也不直接生克这个变爻。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/15',
+  },
+  {
+    id: 'zs-liushen',
+    book: 'liuyao',
+    chapter: '卷一·六神章第十八',
+    quote: '諸書無不以靑龍爲吉，白虎爲凶。',
+    plain: '旧籍多以青龙为吉、白虎为凶；本章随即用卦例说明六神只是取象的一层，不能只看它断吉凶。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/18',
+  },
+  {
+    id: 'zs-liuhe',
+    book: 'liuyao',
+    chapter: '卷一·六合章第十九',
+    quote: '子與丑合、寅與亥合、卯與戌合、辰與酉合、巳與申合，午與未合。',
+    plain: '六合固定六对：子丑、寅亥、卯戌、辰酉、巳申、午未；静爻逢合叫合起，动爻逢合叫合绊。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/19',
+  },
+  {
+    id: 'zs-liuchong',
+    book: 'liuyao',
+    chapter: '卷一·六沖章第二十',
+    quote: '相沖之法有六。日月沖爻者一也，卦逢六沖二也，六合卦變六沖三也，沖變六沖四也。動爻變沖五也、爻與爻沖六也。',
+    plain: '相冲分六种：日月冲爻、卦逢六冲、六合卦变六冲、冲变六冲、动爻变冲、爻与爻冲。冲主散，吉事不宜，凶事反而宜散。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/20',
+  },
+  {
+    id: 'zs-fanyin',
+    book: 'liuyao',
+    chapter: '卷一·反伏章第二十五',
+    quote: '內卦反伏，內則不安。外卦反伏，外則不寧。內外反伏者，內外不寧之象也。',
+    plain: '内卦反伏主内不安，外卦反伏主外不宁，内外都反伏则内外不宁；取象是事情反复，成而败、败而成。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/25',
+  },
+  {
+    id: 'zs-fuyin',
+    book: 'liuyao',
+    chapter: '卷一·反伏章第二十五',
+    quote: '內卦動變伏吟，內則呻吟，外卦動變伏吟，外則憂鬱。',
+    plain: '内卦动变伏吟主内呻吟，外卦动变伏吟主外忧郁；伏吟取停滞难伸，不像反吟那样带冲克。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/25',
+  },
+  {
+    id: 'zs-jintui',
+    book: 'liuyao',
+    chapter: '卷二·進神退神章第二十九',
+    quote: '進神退神者﹐爻之動而化也﹐化進化退﹐吉凶禍福有喜忌之分﹐所喜者宜於化進﹐所忌者宜化退神。',
+    plain: '进神退神是动爻化出同五行的顺次之支：化进主向前，化退主退气；喜用的宜化进，所忌的宜化退。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易',
+  },
+  {
+    id: 'zs-yingqi',
+    book: 'liuyao',
+    chapter: '卷一·各門類應期總注章第又二十六',
+    quote: '靜而逢值逢沖：如主事爻臨子水不動，後逢子日午日而應之，餘仿此。',
+    plain: '应期先分动静：静爻在逢值或逢冲之日应，动爻在逢合或逢值之日应；其余按入墓、旬空、月破等逐条推。',
+    url: 'https://zh.wikisource.org/wiki/增刪卜易/26又3',
+  },
 ];
 
 const BOOK_OF = {
@@ -15246,23 +15355,22 @@ const CARD_CITATIONS = {
   'ziwei-feixing': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '宫干飞化属飞星派传法，非《全书》单条原文' },
   'ziwei-sanfang-fei': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '三方四正同飞属飞星派读法，未定位到单条原文' },
   'ziwei-jichuanji': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '忌转忌串连属飞星派读法，未定位到单条原文' },
-  // ── 六爻：条目未录入原文，先标通行说（本环境无稳定可核验的公有领域章页：
-  //    ctext 明示禁止抓取、维基文库不可达、中华典藏网未收此二书）
-  'liuyao-yongshen': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '用神章、伏神章', reason: '原文待录入；当前按通行用神法实现' },
-  'liuyao-wangshuai': { status: 'general', book: '卜筮正宗', chapter: '月建日辰章', reason: '原文待录入' },
-  'liuyao-dongbian': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '动变章、进神退神', reason: '原文待录入' },
-  'liuyao-fushen': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '伏神章', reason: '原文待录入' },
-  'liuyao-yongshen-shuai': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '月建章、日辰章', reason: '原文待录入' },
-  'liuyao-quanggu-shuai': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '六爻旺衰论', reason: '原文待录入' },
-  'liuyao-yingqi': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '应期章', reason: '原文待录入' },
-  'liuyao-liushen': { status: 'general', book: '卜筮正宗', chapter: '六神章', reason: '原文待录入' },
-  'liuyao-liuchong': { status: 'general', book: '卜筮正宗 / 增删卜易', chapter: '六冲章', reason: '原文待录入' },
-  'liuyao-liuhe': { status: 'general', book: '卜筮正宗', chapter: '六合章', reason: '原文待录入' },
-  'liuyao-fanyin': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '反吟伏吟篇', reason: '原文待录入' },
-  'liuyao-fuyin': { status: 'general', book: '增删卜易 / 卜筮正宗', chapter: '伏吟篇', reason: '原文待录入' },
-  'liuyao-jintui': { status: 'general', book: '增删卜易', chapter: '进神退神章', reason: '原文待录入' },
-  'liuyao-jintui-yong': { status: 'general', book: '增删卜易', chapter: '进神退神章、用神章', reason: '原文待录入' },
-  'liuyao-yingqi-exact': { status: 'todo', book: '卜筮正宗', chapter: '应期章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
+  // ── 六爻：增删卜易（维基文库本，繁体照录）
+  'liuyao-yongshen': { refs: ['zs-yongshen'] },
+  'liuyao-fushen': { refs: ['zs-fushen'] },
+  'liuyao-wangshuai': { refs: ['zs-yuejian'] },
+  'liuyao-yongshen-shuai': { refs: ['zs-richen'] },
+  'liuyao-quanggu-shuai': { refs: ['zs-yuejian-zhuli'] },
+  'liuyao-dongbian': { refs: ['zs-dongbian'] },
+  'liuyao-liushen': { refs: ['zs-liushen'] },
+  'liuyao-liuhe': { refs: ['zs-liuhe'] },
+  'liuyao-liuchong': { refs: ['zs-liuchong'] },
+  'liuyao-fanyin': { refs: ['zs-fanyin'] },
+  'liuyao-fuyin': { refs: ['zs-fuyin'] },
+  'liuyao-jintui': { refs: ['zs-jintui'] },
+  'liuyao-yingqi': { refs: ['zs-yingqi'] },
+  'liuyao-jintui-yong': { status: 'general', book: '增删卜易', chapter: '進神退神章、用神章', reason: '底本把进退落在「動而化」的吉凶喜忌与应期上，未见单列「用神化進／化退」条；按用神与忌神分档是本插件引申，不冒充原文' },
+  'liuyao-yingqi-exact': { status: 'todo', book: '增删卜易', chapter: '各門類應期總注章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
   // ── 其他体系
   'meihua-tiyong': { refs: ['mh-tiyong'] },
   'daliuren-sike': { status: 'general', book: '大六壬大全', chapter: '九宗门取传法', reason: '原文待录入；本环境无稳定可核验的公有领域章页' },

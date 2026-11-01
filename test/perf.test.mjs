@@ -57,6 +57,7 @@ ok('npm 有 check:perf 脚本', /tools\/check-perf\.mjs/.test(pkg.scripts['check
 ok('test:ci 串上性能门槛', /check-perf\.mjs/.test(pkg.scripts['test:ci'] || ''));
 const workflow = read('.github/workflows/test.yml');
 ok('CI 跑性能门槛', /node tools\/check-perf\.mjs/.test(workflow));
+ok('自动发布也跑性能门槛', /'check-perf', \['tools\/check-perf\.mjs'\]/.test(read('tools/autopublish.mjs')));
 
 const readme = read('README.md');
 ok('README 说明性能门槛', /性能门槛/.test(readme) && /DSH_PERF_SCALE/.test(readme));

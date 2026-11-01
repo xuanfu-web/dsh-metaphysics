@@ -268,6 +268,7 @@ async function main() {
     ['verify-tests-can-fail', ['tools/verify-tests-can-fail.mjs']],
     ['check-html-sinks', ['tools/check-html-sinks.mjs']],
     ['check-patterns', ['tools/check-patterns.mjs']],
+    ['check-perf', ['tools/check-perf.mjs']],
   ];
   for (const [label, script] of gates) {
     runStep(label, process.execPath, script);

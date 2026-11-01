@@ -39,10 +39,10 @@ a{color:var(--ok)}
 <p>每张知识卡都指到一处出处：已定位到原文的，给书名、卷章、原文与链接，并由 CI 核验原文子串；属于通行说或尚未录入的，明确标出，不冒充原文。</p>
 <div class="sum">
   <div><b>53</b>知识卡</div>
-  <div><b>30</b>已定位原文</div>
-  <div><b>22</b>通行说</div>
+  <div><b>43</b>已定位原文</div>
+  <div><b>9</b>通行说</div>
   <div><b>1</b>待补</div>
-  <div><b>77</b>引文条目</div>
+  <div><b>90</b>引文条目</div>
 </div>
 <p>原文核验数据：<code>test/fixtures/citation-sources.json</code>（公共领域古籍，由 <code>tools/sync-citation-sources.mjs</code> 抓取）；测试：<code>test/citations.test.mjs</code>。</p>
 
@@ -588,6 +588,97 @@ a{color:var(--ok)}
     <td class="plain">体卦代表自己、主静；用卦代表所问之事、主动。用生体或体用比和为顺，体生用（泄气）与用克体为不顺；再看互卦、变卦与旺衰定轻重。</td>
     <td><span class="chip">meihua-tiyong</span></td>
     <td><a href="https://www.diancang.xyz/xuanxuewushu/meihuayishu/37734.html" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-yongshen</td>
+    <td>《增删卜易·卷一·用神章第八》</td>
+    <td class="quote">父母爻：占父母卽以卦中之父母爻爲神。</td>
+    <td class="plain">六亲各有用神：问父母就以父母爻为用神，兄弟、妻财、子孙、官鬼也各按所问的人与事取爻。</td>
+    <td><span class="chip">liuyao-yongshen</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/8" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-fushen</td>
+    <td>《增删卜易·卷二·飛伏神章第二十八》</td>
+    <td class="quote">此卦寅木妻財在二爻﹐卽以此寅木伏於姤卦亥水之下﹐姤卦二爻之亥水卽爲飛神﹐寅木妻財卽爲伏神﹐亥水而生寅木﹐謂之飛來生伏得長生﹐此用神不現﹐尋得伏神而遇生扶有用﹐亦爲用神﹐便作吉斷﹐餘仿此。</td>
+    <td class="plain">用神不上卦时，到本宫首卦里找伏神：伏在下面的叫伏神，压在它上面的叫飞神。伏神得日月或飞神生扶，才算有用。</td>
+    <td><span class="chip">liuyao-fushen</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-yuejian</td>
+    <td>《增删卜易·卷一·月將章第十六》</td>
+    <td class="quote">月將卽是月建又爲月令。掌一月之權，司三旬之令。</td>
+    <td class="plain">月建就是月令，掌一月的时令、管三旬的旺衰；它能扶起衰弱的爻，也能制住动爻与变爻。</td>
+    <td><span class="chip">liuyao-wangshuai</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/16" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-yuejian-zhuli</td>
+    <td>《增删卜易·卷一·月將章第十六》</td>
+    <td class="quote">爻之衰弱者能生之合之、比之、拱之、扶之，衰而亦旺。</td>
+    <td class="plain">月建对衰弱的爻能生、合、比、拱、扶，衰的也可以转旺；反过来对强旺的爻能冲、克、刑、破，旺的也会转衰。</td>
+    <td><span class="chip">liuyao-quanggu-shuai</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/16" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-richen</td>
+    <td>《增删卜易·卷一·日辰章第十七》</td>
+    <td class="quote">日辰爲六爻之主宰，司四時之旺相。</td>
+    <td class="plain">日辰是六爻之主宰，四时都能当令，与月建同功；日冲旺相静爻为暗动，冲衰弱静爻为日破。</td>
+    <td><span class="chip">liuyao-yongshen-shuai</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/17" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-dongbian</td>
+    <td>《增删卜易·卷一·動變生克沖合章第十五》</td>
+    <td class="quote">卦有動爻，動而必變，夫變出之爻能生克沖合本位之動爻，不能生克他爻，而他爻與本位之動爻，亦不能生克變爻。</td>
+    <td class="plain">动爻变出的爻，只与本位动爻发生生克冲合，不直接作用于其他爻；其他爻也不直接生克这个变爻。</td>
+    <td><span class="chip">liuyao-dongbian</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/15" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-liushen</td>
+    <td>《增删卜易·卷一·六神章第十八》</td>
+    <td class="quote">諸書無不以靑龍爲吉，白虎爲凶。</td>
+    <td class="plain">旧籍多以青龙为吉、白虎为凶；本章随即用卦例说明六神只是取象的一层，不能只看它断吉凶。</td>
+    <td><span class="chip">liuyao-liushen</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/18" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-liuhe</td>
+    <td>《增删卜易·卷一·六合章第十九》</td>
+    <td class="quote">子與丑合、寅與亥合、卯與戌合、辰與酉合、巳與申合，午與未合。</td>
+    <td class="plain">六合固定六对：子丑、寅亥、卯戌、辰酉、巳申、午未；静爻逢合叫合起，动爻逢合叫合绊。</td>
+    <td><span class="chip">liuyao-liuhe</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/19" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-liuchong</td>
+    <td>《增删卜易·卷一·六沖章第二十》</td>
+    <td class="quote">相沖之法有六。日月沖爻者一也，卦逢六沖二也，六合卦變六沖三也，沖變六沖四也。動爻變沖五也、爻與爻沖六也。</td>
+    <td class="plain">相冲分六种：日月冲爻、卦逢六冲、六合卦变六冲、冲变六冲、动爻变冲、爻与爻冲。冲主散，吉事不宜，凶事反而宜散。</td>
+    <td><span class="chip">liuyao-liuchong</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/20" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-fanyin</td>
+    <td>《增删卜易·卷一·反伏章第二十五》</td>
+    <td class="quote">內卦反伏，內則不安。外卦反伏，外則不寧。內外反伏者，內外不寧之象也。</td>
+    <td class="plain">内卦反伏主内不安，外卦反伏主外不宁，内外都反伏则内外不宁；取象是事情反复，成而败、败而成。</td>
+    <td><span class="chip">liuyao-fanyin</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/25" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-fuyin</td>
+    <td>《增删卜易·卷一·反伏章第二十五》</td>
+    <td class="quote">內卦動變伏吟，內則呻吟，外卦動變伏吟，外則憂鬱。</td>
+    <td class="plain">内卦动变伏吟主内呻吟，外卦动变伏吟主外忧郁；伏吟取停滞难伸，不像反吟那样带冲克。</td>
+    <td><span class="chip">liuyao-fuyin</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/25" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-jintui</td>
+    <td>《增删卜易·卷二·進神退神章第二十九》</td>
+    <td class="quote">進神退神者﹐爻之動而化也﹐化進化退﹐吉凶禍福有喜忌之分﹐所喜者宜於化進﹐所忌者宜化退神。</td>
+    <td class="plain">进神退神是动爻化出同五行的顺次之支：化进主向前，化退主退气；喜用的宜化进，所忌的宜化退。</td>
+    <td><span class="chip">liuyao-jintui</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">zs-yingqi</td>
+    <td>《增删卜易·卷一·各門類應期總注章第又二十六》</td>
+    <td class="quote">靜而逢值逢沖：如主事爻臨子水不動，後逢子日午日而應之，餘仿此。</td>
+    <td class="plain">应期先分动静：静爻在逢值或逢冲之日应，动爻在逢合或逢值之日应；其余按入墓、旬空、月破等逐条推。</td>
+    <td><span class="chip">liuyao-yingqi</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/26又3" rel="noreferrer noopener" target="_blank">原文</a></td>
   </tr></tbody>
 </table></div>
 
@@ -732,73 +823,73 @@ a{color:var(--ok)}
   </tr><tr>
     <td class="id">liuyao-yongshen</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗 / 增删卜易·用神章、伏神章<div class="muted">原文待录入；当前按通行用神法实现</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/8" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·用神章第八》</a></td>
   </tr><tr>
     <td class="id">liuyao-wangshuai</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗·月建日辰章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/16" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·月將章第十六》</a></td>
   </tr><tr>
     <td class="id">liuyao-dongbian</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗 / 增删卜易·动变章、进神退神<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/15" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·動變生克沖合章第十五》</a></td>
   </tr><tr>
     <td class="id">liuyao-fushen</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗 / 增删卜易·伏神章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易" target="_blank" rel="noreferrer noopener">《增删卜易·卷二·飛伏神章第二十八》</a></td>
   </tr><tr>
     <td class="id">liuyao-yongshen-shuai</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>增删卜易 / 卜筮正宗·月建章、日辰章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/17" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·日辰章第十七》</a></td>
   </tr><tr>
     <td class="id">liuyao-quanggu-shuai</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>增删卜易 / 卜筮正宗·六爻旺衰论<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/16" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·月將章第十六》</a></td>
   </tr><tr>
     <td class="id">liuyao-yingqi</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗 / 增删卜易·应期章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/26又3" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·各門類應期總注章第又二十六》</a></td>
   </tr><tr>
     <td class="id">liuyao-liushen</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗·六神章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/18" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·六神章第十八》</a></td>
   </tr><tr>
     <td class="id">liuyao-liuchong</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗 / 增删卜易·六冲章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/20" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·六沖章第二十》</a></td>
   </tr><tr>
     <td class="id">liuyao-liuhe</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>卜筮正宗·六合章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/19" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·六合章第十九》</a></td>
   </tr><tr>
     <td class="id">liuyao-fanyin</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>增删卜易 / 卜筮正宗·反吟伏吟篇<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/25" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·反伏章第二十五》</a></td>
   </tr><tr>
     <td class="id">liuyao-fuyin</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>增删卜易 / 卜筮正宗·伏吟篇<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易/25" target="_blank" rel="noreferrer noopener">《增删卜易·卷一·反伏章第二十五》</a></td>
   </tr><tr>
     <td class="id">liuyao-jintui</td>
     <td>六爻</td>
-    <td><span class="st general">通行说</span></td>
-    <td>增删卜易·进神退神章<div class="muted">原文待录入</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://zh.wikisource.org/wiki/增刪卜易" target="_blank" rel="noreferrer noopener">《增删卜易·卷二·進神退神章第二十九》</a></td>
   </tr><tr>
     <td class="id">liuyao-jintui-yong</td>
     <td>六爻</td>
     <td><span class="st general">通行说</span></td>
-    <td>增删卜易·进神退神章、用神章<div class="muted">原文待录入</div></td>
+    <td>增删卜易·進神退神章、用神章<div class="muted">底本把进退落在「動而化」的吉凶喜忌与应期上，未见单列「用神化進／化退」条；按用神与忌神分档是本插件引申，不冒充原文</div></td>
   </tr><tr>
     <td class="id">meihua-tiyong</td>
     <td>梅花</td>
@@ -858,7 +949,7 @@ a{color:var(--ok)}
     <td class="id">liuyao-yingqi-exact</td>
     <td>六爻</td>
     <td><span class="st todo">待补</span></td>
-    <td>卜筮正宗·应期章<div class="muted">逐条应期尚未实现，等 20+ 条有应验日期的卦例</div></td>
+    <td>增删卜易·各門類應期總注章<div class="muted">逐条应期尚未实现，等 20+ 条有应验日期的卦例</div></td>
   </tr></tbody>
 </table></div>
 <p class="muted">说明：标「通行说」的条目，本插件按通行取法实现，但尚未定位到可逐字核验的单一条文；标「待补」的条目尚未完成实现或录入。两者都不算已核验引文。</p>
