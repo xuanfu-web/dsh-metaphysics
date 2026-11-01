@@ -40,6 +40,11 @@ export const CITATION_BOOKS = {
     author: '宋·邵雍（传）',
     base: 'https://www.diancang.xyz/xuanxuewushu/meihuayishu/',
   },
+  ditian: {
+    name: '滴天髓',
+    author: '明·京图（通行本）',
+    base: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/',
+  },
   liuyao: {
     name: '增删卜易',
     author: '清·野鹤老人',
@@ -466,6 +471,17 @@ export const CITATIONS = [
     plain: '月将就是十二支神，按太阳过宫排：以登明为首逆布十二宫；起课时把月将加在占时上，顺布成天盘。',
     url: 'https://zh.wikisource.org/wiki/六壬大全/2',
   },
+  {
+    id: 'dt-yiqi-tonggen',
+    book: 'ditian',
+    chapter: '干支总论',
+    quote: '天全一气，不可使地德莫之载。地全三物，不可使天道莫之容。',
+    plain: '四柱天干同属一气，还得地支能承载它；地支所藏三干若不透到天干，也显不出用处——通根与透出是一件事的两面。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html',
+    // 2026-11-01 复核：这一句是《子平真诠》论十干十二支注文里明确引作《滴天髓》的话，
+    // 在滴天髓底本（干支总论）里能逐字对上，所以才是「通根透干」可核的原文。
+    note: '《子平真诠》卷一论十干十二支注文引作《滴天髓》语，底本干支总论原文可核。',
+  },
 ];
 
 const BOOK_OF = {
@@ -498,7 +514,14 @@ export const CARD_CITATIONS = {
   'bazi-congge-yuanwen': { refs: ['smt-congsha', 'smt-congcai'] },
   'bazi-tongguan': { refs: ['dt-tongguan'] },
   // ── 八字：通行说，暂未定位单一条文
-  'bazi-tonggen-tougan': { status: 'general', book: '滴天髓', chapter: '通神论', reason: '原文为「天干得一比肩，不如得支中一墓库」一路的取象，未定位到单一整句' },
+  'bazi-tonggen-tougan': {
+    refs: ['dt-yiqi-tonggen'],
+    // 通行说法（「地支所藏之干，本静以待用…干以通根为美，支以透出为贵」）常被署成《滴天髓》，
+    // 2026-11-01 核过：滴天髓底本与《子平真诠》沈孝瞻原文（论十干十二支）里都查不到这句，
+    // 它出现在《子平真诠》评注本该章的注文（附支藏人元图、人元司令表之后的按语）。
+    // 注文自身引的《滴天髓》「天全一气…」才是原本，故本卡只引可核的那句，注文只作说明不冒充原文。
+    note: '通行说两句出自《子平真诠》卷一注文，非《滴天髓》正文；注文所引的滴天髓句见本条。',
+  },
   'bazi-wangxiang': { refs: ['smt-wangxiang'] },
   'bazi-shensha': { refs: ['smt-shensha'] },
   'bazi-tiaohou': { refs: ['qt-tiaohou'] },

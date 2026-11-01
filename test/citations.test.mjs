@@ -102,13 +102,20 @@ ok('忌格/结构标签不硬配破格引文', Object.entries(PATTERN_BREAK_RULE
 // ── ④ source 富化 ──────────────────────────────────────────
 const vs = citationSourceOf('bazi-geju', '《子平真诠》「论用神」');
 ok('已定位卡片的 source 带卷章与链接', vs.status === 'verified' && vs.source.includes('原文索引') && vs.source.includes('https://') && vs.citations.length > 0, vs.source);
-const gs = citationSourceOf('bazi-tonggen-tougan', '《滴天髓》通神论');
+const gs = citationSourceOf('ziwei-feixing', '《紫微斗数全书》飞星');
 ok('通行说卡片标明原文待补，不伪造链接', gs.status === 'general' && gs.source.includes('通行说') && !gs.source.includes('http'), gs.source);
+// 2026-11-01 复核：通根透干改引《滴天髓·干支总论》「天全一气…」（评注本注文里明确引作滴天髓，
+// 且本地底本可逐字对上）；通行说那两句是《子平真诠》卷一注文，只作说明不冒充原文
+ok('通根透干改引滴天髓干支总论', (CARD_CITATIONS['bazi-tonggen-tougan'].refs || [])[0] === 'dt-yiqi-tonggen'
+  && citationSourceOf('bazi-tonggen-tougan').status === 'verified');
+ok('通根透干的引文是干支总论原句', /天全一气，不可使地德莫之载/.test(citationOf('dt-yiqi-tonggen').quote)
+  && citationOf('dt-yiqi-tonggen').chapter === '干支总论');
+ok('通根透干写明通行说误署滴天髓', /子平真诠/.test(CARD_CITATIONS['bazi-tonggen-tougan'].note || ''));
 // 2026-11-01 复核：用神化进退的喜忌分档已落到《增删卜易》卷二進神退神章原文
 ok('用神化进退已落到進神退神章', Array.isArray(CARD_CITATIONS['liuyao-jintui-yong'].refs)
   && CARD_CITATIONS['liuyao-jintui-yong'].refs[0] === 'zs-jintui');
 ok('用神化进退的 source 带原文索引', citationSourceOf('liuyao-jintui-yong').status === 'verified');
-ok('通行说剩七张（另有 1 张待补）', generalCards.length === 7 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
+ok('通行说剩六张（另有 1 张待补）', generalCards.length === 6 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
 const ts = citationSourceOf('liuyao-yingqi-exact', '待补');
 ok('待补卡片标明 todo', ts.status === 'todo' && ts.source.includes('待补原文'), ts.source);
 const z = compute({ system: 'ziwei', datetime: '1955-01-02T00:00', gender: 'male', withInterpret: true });

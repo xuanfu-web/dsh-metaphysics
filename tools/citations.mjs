@@ -58,7 +58,7 @@ export function buildCitationsHTML() {
     <td><span class="st ${status}">${status === 'verified' ? '已定位原文' : status === 'general' ? '通行说' : '待补'}</span></td>
     <td>${refs.length
       ? refs.map((c) => `<a href="${esc(c.url)}" target="_blank" rel="noreferrer noopener">《${esc(c.bookName)}·${esc(c.chapter)}》</a>`).join('<br>')
-      : `${esc(e.book || '—')}${e.chapter ? `·${esc(e.chapter)}` : ''}${e.reason ? `<div class="muted">${esc(e.reason)}</div>` : ''}`}</td>
+      : `${esc(e.book || '—')}${e.chapter ? `·${esc(e.chapter)}` : ''}${e.reason ? `<div class="muted">${esc(e.reason)}</div>` : ''}`}${e.note ? `<div class="muted">${esc(e.note)}</div>` : ''}</td>
   </tr>`).join('');
 
   return `<!DOCTYPE html>

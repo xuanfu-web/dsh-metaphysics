@@ -39,10 +39,10 @@ a{color:var(--ok)}
 <p>每张知识卡都指到一处出处：已定位到原文的，给书名、卷章、原文与链接，并由 CI 核验原文子串；属于通行说或尚未录入的，明确标出，不冒充原文。</p>
 <div class="sum">
   <div><b>53</b>知识卡</div>
-  <div><b>45</b>已定位原文</div>
-  <div><b>7</b>通行说</div>
+  <div><b>46</b>已定位原文</div>
+  <div><b>6</b>通行说</div>
   <div><b>1</b>待补</div>
-  <div><b>93</b>引文条目</div>
+  <div><b>94</b>引文条目</div>
 </div>
 <p>原文核验数据：<code>test/fixtures/citation-sources.json</code>（公共领域古籍，由 <code>tools/sync-citation-sources.mjs</code> 抓取）；测试：<code>test/citations.test.mjs</code>。</p>
 
@@ -700,6 +700,13 @@ a{color:var(--ok)}
     <td class="plain">月将就是十二支神，按太阳过宫排：以登明为首逆布十二宫；起课时把月将加在占时上，顺布成天盘。</td>
     <td><span class="muted">—</span></td>
     <td><a href="https://zh.wikisource.org/wiki/六壬大全/2" rel="noreferrer noopener" target="_blank">原文</a></td>
+  </tr><tr>
+    <td class="id">dt-yiqi-tonggen</td>
+    <td>《滴天髓·干支总论》</td>
+    <td class="quote">天全一气，不可使地德莫之载。地全三物，不可使天道莫之容。</td>
+    <td class="plain">四柱天干同属一气，还得地支能承载它；地支所藏三干若不透到天干，也显不出用处——通根与透出是一件事的两面。</td>
+    <td><span class="chip">bazi-tonggen-tougan</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" rel="noreferrer noopener" target="_blank">原文</a></td>
   </tr></tbody>
 </table></div>
 
@@ -714,8 +721,8 @@ a{color:var(--ok)}
   </tr><tr>
     <td class="id">bazi-tonggen-tougan</td>
     <td>八字</td>
-    <td><span class="st general">通行说</span></td>
-    <td>滴天髓·通神论<div class="muted">原文为「天干得一比肩，不如得支中一墓库」一路的取象，未定位到单一整句</div></td>
+    <td><span class="st verified">已定位原文</span></td>
+    <td><a href="https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html" target="_blank" rel="noreferrer noopener">《滴天髓·干支总论》</a><div class="muted">通行说两句出自《子平真诠》卷一注文，非《滴天髓》正文；注文所引的滴天髓句见本条。</div></td>
   </tr><tr>
     <td class="id">bazi-wangxiang</td>
     <td>八字</td>
