@@ -61,6 +61,18 @@ ok('贼克法取卷一', citationOf('dl-zeike').chapter === '卷一·起例（�
 ok('月将取卷二神将释', citationOf('dl-yuejiang').chapter === '卷二·神将释（月将）' && /月将/.test(citationOf('dl-yuejiang').quote));
 ok('大六壬条目不写省略号', ['dl-jigong', 'dl-zeike', 'dl-yuejiang'].every((id) => !/[….](\.\.\.)?/.test(citationOf(id).quote)));
 
+// 滴天髓·下篇六亲论：家庭三处（夫妻/子女/父母）与神煞立场的原文依据
+ok('滴天髓六亲论已录夫妻子女父母', ['dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu']
+  .every((id) => {
+    const c = citationOf(id);
+    return c && c.book === 'ditian' && /^六亲论·/.test(c.chapter) && c.url.endsWith('153092.html');
+  }));
+ok('六亲卡引文覆盖夫妻子女父母', ['dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu']
+  .every((id) => CARD_CITATIONS['bazi-liuqin'].refs.includes(id)));
+// 这条盯的是立场，不是文案：插件说「神煞不主吉凶」，得指得出是原书说的，不能只有今人主张。
+ok('神煞不主吉凶有滴天髓原文依据', /三奇二德虚好语/.test(citationOf('dt-nvming-shensha').quote)
+  && CARD_CITATIONS['bazi-shensha'].refs.includes('dt-nvming-shensha'));
+
 const missingText = [];
 const unverified = [];
 for (const c of [...CLASSICS, ...CITATIONS]) {

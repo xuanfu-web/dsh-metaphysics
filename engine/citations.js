@@ -482,6 +482,52 @@ export const CITATIONS = [
     // 在滴天髓底本（干支总论）里能逐字对上，所以才是「通根透干」可核的原文。
     note: '《子平真诠》卷一论十干十二支注文引作《滴天髓》语，底本干支总论原文可核。',
   },
+  // ── 滴天髓·下篇六亲论（2026-11-01 从底本逐字录入，同一页：153092.html）
+  {
+    id: 'dt-liuqin-fuqi',
+    book: 'ditian',
+    chapter: '六亲论·夫妻',
+    quote: '夫妻因缘宿世来，喜神有意傍天财。',
+    plain: '看夫妻，落点在「喜神」与「财星」的相对位置：财是妻星，喜神是能护住用神的那一位。配偶这件事，看的是财星有没有被喜神照到，不是看盘里有没有财。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
+    // 底本此篇为韵语提纲，各家注解分歧很大；这里只录原文，不把某家注解当原文引用。
+    note: '本句是六亲论的提纲韵语，正文各家用注解发挥，取义不一，故只作「有这一说」的原文凭据。',
+  },
+  {
+    id: 'dt-liuqin-zinv',
+    book: 'ditian',
+    chapter: '六亲论·子女',
+    quote: '子女根枝一世传，喜神看与杀相连。',
+    plain: '子女星取官杀，但成不成器要看喜神与杀的关系：有杀无喜，是压力；有喜有杀，才谈得上传承。单见官杀不作吉断。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
+  },
+  {
+    id: 'dt-liuqin-fumu',
+    book: 'ditian',
+    chapter: '六亲论·父母',
+    quote: '父母或降与或替，岁月所关果非细。',
+    plain: '父母看年月两柱：位置定了，还要看这两柱是「降」（受制）还是「替」（得代），差别不小。这是把六亲落到宫位上，而不是只看印星。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
+  },
+  {
+    id: 'dt-nvming-shensha',
+    book: 'ditian',
+    chapter: '六亲论·女命章',
+    quote: '论夫论子要安详，气静平和妇道章，三奇二德虚好语，咸池驿马半推详。',
+    plain: '这句是古籍自己在批神煞：三奇、二德这类吉神被叫作「虚好语」（空口说好话），咸池（桃花）、驿马只能「半推详」（顶多参考一半）。反对滥用神煞不是今人的意见，原文里就有。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
+    // 2026-11-01 录入：这句是本插件「神煞显示但不参与判断」最直接的原文依据，
+    // 而且是《滴天髓》自己说的，比后人转述有力。注意「三奇二德」指三奇、天德月德一类吉神。
+    note: '「三奇二德虚好语，咸池驿马半推详」是滴天髓原文对神煞的贬语，可直接支撑「神煞不主吉凶」。',
+  },
+  {
+    id: 'dt-hezhi-fugui',
+    book: 'ditian',
+    chapter: '六亲论·何知章',
+    quote: '何知其人富，财气通门户。何知其人贵，官星有理会。何知其人贫，财神反不真。何知其人贱，官星还不见。',
+    plain: '富看财有没有「通门户」（财能流通到日主），贵看官星有没有「理会」（有制有化、有人承接）。反过来，贫是财星不真（有财而无用），贱是官星不见或不理。判词是四个可查的条件，不是形容词。',
+    url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
+  },
 ];
 
 const BOOK_OF = {
@@ -507,7 +553,7 @@ export const CARD_CITATIONS = {
   'bazi-geju': { refs: ['zp-yongshen'] },
   'bazi-suiyun': { refs: ['smt-suiyun'] },
   'bazi-sanming-duizhao': { refs: ['zp-zhenguan', 'smt-guansha-liu'] },
-  'bazi-geju-chengbai': { refs: ['zp-chengbai'] },
+  'bazi-geju-chengbai': { refs: ['zp-chengbai', 'dt-hezhi-fugui'] },
   'bazi-huagi-bianhua': { refs: ['zp-bianhua'] },
   'bazi-zaji-quyong': { refs: ['zp-zaji'] },
   'bazi-zhuanwang-yuanwen': { refs: ['smt-quzhi', 'smt-yanshang', 'smt-congge', 'smt-runxia', 'smt-jiasi'] },
@@ -523,9 +569,12 @@ export const CARD_CITATIONS = {
     note: '通行说两句出自《子平真诠》卷一注文，非《滴天髓》正文；注文所引的滴天髓句见本条。',
   },
   'bazi-wangxiang': { refs: ['smt-wangxiang'] },
-  'bazi-shensha': { refs: ['smt-shensha'] },
+  // 神煞：三命通会条列名目，滴天髓女命章直接贬为「虚好语」「半推详」——两书合看才是全貌：
+  // 神煞是有的，只是不主吉凶。只引三命通会会让人以为本插件在给神煞背书。
+  'bazi-shensha': { refs: ['smt-shensha', 'dt-nvming-shensha'] },
   'bazi-tiaohou': { refs: ['qt-tiaohou'] },
-  'bazi-liuqin': { refs: ['smt-liuqin'] },
+  // 六亲：星宫同参，落点分别是夫妻（财与喜神）、子女（杀与喜神）、父母（年月宫位）
+  'bazi-liuqin': { refs: ['smt-liuqin', 'dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu'] },
   'bazi-kongwang': { refs: ['smt-kongwang'] },
   'bazi-xingchong': { refs: ['smt-xingchong'] },
   'bazi-dayun-jiaoqi': { refs: ['smt-dayun-qiyun'] },
