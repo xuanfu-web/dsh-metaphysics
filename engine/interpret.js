@@ -1723,6 +1723,7 @@ import { buildAnswer, buildPlain, buildGlossary, buildFollowups, dimensionPlain 
 import { knowledgeFor, caveatsFor, STATUS_LABEL, KNOWLEDGE_DISCLAIMER } from './interpret-knowledge.js';
 import { citationSourceOf } from './citations.js';
 import { limitsFor } from './limits.js';
+import { GUIDE } from './guide.js';
 import { CLASSIC_BOOKS, suiyunClassicOf, classicOf } from './classics.js';
 
 /**
@@ -1857,6 +1858,8 @@ const withReportMeta = (body, r, ask) => enrichPlain({
   disclaimer: body.disclaimer || DISCLAIMER,
   // 能力边界走公共收尾，奇门那条支路也能带上（它不经过正文组装）
   limits: body.limits || limitsFor(r.system),
+  // 三层导读：静态内容，放结果里由两套 UI 各自决定怎么折叠，不在引擎里拼 HTML
+  guide: GUIDE,
   ask,
 }, r, ask);
 

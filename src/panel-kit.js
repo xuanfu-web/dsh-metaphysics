@@ -487,6 +487,31 @@
 .mp-it-gloss{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted)}
 .mp-it-gloss summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
 .mp-it-gloss span{color:var(--ink2);font-weight:600;margin-right:4px}
+/* 三层导读（数 / 象 / 辞）：默认收起，展开是一篇能独立读懂的小文；深色只换变量，不另写一套 */
+.mp-guide{margin:10px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--band);overflow:hidden}
+.mp-guide>summary{cursor:pointer;padding:8px 11px;font-size:12.5px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:8px}
+.mp-guide>summary::-webkit-details-marker{display:none}
+.mp-guide>summary::before{content:"▸";color:var(--red);font-size:11px;line-height:1;transition:transform .16s}
+.mp-guide[open]>summary::before{transform:rotate(90deg)}
+.mp-guide>summary:hover{background:var(--hover)}
+.mp-guide-sub{margin-left:auto;color:var(--label);font-size:11.5px;letter-spacing:.08em}
+.mp-guide-body{padding:2px 12px 12px;border-top:1px solid var(--hair)}
+.mp-guide-lead{margin:9px 0;color:var(--ink2);font-size:12.5px}
+.mp-guide-layers{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.mp-guide-layers li{border-left:2px solid var(--line);padding-left:9px}
+.mp-guide-layers b{font-size:13px;color:var(--ink)}
+.mp-guide-layers b i{font-style:normal;margin-left:6px;font-size:11px;color:var(--label);letter-spacing:.1em}
+.mp-guide-layers span{display:block;color:var(--ink2);font-size:12px;margin-top:2px}
+.mp-guide-layers em{display:block;font-style:normal;color:var(--muted);font-size:11.5px;margin-top:3px}
+.mp-guide-check,.mp-guide-parts{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line)}
+.mp-guide-check b,.mp-guide-parts b{font-size:12.5px;color:var(--ink)}
+.mp-guide-check ol{margin:5px 0 0;padding-left:18px;color:var(--ink2);font-size:12px}
+.mp-guide-check ol li{margin:2px 0}
+.mp-guide-check p,.mp-guide-parts p{margin:5px 0 0;color:var(--muted);font-size:11.5px}
+.mp-guide-parts ul{margin:5px 0 0;padding:0;list-style:none;font-size:12px;color:var(--ink2)}
+.mp-guide-parts li{margin:3px 0}
+.mp-guide-parts li span{display:inline-block;min-width:44px;color:var(--ink);font-weight:600}
+.mp-guide-close{margin:11px 0 0;color:var(--ink2);font-size:12px}
 /* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
 .mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 .mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
@@ -2708,6 +2733,17 @@
     const limits = (it.limits && it.limits.length)
       ? `<details class="mp-it-limits"><summary>本插件不回答什么（${it.limits.length} 条）</summary>${it.limits.map((l) => `<div><b>${esc(l.title)}</b>${esc(l.text)}</div>`).join('')}</details>`
       : '';
+        // 三层导读：最靠前，但默认收起——想读的人一进来就有，不想读的人不多占一屏。
+    // 内容全部转义；这段只讲「哪层可复核、哪层要留个心眼」，不碰任何断语。
+    const guide = it.guide ? `<details class="mp-guide">
+      <summary><b>${esc(it.guide.title)}</b><span class="mp-guide-sub">数 / 象 / 辞</span></summary>
+      <div class="mp-guide-body">
+        <p class="mp-guide-lead">${esc(it.guide.lead)}</p>
+        <ol class="mp-guide-layers">${(it.guide.layers || []).map((l) => `<li><b>${esc(l.name)}<i>${esc(l.sub)}</i></b><span>${esc(l.text)}</span><em>${esc(l.hint)}</em></li>`).join('')}</ol>
+        <div class="mp-guide-check"><b>${esc(it.guide.check.title)}</b><ol>${(it.guide.check.items || []).map((q) => `<li>${esc(q)}</li>`).join('')}</ol><p>${esc(it.guide.check.tail)}</p></div>
+        <div class="mp-guide-parts"><b>${esc(it.guide.parts.title)}</b><ul>${(it.guide.parts.rows || []).map((r) => `<li><span>${esc(r[0])}</span>${esc(r[1])}</li>`).join('')}</ul><p>${esc(it.guide.parts.tail)}</p></div>
+        <p class="mp-guide-close">${esc(it.guide.closing)}</p>
+      </div></details>` : '';
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -2720,7 +2756,8 @@
         ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
         ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
-        ${outline}
+    ${guide}
+    ${outline}
         ${toc}
         <div class="mp-it-body">${dims}</div>
         ${secs}
