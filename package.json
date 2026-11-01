@@ -78,7 +78,8 @@
     "backtest:yingqi": "node tools/backtest-yingqi.mjs",
     "release": "node tools/release.mjs",
     "push:tag": "node tools/push-tag.mjs",
-    "rollback:plan": "node tools/release-rollback.mjs"
+    "rollback:plan": "node tools/release-rollback.mjs",
+    "prompt:event": "node tools/event-prompt.mjs"
   },
   "exports": {
     ".": "./index.js",
