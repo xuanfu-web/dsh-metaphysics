@@ -8,7 +8,7 @@ import { DIRECTIONS } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'index'];
+  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -259,7 +259,8 @@ export function assembleChunk(name) {
   const def = CHUNKS[name];
   if (!def) throw new Error(`未知分块：${name}`);
   const pkg = readPkg();
-  const set = new Set([...def.modules, 'index']);
+  // index 依赖 revise（一句话改参）与 handle（并句柄），所以带上 index 的分块必须同时带这两个
+  const set = new Set([...def.modules, 'revise', 'handle', 'index']);
   const order = ORDER.filter((m) => set.has(m));
   return `// 由 tools/build-client.mjs 生成，请勿手改。
 window.__ModuleLoader__.load({

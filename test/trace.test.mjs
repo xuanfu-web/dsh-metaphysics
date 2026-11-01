@@ -96,6 +96,7 @@ ok('奇门宫位生克层带条件', q.trace[3].inputs.some((x) => x.label === '
 const qPlain = compute({ system: 'qimen', datetime: '2026-10-31T10:00', direction: 'career' });
 const qWithTrace = JSON.parse(JSON.stringify(q));
 delete qWithTrace.trace;
+delete qWithTrace.traceText;
 ok('奇门 trace 不改盘面', JSON.stringify(qWithTrace) === JSON.stringify(qPlain));
 
 // ── ③c 大六壬：天地盘 → 四课 → 三传 ────────────────────────────
@@ -114,6 +115,7 @@ ok('大六壬三传带课体与六亲', d.trace[2].inputs.some((x) => x.label ==
 const dPlain = compute({ system: 'daliuren', datetime: '2026-10-31T10:00' });
 const dWithTrace = JSON.parse(JSON.stringify(d));
 delete dWithTrace.trace;
+delete dWithTrace.traceText;
 ok('大六壬 trace 不改盘面', JSON.stringify(dWithTrace) === JSON.stringify(dPlain));
 
 
@@ -121,6 +123,7 @@ ok('大六壬 trace 不改盘面', JSON.stringify(dWithTrace) === JSON.stringify
 const plain = compute({ system: 'liuyao', lines: LINES, question: '今年能否换工作', direction: 'career', datetime: '2026-10-31T10:00' });
 const withTrace = JSON.parse(JSON.stringify(l));
 delete withTrace.trace;
+delete withTrace.traceText;
 ok('trace 不改盘面', JSON.stringify(withTrace) === JSON.stringify(plain));
 const s1 = compute({ system: 'bazi', datetime: '1990-05-06T08:30', gender: 'male', shadow: true, shadowVersion: 't' });
 const s2 = compute({ system: 'bazi', datetime: '1990-05-06T08:30', gender: 'male', shadow: true, shadowVersion: 't', trace: true });
@@ -156,10 +159,10 @@ ok('推导链文本全部转义', !evilHTML.includes('<img src=x') && !evilHTML.
 // ── ⑦ 面板/独立页接线 ─────────────────────────────────────────
 const appSrc = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 const uiSrc = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
-ok('面板渲染 traceHTML', appSrc.includes('PP.traceHTML(result.r.trace, result.r.system)'));
+ok('面板渲染 traceHTML', appSrc.includes('PP.traceHTML(result.r.trace, result.r.system, result.r.traceText)'));
 ok('面板请求 trace', appSrc.includes("args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei' || k === 'qimen' || k === 'daliuren'"));
 ok('面板处理抽屉开关', appSrc.includes('data-trace-open') && appSrc.includes('data-trace-close'));
-ok('独立页渲染 traceHTML', uiSrc.includes('window.__PP.traceHTML(last.r.trace, last.r.system)'));
+ok('独立页渲染 traceHTML', uiSrc.includes('window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText)'));
 ok('独立页请求 trace', uiSrc.includes("args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren'"));
 ok('独立页处理抽屉开关', uiSrc.includes('data-trace-open') && uiSrc.includes('data-trace-close'));
 ok('面板改方向时重算推导链', appSrc.includes('Engine.buildTrace') && appSrc.includes('refresh: true'));

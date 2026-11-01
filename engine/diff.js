@@ -21,6 +21,11 @@ const IGNORE_KEYS = new Set([
   // 十类流派开关的回显（含 rules.schools 那行说明）同理：换开关必然改这段话，
   // 真正要看的是星位、四化、宫位有没有动。身主两派的口径名与说明同属回显。
   'schools', 'bodyMasterSchool', 'bodyMasterNote',
+  // 排盘句柄只是把入参编码回来：换口径后入参变了，句柄必然跟着变，
+  // 但它反映的是「另一次请求」，不是盘面差异。
+  'handle', 'handleError',
+  // 一句话改参的回显：换口径时它必然不同（等于另一次请求），不是盘面差异
+  'revision',
 ]);
 
 const isObject = (v) => v !== null && typeof v === 'object';

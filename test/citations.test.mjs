@@ -19,6 +19,26 @@ ok('引文库非空', all.length === CLASSICS.length + CITATIONS.length && all.l
 eq('引文 id 唯一', new Set(all.map((c) => c.id)).size, all.length);
 ok('每条引文都有书名/卷章/原文/链接', all.every((c) => c.bookName && c.chapter.length >= 2 && c.quote.length >= 8 && /^https:\/\//.test(c.url)));
 ok('紫微书已登记', CITATION_BOOKS.ziwei && CITATION_BOOKS.ziwei.name === '紫微斗数全书');
+ok('穷通宝鉴已登记', CITATION_BOOKS.qiongtong && CITATION_BOOKS.qiongtong.name === '穷通宝鉴');
+
+// B6 补录：七张八字卡从「通行说」落到可核验原文
+const refilled = ['bazi-wangxiang', 'bazi-shensha', 'bazi-kongwang', 'bazi-dayun-jiaoqi', 'bazi-liuqin', 'bazi-xingchong', 'bazi-tiaohou'];
+ok('B6 补录卡片已带 refs', refilled.every((id) => Array.isArray(CARD_CITATIONS[id].refs) && CARD_CITATIONS[id].refs.length));
+ok('旺相休囚死取三命通会卷二', citationOf('smt-wangxiang').bookName === '三命通会' && citationOf('smt-wangxiang').chapter === '卷二·论五行旺相休囚死并寄');
+ok('起运取三命通会论大运', citationOf('smt-dayun-qiyun').chapter === '卷二·论大运');
+ok('六亲取三命通会卷七', citationOf('smt-liuqin').chapter === '卷七·论六亲');
+ok('调候取穷通宝鉴五行总论', citationOf('qt-tiaohou').bookName === '穷通宝鉴' && citationOf('qt-tiaohou').chapter === '五行总论');
+ok('补录条目不写省略号', refilled.every((id) => !/[….](\.\.\.)?/.test(citationOf(CARD_CITATIONS[id].refs[0]).quote)));
+
+// B6 第三批：奇门五张、梅花一张落到《奇门遁甲统宗》《梅花易数》原文
+const refilled2 = ['qimen-yinyang', 'qimen-jixing', 'qimen-rumu', 'qimen-wangshuai', 'qimen-wangshuai-yong', 'meihua-tiyong'];
+ok('奇门遁甲统宗与梅花易数已登记', CITATION_BOOKS.qimen.name === '奇门遁甲统宗' && CITATION_BOOKS.meihua.name === '梅花易数');
+ok('B6 第三批卡片已带 refs', refilled2.every((id) => Array.isArray(CARD_CITATIONS[id].refs) && CARD_CITATIONS[id].refs.length));
+ok('阴阳遁取统宗卷一总赋', citationOf('qm-yinyang').chapter === '卷一·奇门秘诀总赋');
+ok('三奇入墓取统宗卷十一', citationOf('qm-rumu').chapter === '卷十一·玄机赋（中）' && /三奇入墓/.test(citationOf('qm-rumu').quote));
+ok('门星旺衰取统宗卷三', citationOf('qm-wangshuai').chapter === '卷三' && /旺相休囚/.test(citationOf('qm-wangshuai').quote));
+ok('体用取梅花易数卷二', citationOf('mh-tiyong').bookName === '梅花易数' && citationOf('mh-tiyong').chapter === '卷二·体用生克');
+ok('第三批条目不写省略号', refilled2.every((id) => !/[….](\.\.\.)?/.test(citationOf(CARD_CITATIONS[id].refs[0]).quote)));
 
 const missingText = [];
 const unverified = [];

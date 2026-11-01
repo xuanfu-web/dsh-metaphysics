@@ -83,6 +83,7 @@
 .pp-chip.ok{color:var(--lu);border-color:var(--lu)}
 .pp-chip.warn{color:var(--quan);border-color:var(--quan)}
 .pp-chip.broken{color:var(--quan);border-color:var(--quan);border-style:dashed}
+.pp-chip.neu{color:var(--muted);border-style:dashed}
 .pp-sec{margin-top:10px}
 /* 流月/流日/流时：一层层往外推的三级时间盘 */
 .pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif}
@@ -622,6 +623,39 @@
 .mp-shadow-diff .tag{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
 .mp-shadow-diff .same{margin-top:4px;font-size:12px;color:var(--muted)}
 .mp-shadow-diff .note{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
+/* 排盘句柄：追问同一张盘时复制给助手；本体是编码，提示不要公开贴出 */
+.mp-handle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 0;padding:8px 13px;border:1px dashed var(--line);border-radius:10px;background:var(--band);font-family:system-ui,sans-serif}
+.mp-handle-title{font-size:12.5px;font-weight:700;letter-spacing:.06em;color:var(--ink2)}
+.mp-handle-code{flex:1 1 220px;min-width:0;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}
+.mp-handle-copy{flex:0 0 auto;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:12px;cursor:pointer}
+.mp-handle-copy:hover{border-color:var(--ke);color:var(--ke)}
+.mp-handle-copy:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-handle-hint{flex-basis:100%;font-size:11.5px;line-height:1.6;color:var(--muted)}
+.mp-revise{margin:12px 0 0;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:var(--band);font-family:system-ui,sans-serif}
+.mp-revise-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mp-revise-title{font-size:12.5px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
+.mp-revise-text{font-size:12px;line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.mp-revise-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:3px}
+.mp-revise-list li{display:flex;gap:8px;font-size:12.5px;line-height:1.6}
+.mp-revise-list .k{flex:0 0 5.5em;color:var(--muted)}
+.mp-revise-list .old{color:var(--muted)}
+.mp-revise-list .new{color:var(--ink2);font-weight:600}
+.mp-revise-ignored{margin:6px 0 0;font-size:11.5px;line-height:1.6;color:var(--muted)}
+@media (max-width:640px){
+  .mp-revise{padding:8px 11px}
+  .mp-revise-list .k{flex-basis:4.5em}
+}
+@media print{
+  .mp-revise{break-inside:avoid}
+}
+@media (max-width:640px){
+  .mp-handle{padding:8px 11px}
+  .mp-handle-copy{margin-left:0;min-height:44px}
+}
+@media print{
+  .mp-handle-copy{display:none}
+  .mp-handle{break-inside:avoid}
+}
 @media (max-width:640px){
   .mp-shadow{padding:8px 11px}
   .mp-shadow-copy{margin-left:0;min-height:44px}
@@ -650,6 +684,10 @@
 .mp-trace-close{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:16px;cursor:pointer}
 .mp-trace-close:hover{border-color:var(--ke);color:var(--ke)}
 .mp-trace-close:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-trace-copy{margin-left:auto;flex:0 0 auto;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink2);font:inherit;font-size:12px;cursor:pointer}
+.mp-trace-copy:hover{border-color:var(--ke);color:var(--ke)}
+.mp-trace-copy:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
+.mp-trace-copy+.mp-trace-close{margin-left:0}
 .mp-trace-body{flex:1;overflow:auto;padding:10px 14px 24px;overscroll-behavior:contain}
 .mp-trace-step{margin:0 0 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
 .mp-trace-step>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 11px;cursor:pointer;list-style:none}
@@ -2407,9 +2445,17 @@
         const title = `${g.evidence || ''}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`;
         return `<span class="pp-chip ${broke ? 'broken' : pending ? 'warn' : ''}" title="${esc(title)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}${g.status ? `·${esc(g.status)}` : ''}</i></span>`;
       }).join('')}</div>` : '';
+    const ysnChips = (() => {
+      const neu = Array.isArray(fr.yongshen && fr.yongshen.neutral) ? fr.yongshen.neutral : [];
+      const neuGods = new Set((fr.yongshen && fr.yongshen.neutralTenGods) || []);
+      const warnGods = ((fr.yongshen && fr.yongshen.avoidTenGods) || []).filter((t) => !neuGods.has(t));
+      return `${warnGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('')}`
+        + `${[...neuGods].map((t) => `<span class="pp-chip neu" title="局中分量近零，按中性偏忌看">${esc(t)}</span>`).join('')}`
+        + `${neu.length ? `<span class="pp-chip neu" title="忌神中全局不足 0.5 分的那几行；仍在忌里参与行运评分">中性偏忌 ${neu.map((n) => `${esc(n.element)} ${esc(n.weight)} 分`).join('、')}</span>` : ''}`;
+    })();
     const ys = fr.yongshen ? `
       <div class="pp-tl">喜 ${fr.yongshen.favor.map(el).join('')}　忌 ${fr.yongshen.avoid.map(el).join('')}　<span class="pp-dim">${esc(fr.yongshen.method)}</span></div>
-      <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${fr.yongshen.avoidTenGods ? fr.yongshen.avoidTenGods.map((t) => `<span class="pp-chip warn">${esc(t)}</span>`).join('') : ''}</div>
+      <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${ysnChips}</div>
       ${(fr.yongshen.disputed || []).length
         ? `<div class="pp-tl pp-dim">有争议：${fr.yongshen.disputed.map((d) => `${esc(d.element)}（扶抑为${esc(d.favorRole)}·${esc(d.favorVerb)}，${esc(d.climate)}盘调候忌${esc(d.element)}）`).join('、')}　保留在喜用，不列入忌</div>`
         : ''}
@@ -2659,6 +2705,37 @@
   };
 
   /**
+   * 排盘句柄：把这张盘的参数压成一段短串，复制给助手就能只传增量地追问。
+   * 句柄是编码不是加密（里面带着出生信息），所以同时写明「别公开贴出」。
+   */
+  pp.handleHTML = function (handle) {
+    if (typeof handle !== 'string' || !handle) return '';
+    return `<section class="mp-handle" aria-label="排盘句柄">
+      <span class="mp-handle-title">排盘句柄</span>
+      <code class="mp-handle-code" title="${esc(handle)}">${esc(handle)}</code>
+      <button type="button" class="mp-handle-copy" data-handle-copy="${esc(handle)}" aria-label="复制排盘句柄">复制句柄</button>
+      <span class="mp-handle-hint">追问同一张盘时把它连同增量参数（年份、方向、所问之事）一并交给助手，不必重报出生信息。句柄是编码不是加密，含出生时间与出生地，别公开贴出。</span>
+    </section>`;
+  };
+
+  /** 一句话改参的回显：改了哪些、没认哪些，和文本摘要说的是同一件事 */
+  pp.revisionHTML = function (rev) {
+    if (!rev || typeof rev !== 'object') return '';
+    const rows = Array.isArray(rev.applied) ? rev.applied : [];
+    const ignored = Array.isArray(rev.ignored) ? rev.ignored : [];
+    if (!rows.length && !ignored.length) return '';
+    const items = rows.map((a) => {
+      const old = a.fromDisplay == null ? '（未设）' : a.fromDisplay;
+      return `<li><span class="k">${esc(a.label || a.key)}</span><span class="v"><span class="old">${esc(old)}</span> → <span class="new">${esc(a.display)}</span></span></li>`;
+    }).join('');
+    return `<section class="mp-revise" aria-label="一句话改参">
+      <div class="mp-revise-head"><span class="mp-revise-title">一句话改参</span><span class="mp-revise-text">「${esc(rev.text || '')}」</span></div>
+      ${items ? `<ul class="mp-revise-list">${items}</ul>` : '<p class="mp-revise-ignored">没有识别到可改的参数，仍按原参数排盘。</p>'}
+      ${ignored.length ? `<p class="mp-revise-ignored">未处理：${esc(ignored.join('；'))}</p>` : ''}
+    </section>`;
+  };
+
+  /**
    * 影子盘卡：短 ID + 版本 + 基础指纹，必要时附「与上次同盘比对」。
    * 只在 compute({ shadow: true }) 的结果上渲染；没有影子盘信息时返回空串。
    */
@@ -2748,10 +2825,11 @@
    * 推导链：入口卡 + 右侧抽屉。数据来自 Engine.compute({ trace: true }) 的 r.trace。
    * 每层只读展示 {field, rule, inputs, result, source}，不重算、不改盘。
    */
-  pp.traceHTML = function (trace, system) {
+  pp.traceHTML = function (trace, system, markdown) {
     if (!Array.isArray(trace) || !trace.length) return '';
-    const sys = ({ liuyao: '六爻', bazi: '八字', ziwei: '紫微' })[system] || '命盘';
+    const sys = ({ liuyao: '六爻', bazi: '八字', ziwei: '紫微', qimen: '奇门', daliuren: '大六壬' })[system] || '命盘';
     const flow = trace.map((t) => t && t.field).filter(Boolean).join(' → ');
+    const md = typeof markdown === 'string' ? markdown : '';
     const clip = (v, n) => {
       const s = String(v == null ? '' : v);
       return s.length > n ? `${s.slice(0, n)}…` : s;
@@ -2776,9 +2854,11 @@
         <aside class="mp-trace-drawer" role="dialog" aria-modal="true" aria-labelledby="mp-trace-title">
           <div class="mp-trace-head">
             <div><b id="mp-trace-title">推导链 · ${esc(sys)}</b><span>${trace.length} 层 · 每层给出规则、输入、结果与出处；只读，不重算</span></div>
+            ${md ? '<button type="button" class="mp-trace-copy" data-trace-copy aria-label="复制整条推导链的 Markdown">复制 Markdown</button>' : ''}
             <button type="button" class="mp-trace-close" data-trace-close aria-label="关闭推导链">✕</button>
           </div>
           <div class="mp-trace-body">${steps}</div>
+          ${md ? `<textarea class="mp-trace-md" data-trace-md readonly hidden>${esc(md)}</textarea>` : ''}
         </aside>
       </div>`;
   };

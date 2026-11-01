@@ -37,3 +37,5 @@ jobs:
         run: node tools/check-html-sinks.mjs
       - name: 工程约定（engine 纯净性 / 日志 / var / 时间与随机源）
         run: node tools/check-patterns.mjs
+      - name: 性能门槛（热路径 / 批量 / 解析 / 内存，慢机用 DSH_PERF_SCALE）
+        run: node tools/check-perf.mjs

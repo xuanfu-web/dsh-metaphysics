@@ -170,10 +170,13 @@ export function buildAnswer(r, ask, ctx = {}) {
     const ys = (r.frame && r.frame.yongshen) || {};
     const favor = join(ys.favor);
     const avoid = join(ys.avoid);
+    const neu = Array.isArray(ys.neutral) && ys.neutral.length
+      ? `（其中${ys.neutral.map((n) => n.element).join('、')}在命局里几乎没有分量，算中性偏忌，不必刻意避）`
+      : '';
     const ln = (r.liunian || [])[0];
     const parts = [
       head + `先说结论：你是${s(dm.stem)}${s(dm.element)}日主，命局${s(st.level, '待定')}` +
-        `${favor ? `，顺${favor}、忌${avoid}——往${favor}的方向安排事情会更省力` : ''}。`,
+        `${favor ? `，顺${favor}、忌${avoid}${neu}——往${favor}的方向安排事情会更省力` : ''}。`,
       ln && ln.ganzhi
         ? `${s(ln.year)} 年是${ln.ganzhi}年（${s(ln.luck && ln.luck.tier, '平')}），这是「大环境」这一层。`
         : '',

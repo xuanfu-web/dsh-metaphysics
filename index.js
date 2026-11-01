@@ -2,9 +2,10 @@
  * Host 半：把排盘引擎注册成一个模型可调用的工具。
  * 纯计算；唯一的网络行为是按需把地址解析成经度（失败即退回内置坐标表）。
  */
-import { compute, renderText, geocodeAddress, caliberCompare } from './engine/index.js';
+import { compute, renderText, geocodeAddress, caliberCompare, resolveHandle } from './engine/index.js';
 import { createLru } from './engine/lru.js';
 import { cacheMetrics } from './engine/calendar.js';
+import { parseRevision, displayValue } from './engine/revise.js';
 import fs from 'node:fs';
 
 /** 版本注入影子盘：工具侧没有 window.__MP_VER，只能从包元数据取 */
@@ -33,7 +34,9 @@ const DESCRIPTION = [
   '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
-  '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。需要回放或对拍时传 shadow: true，结果带影子盘 ID（同参数同 ID；baseId 不含版本，可跨版本比对字段变化）。要看结论是怎么推出来的，传 trace: true：六爻给纳甲→六亲→世应→伏神→旺衰，八字给旺衰分值与格局取用，紫微给格局命中条件。',
+  '用户用一句话改参数（「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」）时，把原话放进 revise（可配合 handle），引擎翻译成参数补丁并在结果 revision 里回报改了哪些、没认哪些；不要自己把原话拆成猜测的参数。',
+  '追问同一张盘：结果里有 handle，下次传 handle + 增量即可（例如 { handle, asOf: 2030 }、{ handle, withInterpret: true, question: "何时换工作" }、{ handle, system: "ziwei" } 看同一时间另一套盘），不必让用户重报出生信息；句柄带校验位，截断或改字会报 E_HANDLE。',
+  '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。需要回放或对拍时传 shadow: true，结果带影子盘 ID（同参数同 ID；baseId 不含版本，可跨版本比对字段变化）。要看结论是怎么推出来的，传 trace: true：六爻给纳甲→六亲→世应→伏神→旺衰，八字给旺衰分值与格局取用，紫微给格局命中条件，奇门与大六壬给盘面层与取用层；同时回传 traceText（同一份层的 Markdown，可直接贴进对话或文档）。',
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
 
@@ -65,7 +68,30 @@ export function apply(ctx) {
     if (args.geocode !== undefined && args.geocode !== 'offline' && args.geocode !== 'online') {
       throw bad(`geocode 只能是 offline / online，收到「${args.geocode}」`);
     }
-    const next = { ...args };
+    // 句柄先并回完整参数：后面的地址解析、日期补全与口径对照都按同一份参数走，
+    // 否则追问时只带 handle 会漏掉出生地（真太阳时）与 system 判断
+    let next;
+    try {
+      next = { ...resolveHandle(args) };
+    } catch (e) {
+      throw e && e.code ? e : bad(`handle 无法使用：${String((e && e.message) || e)}`);
+    }
+    // 一句话改参：先落到参数上，后面的地址解析、日期补全才按改后的体系走；
+    // 改了什么同时留给对外回显（compute 里也会再算一遍，结果相同，这里以宿主这份为准）
+    let revision = null;
+    if (typeof next.revise === 'string' && next.revise.trim()) {
+      const rev = parseRevision(next.revise);
+      const before = { ...next };
+      next = { ...next, ...rev.patch };
+      revision = {
+        text: rev.text,
+        applied: rev.labels.map((l) => {
+          const from = before[l.key] === undefined ? null : before[l.key];
+          return { ...l, from, fromDisplay: displayValue(l.key, from) };
+        }),
+        ignored: rev.ignored,
+      };
+    }
     if (next.shadow === true && !next.shadowVersion) next.shadowVersion = PKG_VERSION;
     // 默认离线：内置表覆盖到地级市，足够真太阳时用；联网是把出生地原文发给第三方，必须显式开启
     const wantsOnline = next.geocode === 'online';
@@ -110,6 +136,7 @@ export function apply(ctx) {
       next.fortuneYear = now.getFullYear();
     }
     const out = compute(next);
+    if (revision) out.revision = revision;
     // 显式要求时才做口径对照：每次要额外排 2–3 张盘，默认不付这笔开销
     if (next.diff === true) {
       const cmp = caliberCompare(next);
@@ -124,6 +151,16 @@ export function apply(ctx) {
     parameters: {
       type: 'object',
       properties: {
+        handle: {
+          type: 'string',
+          description:
+            '排盘句柄：上一次结果里的 handle（形如 mc1.xxx.yyy）。带上它就不必重报出生时间、性别、出生地——只传这次要改的增量参数（如 asOf、direction、withInterpret、question，或换 system 看同一时间另一套盘）。句柄里带着输入本身（是编码不是加密），校验失败会报 E_HANDLE。',
+        },
+        revise: {
+          type: 'string',
+          description:
+            '一句话改参：用户说「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」时，把原话放这里（可配合 handle），引擎把它翻成具体参数补丁再排盘。只认明确句式，识别不到就原样按旧参数排，并在结果 revision 里写明改了哪些、没认哪些——不要自己脑补参数。出生年份/时辰改不了（一句话给不出分秒），要改请直接传 datetime。',
+        },
         system: {
           type: 'string',
           enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'],
@@ -235,7 +272,7 @@ export function apply(ctx) {
         },
         trace: {
           type: 'boolean',
-          description: '推导链：六爻返回纳甲→六亲→世应→伏神→旺衰，八字返回旺衰分值与格局取用，紫微返回格局命中条件。每层含 field / rule / inputs / result / source；只读盘面，不重算、不改盘。默认 false。',
+          description: '推导链：六爻返回纳甲→六亲→世应→伏神→旺衰，八字返回旺衰分值与格局取用，紫微返回格局命中条件，奇门与大六壬返回盘面层与取用层。每层含 field / rule / inputs / result / source；另回传 traceText（同源 Markdown）。只读盘面，不重算、不改盘。默认 false。',
         },
         verifyPast: {
           type: 'number',

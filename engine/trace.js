@@ -187,11 +187,13 @@ function baziTrace(r) {
   const favor = list(ys.favor);
   const avoid = list(ys.avoid);
   const disputed = list((ys.disputed || []).map((d) => d && d.element), '');
+  const neutral = list((ys.neutral || []).map((n) => (n ? `${n.element}（${n.weight} 分）` : '')), '');
   const tiaohou = ys.tiaohou && typeof ys.tiaohou === 'object' ? ys.tiaohou : climate;
   const need = tiaohou && tiaohou.need ? tiaohou.need : null;
   const resultParts = [
     primaryName === '未取格局' ? primaryName : `主格 ${primaryName}${extraGeju ? `；兼格 ${extraGeju}` : ''}`,
     `喜 ${favor}，忌 ${avoid}`,
+    neutral ? `中性偏忌 ${neutral}（近零，仍按忌参与行运评分）` : '',
     disputed ? `有争议 ${disputed}` : '',
     tiaohou && tiaohou.kind
       ? `调候 ${text(tiaohou.kind)}${need && need.element ? `，取 ${text(need.element)}` : ''}${tiaohou.avoidElement && tiaohou.avoidElement !== '—' ? `，忌 ${text(tiaohou.avoidElement)}` : ''}`
@@ -451,6 +453,41 @@ export function buildTrace(result, opts = {}) {
   else if (result.system === 'qimen') layers = qimenTrace(result, opts);
   else if (result.system === 'daliuren') layers = daliurenTrace(result);
   return layers && layers.length ? layers : null;
+}
+
+/**
+ * A5 推导链导出：把同一份 layers 渲染成 Markdown，供贴进对话、文档或 issue。
+ * 只做排版，不重算、不补字段——导出前后内容必须与 buildTrace 一致。
+ * 表格里的 | 与换行必须转义，否则一格写坏整张表。
+ */
+const mdCell = (v) => String(v === undefined || v === null ? '' : v)
+  .replace(/\\/g, '\\\\')
+  .replace(/\|/g, '\\|')
+  .replace(/\r?\n/g, '<br>');
+
+export function traceMarkdown(layers, opts = {}) {
+  if (!Array.isArray(layers) || !layers.length) return '';
+  const system = opts.system || '';
+  const sys = SYSTEM_LABEL[system] || '命盘';
+  const out = [
+    `# 推导链 · ${sys}`,
+    '',
+    `> ${layers.length} 层；每层给出规则、输入、结果与出处。只读推导，不重算、不改盘面。`,
+  ];
+  layers.forEach((t, i) => {
+    if (!t) return;
+    out.push('', `## ${i + 1}. ${t.field || '(未命名字段)'}`, '');
+    if (t.result) out.push(`**结果**：${t.result}`, '');
+    if (t.rule) out.push(`**规则**：${t.rule}`, '');
+    const inputs = Array.isArray(t.inputs) ? t.inputs : [];
+    if (inputs.length) {
+      out.push('| 项 | 值 |', '| --- | --- |');
+      for (const x of inputs) out.push(`| ${mdCell(x && x.label)} | ${mdCell(x && x.value)} |`);
+      out.push('');
+    }
+    if (t.source) out.push(`**出处**：${t.source}`, '');
+  });
+  return `${out.join('\n').trimEnd()}\n`;
 }
 
 export { SYSTEM_LABEL };

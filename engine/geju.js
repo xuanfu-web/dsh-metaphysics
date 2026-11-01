@@ -303,6 +303,8 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
 // 用神与忌神两行在局中都真有分量、且相克时，五行里恰有一行能接上——克方所生、且能生被克方。
 // 只报这一行在局中的分量，不判「关通了就吉」。
 const TONGGUAN_MIN = 1.5;
+/** 忌神在全局不足这个分量时，展示层降为「中性偏忌」（仍留在 avoid 里参与行运评分） */
+const NEUTRAL_MAX = 0.5;
 export function tongguanOf(favor = [], avoid = [], wuxing = {}) {
   const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
   for (const use of favor) {
@@ -378,6 +380,14 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const favorTenGods = Array.from(new Set(favor.flatMap((el) => expand[roleName(el)] || [])));
   const avoidTenGods = Array.from(new Set(avoid.flatMap((el) => expand[roleName(el)] || [])));
   const disputedTenGods = Array.from(new Set(disputed.flatMap((d) => expand[roleName(d.element)] || [])));
+  // 中性偏忌：忌神里全局分量极轻（不足 NEUTRAL_MAX 分）的那些。
+  // 不从 avoid 里删——行运评分要让「这一行走运到位」仍按忌计分：局中没有，不等于运里不来。
+  // 只在展示层把它们从「实忌」降为「中性偏忌」，避免把一张几乎无该行的盘说成三行皆忌。
+  const weightOf = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const neutral = avoid
+    .filter((el) => weightOf(el) < NEUTRAL_MAX)
+    .map((el) => ({ element: el, role: roleName(el), verb: ROLE_VERB[roleName(el)], weight: weightOf(el) }));
+  const neutralTenGods = Array.from(new Set(neutral.flatMap((n) => expand[n.role] || [])));
   const tongguan = tongguanOf(favor, avoid, wuxing);
 
   const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
@@ -387,6 +397,9 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
   const detail = [
     `日主${dayStem}${me}，${strength.level}（${strength.score} 分）：`,
     `喜${favor.map(describe).join('、') || '—'}；忌${avoid.map(describe).join('、') || '—'}。`,
+    neutral.length
+      ? `中性偏忌：${neutral.map((n) => `${n.element}（局中 ${n.weight} 分）`).join('、')}——分量近零，不作实忌论，但不从此盘喜忌中删除（行运遇之仍按忌计）。`
+      : '',
     disputed.length ? `有争议：${disputedText}。` : '',
     !weak && !strong ? '身中和，先取调候与通关，喜忌随大运流年动态变化。' : '',
     `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}${disputed.some((d) => d.element === climate.avoidElement) ? '（有争议）' : ''}` : '，气候平和'}。`,
@@ -410,11 +423,14 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     favor,
     avoid,
     disputed,
+    neutral,
     favorRoles: favor.map(roleName),
     avoidRoles: avoid.map(roleName),
+    neutralRoles: neutral.map((n) => n.role),
     favorTenGods,
     avoidTenGods,
     disputedTenGods,
+    neutralTenGods,
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,

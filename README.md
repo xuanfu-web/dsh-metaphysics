@@ -30,11 +30,13 @@ Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com
 - **一页读懂 + 三张表**：整体/事业/财富/感情/节奏五条摘要；大运表、流年表、触发事件表（紫微是大限/流年/触发）
 - **证据卡 + 置信度**：每条维度结论可展开到逐条盘面事实与所用技法，置信度按证据条数分强/中/弱
 - **追问**：工具参数 `ask`，围绕已算好的盘回答「2027 年事业怎么样」这类问题；不重排、不猜测，找不到会明说
+- **排盘句柄**：每次结果带 `handle`（形如 `mc1.…`），下一次只传 `{ handle, asOf, direction, question }` 这类增量就能追问同一张盘，或传 `{ handle, system: 'ziwei' }` 看同一时刻另一套盘，不必重报出生时间与出生地。句柄把参数编码进去（不依赖进程内存），键序固定、带校验位，截断或改字报 `E_HANDLE`；`trace` / `shadow` / `withInterpret` 这类输出开关不进句柄。它是编码不是加密——含出生时间与出生地，别公开贴出。随机抽牌只复现参数、不复现牌面，要复现须带 `seed`
+- **一句话改参**：工具参数 `revise`（可配合 `handle`）接住「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」这类原话，引擎翻成参数补丁再排盘，并在结果 `revision` 里回报改了哪些、没认哪些。只认明确句式——换体系要有切换词，单提一句「紫微里怎么说」不换盘；出生年份与时辰一句话给不出分秒，不猜，改为提示直传 `datetime`。识别不到时盘面一字不动。摘要给「【改参】原话 + 旧 → 新 + 未处理」，面板与独立页给改参卡
 - **八字 × 紫微 交叉验证**：工具参数 `cross`，五项并列对照，标注同向 / 有张力 / 互补
 - **晚子时开关**：23:00 后算次日还是当日，面板与独立页都能切；奇门另有「归当日 / 归次日」
 - **口径对照**：同一个盘只换一个开关——八字晚子时 / 真太阳时；紫微闰月、真太阳时与十类流派开关（共 12 组）；奇门取局 / 晚子时归日。结果下方折叠列出「根因字段 旧值 → 新值」与连带变化数；面板、独立页与工具参数 `diff: true` 共用同一份开关表。只列差异，不判哪套更准，不改盘面
 - **影子盘 ID**：工具参数 `shadow: true`（面板与独立页默认开启）为结果生成 `LY-XXXXXXX` 短 ID。同一组归一化参数——键序无关、默认值等价、地址与等值经度等价——在任何机器上得到同一 ID；`baseId` 不含版本，`id` 含版本。面板可一键复制，同一 `baseId` 重排时自动与本地上一张盘比对，版本升级或字段变化会展开列出根因（如「时柱 甲子 → 壬辰」）。塔罗 / 六爻未给 `seed` 时把实际牌面 / 六爻值算进 ID，不把两次不同的抽牌误认成同一张盘
-- **推导链**：工具参数 `trace: true`（面板与独立页对六爻 / 八字 / 紫微 / 奇门 / 大六壬默认开启）返回每一层的 `{field, rule, inputs, result, source}`——六爻是纳甲 → 六亲 → 世应 → 伏神 → 旺衰，八字是旺衰分值与格局取用，紫微是格局命中条件，奇门是盘面事实 → 用神落宫 → 门/星/干旺衰 → 宫位生克，大六壬是天地盘 → 四课 → 三传。只读盘面，不重算、不改盘；面板用右侧抽屉逐层展开规则、结构化输入、结果与出处。六爻的询问方向参与起卦计算，改方向时只重算用神 / 旺衰 / 伏神三层，不重摇一卦；奇门改方向同样只重算用神落宫层，不重新起局
+- **推导链**：工具参数 `trace: true`（面板与独立页对六爻 / 八字 / 紫微 / 奇门 / 大六壬默认开启）返回每一层的 `{field, rule, inputs, result, source}`——六爻是纳甲 → 六亲 → 世应 → 伏神 → 旺衰，八字是旺衰分值与格局取用，紫微是格局命中条件，奇门是盘面事实 → 用神落宫 → 门/星/干旺衰 → 宫位生克，大六壬是天地盘 → 四课 → 三传。只读盘面，不重算、不改盘；面板用右侧抽屉逐层展开规则、结构化输入、结果与出处。六爻的询问方向参与起卦计算，改方向时只重算用神 / 旺衰 / 伏神三层，不重摇一卦；奇门改方向同样只重算用神落宫层，不重新起局。开 `trace` 时结果同时带 `traceText`——同一份层的 Markdown，可直接贴进对话或文档；面板抽屉里也可一键复制
 - **验前事**：列出过去几年流年信号，自评准/不准/不确定后算贴合度；只读，不改盘
 - **生时校正**：给定过去 2–3 件大事，对候选时辰逐一排盘打分排序；只缩小范围，不替代出生记录
 - **导出**：`.md`（盘面 + 解析）与 PNG 摘要长图（Canvas 直出，零依赖）；独立页支持打印/存 PDF
@@ -43,7 +45,7 @@ Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com
 - **《穷通宝鉴》120 格**：十天干 × 十二月令逐格录入用神顺序与原文摘句（「十二月乙木，木寒宜丙」这类原句照录），调候卡里直接给出「这一格书上取什么」与出处章号
 - **方法与验证页**：独立页内置静态页，写明对拍数据、测试与闸门、口径与已知边界
 - **公开对拍报告**（0.54.0 起）：[docs/verification.html](docs/verification.html) 汇总 128 条《卜筮正宗》卦例（成对 93 + 静卦 35；源 138 条中剔除 5 条并逐条给理由）、312 张紫微盘 × 34 条格局（10,608 条独立判定）、20 个奇门时辰 × 9 宫（180 个宫位）与 12 个交运案例。可按「一致 / 剔除 + 理由 / 不一致」和体系筛选，34 条格局的命中分布单独列出；README 顶部徽章由同一生成器写出，并披露「5 剔除」。报告、徽章与 `test/verification.test.mjs` 共用 `tools/verification.mjs`，判定变了或报告没重建，CI 就红
-- **引文索引**（B6）：[docs/citations.html](docs/citations.html) 把每张知识卡指到书名、卷章、原文与链接；已定位原文的（八字三书 + 紫微斗数全书）由 `test/citations.test.mjs` 逐条核验「原文子串确实出现在来源正文里」，通行说与待补条目单独标出，不冒充原文。原文快照在 `test/fixtures/citation-sources.json`，由 `tools/sync-citation-sources.mjs` 抓取公共领域古籍生成
+- **引文索引**（B6）：[docs/citations.html](docs/citations.html) 把每张知识卡指到书名、卷章、原文与链接；引文库 77 条（八字经典 41 + 引文索引 36：紫微 23、三命通会 6、奇门 5、穷通宝鉴 1、梅花 1），53 张卡里 30 张已定位到可核验原文，由 `test/citations.test.mjs` 逐条核验「原文子串确实出现在来源正文里」，其余 22 张通行说与 1 张待补单独标出，不冒充原文（六爻与大六壬缺公有领域章页，仍列通行说）。原文快照在 `test/fixtures/citation-sources.json`，由 `tools/sync-citation-sources.mjs` 抓取公共领域古籍生成
 - **参考资料登记**：[docs/参考资料与对拍来源.md](docs/参考资料与对拍来源.md) 记下 ziwei.pub/bazi 的四宫公式与信息层次、tyme4ts 对拍证据、玄空 B5 的替卦与紫白底本，以及历法 / 卦例 / 紫微 / 八字 / 奇门的外部来源入口；新增参考先登记再改代码，采用范围必须能指向一条测试或对拍证据
 - **离线单文件页（随包分发）**：`命理排盘.html` 一份文件、零依赖、双击即开，十九个入口按用途分三组（也能一键切回平铺），断网可用；它随 npm 包发布，装完插件就有（路径见下）
 
@@ -281,7 +283,7 @@ npm run check:patterns # 单独跑工程约定检查
 npm run release      # 测试 → 构建 → 校验产物 → 发 npm → 核对附件（token 从 NPM_TOKEN 读）
 ```
 
-也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/verification.mjs`、`node tools/caliber-diff.mjs`（同盘换口径的逐字段对照）、`node tools/check-bundle.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/release.mjs`、`node tools/verify-publish.mjs`（被 release 调用，也可单独用来核对某个版本）。
+也可以直接调脚本：`node tools/build-client.mjs`、`node tools/build-html.mjs`、`node tools/verification.mjs`、`node tools/caliber-diff.mjs`（同盘换口径的逐字段对照）、`node tools/check-bundle.mjs`、`node tools/test-all.mjs`、`node tools/check-assertions.mjs`、`node tools/verify-tests-can-fail.mjs`、`node tools/check-html-sinks.mjs`、`node tools/check-patterns.mjs`、`node tools/check-perf.mjs`、`node tools/bench.mjs`（只测不判）、`node tools/release.mjs`、`node tools/verify-publish.mjs`（被 release 调用，也可单独用来核对某个版本）。
 
 **测试的七道闸**：
 
@@ -292,6 +294,8 @@ npm run release      # 测试 → 构建 → 校验产物 → 发 npm → 核对
 5. `tools/check-patterns.mjs`——engine 不得引用浏览器/Node API 与 `console`，不得用 `var`/`debugger`，`new Date()` 与 `Math.random` 只允许出现在白名单文件
 6. `test/fuzz.test.mjs`——固定种子的随机生日扫射八个排盘体系，覆盖边界日期、参数矩阵与"同参数必得同结果"
 7. `tools/check-bundle.mjs`——产物必须在**宿主形态**下能编译能跑：读 `client.js` 与每个 `client.<name>.js` 原文逐模块编译、模拟 `__ModuleLoader__` 执行 factory、校验分块注册名 / 返回 `Engine` / 自包含、IIFE 收口与不可见分隔符，并要求所有产物与源码重构建逐字节一致；入口 gzip 必须 < 100KB（2026-10-25 的启动崩溃就是 Node 侧全绿、Chromium 侧语法错，这道闸专门守这个缝）
+
+另有一道**性能门槛** `tools/check-perf.mjs`（D3）：跑 `tools/bench.mjs` 的八体系样本，对首次 150ms / p50 10ms / p95 25ms / 带解析 250ms / 1000 盘 4000ms / RSS 800MB 判超限，CI 同样执行。阈值按文档目标留 5–10 倍余量，拦的是数量级回退而非毫秒级抖动；慢机用 `DSH_PERF_SCALE=3` 按倍数放大上限。`npm run bench` 只测量不判错，用来做改动前后的 A/B 对比。
 
 `client.js` 与 `client.<name>.js` 都是构建产物，不要手改。入口只带界面；面板按当前 tab 用 `require.async` 取引擎分块，首次打开不再下载整套引擎。改动记录见 [CHANGELOG.md](CHANGELOG.md)。
 

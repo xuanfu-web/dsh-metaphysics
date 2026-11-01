@@ -935,13 +935,12 @@ function App() {
   const isNarrow = () => !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
   const defaultFolded = () => (foldPref === null ? isNarrow() : foldPref);
 
-  /** 影子盘 ID 一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
-  const copyShadowId = (btn) => {
-    const text = btn.getAttribute('data-shadow-copy') || '';
+  /** 一键复制：优先 Clipboard API，失败退回 textarea + execCommand；按钮文案复制后 1.4s 复位 */
+  const copyTextTo = (btn, text, idleLabel) => {
     if (!text) return;
     const done = (ok) => {
       btn.textContent = ok ? '已复制' : '复制失败';
-      setTimeout(() => { btn.textContent = '复制 ID'; }, 1400);
+      setTimeout(() => { btn.textContent = idleLabel; }, 1400);
     };
     const legacy = () => {
       try {
@@ -966,6 +965,19 @@ function App() {
     done(legacy());
   };
 
+  /** 影子盘 ID 一键复制 */
+  const copyShadowId = (btn) => copyTextTo(btn, btn.getAttribute('data-shadow-copy') || '', '复制 ID');
+
+  /** 排盘句柄一键复制：给助手追问同一张盘时直接粘贴 */
+  const copyHandle = (btn) => copyTextTo(btn, btn.getAttribute('data-handle-copy') || '', '复制句柄');
+
+  /** 推导链整条复制：内容取自抽屉里的隐藏 textarea（与引擎 traceText 同源，不在这里重排） */
+  const copyTraceMarkdown = (btn) => {
+    const layer = btn.closest('.mp-trace-layer') || document.getElementById('mp-trace-layer');
+    const box = layer && layer.querySelector('[data-trace-md]');
+    copyTextTo(btn, box ? box.value : '', '复制 Markdown');
+  };
+
   /** 推导链抽屉：打开时锁住背景滚动并把焦点交给关闭按钮；关闭后焦点回入口 */
   const traceOpen = () => {
     const layer = document.getElementById('mp-trace-layer');
@@ -988,8 +1000,12 @@ function App() {
   const onFoldClick = (e) => {
     const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
     if (copyBtn) { copyShadowId(copyBtn); return; }
+    const handleCopy = e.target && e.target.closest ? e.target.closest('[data-handle-copy]') : null;
+    if (handleCopy) { copyHandle(handleCopy); return; }
     const traceBtn = e.target && e.target.closest ? e.target.closest('[data-trace-open]') : null;
     if (traceBtn) { traceOpen(); return; }
+    const traceCopy = e.target && e.target.closest ? e.target.closest('[data-trace-copy]') : null;
+    if (traceCopy) { copyTraceMarkdown(traceCopy); return; }
     const traceBack = e.target && e.target.closest ? e.target.closest('[data-trace-close]') : null;
     if (traceBack) { traceClose(); return; }
     const head = e.target && e.target.closest ? e.target.closest('.mp-it-head') : null;
@@ -1472,8 +1488,8 @@ function App() {
       'aria-live': 'polite',
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
-        __html: castAtHTML(result) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
-          + PP.traceHTML(result.r.trace, result.r.system) + PP.resultWithInterpret(
+        __html: castAtHTML(result) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
+          + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
             : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend) : ''))
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)

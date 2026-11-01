@@ -171,6 +171,10 @@ function baziInterpret(r) {
   const favor = Array.isArray(ys.favor) ? ys.favor : [];
   const avoid = Array.isArray(ys.avoid) ? ys.avoid : [];
   const disputed = Array.isArray(ys.disputed) ? ys.disputed : [];
+  const neutral = Array.isArray(ys.neutral) ? ys.neutral : [];
+  const neutralText = neutral.length
+    ? `其中${neutral.map((n) => `${n.element}（${n.role}）`).join('、')}全局仅 ${neutral.map((n) => n.weight).join('、')} 分，分量近零，按中性偏忌看；仍留在忌里，是因为行运走到这一行时照样按忌计。`
+    : '';
   const primary = pick(frame, 'primaryName', '未取定');
   const gender = pick(r.input, 'gender', '');
   const isMale = gender === 'male';
@@ -338,7 +342,7 @@ function baziInterpret(r) {
 
   const frameworkText = [
     `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。`,
-    `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${frameToneOf(level, favorRolesByWeight)}`,
+    `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${neutral.length ? `（${join(neutral.map((n) => n.element))} 近零，按中性偏忌看）` : ''}${frameToneOf(level, favorRolesByWeight)}`,
     `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
       ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
       : ''}。`,
@@ -473,7 +477,7 @@ function baziInterpret(r) {
       key: 'yongshen', label: '用神与忌神',
       // detail 里通常已含调候说明，这里不再补一句，避免同一段出现两次「调候上…」
       text: `喜用：${join(favor)}（对应十神：${join(ys.favorTenGods || ys.favorRoles || [])}）；忌：${join(avoid)}（对应十神：${join(ys.avoidTenGods || ys.avoidRoles || [])}）。` +
-        `${pick(ys, 'detail', '')}`,
+        neutralText + `${pick(ys, 'detail', '')}`,
     },
     ...(cli ? [{
       key: 'climate', label: '寒暖燥湿',
@@ -515,7 +519,7 @@ function baziInterpret(r) {
   // 一页读懂：报告顶部的五条结论（整体 / 事业 / 财富 / 感情 / 节奏）。
   // 只做「摘要」，不引入新判断——全部取自下面已经算好的字段。
   const outline = [
-    { key: 'overall', label: '整体', text: `${level}，喜${join(favor) || '—'}、忌${join(avoid) || '—'}` },
+    { key: 'overall', label: '整体', text: `${level}，喜${join(favor) || '—'}、忌${join(avoid) || '—'}${neutral.length ? `（${join(neutral.map((n) => n.element))} 近零·中性偏忌）` : ''}` },
     { key: 'career', label: '事业', text: `主格${primary}，${topName}偏旺` },
     { key: 'wealth', label: '财富', text: `财星权重 ${groups['财'] ?? 0}${favor.includes('金') ? '，喜金助财' : ''}` },
     { key: 'love', label: '感情', text: `${spouseKey}星权重 ${groups[spouseKey] ?? 0}，日支 ${pick(r.pillars?.day, 'branch', '—')}` },

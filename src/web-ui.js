@@ -225,13 +225,15 @@
     return `<div class="cast-at">起卦时刻：<b>${d} ${t}</b>　<span>（来自本机时间，点「此刻」可重新取当下）</span></div>`;
   }
 
-  /** 影子盘 ID 一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
-  function copyShadow(btn) {
-    const text = btn.getAttribute('data-shadow-copy') || '';
+  /** 推导链整条复制：内容取自抽屉里的隐藏 textarea（与引擎 traceText 同源，不在这里重排） */
+  function copyTraceMarkdown(btn) {
+    const layer = btn.closest('.mp-trace-layer') || document.getElementById('mp-trace-layer');
+    const box = layer && layer.querySelector('[data-trace-md]');
+    const text = box ? box.value : '';
     if (!text) return;
     const done = (ok) => {
       btn.textContent = ok ? '已复制' : '复制失败';
-      setTimeout(() => { btn.textContent = '复制 ID'; }, 1400);
+      setTimeout(() => { btn.textContent = '复制 Markdown'; }, 1400);
     };
     const legacy = () => {
       try {
@@ -255,6 +257,39 @@
     } catch (e) { /* 走下面的兜底 */ }
     done(legacy());
   }
+
+  /** 影子盘 ID / 排盘句柄一键复制：优先 Clipboard API，失败退回 textarea + execCommand */
+  function copyAttr(btn, attr, idle) {
+    const text = btn.getAttribute(attr) || '';
+    if (!text) return;
+    const done = (ok) => {
+      btn.textContent = ok ? '已复制' : '复制失败';
+      setTimeout(() => { btn.textContent = idle; }, 1400);
+    };
+    const legacy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = !!(document.execCommand && document.execCommand('copy'));
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => done(true), () => done(legacy()));
+        return;
+      }
+    } catch (e) { /* 走下面的兜底 */ }
+    done(legacy());
+  }
+  const copyShadow = (btn) => copyAttr(btn, 'data-shadow-copy', '复制 ID');
+  const copyHandle = (btn) => copyAttr(btn, 'data-handle-copy', '复制句柄');
 
   /** 推导链抽屉：打开时把焦点交给关闭按钮，关闭后回到入口 */
   function traceOpen() {
@@ -289,8 +324,10 @@
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
     el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
+      + window.__PP.revisionHTML(last.r.revision)
+      + window.__PP.handleHTML(last.r.handle)
       + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)
-      + window.__PP.traceHTML(last.r.trace, last.r.system)
+      + window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText)
       + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
       + window.__PP.caliberHTML(last.caliber)
       + followupBar()
@@ -1037,8 +1074,12 @@
     el('out').addEventListener('click', (e) => {
       const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
       if (copyBtn) { copyShadow(copyBtn); return; }
+      const handleCopy = e.target && e.target.closest ? e.target.closest('[data-handle-copy]') : null;
+      if (handleCopy) { copyHandle(handleCopy); return; }
       const traceBtn = e.target && e.target.closest ? e.target.closest('[data-trace-open]') : null;
       if (traceBtn) { traceOpen(); return; }
+      const traceCopy = e.target && e.target.closest ? e.target.closest('[data-trace-copy]') : null;
+      if (traceCopy) { copyTraceMarkdown(traceCopy); return; }
       const traceBack = e.target && e.target.closest ? e.target.closest('[data-trace-close]') : null;
       if (traceBack) { traceClose(); return; }
       const pm = e.target && e.target.closest ? e.target.closest('[data-pmark]') : null;

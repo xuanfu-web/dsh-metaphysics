@@ -11,6 +11,8 @@ import { buildQimen, buildSnapshot } from './qimen.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
+import { encodeHandle, decodeHandle, resolveHandle } from './handle.js';
+import { parseRevision, displayValue } from './revise.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
 import { followup, askPrompt } from './followup.js';
 import { crossCheck, crossText, crossSection } from './crosscheck.js';
@@ -30,7 +32,7 @@ import { canonicalJson, fingerprintOf } from './fingerprint.js';
 import { buildTrend } from './trend.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
-import { buildTrace, SYSTEM_LABEL } from './trace.js';
+import { buildTrace, traceMarkdown, SYSTEM_LABEL } from './trace.js';
 import { fail } from './fail.js';
 import { assertCivil } from './validate.js';
 
@@ -139,10 +141,14 @@ function baziText(r) {
     ? `　有争议：${ysd.map((d) => `${d.element}（${d.favorRole}；${d.climate}盘调候忌${d.element}）`).join('、')}`
     : '';
   const disEls = new Set(ysd.map((d) => d.element));
+  const ysn = (r.frame && r.frame.yongshen && r.frame.yongshen.neutral) || [];
+  const neuText = ysn.length
+    ? `　中性偏忌：${ysn.map((n) => `${n.element} ${n.weight} 分`).join('、')}（近零，不作实忌）`
+    : '';
   const gejuLine = r.frame ? [
     `格局：${r.frame.primary ? `${r.frame.primary.name}（${r.frame.primary.evidence}）` : '—'}`,
     `　　　${r.frame.geju.map((g) => `${g.name}[${g.kind}${g.status ? `·${g.status}` : ''}]`).join('　')}`,
-    `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）${disText}　${r.frame.yongshen.method}`,
+    `用神：喜${r.frame.yongshen.favor.join('')}（${r.frame.yongshen.favorTenGods.join('、')}）　忌${r.frame.yongshen.avoid.join('')}（${r.frame.yongshen.avoidTenGods.join('、')}）${disText}${neuText}　${r.frame.yongshen.method}`,
     `　　　${r.frame.yongshen.detail}`,
     `寒暖：${r.climate ? `${r.climate.label}（${(r.climate.evidence || []).join('、')}）${r.climate.need ? `　调候取${r.climate.need.stem}${r.climate.need.element}　忌${r.climate.avoidElement}${disEls.has(r.climate.avoidElement) ? '（有争议）' : ''}` : ''}` : '—'}` +
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
@@ -484,7 +490,7 @@ function jsonSafe(value) {
 // 只收影响盘面的参数：地址换成有效经度后不再把原文算进去，问事/方向按体系保留。
 const SHADOW_IGNORE = new Set([
   'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'cross', 'verifyPast', 'rectify', 'events',
-  'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf',
+  'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise',
 ]);
 
 const num6 = (n) => {
@@ -625,11 +631,11 @@ export function chartFingerprint(args = {}, opts = {}) {
 }
 
 const SHADOW_DIFF_IGNORE = new Set([
-  'shadow', 'trace', 'traceError', 'interpret', 'summary', 'classics', 'suiyunClassic', 'renyuanClassic', 'cross',
+  'shadow', 'trace', 'traceText', 'traceError', 'interpret', 'summary', 'classics', 'suiyunClassic', 'renyuanClassic', 'cross',
   'past', 'rectify', 'followup', 'caliber', 'input', 'reading', 'knowledge', 'outline',
   'sections', 'answer', 'plain', 'tables', 'glossary', 'caveats', 'lead', 'dimensions',
   'moduleType', 'technique', 'disclaimer', 'ask', 'followups', 'knowledgeCount', 'title',
-  'systemLabel',
+  'systemLabel', 'handle', 'handleError', 'revision',
 ]);
 
 function shadowChart(result) {
@@ -693,9 +699,29 @@ export function shadowDiff(previous, current, opts = {}) {
  * @param {object} args
  * @param {'bazi'|'ziwei'|'liuyao'} args.system
  * @param {string} [args.datetime]
+ * @param {string} [args.handle] 上次结果里的句柄；给了它就可以只传增量参数（如 asOf、direction、system）
  */
-export function compute(args = {}) {
+export function compute(input = {}) {
+  // 句柄先并回参数：后面的代码只看见一份完整参数，不必到处判 handle
+  let args = resolveHandle(input);
+  // 一句话改参（C2）：把「换成紫微看 2030 年事业」翻成补丁再排盘；识别不到就原样排，
+  // 绝不猜。改了哪些、没认哪些都随结果回传，便于核对。
+  let revision;
+  if (typeof args.revise === 'string' && args.revise.trim()) {
+    const rev = parseRevision(args.revise);
+    const before = { ...args };
+    args = { ...args, ...rev.patch };
+    revision = {
+      text: rev.text,
+      applied: rev.labels.map((l) => {
+        const from = before[l.key] === undefined ? null : before[l.key];
+        return { ...l, from, fromDisplay: displayValue(l.key, from) };
+      }),
+      ignored: rev.ignored,
+    };
+  }
   const r = jsonSafe(computeRaw(args));
+  if (revision) r.revision = revision;
   if (r && r.system === 'bazi') {
     r.classics = classicsFor(r);
     const ct = classicsText(r.classics);
@@ -788,7 +814,11 @@ export function compute(args = {}) {
   if (args.trace === true) {
     try {
       const layers = buildTrace(r, { direction: args.direction, gender: args.gender });
-      if (layers) r.trace = layers;
+      if (layers) {
+        r.trace = layers;
+        // 同一份层另出一份 Markdown：贴进对话/文档时表格不会散架，内容与 r.trace 同源
+        r.traceText = traceMarkdown(layers, { system: r.system });
+      }
     } catch (e) {
       r.traceError = String((e && e.message) || e);
     }
@@ -800,6 +830,13 @@ export function compute(args = {}) {
     } catch (e) {
       r.shadow = { error: String((e && e.message) || e) };
     }
+  }
+  // 排盘句柄：把这张盘的参数压成短串；下一次追问传 handle + 增量即可，不必重报出生信息
+  try {
+    const h = encodeHandle(args);
+    if (h) r.handle = h;
+  } catch (e) {
+    r.handleError = String((e && e.message) || e);
   }
   return r;
 }
@@ -1551,6 +1588,17 @@ export function renderText(result) {
       + (s.reproducible === false ? `\n　⚠ 不可复算：${s.reason}` : '')
       + (s.reproducible === true && s.asOfPinned === false && (s.system === 'bazi' || s.system === 'ziwei') ? '\n　提示：未固定 asOf，流年/流月随「此刻」变化；要比对请传 asOf。' : ''));
   }
+  // 一句话改参的回显：改了哪些、没认哪些，都摆出来让人核对，而不是悄悄按新参数排
+  if (result.revision && ((result.revision.applied || []).length || (result.revision.ignored || []).length)) {
+    const rev = result.revision;
+    const rows = (rev.applied || []).map((a) => `${a.label}：${a.fromDisplay == null ? '（未设）' : a.fromDisplay} → ${a.display}`);
+    parts.push(`【改参】${rev.text}${rows.length ? `\n　${rows.join('；')}` : '\n　没有识别到可改的参数，仍按原参数排盘'}`
+      + ((rev.ignored || []).length ? `\n　未处理：${rev.ignored.join('；')}` : ''));
+  }
+  // 句柄放进文本：模型看到的是这段摘要，不给它就没法在下一轮只传增量
+  if (typeof result.handle === 'string' && result.handle) {
+    parts.push(`【排盘句柄】${result.handle}\n　追问同一张盘：传 handle + 增量参数（asOf / direction / question，或换 system 看另一套盘），不必重报出生信息。`);
+  }
   if (Array.isArray(result.trace) && result.trace.length) {
     parts.push(`【推导链】${SYSTEM_LABEL[result.system] || result.system} · ${result.trace.length} 层\n`
       + result.trace.map((t, i) => `${i + 1}. ${t.field}｜${t.result}\n　规则：${t.rule}　出处：${t.source}`).join('\n'));
@@ -1598,7 +1646,8 @@ export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText, crossSection };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName };
-export { buildTrace };
+export { buildTrace, traceMarkdown };
+export { encodeHandle, decodeHandle, resolveHandle };
 
 
 
