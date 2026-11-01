@@ -82,7 +82,7 @@ async function verifyReleased() {
     console.warn(`  ⚠ latest 目前指向 ${check.latest}，若需要可执行：npm dist-tag add ${pkg.name}@${pkg.version} latest`);
   }
   console.log(`\n✅ 已发布并核对通过 ${pkg.name}@${pkg.version}`);
-  console.log('   提示：别忘了 git tag 并推送 —— git tag v' + pkg.version + ' && git push origin v' + pkg.version);
+  console.log('   提示：别忘了打 tag 并推送 —— node tools/push-tag.mjs（HTTPS 不通会自动走 SSH deploy key）');
   return check;
 }
 

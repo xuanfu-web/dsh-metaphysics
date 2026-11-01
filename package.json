@@ -75,6 +75,7 @@
     "check:patterns": "node tools/check-patterns.mjs",
     "check:perf": "node tools/check-perf.mjs",
     "release": "node tools/release.mjs",
+    "push:tag": "node tools/push-tag.mjs",
     "rollback:plan": "node tools/release-rollback.mjs"
   },
   "exports": {

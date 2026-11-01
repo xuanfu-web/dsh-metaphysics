@@ -6,6 +6,11 @@
 
 ## 未发布
 
+- **发版最后一步补成工具：`tools/push-tag.mjs`**（`package.json` 增 `push:tag` 脚本，`release.mjs` 的提示改指它）：
+  - 起因：0.58.0 发完 npm，脚本提示 `git tag v0.58.0 && git push origin v0.58.0`，而这台机器 GitHub 443 整段不通（`Connection reset` / 连不上），tag 只能落在本地，远端 release 页面上永远缺一个。
+  - 做法：默认取 `package.json` 版本；缺 tag 就建 annotated tag；推送连续三次失败且错误像「连不上」时，自动临时 ed25519 → 注册 deploy key → 走 `ssh.github.com:443` 推 `refs/tags/…` → 无论成败都删 key 与私钥。`--dry-run` 只报告不动手，`--no-create` 只推不建。与自动发布用同一个配置文件，不额外落盘凭据。
+  - 证据：`test/push-tag.test.mjs` 22 条（dry-run 不建 tag 也不碰远端、默认 tag 跟版本号、tag 名不合法直接拒绝、SSH 兜底接线与删 key、凭据只从配置文件读）。实测 v0.58.0 走 SSH 兜底推成功，临时 deploy key 168375084 已删。
+
 - **C3 对话桥替代**（`engine/bridge.js`、`src/app.js`、`src/web-ui.js`）：会话槽位 `conversation.input.right` 不稳，桥一断就没路把盘送进对话；这一版给出三条不依赖宿主的通道。
   - 深链：`#mp=<句柄>&q=<问题>`，参数走 C1 句柄编码，截断或改字报 `E_HANDLE` 而不是静默排成另一张盘。面板首屏先读链接再排盘（表单状态下一帧才生效，同一批值经 `run` 的 over 直传，不会先闪一张旧盘）；独立页在 `setTab` 之后填表单再排，并在结果顶部写「已按链接还原：体系｜问题」，没填回表单的参数（如合盘对方）如实列出，不悄悄丢。
   - 复制：完整提问（与桥发出去的是同一份）、一句话精简（体系 + 句柄 + 问题，≤200 字）、结构化参数（`{"tool":"metaphysics","args":{handle,…}}`，助手可直接照 args 调 compute）。
