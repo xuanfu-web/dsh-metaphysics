@@ -1,0 +1,1898 @@
+{
+ "meta": {
+  "source": "《增删卜易》（维基文库全文本，本地缓存于 test/fixtures/citation-sources.json）",
+  "generator": "tools/gen-zengshan-cases.mjs",
+  "policy": "五要素齐才收：月建日辰 / 六爻完整 / 纳甲逐爻相符 / 断语点名用神 / 有可解析的实际应验。任何一条不过都进 excluded 并写理由，不静默丢弃。",
+  "caution": "原文自语自证：应验是野鹤老人自己记的，不是第三方核实。对拍衡量的是「引擎的触发支集合是否覆盖原文所记应验支」，不等于预测能力。",
+  "stats": {
+   "起式": 170,
+   "卦体不全": 1,
+   "纳甲不符": 0,
+   "无用神": 45,
+   "用神落位": 38,
+   "无应验": 54,
+   "变卦不符": 3
+  },
+  "accepted": 29,
+  "excluded": 141
+ },
+ "cases": [
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "辰",
+   "day": "戊子",
+   "zhan": "父何日歸得乾之夬",
+   "ben": "乾为天",
+   "bian": "泽天夬",
+   "lines": [
+    7,
+    7,
+    7,
+    7,
+    7,
+    9
+   ],
+   "movingPositions": [
+    6
+   ],
+   "xunKong": [
+    "午",
+    "未"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "父母",
+    "branch": "戌",
+    "moving": true,
+    "raw": "父母持世"
+   },
+   "actual": [
+    "卯",
+    "未"
+   ],
+   "yan": "果於卯日得信﹐乙未日到家﹐應卯日得信者﹐破而逢合之日也。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "午",
+   "day": "癸卯",
+   "zhan": "後遇功名",
+   "ben": "艮为山",
+   "bian": "风地观",
+   "lines": [
+    8,
+    8,
+    9,
+    8,
+    6,
+    7
+   ],
+   "movingPositions": [
+    3,
+    5
+   ],
+   "xunKong": [
+    "辰",
+    "巳"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "官鬼",
+    "branch": "寅",
+    "moving": false,
+    "raw": "寅木官星"
+   },
+   "actual": [
+    "申"
+   ],
+   "yan": "果於七月﹐成大非﹐冬至月事結降級調用。",
+   "yingqiWords": "果於七月﹐成大非﹐冬至月事結降級調用"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "寅",
+   "day": "丙辰",
+   "zhan": "得地澤臨",
+   "ben": "地泽临",
+   "bian": null,
+   "lines": [
+    7,
+    7,
+    8,
+    8,
+    8,
+    8
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "子",
+    "丑"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "子孙",
+    "branch": "酉",
+    "moving": false,
+    "raw": "子孫为用神"
+   },
+   "actual": [
+    "子",
+    "巳",
+    "卯"
+   ],
+   "yan": "果於甲子年巳月仍以原品起用專補兩任﹐卯年而開督府。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "卯",
+   "day": "乙丑",
+   "zhan": "求婚成否",
+   "ben": "火雷噬嗑",
+   "bian": "水地比",
+   "lines": [
+    9,
+    8,
+    8,
+    9,
+    6,
+    9
+   ],
+   "movingPositions": [
+    1,
+    4,
+    5,
+    6
+   ],
+   "xunKong": [
+    "戌",
+    "亥"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "子孙",
+    "branch": "巳",
+    "moving": true,
+    "raw": "巳火子"
+   },
+   "actual": [
+    "午"
+   ],
+   "yan": "果於午日允婚。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "巳",
+   "day": "乙丑",
+   "zhan": "試中否得兌之訟",
+   "ben": "兑为泽",
+   "bian": "天水讼",
+   "lines": [
+    9,
+    7,
+    8,
+    7,
+    7,
+    6
+   ],
+   "movingPositions": [
+    1,
+    6
+   ],
+   "xunKong": [
+    "戌",
+    "亥"
+   ],
+   "useGod": {
+    "position": 1,
+    "liuqin": "官鬼",
+    "branch": "巳",
+    "moving": true,
+    "raw": "巳火官"
+   },
+   "actual": [
+    "寅"
+   ],
+   "yan": "果於寅日揭榜﹐中第八名﹐古法動破散化日月尙不能進﹐此卦動散化空亦能中矣。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "未",
+   "day": "丁丑",
+   "zhan": "母路隔千里何時來得火天大有變井",
+   "ben": "火天大有",
+   "bian": "水风井",
+   "lines": [
+    9,
+    7,
+    7,
+    9,
+    6,
+    9
+   ],
+   "movingPositions": [
+    1,
+    4,
+    5,
+    6
+   ],
+   "xunKong": [
+    "申",
+    "酉"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "兄弟",
+    "branch": "酉",
+    "moving": true,
+    "raw": "酉金兄"
+   },
+   "actual": [
+    "辰"
+   ],
+   "yan": "果於次年三月妹至﹐此乃兄弟化空﹐爻空亦能退也。",
+   "yingqiWords": "果於次年三月妹至﹐此乃兄弟化空﹐爻空亦能退也"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "寅",
+   "day": "庚戌",
+   "zhan": "女病",
+   "ben": "火水未济",
+   "bian": "水山蹇",
+   "lines": [
+    8,
+    9,
+    6,
+    9,
+    6,
+    9
+   ],
+   "movingPositions": [
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "xunKong": [
+    "寅",
+    "卯"
+   ],
+   "useGod": {
+    "position": 5,
+    "liuqin": "子孙",
+    "branch": "未",
+    "moving": true,
+    "raw": "未土子孫"
+   },
+   "actual": [
+    "寅"
+   ],
+   "yan": "果於寅日全愈。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "巳",
+   "day": "壬子",
+   "zhan": "鄕試得水地比",
+   "ben": "水地比",
+   "bian": null,
+   "lines": [
+    8,
+    8,
+    8,
+    8,
+    7,
+    8
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "寅",
+    "卯"
+   ],
+   "useGod": {
+    "position": 3,
+    "liuqin": "官鬼",
+    "branch": "卯",
+    "moving": false,
+    "raw": "官星持世"
+   },
+   "actual": [
+    "卯"
+   ],
+   "yan": "果於卯年登科。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "未",
+   "day": "庚寅",
+   "zhan": "官運",
+   "ben": "泽火革",
+   "bian": "水火既济",
+   "lines": [
+    7,
+    8,
+    7,
+    9,
+    7,
+    8
+   ],
+   "movingPositions": [
+    4
+   ],
+   "xunKong": [
+    "午",
+    "未"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "兄弟",
+    "branch": "亥",
+    "moving": true,
+    "raw": "兄爻持世"
+   },
+   "actual": [
+    "巳"
+   ],
+   "yan": "果於巳年被論﹐宦囊消索。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "午",
+   "day": "癸丑",
+   "zhan": "妻病",
+   "ben": "泽地萃",
+   "bian": "水地比",
+   "lines": [
+    8,
+    8,
+    8,
+    9,
+    7,
+    8
+   ],
+   "movingPositions": [
+    4
+   ],
+   "xunKong": [
+    "寅",
+    "卯"
+   ],
+   "useGod": {
+    "position": 3,
+    "liuqin": "妻财",
+    "branch": "卯",
+    "moving": false,
+    "raw": "卯木財"
+   },
+   "actual": [
+    "寅"
+   ],
+   "yan": "應在明日寅日﹐寅與亥合﹐合起子孫之日﹐爾無憂也﹐果於次日退災﹐不藥而愈﹐亦不獨此﹐又因卯木財空﹐次日出空而退災。",
+   "yingqiWords": "應在明日寅日﹐寅與亥合﹐合起子孫之日﹐爾無憂也﹐果於次日退災﹐不藥而愈﹐亦不獨此﹐又"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "辰",
+   "day": "乙未",
+   "zhan": "月令得泰之豐",
+   "ben": "地天泰",
+   "bian": "雷火丰",
+   "lines": [
+    7,
+    9,
+    7,
+    6,
+    8,
+    8
+   ],
+   "movingPositions": [
+    2,
+    4
+   ],
+   "xunKong": [
+    "辰",
+    "巳"
+   ],
+   "useGod": {
+    "position": 3,
+    "liuqin": "兄弟",
+    "branch": "辰",
+    "moving": false,
+    "raw": "世爻辰"
+   },
+   "actual": [
+    "丑"
+   ],
+   "yan": "後至辛丑日尙亦見其凶非﹐因一言觸怒上司﹐幾乎危殆﹐幸得解救。",
+   "yingqiWords": "後至辛丑日尙亦見其凶非﹐因一言觸怒上司﹐幾乎危殆﹐幸得解救"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "卯",
+   "day": "庚子",
+   "zhan": "得風山漸",
+   "ben": "风山渐",
+   "bian": null,
+   "lines": [
+    8,
+    8,
+    7,
+    8,
+    7,
+    7
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "辰",
+    "巳"
+   ],
+   "useGod": {
+    "position": 3,
+    "liuqin": "子孙",
+    "branch": "申",
+    "moving": false,
+    "raw": "子孫持世"
+   },
+   "actual": [
+    "巳",
+    "辰"
+   ],
+   "yan": "及至三月將軍之侄因昔年因陳不前﹐都中有人報出行文拿問﹔又見邸報﹐江南撫軍果以原品起用﹔又本府府尊命下﹐不準復職﹐後援刑例果於巳年補陜慶陽府知府。",
+   "yingqiWords": "及至三月將軍之侄因昔年因陳不前﹐都中有人報出行文拿問﹔又見邸報﹐江南撫軍果以原品起用"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "未",
+   "day": "癸亥",
+   "zhan": "流年得艮卦",
+   "ben": "艮为山",
+   "bian": null,
+   "lines": [
+    8,
+    8,
+    7,
+    8,
+    8,
+    7
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "子",
+    "丑"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "官鬼",
+    "branch": "寅",
+    "moving": false,
+    "raw": "寅木官星"
+   },
+   "actual": [
+    "申"
+   ],
+   "yan": "果於申日文書實收俱到﹐應申日者﹐寅木官星持世﹐靜而逢沖之日也。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "未",
+   "day": "丙午",
+   "zhan": "何雨﹐得離之旅",
+   "ben": "离为火",
+   "bian": "火山旅",
+   "lines": [
+    9,
+    8,
+    7,
+    7,
+    8,
+    7
+   ],
+   "movingPositions": [
+    1
+   ],
+   "xunKong": [
+    "寅",
+    "卯"
+   ],
+   "useGod": {
+    "position": 1,
+    "liuqin": "父母",
+    "branch": "卯",
+    "moving": true,
+    "raw": "卯木父"
+   },
+   "actual": [
+    "寅",
+    "卯",
+    "辰"
+   ],
+   "yan": "果於寅日云卯日大雨辰日大晴。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "卯",
+   "day": "丁巳",
+   "zhan": "何日雨﹕得渙之坎卦",
+   "ben": "风水涣",
+   "bian": "坎为水",
+   "lines": [
+    8,
+    7,
+    8,
+    8,
+    7,
+    9
+   ],
+   "movingPositions": [
+    6
+   ],
+   "xunKong": [
+    "子",
+    "丑"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "父母",
+    "branch": "卯",
+    "moving": true,
+    "raw": "卯木父"
+   },
+   "actual": [
+    "戌",
+    "亥"
+   ],
+   "yan": "應在卯戌日﹐而雨卻應長生亥日。",
+   "yingqiWords": "應在卯戌日﹐而雨卻應長生亥日"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "巳",
+   "day": "丙申",
+   "zhan": "何日得臨之蒙",
+   "ben": "地泽临",
+   "bian": "山水蒙",
+   "lines": [
+    9,
+    7,
+    8,
+    8,
+    8,
+    6
+   ],
+   "movingPositions": [
+    1,
+    6
+   ],
+   "xunKong": [
+    "辰",
+    "巳"
+   ],
+   "useGod": {
+    "position": 1,
+    "liuqin": "父母",
+    "branch": "巳",
+    "moving": true,
+    "raw": "巳火父"
+   },
+   "actual": [
+    "辰"
+   ],
+   "yan": "應在初九辰日卽雨。",
+   "yingqiWords": "應在初九辰日卽雨"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "戌",
+   "day": "辛亥",
+   "zhan": "終身財福得比之觀卦",
+   "ben": "水地比",
+   "bian": "风地观",
+   "lines": [
+    8,
+    8,
+    8,
+    8,
+    7,
+    6
+   ],
+   "movingPositions": [
+    6
+   ],
+   "xunKong": [
+    "寅",
+    "卯"
+   ],
+   "useGod": {
+    "position": 6,
+    "liuqin": "妻财",
+    "branch": "子",
+    "moving": true,
+    "raw": "子水財"
+   },
+   "actual": [
+    "卯"
+   ],
+   "yan": "果至卯年立業成家。",
+   "yingqiWords": "果至卯年立業成家"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "寅",
+   "day": "乙巳",
+   "zhan": "財福",
+   "ben": "雷天大壮",
+   "bian": null,
+   "lines": [
+    7,
+    7,
+    7,
+    7,
+    8,
+    8
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "寅",
+    "卯"
+   ],
+   "useGod": {
+    "position": 1,
+    "liuqin": "妻财",
+    "branch": "子",
+    "moving": false,
+    "raw": "子水財"
+   },
+   "actual": [
+    "寅"
+   ],
+   "yan": "後果於寅年醫好富翁﹐厚贈讀書。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "午",
+   "day": "丙子",
+   "zhan": "財福得明夷之豐",
+   "ben": "地火明夷",
+   "bian": "雷火丰",
+   "lines": [
+    7,
+    8,
+    7,
+    6,
+    8,
+    8
+   ],
+   "movingPositions": [
+    4
+   ],
+   "xunKong": [
+    "申",
+    "酉"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "官鬼",
+    "branch": "丑",
+    "moving": true,
+    "raw": "官鬼持世"
+   },
+   "actual": [
+    "卯",
+    "巳",
+    "未"
+   ],
+   "yan": "果於卯年援例入臨﹐巳年初任兵馬卽加納縣令﹐未年再位江南。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "午",
+   "day": "丁亥",
+   "zhan": "夢前夫叫去已隨去矣",
+   "ben": "水火既济",
+   "bian": "地雷复",
+   "lines": [
+    7,
+    8,
+    9,
+    8,
+    9,
+    8
+   ],
+   "movingPositions": [
+    3,
+    5
+   ],
+   "xunKong": [
+    "午",
+    "未"
+   ],
+   "useGod": {
+    "position": 3,
+    "liuqin": "兄弟",
+    "branch": "亥",
+    "moving": true,
+    "raw": "世爻亥"
+   },
+   "actual": [
+    "戌"
+   ],
+   "yan": "果於九月成癆﹐臘月而死。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "申",
+   "day": "辛卯",
+   "zhan": "子嗣得復卦",
+   "ben": "地雷复",
+   "bian": null,
+   "lines": [
+    7,
+    8,
+    8,
+    8,
+    8,
+    8
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "午",
+    "未"
+   ],
+   "useGod": {
+    "position": 1,
+    "liuqin": "妻财",
+    "branch": "子",
+    "moving": false,
+    "raw": "世爻子"
+   },
+   "actual": [
+    "未"
+   ],
+   "yan": "果於次年六月父子相逢。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "子",
+   "day": "己丑",
+   "zhan": "何時得價得歸妹之兌",
+   "ben": "雷泽归妹",
+   "bian": "兑为泽",
+   "lines": [
+    7,
+    7,
+    8,
+    7,
+    6,
+    8
+   ],
+   "movingPositions": [
+    5
+   ],
+   "xunKong": [
+    "午",
+    "未"
+   ],
+   "useGod": {
+    "position": 2,
+    "liuqin": "妻财",
+    "branch": "卯",
+    "moving": false,
+    "raw": "卯木財"
+   },
+   "actual": [
+    "寅"
+   ],
+   "yan": "果於正月勃然大長﹐此乃財爻被克待沖去克神之月。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "未",
+   "day": "丁卯",
+   "zhan": "借貸得兌之震",
+   "ben": "兑为泽",
+   "bian": "震为雷",
+   "lines": [
+    7,
+    9,
+    8,
+    7,
+    9,
+    8
+   ],
+   "movingPositions": [
+    2,
+    5
+   ],
+   "xunKong": [
+    "戌",
+    "亥"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "子孙",
+    "branch": "亥",
+    "moving": false,
+    "raw": "子孫为用神"
+   },
+   "actual": [
+    "辰"
+   ],
+   "yan": "果於辰日。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "巳",
+   "day": "己亥",
+   "zhan": "夫妻不和將來如好否",
+   "ben": "水天需",
+   "bian": "泽风大过",
+   "lines": [
+    9,
+    7,
+    7,
+    6,
+    7,
+    8
+   ],
+   "movingPositions": [
+    1,
+    4
+   ],
+   "xunKong": [
+    "辰",
+    "巳"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "子孙",
+    "branch": "申",
+    "moving": true,
+    "raw": "子孫持世"
+   },
+   "actual": [
+    "寅",
+    "未"
+   ],
+   "yan": "果於次年寅月休妻﹐此人六月再取彼婦﹐應寅月者﹐夫臨寅木而沖世也﹐應六月者未土沖開初爻丑土﹐子水來生其寅木也。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "寅",
+   "day": "亥",
+   "zhan": "主人何時回﹐以父母爲用",
+   "ben": "山天大畜",
+   "bian": "风雷益",
+   "lines": [
+    7,
+    9,
+    9,
+    8,
+    6,
+    7
+   ],
+   "movingPositions": [
+    2,
+    3,
+    5
+   ],
+   "xunKong": [],
+   "useGod": {
+    "position": 1,
+    "liuqin": "妻财",
+    "branch": "子",
+    "moving": false,
+    "raw": "子水財"
+   },
+   "actual": [
+    "巳"
+   ],
+   "yan": "果於巳日到。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "亥",
+   "day": "甲子",
+   "zhan": "夫在外還往他省去否得大壯之大過",
+   "ben": "雷天大壮",
+   "bian": "泽风大过",
+   "lines": [
+    9,
+    7,
+    7,
+    7,
+    6,
+    8
+   ],
+   "movingPositions": [
+    1,
+    5
+   ],
+   "xunKong": [
+    "戌",
+    "亥"
+   ],
+   "useGod": {
+    "position": 2,
+    "liuqin": "官鬼",
+    "branch": "寅",
+    "moving": false,
+    "raw": "官为用神"
+   },
+   "actual": [
+    "巳"
+   ],
+   "yan": "果於巳日到。",
+   "yingqiWords": ""
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "子",
+   "day": "丁酉",
+   "zhan": "擇某日入宅是否有礙父母得萃卦",
+   "ben": "泽地萃",
+   "bian": null,
+   "lines": [
+    8,
+    8,
+    8,
+    7,
+    7,
+    8
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "辰",
+    "巳"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "子孙",
+    "branch": "亥",
+    "moving": false,
+    "raw": "子孫为用神"
+   },
+   "actual": [
+    "午"
+   ],
+   "yan": "果於次年一歲兩升﹐午年又升官至二品。",
+   "yingqiWords": "果於次年一歲兩升﹐午年又升官至二品"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "寅",
+   "day": "戊午",
+   "zhan": "地得頤變無妄卦",
+   "ben": "山雷颐",
+   "bian": "天雷无妄",
+   "lines": [
+    7,
+    8,
+    8,
+    6,
+    6,
+    7
+   ],
+   "movingPositions": [
+    4,
+    5
+   ],
+   "xunKong": [
+    "子",
+    "丑"
+   ],
+   "useGod": {
+    "position": 4,
+    "liuqin": "妻财",
+    "branch": "戌",
+    "moving": true,
+    "raw": "世爻戌"
+   },
+   "actual": [
+    "子"
+   ],
+   "yan": "及至子年﹐次孫又登鄕榜。",
+   "yingqiWords": "及至子年﹐次孫又登鄕榜"
+  },
+  {
+   "source": "https://zh.wikisource.org/wiki/增刪卜易",
+   "month": "丑",
+   "day": "庚申",
+   "zhan": "地形勢得咸卦",
+   "ben": "泽山咸",
+   "bian": null,
+   "lines": [
+    8,
+    8,
+    7,
+    7,
+    7,
+    8
+   ],
+   "movingPositions": [],
+   "xunKong": [
+    "子",
+    "丑"
+   ],
+   "useGod": {
+    "position": 3,
+    "liuqin": "兄弟",
+    "branch": "申",
+    "moving": false,
+    "raw": "兄弟持世"
+   },
+   "actual": [
+    "午",
+    "丑",
+    "子"
+   ],
+   "yan": "應在於午年月﹐動者應在丑年月亦有應子年﹐餘仿此。",
+   "yingqiWords": "應在於午年月﹐動者應在丑年月亦有應子年﹐餘仿此"
+  }
+ ],
+ "excluded": [
+  {
+   "month": "亥",
+   "day": "己丑",
+   "zhan": "將來有官否",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "卯",
+   "day": "壬辰",
+   "zhan": "候文書何日得領﹐得山火賁卦",
+   "reason": "断语所指「午火父母为用神」在卦中找不到对应爻"
+  },
+  {
+   "month": "酉",
+   "day": "丙辰",
+   "zhan": "子病",
+   "reason": "断语所指「午火子孫」在卦中找不到对应爻"
+  },
+  {
+   "month": "卯",
+   "day": "丙辰",
+   "zhan": "父病得地雷復卦",
+   "reason": "断语所指「巳火父母」在卦中找不到对应爻"
+  },
+  {
+   "month": "子",
+   "day": "戊寅",
+   "zhan": "官得困之兌卦",
+   "reason": "断语说世爻未，但卦上世爻是寅"
+  },
+  {
+   "month": "申",
+   "day": "癸卯",
+   "zhan": "鄕試得恆變大過",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "酉",
+   "day": "甲辰",
+   "zhan": "自陳何如",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "丑",
+   "day": "丙戌",
+   "zhan": "父有信至已起程我去迎之可能遇否",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "戌",
+   "day": "癸亥",
+   "zhan": "本年冬今得關差否水澤節變需卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "未",
+   "day": "丁卯",
+   "zhan": "功名始得出仕否得火天同人變革卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "辛卯",
+   "zhan": "病得澤天夬卦變大壯",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "丑",
+   "day": "癸卯",
+   "zhan": "妻病服藥可愈否",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "戌",
+   "day": "癸未",
+   "zhan": "病得乾之夬",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "戌",
+   "day": "己卯",
+   "zhan": "母血崩一年有餘得同人變解",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "卯",
+   "day": "癸酉",
+   "zhan": "父母近病得萃之否",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "辰",
+   "day": "癸丑",
+   "zhan": "病得困變解",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "辰",
+   "day": "乙丑",
+   "zhan": "妻母病得隨之否",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "乙卯",
+   "zhan": "出得屯之節",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "辰",
+   "day": "乙未",
+   "zhan": "子病得大有變睽﹐同時祖又占子孫亦得此卦",
+   "reason": "卦体只解析出 0 爻"
+  },
+  {
+   "month": "未",
+   "day": "辛丑",
+   "zhan": "開金銀器皿店得火雷噬嗑化屯卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "卯",
+   "zhan": "兄弟得兌之豐",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "戊辰",
+   "zhan": "夫病癸亥命",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "己丑",
+   "zhan": "病壬申命得雷風恆",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "未",
+   "day": "戊辰",
+   "zhan": "已定重罪可蒙赦免否",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "己未",
+   "zhan": "賊來否得大畜之泰卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "辰",
+   "day": "甲戌",
+   "zhan": "迎請父王靈柩允否",
+   "reason": "断语所指「丑土財」在卦中找不到对应爻"
+  },
+  {
+   "month": "未",
+   "day": "庚子",
+   "zhan": "求財得風天小畜",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "未",
+   "day": "甲午",
+   "zhan": "升遷得師之渙卦",
+   "reason": "断语所指「申金兄」在卦中找不到对应爻"
+  },
+  {
+   "month": "丑",
+   "day": "壬子",
+   "zhan": "訟",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "巳",
+   "day": "未",
+   "zhan": "久病得困之兌卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "酉",
+   "day": "乙巳",
+   "zhan": "升遷得澤地萃之天地否",
+   "reason": "变卦不符：原文「天」，引擎由动爻推得「天地否」"
+  },
+  {
+   "month": "辰",
+   "day": "丙辰",
+   "zhan": "地下忽然起五色之光疑有古窖",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "未",
+   "day": "戊辰",
+   "zhan": "年運",
+   "reason": "断语说「官鬼持世」，但世爻是妻财"
+  },
+  {
+   "month": "辰",
+   "day": "戊子",
+   "zhan": "小舟過關恐盤阻得水地比變澤山咸卦",
+   "reason": "变卦不符：原文「澤」，引擎由动爻推得「泽山咸」"
+  },
+  {
+   "month": "戌",
+   "day": "己酉",
+   "zhan": "文書得小畜之蠱",
+   "reason": "断语说「子孙持世」，但世爻是父母"
+  },
+  {
+   "month": "巳",
+   "day": "丙申",
+   "zhan": "財得未濟變鼎卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "乙未",
+   "zhan": "脫役得損之節",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "戌",
+   "day": "甲寅",
+   "zhan": "候選何時得缺﹐得益變騫",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "巳",
+   "day": "壬申",
+   "zhan": "開店貿易",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "午",
+   "day": "戊午",
+   "zhan": "何日雨得地風升變恆卦",
+   "reason": "断语所指「午火子孫」在卦中找不到对应爻"
+  },
+  {
+   "month": "戌",
+   "day": "丙子",
+   "zhan": "父任云南何時得信",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "丑",
+   "day": "庚子",
+   "zhan": "關差得否得泰之明夷",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "卯",
+   "day": "甲申",
+   "zhan": "病得地山謙變水山蹇",
+   "reason": "变卦不符：原文「水」，引擎由动爻推得「水山蹇」"
+  },
+  {
+   "month": "午",
+   "day": "庚寅",
+   "zhan": "掣簽何處",
+   "reason": "断语所指「亥水財」在卦中找不到对应爻"
+  },
+  {
+   "month": "卯",
+   "day": "戊戌",
+   "zhan": "目下功名升否",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "辰",
+   "day": "乙丑",
+   "zhan": "求財得隨之否",
+   "reason": "断语说「兄弟持世」，但世爻是妻财"
+  },
+  {
+   "month": "卯",
+   "day": "戊戌",
+   "zhan": "主人目下災悔否",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "辛酉",
+   "zhan": "功名得萃變遁",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "未",
+   "day": "丙辰",
+   "zhan": "財",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "酉",
+   "day": "甲辰",
+   "zhan": "本月月令",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "戊寅",
+   "zhan": "身病得坤之比",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "未",
+   "day": "丁亥",
+   "zhan": "母病得坤之剝",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "卯",
+   "day": "甲午",
+   "zhan": "晴",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "甲戌",
+   "zhan": "天何日雨得小過之旅",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "酉",
+   "day": "乙巳",
+   "zhan": "本日陰晴﹕得升之恆",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "丁卯",
+   "zhan": "天何日雨得恆之大過",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "丁亥",
+   "zhan": "本日陰晴得逐之否",
+   "reason": "断语所指「卯木財」在卦中找不到对应爻"
+  },
+  {
+   "month": "辰",
+   "day": "己卯",
+   "zhan": "本日陰晴得屯之臨",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "丙午",
+   "zhan": "何日雨得大壯之升",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "丙辰",
+   "zhan": "何日得坎之困",
+   "reason": "断语所指「午火父」在卦中找不到对应爻"
+  },
+  {
+   "month": "辰",
+   "day": "戊申",
+   "zhan": "本日陰晴得中孚之小畜卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "巳",
+   "day": "己卯",
+   "zhan": "何日晴得離卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "丑",
+   "day": "甲戌",
+   "zhan": "何日雨得震之豫卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "午",
+   "day": "乙卯",
+   "zhan": "何日晴﹐得晉之歸妹",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "未",
+   "day": "甲午",
+   "zhan": "何日雨",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "辰",
+   "day": "庚寅",
+   "zhan": "何日晴得觀之升",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "酉",
+   "day": "癸未",
+   "zhan": "何晴",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "卯",
+   "day": "申",
+   "zhan": "終身財福得復之頤",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "酉",
+   "day": "辛未",
+   "zhan": "終身財福得頤卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "丙戌",
+   "zhan": "終身財福得節卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "壬子",
+   "zhan": "終身之財福",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "丑",
+   "day": "丙辰",
+   "zhan": "終身財福得未濟之睽",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "酉",
+   "day": "癸丑",
+   "zhan": "終身除功名外何事可爲",
+   "reason": "断语说「妻财持世」，但世爻是父母"
+  },
+  {
+   "month": "巳",
+   "day": "己丑",
+   "zhan": "終身財福得歸妹之臨卦",
+   "reason": "断语说「官鬼持世」，但世爻是父母"
+  },
+  {
+   "month": "子",
+   "day": "乙未",
+   "zhan": "終身財福得兌卦",
+   "reason": "断语说「兄弟持世」，但世爻是父母"
+  },
+  {
+   "month": "卯",
+   "day": "癸未",
+   "zhan": "終身財福得革之家人",
+   "reason": "断语说「妻财持世」，但世爻是兄弟"
+  },
+  {
+   "month": "辰",
+   "day": "乙未",
+   "zhan": "終身功名有無得地火明夷變豐卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "戌",
+   "day": "戊辰",
+   "zhan": "終身功名有無得蠱卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "戌",
+   "day": "丁卯",
+   "zhan": "終身功名有無得需卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "乙卯",
+   "zhan": "終身功名得旅卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "辰",
+   "day": "乙巳",
+   "zhan": "壽得中孚卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "己卯",
+   "zhan": "得山澤損之復卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "辰",
+   "day": "乙卯",
+   "zhan": "壽得中孚之暌",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "卯",
+   "day": "丙寅",
+   "zhan": "索債得否得益之中孚",
+   "reason": "断语说「官鬼持世」，但世爻是妻财"
+  },
+  {
+   "month": "丑",
+   "day": "戊子",
+   "zhan": "夢得益之中孚卦",
+   "reason": "断语说「子孙持世」，但世爻是妻财"
+  },
+  {
+   "month": "戌",
+   "day": "戊申",
+   "zhan": "夢母叫去已隨去矣得風山漸",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "庚辰",
+   "zhan": "防患得夬卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "寅",
+   "day": "丁卯",
+   "zhan": "流年得益之睽",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "未",
+   "day": "丙子",
+   "zhan": "僕人爲禍否得解之震",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "巳",
+   "day": "戊辰",
+   "zhan": "防流兵得臨之暌卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "巳",
+   "day": "丙戌",
+   "zhan": "通鄕避亂得乾之大有",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "未",
+   "day": "癸亥",
+   "zhan": "定何罪得中孚變臨卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "乙酉",
+   "zhan": "父壽得巽之姤卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "卯",
+   "day": "丙寅",
+   "zhan": "祖母壽得中孚",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "丑",
+   "day": "庚子",
+   "zhan": "得歸妹變復卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "申",
+   "day": "丙辰",
+   "zhan": "弟兄和好否",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "未",
+   "day": "辛丑",
+   "zhan": "兄弟還有得旣濟變革",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "酉",
+   "day": "辛巳",
+   "zhan": "夫婦將來和俁否",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "丁未",
+   "zhan": "夫妻偕老否",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "亥",
+   "day": "丙辰",
+   "zhan": "子易養否",
+   "reason": "断语只说「妻财」，卦中0处，不替原文选"
+  },
+  {
+   "month": "酉",
+   "day": "丙子",
+   "zhan": "本經能發否得益之觀",
+   "reason": "断语说「官鬼持世」，但世爻是妻财"
+  },
+  {
+   "month": "寅",
+   "day": "戊午",
+   "zhan": "子從師",
+   "reason": "断语说「官鬼持世」，但世爻是子孙"
+  },
+  {
+   "month": "亥",
+   "day": "丙戌",
+   "zhan": "道考得豐之革卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "乙巳",
+   "zhan": "歲考得大過之鼎卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "乙卯",
+   "zhan": "歲焉得地天泰卦",
+   "reason": "断语只说「父母」，卦中0处，不替原文选"
+  },
+  {
+   "month": "卯",
+   "day": "甲申",
+   "zhan": "會試得艮之益",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "丙辰",
+   "zhan": "鄕試",
+   "reason": "断语说「官鬼持世」，但世爻是父母"
+  },
+  {
+   "month": "申",
+   "day": "己亥",
+   "zhan": "缺得否得井之節卦",
+   "reason": "断语说「官鬼持世」，但世爻是妻财"
+  },
+  {
+   "month": "申",
+   "day": "戊寅",
+   "zhan": "得差否",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "寅",
+   "day": "乙未",
+   "zhan": "升遷得比之觀",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "戌",
+   "day": "辛酉",
+   "zhan": "何日補官",
+   "reason": "断语所指「寅木財」在卦中找不到对应爻"
+  },
+  {
+   "month": "亥",
+   "day": "丙寅",
+   "zhan": "驗﹐世爻旺者﹐竟超升﹐豈非屯卦耶",
+   "reason": "断语所指「戌土官星」在卦中找不到对应爻"
+  },
+  {
+   "month": "丑",
+   "day": "乙卯",
+   "zhan": "援例得豫之否卦",
+   "reason": "断语说「子孙持世」，但世爻是妻财"
+  },
+  {
+   "month": "申",
+   "day": "戊辰",
+   "zhan": "上書得中孚之損",
+   "reason": "断语说「官鬼持世」，但世爻是兄弟"
+  },
+  {
+   "month": "未",
+   "day": "戊申",
+   "zhan": "因避誤軍糧己被劫得豐之旅",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "乙卯",
+   "zhan": "得雷山小過",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "卯",
+   "day": "壬辰",
+   "zhan": "父何時起用得風水渙變夬",
+   "reason": "断语只说「妻财」，卦中0处，不替原文选"
+  },
+  {
+   "month": "酉",
+   "day": "戊午",
+   "zhan": "求財得革卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "丁巳",
+   "zhan": "求財得卽濟變渙卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "丁卯",
+   "zhan": "出行謁見貴人得同人",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "寅",
+   "day": "己亥",
+   "zhan": "收貨得頤卦",
+   "reason": "断语说「兄弟持世」，但世爻是妻财"
+  },
+  {
+   "month": "寅",
+   "day": "己酉",
+   "zhan": "脫貨於何時得賁卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "午",
+   "day": "戊子",
+   "zhan": "往楚買豆得臨卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "未",
+   "day": "戊申",
+   "zhan": "往粵東探親可帶何貨歸來得利得旅卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "巳",
+   "day": "戊申",
+   "zhan": "鵪鶉得漸之巽卦",
+   "reason": "断语只说「妻财」，卦中0处，不替原文选"
+  },
+  {
+   "month": "巳",
+   "day": "丁卯",
+   "zhan": "婚於何時得泰卦",
+   "reason": "断语只说「父母」，卦中0处，不替原文选"
+  },
+  {
+   "month": "辰",
+   "day": "戊辰",
+   "zhan": "孕男女得小過之豫卦",
+   "reason": "断语只说「妻财」，卦中0处，不替原文选"
+  },
+  {
+   "month": "子",
+   "day": "乙亥",
+   "zhan": "妻孕平安否得豐之小過卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "酉",
+   "day": "戊申",
+   "zhan": "母在外何時來得旅之艮卦",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "亥",
+   "day": "甲子",
+   "zhan": "僕人何日回得革之夬卦",
+   "reason": "断语所指「午火財」在卦中找不到对应爻"
+  },
+  {
+   "month": "未",
+   "day": "戊戌",
+   "zhan": "伯何日來得屯之隨卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "丑",
+   "day": "庚午",
+   "zhan": "父遠去何日回得履卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "庚寅",
+   "zhan": "子近病得恆之解卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "申",
+   "day": "壬子",
+   "zhan": "子病得遁卦",
+   "reason": "断语只说「子孙」，卦中0处，不替原文选"
+  },
+  {
+   "month": "戌",
+   "day": "丙午",
+   "zhan": "得乾之小畜",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "巳",
+   "day": "己丑",
+   "zhan": "得大有之乾卦",
+   "reason": "断语说「妻财持世」，但世爻是父母"
+  },
+  {
+   "month": "戌",
+   "day": "己亥",
+   "zhan": "得鼎卦",
+   "reason": "断语所指「未土財」在卦中找不到对应爻"
+  },
+  {
+   "month": "卯",
+   "day": "戊子",
+   "zhan": "地得巽之升",
+   "reason": "断语未点名用神"
+  },
+  {
+   "month": "辰",
+   "day": "乙卯",
+   "zhan": "何時得地得復之屯卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "未",
+   "day": "乙巳",
+   "zhan": "穴得大壯卦",
+   "reason": "无「果/后至/应在」式应验，或应验句里没有年月日"
+  },
+  {
+   "month": "子",
+   "day": "丙申",
+   "zhan": "以父柩附葬祖苗得復之坤卦",
+   "reason": "断语未点名用神"
+  }
+ ]
+}

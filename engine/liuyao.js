@@ -67,6 +67,10 @@ const ZHI_CHONG_PAIRS = [['子', '午'], ['丑', '未'], ['寅', '申'], ['卯',
 const ZHI_HE_PAIRS = [['子', '丑'], ['寅', '亥'], ['卯', '戌'], ['辰', '酉'], ['巳', '申'], ['午', '未']];
 const CHONG_OF = Object.fromEntries(ZHI_CHONG_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
 const HE_OF = Object.fromEntries(ZHI_HE_PAIRS.flatMap(([a, b]) => [[a, b], [b, a]]));
+
+// 应期规则要算「冲开/合住」，但表只有这一份：导出成函数，别让第二个模块再抄一张表
+export const chongOf = (branch) => CHONG_OF[branch] || null;
+export const heOf = (branch) => HE_OF[branch] || null;
 const TRIGRAM_OPPOSITE = { 乾: '巽', 巽: '乾', 坎: '离', 离: '坎', 艮: '坤', 坤: '艮', 震: '兑', 兑: '震' };
 
 // ── 化进神 / 化退神 ────────────────────────────────────────────────

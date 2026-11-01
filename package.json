@@ -74,6 +74,8 @@
     "check:bundle": "node tools/check-bundle.mjs",
     "check:patterns": "node tools/check-patterns.mjs",
     "check:perf": "node tools/check-perf.mjs",
+    "gen:zengshan": "node tools/gen-zengshan-cases.mjs",
+    "backtest:yingqi": "node tools/backtest-yingqi.mjs",
     "release": "node tools/release.mjs",
     "push:tag": "node tools/push-tag.mjs",
     "rollback:plan": "node tools/release-rollback.mjs"
