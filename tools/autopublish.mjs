@@ -23,6 +23,14 @@ import { createHash } from 'node:crypto';
 
 const root = path.resolve(import.meta.dirname, '..');
 const args = process.argv.slice(2);
+const FLAGS = new Set(['--dry-run', '--init', '--force']);
+const unknown = args.filter((a) => !FLAGS.has(a));
+if (unknown.length) {
+  // 只认上面三个开关：拼错（如 --dry）时立即停下，不能因为「多了一个不认识的词」就去提交推送
+  console.error(`未知参数：${unknown.join(' ')}`);
+  console.error('可用参数：--dry-run（只报告）、--init（记基线）、--force（忽略指纹）');
+  process.exit(1);
+}
 const DRY = args.includes('--dry-run');
 const INIT = args.includes('--init');
 const FORCE = args.includes('--force');
