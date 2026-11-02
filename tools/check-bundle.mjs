@@ -83,6 +83,11 @@ if (entryReg) {
 }
 
 // ---- 3. 分块 ----
+// 分块体积预算：每块自带整套引擎导出，往引擎里加一张大表会同时抬高 18 块。
+// 单块上限按现有最大块（bazi ≈221KB gzip）留两成余量，总量按 18 块合计留余量。
+const CHUNK_GZIP_CAP = 260 * 1024;
+const CHUNKS_TOTAL_GZIP_CAP = 2.75 * 1024 * 1024;
+let chunksGzip = 0;
 const chunkFiles = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
 const expected = Object.keys(CHUNKS).map((n) => `client.${n}.js`).sort();
 for (const f of chunkFiles) if (!expected.includes(f)) problems.push(`存在未声明的分块文件：${f}`);
@@ -94,6 +99,9 @@ for (const name of Object.keys(CHUNKS)) {
     continue;
   }
   const code = fs.readFileSync(full, 'utf8');
+  const gz = zlib.gzipSync(Buffer.from(code, 'utf8')).length;
+  chunksGzip += gz;
+  if (gz > CHUNK_GZIP_CAP) problems.push(`${file} gzip ${Math.round(gz / 1024)}KB 超出单块预算 ${Math.round(CHUNK_GZIP_CAP / 1024)}KB`);
   checkSyntax(code, file);
   checkChars(code, file);
   const reg = registrationOf(code, file);
@@ -153,6 +161,9 @@ try {
 // 入口体积预算：首屏不应再背整套引擎（目标 < 100KB gzip）
 const entryGzip = zlib.gzipSync(Buffer.from(raw, 'utf8')).length;
 if (entryGzip >= 100 * 1024) problems.push(`client.js gzip ${Math.round(entryGzip / 1024)}KB 超出 100KB 预算`);
+if (chunksGzip > CHUNKS_TOTAL_GZIP_CAP) {
+  problems.push(`引擎分块合计 gzip ${(chunksGzip / 1024 / 1024).toFixed(2)}MB 超出 ${(CHUNKS_TOTAL_GZIP_CAP / 1024 / 1024).toFixed(2)}MB 预算`);
+}
 
 if (problems.length) {
   console.error(`✗ 产物自检未通过（${problems.length} 处）：`);
@@ -160,4 +171,5 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(`✓ 产物自检通过：client.js ${(Buffer.byteLength(raw, 'utf8') / 1024).toFixed(0)}KB / gzip ${Math.round(entryGzip / 1024)}KB`
-  + ` / 引擎分块 ${chunkFiles.length} 个 / 逐模块编译 ${starts.length} 个 / 宿主形态可执行 / 与源码一致`);
+  + ` / 引擎分块 ${chunkFiles.length} 个（gzip 合计 ${(chunksGzip / 1024 / 1024).toFixed(2)}MB，单块上限 ${Math.round(CHUNK_GZIP_CAP / 1024)}KB）`
+  + ` / 逐模块编译 ${starts.length} 个 / 宿主形态可执行 / 与源码一致`);

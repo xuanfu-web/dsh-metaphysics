@@ -3,7 +3,15 @@
 
 /** mulberry32：32 位状态，分布够用，实现只有几行 */
 export function mulberry32(seed) {
-  let a = Number(seed) >>> 0;
+  const n = Number(seed);
+  // 状态只有 32 位，但不能只截低 32 位（`>>> 0`）：相差 2^32 的种子会跑出同一串数。
+  // 拿毫秒时间戳当种子时，隔 49.7 天的两次摇卦会得到完全一样的卦——用户换了种子却看不出区别，
+  // 「可复现」就退成了「可猜测」。所以把高位与小数位各折一份进状态；
+  // 整数种子（0…2^31）的低 32 位仍原样参与，小种子不会莫名其妙换一卦。
+  const lo = n >>> 0;
+  const hi = Math.floor(Math.abs(n) / 4294967296) >>> 0;
+  const frac = Math.round((n - Math.trunc(n)) * 4294967296) >>> 0;
+  let a = (lo ^ Math.imul(hi + 1, 0x85ebca6b) ^ frac) >>> 0;
   if (!a) a = 0x9e3779b9;
   return function next() {
     a = (a + 0x6d2b79f5) >>> 0;

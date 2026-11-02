@@ -1,13 +1,13 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 6737,
+  "total": 7139,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
       "fail": 0
     },
     "args.test.mjs": {
-      "pass": 40,
+      "pass": 43,
       "fail": 0
     },
     "ask-copy.test.mjs": {
@@ -23,7 +23,7 @@
       "fail": 0
     },
     "autopublish.test.mjs": {
-      "pass": 30,
+      "pass": 42,
       "fail": 0
     },
     "baseline.test.mjs": {
@@ -51,11 +51,15 @@
       "fail": 0
     },
     "bazi.test.mjs": {
-      "pass": 12,
+      "pass": 13,
       "fail": 0
     },
     "bridge.test.mjs": {
       "pass": 88,
+      "fail": 0
+    },
+    "bundle-budget.test.mjs": {
+      "pass": 24,
       "fail": 0
     },
     "bzform.test.mjs": {
@@ -63,7 +67,7 @@
       "fail": 0
     },
     "calendar.test.mjs": {
-      "pass": 10,
+      "pass": 14,
       "fail": 0
     },
     "caliber-diff.test.mjs": {
@@ -98,6 +102,10 @@
       "pass": 22,
       "fail": 0
     },
+    "client-race.test.mjs": {
+      "pass": 19,
+      "fail": 0
+    },
     "contract.test.mjs": {
       "pass": 21,
       "fail": 0
@@ -124,6 +132,14 @@
     },
     "deep.test.mjs": {
       "pass": 41,
+      "fail": 0
+    },
+    "detail-tier.test.mjs": {
+      "pass": 37,
+      "fail": 0
+    },
+    "dst.test.mjs": {
+      "pass": 23,
       "fail": 0
     },
     "e2e.test.mjs": {
@@ -174,6 +190,10 @@
       "pass": 4,
       "fail": 0
     },
+    "guard-inputs.test.mjs": {
+      "pass": 44,
+      "fail": 0
+    },
     "guide.test.mjs": {
       "pass": 26,
       "fail": 0
@@ -191,11 +211,15 @@
       "fail": 0
     },
     "historical-tz.test.mjs": {
-      "pass": 8,
+      "pass": 9,
       "fail": 0
     },
     "hour-unknown.test.mjs": {
       "pass": 48,
+      "fail": 0
+    },
+    "html-gate.test.mjs": {
+      "pass": 17,
       "fail": 0
     },
     "interact.test.mjs": {
@@ -275,7 +299,7 @@
       "fail": 0
     },
     "lunar.test.mjs": {
-      "pass": 18,
+      "pass": 23,
       "fail": 0
     },
     "mbti.test.mjs": {
@@ -307,7 +331,7 @@
       "fail": 0
     },
     "perf-instrumentation.test.mjs": {
-      "pass": 41,
+      "pass": 50,
       "fail": 0
     },
     "perf.test.mjs": {
@@ -316,6 +340,10 @@
     },
     "plain-summary.test.mjs": {
       "pass": 150,
+      "fail": 0
+    },
+    "profiles-store.test.mjs": {
+      "pass": 165,
       "fail": 0
     },
     "push-tag.test.mjs": {
@@ -375,7 +403,7 @@
       "fail": 0
     },
     "repro.test.mjs": {
-      "pass": 13,
+      "pass": 19,
       "fail": 0
     },
     "revise.test.mjs": {
@@ -384,6 +412,14 @@
     },
     "sanming.test.mjs": {
       "pass": 106,
+      "fail": 0
+    },
+    "schema-budget.test.mjs": {
+      "pass": 9,
+      "fail": 0
+    },
+    "secrets-gate.test.mjs": {
+      "pass": 17,
       "fail": 0
     },
     "security.test.mjs": {
@@ -451,7 +487,7 @@
       "fail": 0
     },
     "tools2.test.mjs": {
-      "pass": 68,
+      "pass": 74,
       "fail": 0
     },
     "tools3.test.mjs": {

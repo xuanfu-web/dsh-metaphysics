@@ -23,7 +23,7 @@ const PREFIX = 'mc1.';
  * 反过来，seed / asOf / direction / 各流派开关都必须留下——少了它们就复现不出同一张盘。
  */
 const SKIP = new Set([
-  'handle', 'trace', 'shadow', 'shadowVersion', 'diff', 'withInterpret', 'cross',
+  'handle', 'trace', 'shadow', 'shadowVersion', 'diff', 'withInterpret', 'detail', 'cross',
   'verifyPast', 'rectify', 'events', 'ask', 'followup', 'question', 'geocode', 'caliber',
   // 一句话改参是把原话翻成补丁：补丁已经落在其余参数里，原话本身不进句柄，
   // 否则同一张盘换个说法就换一个句柄，回放时还会再套一遍补丁。
@@ -171,6 +171,9 @@ export function decodeHandle(handle) {
   return payload;
 }
 
+/** 不能作为增量键的名字：`out['__proto__'] = v` 走的是 setter，会把 out 的原型换掉 */
+const KEY_BLOCKED = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
  * 把 handle 与增量参数并起来。没有 handle 时原样返回（深一层的浅拷贝，避免改调用方对象）。
  * 增量优先：{ handle, asOf: 2030 } 只覆盖 asOf，其余沿用原参数。
@@ -183,7 +186,8 @@ export function resolveHandle(args = {}) {
   // 显式的 undefined 当作「没传」：否则 { handle, datetime: undefined } 会把句柄里的日期抹掉
   const out = { ...base };
   for (const [k, v] of Object.entries(rest)) {
-    if (v !== undefined) out[k] = v;
+    if (v === undefined || KEY_BLOCKED.has(k)) continue;
+    out[k] = v;
   }
   return out;
 }

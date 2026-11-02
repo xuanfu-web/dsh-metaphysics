@@ -136,7 +136,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = 'http://127.0.0.1:' + server.address().port;
 
 const browser = await chromium.launch({ executablePath: exe, headless: true });
-const ctx = await browser.newContext({ viewport: { width: 1180, height: 900 }, colorScheme: 'light' });
+const ctx = await browser.newContext({ viewport: { width: 1180, height: 900 }, colorScheme: 'light', permissions: ['clipboard-read', 'clipboard-write'] });
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
@@ -401,7 +401,223 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   await p2.close(); await p3.close();
 }
 
-// ── 十一、全程无 JS 报错 ───────────────────────────────────────
+// ── 十一、我的命盘：存一张卡，下次一点就出盘 ────────────────────
+// 这块是「用户不用每次重报出生信息」的主路径，全程走真实点击：
+// 填表 → 存档 → 改日期排别的盘 → 点档案卡 → 出生信息回填 + 出的是同一张盘。
+{
+  await page.setViewportSize({ width: 900, height: 900 });
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.waitForTimeout(300);
+
+  const bz = page.locator('#main .pp-bz').first();
+  const chartText = async () => ((await bz.count()) ? (await bz.innerText()).replace(/\s+/g, ' ').trim() : '');
+  const errsBefore = errors.length;
+
+  // 档案只描述「一个人」，占事体系不给存入条
+  await page.locator('.mp-tool[data-tab="liuyao"]').click();
+  await page.waitForTimeout(200);
+  ok((await page.locator('#main .mp-prof').count()) === 1, '六爻页也显示「我的命盘」区');
+  ok((await page.locator('#main .mp-prof-name').count()) === 0, '占事体系不给「存为我的命盘」输入条');
+
+  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await page.waitForTimeout(250);
+  ok((await page.locator('#main .mp-prof-empty').count()) === 1, '没有档案时给一句引导而不是空框');
+  ok((await page.locator('#main .mp-prof-name').count()) === 1, '八字页出现称呼输入框');
+
+  const dateEl = '#main label.mp-field:has(span:text-is("出生日期（公历）")) input';
+  const timeEl = '#main label.mp-field:has(span:text-is("出生时刻")) input';
+  const addrEl = '#main label.mp-field:has(span.mp-lbl:text-matches("出生地")) input';
+  const genderEl = '#main label.mp-field:has(span:text-is("性别")) select';
+  // 上一节勾过「时辰未知」，时刻框是禁用的；档案要存真实钟点，先取消
+  const huAgain = page.locator('#main label.mp-chk').filter({ hasText: '时辰未知' });
+  if ((await huAgain.count()) && (await huAgain.locator('input').isChecked())) {
+    await huAgain.locator('input').uncheck();
+    await page.waitForTimeout(200);
+  }
+  await page.fill(dateEl, '1988-03-05');
+  await page.fill(timeEl, '08:30');
+  await page.selectOption(genderEl, 'male');
+  await page.fill(addrEl, '河北石家庄');
+  await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+  await page.waitForSelector('#main .pp-bz', { timeout: 15000 });
+  await page.waitForTimeout(600);
+  const saved = await chartText();
+  ok(/年柱/.test(saved), '存盘前先排出一张八字盘', saved.slice(0, 36));
+
+  await page.fill('#main .mp-prof-name', '阿测');
+  await page.locator('#main button[data-mp-prof="put"]').click();
+  await page.waitForTimeout(300);
+  ok((await page.locator('#main .mp-prof-card').count()) === 1, '点「存为我的命盘」多出一张档案卡');
+  ok((await text('#main .mp-prof-nm')).includes('阿测'), '卡面写的是称呼', await text('#main .mp-prof-nm'));
+  const storedRaw = await page.evaluate(() => localStorage.getItem('dsh-metaphysics/profiles-v1'));
+  const stored = (() => { try { return JSON.parse(storedRaw || '[]'); } catch (e) { return []; } })();
+  ok(Array.isArray(stored) && stored.length === 1, '档案落到本机 localStorage', storedRaw ? storedRaw.slice(0, 60) : '空');
+  ok(stored[0] && stored[0].date === '1988-03-05' && stored[0].time === '08:30', '存的是输入（生日/时刻），不是结果', JSON.stringify(stored[0] && { d: stored[0].date, t: stored[0].time }));
+  ok(stored[0] && stored[0].kind === 'bazi' && stored[0].gender === 'male', '档案记住体系与性别');
+  ok((await text('#main .mp-note')).includes('已存入我的命盘'), '存入后有回执', (await text('#main .mp-note')).slice(0, 40));
+  ok((await page.locator('#main .mp-prof-name').inputValue()) === '', '存完清空称呼框，下次直接写新名字');
+
+  // 称呼框是裸 DOM：翻一下置顶会让档案区整块重绘，已经敲进去的字不能被重绘抹掉
+  await page.fill('#main .mp-prof-name', '临时称呼');
+  await page.locator('#main [data-mp-prof="pin"]').dispatchEvent('click');
+  await page.waitForTimeout(250);
+  ok((await page.locator('#main .mp-prof-name').inputValue()) === '临时称呼', '档案区重绘后刚敲的称呼还在', await page.locator('#main .mp-prof-name').inputValue());
+  ok((await page.locator('#main .mp-prof-card.pinned').count()) === 1, '重绘来自置顶（卡片状态确实变了）');
+  await page.locator('#main [data-mp-prof="pin"]').dispatchEvent('click');
+  await page.waitForTimeout(250);
+  await page.fill('#main .mp-prof-name', '');
+
+  // 窄屏不许因为多了一张卡就横向溢出（卡片网格 + 档案条都算进去）
+  await page.setViewportSize({ width: 480, height: 820 });
+  await page.waitForTimeout(350);
+  const profNarrow = await page.evaluate(() => {
+    const main = document.getElementById('main');
+    return main.scrollWidth - main.clientWidth;
+  });
+  ok(profNarrow <= 2, '480px 有档案卡仍无横向溢出', `溢出 ${profNarrow}px`);
+  await page.setViewportSize({ width: 900, height: 900 });
+  await page.waitForTimeout(300);
+
+  // 深色下档案条按钮：配色变量挂在 .mp-prof 上，档案条一旦被拼到 section 外面就拿不到，
+  // 结果是「底透明 + 字继承页面色」——单页那边真就这么糊过一次，这里钉住。
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForTimeout(250);
+  const barContrast = await page.evaluate(() => {
+    const nums = (c) => (String(c).match(/[\d.]+/g) || []).map(Number);
+    const lum = (rgb) => {
+      const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+      return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+    };
+    const el = document.querySelector('#main .mp-prof-bar button');
+    if (!el) return { err: '没有档案条按钮' };
+    const cs = getComputedStyle(el);
+    const bg = nums(cs.backgroundColor);
+    if (bg.length < 3 || (bg.length > 3 && bg[3] < 0.5)) return { err: `底色透明（配色变量没落到这个元素）：${cs.backgroundColor}` };
+    const fg = nums(cs.color);
+    if (fg.length < 3) return { err: `取不到字色：${cs.color}` };
+    const a = lum(fg);
+    const b = lum(bg);
+    return { r: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), fg: cs.color, bg: cs.backgroundColor };
+  });
+  ok(!barContrast.err && barContrast.r >= 4.5, '深色下「存为我的命盘」按钮文字看得见',
+    barContrast.err || `${barContrast.r.toFixed(2)}:1（字 ${barContrast.fg} / 底 ${barContrast.bg}）`);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.waitForTimeout(200);
+
+  // 换一张盘，再点档案卡：应当一键回到 1988 那张
+  await page.fill(dateEl, '1990-12-01');
+  await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+  await page.waitForTimeout(1200);
+  const other = await chartText();
+  ok(other && other !== saved, '换了日期确实排成另一张盘', other.slice(0, 36));
+  await page.locator('#main .mp-prof-use').first().click();
+  await page.waitForFunction((want) => {
+    const el = document.querySelector('#main .pp-bz');
+    return !!el && el.innerText.replace(/\s+/g, ' ').trim() === want;
+  }, saved, { timeout: 20000 }).catch(() => {});
+  ok((await chartText()) === saved, '点档案卡直接出同一张盘（不必重报出生信息）', (await chartText()).slice(0, 36));
+  const filled = await page.evaluate(() => {
+    const f = (t) => {
+      const lab = Array.from(document.querySelectorAll('#main label.mp-field'))
+        .find((x) => x.querySelector('span.mp-lbl') && x.querySelector('span.mp-lbl').innerText.trim() === t);
+      const inp = lab && (lab.querySelector('input') || lab.querySelector('select'));
+      return inp ? inp.value : '';
+    };
+    return { date: f('出生日期（公历）'), time: f('出生时刻'), addr: f('出生地（省/市即可）'), gender: f('性别') };
+  });
+  ok(filled.date === '1988-03-05', '卡上的生日回填进日期框', filled.date);
+  ok(filled.time === '08:30', '卡上的时刻回填进时刻框', filled.time);
+  ok(filled.gender === 'male', '卡上的性别回填', filled.gender);
+  ok(filled.addr.includes('石家庄'), '卡上的出生地回填', filled.addr);
+  const afterUse = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/profiles-v1') || '[]')[0] || {}; } catch (e) { return {}; }
+  });
+  ok(afterUse.uses >= 1 && afterUse.lastUsedAt > 0, '用过一次就记次数（列表按最近用过排）', `uses=${afterUse.uses}`);
+
+  // 卡面操作：hover 才出现（平时不占视觉），置顶/改名/删除都要真点得到
+  // 上一步刚点过卡片，鼠标还停在卡上，:hover 是活的——先把指针挪开再验「平时收着」
+  await page.mouse.move(2, 2);
+  await page.waitForTimeout(200);
+  const pinBtn = page.locator('#main [data-mp-prof="pin"]');
+  ok(!(await pinBtn.isVisible()), '不悬停时卡面按钮不占位');
+  await page.locator('#main .mp-prof-card').first().hover();
+  await page.waitForTimeout(150);
+  ok(await pinBtn.isVisible(), '悬停卡片后出现置顶/改名/删除');
+  await pinBtn.click();
+  await page.waitForTimeout(200);
+  ok((await page.locator('#main .mp-prof-card.pinned').count()) === 1, '置顶后卡片带上 pinned 标记');
+  ok((await text('#main [data-mp-prof="pin"]')).includes('已置顶'), '置顶按钮文案跟着变', await text('#main [data-mp-prof="pin"]'));
+
+  await page.locator('#main [data-mp-prof="edit"]').dispatchEvent('click');
+  await page.waitForTimeout(250);
+  ok((await text('#main button[data-mp-prof="put"]')).includes('更新这张档案'), '改名时按钮变「更新这张档案」');
+  ok((await page.locator('#main .mp-prof-name').inputValue()) === '阿测', '改名把原称呼读回输入框');
+  ok((await page.locator('#main [data-mp-prof="cancel"]').count()) === 1, '改名时给一条取消退路');
+  await page.locator('#main [data-mp-prof="cancel"]').dispatchEvent('click');
+  await page.waitForTimeout(200);
+  ok((await text('#main button[data-mp-prof="put"]')).includes('存为我的命盘'), '取消改名后按钮复原');
+
+  // 删除点两次才算：防误触
+  await page.locator('#main [data-mp-prof="del"]').dispatchEvent('click');
+  await page.waitForTimeout(200);
+  ok((await page.locator('#main .mp-prof-card').count()) === 1, '第一次点删除不删，只变成确认');
+  ok((await text('#main [data-mp-prof="del"]')).includes('确认删除'), '按钮文案变成「确认删除」', await text('#main [data-mp-prof="del"]'));
+  await page.locator('#main [data-mp-prof="del"]').dispatchEvent('click');
+  await page.waitForTimeout(250);
+  ok((await page.locator('#main .mp-prof-card').count()) === 0, '第二次点才真删');
+  ok((await page.locator('#main .mp-prof-empty').count()) === 1, '删空后回到引导文案');
+  ok((await text('#main .mp-note')).includes('删除'), '删除有回执', (await text('#main .mp-note')).slice(0, 40));
+  const afterDel = await page.evaluate(() => localStorage.getItem('dsh-metaphysics/profiles-v1'));
+  ok(afterDel === '[]' || !afterDel || JSON.parse(afterDel).length === 0, '删掉的档案不留在本机', String(afterDel).slice(0, 40));
+  ok((await page.locator('#main .pp-bz').count()) === 1, '删档案不影响已经排出来的盘');
+  ok(errors.length === errsBefore, '档案全流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
+}
+
+// ── 十二、复制给其他 AI：主问题与追问都要进包 ────────────────────
+// 命盘类没有主问题输入框、问事类有；只读追问会让问事类的「所问」退回默认开场句，
+// 只读主问题又会让刚写的追问整段丢失。两侧都要验，面板这条链直通宿主。
+{
+  const errsBefore = errors.length;
+  // ① 只填「所问之事」、追问框空着：包里的所问必须是用户的主问题
+  await page.locator('.mp-tool[data-tab="liuyao"]').click();
+  await page.waitForTimeout(300);
+  await page.locator('.mp-textarea').fill('今年适合换工作吗');
+  await page.locator('button.mp-btn').filter({ hasText: '起卦' }).first().click();
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => navigator.clipboard.writeText('__before__'));
+  await page.locator('[data-bridge-copy="full"]').click();
+  await page.waitForTimeout(300);
+  const lyPack = await page.evaluate(() => navigator.clipboard.readText());
+  // 只看摘要之前的抬头：摘要正文里本来就有「所问：」，拿全文匹配会把默认句的错盖过去
+  const lyHead = lyPack.split('——盘面摘要——')[0];
+  ok(/所问：今年适合换工作吗/.test(lyHead), '面板复制提问 · 只填「所问之事」时也进包');
+  ok(!/所问：请先用一句白话讲清/.test(lyHead), '面板复制提问 · 默认开场句不顶替用户问题');
+
+  // ② 「问进对话」与复制提问同一口径：桥没就绪时它退回剪贴板，正好能读到包体
+  await page.evaluate(() => navigator.clipboard.writeText('__before__'));
+  await page.locator('button.mp-btn').filter({ hasText: '问进对话' }).click();
+  await page.waitForTimeout(400);
+  const chatPack = await page.evaluate(() => navigator.clipboard.readText());
+  ok(chatPack.split('——盘面摘要——')[0].includes('所问：今年适合换工作吗'), '面板问进对话 · 只填「所问之事」时也进包');
+
+  // ③ 八字填入追问：写在按钮左边的那句必须进包，且带上已有开场结论
+  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await page.waitForTimeout(300);
+  await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+  await page.waitForSelector('.pp-bz', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  await page.locator('#main .mp-askbox input.mp-input').fill('2027 年事业怎么样');
+  await page.evaluate(() => navigator.clipboard.writeText('__before__'));
+  await page.locator('[data-bridge-copy="full"]').click();
+  await page.waitForTimeout(300);
+  const bzPack = await page.evaluate(() => navigator.clipboard.readText());
+  ok(bzPack.includes('2027 年事业怎么样'), '面板复制提问 · 带上追问框里写的问题');
+  ok(bzPack.includes('——盘面摘要——') && bzPack.includes('——回答要求——'), '面板复制提问 · 带盘面摘要与回答骨架');
+  ok(bzPack.includes('——开场结论') && bzPack.includes('说人话：'), '面板复制提问 · 带面板已算好的开场结论');
+  ok(errors.length === errsBefore, '复制提问流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
+}
+
+// ── 十三、全程无 JS 报错 ───────────────────────────────────────
 ok(errors.length === 0, '面板全程无 JS 报错', errors.slice(0, 3).join(' | '));
 
 await page.screenshot({ path: path.join(root, '_e2e-panel.png') });

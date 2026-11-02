@@ -60,6 +60,41 @@ await env.window.__mpEnsureEngine('ziwei');
 eq('换 tab 记录新分块', env.window.__MP_LAST_LOAD.chunk, 'client.ziwei.js');
 eq('换 tab 是未命中缓存', env.window.__MP_LAST_LOAD.cached, false);
 
+// ── 并发取块：同一块的多个调用只下载一次 ──
+const slow = makeEnv();
+let release;
+slow.require.async = () => new Promise((resolve) => {
+  slow.__mpCalls += 1;
+  release = () => resolve({ Engine: { compute: () => ({}) } });
+});
+const p1 = slow.window.__mpEnsureEngine('bazi');
+const p2 = slow.window.__mpEnsureEngine('bazi');
+const p3 = slow.window.__mpEnsureEngine('bazi');
+eq('并发期间只取过一次块', slow.__mpCalls, 1);
+release();
+const trio = await Promise.all([p1, p2, p3]);
+ok('并发调用都拿到引擎', trio.every((e) => typeof e.compute === 'function'));
+eq('解出来后累计仍只有一次取块', slow.__mpCalls, 1);
+await slow.window.__mpEnsureEngine('bazi');
+eq('并发之后仍算命中缓存', slow.__mpCalls, 1);
+
+// ── 取块失败不留残锁：下一次要真的重试 ──
+const flaky = makeEnv();
+flaky.require.async = async () => {
+  flaky.__mpCalls += 1;
+  if (flaky.__mpCalls === 1) return { notEngine: true };
+  return { Engine: { compute: () => ({}) } };
+};
+let threw = '';
+try { await flaky.window.__mpEnsureEngine('bazi'); } catch (e) { threw = e.message; }
+ok('坏块报错', /未返回 Engine/.test(threw), threw);
+ok('报错后不写就绪标记', !flaky.window.__MP_ENGINE_READY__);
+threw = '';
+try { await flaky.window.__mpEnsureEngine('bazi'); } catch (e) { threw = e.message; }
+ok('重试不再抛旧错误', threw === '', threw);
+eq('失败后重试会再取一次块', flaky.__mpCalls, 2);
+ok('重试成功后引擎可用', typeof flaky.window.Engine.compute === 'function');
+
 // ── 面板接线 ──
 const APP = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 ok('面板读懒加载耗时', APP.includes('__MP_LAST_LOAD'));

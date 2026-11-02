@@ -647,8 +647,11 @@ export function buildZiwei(input) {
     };
   })();
 
-  // 流年（当年起 12 年）
-  const thisYear = new Date().getFullYear();
+  // 流年（基准年起 12 年）：基准年优先用调用方传来的 asOf，缺省才落本机当年。
+  // 直接读挂钟的话，同一组参数（同一个句柄）跨年会排出不同的流年表，
+  // 「同参数同盘」的承诺就只在当年成立。
+  const asOfForLiunian = asOfParts(input.asOf);
+  const thisYear = (asOfForLiunian && asOfForLiunian.year) || new Date().getFullYear();
   const liunian = [];
   for (let y = thisYear; y < thisYear + 12; y++) {
     const gz = ganzhiName((((y - 4) % 60) + 60) % 60);

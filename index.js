@@ -33,7 +33,7 @@ const DESCRIPTION = [
   '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
   '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回。',
-  '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）。',
+  '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）；只要结论与时间表就再带 detail: "lean"（省约一半文本），用户追问「为什么/依据」时改回 full。',
   '用户用一句话改参数（「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」）时，把原话放进 revise（可配合 handle），引擎翻译成参数补丁并在结果 revision 里回报改了哪些、没认哪些；不要自己把原话拆成猜测的参数。',
   '追问同一张盘：结果里有 handle，下次传 handle + 增量即可（例如 { handle, asOf: 2030 }、{ handle, withInterpret: true, question: "何时换工作" }、{ handle, system: "ziwei" } 看同一时间另一套盘），不必让用户重报出生信息；句柄带校验位，截断或改字会报 E_HANDLE。',
   '出生时刻未知时不要编一个钟点：传 hourUnknown: true——八字只排年/月/日三柱（时柱暂缺，摘要首行提示），趋势按日降级，紫微与合盘会直接以 HOUR_UNKNOWN 阻断并给出补时刻的引导。',
@@ -59,7 +59,8 @@ export function apply(ctx) {
     const hit = geoCache.get(key);
     if (hit !== undefined) return hit;
     const value = await geocodeAddress(address, opts);
-    geoCache.set(key, value);
+    // 联网失败不写缓存：否则会连着 6 小时把「解析失败」当成答案，网络恢复也翻不了身
+    if (value && !value.onlineFailed) geoCache.set(key, value);
     return value;
   }
 
@@ -94,6 +95,18 @@ export function apply(ctx) {
       };
     }
     if (next.shadow === true && !next.shadowVersion) next.shadowVersion = PKG_VERSION;
+    // 自由文本长度上限：这些串会整段进句柄（handle 是参数的 base64url），
+    // 不设限就等于允许一次调用把结果撑到几百 KB——摘要、句柄、影子盘四处都要重抄一遍。
+    const MAX_LEN = { address: 80, question: 300, revise: 200, ask: 200, surname: 16, givenName: 16 };
+    for (const [k, lim] of Object.entries(MAX_LEN)) {
+      if (typeof next[k] === 'string' && next[k].length > lim) {
+        throw bad(`${k} 最长 ${lim} 个字符（收到 ${next[k].length} 个）；写要点即可，例如「成都」「今年是否适合换工作」`);
+      }
+    }
+    if (next.partner && typeof next.partner === 'object' && typeof next.partner.address === 'string'
+      && next.partner.address.length > MAX_LEN.address) {
+      throw bad(`partner.address 最长 ${MAX_LEN.address} 个字符（收到 ${next.partner.address.length} 个）`);
+    }
     // 默认离线：内置表覆盖到地级市，足够真太阳时用；联网是把出生地原文发给第三方，必须显式开启
     const wantsOnline = next.geocode === 'online';
     const resolveGeo = async (person) => {
@@ -110,8 +123,10 @@ export function apply(ctx) {
         // 联网失败不影响排盘，退回内置表
       }
     };
+    // fengshui 不在名单里：玄空/八宅只看 year/month/day/gender 与坐向，
+    // 经度对盘面毫无影响，把出生地发给第三方就是纯外泄。
     if (next.system === 'bazi' || next.system === 'ziwei' || next.system === 'hepan'
-      || next.system === 'trend' || next.system === 'fengshui' || next.system === 'name') {
+      || next.system === 'trend' || next.system === 'name') {
       await resolveGeo(next);
     }
     if (next.system === 'hepan' && next.partner && typeof next.partner === 'object') {
@@ -170,7 +185,7 @@ export function apply(ctx) {
         datetime: {
           type: 'string',
           description:
-            '公历本地时间，如 1990-05-12T14:30。bazi / ziwei 必填；liuyao 可选，仅用于取日辰定六神。almanac / star / numerology 只需要日期；mbti 不用时间。；chenggu 需要带时分或用 hour 补时辰；xiaoliuren 时间起课用它的日期与时分。',
+            '公历本地时间，如 1990-05-12T14:30。bazi / ziwei 必填；liuyao 可选，仅用于取日辰定六神。almanac / star / numerology 只需要日期；mbti 不用时间。chenggu 需要带时分，或用 hour 补时辰；xiaoliuren 时间起课用它的日期与时分。',
         },
         date: {
           type: 'string',
@@ -249,8 +264,9 @@ export function apply(ctx) {
         },
         mode: {
           type: 'string',
-          enum: ['solar2lunar', 'lunar2solar'],
-          description: '仅 convert 使用：转换方向，默认 solar2lunar（公历转农历）；lunar2solar 需同时给 lunarYear/lunarMonth/lunarDay。',
+          enum: ['solar2lunar', 'lunar2solar', 'time', 'number'],
+          description:
+            '方向/起法开关，取值按体系分三组，互不重叠。convert（公农历互转）：solar2lunar 公历转农历（默认）、lunar2solar 农历转公历（须同时给 lunarYear/lunarMonth/lunarDay）。meihua（梅花易数）：time 时间起卦（需 datetime，默认）、number 数字起卦（需 upper/lower）。xiaoliuren（小六壬）：time 时间起课（默认）、number 报数起课（需 num1–num3）。',
         },
         lunarYear: { type: 'integer', description: '仅 convert 的 lunar2solar：农历年份，如 2026。' },
         lunarMonth: { type: 'integer', description: '仅 convert 的 lunar2solar：农历月份 1–12。' },
@@ -307,9 +323,15 @@ export function apply(ctx) {
         ask: {
           type: 'string',
           description: '追问：围绕已算好的盘回答「某一年 / 某方面」的问题，如「2027 年事业怎么样」「感情如何」。只取盘面已有字段，不重排、不猜测。',
-        },        withInterpret: {
+        },
+        withInterpret: {
           type: 'boolean',
           description: '是否附带「解析与详解」（五个维度 + 用神/格局等分节 + 免责声明）；默认 false，避免默认输出过长。',
+        },
+        detail: {
+          type: 'string',
+          enum: ['full', 'lean'],
+          description: '解析文本的档位，仅配合 withInterpret。full（默认）给全部论述与规则出处；lean 只给结论、所问方向那一条与三张表，长论述和出处折成一行指针（省约一半文本）。先拿结论用 lean，用户追问「为什么 / 依据是什么」再换 full；盘面与句柄不受它影响。',
         },
         asOf: {
           type: 'string',
@@ -350,11 +372,6 @@ export function apply(ctx) {
             trueSolar: { type: 'boolean', description: '第三方是否启用真太阳时' },
           },
           required: ['datetime', 'gender'],
-        },
-        mode: {
-          type: 'string',
-          enum: ['time', 'number'],
-          description: '梅花易数起卦方式：time 时间起卦（需 datetime），number 数字起卦（需 upper/lower）。默认 time。',
         },
         upper: { type: 'number', description: '梅花数字起卦：第一个数（定上卦）。' },
         lower: { type: 'number', description: '梅花数字起卦：第二个数（定下卦）。' },

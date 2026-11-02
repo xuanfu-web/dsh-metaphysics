@@ -17,9 +17,17 @@ ok('2026 年用东八区', Math.abs(localOffsetFor(utOf(2026, 6, 1)) - OFFSET_MO
 ok('切换点在 1929-01-01', Math.abs(localOffsetFor(utOf(1928, 12, 31)) - OFFSET_BEIJING_LOCAL) < 1e-12
   && Math.abs(localOffsetFor(utOf(1929, 1, 2)) - OFFSET_MODERN) < 1e-12);
 
-// 1920 冬至：按北京地方平时应是 11:03（若仍一律 +8 会得到 11:17）
+// 1920 冬至：按北京地方平时是 11:02:42（若仍一律 +8 会得到 11:17:42）。
+// 分钟取「这一刻所在的整分」向下取，不进位：排盘用的时辰与日柱也按同一条轴截断，
+// 标签若四舍五入就会出现「写着次日 00:00、日柱还是前一天」的自相矛盾。
+// 本条真正守的是那 14 分钟的偏移有没有生效，分钟口径变了要一并改这里。
 const dongzhi1920 = formatJd(termInstantJd(1920, 23));
-ok('1920 冬至按北京地方平时标注', dongzhi1920 === '1920-12-22 11:03', dongzhi1920);
+ok('1920 冬至按北京地方平时标注', dongzhi1920 === '1920-12-22 11:02', dongzhi1920);
+ok('1920 冬至秒位在 11:02:4x', (() => {
+  const jd = termInstantJd(1920, 23);
+  const secOfDay = (jd + 0.5 - Math.floor(jd + 0.5)) * 86400;
+  return secOfDay >= 39760 && secOfDay < 39770;
+})(), ((termInstantJd(1920, 23) + 0.5 - Math.floor(termInstantJd(1920, 23) + 0.5)) * 86400).toFixed(1));
 
 // 两套偏移相差 0.2389 小时（14.33 分钟），正是历史上会"吃掉"一次交节的那个量级
 const gapMinutes = (OFFSET_MODERN - OFFSET_BEIJING_LOCAL) * 1440;

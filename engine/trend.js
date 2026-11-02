@@ -44,21 +44,37 @@ function tenGodOfZhi(dayStem, branch) {
 
 const yearGanzhi = (year) => ganzhiName(((year - 4) % 60 + 60) % 60);
 
-/** 把大运表补到覆盖 toAge（引擎默认只排 8 步 / 80 年）。 */
-function extendDayun(list, direction, toAge) {
-  const out = list.slice();
+/**
+ * 大运分段，按「交运那一年」切，年龄落在与 points[].age 同一条虚岁轴上。
+ *
+ * 不能直接用 dayun.startAge：那是周岁（三日用折一年从出生日算起），
+ * 而 K 线一年一格、`age` 就是虚岁（= 年份 − 出生年 + 1，与八字流年表同一口径）。
+ * 两套轴混在一起会让整条线提前一年：1990-05-12 男命 1998-08 交壬午，
+ * 旧写法把 1997（还没起运）划进壬午，2007（仍在壬午）却标成癸未。
+ * 交运日期本来就是同一份数据的精确表达，所以按它的年份起算；
+ * 引擎只排八步，八步之外按十年一格推年份，干支仍按六十甲子顺/逆推。
+ */
+function buildSegments(list, direction, birthYear, toAge) {
+  const toYear = birthYear + toAge - 1;
   const step = direction === '逆行' ? -1 : 1;
+  const years = [];
+  for (const d of list) years.push({ ganZhi: d.ganzhi, startYear: Number(String(d.fromDate).slice(0, 4)) });
   let guard = 0;
-  while (out.length && out[out.length - 1].startAge <= toAge && guard < 24) {
-    const last = out[out.length - 1];
-    // last.ganzhi 是「甲辰」这样的名字，不是六十甲子序号：先换回序号再顺/逆推一步
-    const lastIdx = sexagenaryIndex(STEMS.indexOf(last.ganzhi[0]), BRANCHES.indexOf(last.ganzhi[1]));
-    const nextIdx = (lastIdx + step + 60) % 60;
-    const g = ganzhiName(nextIdx);
-    out.push({ step: last.step + 1, startAge: last.startAge + 10, ganzhi: g.name, stem: g.stem, branch: g.branch, stemTenGod: last.stemTenGod });
+  while (years.length && years[years.length - 1].startYear <= toYear && guard < 24) {
+    const last = years[years.length - 1];
+    // ganZhi 是「甲辰」这样的名字，不是六十甲子序号：先换回序号再顺/逆推一步
+    const lastIdx = sexagenaryIndex(STEMS.indexOf(last.ganZhi[0]), BRANCHES.indexOf(last.ganZhi[1]));
+    const g = ganzhiName((lastIdx + step + 60) % 60);
+    years.push({ ganZhi: g.name, startYear: last.startYear + 10 });
     guard++;
   }
-  return out;
+  return years
+    .map((s, i) => ({
+      ganZhi: s.ganZhi,
+      startAge: s.startYear - birthYear + 1,
+      endAge: (years[i + 1] ? years[i + 1].startYear : s.startYear + 10) - birthYear,
+    }))
+    .filter((s) => s.startAge <= toAge);
 }
 
 /**
@@ -94,16 +110,9 @@ export function buildTrend(input) {
   const scoreOf = (god) => table[god] ?? 0;
   const boundary = LEVEL_CUTS.some((c) => Math.abs(r.strength.score - c) <= BOUNDARY_EPS);
 
-  const dayun = extendDayun(r.dayun.list, r.dayun.direction, toAge);
-  const segments = dayun
-    .map((d, i) => ({
-      ganZhi: d.ganzhi,
-      startAge: d.startAge,
-      endAge: (dayun[i + 1] ? dayun[i + 1].startAge : d.startAge + 10) - 1,
-    }))
-    .filter((s) => s.startAge <= toAge);
-
   const birthYear = Number(String(r.solarTime.civilText).slice(0, 4));
+  const segments = buildSegments(r.dayun.list, r.dayun.direction, birthYear, toAge);
+
   const points = [];
   let prev = 50;
   for (let age = 1; age <= toAge; age++) {

@@ -1,7 +1,7 @@
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -22,7 +22,7 @@
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -1296,6 +1296,44 @@
   .mp-hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
   .mp-hy-row.hy-plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
+/* ── 我的命盘（本机档案）──
+   照市面排盘 App 的「命盘列表」做：一张卡一个人，点卡直接出盘，
+   改名/置顶/删除收在卡片右上角，hover 或键盘聚焦才出现——平时不占视觉。 */
+.mp-prof{margin:0 0 14px;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+.mp-prof-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.mp-prof-h b{font-size:13.5px;color:var(--ink);letter-spacing:.02em}
+.mp-prof-h .mp-prof-sub{font-size:11.5px;color:var(--muted)}
+.mp-prof-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:8px}
+.mp-prof-card{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--card);transition:border-color .12s,box-shadow .12s}
+.mp-prof-card:hover,.mp-prof-card:focus-within{border-color:var(--red);box-shadow:0 1px 2px rgba(35,28,18,.06)}
+.mp-prof-card.pinned{border-color:var(--quan)}
+.mp-prof-use{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;background:transparent;border:none;
+  padding:9px 10px;cursor:pointer;color:inherit;font:inherit;line-height:1.4}
+.mp-prof-nm{display:flex;align-items:center;gap:5px;font-size:13.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:52px}
+.mp-prof-nm .sx{font-size:11px;font-weight:400;color:var(--muted)}
+.mp-prof-sys{align-self:flex-start;font-size:10.5px;line-height:16px;padding:0 6px;border-radius:8px;
+  background:var(--tri);color:var(--quan);border:1px solid color-mix(in srgb,var(--quan) 28%,transparent)}
+.mp-prof-bd{font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-prof-at{font-size:11px;color:var(--faint)}
+.mp-prof-ops{position:absolute;top:6px;right:6px;display:none;gap:4px}
+.mp-prof-card:hover .mp-prof-ops,.mp-prof-card:focus-within .mp-prof-ops{display:flex}
+.mp-prof-ops button{font:inherit;font-size:10.5px;line-height:18px;padding:0 6px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--line);background:var(--card);color:var(--muted)}
+.mp-prof-ops button:hover{color:var(--red);border-color:var(--red)}
+.mp-prof-ops button.on{color:var(--quan);border-color:var(--quan)}
+/* 触屏没有 hover：改名/置顶/删除若只靠悬停出现，手机上永远点不到，所以常驻 */
+@media (hover:none){.mp-prof-ops{display:flex}.mp-prof-nm{padding-right:0}}
+.mp-prof-empty{margin:0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;
+  font-size:12px;color:var(--muted);background:var(--band)}
+.mp-prof-bar{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.mp-prof-bar input{font:inherit;font-size:12.5px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);min-width:0;flex:1 1 150px;max-width:220px}
+.mp-prof-bar button{font:inherit;font-size:12.5px;padding:6px 12px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--red);background:var(--red);color:var(--on-accent)}
+.mp-prof-bar button.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+.mp-prof-bar .mp-prof-tip{font-size:11.5px;color:var(--muted)}
+@media (max-width:360px){.mp-prof-list{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
@@ -1317,7 +1355,9 @@
   };
   const POS_NAME = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
 
-  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // 单引号也转：本仓拼接属性一律用双引号，但「少一个字符就破功」的写法不该赌下一位
+  // 贡献者守不守约定（text-node 之外的任何位置都可能被 ' 截断）。
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   /**
    * 单爻线：阳一整条，阴两段；动爻描红。
@@ -3034,6 +3074,286 @@
       if (window.localStorage) window.localStorage.setItem(KEY, JSON.stringify(store));
     } catch (e) { /* 存储满/被禁用时只影响跨次比对，不影响本次结果 */ }
     return diff;
+  };
+
+  // ── 我的命盘（本机档案）────────────────────────────────────────
+  // 存的是「输入」而不是结果：换台机器或清掉站点数据就没有，也不含出生时间以外的身份信息。
+  // 面板与单页共用这一份实现与这一份渲染，两边看到的是同一批档案。
+  const PROF_KEY = 'dsh-metaphysics/profiles-v1';
+  const PROF_MAX = 24;
+  const PROF_LABEL_MAX = 16;
+  const PROF_ADDR_MAX = 40;
+  const PROF_NOTE_MAX = 60;
+  const PROF_KINDS = ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen',
+    'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'];
+  pp.PROF_KEY = PROF_KEY;
+  pp.PROF_MAX = PROF_MAX;
+  pp.PROF_KINDS = PROF_KINDS;
+
+  // 档案卡上的体系短名。面板与单页各自的 tab 标签更长（带说明），这里只要两三个字
+  const PROF_KIND_LABEL = {
+    bazi: '八字', ziwei: '紫微', liuyao: '六爻', tarot: '塔罗', meihua: '梅花', daliuren: '六壬',
+    hepan: '合盘', qimen: '奇门', almanac: '黄历', zeri: '择日', chenggu: '称骨', xiaoliuren: '小六壬',
+    star: '星座', numerology: '生命数字', mbti: '人格', trend: '人生K线', fengshui: '风水', name: '起名', convert: '农历',
+  };
+  pp.profKindLabel = (k) => PROF_KIND_LABEL[k] || String(k || '');
+
+  const isStr = (v) => typeof v === 'string';
+
+  /**
+   * 档案来自 localStorage，等于一份用户可以自己改的外部输入：
+   * 逐字段验一遍再放进列表，坏条目整条丢掉（不是把 undefined 渲染进卡片）。
+   */
+  function profClean(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (!isStr(raw.id) || !raw.id || raw.id.length > 40) return null;
+    if (!isStr(raw.kind) || PROF_KINDS.indexOf(raw.kind) < 0) return null;
+    // 日期要真过一遍日历：'2020-13-45' 形如合法，但会让引擎拿一个不存在的日子排出张怪盘
+    const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(raw.date || ''));
+    if (!dm) return null;
+    const y = Number(dm[1]);
+    const mo = Number(dm[2]);
+    const dd = Number(dm[3]);
+    if (mo < 1 || mo > 12 || dd < 1 || dd > new Date(y, mo, 0).getDate()) return null;
+    const time = isStr(raw.time) && /^([01]?\d|2[0-3]):[0-5]\d$/.test(raw.time) ? raw.time : '';
+    return {
+      id: raw.id,
+      kind: raw.kind,
+      label: isStr(raw.label) ? raw.label.slice(0, PROF_LABEL_MAX) : '',
+      date: raw.date,
+      time: raw.hourUnknown === true ? '' : time,
+      hourUnknown: raw.hourUnknown === true,
+      gender: raw.gender === 'male' || raw.gender === 'female' ? raw.gender : '',
+      address: isStr(raw.address) ? raw.address.slice(0, PROF_ADDR_MAX) : '',
+      note: isStr(raw.note) ? raw.note.slice(0, PROF_NOTE_MAX) : '',
+      pinned: raw.pinned === true,
+      createdAt: Number(raw.createdAt) || 0,
+      lastUsedAt: Number(raw.lastUsedAt) || 0,
+      uses: Number(raw.uses) || 0,
+    };
+  }
+
+  function profReadRaw() {
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(PROF_KEY) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  /** 置顶在前，其余按最近排过；同一秒内按创建时间兜底，保证两次渲染顺序一致 */
+  function profSort(list) {
+    return list.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
+      || (b.lastUsedAt || b.createdAt || 0) - (a.lastUsedAt || a.createdAt || 0)
+      || (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  pp.profilesLoad = function () {
+    const out = [];
+    const seen = Object.create(null);
+    for (const raw of profReadRaw()) {
+      const p = profClean(raw);
+      // 同 id 只留第一条：手改过的存储里出现重复 id 时，后一条会把前一条悄悄顶掉
+      if (p && !seen[p.id]) { seen[p.id] = 1; out.push(p); }
+    }
+    return profSort(out);
+  };
+
+  pp.profilesSave = function (list) {
+    const arr = profSort(Array.isArray(list) ? list.slice(0, PROF_MAX) : []);
+    try {
+      // 没有 localStorage 就等于没写进去，不能报成功（卡片只活这一次会话）
+      if (!window.localStorage) return false;
+      window.localStorage.setItem(PROF_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) { return false; }
+  };
+
+  // 同毫秒新建两张卡时靠这个自增序列分开；只在本页生命周期内有效
+  let profSeq = 0;
+  pp.profilesNewId = function () {
+    const taken = Object.create(null);
+    for (const p of pp.profilesLoad()) taken[p.id] = 1;
+    let id;
+    do { id = `p${Date.now().toString(36)}${(profSeq++).toString(36)}`; } while (taken[id]);
+    return id;
+  };
+
+  /** 新增或按 id 覆盖，返回存好后的完整列表；超出上限时丢最久没排的那张 */
+  pp.profilesPut = function (entry) {
+    const clean = profClean(Object.assign({
+      id: pp.profilesNewId(), createdAt: Date.now(), lastUsedAt: Date.now(),
+    }, entry));
+    if (!clean) return { ok: false, list: pp.profilesLoad() };
+    const list = pp.profilesLoad();
+    const i = list.findIndex((x) => x.id === clean.id);
+    if (i >= 0) {
+      // 更新只换出生信息与称呼：排过几次、上次什么时候排的、置没置顶归存储管，
+      // 不能因为「改个称呼」就把这张卡的历史和位置抹平
+      const prev = list[i];
+      clean.createdAt = prev.createdAt || clean.createdAt;
+      clean.lastUsedAt = prev.lastUsedAt;
+      clean.uses = prev.uses;
+      clean.pinned = prev.pinned;
+      list.splice(i, 1, clean);
+    } else list.push(clean);
+    if (list.length > PROF_MAX) {
+      const byUse = list.slice().sort((a, b) => (a.lastUsedAt || a.createdAt) - (b.lastUsedAt || b.createdAt));
+      const drop = byUse.find((x) => x.id !== clean.id) || byUse[0];
+      const at = list.indexOf(drop);
+      if (at >= 0) list.splice(at, 1);
+    }
+    // 写不进去就别当存成功：卡片只活在本次会话里，下次进来就没了，回执必须是失败
+    if (!pp.profilesSave(list)) return { ok: false, list: pp.profilesLoad() };
+    return { ok: true, list: profSort(list), item: clean };
+  };
+
+  pp.profilesRemove = function (id) {
+    const list = pp.profilesLoad().filter((x) => x.id !== id);
+    // 写不进去就把存储里的真实状态还回去：否则卡片从界面消失、下次进来又复活
+    if (!pp.profilesSave(list)) return pp.profilesLoad();
+    return list;
+  };
+
+  pp.profilesPin = function (id) {
+    const list = pp.profilesLoad().map((x) => (x.id === id ? Object.assign({}, x, { pinned: !x.pinned }) : x));
+    if (!pp.profilesSave(list)) return pp.profilesLoad();
+    return profSort(list);
+  };
+
+  /** 排过一次就记一笔：档案卡按「最近排过」排序靠它 */
+  pp.profilesTouch = function (id) {
+    let hit = false;
+    const list = pp.profilesLoad().map((x) => {
+      if (x.id !== id) return x;
+      hit = true;
+      return Object.assign({}, x, { lastUsedAt: Date.now(), uses: (x.uses || 0) + 1 });
+    });
+    if (!hit) return list;
+    if (!pp.profilesSave(list)) return pp.profilesLoad();
+    return profSort(list);
+  };
+
+  const DAY_MS = 86400000;
+  function profAgo(ts) {
+    const n = Number(ts) || 0;
+    if (!n) return '未排过';
+    const d = Math.floor((Date.now() - n) / DAY_MS);
+    if (d <= 0) return '今天排过';
+    if (d === 1) return '昨天排过';
+    if (d < 30) return `${d} 天前排过`;
+    const dt = new Date(n);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} 排过`;
+  }
+  pp.profilesAgo = profAgo;
+
+  const PROF_GENDER = { male: '♂', female: '♀' };
+
+  /**
+   * 档案列表的 HTML。交互全靠 data-mp-prof + data-id 事件委托，
+   * 所以面板（React 容器）与单页（原生 DOM）用同一份标记就能接上。
+   * opts: { editingId, armedDel, bar }
+   *   bar：档案条（称呼输入 + 存入）。必须走这个参数塞进 section 里，不能由调用方拼在外面——
+   *   配色变量挂在 .mp-prof 上，拼在外面就等于拿不到 --red/--on-accent，深色下按钮糊成一片。
+   */
+  pp.profilesHTML = function (list, opts) {
+    const o = opts || {};
+    const rows = (Array.isArray(list) ? list : []).map((raw) => {
+      const p = profClean(raw);
+      if (!p) return '';
+      const birth = [p.date, p.hourUnknown ? '时辰未知' : p.time, p.address].filter(Boolean).join(' ');
+      const editing = o.editingId && p.id === o.editingId;
+      const armed = o.armedDel && p.id === o.armedDel;
+      return `<div class="mp-prof-card${p.pinned ? ' pinned' : ''}${editing ? ' editing' : ''}" data-id="${esc(p.id)}">
+        <button type="button" class="mp-prof-use" data-mp-prof="use" data-id="${esc(p.id)}"
+          title="${esc(`用「${p.label || p.kind}」的出生信息直接排盘`)}">
+          <span class="mp-prof-nm">${esc(p.label || '未命名')}${p.gender ? `<i class="sx">${PROF_GENDER[p.gender] || ''}</i>` : ''}</span>
+          <span class="mp-prof-sys">${esc(pp.profKindLabel ? pp.profKindLabel(p.kind) : p.kind)}</span>
+          <span class="mp-prof-bd">${esc(birth)}</span>
+          <span class="mp-prof-at">${esc(profAgo(p.lastUsedAt || p.createdAt))}${p.uses ? ` · ${p.uses} 次` : ''}${p.pinned ? ' · 置顶' : ''}</span>
+        </button>
+        <span class="mp-prof-ops">
+          <button type="button" data-mp-prof="pin" data-id="${esc(p.id)}" class="${p.pinned ? 'on' : ''}"
+            aria-pressed="${p.pinned ? 'true' : 'false'}" title="置顶这张档案">${p.pinned ? '已置顶' : '置顶'}</button>
+          <button type="button" data-mp-prof="edit" data-id="${esc(p.id)}" title="把这张档案读回输入框，改完再存">改名</button>
+          <button type="button" data-mp-prof="del" data-id="${esc(p.id)}" class="${armed ? 'on' : ''}"
+            title="${armed ? '再点一次就从本机删除这张档案' : '从本机删除这张档案（点两次确认）'}">${armed ? '确认删除' : '删除'}</button>
+        </span>
+      </div>`;
+    }).join('');
+    const body = rows
+      ? `<div class="mp-prof-list">${rows}</div>`
+      : `<p class="mp-prof-empty">还没有存过命盘。填好出生信息，给这张盘起个称呼，点「存为我的命盘」——下次进来一点就出盘，不必重报。</p>`;
+    return `<section class="mp-prof" aria-label="我的命盘">
+      <div class="mp-prof-h"><b>我的命盘</b><span class="mp-prof-sub">只存本机 · 不上传${list && list.length ? ` · ${list.length}/${PROF_MAX}` : ''}</span></div>
+      ${body}
+      ${o.bar || ''}
+    </section>`;
+  };
+
+  /**
+   * 档案条（称呼输入 + 存 / 取消）。单页用这份；面板那份是 React 容器，
+   * 把输入框塞进 innerHTML 会每敲一个字整块重绘、光标被踢走，
+   * 所以面板自己渲染同样这几个控件。
+   */
+  pp.profilesBarHTML = function (opts) {
+    const o = opts || {};
+    return `<div class="mp-prof-bar">
+        <input class="mp-prof-name" type="text" maxlength="${PROF_LABEL_MAX}" placeholder="称呼，如「我」「妈妈」" aria-label="档案称呼" value="${esc(o.name || '')}">
+        <button type="button" data-mp-prof="put"${o.canAdd === false ? ' disabled' : ''}>${esc(o.editingId ? '更新这张档案' : '存为我的命盘')}</button>
+        ${o.editingId ? '<button type="button" class="ghost" data-mp-prof="cancel">取消改名</button>' : ''}
+        <span class="mp-prof-tip">${esc(o.tip || (o.editingId ? '改完出生信息或称呼，点「更新这张档案」覆盖原档。' : '存的是出生时间与出生地这些输入，不是结果。'))}</span>
+      </div>`;
+  };
+
+  /**
+   * 事件委托：容器上点一次，返回 {action, id} 或 null。
+   * 两边（React / 原生）都靠它，避免各写一份 closest 判断。
+   */
+  pp.profEvent = function (target) {
+    let el = target && target.closest ? target.closest('[data-mp-prof]') : null;
+    if (!el) return null;
+    const action = el.getAttribute('data-mp-prof');
+    if (el.tagName === 'BUTTON' && el.disabled) return null;
+    return { action, id: el.getAttribute('data-id') || '', name: el };
+  };
+
+  /** 从当前输入拼一条档案（称呼取自档案输入框，缺省用体系名） */
+  // 「时辰未知」只有八字与人生K线成立（紫微没有时支整盘不成立），勾选状态在体系之间
+  // 是会残留的，所以在这里按体系收口，免得存出一张「紫微 · 时辰未知」的矛盾档案。
+  const PROF_HU = ['bazi', 'trend'];
+  // 这些体系没有时刻就排不出「这张盘」（出生类与起卦类）；其余只需日期或不需时间
+  const PROF_NEEDS_TIME = ['bazi', 'ziwei', 'liuyao', 'meihua', 'daliuren', 'qimen', 'hepan',
+    'chenggu', 'trend', 'fengshui', 'name', 'xiaoliuren'];
+  /**
+   * 这张档案能不能直接排：手改存储 / 旧版本可能留下「有日期没时刻」的卡。
+   * 直接排会拿当前表单里的时刻顶上，等于排成另一个人，所以两处接线都先问这一句。
+   */
+  pp.profUsable = function (p) {
+    if (!p || typeof p !== 'object') return false;
+    if (p.hourUnknown === true || p.time) return true;
+    return PROF_NEEDS_TIME.indexOf(String(p.kind || '')) < 0;
+  };
+  pp.profFromForm = function (form, label, id) {
+    const src = form || {};
+    const hu = src.hourUnknown === true && PROF_HU.indexOf(String(src.kind || '')) >= 0;
+    // 没时刻就排不出「这张盘」：存下去只会变成一张点开时静默沿用上一次时刻的卡。
+    // 时辰未知是显式选择，不算缺时刻。
+    if (!hu && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(String(src.time || '').trim())) return null;
+    return profClean(Object.assign({
+      id: id || pp.profilesNewId(),
+      kind: String(src.kind || ''),
+      label: String(label || '').trim().slice(0, PROF_LABEL_MAX) || (pp.profKindLabel ? pp.profKindLabel(src.kind) : String(src.kind || '')),
+      date: String(src.date || ''),
+      time: String(src.time || ''),
+      hourUnknown: hu,
+      gender: String(src.gender || ''),
+      address: String(src.address || ''),
+      pinned: false,
+      createdAt: Date.now(),
+      lastUsedAt: 0,
+      uses: 0,
+    }));
   };
 
   /**

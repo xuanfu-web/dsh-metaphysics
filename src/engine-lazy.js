@@ -6,6 +6,8 @@ Engine.compute = () => {
   throw new Error('命理引擎尚未加载');
 };
 const MP_ENGINE_CACHE = Object.create(null);
+// 在途请求：同一分块的并发调用共享这一次取块，否则首屏连点两个体系会各下载一份同样的块
+const MP_ENGINE_FETCH = Object.create(null);
 
 function mpChunkOf(tab) {
   return __MP_CHUNKS__[tab] || __MP_CHUNKS__.bazi || 'client.bazi.js';
@@ -22,12 +24,21 @@ async function __mpEnsureEngine(tab) {
     if (!require || typeof require.async !== 'function') {
       throw new Error('当前宿主不支持客户端分块加载（require.async 缺失），请升级 DeepSeek Harness');
     }
-    const mod = await require.async(`./${chunk}`);
-    engine = mod && (mod.Engine || mod.default);
-    if (!engine || typeof engine.compute !== 'function') {
-      throw new Error(`命理引擎分块 ${chunk} 未返回 Engine`);
+    // 失败也要清掉在途记录，否则一次网络抖动会把这块永久钉在「正在加载」上
+    let pending = MP_ENGINE_FETCH[chunk];
+    if (!pending) {
+      pending = require.async(`./${chunk}`).then((mod) => {
+        const loaded = mod && (mod.Engine || mod.default);
+        if (!loaded || typeof loaded.compute !== 'function') {
+          throw new Error(`命理引擎分块 ${chunk} 未返回 Engine`);
+        }
+        MP_ENGINE_CACHE[chunk] = loaded;
+        return loaded;
+      });
+      MP_ENGINE_FETCH[chunk] = pending;
+      pending.catch(() => {}).then(() => { delete MP_ENGINE_FETCH[chunk]; });
     }
-    MP_ENGINE_CACHE[chunk] = engine;
+    engine = await pending;
   }
   // 只合并有值的导出：没有 interpret / DIRECTIONS 的分块不能把上一块的能力抹掉
   for (const key of Object.keys(engine)) {

@@ -240,9 +240,16 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   header{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:12px}
   header>*{min-width:0}
   header{gap:10px;padding-bottom:12px}
-  .brand{font-size:19px;letter-spacing:.1em}
+  .brand{font-size:19px;letter-spacing:.1em;min-width:0}
+  /* 标题与「分组/平铺」同一排：换行会给窄屏多顶出一整行工具栏 */
+  .brand-row{flex-wrap:nowrap}
+  .brand{flex:1 1 auto;min-width:0}
+  .view-switch{flex:none}
+  .view-switch .seg button{white-space:nowrap}
   .brand .seal{width:34px;height:34px;border-radius:9px;font-size:17px}
-  .brand-txt small{font-size:11.5px;line-height:1.5}
+  /* 一行副标题 + 省略号：窄屏下让它换行会把「分组/平铺」顶到下一排，整块头重脚轻 */
+  .brand-txt{min-width:0;overflow:hidden}
+  .brand-txt small{font-size:11.5px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 分组卡片：每组先露 4 个，其余折起来；否则三组铺完，表单要滚过一整屏才见到 */
   .view-switch{gap:6px}
   .view-switch .hint{display:none}
@@ -347,7 +354,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.59.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.60.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -378,6 +385,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
       <button class="tab" data-tab="mbti">人格</button>
     </div>
   </header>
+
+  <!-- 我的命盘（本机档案）：卡片列表 + 存入条，渲染与存储都取自 panel-kit，
+       样式在 PP.CSS 里；放在入口之上——回来第一件事通常是接着排上次那个人。 -->
+  <div id="profwrap"></div>
 
   <!-- 首屏分组：同一批入口按「想干什么」重排，点击走 web-ui 的 setTab；平铺视图下整块收起 -->
   <section class="start" id="start" aria-label="选择要算的事">
@@ -634,7 +645,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：138 个测试文件 / 6737 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：147 个测试文件 / 7139 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -1600,13 +1611,19 @@ function termInstantJd(year, index) {
 function jdToParts(jdLocal) {
   const jdn = Math.floor(jdLocal + 0.5);
   const frac = jdLocal + 0.5 - jdn;
-  const totalMinutes = Math.round(frac * 1440);
+  // 按「整分钟向下取」而不是四舍五入：23:59:45 一进位就成了 1440 分，
+  // 旧写法把小时取模、日序不动，于是这一瞬时塌回「当日 00:00」——
+  // 日柱退一天、partsToJd 往返回来差将近一天（晚子时换日与真太阳时跨午夜正好踩在刀口上）。
+  // 向下取后 hour/minute 与 jdn 永远自洽：拆出来的那一天，就是这一刻所在的那一天。
+  // 但向下取会被浮点噪声咬住：JD 里的 13:00 常算成 779.99999 分，直接 floor 就是 12:59，
+  // 未时变成午时。先归到最近的整秒（输入精度到分，误差远小于一秒），再向下取整分。
+  const totalMinutes = Math.min(1439, Math.floor(Math.round(frac * 86400) / 60));
   const { year, month, day } = fromJDN(jdn);
   return {
     year,
     month,
     day,
-    hour: Math.floor(totalMinutes / 60) % 24,
+    hour: Math.floor(totalMinutes / 60),
     minute: totalMinutes % 60,
   };
 }
@@ -1733,7 +1750,7 @@ return { STEMS, BRANCHES, TERM_NAMES, termLongitude, toJDN, fromJDN, sexagenaryI
 
 __mods.lunar = (function () {
 // 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
-const { toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor, OFFSET_MODERN } = (__mods.calendar || {});
+const { toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor } = (__mods.calendar || {});
 
 const SYNODIC = 29.530588861;
 const NEW_MOON_EPOCH = 2451550.09766;
@@ -1795,12 +1812,11 @@ function dayNumberOf(jd) {
   return Math.floor(jd + 0.5);
 }
 
-// 1929 年前后的时区切换常量与换算统一放在 calendar.js（节气与农历共用）
-/** 把 calendar 给出的「东八区轴」时刻换成当时的地方轴 */
-function toHistoricalLocal(jdBeijing) {
-  const jdUt = jdBeijing - OFFSET_MODERN;
-  return jdUt + localOffsetFor(jdUt);
-}
+// 时区切换常量与换算统一在 calendar.js：termInstantJd 与 newMoonJd 都已经落在
+// 「当时的本地时间轴」上（1929 前北京地方平时，之后东八区），两边直接比日序就行。
+// 以前这里再套一次 localOffset 把节气拉回本地轴，等于对同一个量移了两次时：
+// 净偏移约 −12 分，节气时刻一旦落在午夜前后十几分钟内就少算一天，
+// 中气归属错一个月，置闰跟着整月错位（1917 报闰三、真历表闰二；1922 报闰六、真历表闰五）。
 
 function kNear(jdDay) {
   return Math.round((jdDay + 0.5 - NEW_MOON_EPOCH) / SYNODIC);
@@ -1810,7 +1826,7 @@ function kNear(jdDay) {
 function hasZhongQi(year, startDay, endDay) {
   for (let y = year - 1; y <= year + 1; y++) {
     for (let i = 1; i < 24; i += 2) {
-      const jdLocal = toHistoricalLocal(termInstantJd(y, i));
+      const jdLocal = termInstantJd(y, i);
       const d = dayNumberOf(jdLocal);
       if (d >= startDay && d < endDay) return { index: i, jd: jdLocal };
     }
@@ -1825,9 +1841,9 @@ function hasZhongQi(year, startDay, endDay) {
 function solarToLunar(year, month, day) {
   const targetDay = toJDN(year, month, day);
 
-  const wsDayThisYear = dayNumberOf(toHistoricalLocal(termInstantJd(year, 23)));
+  const wsDayThisYear = dayNumberOf(termInstantJd(year, 23));
   const wsYear = targetDay < wsDayThisYear ? year - 1 : year;
-  const wsDay = dayNumberOf(toHistoricalLocal(termInstantJd(wsYear, 23)));
+  const wsDay = dayNumberOf(termInstantJd(wsYear, 23));
 
   // 十一月朔：日序不晚于冬至的最后一个朔日
   let k = kNear(wsDay);
@@ -1837,7 +1853,7 @@ function solarToLunar(year, month, day) {
   // ── 置闰前提（国标口径）──
   // 只有「两个冬至月之间有 13 个朔望月」才需要置闰，且取其中第一个无中气的月。
   // 若只有 12 个月，即使某月无中气也不闰（1985 正月、2053 正月就是这种反例）。
-  const nextWsDay = dayNumberOf(toHistoricalLocal(termInstantJd(wsYear + 1, 23)));
+  const nextWsDay = dayNumberOf(termInstantJd(wsYear + 1, 23));
   let kNext = k;
   while (dayNumberOf(newMoonJd(kNext + 1)) <= nextWsDay) kNext++;
   const cycleMonths = kNext - k;
@@ -2112,7 +2128,15 @@ __mods.random = (function () {
 
 /** mulberry32：32 位状态，分布够用，实现只有几行 */
 function mulberry32(seed) {
-  let a = Number(seed) >>> 0;
+  const n = Number(seed);
+  // 状态只有 32 位，但不能只截低 32 位（`>>> 0`）：相差 2^32 的种子会跑出同一串数。
+  // 拿毫秒时间戳当种子时，隔 49.7 天的两次摇卦会得到完全一样的卦——用户换了种子却看不出区别，
+  // 「可复现」就退成了「可猜测」。所以把高位与小数位各折一份进状态；
+  // 整数种子（0…2^31）的低 32 位仍原样参与，小种子不会莫名其妙换一卦。
+  const lo = n >>> 0;
+  const hi = Math.floor(Math.abs(n) / 4294967296) >>> 0;
+  const frac = Math.round((n - Math.trunc(n)) * 4294967296) >>> 0;
+  let a = (lo ^ Math.imul(hi + 1, 0x85ebca6b) ^ frac) >>> 0;
   if (!a) a = 0x9e3779b9;
   return function next() {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -2182,6 +2206,26 @@ function inDstSpan(t) {
 }
 
 /**
+ * 换表当天绕不开的两个钟面区间：
+ * - 起算日 02:00–02:59：钟表从 02:00 直接拨到 03:00，这个读数在当年根本不存在；
+ * - 终止日 01:00–01:59：钟表往回拨一小时，同一读数会走两遍，对应两个真实时刻。
+ * 两者都不是「算错了」，而是输入本身有歧义，需要告诉调用方我们按哪种读法折的。
+ * @param {{year:number,month:number,day:number,hour:number,minute?:number}} t
+ * @returns {'gap'|'twice'|null}
+ */
+function dstAmbiguity(t) {
+  const span = DST_SPANS[t.year];
+  if (!span) return null;
+  const [sy, sm, sd] = span[0].split('-').map(Number);
+  const [ey, em, ed] = span[1].split('-').map(Number);
+  const n = ORD(t.year, t.month, t.day);
+  const minutes = t.hour * 60 + (t.minute || 0);
+  if (n === ORD(sy, sm, sd) && minutes >= 120 && minutes < 180) return 'gap';
+  if (n === ORD(ey, em, ed) && minutes >= 60 && minutes < 120) return 'twice';
+  return null;
+}
+
+/**
  * 夏令时校正：钟面时间减 1 小时（跨日正确回退）。
  * @param {{year:number,month:number,day:number,hour:number,minute?:number}} t
  * @returns {{year,month,day,hour,minute,applied:boolean,note:string|null}}
@@ -2200,10 +2244,17 @@ function applyDst(t) {
       day = daysInMonth(year, month);
     }
   }
+  const amb = dstAmbiguity(t);
   return {
     year, month, day, hour, minute,
     applied: true,
-    note: `检出自 ${DST_SPANS[t.year][0]} 至 ${DST_SPANS[t.year][1]} 的中国夏令时：出生钟面时间已减 1 小时校正`,
+    note: `检出自 ${DST_SPANS[t.year][0]} 至 ${DST_SPANS[t.year][1]} 的中国夏令时：出生钟面时间已减 1 小时校正`
+      + (amb === 'gap'
+        ? '；这一天 02:00–03:00 钟表直接跳过，所给钟面时间在当年并不存在——这里按「拨快后的读数」回退一小时，'
+          + '若登记的本是标准时间，请传 dst:false 重排。'
+        : amb === 'twice'
+          ? '；这一天 01:00–02:00 因回拨走了两遍，同一钟面时间对应两个真实时刻——这里按夏令时的那一遍（回退一小时）取。'
+          : ''),
   };
 }
 
@@ -2214,7 +2265,7 @@ function withDstNote(notes, dst) {
   return out;
 }
 
-return { DST_SPANS, inDstSpan, applyDst, withDstNote };
+return { DST_SPANS, inDstSpan, dstAmbiguity, applyDst, withDstNote };
 })();
 
 __mods.shensha = (function () {
@@ -7570,8 +7621,11 @@ function buildZiwei(input) {
     };
   })();
 
-  // 流年（当年起 12 年）
-  const thisYear = new Date().getFullYear();
+  // 流年（基准年起 12 年）：基准年优先用调用方传来的 asOf，缺省才落本机当年。
+  // 直接读挂钟的话，同一组参数（同一个句柄）跨年会排出不同的流年表，
+  // 「同参数同盘」的承诺就只在当年成立。
+  const asOfForLiunian = asOfParts(input.asOf);
+  const thisYear = (asOfForLiunian && asOfForLiunian.year) || new Date().getFullYear();
   const liunian = [];
   for (let y = thisYear; y < thisYear + 12; y++) {
     const gz = ganzhiName((((y - 4) % 60) + 60) % 60);
@@ -9486,21 +9540,37 @@ function tenGodOfZhi(dayStem, branch) {
 
 const yearGanzhi = (year) => ganzhiName(((year - 4) % 60 + 60) % 60);
 
-/** 把大运表补到覆盖 toAge（引擎默认只排 8 步 / 80 年）。 */
-function extendDayun(list, direction, toAge) {
-  const out = list.slice();
+/**
+ * 大运分段，按「交运那一年」切，年龄落在与 points[].age 同一条虚岁轴上。
+ *
+ * 不能直接用 dayun.startAge：那是周岁（三日用折一年从出生日算起），
+ * 而 K 线一年一格、`age` 就是虚岁（= 年份 − 出生年 + 1，与八字流年表同一口径）。
+ * 两套轴混在一起会让整条线提前一年：1990-05-12 男命 1998-08 交壬午，
+ * 旧写法把 1997（还没起运）划进壬午，2007（仍在壬午）却标成癸未。
+ * 交运日期本来就是同一份数据的精确表达，所以按它的年份起算；
+ * 引擎只排八步，八步之外按十年一格推年份，干支仍按六十甲子顺/逆推。
+ */
+function buildSegments(list, direction, birthYear, toAge) {
+  const toYear = birthYear + toAge - 1;
   const step = direction === '逆行' ? -1 : 1;
+  const years = [];
+  for (const d of list) years.push({ ganZhi: d.ganzhi, startYear: Number(String(d.fromDate).slice(0, 4)) });
   let guard = 0;
-  while (out.length && out[out.length - 1].startAge <= toAge && guard < 24) {
-    const last = out[out.length - 1];
-    // last.ganzhi 是「甲辰」这样的名字，不是六十甲子序号：先换回序号再顺/逆推一步
-    const lastIdx = sexagenaryIndex(STEMS.indexOf(last.ganzhi[0]), BRANCHES.indexOf(last.ganzhi[1]));
-    const nextIdx = (lastIdx + step + 60) % 60;
-    const g = ganzhiName(nextIdx);
-    out.push({ step: last.step + 1, startAge: last.startAge + 10, ganzhi: g.name, stem: g.stem, branch: g.branch, stemTenGod: last.stemTenGod });
+  while (years.length && years[years.length - 1].startYear <= toYear && guard < 24) {
+    const last = years[years.length - 1];
+    // ganZhi 是「甲辰」这样的名字，不是六十甲子序号：先换回序号再顺/逆推一步
+    const lastIdx = sexagenaryIndex(STEMS.indexOf(last.ganZhi[0]), BRANCHES.indexOf(last.ganZhi[1]));
+    const g = ganzhiName((lastIdx + step + 60) % 60);
+    years.push({ ganZhi: g.name, startYear: last.startYear + 10 });
     guard++;
   }
-  return out;
+  return years
+    .map((s, i) => ({
+      ganZhi: s.ganZhi,
+      startAge: s.startYear - birthYear + 1,
+      endAge: (years[i + 1] ? years[i + 1].startYear : s.startYear + 10) - birthYear,
+    }))
+    .filter((s) => s.startAge <= toAge);
 }
 
 /**
@@ -9536,16 +9606,9 @@ function buildTrend(input) {
   const scoreOf = (god) => table[god] ?? 0;
   const boundary = LEVEL_CUTS.some((c) => Math.abs(r.strength.score - c) <= BOUNDARY_EPS);
 
-  const dayun = extendDayun(r.dayun.list, r.dayun.direction, toAge);
-  const segments = dayun
-    .map((d, i) => ({
-      ganZhi: d.ganzhi,
-      startAge: d.startAge,
-      endAge: (dayun[i + 1] ? dayun[i + 1].startAge : d.startAge + 10) - 1,
-    }))
-    .filter((s) => s.startAge <= toAge);
-
   const birthYear = Number(String(r.solarTime.civilText).slice(0, 4));
+  const segments = buildSegments(r.dayun.list, r.dayun.direction, birthYear, toAge);
+
   const points = [];
   let prev = 50;
   for (let age = 1; age <= toAge; age++) {
@@ -13855,6 +13918,11 @@ __mods.zeri = (function () {
 // 口径透明：这是排序引导，不是吉凶断语；未收录逐日神煞，冲煞按日支对生肖。
 const { fromJDN, toJDN } = (__mods.calendar || {});
 const { buildAlmanac, SHENGXIAO } = (__mods.almanac || {});
+const { fail } = (__mods.fail || {});
+
+// 择日的入参错误一律带 E_INPUT：裸 new Error 到工具层只剩 [E_INTERNAL]，
+// 模型拿到的是一句没有指向性的文案，改不了参数。
+const bad = (message) => fail('E_INPUT', message);
 
 /** 支持的事项：直接宜词 + 关联宜词（黄历措辞）。 */
 const TASKS = {
@@ -13957,39 +14025,50 @@ const ymd = (p) => `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day
  */
 function buildZeri(input) {
   const task = input.task;
-  if (!TASKS[task]) throw new Error(`不支持的事项「${task}」。支持：${Object.keys(TASKS).join('、')}`);
+  if (!TASKS[task]) throw bad(`不支持的事项「${task}」。支持：${Object.keys(TASKS).join('、')}`);
   const shengXiaoRaw = typeof input.shengXiao === 'string' ? input.shengXiao.trim() : '';
   const shengXiao = shengXiaoRaw || null;
-  if (shengXiao && !SHENGXIAO.includes(shengXiao)) throw new Error(`shengXiao 须为生肖名：${SHENGXIAO.join('、')}`);
+  if (shengXiao && !SHENGXIAO.includes(shengXiao)) throw bad(`shengXiao 须为生肖名：${SHENGXIAO.join('、')}`);
 
   // 候选日模式：只比用户给的这几天，不再按区间扫
   let candidates = null;
   if (input.candidates !== undefined && input.candidates !== null) {
     if (!Array.isArray(input.candidates)) {
-      throw new Error('candidates 须为日期数组，例如 ["2026-12-01","2026-12-08","2026-12-15"]');
+      throw bad('candidates 须为日期数组，例如 ["2026-12-01","2026-12-08","2026-12-15"]');
     }
-    if (input.candidates.length < 2) throw new Error('candidates 至少给 2 个候选日；只想看一天请用 startDate + days: 1');
-    if (input.candidates.length > 12) throw new Error('candidates 最多 12 个候选日；更多请用 startDate + days 扫区间');
+    if (input.candidates.length < 2) throw bad('candidates 至少给 2 个候选日；只想看一天请用 startDate + days: 1');
+    if (input.candidates.length > 12) throw bad('candidates 最多 12 个候选日；更多请用 startDate + days 扫区间');
     const seen = new Set();
     candidates = [];
     for (const raw of input.candidates) {
       const p = parseYmd(raw);
-      if (!p) throw new Error(`候选日不是真实存在的公历日期：「${raw}」，请用 2026-12-01 这种格式`);
+      if (!p) throw bad(`候选日不是真实存在的公历日期：「${raw}」，请用 2026-12-01 这种格式`);
       const key = ymd(p);
       if (seen.has(key)) continue;
       seen.add(key);
       candidates.push(p);
     }
-    if (candidates.length < 2) throw new Error('候选日去重后不足 2 天；至少要两个不同的日子才谈得上比较');
+    if (candidates.length < 2) throw bad('候选日去重后不足 2 天；至少要两个不同的日子才谈得上比较');
   }
 
   let start = null;
   let days = 0;
   if (!candidates) {
     const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(input.startDate || '').trim());
-    if (!m) throw new Error('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
+    if (!m) throw bad('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
     start = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
-    days = Math.max(1, Math.min(60, Number.isInteger(input.days) ? input.days : 30));
+    // days 以前只认 Number.isInteger，于是 "45"（模型很爱给字符串）与 45.5 都静默变成 30 天：
+    // 用户要的区间被悄悄改短，而结果里只看得到实际扫了几天，看不出被改过。
+    // 现在：能规范成整数的（含数字串）就规范，范围外或非数字一律报错，不猜。
+    const rawDays = input.days;
+    if (rawDays === undefined || rawDays === null || rawDays === '') {
+      days = 30;
+    } else {
+      const n = Number(rawDays);
+      if (!Number.isInteger(n)) throw bad(`择日的 days 要是 1–60 的整数，收到「${rawDays}」`);
+      if (n < 1 || n > 60) throw bad(`择日的 days 要在 1–60 之间（${n} 超出范围）；更长请用分段多次查询`);
+      days = n;
+    }
   }
 
   const spec = TASKS[task];
@@ -18841,6 +18920,8 @@ const { buildBazi } = (__mods.bazi || {});
 
 const KINDS = ['career', 'wealth', 'love', 'move', 'health', 'other'];
 const HOURS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23];
+/** 事件条数上限：对账用不到几百条，超限是输入异常而不是需求 */
+const MAX_EVENTS = 200;
 
 const TEN_GOD = (l) => l.stemTenGod || '';
 const has = (l, re) => re.test((l.relations || []).join(''));
@@ -18899,10 +18980,29 @@ function rectifyBirth(opts) {
     e.code = 'E_INPUT';
     throw e;
   }
-  const nowYear = Math.min(...clean.map((x) => x.year));
-  const hours = Array.isArray(opts.hours) && opts.hours.length
-    ? opts.hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23)
+  // 事件只用来对账，几十条已足够。不设上限的后果很具体：20 万条会原样回显成 2MB 结果，
+  // 并且下面的取最小值（Math.min(...arr) 逐元素入参）直接把栈打爆。
+  if (clean.length > MAX_EVENTS) {
+    const e = new Error(`生时校正的事件最多 ${MAX_EVENTS} 条，收到 ${clean.length} 条——只报最近几十年里确实发生过的事即可`);
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  if (clean.some((x) => x.year < 1600 || x.year > 2400)) {
+    const e = new Error('事件年份要落在 1600–2400 之间（与排盘支持的年份一致）');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  const nowYear = clean.reduce((m, x) => (x.year < m ? x.year : m), clean[0].year);
+  // 候选时辰同样要限：一天只有 12 个时辰，给了 1000 个就是白排 1000 张盘
+  const wanted = Array.isArray(opts.hours) && opts.hours.length
+    ? [...new Set(opts.hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23))]
     : HOURS;
+  if (!wanted.length) {
+    const e = new Error('候选时辰里没有有效的小时（0–23 的整数）');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  const hours = wanted.slice(0, 24);
 
   const candidates = hours.map((hour) => {
     const chart = buildBazi({
@@ -19656,7 +19756,7 @@ const PREFIX = 'mc1.';
  * 反过来，seed / asOf / direction / 各流派开关都必须留下——少了它们就复现不出同一张盘。
  */
 const SKIP = new Set([
-  'handle', 'trace', 'shadow', 'shadowVersion', 'diff', 'withInterpret', 'cross',
+  'handle', 'trace', 'shadow', 'shadowVersion', 'diff', 'withInterpret', 'detail', 'cross',
   'verifyPast', 'rectify', 'events', 'ask', 'followup', 'question', 'geocode', 'caliber',
   // 一句话改参是把原话翻成补丁：补丁已经落在其余参数里，原话本身不进句柄，
   // 否则同一张盘换个说法就换一个句柄，回放时还会再套一遍补丁。
@@ -19804,6 +19904,9 @@ function decodeHandle(handle) {
   return payload;
 }
 
+/** 不能作为增量键的名字：`out['__proto__'] = v` 走的是 setter，会把 out 的原型换掉 */
+const KEY_BLOCKED = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
  * 把 handle 与增量参数并起来。没有 handle 时原样返回（深一层的浅拷贝，避免改调用方对象）。
  * 增量优先：{ handle, asOf: 2030 } 只覆盖 asOf，其余沿用原参数。
@@ -19816,7 +19919,8 @@ function resolveHandle(args = {}) {
   // 显式的 undefined 当作「没传」：否则 { handle, datetime: undefined } 会把句柄里的日期抹掉
   const out = { ...base };
   for (const [k, v] of Object.entries(rest)) {
-    if (v !== undefined) out[k] = v;
+    if (v === undefined || KEY_BLOCKED.has(k)) continue;
+    out[k] = v;
   }
   return out;
 }
@@ -21281,13 +21385,17 @@ function ziweiSchoolArgs(args) {
   return out;
 }
 
-/** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD' */
+/** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD'
+ *  可以带秒（用户常直接粘 ISO 串），但引擎的民用时间口径到分钟：秒只校验、不参与换算。 */
 function parseDateTime(text) {
   if (typeof text !== 'string' || !text.trim()) {
     throw fail('E_INPUT', '缺少 datetime（公历日期时间），例如 1990-05-12T14:30');
   }
   const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
   if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 1990-05-12T14:30 这种格式`);
+  // 秒位以前只捕获不校验：\d{1,2} 放过 0–99，于是「T03:04:99」被静默折成 03:04。
+  // 与 1990-02-30 同一类问题——非法输入悄悄变成一个合法时刻，盘面照样排出，没人知道。
+  if (m[6] !== undefined && Number(m[6]) > 59) throw fail('E_INPUT', `秒超出范围：${m[6]}`);
   const out = {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
     hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),
@@ -21722,7 +21830,7 @@ function jsonSafe(value) {
 // ── 影子盘：同一组归一化参数 + 同一版本 → 同一个短 ID ──────────────
 // 只收影响盘面的参数：地址换成有效经度后不再把原文算进去，问事/方向按体系保留。
 const SHADOW_IGNORE = new Set([
-  'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'cross', 'verifyPast', 'rectify', 'events',
+  'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'detail', 'cross', 'verifyPast', 'rectify', 'events',
   'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise',
 ]);
 
@@ -21961,6 +22069,8 @@ function compute(input = {}) {
     args = { ...args };
     delete args.partner2;
   }
+  // 经度整形 + 守卫（非有限 / 超范围 → E_RANGE；数字串 → 数字）
+  args = normalizeLongitudes(args);
   const r = jsonSafe(computeRaw(args));
   // 「所问之事」以前只有六爻和塔罗会落到结果里，梅花/六壬/奇门/小六壬都丢掉了：
   // 于是第一屏想说「你问的是……」却拿不到那句话。这里统一补齐，已有的值不动。
@@ -22009,11 +22119,15 @@ ${r.summary}`;
 ${r.summary}`;
   }
   // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
+  const tier = detailOf(args.detail);
   if (args.withInterpret) {
     r.interpret = interpret(r, {
       question: typeof args.question === 'string' ? args.question : '',
       direction: typeof args.direction === 'string' ? args.direction : 'general',
     });
+    // 档位只改「回给模型的文本」，不改解析对象：面板拿到的仍是完整的 interpret。
+    // 键名不用 detail / tier：合盘结果里 r.detail 是详批对象、流年行里 r.tier 是档位，都会撞。
+    if (tier === 'lean') r.interpretTier = 'lean';
   }
   // 八字 × 紫微交叉验证：同一份出生信息再排另一套盘，并列两边对同一件事的说法
   // 交叉验证要再排另一套盘：时辰未知时紫微排不出来，这条支路直接跳过，
@@ -22109,9 +22223,13 @@ ${r.summary}`;
   return r;
 }
 
-/** 解析与详解的紧凑文本（给模型看，不塞整块 JSON） */
-function interpretText(i) {
+/** 解析与详解的紧凑文本（给模型看，不塞整块 JSON）
+ *  detail：'full'（默认，与历史输出逐字一致）或 'lean'（只给结论、你问的那条与三张表，
+ *  长论述与「规则·出处」折成一行指针）。省的是回给模型的文本，不改盘面、不改解析对象本身。 */
+function interpretText(i, detail) {
   if (!i) return '';
+  const lean = detail === 'lean';
+  const LONG_SECTION = 300;
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   // 直答放在最前：先回答「你问的事」，再说依据，避免读者读到最后才知道结论；
   // 没填问题时就不该喊「答所问」——改为「先看结论」，否则是一句假话
@@ -22124,16 +22242,27 @@ function interpretText(i) {
   }
   // 解析生成失败时不能只返回一个空壳：盘面数据仍然可用，但要让调用方知道"这段没生成出来"
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
-  for (const d of i.dimensions || []) {
+  const allDims = i.dimensions || [];
+  // 问了方向就只给那一条：其余四条在 full 档里，模型要展开随时可以再排一次
+  const dims = lean && allDims.some((d) => d && d.focused) ? allDims.filter((d) => d && d.focused) : allDims;
+  for (const d of dims) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}${d.confidence ? `　置信度：${d.confidence}` : ''}` : '';
     const plain = d.plain ? `（${d.plain}）` : '';
     // 知识条目：「为什么这样断」＋出处＋可信度标注，是结论与依据之外的第三层
-    const know = (d.knowledge || [])
-      .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
-      .join('');
+    const know = lean
+      ? ((d.knowledge || []).length ? `\n　规则 ${d.knowledge.length} 条未展开（detail:"full" 给出原文与出处）` : '')
+      : (d.knowledge || [])
+        .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
+        .join('');
     out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}${know}`);
   }
-  for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  const secs = i.sections || [];
+  const longSecs = lean ? secs.filter((s) => String(s.text || '').length > LONG_SECTION) : [];
+  for (const s of secs) {
+    if (lean && String(s.text || '').length > LONG_SECTION) continue;
+    out.push(`${s.label}：${s.text}`);
+  }
+  if (longSecs.length) out.push(`（另有 ${longSecs.length} 节长论述未展开：${longSecs.map((s) => s.label).join('、')}。需要原文与出处时传 detail:"full"）`);
   // 三张表：大运 / 流年 / 触发事件（纯文本对齐，工具输出也能直接读）
   for (const t of i.tables || []) {
     if (!Array.isArray(t.rows) || !t.rows.length) continue;
@@ -22157,7 +22286,7 @@ function interpretText(i) {
 
 /** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
 // shadow / trace 是结果的派生展示，不是盘面口径；带进来会让影子盘回显把每组开关都算成「有变化」
-const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events', 'shadow', 'trace'];
+const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'detail', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events', 'shadow', 'trace'];
 
 /**
  * 口径对照：同一组输入，只把某一个口径开关换成它的另一档，逐字段列出变化。
@@ -22225,15 +22354,62 @@ const JU_METHODS = ['chaibu', 'chaoshen', 'zhirun'];
 const TAROT_COUNTS = [1, 3, 5];
 const LATE_ZI_MODES = ['same-day', 'next-day'];
 
+/**
+ * 经度守卫：入口只判 `typeof === 'number'`，于是 JSON 里的 1e999（= Infinity）
+ * 会一路走到真太阳时里炸成裸 TypeError，181 这类超范围值则静默排出另一张盘。
+ * 两者都比报错坏：一个把堆栈式文案交给模型，一个把错结果当成对结果说出去。
+ */
+function checkLongitude(value, who = '') {
+  if (value === undefined || value === null || value === '') return undefined;
+  const n = Number(value);
+  const tag = who ? `${who}的` : '';
+  if (!Number.isFinite(n)) throw fail('E_RANGE', `${tag}经度不是有限数值：收到「${value}」。经度写十进制数字即可，例如北京 116.4`);
+  if (n < -180 || n > 180) throw fail('E_RANGE', `${tag}经度要在 −180 到 180 之间（东经为正），收到 ${n}`);
+  return n;
+}
+
+/**
+ * 把主方 / 对方 / 第三方的经度统一成数字。
+ * 下游按 `typeof === 'number'` 取值，所以 "86.0"（模型常给带引号的数）会被静默丢掉，
+ * 少一次真太阳时修正而结果里毫无痕迹——这里先整形，再交给校验过的值。
+ */
+function normalizeLongitudes(args) {
+  const self = checkLongitude(args.longitude, '');
+  const p = args.partner && typeof args.partner === 'object' ? checkLongitude(args.partner.longitude, '对方') : undefined;
+  const p2 = args.partner2 && typeof args.partner2 === 'object' ? checkLongitude(args.partner2.longitude, '第三方') : undefined;
+  const dirty = (self !== undefined && args.longitude !== self)
+    || (p !== undefined && args.partner.longitude !== p)
+    || (p2 !== undefined && args.partner2.longitude !== p2);
+  if (!dirty) return args;
+  const out = { ...args };
+  if (self !== undefined) out.longitude = self;
+  if (p !== undefined) out.partner = { ...out.partner, longitude: p };
+  if (p2 !== undefined) out.partner2 = { ...out.partner2, longitude: p2 };
+  return out;
+}
+
+/** 输出档位：缺省与 'full' 都是历史全文；'lean' 只回结论与你问的那一条，省模型上下文。
+ *  其它值以前会被当成「缺省」静默放过，写了 detail:'brief' 的人以为自己省了钱，其实没有。 */
+function detailOf(value) {
+  if (value === undefined || value === null || value === '' || value === 'full') return 'full';
+  if (value === 'lean') return 'lean';
+  throw fail('E_INPUT', `detail 只能是 'full' 或 'lean'：收到「${String(value).slice(0, 24)}」`);
+}
+
 /** asOf 只接受能解析成真实日期的字符串；非法值以前会静默回退到「此刻」 */
 function checkAsOf(asOf) {
   if (asOf === undefined || asOf === null || asOf === '') return undefined;
   const parts = asOfParts(asOf);
   if (!parts) throw fail('E_ASOF', `无法解析 asOf：「${asOf}」，请用 2026-10-22T16:00 这种格式`);
-  const { year, month, day } = parts;
+  const { year, month, day, hour, minute } = parts;
   if (!(month >= 1 && month <= 12) || !(day >= 1 && day <= daysInMonth(year, month))) {
     throw fail('E_ASOF', `asOf 指向的日期不存在：${asOf}`);
   }
+  // 时分以前不校验：asOf: '2026-06-01T25:99' 会被接受并原样回显，
+  // 而小时又按 mod 24 折回当日子时——流日/流时静默错位，比报错更坏。
+  // 与 parseDateTime 同一把尺：给了就必须在范围内，缺省才由下游补默认值。
+  if (hour !== undefined && !(hour >= 0 && hour <= 23)) throw fail('E_ASOF', `asOf 的小时要在 0–23 之间：${asOf}`);
+  if (minute !== undefined && !(minute >= 0 && minute <= 59)) throw fail('E_ASOF', `asOf 的分钟要在 0–59 之间：${asOf}`);
   return parts;
 }
 
@@ -22279,7 +22455,7 @@ function computeRaw(args = {}) {
       // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
       asOf,
     });
-    return { ...result, precision: dt.precision, summary: ziweiText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: ziweiText(result) };
   }
   if (system === 'tarot') {
     const count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
@@ -22938,7 +23114,7 @@ function renderText(result) {
       + result.trace.map((t, i) => `${i + 1}. ${t.field}｜${t.result}\n　规则：${t.rule}　出处：${t.source}`).join('\n'));
   }
   if (result.interpret) {
-    const extra = interpretText(result.interpret);
+    const extra = interpretText(result.interpret, result.interpretTier);
     if (extra) parts.push(extra);
   }
   if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);
@@ -23007,7 +23183,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, geocodeAd
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.59.1";
+window.__MP_VER = "0.60.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -23119,7 +23295,7 @@ window.__MP_VER = "0.59.1";
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
@@ -23140,7 +23316,7 @@ window.__MP_VER = "0.59.1";
 /* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
    打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
 @media screen and (prefers-color-scheme:dark){
-  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
+  .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
     --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
@@ -24414,6 +24590,44 @@ window.__MP_VER = "0.59.1";
   .mp-hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
   .mp-hy-row.hy-plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
+/* ── 我的命盘（本机档案）──
+   照市面排盘 App 的「命盘列表」做：一张卡一个人，点卡直接出盘，
+   改名/置顶/删除收在卡片右上角，hover 或键盘聚焦才出现——平时不占视觉。 */
+.mp-prof{margin:0 0 14px;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
+.mp-prof-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.mp-prof-h b{font-size:13.5px;color:var(--ink);letter-spacing:.02em}
+.mp-prof-h .mp-prof-sub{font-size:11.5px;color:var(--muted)}
+.mp-prof-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:8px}
+.mp-prof-card{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--card);transition:border-color .12s,box-shadow .12s}
+.mp-prof-card:hover,.mp-prof-card:focus-within{border-color:var(--red);box-shadow:0 1px 2px rgba(35,28,18,.06)}
+.mp-prof-card.pinned{border-color:var(--quan)}
+.mp-prof-use{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;background:transparent;border:none;
+  padding:9px 10px;cursor:pointer;color:inherit;font:inherit;line-height:1.4}
+.mp-prof-nm{display:flex;align-items:center;gap:5px;font-size:13.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:52px}
+.mp-prof-nm .sx{font-size:11px;font-weight:400;color:var(--muted)}
+.mp-prof-sys{align-self:flex-start;font-size:10.5px;line-height:16px;padding:0 6px;border-radius:8px;
+  background:var(--tri);color:var(--quan);border:1px solid color-mix(in srgb,var(--quan) 28%,transparent)}
+.mp-prof-bd{font-size:11.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-prof-at{font-size:11px;color:var(--faint)}
+.mp-prof-ops{position:absolute;top:6px;right:6px;display:none;gap:4px}
+.mp-prof-card:hover .mp-prof-ops,.mp-prof-card:focus-within .mp-prof-ops{display:flex}
+.mp-prof-ops button{font:inherit;font-size:10.5px;line-height:18px;padding:0 6px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--line);background:var(--card);color:var(--muted)}
+.mp-prof-ops button:hover{color:var(--red);border-color:var(--red)}
+.mp-prof-ops button.on{color:var(--quan);border-color:var(--quan)}
+/* 触屏没有 hover：改名/置顶/删除若只靠悬停出现，手机上永远点不到，所以常驻 */
+@media (hover:none){.mp-prof-ops{display:flex}.mp-prof-nm{padding-right:0}}
+.mp-prof-empty{margin:0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;
+  font-size:12px;color:var(--muted);background:var(--band)}
+.mp-prof-bar{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
+.mp-prof-bar input{font:inherit;font-size:12.5px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);min-width:0;flex:1 1 150px;max-width:220px}
+.mp-prof-bar button{font:inherit;font-size:12.5px;padding:6px 12px;border-radius:9px;cursor:pointer;
+  border:1px solid var(--red);background:var(--red);color:var(--on-accent)}
+.mp-prof-bar button.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+.mp-prof-bar .mp-prof-tip{font-size:11.5px;color:var(--muted)}
+@media (max-width:360px){.mp-prof-list{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
@@ -24435,7 +24649,9 @@ window.__MP_VER = "0.59.1";
   };
   const POS_NAME = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
 
-  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // 单引号也转：本仓拼接属性一律用双引号，但「少一个字符就破功」的写法不该赌下一位
+  // 贡献者守不守约定（text-node 之外的任何位置都可能被 ' 截断）。
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   /**
    * 单爻线：阳一整条，阴两段；动爻描红。
@@ -26154,6 +26370,286 @@ window.__MP_VER = "0.59.1";
     return diff;
   };
 
+  // ── 我的命盘（本机档案）────────────────────────────────────────
+  // 存的是「输入」而不是结果：换台机器或清掉站点数据就没有，也不含出生时间以外的身份信息。
+  // 面板与单页共用这一份实现与这一份渲染，两边看到的是同一批档案。
+  const PROF_KEY = 'dsh-metaphysics/profiles-v1';
+  const PROF_MAX = 24;
+  const PROF_LABEL_MAX = 16;
+  const PROF_ADDR_MAX = 40;
+  const PROF_NOTE_MAX = 60;
+  const PROF_KINDS = ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen',
+    'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'];
+  pp.PROF_KEY = PROF_KEY;
+  pp.PROF_MAX = PROF_MAX;
+  pp.PROF_KINDS = PROF_KINDS;
+
+  // 档案卡上的体系短名。面板与单页各自的 tab 标签更长（带说明），这里只要两三个字
+  const PROF_KIND_LABEL = {
+    bazi: '八字', ziwei: '紫微', liuyao: '六爻', tarot: '塔罗', meihua: '梅花', daliuren: '六壬',
+    hepan: '合盘', qimen: '奇门', almanac: '黄历', zeri: '择日', chenggu: '称骨', xiaoliuren: '小六壬',
+    star: '星座', numerology: '生命数字', mbti: '人格', trend: '人生K线', fengshui: '风水', name: '起名', convert: '农历',
+  };
+  pp.profKindLabel = (k) => PROF_KIND_LABEL[k] || String(k || '');
+
+  const isStr = (v) => typeof v === 'string';
+
+  /**
+   * 档案来自 localStorage，等于一份用户可以自己改的外部输入：
+   * 逐字段验一遍再放进列表，坏条目整条丢掉（不是把 undefined 渲染进卡片）。
+   */
+  function profClean(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (!isStr(raw.id) || !raw.id || raw.id.length > 40) return null;
+    if (!isStr(raw.kind) || PROF_KINDS.indexOf(raw.kind) < 0) return null;
+    // 日期要真过一遍日历：'2020-13-45' 形如合法，但会让引擎拿一个不存在的日子排出张怪盘
+    const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(raw.date || ''));
+    if (!dm) return null;
+    const y = Number(dm[1]);
+    const mo = Number(dm[2]);
+    const dd = Number(dm[3]);
+    if (mo < 1 || mo > 12 || dd < 1 || dd > new Date(y, mo, 0).getDate()) return null;
+    const time = isStr(raw.time) && /^([01]?\d|2[0-3]):[0-5]\d$/.test(raw.time) ? raw.time : '';
+    return {
+      id: raw.id,
+      kind: raw.kind,
+      label: isStr(raw.label) ? raw.label.slice(0, PROF_LABEL_MAX) : '',
+      date: raw.date,
+      time: raw.hourUnknown === true ? '' : time,
+      hourUnknown: raw.hourUnknown === true,
+      gender: raw.gender === 'male' || raw.gender === 'female' ? raw.gender : '',
+      address: isStr(raw.address) ? raw.address.slice(0, PROF_ADDR_MAX) : '',
+      note: isStr(raw.note) ? raw.note.slice(0, PROF_NOTE_MAX) : '',
+      pinned: raw.pinned === true,
+      createdAt: Number(raw.createdAt) || 0,
+      lastUsedAt: Number(raw.lastUsedAt) || 0,
+      uses: Number(raw.uses) || 0,
+    };
+  }
+
+  function profReadRaw() {
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(PROF_KEY) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  /** 置顶在前，其余按最近排过；同一秒内按创建时间兜底，保证两次渲染顺序一致 */
+  function profSort(list) {
+    return list.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
+      || (b.lastUsedAt || b.createdAt || 0) - (a.lastUsedAt || a.createdAt || 0)
+      || (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  pp.profilesLoad = function () {
+    const out = [];
+    const seen = Object.create(null);
+    for (const raw of profReadRaw()) {
+      const p = profClean(raw);
+      // 同 id 只留第一条：手改过的存储里出现重复 id 时，后一条会把前一条悄悄顶掉
+      if (p && !seen[p.id]) { seen[p.id] = 1; out.push(p); }
+    }
+    return profSort(out);
+  };
+
+  pp.profilesSave = function (list) {
+    const arr = profSort(Array.isArray(list) ? list.slice(0, PROF_MAX) : []);
+    try {
+      // 没有 localStorage 就等于没写进去，不能报成功（卡片只活这一次会话）
+      if (!window.localStorage) return false;
+      window.localStorage.setItem(PROF_KEY, JSON.stringify(arr));
+      return true;
+    } catch (e) { return false; }
+  };
+
+  // 同毫秒新建两张卡时靠这个自增序列分开；只在本页生命周期内有效
+  let profSeq = 0;
+  pp.profilesNewId = function () {
+    const taken = Object.create(null);
+    for (const p of pp.profilesLoad()) taken[p.id] = 1;
+    let id;
+    do { id = `p${Date.now().toString(36)}${(profSeq++).toString(36)}`; } while (taken[id]);
+    return id;
+  };
+
+  /** 新增或按 id 覆盖，返回存好后的完整列表；超出上限时丢最久没排的那张 */
+  pp.profilesPut = function (entry) {
+    const clean = profClean(Object.assign({
+      id: pp.profilesNewId(), createdAt: Date.now(), lastUsedAt: Date.now(),
+    }, entry));
+    if (!clean) return { ok: false, list: pp.profilesLoad() };
+    const list = pp.profilesLoad();
+    const i = list.findIndex((x) => x.id === clean.id);
+    if (i >= 0) {
+      // 更新只换出生信息与称呼：排过几次、上次什么时候排的、置没置顶归存储管，
+      // 不能因为「改个称呼」就把这张卡的历史和位置抹平
+      const prev = list[i];
+      clean.createdAt = prev.createdAt || clean.createdAt;
+      clean.lastUsedAt = prev.lastUsedAt;
+      clean.uses = prev.uses;
+      clean.pinned = prev.pinned;
+      list.splice(i, 1, clean);
+    } else list.push(clean);
+    if (list.length > PROF_MAX) {
+      const byUse = list.slice().sort((a, b) => (a.lastUsedAt || a.createdAt) - (b.lastUsedAt || b.createdAt));
+      const drop = byUse.find((x) => x.id !== clean.id) || byUse[0];
+      const at = list.indexOf(drop);
+      if (at >= 0) list.splice(at, 1);
+    }
+    // 写不进去就别当存成功：卡片只活在本次会话里，下次进来就没了，回执必须是失败
+    if (!pp.profilesSave(list)) return { ok: false, list: pp.profilesLoad() };
+    return { ok: true, list: profSort(list), item: clean };
+  };
+
+  pp.profilesRemove = function (id) {
+    const list = pp.profilesLoad().filter((x) => x.id !== id);
+    // 写不进去就把存储里的真实状态还回去：否则卡片从界面消失、下次进来又复活
+    if (!pp.profilesSave(list)) return pp.profilesLoad();
+    return list;
+  };
+
+  pp.profilesPin = function (id) {
+    const list = pp.profilesLoad().map((x) => (x.id === id ? Object.assign({}, x, { pinned: !x.pinned }) : x));
+    if (!pp.profilesSave(list)) return pp.profilesLoad();
+    return profSort(list);
+  };
+
+  /** 排过一次就记一笔：档案卡按「最近排过」排序靠它 */
+  pp.profilesTouch = function (id) {
+    let hit = false;
+    const list = pp.profilesLoad().map((x) => {
+      if (x.id !== id) return x;
+      hit = true;
+      return Object.assign({}, x, { lastUsedAt: Date.now(), uses: (x.uses || 0) + 1 });
+    });
+    if (!hit) return list;
+    if (!pp.profilesSave(list)) return pp.profilesLoad();
+    return profSort(list);
+  };
+
+  const DAY_MS = 86400000;
+  function profAgo(ts) {
+    const n = Number(ts) || 0;
+    if (!n) return '未排过';
+    const d = Math.floor((Date.now() - n) / DAY_MS);
+    if (d <= 0) return '今天排过';
+    if (d === 1) return '昨天排过';
+    if (d < 30) return `${d} 天前排过`;
+    const dt = new Date(n);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} 排过`;
+  }
+  pp.profilesAgo = profAgo;
+
+  const PROF_GENDER = { male: '♂', female: '♀' };
+
+  /**
+   * 档案列表的 HTML。交互全靠 data-mp-prof + data-id 事件委托，
+   * 所以面板（React 容器）与单页（原生 DOM）用同一份标记就能接上。
+   * opts: { editingId, armedDel, bar }
+   *   bar：档案条（称呼输入 + 存入）。必须走这个参数塞进 section 里，不能由调用方拼在外面——
+   *   配色变量挂在 .mp-prof 上，拼在外面就等于拿不到 --red/--on-accent，深色下按钮糊成一片。
+   */
+  pp.profilesHTML = function (list, opts) {
+    const o = opts || {};
+    const rows = (Array.isArray(list) ? list : []).map((raw) => {
+      const p = profClean(raw);
+      if (!p) return '';
+      const birth = [p.date, p.hourUnknown ? '时辰未知' : p.time, p.address].filter(Boolean).join(' ');
+      const editing = o.editingId && p.id === o.editingId;
+      const armed = o.armedDel && p.id === o.armedDel;
+      return `<div class="mp-prof-card${p.pinned ? ' pinned' : ''}${editing ? ' editing' : ''}" data-id="${esc(p.id)}">
+        <button type="button" class="mp-prof-use" data-mp-prof="use" data-id="${esc(p.id)}"
+          title="${esc(`用「${p.label || p.kind}」的出生信息直接排盘`)}">
+          <span class="mp-prof-nm">${esc(p.label || '未命名')}${p.gender ? `<i class="sx">${PROF_GENDER[p.gender] || ''}</i>` : ''}</span>
+          <span class="mp-prof-sys">${esc(pp.profKindLabel ? pp.profKindLabel(p.kind) : p.kind)}</span>
+          <span class="mp-prof-bd">${esc(birth)}</span>
+          <span class="mp-prof-at">${esc(profAgo(p.lastUsedAt || p.createdAt))}${p.uses ? ` · ${p.uses} 次` : ''}${p.pinned ? ' · 置顶' : ''}</span>
+        </button>
+        <span class="mp-prof-ops">
+          <button type="button" data-mp-prof="pin" data-id="${esc(p.id)}" class="${p.pinned ? 'on' : ''}"
+            aria-pressed="${p.pinned ? 'true' : 'false'}" title="置顶这张档案">${p.pinned ? '已置顶' : '置顶'}</button>
+          <button type="button" data-mp-prof="edit" data-id="${esc(p.id)}" title="把这张档案读回输入框，改完再存">改名</button>
+          <button type="button" data-mp-prof="del" data-id="${esc(p.id)}" class="${armed ? 'on' : ''}"
+            title="${armed ? '再点一次就从本机删除这张档案' : '从本机删除这张档案（点两次确认）'}">${armed ? '确认删除' : '删除'}</button>
+        </span>
+      </div>`;
+    }).join('');
+    const body = rows
+      ? `<div class="mp-prof-list">${rows}</div>`
+      : `<p class="mp-prof-empty">还没有存过命盘。填好出生信息，给这张盘起个称呼，点「存为我的命盘」——下次进来一点就出盘，不必重报。</p>`;
+    return `<section class="mp-prof" aria-label="我的命盘">
+      <div class="mp-prof-h"><b>我的命盘</b><span class="mp-prof-sub">只存本机 · 不上传${list && list.length ? ` · ${list.length}/${PROF_MAX}` : ''}</span></div>
+      ${body}
+      ${o.bar || ''}
+    </section>`;
+  };
+
+  /**
+   * 档案条（称呼输入 + 存 / 取消）。单页用这份；面板那份是 React 容器，
+   * 把输入框塞进 innerHTML 会每敲一个字整块重绘、光标被踢走，
+   * 所以面板自己渲染同样这几个控件。
+   */
+  pp.profilesBarHTML = function (opts) {
+    const o = opts || {};
+    return `<div class="mp-prof-bar">
+        <input class="mp-prof-name" type="text" maxlength="${PROF_LABEL_MAX}" placeholder="称呼，如「我」「妈妈」" aria-label="档案称呼" value="${esc(o.name || '')}">
+        <button type="button" data-mp-prof="put"${o.canAdd === false ? ' disabled' : ''}>${esc(o.editingId ? '更新这张档案' : '存为我的命盘')}</button>
+        ${o.editingId ? '<button type="button" class="ghost" data-mp-prof="cancel">取消改名</button>' : ''}
+        <span class="mp-prof-tip">${esc(o.tip || (o.editingId ? '改完出生信息或称呼，点「更新这张档案」覆盖原档。' : '存的是出生时间与出生地这些输入，不是结果。'))}</span>
+      </div>`;
+  };
+
+  /**
+   * 事件委托：容器上点一次，返回 {action, id} 或 null。
+   * 两边（React / 原生）都靠它，避免各写一份 closest 判断。
+   */
+  pp.profEvent = function (target) {
+    let el = target && target.closest ? target.closest('[data-mp-prof]') : null;
+    if (!el) return null;
+    const action = el.getAttribute('data-mp-prof');
+    if (el.tagName === 'BUTTON' && el.disabled) return null;
+    return { action, id: el.getAttribute('data-id') || '', name: el };
+  };
+
+  /** 从当前输入拼一条档案（称呼取自档案输入框，缺省用体系名） */
+  // 「时辰未知」只有八字与人生K线成立（紫微没有时支整盘不成立），勾选状态在体系之间
+  // 是会残留的，所以在这里按体系收口，免得存出一张「紫微 · 时辰未知」的矛盾档案。
+  const PROF_HU = ['bazi', 'trend'];
+  // 这些体系没有时刻就排不出「这张盘」（出生类与起卦类）；其余只需日期或不需时间
+  const PROF_NEEDS_TIME = ['bazi', 'ziwei', 'liuyao', 'meihua', 'daliuren', 'qimen', 'hepan',
+    'chenggu', 'trend', 'fengshui', 'name', 'xiaoliuren'];
+  /**
+   * 这张档案能不能直接排：手改存储 / 旧版本可能留下「有日期没时刻」的卡。
+   * 直接排会拿当前表单里的时刻顶上，等于排成另一个人，所以两处接线都先问这一句。
+   */
+  pp.profUsable = function (p) {
+    if (!p || typeof p !== 'object') return false;
+    if (p.hourUnknown === true || p.time) return true;
+    return PROF_NEEDS_TIME.indexOf(String(p.kind || '')) < 0;
+  };
+  pp.profFromForm = function (form, label, id) {
+    const src = form || {};
+    const hu = src.hourUnknown === true && PROF_HU.indexOf(String(src.kind || '')) >= 0;
+    // 没时刻就排不出「这张盘」：存下去只会变成一张点开时静默沿用上一次时刻的卡。
+    // 时辰未知是显式选择，不算缺时刻。
+    if (!hu && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(String(src.time || '').trim())) return null;
+    return profClean(Object.assign({
+      id: id || pp.profilesNewId(),
+      kind: String(src.kind || ''),
+      label: String(label || '').trim().slice(0, PROF_LABEL_MAX) || (pp.profKindLabel ? pp.profKindLabel(src.kind) : String(src.kind || '')),
+      date: String(src.date || ''),
+      time: String(src.time || ''),
+      hourUnknown: hu,
+      gender: String(src.gender || ''),
+      address: String(src.address || ''),
+      pinned: false,
+      createdAt: Date.now(),
+      lastUsedAt: 0,
+      uses: 0,
+    }));
+  };
+
   /**
    * 推导链：入口卡 + 右侧抽屉。数据来自 Engine.compute({ trace: true }) 的 r.trace。
    * 每层只读展示 {field, rule, inputs, result, source}，不重算、不改盘。
@@ -26597,6 +27093,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'aux' };
   const MUT_CLASS = { 禄: 'm-lu', 权: 'm-quan', 科: 'm-ke', 忌: 'm-ji' };
   let tab = 'ziwei';
+  // 排盘代次：每次点「排盘」自增。地址解析要等网络，回来时若代次已变，说明用户换过 tab
+  // 或又点了一次，这一次作废（之后所有 el() 读到的都是新 tab 的控件，接着拼会排出错盘）
+  let runSeq = 0;
   let mhMode = 'time';
   let xlrMode = 'time';
   let fsMode = 'natal';
@@ -26678,6 +27177,122 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     setTab(next);
     recordRecent(next);
     if (next === 'mbti') mbEnter(); else run();
+  }
+
+  // ── 我的命盘（本机档案）────────────────────────────────────────
+  // 存的是「输入」而不是结果，点卡回填 + 直接出盘。存储、清洗、卡片渲染都取自
+  // panel-kit 那一份实现：宿主面板里存的档案，在这个单页里同样看得见、同样能一点出盘。
+  const PROF_TABS = ['bazi', 'ziwei', 'trend', 'chenggu'];
+  let profEditing = '';
+  let profArmed = '';
+  let profTip = '';
+  // 称呼框是裸 DOM，重渲染会整块换掉：把用户敲的字存在这里，才不会因为点别的按钮被抹掉
+  let profName = '';
+
+  function renderProfiles() {
+    const box = el('profwrap');
+    const PP = window.__PP;
+    if (!box || !PP || !PP.profilesHTML) return;
+    const list = PP.profilesLoad();
+    // 档案描述的是「一个人」，占事与合盘类没有可复用的出生信息，不给存入条
+    const bar = PROF_TABS.indexOf(tab) >= 0 && PP.profilesBarHTML
+      ? PP.profilesBarHTML({ editingId: profEditing, name: profName, tip: profTip }) : '';
+    box.innerHTML = PP.profilesHTML(list, { editingId: profEditing, armedDel: profArmed, bar });
+  }
+
+  /** 回填出生信息：顺序与深链还原一致（先 setTab 再填，setTab 会按体系改可见性）。返回是否真排了盘 */
+  function profApply(p) {
+    // 外部改坏 / 旧版本留下的「有日期没时刻」卡：别拿当前表单里的时刻顶上，那会排成另一个人
+    if (!window.__PP.profUsable(p)) {
+      profTip = '这张档案没有出生时刻，先补上时刻再存一次。';
+      renderProfiles();
+      return false;
+    }
+    profName = '';
+    setTab(p.kind);
+    recordRecent(p.kind);
+    const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
+    for (const pair of puts) {
+      const node = el(pair[0]);
+      if (node && pair[1]) node.value = pair[1];
+    }
+    const hu = el('hourunknown');
+    if (hu) hu.checked = !!p.hourUnknown;
+    // 把这次回填当成「用户填的」：否则切走再切回出生类体系时会被上一次的自动值顶掉
+    onManualEdit();
+    run();
+    return true;
+  }
+
+  function profReadForm() {
+    const PP = window.__PP;
+    const v = (id) => { const n = el(id); return n ? n.value : ''; };
+    const hu = el('hourunknown');
+    const box = el('profwrap');
+    const nameEl = box ? box.querySelector('.mp-prof-name') : null;
+    return PP.profFromForm({
+      kind: tab, date: v('date'), time: v('time'), gender: v('gender'), address: v('addr'),
+      hourUnknown: !!(hu && hu.checked),
+    }, nameEl ? nameEl.value : '', profEditing || undefined);
+  }
+
+  function onProfClick(e) {
+    const PP = window.__PP;
+    if (!PP || !PP.profEvent) return;
+    const ev = PP.profEvent(e.target);
+    if (!ev) return;
+    const of = (id) => PP.profilesLoad().find((x) => x.id === id);
+    if (ev.action === 'use') {
+      const p = of(ev.id);
+      if (!p) return;
+      // 没排出来就不算「排过一次」：否则缺时刻的坏卡会顶着「1 次」跳到列表最前
+      profTip = '';
+      if (!profApply(p)) { renderProfiles(); return; }
+      PP.profilesTouch(p.id);
+      renderProfiles();
+      return;
+    }
+    if (ev.action === 'edit') {
+      const p = of(ev.id);
+      if (!p) return;
+      profEditing = p.id;
+      profName = p.label;
+      profTip = '';
+      renderProfiles();
+      // 改名要连着能改出生信息：把档案读回输入框，用户调完再点「更新这张档案」
+      const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
+      for (const pair of puts) {
+        const node = el(pair[0]);
+        if (node && pair[1]) node.value = pair[1];
+      }
+      const hu = el('hourunknown');
+      if (hu) hu.checked = !!p.hourUnknown;
+      return;
+    }
+    if (ev.action === 'cancel') { profEditing = ''; profName = ''; profTip = ''; renderProfiles(); return; }
+    if (ev.action === 'pin') { PP.profilesPin(ev.id); profTip = ''; renderProfiles(); return; }
+    if (ev.action === 'del') {
+      // 删除点两次才算：第一次只把按钮变成「确认删除」，误触不会丢档案
+      if (profArmed !== ev.id) { profArmed = ev.id; profTip = ''; renderProfiles(); return; }
+      PP.profilesRemove(ev.id);
+      if (profEditing === ev.id) { profEditing = ''; profName = ''; }
+      profArmed = '';
+      profTip = '已从本机删除这张档案卡（不影响已经排出来的盘）。';
+      renderProfiles();
+      return;
+    }
+    if (ev.action === 'put') {
+      const wasEditing = profEditing;
+      const entry = profReadForm();
+      if (!entry) { profTip = '先填好出生日期（和时刻），再存档案。'; renderProfiles(); return; }
+      const res = PP.profilesPut(entry);
+      if (!res.ok) { profTip = '档案没能存进本机（存储被禁用或已满），排盘不受影响。'; renderProfiles(); return; }
+      profEditing = '';
+      profArmed = '';
+      profName = '';
+      profTip = `${wasEditing ? '已更新档案' : '已存入我的命盘'}「${res.item.label}」。`;
+      renderProfiles();
+    }
   }
 
   /** 分组 / 平铺：只切显示，19 个 tab 与分组卡片两套入口始终可用 */
@@ -26896,9 +27511,14 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   };
   function bridgePackages() {
     if (!last || !last.r || !window.Engine || !window.Engine.askPackages) return null;
-    const q = el('question') ? el('question').value.trim() : '';
-    try { return window.Engine.askPackages(last.r, { question: q, base: pageBase() }); }
-    catch (e) { return null; }
+    // 追问框就在按钮旁边，用户刚写下的那句必须进包；没写追问时才退回「所问之事」。
+    // 只读 #question 的话，命盘类根本没有这个输入框，复制出去的「所问」永远是默认开场句。
+    const follow = el('askq') ? el('askq').value.trim() : '';
+    const main = el('question') ? el('question').value.trim() : '';
+    try {
+      // interpret 一并交出去：面板已算过「直答 / 说人话」，别的模型开场就该沿用同一口径
+      return window.Engine.askPackages(last.r, { question: follow || main, interpret: last.it || null, base: pageBase() });
+    } catch (e) { return null; }
   }
 
   // ── C3 深链：打开带 #mp= 的链接时还原同一张盘 ──────────────────
@@ -26981,6 +27601,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   /** 用缓存的卦象重新渲染：解读按当前的问题与方向重出，卦面本身不动 */
   function paint() {
     if (!last) return;
+    // 重绘会换掉整个 #out：先记下追问框里的字，否则切方向 / 刷新推导链时用户刚打的问题会凭空消失
+    const askBefore = el('askq') ? el('askq').value : '';
     let it = null;
     try {
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
@@ -27000,6 +27622,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
       + exportBar();
     last.it = it;
+    const askNow = el('askq');
+    if (askNow && askBefore) askNow.value = askBefore;
     // 耗时行跟盘走：方向切换等重绘会把 innerHTML 整个换掉，不在这里补一次就会丢
     if (last.perf) {
       const perfHtml = window.__PP.perfHTML(last.perf);
@@ -27015,7 +27639,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     return `<div class="askbox no-print">
       <input id="askq" maxlength="120" placeholder="追问：如 2027 年事业怎么样（回车提交）">
       <button type="button" data-act="ask">追问</button>
-      <button type="button" data-act="copyask" title="把这张盘和你的问题整理成一段提问，粘到任意对话窗都能用">复制提问</button>
+      <button type="button" data-act="copyask" title="把这张盘和上面输入的问题整理成一段提问，粘到任意 AI 对话窗都能用">复制提问</button>
       <span class="hint">只回答盘面能支持的部分；找不到会说找不到</span>
     </div><div id="fout"></div>`;
   }
@@ -27151,6 +27775,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 
   async function run() {
     const runStart = mpNow();
+    const myRun = ++runSeq;
+    const startTab = tab;
     const date = el('date').value;
     // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
     const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
@@ -27185,6 +27811,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
           const g = await window.Engine.geocodeAddress(addr, { online: el('online').checked });
           if (g && typeof g.lon === 'number') { args.longitude = g.lon; args.geo = g; }
         } catch (e) { /* 退回内置表 */ }
+        // 换过 tab 或又点了一次：这一次作废，让最新那次去排（下面读的全是新 tab 的控件）
+        if (myRun !== runSeq || startTab !== tab) return;
       }
     }
     if (tab === 'hepan') {
@@ -27467,6 +28095,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
     renderTip();
+    renderProfiles();  // 档案条只在命盘类体系出现，切 tab 要跟着换
   }
 
   function syncMhMode() {
@@ -27695,6 +28324,15 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     });
     applyView(storeGet(VIEW_KEY) === 'flat' ? 'flat' : 'group');
     renderRecent();
+    const profBox = el('profwrap');
+    if (profBox) {
+      profBox.addEventListener('click', onProfClick);
+      // 只记名字、不重绘：每敲一个字重绘会把光标踢走
+      profBox.addEventListener('input', (e) => {
+        const nm = e.target && e.target.closest ? e.target.closest('.mp-prof-name') : null;
+        if (nm) profName = nm.value;
+      });
+    }
     const mbHost = el('mbti-qs');
     if (mbHost) {
       renderMbti();
@@ -27829,7 +28467,13 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       const copyAsk = e.target && e.target.closest ? e.target.closest('[data-act="copyask"]') : null;
       if (copyAsk) {
         const pkg = bridgePackages();
-        if (pkg) copyPlain(copyAsk, pkg.full, '复制提问');
+        // 打包失败时按钮不能毫无反应：用户会以为点了没生效，再点、再粘贴，最后贴进去一段旧内容
+        if (!pkg || !pkg.full) {
+          copyAsk.textContent = '暂无可复制内容';
+          setTimeout(() => { copyAsk.textContent = '复制提问'; }, 1400);
+          return;
+        }
+        copyPlain(copyAsk, pkg.full, '复制提问');
         return;
       }
       onExportClick(e);

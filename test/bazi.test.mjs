@@ -42,3 +42,15 @@ console.log('  大运:', d.dayun.list.slice(0, 3).map((x) => `${x.startAge}岁 $
 const urumqi = buildBazi({ year: 2000, month: 1, day: 1, hour: 0, minute: 30, gender: 'male', longitude: 87.6 });
 console.log('  乌鲁木齐 00:30 真太阳时 ->', urumqi.solarTime.trueSolarText, urumqi.jieqi.nearBoundaryMinutes, '分钟');
 console.log('  时柱:', urumqi.pillars.hour.ganzhi);
+
+// 7) 真太阳时跨午夜：东经 128.6° 一带，23:40 的北京钟面折成真太阳刚好落在 00:00 前后。
+// 旧 jdToParts 把 23:59:45 四舍五入成 00:00 又不进日，这一带会排出甲辰日甲子时——
+// 时刻写着子时、日柱留在前一天，盘面自相矛盾。跨过去之后四处必须仍是同一套四柱。
+const edgeBad = [];
+for (const lon of [120, 128.5, 128.63, 128.64, 128.7]) {
+  const r = buildBazi({ year: 2024, month: 2, day: 10, hour: 23, minute: 40, gender: 'male', longitude: lon });
+  const got = four(r);
+  const hh = Number(r.solarTime.trueSolarText.slice(11, 13));
+  if (got !== '甲辰 丙寅 乙巳 丙子' || (hh !== 23 && hh !== 0)) edgeBad.push(`${lon}：${r.solarTime.trueSolarText} ${got}`);
+}
+ok('真太阳跨午夜四柱不跳（120/128.5/128.63/128.64/128.7）', edgeBad.length === 0, edgeBad.join('；'));

@@ -248,9 +248,16 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   header{flex-direction:column;align-items:stretch;gap:10px;margin-bottom:12px}
   header>*{min-width:0}
   header{gap:10px;padding-bottom:12px}
-  .brand{font-size:19px;letter-spacing:.1em}
+  .brand{font-size:19px;letter-spacing:.1em;min-width:0}
+  /* 标题与「分组/平铺」同一排：换行会给窄屏多顶出一整行工具栏 */
+  .brand-row{flex-wrap:nowrap}
+  .brand{flex:1 1 auto;min-width:0}
+  .view-switch{flex:none}
+  .view-switch .seg button{white-space:nowrap}
   .brand .seal{width:34px;height:34px;border-radius:9px;font-size:17px}
-  .brand-txt small{font-size:11.5px;line-height:1.5}
+  /* 一行副标题 + 省略号：窄屏下让它换行会把「分组/平铺」顶到下一排，整块头重脚轻 */
+  .brand-txt{min-width:0;overflow:hidden}
+  .brand-txt small{font-size:11.5px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* 分组卡片：每组先露 4 个，其余折起来；否则三组铺完，表单要滚过一整屏才见到 */
   .view-switch{gap:6px}
   .view-switch .hint{display:none}
@@ -407,6 +414,10 @@ function page() {
       <button class="tab" data-tab="mbti">人格</button>
     </div>
   </header>
+
+  <!-- 我的命盘（本机档案）：卡片列表 + 存入条，渲染与存储都取自 panel-kit，
+       样式在 PP.CSS 里；放在入口之上——回来第一件事通常是接着排上次那个人。 -->
+  <div id="profwrap"></div>
 
   <!-- 首屏分组：同一批入口按「想干什么」重排，点击走 web-ui 的 setTab；平铺视图下整块收起 -->
   <section class="start" id="start" aria-label="选择要算的事">

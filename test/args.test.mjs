@@ -42,6 +42,11 @@ throws('年份 1500 报错', () => parseDateTime('1500-01-01'), 'E_RANGE');
 const leap = parseDateTime('2000-02-29');
 ok('2000-02-29 被接受', leap.day === 29 && leap.month === 2);
 ok('秒被接受（忽略）', parseDateTime('1990-05-12T14:30:45').minute === 30);
+// 秒只被忽略、不该被放过：正则写的是 \d{1,2}，「T14:30:99」曾静默折成 14:30，
+// 与 1990-02-30 滚月同一类问题——非法输入悄悄变成一个合法时刻。
+throws('秒 60 报错', () => parseDateTime('1990-05-12T14:30:60'), 'E_INPUT');
+throws('秒 99 报错', () => parseDateTime('1990-05-12T14:30:99'), 'E_INPUT');
+notThrows('秒 59 被接受', () => parseDateTime('1990-05-12T14:30:59'));
 
 // ── ② 性别必填 ───────────────────────────────────────────────
 throws('bazi 缺 gender 报错', () => compute({ system: 'bazi', datetime: '1990-05-12T14:30' }), 'E_INPUT');

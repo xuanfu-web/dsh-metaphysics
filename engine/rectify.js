@@ -9,6 +9,8 @@ import { buildBazi } from './bazi.js';
 
 const KINDS = ['career', 'wealth', 'love', 'move', 'health', 'other'];
 const HOURS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23];
+/** 事件条数上限：对账用不到几百条，超限是输入异常而不是需求 */
+const MAX_EVENTS = 200;
 
 const TEN_GOD = (l) => l.stemTenGod || '';
 const has = (l, re) => re.test((l.relations || []).join(''));
@@ -67,10 +69,29 @@ export function rectifyBirth(opts) {
     e.code = 'E_INPUT';
     throw e;
   }
-  const nowYear = Math.min(...clean.map((x) => x.year));
-  const hours = Array.isArray(opts.hours) && opts.hours.length
-    ? opts.hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23)
+  // 事件只用来对账，几十条已足够。不设上限的后果很具体：20 万条会原样回显成 2MB 结果，
+  // 并且下面的取最小值（Math.min(...arr) 逐元素入参）直接把栈打爆。
+  if (clean.length > MAX_EVENTS) {
+    const e = new Error(`生时校正的事件最多 ${MAX_EVENTS} 条，收到 ${clean.length} 条——只报最近几十年里确实发生过的事即可`);
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  if (clean.some((x) => x.year < 1600 || x.year > 2400)) {
+    const e = new Error('事件年份要落在 1600–2400 之间（与排盘支持的年份一致）');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  const nowYear = clean.reduce((m, x) => (x.year < m ? x.year : m), clean[0].year);
+  // 候选时辰同样要限：一天只有 12 个时辰，给了 1000 个就是白排 1000 张盘
+  const wanted = Array.isArray(opts.hours) && opts.hours.length
+    ? [...new Set(opts.hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23))]
     : HOURS;
+  if (!wanted.length) {
+    const e = new Error('候选时辰里没有有效的小时（0–23 的整数）');
+    e.code = 'E_INPUT';
+    throw e;
+  }
+  const hours = wanted.slice(0, 24);
 
   const candidates = hours.map((hour) => {
     const chart = buildBazi({

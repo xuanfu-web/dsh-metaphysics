@@ -2,6 +2,9 @@
   const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'aux' };
   const MUT_CLASS = { 禄: 'm-lu', 权: 'm-quan', 科: 'm-ke', 忌: 'm-ji' };
   let tab = 'ziwei';
+  // 排盘代次：每次点「排盘」自增。地址解析要等网络，回来时若代次已变，说明用户换过 tab
+  // 或又点了一次，这一次作废（之后所有 el() 读到的都是新 tab 的控件，接着拼会排出错盘）
+  let runSeq = 0;
   let mhMode = 'time';
   let xlrMode = 'time';
   let fsMode = 'natal';
@@ -83,6 +86,122 @@
     setTab(next);
     recordRecent(next);
     if (next === 'mbti') mbEnter(); else run();
+  }
+
+  // ── 我的命盘（本机档案）────────────────────────────────────────
+  // 存的是「输入」而不是结果，点卡回填 + 直接出盘。存储、清洗、卡片渲染都取自
+  // panel-kit 那一份实现：宿主面板里存的档案，在这个单页里同样看得见、同样能一点出盘。
+  const PROF_TABS = ['bazi', 'ziwei', 'trend', 'chenggu'];
+  let profEditing = '';
+  let profArmed = '';
+  let profTip = '';
+  // 称呼框是裸 DOM，重渲染会整块换掉：把用户敲的字存在这里，才不会因为点别的按钮被抹掉
+  let profName = '';
+
+  function renderProfiles() {
+    const box = el('profwrap');
+    const PP = window.__PP;
+    if (!box || !PP || !PP.profilesHTML) return;
+    const list = PP.profilesLoad();
+    // 档案描述的是「一个人」，占事与合盘类没有可复用的出生信息，不给存入条
+    const bar = PROF_TABS.indexOf(tab) >= 0 && PP.profilesBarHTML
+      ? PP.profilesBarHTML({ editingId: profEditing, name: profName, tip: profTip }) : '';
+    box.innerHTML = PP.profilesHTML(list, { editingId: profEditing, armedDel: profArmed, bar });
+  }
+
+  /** 回填出生信息：顺序与深链还原一致（先 setTab 再填，setTab 会按体系改可见性）。返回是否真排了盘 */
+  function profApply(p) {
+    // 外部改坏 / 旧版本留下的「有日期没时刻」卡：别拿当前表单里的时刻顶上，那会排成另一个人
+    if (!window.__PP.profUsable(p)) {
+      profTip = '这张档案没有出生时刻，先补上时刻再存一次。';
+      renderProfiles();
+      return false;
+    }
+    profName = '';
+    setTab(p.kind);
+    recordRecent(p.kind);
+    const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
+    for (const pair of puts) {
+      const node = el(pair[0]);
+      if (node && pair[1]) node.value = pair[1];
+    }
+    const hu = el('hourunknown');
+    if (hu) hu.checked = !!p.hourUnknown;
+    // 把这次回填当成「用户填的」：否则切走再切回出生类体系时会被上一次的自动值顶掉
+    onManualEdit();
+    run();
+    return true;
+  }
+
+  function profReadForm() {
+    const PP = window.__PP;
+    const v = (id) => { const n = el(id); return n ? n.value : ''; };
+    const hu = el('hourunknown');
+    const box = el('profwrap');
+    const nameEl = box ? box.querySelector('.mp-prof-name') : null;
+    return PP.profFromForm({
+      kind: tab, date: v('date'), time: v('time'), gender: v('gender'), address: v('addr'),
+      hourUnknown: !!(hu && hu.checked),
+    }, nameEl ? nameEl.value : '', profEditing || undefined);
+  }
+
+  function onProfClick(e) {
+    const PP = window.__PP;
+    if (!PP || !PP.profEvent) return;
+    const ev = PP.profEvent(e.target);
+    if (!ev) return;
+    const of = (id) => PP.profilesLoad().find((x) => x.id === id);
+    if (ev.action === 'use') {
+      const p = of(ev.id);
+      if (!p) return;
+      // 没排出来就不算「排过一次」：否则缺时刻的坏卡会顶着「1 次」跳到列表最前
+      profTip = '';
+      if (!profApply(p)) { renderProfiles(); return; }
+      PP.profilesTouch(p.id);
+      renderProfiles();
+      return;
+    }
+    if (ev.action === 'edit') {
+      const p = of(ev.id);
+      if (!p) return;
+      profEditing = p.id;
+      profName = p.label;
+      profTip = '';
+      renderProfiles();
+      // 改名要连着能改出生信息：把档案读回输入框，用户调完再点「更新这张档案」
+      const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
+      for (const pair of puts) {
+        const node = el(pair[0]);
+        if (node && pair[1]) node.value = pair[1];
+      }
+      const hu = el('hourunknown');
+      if (hu) hu.checked = !!p.hourUnknown;
+      return;
+    }
+    if (ev.action === 'cancel') { profEditing = ''; profName = ''; profTip = ''; renderProfiles(); return; }
+    if (ev.action === 'pin') { PP.profilesPin(ev.id); profTip = ''; renderProfiles(); return; }
+    if (ev.action === 'del') {
+      // 删除点两次才算：第一次只把按钮变成「确认删除」，误触不会丢档案
+      if (profArmed !== ev.id) { profArmed = ev.id; profTip = ''; renderProfiles(); return; }
+      PP.profilesRemove(ev.id);
+      if (profEditing === ev.id) { profEditing = ''; profName = ''; }
+      profArmed = '';
+      profTip = '已从本机删除这张档案卡（不影响已经排出来的盘）。';
+      renderProfiles();
+      return;
+    }
+    if (ev.action === 'put') {
+      const wasEditing = profEditing;
+      const entry = profReadForm();
+      if (!entry) { profTip = '先填好出生日期（和时刻），再存档案。'; renderProfiles(); return; }
+      const res = PP.profilesPut(entry);
+      if (!res.ok) { profTip = '档案没能存进本机（存储被禁用或已满），排盘不受影响。'; renderProfiles(); return; }
+      profEditing = '';
+      profArmed = '';
+      profName = '';
+      profTip = `${wasEditing ? '已更新档案' : '已存入我的命盘'}「${res.item.label}」。`;
+      renderProfiles();
+    }
   }
 
   /** 分组 / 平铺：只切显示，19 个 tab 与分组卡片两套入口始终可用 */
@@ -301,9 +420,14 @@
   };
   function bridgePackages() {
     if (!last || !last.r || !window.Engine || !window.Engine.askPackages) return null;
-    const q = el('question') ? el('question').value.trim() : '';
-    try { return window.Engine.askPackages(last.r, { question: q, base: pageBase() }); }
-    catch (e) { return null; }
+    // 追问框就在按钮旁边，用户刚写下的那句必须进包；没写追问时才退回「所问之事」。
+    // 只读 #question 的话，命盘类根本没有这个输入框，复制出去的「所问」永远是默认开场句。
+    const follow = el('askq') ? el('askq').value.trim() : '';
+    const main = el('question') ? el('question').value.trim() : '';
+    try {
+      // interpret 一并交出去：面板已算过「直答 / 说人话」，别的模型开场就该沿用同一口径
+      return window.Engine.askPackages(last.r, { question: follow || main, interpret: last.it || null, base: pageBase() });
+    } catch (e) { return null; }
   }
 
   // ── C3 深链：打开带 #mp= 的链接时还原同一张盘 ──────────────────
@@ -386,6 +510,8 @@
   /** 用缓存的卦象重新渲染：解读按当前的问题与方向重出，卦面本身不动 */
   function paint() {
     if (!last) return;
+    // 重绘会换掉整个 #out：先记下追问框里的字，否则切方向 / 刷新推导链时用户刚打的问题会凭空消失
+    const askBefore = el('askq') ? el('askq').value : '';
     let it = null;
     try {
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
@@ -405,6 +531,8 @@
       + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
       + exportBar();
     last.it = it;
+    const askNow = el('askq');
+    if (askNow && askBefore) askNow.value = askBefore;
     // 耗时行跟盘走：方向切换等重绘会把 innerHTML 整个换掉，不在这里补一次就会丢
     if (last.perf) {
       const perfHtml = window.__PP.perfHTML(last.perf);
@@ -420,7 +548,7 @@
     return `<div class="askbox no-print">
       <input id="askq" maxlength="120" placeholder="追问：如 2027 年事业怎么样（回车提交）">
       <button type="button" data-act="ask">追问</button>
-      <button type="button" data-act="copyask" title="把这张盘和你的问题整理成一段提问，粘到任意对话窗都能用">复制提问</button>
+      <button type="button" data-act="copyask" title="把这张盘和上面输入的问题整理成一段提问，粘到任意 AI 对话窗都能用">复制提问</button>
       <span class="hint">只回答盘面能支持的部分；找不到会说找不到</span>
     </div><div id="fout"></div>`;
   }
@@ -556,6 +684,8 @@
 
   async function run() {
     const runStart = mpNow();
+    const myRun = ++runSeq;
+    const startTab = tab;
     const date = el('date').value;
     // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
     const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
@@ -590,6 +720,8 @@
           const g = await window.Engine.geocodeAddress(addr, { online: el('online').checked });
           if (g && typeof g.lon === 'number') { args.longitude = g.lon; args.geo = g; }
         } catch (e) { /* 退回内置表 */ }
+        // 换过 tab 或又点了一次：这一次作废，让最新那次去排（下面读的全是新 tab 的控件）
+        if (myRun !== runSeq || startTab !== tab) return;
       }
     }
     if (tab === 'hepan') {
@@ -872,6 +1004,7 @@
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
     renderTip();
+    renderProfiles();  // 档案条只在命盘类体系出现，切 tab 要跟着换
   }
 
   function syncMhMode() {
@@ -1100,6 +1233,15 @@
     });
     applyView(storeGet(VIEW_KEY) === 'flat' ? 'flat' : 'group');
     renderRecent();
+    const profBox = el('profwrap');
+    if (profBox) {
+      profBox.addEventListener('click', onProfClick);
+      // 只记名字、不重绘：每敲一个字重绘会把光标踢走
+      profBox.addEventListener('input', (e) => {
+        const nm = e.target && e.target.closest ? e.target.closest('.mp-prof-name') : null;
+        if (nm) profName = nm.value;
+      });
+    }
     const mbHost = el('mbti-qs');
     if (mbHost) {
       renderMbti();
@@ -1234,7 +1376,13 @@
       const copyAsk = e.target && e.target.closest ? e.target.closest('[data-act="copyask"]') : null;
       if (copyAsk) {
         const pkg = bridgePackages();
-        if (pkg) copyPlain(copyAsk, pkg.full, '复制提问');
+        // 打包失败时按钮不能毫无反应：用户会以为点了没生效，再点、再粘贴，最后贴进去一段旧内容
+        if (!pkg || !pkg.full) {
+          copyAsk.textContent = '暂无可复制内容';
+          setTimeout(() => { copyAsk.textContent = '复制提问'; }, 1400);
+          return;
+        }
+        copyPlain(copyAsk, pkg.full, '复制提问');
         return;
       }
       onExportClick(e);

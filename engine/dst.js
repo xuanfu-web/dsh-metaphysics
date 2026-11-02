@@ -35,6 +35,26 @@ export function inDstSpan(t) {
 }
 
 /**
+ * 换表当天绕不开的两个钟面区间：
+ * - 起算日 02:00–02:59：钟表从 02:00 直接拨到 03:00，这个读数在当年根本不存在；
+ * - 终止日 01:00–01:59：钟表往回拨一小时，同一读数会走两遍，对应两个真实时刻。
+ * 两者都不是「算错了」，而是输入本身有歧义，需要告诉调用方我们按哪种读法折的。
+ * @param {{year:number,month:number,day:number,hour:number,minute?:number}} t
+ * @returns {'gap'|'twice'|null}
+ */
+export function dstAmbiguity(t) {
+  const span = DST_SPANS[t.year];
+  if (!span) return null;
+  const [sy, sm, sd] = span[0].split('-').map(Number);
+  const [ey, em, ed] = span[1].split('-').map(Number);
+  const n = ORD(t.year, t.month, t.day);
+  const minutes = t.hour * 60 + (t.minute || 0);
+  if (n === ORD(sy, sm, sd) && minutes >= 120 && minutes < 180) return 'gap';
+  if (n === ORD(ey, em, ed) && minutes >= 60 && minutes < 120) return 'twice';
+  return null;
+}
+
+/**
  * 夏令时校正：钟面时间减 1 小时（跨日正确回退）。
  * @param {{year:number,month:number,day:number,hour:number,minute?:number}} t
  * @returns {{year,month,day,hour,minute,applied:boolean,note:string|null}}
@@ -53,10 +73,17 @@ export function applyDst(t) {
       day = daysInMonth(year, month);
     }
   }
+  const amb = dstAmbiguity(t);
   return {
     year, month, day, hour, minute,
     applied: true,
-    note: `检出自 ${DST_SPANS[t.year][0]} 至 ${DST_SPANS[t.year][1]} 的中国夏令时：出生钟面时间已减 1 小时校正`,
+    note: `检出自 ${DST_SPANS[t.year][0]} 至 ${DST_SPANS[t.year][1]} 的中国夏令时：出生钟面时间已减 1 小时校正`
+      + (amb === 'gap'
+        ? '；这一天 02:00–03:00 钟表直接跳过，所给钟面时间在当年并不存在——这里按「拨快后的读数」回退一小时，'
+          + '若登记的本是标准时间，请传 dst:false 重排。'
+        : amb === 'twice'
+          ? '；这一天 01:00–02:00 因回拨走了两遍，同一钟面时间对应两个真实时刻——这里按夏令时的那一遍（回退一小时）取。'
+          : ''),
   };
 }
 

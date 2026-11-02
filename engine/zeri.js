@@ -2,6 +2,11 @@
 // 口径透明：这是排序引导，不是吉凶断语；未收录逐日神煞，冲煞按日支对生肖。
 import { fromJDN, toJDN } from './calendar.js';
 import { buildAlmanac, SHENGXIAO } from './almanac.js';
+import { fail } from './fail.js';
+
+// 择日的入参错误一律带 E_INPUT：裸 new Error 到工具层只剩 [E_INTERNAL]，
+// 模型拿到的是一句没有指向性的文案，改不了参数。
+const bad = (message) => fail('E_INPUT', message);
 
 /** 支持的事项：直接宜词 + 关联宜词（黄历措辞）。 */
 export const TASKS = {
@@ -104,39 +109,50 @@ const ymd = (p) => `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day
  */
 export function buildZeri(input) {
   const task = input.task;
-  if (!TASKS[task]) throw new Error(`不支持的事项「${task}」。支持：${Object.keys(TASKS).join('、')}`);
+  if (!TASKS[task]) throw bad(`不支持的事项「${task}」。支持：${Object.keys(TASKS).join('、')}`);
   const shengXiaoRaw = typeof input.shengXiao === 'string' ? input.shengXiao.trim() : '';
   const shengXiao = shengXiaoRaw || null;
-  if (shengXiao && !SHENGXIAO.includes(shengXiao)) throw new Error(`shengXiao 须为生肖名：${SHENGXIAO.join('、')}`);
+  if (shengXiao && !SHENGXIAO.includes(shengXiao)) throw bad(`shengXiao 须为生肖名：${SHENGXIAO.join('、')}`);
 
   // 候选日模式：只比用户给的这几天，不再按区间扫
   let candidates = null;
   if (input.candidates !== undefined && input.candidates !== null) {
     if (!Array.isArray(input.candidates)) {
-      throw new Error('candidates 须为日期数组，例如 ["2026-12-01","2026-12-08","2026-12-15"]');
+      throw bad('candidates 须为日期数组，例如 ["2026-12-01","2026-12-08","2026-12-15"]');
     }
-    if (input.candidates.length < 2) throw new Error('candidates 至少给 2 个候选日；只想看一天请用 startDate + days: 1');
-    if (input.candidates.length > 12) throw new Error('candidates 最多 12 个候选日；更多请用 startDate + days 扫区间');
+    if (input.candidates.length < 2) throw bad('candidates 至少给 2 个候选日；只想看一天请用 startDate + days: 1');
+    if (input.candidates.length > 12) throw bad('candidates 最多 12 个候选日；更多请用 startDate + days 扫区间');
     const seen = new Set();
     candidates = [];
     for (const raw of input.candidates) {
       const p = parseYmd(raw);
-      if (!p) throw new Error(`候选日不是真实存在的公历日期：「${raw}」，请用 2026-12-01 这种格式`);
+      if (!p) throw bad(`候选日不是真实存在的公历日期：「${raw}」，请用 2026-12-01 这种格式`);
       const key = ymd(p);
       if (seen.has(key)) continue;
       seen.add(key);
       candidates.push(p);
     }
-    if (candidates.length < 2) throw new Error('候选日去重后不足 2 天；至少要两个不同的日子才谈得上比较');
+    if (candidates.length < 2) throw bad('候选日去重后不足 2 天；至少要两个不同的日子才谈得上比较');
   }
 
   let start = null;
   let days = 0;
   if (!candidates) {
     const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(input.startDate || '').trim());
-    if (!m) throw new Error('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
+    if (!m) throw bad('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
     start = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
-    days = Math.max(1, Math.min(60, Number.isInteger(input.days) ? input.days : 30));
+    // days 以前只认 Number.isInteger，于是 "45"（模型很爱给字符串）与 45.5 都静默变成 30 天：
+    // 用户要的区间被悄悄改短，而结果里只看得到实际扫了几天，看不出被改过。
+    // 现在：能规范成整数的（含数字串）就规范，范围外或非数字一律报错，不猜。
+    const rawDays = input.days;
+    if (rawDays === undefined || rawDays === null || rawDays === '') {
+      days = 30;
+    } else {
+      const n = Number(rawDays);
+      if (!Number.isInteger(n)) throw bad(`择日的 days 要是 1–60 的整数，收到「${rawDays}」`);
+      if (n < 1 || n > 60) throw bad(`择日的 days 要在 1–60 之间（${n} 超出范围）；更长请用分段多次查询`);
+      days = n;
+    }
   }
 
   const spec = TASKS[task];

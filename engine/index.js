@@ -76,13 +76,17 @@ function ziweiSchoolArgs(args) {
   return out;
 }
 
-/** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD' */
+/** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD'
+ *  可以带秒（用户常直接粘 ISO 串），但引擎的民用时间口径到分钟：秒只校验、不参与换算。 */
 export function parseDateTime(text) {
   if (typeof text !== 'string' || !text.trim()) {
     throw fail('E_INPUT', '缺少 datetime（公历日期时间），例如 1990-05-12T14:30');
   }
   const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
   if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 1990-05-12T14:30 这种格式`);
+  // 秒位以前只捕获不校验：\d{1,2} 放过 0–99，于是「T03:04:99」被静默折成 03:04。
+  // 与 1990-02-30 同一类问题——非法输入悄悄变成一个合法时刻，盘面照样排出，没人知道。
+  if (m[6] !== undefined && Number(m[6]) > 59) throw fail('E_INPUT', `秒超出范围：${m[6]}`);
   const out = {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
     hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),
@@ -517,7 +521,7 @@ function jsonSafe(value) {
 // ── 影子盘：同一组归一化参数 + 同一版本 → 同一个短 ID ──────────────
 // 只收影响盘面的参数：地址换成有效经度后不再把原文算进去，问事/方向按体系保留。
 const SHADOW_IGNORE = new Set([
-  'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'cross', 'verifyPast', 'rectify', 'events',
+  'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'detail', 'cross', 'verifyPast', 'rectify', 'events',
   'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise',
 ]);
 
@@ -756,6 +760,8 @@ export function compute(input = {}) {
     args = { ...args };
     delete args.partner2;
   }
+  // 经度整形 + 守卫（非有限 / 超范围 → E_RANGE；数字串 → 数字）
+  args = normalizeLongitudes(args);
   const r = jsonSafe(computeRaw(args));
   // 「所问之事」以前只有六爻和塔罗会落到结果里，梅花/六壬/奇门/小六壬都丢掉了：
   // 于是第一屏想说「你问的是……」却拿不到那句话。这里统一补齐，已有的值不动。
@@ -804,11 +810,15 @@ ${r.summary}`;
 ${r.summary}`;
   }
   // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
+  const tier = detailOf(args.detail);
   if (args.withInterpret) {
     r.interpret = interpret(r, {
       question: typeof args.question === 'string' ? args.question : '',
       direction: typeof args.direction === 'string' ? args.direction : 'general',
     });
+    // 档位只改「回给模型的文本」，不改解析对象：面板拿到的仍是完整的 interpret。
+    // 键名不用 detail / tier：合盘结果里 r.detail 是详批对象、流年行里 r.tier 是档位，都会撞。
+    if (tier === 'lean') r.interpretTier = 'lean';
   }
   // 八字 × 紫微交叉验证：同一份出生信息再排另一套盘，并列两边对同一件事的说法
   // 交叉验证要再排另一套盘：时辰未知时紫微排不出来，这条支路直接跳过，
@@ -904,9 +914,13 @@ ${r.summary}`;
   return r;
 }
 
-/** 解析与详解的紧凑文本（给模型看，不塞整块 JSON） */
-export function interpretText(i) {
+/** 解析与详解的紧凑文本（给模型看，不塞整块 JSON）
+ *  detail：'full'（默认，与历史输出逐字一致）或 'lean'（只给结论、你问的那条与三张表，
+ *  长论述与「规则·出处」折成一行指针）。省的是回给模型的文本，不改盘面、不改解析对象本身。 */
+export function interpretText(i, detail) {
   if (!i) return '';
+  const lean = detail === 'lean';
+  const LONG_SECTION = 300;
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   // 直答放在最前：先回答「你问的事」，再说依据，避免读者读到最后才知道结论；
   // 没填问题时就不该喊「答所问」——改为「先看结论」，否则是一句假话
@@ -919,16 +933,27 @@ export function interpretText(i) {
   }
   // 解析生成失败时不能只返回一个空壳：盘面数据仍然可用，但要让调用方知道"这段没生成出来"
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
-  for (const d of i.dimensions || []) {
+  const allDims = i.dimensions || [];
+  // 问了方向就只给那一条：其余四条在 full 档里，模型要展开随时可以再排一次
+  const dims = lean && allDims.some((d) => d && d.focused) ? allDims.filter((d) => d && d.focused) : allDims;
+  for (const d of dims) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}${d.confidence ? `　置信度：${d.confidence}` : ''}` : '';
     const plain = d.plain ? `（${d.plain}）` : '';
     // 知识条目：「为什么这样断」＋出处＋可信度标注，是结论与依据之外的第三层
-    const know = (d.knowledge || [])
-      .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
-      .join('');
+    const know = lean
+      ? ((d.knowledge || []).length ? `\n　规则 ${d.knowledge.length} 条未展开（detail:"full" 给出原文与出处）` : '')
+      : (d.knowledge || [])
+        .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
+        .join('');
     out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}${know}`);
   }
-  for (const s of i.sections || []) out.push(`${s.label}：${s.text}`);
+  const secs = i.sections || [];
+  const longSecs = lean ? secs.filter((s) => String(s.text || '').length > LONG_SECTION) : [];
+  for (const s of secs) {
+    if (lean && String(s.text || '').length > LONG_SECTION) continue;
+    out.push(`${s.label}：${s.text}`);
+  }
+  if (longSecs.length) out.push(`（另有 ${longSecs.length} 节长论述未展开：${longSecs.map((s) => s.label).join('、')}。需要原文与出处时传 detail:"full"）`);
   // 三张表：大运 / 流年 / 触发事件（纯文本对齐，工具输出也能直接读）
   for (const t of i.tables || []) {
     if (!Array.isArray(t.rows) || !t.rows.length) continue;
@@ -952,7 +977,7 @@ export function interpretText(i) {
 
 /** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
 // shadow / trace 是结果的派生展示，不是盘面口径；带进来会让影子盘回显把每组开关都算成「有变化」
-const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events', 'shadow', 'trace'];
+const CALIBER_IGNORE_ARGS = ['cross', 'verifyPast', 'withInterpret', 'detail', 'question', 'direction', 'ask', 'geocode', 'rectify', 'events', 'shadow', 'trace'];
 
 /**
  * 口径对照：同一组输入，只把某一个口径开关换成它的另一档，逐字段列出变化。
@@ -1020,15 +1045,62 @@ const JU_METHODS = ['chaibu', 'chaoshen', 'zhirun'];
 const TAROT_COUNTS = [1, 3, 5];
 const LATE_ZI_MODES = ['same-day', 'next-day'];
 
+/**
+ * 经度守卫：入口只判 `typeof === 'number'`，于是 JSON 里的 1e999（= Infinity）
+ * 会一路走到真太阳时里炸成裸 TypeError，181 这类超范围值则静默排出另一张盘。
+ * 两者都比报错坏：一个把堆栈式文案交给模型，一个把错结果当成对结果说出去。
+ */
+function checkLongitude(value, who = '') {
+  if (value === undefined || value === null || value === '') return undefined;
+  const n = Number(value);
+  const tag = who ? `${who}的` : '';
+  if (!Number.isFinite(n)) throw fail('E_RANGE', `${tag}经度不是有限数值：收到「${value}」。经度写十进制数字即可，例如北京 116.4`);
+  if (n < -180 || n > 180) throw fail('E_RANGE', `${tag}经度要在 −180 到 180 之间（东经为正），收到 ${n}`);
+  return n;
+}
+
+/**
+ * 把主方 / 对方 / 第三方的经度统一成数字。
+ * 下游按 `typeof === 'number'` 取值，所以 "86.0"（模型常给带引号的数）会被静默丢掉，
+ * 少一次真太阳时修正而结果里毫无痕迹——这里先整形，再交给校验过的值。
+ */
+function normalizeLongitudes(args) {
+  const self = checkLongitude(args.longitude, '');
+  const p = args.partner && typeof args.partner === 'object' ? checkLongitude(args.partner.longitude, '对方') : undefined;
+  const p2 = args.partner2 && typeof args.partner2 === 'object' ? checkLongitude(args.partner2.longitude, '第三方') : undefined;
+  const dirty = (self !== undefined && args.longitude !== self)
+    || (p !== undefined && args.partner.longitude !== p)
+    || (p2 !== undefined && args.partner2.longitude !== p2);
+  if (!dirty) return args;
+  const out = { ...args };
+  if (self !== undefined) out.longitude = self;
+  if (p !== undefined) out.partner = { ...out.partner, longitude: p };
+  if (p2 !== undefined) out.partner2 = { ...out.partner2, longitude: p2 };
+  return out;
+}
+
+/** 输出档位：缺省与 'full' 都是历史全文；'lean' 只回结论与你问的那一条，省模型上下文。
+ *  其它值以前会被当成「缺省」静默放过，写了 detail:'brief' 的人以为自己省了钱，其实没有。 */
+function detailOf(value) {
+  if (value === undefined || value === null || value === '' || value === 'full') return 'full';
+  if (value === 'lean') return 'lean';
+  throw fail('E_INPUT', `detail 只能是 'full' 或 'lean'：收到「${String(value).slice(0, 24)}」`);
+}
+
 /** asOf 只接受能解析成真实日期的字符串；非法值以前会静默回退到「此刻」 */
 function checkAsOf(asOf) {
   if (asOf === undefined || asOf === null || asOf === '') return undefined;
   const parts = asOfParts(asOf);
   if (!parts) throw fail('E_ASOF', `无法解析 asOf：「${asOf}」，请用 2026-10-22T16:00 这种格式`);
-  const { year, month, day } = parts;
+  const { year, month, day, hour, minute } = parts;
   if (!(month >= 1 && month <= 12) || !(day >= 1 && day <= daysInMonth(year, month))) {
     throw fail('E_ASOF', `asOf 指向的日期不存在：${asOf}`);
   }
+  // 时分以前不校验：asOf: '2026-06-01T25:99' 会被接受并原样回显，
+  // 而小时又按 mod 24 折回当日子时——流日/流时静默错位，比报错更坏。
+  // 与 parseDateTime 同一把尺：给了就必须在范围内，缺省才由下游补默认值。
+  if (hour !== undefined && !(hour >= 0 && hour <= 23)) throw fail('E_ASOF', `asOf 的小时要在 0–23 之间：${asOf}`);
+  if (minute !== undefined && !(minute >= 0 && minute <= 59)) throw fail('E_ASOF', `asOf 的分钟要在 0–59 之间：${asOf}`);
   return parts;
 }
 
@@ -1074,7 +1146,7 @@ function computeRaw(args = {}) {
       // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
       asOf,
     });
-    return { ...result, precision: dt.precision, summary: ziweiText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: ziweiText(result) };
   }
   if (system === 'tarot') {
     const count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
@@ -1733,7 +1805,7 @@ export function renderText(result) {
       + result.trace.map((t, i) => `${i + 1}. ${t.field}｜${t.result}\n　规则：${t.rule}　出处：${t.source}`).join('\n'));
   }
   if (result.interpret) {
-    const extra = interpretText(result.interpret);
+    const extra = interpretText(result.interpret, result.interpretTier);
     if (extra) parts.push(extra);
   }
   if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);

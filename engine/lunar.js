@@ -1,6 +1,6 @@
 // 农历（定朔）：朔望月计算 + 冬至所在月为十一月 + 无中气置闰
 import {
-  toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor, OFFSET_MODERN,
+  toJDN, jdToParts, termInstantJd, deltaTSeconds, localOffsetFor,
 } from './calendar.js';
 
 const SYNODIC = 29.530588861;
@@ -63,12 +63,11 @@ export function dayNumberOf(jd) {
   return Math.floor(jd + 0.5);
 }
 
-// 1929 年前后的时区切换常量与换算统一放在 calendar.js（节气与农历共用）
-/** 把 calendar 给出的「东八区轴」时刻换成当时的地方轴 */
-function toHistoricalLocal(jdBeijing) {
-  const jdUt = jdBeijing - OFFSET_MODERN;
-  return jdUt + localOffsetFor(jdUt);
-}
+// 时区切换常量与换算统一在 calendar.js：termInstantJd 与 newMoonJd 都已经落在
+// 「当时的本地时间轴」上（1929 前北京地方平时，之后东八区），两边直接比日序就行。
+// 以前这里再套一次 localOffset 把节气拉回本地轴，等于对同一个量移了两次时：
+// 净偏移约 −12 分，节气时刻一旦落在午夜前后十几分钟内就少算一天，
+// 中气归属错一个月，置闰跟着整月错位（1917 报闰三、真历表闰二；1922 报闰六、真历表闰五）。
 
 function kNear(jdDay) {
   return Math.round((jdDay + 0.5 - NEW_MOON_EPOCH) / SYNODIC);
@@ -78,7 +77,7 @@ function kNear(jdDay) {
 function hasZhongQi(year, startDay, endDay) {
   for (let y = year - 1; y <= year + 1; y++) {
     for (let i = 1; i < 24; i += 2) {
-      const jdLocal = toHistoricalLocal(termInstantJd(y, i));
+      const jdLocal = termInstantJd(y, i);
       const d = dayNumberOf(jdLocal);
       if (d >= startDay && d < endDay) return { index: i, jd: jdLocal };
     }
@@ -93,9 +92,9 @@ function hasZhongQi(year, startDay, endDay) {
 export function solarToLunar(year, month, day) {
   const targetDay = toJDN(year, month, day);
 
-  const wsDayThisYear = dayNumberOf(toHistoricalLocal(termInstantJd(year, 23)));
+  const wsDayThisYear = dayNumberOf(termInstantJd(year, 23));
   const wsYear = targetDay < wsDayThisYear ? year - 1 : year;
-  const wsDay = dayNumberOf(toHistoricalLocal(termInstantJd(wsYear, 23)));
+  const wsDay = dayNumberOf(termInstantJd(wsYear, 23));
 
   // 十一月朔：日序不晚于冬至的最后一个朔日
   let k = kNear(wsDay);
@@ -105,7 +104,7 @@ export function solarToLunar(year, month, day) {
   // ── 置闰前提（国标口径）──
   // 只有「两个冬至月之间有 13 个朔望月」才需要置闰，且取其中第一个无中气的月。
   // 若只有 12 个月，即使某月无中气也不闰（1985 正月、2053 正月就是这种反例）。
-  const nextWsDay = dayNumberOf(toHistoricalLocal(termInstantJd(wsYear + 1, 23)));
+  const nextWsDay = dayNumberOf(termInstantJd(wsYear + 1, 23));
   let kNext = k;
   while (dayNumberOf(newMoonJd(kNext + 1)) <= nextWsDay) kNext++;
   const cycleMonths = kNext - k;

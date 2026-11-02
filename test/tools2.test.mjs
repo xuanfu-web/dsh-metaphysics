@@ -1,5 +1,6 @@
 // 人生 K 线 / 风水 / 起名 / 合盘细化层：口径与边界
 import { compute } from '../engine/index.js';
+import { buildBazi } from '../engine/bazi.js';
 import { buildTrend } from '../engine/trend.js';
 import { buildFengshui, mingGua, yearZibaiStar, yearlyFlying, MOUNTAINS_24 } from '../engine/fengshui.js';
 import { buildName, CHAR_LIB } from '../engine/name.js';
@@ -27,6 +28,24 @@ ok('trend K 线高点≥收盘≥低点', t.points.every((p) => p.kline.high >= 
 ok('trend 走势分段数=分段数+起运前', Array.isArray(t.sparkline) && t.sparkline.length === t.segments.length + 1, t.sparkline);
 ok('trend 关键年最多 3 个', !t.highlights || !t.highlights.best || t.highlights.best.length <= 3, t.highlights);
 
+// 大运分段的轴：points[].age 是虚岁（= 公历年 − 出生年 + 1，与八字流年表同一口径），
+// dayun.startAge 却是周岁（三日折一年从出生日起算）。旧写法把周岁直接套在虚岁轴上，
+// 整条线提前一年——1990-11-20 男命 1996-09 交戊子（起运 5 岁 10 个月），
+// 旧写法从 1996-09-05 往前退到 1995 就套上戊子，等于把还没起运的一年算进了新运。
+// 用 11 月出生的盘才照得出这一步：交运落在生日之前，周岁起运年与交运年差一整年。
+const ts = buildTrend({ year: 1990, month: 11, day: 20, hour: 8, minute: 0, gender: 'male', toAge: 30 });
+const bRef = buildBazi({ year: 1990, month: 11, day: 20, hour: 8, minute: 0, gender: 'male' });
+const jiaoYear = Number(String(bRef.dayun.list[0].fromDate).slice(0, 4));
+const firstSeg = ts.segments[0];
+eq('trend 首段起点 = 交运那一年的虚岁', firstSeg.startAge, jiaoYear - 1990 + 1);
+ok('trend 交运前不提前套大运', ts.points.filter((p) => p.year < jiaoYear).every((p) => p.dayunGanZhi === null),
+  ts.points.filter((p) => p.year < jiaoYear).map((p) => `${p.year}:${p.dayunGanZhi}`).join(' '));
+ok('trend 每段都有段名', ts.segments.every((s) => typeof s.ganZhi === 'string' && s.ganZhi.length === 2), ts.segments);
+ok('trend 分段首尾相接、不重叠不断档', ts.segments.every((s, i) => i === 0 || s.startAge === ts.segments[i - 1].endAge + 1),
+  ts.segments.map((s) => `${s.startAge}-${s.endAge}`).join(' '));
+ok('trend 周岁起运年 ≠ 交运年（用例本身要有区分度）', 1990 + bRef.dayun.startAge.years !== jiaoYear,
+  `起运 ${bRef.dayun.startAge.years} 岁 / 交运 ${jiaoYear} 年`);
+
 // 边界：旺衰落在换档阈值上时不强出顺位结论
 const tb = buildTrend({ year: 1988, month: 7, day: 1, hour: 0, minute: 30, gender: 'female', toAge: 40 });
 ok('trend 夏令时日期被校正', tb.meta.birth === '1988-06-30', tb.meta.birth);
@@ -34,6 +53,11 @@ if (tb.meta.boundaryNote) ok('trend 边界时只给提示不给排序', tb.highl
 
 const t100 = buildTrend({ year: 1990, month: 5, day: 12, hour: 14, minute: 30, gender: 'female' });
 eq('trend 默认算到 100 岁', t100.points.length, 100);
+// 引擎只排八步：九步之后靠「交运年 + 十年」续段，段名按六十甲子推。
+ok('trend 八步之外按十年续段', t100.segments.length > 8
+  && t100.segments[8].startAge === t100.segments[7].endAge + 1
+  && t100.segments[8].endAge - t100.segments[8].startAge === 9
+  && t100.segments[8].ganZhi.length === 2, t100.segments.map((s) => `${s.startAge}-${s.endAge}`).join(' '));
 
 // ── 风水 ───────────────────────────────────────────────────
 const f = buildFengshui({ year: 1990, month: 8, day: 15, gender: 'female', fortuneYear: 2026 });

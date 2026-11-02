@@ -1,4 +1,5 @@
 import { solarToLunar } from '../engine/lunar.js';
+import { termInstantJd, jdToParts } from '../engine/calendar.js';
 
 import { ok } from './_harness.mjs';
 
@@ -38,6 +39,35 @@ for (const [date, month, isLeap, label] of leaps) {
   const l = solarToLunar(Y, M, D);
   ok(label, l.month === month && l.isLeap === true && l.day === 1, `${l.month}月${l.day}日${l.isLeap ? ' 闰' : ''}`);
 }
+
+// 1929 年前那一次「北京地方平时」换算只能做一遍。
+// 早先 lunar.js 把 calendar 已经落在本地轴上的节气时刻又套了一次 toHistoricalLocal，
+// 等于把所有中气整体推后约 12 分钟；正好卡在午夜前后的中气因此归错了月，
+// 1917、1922 两年各多出一个闰月。历书：1917 闰二月、1922 闰五月（引擎曾误判闰三月、闰六月）。
+const pre1929 = [
+  ['1917-03-23', 2, true, '1917 闰二月初一'],
+  ['1917-04-21', 3, false, '1917-04-21 = 三月初一，不是闰三月初一'],
+  ['1922-06-25', 5, true, '1922 闰五月初一'],
+  ['1922-07-24', 6, false, '1922-07-24 = 六月初一，不是闰六月初一'],
+];
+for (const [date, month, isLeap, label] of pre1929) {
+  const [Y, M, D] = date.split('-').map(Number);
+  const l = solarToLunar(Y, M, D);
+  ok(label, l.month === month && l.day === 1 && l.isLeap === isLeap,
+    `${l.month}月${l.day}日${l.isLeap ? ' 闰' : ''}`);
+}
+
+// 「冬至必须在十一月」是整张置闰表的定盘星：十一月由含冬至的那个月锚死，
+// 之后才逐月推中气、找第一个无中气之月置闰。时间轴算错时最先松动的就是它，
+// 所以 1900–2100 逐年核对，而不是只挑几个样本年。
+const dzBad = [];
+for (let y = 1900; y <= 2100; y++) {
+  const p = jdToParts(termInstantJd(y, 23));
+  const l = solarToLunar(p.year, p.month, p.day);
+  if (!l) dzBad.push(`${y} 越界`);
+  else if (l.month !== 11 || l.isLeap) dzBad.push(`${y}：冬至${p.month}-${p.day} → ${l.isLeap ? '闰' : ''}${l.month}月${l.day}日`);
+}
+ok('1900–2100 每年冬至都落在十一月', dzBad.length === 0, dzBad.slice(0, 6).join('；') || '201 年全中');
 
 // 连续 60 天逐日自检：同一月内日期递增，换月则回到初一
 let prev = null;

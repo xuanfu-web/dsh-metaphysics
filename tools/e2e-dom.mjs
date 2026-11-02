@@ -53,7 +53,7 @@ const TABS = [
 ];
 
 const browser = await chromium.launch({ executablePath: exe, headless: true, args: ['--allow-file-access-from-files'] });
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: 'light' });
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: 'light', permissions: ['clipboard-read', 'clipboard-write'] });
 const page = await ctx.newPage();
 
 const errors = [];
@@ -275,6 +275,192 @@ for (const t of TABS) {
     console.log('      窄屏截图：' + path.join(root, '_e2e-mobile.png'));
   }
   await p4.close();
+}
+
+// ── 我的命盘（单页侧）：存一张卡 → 换一张盘 → 点卡回到原盘 ──────
+// 档案的存储与渲染在 panel-kit 是共用的一份，但接线是各写各的：
+// 面板走 React 的 onClick 委托，单页走 addEventListener + 真实表单 id。
+// 只有把两边都点一遍，才知道「单页这边有没有把 id 填错 / 有没有把 run 忘了」。
+{
+  const errsBefore = errors.length;
+  const p5 = await ctx.newPage();
+  p5.on('pageerror', (e) => errors.push('p5 pageerror: ' + e.message));
+  await p5.goto('file:///' + pageFile.replace(/\\/g, '/'), { waitUntil: 'load' });
+  await p5.waitForTimeout(500);
+
+  const bz = () => p5.evaluate(() => {
+    const t = document.querySelector('#out .pp-bz');
+    return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
+  });
+
+  // 分组视图下 .tab 那条是被 CSS 收起来的，能点的入口是分组卡片；两个都试一遍
+  const clickTab = async (k) => {
+    const loc = p5.locator(`[data-tab="${k}"]`);
+    const n = await loc.count();
+    for (let i = 0; i < n; i++) {
+      const one = loc.nth(i);
+      if (await one.isVisible()) { await one.click(); return true; }
+    }
+    if (!n) return false;
+    await loc.first().dispatchEvent('click');
+    return true;
+  };
+
+  ok((await p5.locator('#profwrap .mp-prof').count()) === 1, '单页 · 顶部出现「我的命盘」');
+  ok((await p5.locator('#profwrap .mp-prof-empty').count()) === 1, '单页 · 没有档案时给引导');
+  ok((await p5.locator('#profwrap .mp-prof-name').count()) === 1, '单页 · 命盘类体系给存入条');
+
+  // 六爻是占事，没有「出生信息」可存
+  ok(await clickTab('liuyao'), '单页 · 能切到六爻');
+  await p5.waitForTimeout(500);
+  ok((await p5.locator('#profwrap .mp-prof-name').count()) === 0, '单页 · 占事体系不给存入条');
+
+  ok(await clickTab('bazi'), '单页 · 能切到八字');
+  await p5.waitForTimeout(500);
+  await p5.fill('#date', '1988-03-05');
+  await p5.fill('#time', '08:30');
+  await p5.selectOption('#gender', 'male');
+  await p5.fill('#addr', '河北石家庄');
+  await p5.locator('#hourunknown').uncheck().catch(() => {});
+  await p5.locator('#go').click();
+  await p5.waitForTimeout(1500);
+  const saved = await bz();
+  ok(/年柱/.test(saved), '单页 · 存盘前先排出一张八字盘', saved.slice(0, 32));
+
+  await p5.fill('#profwrap .mp-prof-name', '单页阿测');
+  await p5.locator('#profwrap button[data-mp-prof="put"]').click();
+  await p5.waitForTimeout(300);
+  ok((await p5.locator('#profwrap .mp-prof-card').count()) === 1, '单页 · 存入后多出一张档案卡');
+  ok((await p5.locator('#profwrap .mp-prof-tip').innerText()).includes('已存入我的命盘'), '单页 · 存入回执写在这条上', (await p5.locator('#profwrap .mp-prof-tip').innerText()).slice(0, 30));
+  const stored = await p5.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/profiles-v1') || '[]'); } catch (e) { return []; }
+  });
+  ok(stored.length === 1 && stored[0].date === '1988-03-05' && stored[0].kind === 'bazi', '单页 · 档案落到本机存储', JSON.stringify(stored[0] || {}).slice(0, 60));
+
+  // 改名：原称呼必须先读回输入框；什么都不改点「更新」，称呼不能被体系短名顶掉
+  await p5.locator('#profwrap [data-mp-prof="edit"]').dispatchEvent('click');
+  await p5.waitForTimeout(200);
+  const editName = await p5.inputValue('#profwrap .mp-prof-name');
+  ok(editName === '单页阿测', '单页 · 点「改名」把原称呼读回输入框', editName);
+  await p5.locator('#profwrap button[data-mp-prof="put"]').click();
+  await p5.waitForTimeout(300);
+  const afterEdit = await p5.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/profiles-v1') || '[]'); } catch (e) { return []; }
+  });
+  ok(afterEdit.length === 1 && afterEdit[0].label === '单页阿测', '单页 · 不改称呼直接更新，称呼不被体系名顶掉', JSON.stringify(afterEdit[0] || {}).slice(0, 60));
+
+  // 换一张盘，再点卡：表单回填 + 出的是同一张盘
+  await p5.fill('#date', '1990-12-01');
+  await p5.locator('#go').click();
+  await p5.waitForTimeout(1500);
+  const other = await bz();
+  ok(other && other !== saved, '单页 · 换日期确实换了一张盘', other.slice(0, 32));
+  await p5.locator('#profwrap .mp-prof-use').first().click();
+  await p5.waitForFunction((want) => {
+    const t = document.querySelector('#out .pp-bz');
+    return !!t && t.innerText.replace(/\s+/g, ' ').trim() === want;
+  }, saved, { timeout: 20000 }).catch(() => {});
+  ok((await bz()) === saved, '单页 · 点档案卡一点出盘（不必重报出生信息）', (await bz()).slice(0, 32));
+  const filled = await p5.evaluate(() => ({
+    date: (document.getElementById('date') || {}).value,
+    time: (document.getElementById('time') || {}).value,
+    gender: (document.getElementById('gender') || {}).value,
+    addr: (document.getElementById('addr') || {}).value,
+  }));
+  ok(filled.date === '1988-03-05' && filled.time === '08:30', '单页 · 卡上的生日时刻回填进表单', `${filled.date} ${filled.time}`);
+  ok(filled.gender === 'male' && String(filled.addr).includes('石家庄'), '单页 · 性别与出生地回填', `${filled.gender} ${filled.addr}`);
+
+  // 删除两次确认 + 删完不影响已经排出来的盘
+  await p5.locator('#profwrap [data-mp-prof="del"]').dispatchEvent('click');
+  await p5.waitForTimeout(200);
+  ok((await p5.locator('#profwrap .mp-prof-card').count()) === 1, '单页 · 第一次点删除只变成确认');
+  ok((await p5.locator('#profwrap [data-mp-prof="del"]').innerText()).includes('确认删除'), '单页 · 按钮文案变「确认删除」');
+  await p5.locator('#profwrap [data-mp-prof="del"]').dispatchEvent('click');
+  await p5.waitForTimeout(250);
+  ok((await p5.locator('#profwrap .mp-prof-card').count()) === 0, '单页 · 第二次点才真删');
+  ok((await bz()) === saved, '单页 · 删档案不动已经排出来的盘');
+
+  // 旧版本 / 手改存储留下的「有日期没时刻」卡：不能拿表单里现成的 14:30 顶上排成另一个人
+  await p5.evaluate(() => {
+    localStorage.setItem('dsh-metaphysics/profiles-v1', JSON.stringify([
+      { id: 'nt1', kind: 'bazi', label: '没时刻', date: '1990-01-01', time: '', hourUnknown: false, createdAt: 1, lastUsedAt: 1 },
+    ]));
+  });
+  await p5.reload({ waitUntil: 'load' });
+  await p5.waitForTimeout(500);
+  ok((await p5.locator('#profwrap .mp-prof-card').count()) === 1, '单页 · 重载后读到那张缺时刻的卡');
+  await p5.locator('#profwrap .mp-prof-use').first().click();
+  await p5.waitForTimeout(500);
+  ok((await p5.locator('#profwrap .mp-prof-tip').innerText()).includes('没有出生时刻'), '单页 · 缺时刻的卡提示先补时刻', (await p5.locator('#profwrap .mp-prof-tip').innerText()).slice(0, 30));
+  ok((await p5.locator('#out .pp-bz').count()) === 0, '单页 · 缺时刻的卡不拿表单现成时刻排成另一个人');
+  const ntUse = await p5.evaluate(() => {
+    try { return (JSON.parse(localStorage.getItem('dsh-metaphysics/profiles-v1') || '[]')[0] || {}).uses || 0; } catch (e) { return -1; }
+  });
+  ok(ntUse === 0, '单页 · 没排出来的卡不算「排过一次」', String(ntUse));
+
+  // 面板与单页共用存储：单页存的 key 必须和面板写的是同一个
+  const keyOk = await p5.evaluate(() => Object.prototype.hasOwnProperty.call(window.__PP, 'PROF_KEY') && window.__PP.PROF_KEY === 'dsh-metaphysics/profiles-v1');
+  ok(keyOk, '单页与面板共用同一个档案 key');
+  ok(errors.length === errsBefore, '单页 · 档案流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
+  await p5.close();
+}
+
+// ── 复制给其他 AI（单页侧）：包里的「所问」必须是用户写的那句 ──────────
+// 这条链最容易在接线层断：命盘类没有主问题输入框，若只读 #question，复制出去的
+// 永远是「请先用一句白话讲清这张盘的主线」；追问框里刚写的字则整段丢失。
+// 同时要求带上插件已算好的开场结论，别的模型才不会另起一套口径。
+{
+  const errsBefore = errors.length;
+  const p6 = await ctx.newPage();
+  p6.on('pageerror', (e) => errors.push('p6 pageerror: ' + e.message));
+  await p6.goto('file:///' + pageFile.replace(/\\/g, '/'), { waitUntil: 'load' });
+  await p6.waitForTimeout(500);
+
+  const openTab = async (k) => {
+    const loc = p6.locator(`[data-tab="${k}"]`);
+    const n = await loc.count();
+    for (let i = 0; i < n; i++) {
+      if (await loc.nth(i).isVisible()) { await loc.nth(i).click(); return true; }
+    }
+    if (!n) return false;
+    await loc.first().dispatchEvent('click');
+    return true;
+  };
+  const copyAsk = async () => {
+    await p6.evaluate(() => navigator.clipboard.writeText('__before__'));
+    await p6.locator('[data-act="copyask"]').click();
+    await p6.waitForTimeout(300);
+    return p6.evaluate(() => navigator.clipboard.readText());
+  };
+
+  await openTab('bazi');
+  await p6.click('#go');
+  await p6.waitForTimeout(1400);
+  await p6.fill('#askq', '2027 年事业怎么样');
+  const baziPack = await copyAsk();
+  ok(baziPack.includes('2027 年事业怎么样'), '复制提问 · 带上追问框里写的问题');
+  ok(baziPack.includes('——盘面摘要——') && baziPack.includes('——回答要求——'), '复制提问 · 带盘面摘要与回答骨架');
+  ok(baziPack.includes('——开场结论') && baziPack.includes('说人话：'), '复制提问 · 带面板已算好的开场结论');
+  ok(baziPack.length > 2000, '复制提问 · 内容量够别的模型直接用', String(baziPack.length));
+
+  // 只填「所问之事」、不写追问：问事类也不能退回默认开场句
+  await openTab('liuyao');
+  await p6.fill('#question', '今年适合换工作吗');
+  await p6.click('#go');
+  await p6.waitForTimeout(1400);
+  const lyPack = await copyAsk();
+  // 只看摘要之前的抬头：摘要正文里本来就有「所问：」，拿全文匹配会把默认句的错盖过去
+  const lyHead = lyPack.split('——盘面摘要——')[0];
+  ok(/所问：今年适合换工作吗/.test(lyHead), '复制提问 · 只填「所问之事」时也进包');
+  ok(!/所问：请先用一句白话讲清/.test(lyHead), '复制提问 · 默认开场句不顶替用户问题');
+
+  // 切「询问方向」会整块重绘 #out：追问框里已经输入的字不能被清掉
+  await p6.fill('#askq', '换方向后这句话还在吗');
+  await p6.locator('#direction').selectOption({ index: 1 });
+  await p6.waitForTimeout(600);
+  ok((await p6.inputValue('#askq')) === '换方向后这句话还在吗', '单页 · 切方向重绘后追问框内容保留');
+  ok(errors.length === errsBefore, '单页 · 复制提问流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
+  await p6.close();
 }
 
 await browser.close();

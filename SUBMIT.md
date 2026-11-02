@@ -62,10 +62,10 @@ PR 合并后站点与 dsh-market 会自动重建，通常一天内可见。
 npm publish --access public
 ```
 
-## 四、提交状态（2026-10-31 更新）
+## 四、提交状态（2026-11-02 更新）
 
-- **当前版本**：`0.59.1`（已推送并发布；九个体系第一屏人话、时辰未知三柱模式、工具 `hourUnknown`、多个第一屏修复）。
-- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并；#10557 也已合并（条目同步到 0.46 能力）。0.47–0.59.1 的市场描述仍需下一次 PR 补。
+- **当前版本**：`0.60.0`（工作区已就绪、待发布；我的命盘、复制提问、输入守卫、历算修正、lean 档位、竞态与闸门修复）。线上最新仍是 `0.59.1`。
+- **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并；#10557 也已合并（条目同步到 0.46 能力）。0.47–0.60.0 的市场描述仍需下一次 PR 补。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
 - **已发布**：npm `dsh-metaphysics@0.59.1`（2026-11-02，`dist-tags.latest = 0.59.1`，shasum `43817f74d114121bbbe947c91abc10a825a287b9`，94 个文件，tarball 3.8MB）。上一版是 `0.59.0`。
 - **仓库同步**：`main` 推到 `520c1da`，tag `v0.59.1`，GitHub release：https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.59.1

@@ -333,8 +333,66 @@ async function pushWithRetry(args, label, cfg) {
   fail(`${label} 连续 3 次失败（检查 GitHub 443 是否可达；SSH 兜底也没成）`);
 }
 
+/**
+ * 自动提交只收「本来就该在仓库里的路径」。
+ *
+ * 原先这里是 `git add -A`：工作区里多出什么，机器人都原样推到公开仓库。
+ * 真实踩过一次——某条写文档的命令把整句中文当成了重定向目标，在仓库根留下
+ * 7 个 0 字节、文件名是一句话的文件，当天就被 autopublish 提交进 main。
+ * .gitignore 只挡得住约定好的形态（.env / *.secret），挡不住「没见过的名字」。
+ *
+ * 规则：目录按白名单走；根文件必须有已知扩展名，或在显式清单里（LICENSE、.gitignore）。
+ * 落在规则外的改动不提交、也不删——只在日志里点名，让人来看一眼是什么。
+ */
+const STAGE_DIRS = ['engine/', 'src/', 'test/', 'tools/', 'docs/', 'locale/', 'submit/', '.github/'];
+const STAGE_ROOT_EXT = /\.(js|json|md|html|yml|yaml|svg|css|txt|csv)$/i;
+const STAGE_ROOT_EXPLICIT = ['LICENSE', '.gitignore'];
+// 点开头的名字一律不收：自动发布自己的状态/锁/日志都在 tools/ 下，按目录白名单会被放行，
+// 于是每一轮提交都多一条「运行痕迹」。
+const STAGE_DOT_OK = ['.github', '.gitignore'];
+
+function stageable(p) {
+  if (p.split('/').some((s) => s.startsWith('.') && !STAGE_DOT_OK.includes(s))) return false;
+  if (p.includes('/')) return STAGE_DIRS.some((d) => p.startsWith(d));
+  return STAGE_ROOT_EXT.test(p) || STAGE_ROOT_EXPLICIT.includes(p);
+}
+
+/** porcelain -z：路径不带引号转义，中文名也能原样拿到；重命名会多一条「旧路径」记录 */
+function changedPaths() {
+  const r = git(['status', '--porcelain=v1', '--untracked-files=all', '-z']);
+  if (r.status !== 0) return null;
+  const recs = r.stdout.split('\0');
+  const out = [];
+  for (let i = 0; i < recs.length; i++) {
+    const rec = recs[i];
+    // 不能在这里 filter 掉短记录：重命名记录的下一条就是「旧路径」，
+    // 少一条会让 i++ 跳过真正的改动，把该提交的文件静默漏掉。
+    if (rec.length < 4) continue;
+    const xy = rec.slice(0, 2);
+    out.push(rec.slice(3));
+    // R/C 的记录后面紧跟来源路径，它本身不是独立改动
+    if (xy[0] === 'R' || xy[0] === 'C') i++;
+  }
+  return out;
+}
+
 async function commitAndPush(cfg) {
-  git(['add', '-A']);
+  const paths = changedPaths();
+  if (!paths) fail('git status 失败，无法确定要提交哪些文件（宁可不提交，也不做全量 add -A）');
+  const keep = paths.filter(stageable);
+  const skipped = paths.filter((p) => !stageable(p));
+  if (skipped.length) {
+    log(`⚠ 未纳入自动提交（不在允许清单，请人工确认）：${skipped.slice(0, 12).join(' / ')}${skipped.length > 12 ? ` …共 ${skipped.length} 项` : ''}`);
+  }
+  if (!keep.length) {
+    log('允许清单内没有改动，本轮不提交');
+    return;
+  }
+  // 分批传路径：一次塞几百个会撞命令行长度上限
+  for (let i = 0; i < keep.length; i += 50) {
+    const r = git(['add', '-A', '--', ...keep.slice(i, i + 50)]);
+    if (r.status !== 0) fail(`git add 失败：\n${r.stdout}${r.stderr}`);
+  }
   const msg = 'chore(autopublish): 自动构建并推送\n\n由 tools/autopublish.mjs 定时任务生成：跑七道闸、重建 client.js 与命理排盘.html 后提交推送。不发 npm、不改版本号、不打 tag——发版按主题攒够后手动走 tools/release.mjs。';
   const c = git(['-c', 'core.autocrlf=false', 'commit', '-m', msg]);
   if (c.status !== 0 && !/nothing to commit/i.test(c.stdout + c.stderr)) {
@@ -407,6 +465,8 @@ async function main() {
   const gates = [
     ['build-client', ['tools/build-client.mjs']],
     ['build-html', ['tools/build-html.mjs']],
+    ['build-verification', ['tools/verification.mjs']],
+    ['check-verification', ['tools/check-verification.mjs']],
     ['check-bundle', ['tools/check-bundle.mjs']],
     ['test-all', ['tools/test-all.mjs']],
     ['check-assertions', ['tools/check-assertions.mjs']],

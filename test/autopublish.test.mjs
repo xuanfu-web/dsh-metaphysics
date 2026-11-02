@@ -80,3 +80,56 @@ const stateAfterFail = fs.existsSync(statePath) ? read('.autopublish-state.json'
 ok('失败不改状态文件', stateAfterFail === after);
 // 收拾现场：错误文件是运行产物，别留在工作区里
 try { fs.unlinkSync(ERR); } catch (e) { /* 本来就没有 */ }
+
+// ── ⑤ 受控暂存：机器人不许把没见过的文件推到公开仓库 ─────────────
+// 真实事故：某条写文档的命令把整句中文当成重定向目标，在仓库根留下 7 个 0 字节文件，
+// 因为 commitAndPush 里是 `git add -A`，当天就被自动提交进 main。
+// 仓库里全是 CRLF，跨行的定位与抽取一律先在换行归一后的副本上做。
+const srcLF = src.replace(/\r\n/g, '\n');
+const stageStart = srcLF.indexOf('const STAGE_DIRS = [');
+const stageEnd = srcLF.indexOf('  return out;\n}', stageStart);
+ok('受控暂存代码存在', stageStart >= 0 && stageEnd > stageStart);
+const stageRegion = srcLF.slice(stageStart, stageEnd + '  return out;\n}'.length);
+let recs = [];
+const api = new Function('git', `${stageRegion}\nreturn { stageable, changedPaths };`)(
+  () => ({ status: 0, stdout: recs.join('\0'), stderr: '' }),
+);
+
+// 路径判定：目录白名单 + 根文件扩展名/显式清单
+const YES = ['src/app.js', 'test/autopublish.test.mjs', 'engine/index.js', 'tools/check-bundle.mjs',
+  'docs/参考资料与对拍来源.md', 'client.ziwei.js', '命理排盘.html', 'index.js', 'package.json',
+  'README.md', 'LICENSE', '.gitignore', 'locale/zh.json', '.github/workflows/ci.yml'];
+const NO = ['node_modules/dsh-metaphysics/index.js', '.env', '.npmrc', 'tools/.autopublish.log',
+  '不记录反馈者的出生资料、邮箱与账号；需要样例时只写盘型，测试一律用合成日期。', '这份清单对应',
+  '典籍原文的登记、核验与待补状态见', 'nope.txt.bak2', 'token.txt.tmp', ''];
+const wrongYes = YES.filter((p) => !api.stageable(p));
+const wrongNo = NO.filter((p) => api.stageable(p));
+ok('该提交的都在清单内', wrongYes.length === 0, wrongYes.join(' / '));
+ok('没见过的根文件与产物一律不提交', wrongNo.length === 0, wrongNo.join(' / '));
+
+// 清单必须真的能拦住这次事故的那 7 个名字，而不是碰巧
+const incidents = ['每份反馈逐条记：诉求', '立这道门槛的原因很简单：命理领域最容易犯的错不是「算错」，而是「说得很确定，却没人知道依据在哪」。',
+  '每条规则在解析卡片里直接显示，右上角标注可信度：**诸家一致', '外部页面、库与典籍只作口径参考与对拍。每条记清：地址、访问日期、采用了什么、怎么验证、哪些没采用。'];
+ok('事故里的 7 个文件名全部被拒', incidents.every((p) => !api.stageable(p)));
+
+// porcelain -z 解析：重命名记录会多带一条「旧路径」，不能当成独立改动，
+// 也不能因为旧路径名很短就 filter 掉整条记录——那会让下一条真改动被跳过。
+recs = ['R  src/new.js', 'src/old.js', 'M  engine/index.js', ''];
+eq('重命名只取新路径', api.changedPaths().join(','), 'src/new.js,engine/index.js');
+recs = ['R  tools/a.js', 'b', 'M  src/app.js', ''];
+eq('极短的重命名来源不吞掉下一条', api.changedPaths().join(','), 'tools/a.js,src/app.js');
+recs = ['?? 每份反馈逐条记：诉求', 'M  package.json', ''];
+eq('中文名按原样取回（不走引号转义）', api.changedPaths().join(','), '每份反馈逐条记：诉求,package.json');
+
+// git status 失败时宁可整轮不提交，也不退回全量 add -A
+api.__recs = null;
+const gitStatus = new Function('git', `${stageRegion}\nreturn changedPaths;`)
+  (() => ({ status: 128, stdout: '', stderr: 'not a git repository' }));
+eq('status 失败返回 null（调用方据此放弃提交）', gitStatus(), null);
+
+// 源码层：不许再出现裸 add -A；清单外的只记日志，不许顺手删
+ok('不再有无差别的 git add -A', !/git\(\['add', '-A'\]\)/.test(srcLF));
+ok('暂存走显式路径清单', /git\(\['add', '-A', '--', \.\.\.keep/.test(srcLF));
+ok('清单外的改动只报不删', /未纳入自动提交（不在允许清单/.test(srcLF)
+  && !/commitAndPush[\s\S]{0,1400}(rmSync|unlinkSync)/.test(srcLF));
+ok('拿不到改动清单时整轮放弃', /git status 失败/.test(srcLF));

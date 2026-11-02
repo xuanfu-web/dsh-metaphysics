@@ -37,7 +37,8 @@ function HISTORY_LABEL(kind, r) {
 const PP = window.__PP;
 // 计时统一走 performance.now，缺省退回 Date.now（老宿主 / vm 沙箱）
 const mpNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-// 只用来丢弃过期的首帧回调；不上报、不落盘
+// 界面代次：每次点排盘 / 切 tab 都自增。await 之后拿它比对一次，过期的一次不再写结果与历史。
+// 只用来丢弃过期回调；不上报、不落盘
 let perfSeq = 0;
 // 独立页与旧宿主没有分块加载器：把现成的完整 Engine 当作已加载
 const ensureEngine = typeof window.__mpEnsureEngine === 'function'
@@ -442,8 +443,11 @@ const needAsk = Core.needAsk || ((t) => false);
 // conversation.input.right 是会话作用域槽位，props 带 inputActions：
 // setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
 // 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
-const COMPOSER = { ref: null, seats: [], keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
+const COMPOSER = { ref: null, seats: [], seatOk: {}, keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
 const LAST = { r: null, q: '', it: null };
+// 档案称呼框在 dangerouslySetInnerHTML 里，重绘会整块换掉；存在模块级，
+// 改日期等任意 state 变化重绘时才能把它带回输入框（不 setState，避免每键重绘丢光标）
+let PROF_NAME = '';
 
 // 桥自检：把「门面有没有 inject、槽位声明成什么样、注册抛没抛错、组件被渲染过几次」
 // 拼成一行给面板显示——用户不用开控制台，把这一行截回来就能定位。
@@ -593,9 +597,6 @@ function App() {
   const [result, setResult] = useState(null);
   // 首屏耗时：引擎取块、排盘、首帧（rAF 两次）三段实测；只在本机显示
   const [perf, setPerf] = useState(null);
-  useEffect(() => {
-    if (result && result.r) { LAST.r = result.r; LAST.q = askText.trim(); LAST.it = result.it || null; }
-  }, [result, askText]);
   const [hist, setHist] = useState(() => loadHistory());
   // 首屏视图与「最近用过」：与独立页同一套存储键，分组视图下隐藏平铺 tab 条
   const [view, setView] = useState(() => (storeGet(VIEW_KEY) === 'flat' ? 'flat' : 'group'));
@@ -605,12 +606,25 @@ function App() {
   });
   const [openGroups, setOpenGroups] = useState({});
   const [replayArgs, setReplayArgs] = useState(null);
+  // 我的命盘（本机档案）：列表 / 改名中的那一张 / 等第二次点击确认的删除
+  const [profiles, setProfiles] = useState(() => PP.profilesLoad());
+  const [profEditing, setProfEditing] = useState(null);
+  const [profArmed, setProfArmed] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [engineLoading, setEngineLoading] = useState(false);
   const [count, setCount] = useState('3');
   const [question, setQuestion] = useState('');
   const [direction, setDirection] = useState('general');
+  // 对外打包的「所问」：追问优先，其次「所问之事」。复制提问 / 问进对话 / 对话桥
+  // 三个出口共用这一份口径，否则问事类只填主问题时，发出去的永远是默认开场句。
+  function packedQuestion() {
+    return askText.trim() || (result && needAsk(result.kind) ? String(question || '').trim() : '');
+  }
+  // 对话桥（输入条右侧的「命理·问」）读的是 LAST.q，这里跟着结果一起更新
+  useEffect(() => {
+    if (result && result.r) { LAST.r = result.r; LAST.q = packedQuestion(); LAST.it = result.it || null; }
+  }, [result, askText, question]);
   // 解析模块较长：窄屏默认收起、宽屏默认展开；用户手动切过就以他的选择为准
   const [foldPref, setFoldPref] = useState(null);
   // 「所问之事」未填就起卦时，输入框转红提示
@@ -653,6 +667,9 @@ function App() {
     // 首屏计时从点按钮这一刻起；runToken 防止连续点两次时旧的一次把新数字覆盖掉
     const runStart = mpNow();
     const runToken = ++perfSeq;
+    // 同一次「点排盘」在 await 之后还要写结果、错误、历史：只要期间用户又点了一次或换了 tab，
+    // 这次就是过期的一次。过期只影响本次是否落笔，不影响排盘正确性——但不能让旧盘盖掉新盘。
+    const stale = () => runToken !== perfSeq;
     setPerf(null);
     setNotice('');   // 上一次的提示（如「先答满 12 题」）不该跟着新结果一起留下
     try {
@@ -665,12 +682,14 @@ function App() {
         engineMs = load && typeof load.ms === 'number' ? load.ms : mpNow() - runStart;
         engineCached = load && typeof load.cached === 'boolean' ? load.cached : null;
       } catch (e) {
+        if (stale()) return;
         setError(e && e.message ? e.message : String(e));
         setResult(null);
         return;
       } finally {
         setEngineLoading(false);
       }
+      if (stale()) return;
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
       // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
@@ -691,6 +710,8 @@ function App() {
           } catch (e) {
             console.error('[metaphysics] 地址解析失败，退回内置表', e);
           }
+          // 联网解析可能几百毫秒，期间足够用户改日期再点一次：过期就不必接着排这张旧盘
+          if (stale()) return;
         }
         // 交叉验证只对八字/紫微有意义：引擎会用同一份出生信息再排另一套盘
         if (k !== 'hepan') args.cross = crossOn;
@@ -897,6 +918,7 @@ function App() {
         });
       }
     } catch (e) {
+      if (stale()) return;
       setError(e && e.message ? e.message : String(e));
       setResult(null);
     }
@@ -905,13 +927,17 @@ function App() {
   /** 切 tab：起卦类自动取当前时刻、命盘类回到示例默认；用户在这类下改过则保留他的值 */
   const switchTo = async (next) => {
     const k = kindOf(next);
+    // 换 tab 就是把上一张在途的盘作废：连点两个 tab 时，先完成的那次不该把 tab 拨回去
+    const switchSeq = ++perfSeq;
     setError('');
     // 人格 tab 的输入就是问卷本身：题面在引擎分块里，先加载再切，避免先渲染出空问卷
     if (next === 'mbti') {
       setNotice('');
       setEngineLoading(true);
-      try { await ensureEngine(next); } catch (e) { setError(e && e.message ? e.message : String(e)); }
-      finally { setEngineLoading(false); }
+      try { await ensureEngine(next); } catch (e) {
+        if (switchSeq === perfSeq) setError(e && e.message ? e.message : String(e));
+      } finally { setEngineLoading(false); }
+      if (switchSeq !== perfSeq) return;
       setTab(next);
       if (mbAns.filter((v) => v != null).length >= MBTI_MIN) run(next);
       else setResult(null);
@@ -1064,7 +1090,7 @@ function App() {
     if (!result || !result.r) return null;
     try {
       if (!Engine.askPackages) return null;
-      return Engine.askPackages(result.r, { question: askText.trim(), interpret: result.it, base: pageBase() });
+      return Engine.askPackages(result.r, { question: packedQuestion(), interpret: result.it, base: pageBase() });
     } catch (e) { return null; }
   };
   const BRIDGE_KINDS = [
@@ -1188,7 +1214,7 @@ function App() {
   const askInChat = () => {
     if (!result || !result.r) return;
     try {
-      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: askText.trim(), interpret: result.it }) : null;
+      const p = Engine.askPrompt ? Engine.askPrompt(result.r, { question: packedQuestion(), interpret: result.it }) : null;
       const text = p && p.text ? p.text : String(result.r.summary || '');
       if (sendToComposer(text)) { setChatNote('已发到对话窗，往下看回复。'); return; }
       const diag = '（' + bridgeDiagText() + '）';
@@ -1288,6 +1314,86 @@ function App() {
   const clearHist = () => { setHist([]); saveHistory([]); };
 
   /**
+   * 我的命盘：一张卡一个人，点卡直接出盘，不必每次重报出生信息。
+   * 存本机 localStorage，存的是输入（生日/时刻/性别/出生地），不是结果；
+   * 合盘与占事类不入档（档案只描述一个人），所以只在单人体系下给「存入」条。
+   */
+  const PROF_TABS = ['bazi', 'ziwei', 'trend', 'chenggu'];
+  const profFill = (p) => {
+    setTab(p.kind);
+    setDate(p.date);
+    if (p.time) setTime(p.time);
+    setHourUnknown(!!p.hourUnknown);
+    if (p.gender) setGender(p.gender);
+    setAddress(p.address || '');
+  };
+  const onProf = (e) => {
+    const ev = PP.profEvent(e.target);
+    if (!ev) return;
+    const of = (id) => profiles.find((x) => x.id === id);
+    const nameEl = e.currentTarget.querySelector('.mp-prof-name');
+    setProfArmed('');
+    if (ev.action === 'use') {
+      const p = of(ev.id);
+      if (!p) return;
+      // 外部改坏 / 旧版本留下的「有日期没时刻」卡：别拿当前表单里的时刻顶上
+      if (!PP.profUsable(p)) {
+        setNotice('这张档案没有出生时刻，先补上时刻再存一次。');
+        return;
+      }
+      PROF_NAME = '';
+      setProfiles(PP.profilesTouch(p.id));
+      profFill(p);
+      // 出生信息同时经 run 的覆盖参数直传：表单 state 要下一次渲染才生效，
+      // 只靠 setState 会先按旧参数排一张、再按新参数排一张，用户看见闪一下别的盘。
+      run(p.kind, { date: p.date, time: p.hourUnknown ? '12:00' : p.time }, undefined, {
+        gender: p.gender || undefined, address: p.address, hourUnknown: !!p.hourUnknown,
+      });
+      return;
+    }
+    if (ev.action === 'edit') {
+      const p = of(ev.id);
+      if (!p) return;
+      profFill(p);
+      PROF_NAME = p.label;
+      setProfEditing(p.id);
+      return;
+    }
+    if (ev.action === 'cancel') { PROF_NAME = ''; setProfEditing(null); return; }
+    if (ev.action === 'pin') { setProfiles(PP.profilesPin(ev.id)); return; }
+    if (ev.action === 'del') {
+      // 删除点两次才算：第一次只是把按钮变成「确认删除」，误触不会丢档案
+      if (profArmed !== ev.id) { setProfArmed(ev.id); return; }
+      setProfiles(PP.profilesRemove(ev.id));
+      if (profEditing === ev.id) { PROF_NAME = ''; setProfEditing(null); }
+      setNotice('已从本机删除这张档案卡（不影响已经排出来的盘）。');
+      return;
+    }
+    if (ev.action === 'put') {
+      const wasEditing = profEditing;
+      const entry = PP.profFromForm(
+        { kind: tab, date, time, hourUnknown, gender, address },
+        nameEl ? nameEl.value : PROF_NAME,
+        profEditing || undefined,
+      );
+      if (!entry) { setNotice('先填好出生日期（和时刻），再存档案。'); return; }
+      // 排过几次 / 置顶 / 创建时间由档案层自己保留，这里只交输入
+      const res = PP.profilesPut(entry);
+      if (!res.ok) { setNotice('档案没能存进本机（存储被禁用或已满），排盘不受影响。'); return; }
+      setProfiles(res.list);
+      PROF_NAME = '';
+      setProfEditing(null);
+      if (nameEl) nameEl.value = '';
+      setNotice(`${wasEditing ? '已更新档案' : '已存入我的命盘'}「${res.item.label}」。`);
+    }
+  };
+  /** 称呼框输入：只记在模块级，不触发重绘（每键重绘会丢光标） */
+  const onProfInput = (e) => {
+    const nm = e.target && e.target.closest ? e.target.closest('.mp-prof-name') : null;
+    if (nm) PROF_NAME = nm.value;
+  };
+
+  /**
    * C3 深链还原：把链接里的参数填回表单并立刻排一次。
    * 表单 state 要等下一次渲染才生效，所以同一批值经 run 的 over 直传——
    * 否则会「先按旧参数排一张，再按新参数排一张」，用户看到闪一下另一张盘。
@@ -1324,6 +1430,9 @@ function App() {
   // 解析放在引擎加载之后：链接解析要用到句柄编解码，那是引擎分块里的东西。
   useEffect(() => {
     let cancelled = false;
+    // 载入分块那几秒里用户可能已经点了别的体系：默认盘只在他还没动过的时候补上，
+    // 否则这条迟到的 run 会把他刚点的那一张作废
+    const bootSeq = perfSeq;
     (async () => {
       let deep = null;
       try {
@@ -1333,7 +1442,7 @@ function App() {
           deep = window.Engine.parseAskLink(href);
         }
       } catch (e) { deep = null; }
-      if (cancelled) return;
+      if (cancelled || perfSeq !== bootSeq) return;
       if (deep && deep.ok) {
         try { applyDeep(deep); return; } catch (e) { /* 还原失败就走默认盘 */ }
       }
@@ -1365,6 +1474,16 @@ function App() {
   }, h('b', null, label), h('span', null, tip));
 
   const children = [
+    h('div', {
+      key: 'profiles', className: 'mp-profwrap', onClick: onProf, onInput: onProfInput,
+      dangerouslySetInnerHTML: {
+        __html: PP.profilesHTML(profiles, {
+          editingId: profEditing,
+          armedDel: profArmed,
+          bar: PROF_TABS.indexOf(tab) >= 0 ? PP.profilesBarHTML({ editingId: profEditing, name: PROF_NAME }) : '',
+        }),
+      },
+    }),
     h('section', { key: 'start', className: 'mp-start', 'aria-label': '选择要算的事' },
       h('div', { className: 'mp-start-top' },
         h('div', { className: 'mp-recent', hidden: recentList.length === 0 },
@@ -1412,8 +1531,10 @@ function App() {
       h('div', { className: 'mp-row' },
         showDate ? field(isBirth ? '出生日期（公历）' : timeKind === 'date' ? '日期（公历）' : '起卦日期（公历）',
           h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
+        // 勾了「时辰未知」就把钟点灰掉：run 里用的是写死的 12:00，
+        // 灰掉之前只判 bazi 会让 trend 上的钟点看着能改、改了却不进盘
         showTime ? field(isBirth ? '出生时刻' : '起卦时刻',
-          h('input', { className: 'mp-input', type: 'time', value: time, disabled: hourUnknown && (tab === 'bazi'), onChange: (e) => editTime(e.target.value) })) : null,
+          h('input', { className: 'mp-input', type: 'time', value: time, disabled: hourUnknown && (tab === 'bazi' || tab === 'trend'), onChange: (e) => editTime(e.target.value) })) : null,
         // 时辰未知：只给八字与人生 K 线。紫微/合盘没有时支整盘不成立，不提供这个勾选
         (tab === 'bazi' || tab === 'trend') ? h('label', { className: 'mp-chk', title: '不知道出生时辰时勾这里：不排时柱，起运按日估算，结果首行会写明' },
           h('input', {
@@ -1892,6 +2013,9 @@ function safeApply(ctx) {  try {
     try {
       const d = slots.register(options, component);
       COMPOSER.regs += 1;
+      // 宿主收下即算「这个槽位已申报」：组件什么时候挂载由外壳决定，
+      // 拿 ref 当唯一判据会在挂载空窗里反复补注册，输入条长出两个同款按钮
+      COMPOSER.seatOk[options.name] = true;
       return d;
     } catch (e) {
       noteRegError(e);
@@ -1956,16 +2080,23 @@ function safeApply(ctx) {  try {
     if (COMPOSER.ref) return;
     seatTries += 1;
     const tag = '-' + seatTries;
-    tryReg({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
-    tryReg({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
+    // 只补没被宿主收下过的那一格；已收下的等它挂载，不再用新 id 重复注册
+    if (!COMPOSER.seatOk['conversation.input.right']) {
+      tryReg({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
+    }
+    if (!COMPOSER.seatOk['conversation.composer.dock']) {
+      tryReg({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
+    }
   };
   // 会话输入条要等会话视图打开才声明槽位：启动后 15 秒内连试，
   // 用户第一次点页面时再补一次（那时输入框一定已经在）。
   let seatTriesLeft = 20;
+  const seatBothSeated = () => COMPOSER.seatOk['conversation.input.right'] && COMPOSER.seatOk['conversation.composer.dock'];
   const seatRetry = () => {
-    if (COMPOSER.ref || seatTriesLeft <= 0) return;
+    if (COMPOSER.ref || seatTriesLeft <= 0 || seatBothSeated()) return;
     seatTriesLeft -= 1;
     trySeatNow();
+    if (seatBothSeated()) return;
     setTimeout(seatRetry, 700);
   };
   try { setTimeout(seatRetry, 700); } catch (e) { /* 无计时器环境 */ }

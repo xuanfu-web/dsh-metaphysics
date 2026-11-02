@@ -196,13 +196,19 @@ export function termInstantJd(year, index) {
 export function jdToParts(jdLocal) {
   const jdn = Math.floor(jdLocal + 0.5);
   const frac = jdLocal + 0.5 - jdn;
-  const totalMinutes = Math.round(frac * 1440);
+  // 按「整分钟向下取」而不是四舍五入：23:59:45 一进位就成了 1440 分，
+  // 旧写法把小时取模、日序不动，于是这一瞬时塌回「当日 00:00」——
+  // 日柱退一天、partsToJd 往返回来差将近一天（晚子时换日与真太阳时跨午夜正好踩在刀口上）。
+  // 向下取后 hour/minute 与 jdn 永远自洽：拆出来的那一天，就是这一刻所在的那一天。
+  // 但向下取会被浮点噪声咬住：JD 里的 13:00 常算成 779.99999 分，直接 floor 就是 12:59，
+  // 未时变成午时。先归到最近的整秒（输入精度到分，误差远小于一秒），再向下取整分。
+  const totalMinutes = Math.min(1439, Math.floor(Math.round(frac * 86400) / 60));
   const { year, month, day } = fromJDN(jdn);
   return {
     year,
     month,
     day,
-    hour: Math.floor(totalMinutes / 60) % 24,
+    hour: Math.floor(totalMinutes / 60),
     minute: totalMinutes % 60,
   };
 }
