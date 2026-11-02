@@ -26,6 +26,9 @@ const IGNORE_KEYS = new Set([
   'handle', 'handleError',
   // 一句话改参的回显：换口径时它必然不同（等于另一次请求），不是盘面差异
   'revision',
+  // 顶部「人话总结」是从盘面派生出来的叙述，不是盘面本身：换一档口径，
+  // 它必然跟着改写（句子会重排），但要看的是星位、日柱这些有没有动。
+  'brief', 'briefError',
 ]);
 
 const isObject = (v) => v !== null && typeof v === 'object';

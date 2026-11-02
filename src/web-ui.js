@@ -715,6 +715,8 @@
     if (tab === 'qimen') args.direction = el('qdir').value;
     try {
       const computeStart = mpNow();
+      // 同面板：当前日期由界面给，引擎不读挂钟（保证同一条线可复现）
+      if (tab === 'trend' && !args.asOf && Core.todayStamp) args.asOf = Core.todayStamp();
       const r = window.Engine.compute(args);
       const computeMs = mpNow() - computeStart;
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
@@ -727,6 +729,7 @@
           trend = window.Engine.compute({
             system: 'trend', datetime: `${date}T${time}`, gender: args.gender, toAge: 100,
             trueSolar: args.trueSolar, lateZi: args.lateZi !== false,
+            ...(Core.todayStamp ? { asOf: args.asOf || Core.todayStamp() } : {}),
             ...(args.address ? { address: args.address } : {}),
             ...(typeof args.longitude === 'number' ? { longitude: args.longitude } : {}),
             ...(args.geo ? { geo: args.geo } : {}),
@@ -739,7 +742,7 @@
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
       const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
-        : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend) : ''))
+        : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)

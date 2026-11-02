@@ -21,10 +21,13 @@ const INTERPRET = ['interpret-data', 'interpret-knowledge', 'limits', 'guide', '
 const ASK = ['followup'];
 // 问事解读提示：liuyao/meihua/daliuren/qimen/tarot/xiaoliuren 这六个问事体系要带，命盘类不带
 const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
+// 顶部人话总结：凡是要调 compute 的块都得带。漏了的块不报错，只会在结果里
+// 静默留一个 briefError（分块里 plainSummary 是 undefined）——第一屏直接消失。
+const BRIEF = ['plain-summary'];
 // 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎
 // 顶部人话总结：只有八字与紫微有，所以挂在各自栈上，不塞进 INTERPRET
-const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', 'plain-summary', ...INTERPRET];
-const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', 'plain-summary', ...INTERPRET];
+const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', ...BRIEF, ...INTERPRET];
+const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', ...BRIEF, ...INTERPRET];
 
 export const CHUNKS = {
   bazi: {
@@ -50,21 +53,21 @@ export const CHUNKS = {
   name: {
     tabs: ['name'],
     modules: [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words',
-      'classics', 'name-data', 'name', ...ASK],
+      'classics', 'name-data', 'name', ...BRIEF, ...ASK],
   },
-  fengshui: { tabs: ['fengshui'], modules: [...COMMON, 'fengshui', ...ASK] },
-  liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'liuyao', 'meihua', ...INTERPRET, ...ASK, ...EVENT_PROMPT, 'trace'] },
-  qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen-ganying', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK, ...EVENT_PROMPT, 'trace'] },
-  daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK, ...EVENT_PROMPT, 'trace'] },
-  tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot', ...INTERPRET, ...ASK, ...EVENT_PROMPT] },
-  almanac: { tabs: ['almanac'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', ...ASK] },
-  convert: { tabs: ['convert'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'convert', ...ASK] },
-  zeri: { tabs: ['zeri'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'zeri', ...ASK] },
-  chenggu: { tabs: ['chenggu'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'chenggu', ...ASK] },
-  xiaoliuren: { tabs: ['xiaoliuren'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'xiaoliuren', ...ASK, ...EVENT_PROMPT] },
-  star: { tabs: ['star'], modules: [...COMMON, 'classics', 'star', ...ASK] },
-  numerology: { tabs: ['numerology'], modules: [...COMMON, 'classics', 'numerology', ...ASK] },
-  mbti: { tabs: ['mbti'], modules: [...COMMON, 'classics', 'mbti', ...ASK] },
+  fengshui: { tabs: ['fengshui'], modules: [...COMMON, 'fengshui', ...BRIEF, ...ASK] },
+  liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'liuyao', 'meihua', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
+  qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen-ganying', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
+  daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
+  tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT] },
+  almanac: { tabs: ['almanac'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', ...BRIEF, ...ASK] },
+  convert: { tabs: ['convert'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'convert', ...BRIEF, ...ASK] },
+  zeri: { tabs: ['zeri'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'zeri', ...BRIEF, ...ASK] },
+  chenggu: { tabs: ['chenggu'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'chenggu', ...BRIEF, ...ASK] },
+  xiaoliuren: { tabs: ['xiaoliuren'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'xiaoliuren', ...ASK, ...BRIEF, ...EVENT_PROMPT] },
+  star: { tabs: ['star'], modules: [...COMMON, 'classics', 'star', ...BRIEF, ...ASK] },
+  numerology: { tabs: ['numerology'], modules: [...COMMON, 'classics', 'numerology', ...BRIEF, ...ASK] },
+  mbti: { tabs: ['mbti'], modules: [...COMMON, 'classics', 'mbti', ...BRIEF, ...ASK] },
 };
 
 /** tab → 分块文件名；未列出的 tab 回落到 bazi（19 个 tab 全覆盖由测试兜底） */

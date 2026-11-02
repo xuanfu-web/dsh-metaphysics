@@ -1551,7 +1551,7 @@
       </div>`;
     })() : '';
     pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
-    return (r.brief ? pp.summaryHTML(r.brief) : '') + `<div class="pp">
+    return pp.briefHTML(r) + `<div class="pp">
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
       <input type="radio" name="ppm" id="ppm-da" class="pp-r">
       <input type="radio" name="ppm" id="ppm-ln" class="pp-r">
@@ -1791,7 +1791,7 @@
         return `<span class="pp-chip ${cls}">${esc(l)}</span>`;
       }).join('')}</div>`
       : '';
-    return `<div class="pp" style="padding:14px">
+    return pp.briefHTML(r) + `<div class="pp" style="padding:14px">
       <div class="mp-mh-head">起卦 ${r.cast.notation.join('、')}（自下而上）　日辰 ${r.dayGanZhi.name}</div>
       <div class="mp-hy-wrap">${ben}${bian}</div>
       ${bodyRow}
@@ -1842,7 +1842,7 @@
 
     const cuoTri = TRI_OF(r.cuo.name) || ['', ''];
     const zongTri = TRI_OF(r.zong.name) || ['', ''];
-    return `<div class="pp mp-mh">
+    return pp.briefHTML(r) + `<div class="pp mp-mh">
       <div class="mp-mh-main">
         ${mainBox}
         ${mini('互卦', r.hu.name, r.hu.upper, r.hu.lower, '中藏之象')}
@@ -1910,7 +1910,7 @@
       <div class="dl-t3">${sc.chu.zhi} → ${sc.zhong.zhi} → ${sc.mo.zhi}</div>
       <div class="dl-t2">节气 ${r.jieqi.name}${r.jieqi.time ? ' ' + r.jieqi.time : ''}</div>
     </div>`;
-    return `<div class="pp mp-dl">
+    return pp.briefHTML(r) + `<div class="pp mp-dl">
       <div class="mp-dl-head">日 ${r.dayGanZhi}　时 ${r.hourZhi}（${r.dayNight}贵）　月将 ${r.yueJiang.name}${r.yueJiang.zhi}　节气 ${r.jieqi.name}　贵人${r.guiren.reverse ? '逆' : '顺'}行</div>
       <div class="mp-dl-sc">${cbox(sc.chu, '初传')}${cbox(sc.zhong, '中传')}${cbox(sc.mo, '末传')}${ge}</div>
       <div class="mp-dl-sk">${keCells}</div>
@@ -1934,7 +1934,7 @@
     const q = r.question ? esc(r.question) : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>';
     // 解读段落里会回显用户问题（"你问的是「…」"），同样走转义
     const reading = (r.reading || []).map((p) => `<p>${esc(p)}</p>`).join('');
-    return `<div class="pp mp-tt">
+    return pp.briefHTML(r) + `<div class="pp mp-tt">
       <div class="mp-tt-q"><b>所问</b>${q}</div>
       <div class="mp-tt-head">${r.spread}${r.castAt ? `　·　抽牌于 ${r.castAt}` : ''}</div>
       <div class="mp-tt-grid">${cards}</div>
@@ -1985,7 +1985,7 @@
       <div class="mp-hp-dimh"><span>${d.label}</span><b class="${d.score >= 10 ? 'good' : d.score < 0 ? 'bad' : ''}">${d.score >= 0 ? '+' : ''}${d.score}</b></div>
       <div class="mp-hp-dimt">${d.text}</div>
     </div>`).join('');
-    return `<div class="pp mp-hp">
+    return pp.briefHTML(r) + `<div class="pp mp-hp">
       <div class="mp-hp-head"><b>${r.score.level}</b><span>${r.score.total}/100</span></div>
       <div class="mp-hp-sides">${side(r.a, '你')}${side(r.b, '对方')}</div>
       <div class="mp-hp-dims">${dims}</div>
@@ -2069,7 +2069,7 @@
         <div class="pp-qm-bot"><span class="dim">${p.ganYing ? esc(`${p.ganYing.tian}加${p.ganYing.di} ${p.ganYing.name}`) : ''}</span></div>
       </div>`;
     };
-    return `<div class="pp mp-qm">
+    return pp.briefHTML(r) + `<div class="pp mp-qm">
       <div class="mp-qm-head">
         <b>${r.ju}</b>
         <span>${r.siZhu.year} ${r.siZhu.month} ${r.siZhu.day} ${r.siZhu.time}</span>
@@ -2099,7 +2099,7 @@
     </div>`).join('');
     const list = (who) => (r.interactions || []).filter((h) => h.who === who)
       .map((h) => `<li><b class="m-${h.mutagen}">${h.mutagen}</b>${h.star}：本命${h.ownPalace} → 对方${h.landingPalace || '盘外'}${h.strong ? '<i>（强）</i>' : ''}</li>`).join('');
-    return `<div class="pp mp-hp">
+    return pp.briefHTML(r) + `<div class="pp mp-hp">
       <div class="mp-hp-head"><b>${r.score.level}</b><span>${r.score.total}/100　紫微合盘</span></div>
       <div class="mp-hp-sides">${side(r.a, '你')}${side(r.b, '对方')}</div>
       <div class="mp-hp-dims">${dims}</div>
@@ -2382,9 +2382,15 @@
       </svg>${legend}</div>`;
   };
 
-  /** 人生 K 线整块：图 + 大运分段 + 高低年份 + 口径说明；数据不足时退回文字摘要 */
-  pp.trendHTML = function (r) {
+  /**
+   * 人生 K 线整块：图 + 大运分段 + 高低年份 + 口径说明；数据不足时退回文字摘要。
+   * @param {object} r trend 结果
+   * @param {{brief?:boolean}} [opt] 嵌在八字页里时传 brief:false——
+   *   那一页最上面已经有八字本人话，再叠一个「先说结论」会变成两个方框抢第一屏。
+   */
+  pp.trendHTML = function (r, opt) {
     if (!r) return '';
+    const withBrief = !(opt && opt.brief === false);
     const chart = pp.trendChart(r);
     if (!chart) return pp.quickHTML(r);
     const segs = Array.isArray(r.segments) ? r.segments : [];
@@ -2414,7 +2420,7 @@
     }
     statCells.push(`<span><em>波动幅度</em><b>${span.toFixed(0)}</b></span>`);
     const stats = `<div class="kl-stats">${statCells.join('')}</div>`;
-    return `<section class="mp-kline" aria-label="人生K线结果">
+    return (withBrief ? pp.briefHTML(r) : '') + `<section class="mp-kline" aria-label="人生K线结果">
       <div class="mp-kline-h"><b>人生 K 线</b><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
       ${chart}
       ${stats}
@@ -2522,7 +2528,14 @@
   /**
    * 盘面顶部的人话总结（engine/plain-summary.js 的结果 → 一个方框）。
    * 位置固定在最前：先给结论，再用下面的盘面作依据——反过来大多数人读不到第二屏。
+   *
+   * 命盘两类、问事五类、合盘与走势都走这一个入口：没有 brief（数据不够）就返回空串，
+   * 绝不让一块空方框留在页面上。各盘渲染时只写 pp.briefHTML(r)，不再各自判一次。
    */
+  pp.briefHTML = function (r) {
+    return r && r.brief ? pp.summaryHTML(r.brief) : '';
+  };
+
   pp.summaryHTML = function (b) {
     if (!b || !b.lead) return '';
     const secs = (b.sections || []).map((x) => `<div class="mp-br-sec"><b>${esc(x.h)}</b><p>${esc(x.t)}</p></div>`).join('');
@@ -2674,7 +2687,7 @@
         ${ssGroups.map((g) => `<div class="pp-ssg"><span class="ssg-gt">${g.cat}</span><span class="ssg-gi">${g.items.map((i) => `<span class="pp-ssi ${i.luck || 'neutral'}" title="${esc(`${i.via}查${i.target} ｜ ${i.rule}`)}">${i.name}<em>${i.pillars.map((k) => SHORT[k] || '').join('')}</em></span>`).join('')}</span></div>`).join('')}
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>` : '';
-    return (r.brief ? pp.summaryHTML(r.brief) : '') + `<div class="pp" style="padding:12px">
+    return pp.briefHTML(r) + `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>
       ${r.hourUnknown ? `<div class="pp-warn" role="note">时柱暂缺：未提供出生时刻，只排年/月/日三柱；起运与交运按日估算，涉及时柱的结论仅供参考。</div>` : ''}
       <div class="pp-rel"><div><b>天干</b>${(r.relations && r.relations.stems.length) ? r.relations.stems.join(' · ') : '—'}</div>

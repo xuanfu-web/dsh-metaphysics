@@ -145,6 +145,9 @@ export function buildTrend(input) {
       dayMaster: `${dayStem}（${r.dayMaster.yinYang}${r.dayMaster.element}）`,
       strength: { level: r.strength.level, score: r.strength.score, boundary },
       toAge,
+      // 当前年份由调用方给（asOf）：引擎不读挂钟，同一条线在任意时刻复算都一致。
+      // 没给就不写这个键，summary 那边据此省掉「你现在在第几步」。
+      ...(Number.isInteger(input.nowYear) ? { nowYear: input.nowYear } : {}),
       ...(boundary
         ? {
           boundaryNote:

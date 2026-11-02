@@ -757,9 +757,19 @@ export function compute(input = {}) {
     delete args.partner2;
   }
   const r = jsonSafe(computeRaw(args));
-  // 顶部那段「人话总结」：只给命盘类（八字/紫微）。生成失败就整块不显示，不能因此拖垮排盘。
-  if (r && (r.system === 'bazi' || r.system === 'ziwei')) {
-    try { r.brief = plainSummary(r); } catch (e) { r.briefError = String(e && e.message || e); }
+  // 「所问之事」以前只有六爻和塔罗会落到结果里，梅花/六壬/奇门/小六壬都丢掉了：
+  // 于是第一屏想说「你问的是……」却拿不到那句话。这里统一补齐，已有的值不动。
+  if (r && !r.question && typeof args.question === 'string' && args.question.trim()
+    && ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren'].includes(r.system)) {
+    r.question = args.question.trim();
+  }
+  // 顶部那段「人话总结」：命盘两类 + 问事五类 + 合盘 + 走势，都由 plainSummary 决定给不给。
+  // 数据不够时它返回 null，不动 r.brief；生成失败只记 briefError，绝不因此拖垮排盘。
+  if (r) {
+    try {
+      const brief = plainSummary(r);
+      if (brief) r.brief = brief;
+    } catch (e) { r.briefError = String((e && e.message) || e); }
   }
   if (revision) r.revision = revision;
   if (r && r.system === 'bazi') {
@@ -1320,8 +1330,12 @@ function computeRaw(args = {}) {
   }
   if (system === 'trend') {
     const dt = parseDateTime(args.datetime);
+    // 「现在在第几步」要有个当前年份；引擎不读挂钟，只认 asOf。
+    // 不给 asOf 就不标当前位置（summary 会少一句，但结果可复现）。
+    const nowParts = args.asOf ? checkAsOf(args.asOf) : undefined;
     const result = buildTrend({
       ...dt,
+      nowYear: nowParts ? nowParts.year : undefined,
       gender: requireGender(args.gender),
       toAge: args.toAge,
       lateZi: args.lateZi !== false,

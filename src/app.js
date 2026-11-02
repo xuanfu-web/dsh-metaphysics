@@ -826,6 +826,8 @@ function App() {
         }
       }
       const computeStart = mpNow();
+      // 「现在走到第几步」要有当前日期；引擎不读挂钟，由界面以 asOf 传入
+      if (k === 'trend' && !args.asOf && Core.todayStamp) args.asOf = Core.todayStamp();
       const r = Engine.compute(args);
       const computeMs = mpNow() - computeStart;
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
@@ -838,6 +840,8 @@ function App() {
           trend = Engine.compute({
             system: 'trend', datetime, gender: genderV, toAge: 100,
             trueSolar: tsV, lateZi: lateZiV,
+            // K 线里的「你现在」要落在正确的大运上：默认取界面当天
+            ...(Core.todayStamp ? { asOf: args.asOf || Core.todayStamp() } : {}),
             ...(args.dst !== undefined ? { dst: args.dst } : {}),
             ...(args.address ? { address: args.address } : {}),
             ...(typeof args.longitude === 'number' ? { longitude: args.longitude } : {}),
@@ -1690,7 +1694,7 @@ function App() {
         __html: castAtHTML(result) + PP.perfHTML(perf) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
           + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.resultWithInterpret(
           result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-            : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend) : ''))
+            : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))
               : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
                 : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
                   : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))

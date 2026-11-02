@@ -8,6 +8,19 @@
 // 一条硬规矩：这里只做「结构 → 人话」的翻译，不做吉凶断语。
 // 「官杀混」可以说成「你容易遇到两种类型的人」，不能说成「你婚姻不好」。
 
+import { ASK_KINDS } from './event-prompt.js';
+import { PALACE_FIELD, GATE_MEANING } from './qimen-prompt.js';
+
+const ASK = ASK_KINDS || {};
+const PALACE = PALACE_FIELD || {};
+const GATES = GATE_MEANING || {};
+
+// 命盘的「询问方向」与问事提示的「六类问法」不是一套键：
+// 财运要落到「生意/合作」、学业落到「工作/事业」、健康与出行各自归位。
+// 不转这一道，选「财运」问六爻时会取不到现实核对清单——建议那一段就是空的。
+const DIR2KIND = { wealth: 'business', career: 'career', love: 'love', health: 'other', study: 'career', travel: 'action', general: 'other' };
+const askKind = (dir) => DIR2KIND[dir] || (ASK[dir] ? dir : 'other');
+
 const ELEMENT_COLOR = {
   木: { color: '青、绿', where: '东边、有树有水的地方', daily: '早上多出门走走' },
   火: { color: '红、橙、紫', where: '南边、向阳的房间', daily: '白天多晒太阳，别总待在阴冷的屋里' },
@@ -189,7 +202,10 @@ function ziweiSummary(r) {
   const plainOf = (stars) => stars.filter((s) => s.type === '主星').map((s) => `${s.name}${STAR_PLAIN[s.name] ? `（${STAR_PLAIN[s.name]}）` : ''}`).join('；');
 
   const ps = r.patternSummary || {};
-  const formed = uniq([...(ps.good || []), ...(ps.neutral || [])]);
+  const broken = uniq(ps.broken || []);
+  const bad = uniq(ps.bad || []);
+  // 被判冲破的格局不再算「成」——否则同一段里既说成、又说破，读的人只会觉得自相矛盾
+  const formed = uniq([...(ps.good || []), ...(ps.neutral || [])]).filter((x) => !broken.includes(x));
   const loveStars = (love.stars || []);
   const loveMain = loveStars.filter((s) => s.type === '主星');
   const loveSha = loveStars.filter((s) => s.type === '煞星');
@@ -200,13 +216,13 @@ function ziweiSummary(r) {
     chips: uniq([`命宫在${ming.branch || ''}`, mainName, r.bureau ? r.bureau.name : '', body.lands ? `身宫落${body.lands}` : '']),
     lead: `命宫在${ming.branch || ''}，坐${mainName}${bright ? `（${bright}）` : ''}；身宫落在${body.lands || body.palace || '—'}。`
       + `${mainStars.length ? `底色是${mainStars.map((s) => STAR_PLAIN[s.name] || s.name).join('、')}。` : '命宫无主星，性格更多由对宫与三方决定，可塑性反而大。'}`
-      + `${formed.length ? `结构上成的是${formed.slice(0, 3).join('、')}——格局只说明形状，不是吉凶判词。` : ''}`,
+      + `${formed.length ? `结构上成的是${formed.slice(0, 3).join('、')}——格局只说明形状，不是吉凶判词。` : '没有完整成套的格局，这一盘更多看单颗星的性质，少看组合。'}`,
     sections: [
       { h: '你的底色', t: `${plainOf(ming.stars || []) || '命宫无主星，靠三方四正补'}。身宫落${body.lands || '—'}，说明你这辈子真正花力气的地方在${body.lands || '那一块'}。` },
       { h: '感情这件事', t: `夫妻宫在${love.branch || '—'}，坐${loveMain.map((s) => `${s.name}${s.brightness ? `（${BRIGHT_PLAIN[s.brightness] || s.brightness}）` : ''}`).join('、') || '空宫（借对宫）'}。`
         + `${loveSha.length ? `同宫还有${loveSha.map((s) => s.name).join('、')}——关系里容易起摩擦，来得快也去得快。` : '没有明显的煞星同宫，关系相对平顺。'}` },
-      { h: '最容易卡住的地方', t: `${(ps.broken || []).length ? `${uniq(ps.broken).join('、')}被判为被冲破：结构还在，但成色打折。` : '主要格局没有明显被冲破。'}`
-        + `${(ps.bad || []).length ? `另有${uniq(ps.bad).join('、')}这类忌格，只描述结构，不作吉凶断。` : ''}` },
+      { h: '最容易卡住的地方', t: `${broken.length ? `被冲破的格局有${broken.join('、')}——结构还在，但成色打折；冲不等于毁，说的是它不如完好时那么顶用。` : '主要格局没有明显被冲破。'}`
+        + `${bad.length ? `另有${bad.join('、')}这类忌格，只描述结构，不作吉凶断。` : ''}` },
     ],
     advice: [
       `命宫主星${mainStars.length ? `是${mainStars.map((s) => s.name).join('、')}，顺它的长处在做事，比硬改性格省力` : '不显，先靠环境和习惯替自己定节奏'}。`,
@@ -214,6 +230,357 @@ function ziweiSummary(r) {
     ],
     caveat: '',
     footer: '以上都是对结构的描述，不是断语；判断好坏要结合你自己的处境。',
+  };
+}
+
+// ── 问事类与走势：同样只翻译结构 ─────────────────────────────
+// 命盘讲「你是什么结构」，问事讲「这件事现在卡在哪、下一步看什么」。
+// 共同底线一致：每条话都要能指回盘面上的某个符号，不写「一定会」「必然」。
+
+const MONTH_STATE_PLAIN = { 旺: '当令，气最足', 相: '有生机，正在起', 休: '气在泄，歇着', 囚: '被压着，使不上劲', 死: '最弱，得靠外援' };
+const LIUQIN_PLAIN = {
+  官鬼: '职位、压力、管你的人和事',
+  妻财: '钱、资源、实际回报',
+  父母: '文书、答复、流程与长辈',
+  子孙: '结果本身、松弛、把事情落地',
+  兄弟: '同辈、分利、竞争',
+};
+const DAY_REL_PLAIN = {
+  日生: '日辰生它，当天有人托着',
+  日克: '日辰克它，当天被压一头',
+  比和: '与日辰同气，力量相当',
+  日合: '与日辰相合，黏住了',
+  日冲: '与日辰相冲，当天就动',
+};
+
+/** 用神/世爻的「当下状态」：月令一句 + 日辰一句 + 空/动/冲的标志 */
+function stateLine(l) {
+  if (!l) return '';
+  const bits = [];
+  const ms = MONTH_STATE_PLAIN[l.monthState] || l.monthSay || '';
+  if (ms) bits.push(`月令${l.monthState || ''}（${ms}）`);
+  const ds = DAY_REL_PLAIN[l.dayRelation] || l.daySay || '';
+  if (ds) bits.push(ds);
+  if (l.kong) bits.push('旬空——抓不实，等冲或填');
+  if (l.moving) bits.push('发动，是这件事的动因');
+  if (l.monthChong) bits.push('月破，先破后立');
+  return bits.join('；');
+}
+
+/**
+ * 六爻在「没指定所问之事」时的版本。
+ *
+ * 取用神要先知道问什么；方向留在「综合」时，引擎给不出用神，也就给不出成败。
+ * 但一张卦并非只能读懂用神——世应、卦体（六冲/六合）、动爻这几样与问题无关，照样能读。
+ * 所以这里不硬凑一个用神，只讲这几样，并在结尾把「为什么没有结论」说清楚：
+ * 让用户知道该补一步（选方向），而不是以为插件什么都说不出来。
+ */
+function liuyaoGeneralSummary(r) {
+  const hex = (r.hexStrength && r.hexStrength.lines) || [];
+  if (!hex.length) return null;
+  const shi = hex.find((l) => l.shi) || null;
+  const ying = hex.find((l) => l.ying) || null;
+  const body = r.body || {};
+  const ben = body.ben || {};
+  const bian = body.bian || {};
+  const moving = (r.cast && r.cast.movingPositions) || [];
+  const movingLines = hex.filter((l) => l.moving);
+  const q = String(r.question || '').trim();
+  const labels = uniq([...(body.labels || []), ...((r.hexStrength && r.hexStrength.labels) || [])]);
+  const month = r.hexStrength && r.hexStrength.month ? r.hexStrength.month.branch : '';
+
+  const form = [
+    ben.chong ? '六冲卦：事情容易散、节奏快' : '',
+    ben.he ? '六合卦：事情黏住、快不起来' : '',
+    body.fuYin && (body.fuYin.inner || body.fuYin.outer) ? '有伏吟：原地打转' : '',
+    body.fanYin && (body.fanYin.inner || body.fanYin.outer) ? '有反吟：来回反复' : '',
+  ].filter(Boolean);
+
+  return {
+    system: 'liuyao',
+    title: '先看这一卦：这卦大致在说什么',
+    chips: uniq([ben.name, bian.name ? `变${bian.name}` : '', moving.length ? `${moving.length} 爻动` : '静卦', month ? `${month}月` : '']),
+    lead: `${q ? `你问的是「${q}」。` : ''}本卦「${ben.name || '—'}」${bian.name ? `，${moving.length ? `第 ${moving.join('、')} 爻动` : '六爻安静'}，变「${bian.name}」` : ''}。`
+      + `方向还留在「综合」，所以这一卦没有取用神——先只讲与问题无关的那几样：你（世爻）、事情（应爻）、卦体。`,
+    sections: [
+      { h: '代表你的是', t: shi ? `世爻在${shi.name}（${shi.branch}${shi.element}·${shi.liuqin}）：${stateLine(shi) || '状态平稳'}。` : '这一卦取不到世爻。' },
+      { h: '代表事情的是', t: ying ? `应爻在${ying.name}（${ying.branch}${ying.element}·${ying.liuqin}）：${stateLine(ying) || '状态平稳'}。应爻说的是「事情那一头」的状态，不是你努力的程度。` : '这一卦取不到应爻。' },
+      { h: '卦体与动爻', t: `${form.length ? `${form.join('；')}。` : '没有六冲、六合、伏吟、反吟这类整体结构。'}`
+        + `${movingLines.length ? `动爻在${movingLines.map((l) => `${l.name}（${l.liuqin}）`).join('、')}——动的地方，就是这件事会发生变化的那一环。` : '六爻安静：眼下没有明显在动的地方，说明事情的节奏还没起来。'}` },
+    ],
+    advice: [
+      '先在上面选一个「询问方向」（工作、感情、生意、推进、择日）：选完才会取用神，旺衰、应期、成败条件才有落点。',
+      ...((ASK.other && ASK.other.reality) || []).slice(0, 2),
+    ].filter(Boolean),
+    caveat: '未指定所问之事：这一版只读世应、卦体与动爻，不判成败，也不给应期——不是算不出来，是取用神要先知道问什么。',
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function liuyaoSummary(r) {
+  const ug = r.useGod || {};
+  // 没有用神（方向停在「综合」）时走世应版，不让第一屏空着
+  if (!ug.liuqin) return liuyaoGeneralSummary(r);
+  const found = ug.found || [];
+  if (!found.length && !ug.missing) return null;
+  const q = String(r.question || '').trim();
+  const strengthLines = (r.useGodStrength && r.useGodStrength.lines) || [];
+  const byPos = (pos) => strengthLines.find((l) => l.position === pos) || null;
+  const hexLines = (r.hexStrength && r.hexStrength.lines) || [];
+  const shi = hexLines.find((l) => l.shi) || null;
+  const month = r.useGodStrength && r.useGodStrength.month ? r.useGodStrength.month.branch : '';
+  const day = (r.dayGanZhi && r.dayGanZhi.name) || '';
+
+  const positions = found.map((f) => f.name).join('、');
+  const lead = `${q ? `你问的是「${q}」。` : '你没填具体问题，这里按「综合」取用神，结论会更粗。'}`
+    + `这卦里代表它的是「${ug.liuqin}」（${ug.ask || ''}），`
+    + (found.length
+      ? `落在${positions}${found.length > 1 ? '——两处都出现了，两个条件要一起看' : ''}。`
+      : '盘中看不见它（伏藏），要等冲开或引出才有动静。')
+    + `日辰是${day || '—'}，月建是${month || '—'}。`;
+
+  const favors = [];
+  const burdens = [];
+  for (const f of found) {
+    const st = byPos(f.position);
+    if (!st) continue;
+    if (/旺|相/.test(st.monthState || '') && !st.kong && !st.monthChong) favors.push(f.name);
+    if (/日克|日冲/.test(st.dayRelation || '') || st.kong || st.monthChong) burdens.push(f.name);
+  }
+  const balance = found.length
+    ? (favors.length > burdens.length ? '条件偏有利'
+      : burdens.length > favors.length ? '条件偏紧，得有外力或时间'
+        : '一半一半，取决于你怎么推')
+    : '没有可判的落点';
+
+  const flags = uniq([
+    ...(ug.labels || []).filter((x) => /两现|伏藏|六合|六冲/.test(x)),
+    r.body && r.body.ben && r.body.ben.chong ? '六冲卦：事情容易散，节奏偏快' : '',
+    r.body && r.body.ben && r.body.ben.he ? '六合卦：事情黏住，快不起来' : '',
+  ]);
+
+  const yingqiBranches = uniq(((r.yingqi && r.yingqi.items) || []).map((x) => x.branch)).slice(0, 4);
+
+  return {
+    system: 'liuyao',
+    title: '先看这一卦：这卦大致在说什么',
+    chips: uniq([r.ben && r.ben.name, `用神 ${ug.liuqin || ''}`, month ? `${month}月` : '', r.yingqi ? r.yingqi.tempo : '']),
+    lead,
+    sections: [
+      { h: '代表你的是', t: shi ? `世爻在${shi.name}（${shi.branch}${shi.element}·${shi.liuqin}）：${stateLine(shi) || '状态平稳'}。` : '这一卦的世爻取不到，先看用神那一条。' },
+      { h: '代表这件事的是', t: found.length
+        ? found.map((f) => `${f.name} ${f.ganzhi}（${f.liuqin}）：${stateLine(byPos(f.position)) || '没有明显的月日冲克'}。`).join('')
+        : '用神伏藏：盘中看不见它，说明这件事现在还不在明面上，要等一个引子。' },
+      { h: '成不成看哪里', t: `把用神的月令与日辰放在一起，盘面给的是「${balance}」。${flags.length ? `另有：${flags.join('；')}。` : ''}` },
+    ],
+    advice: [
+      ...((ASK[askKind(ug.direction)] && ASK[askKind(ug.direction)].reality) || []).slice(0, 2),
+      yingqiBranches.length ? `应期只看地支：${yingqiBranches.join('、')}——地支只是「往哪个方向等」，不是公历日期。` : '',
+    ].filter(Boolean),
+    caveat: uniq([
+      found.length > 1 ? `用神两现（${positions}）：本插件不替你二选一，两处条件一起看。` : '',
+      ug.missing ? '用神伏藏：先看伏神与飞神的关系，再看有没有东西把它冲出来。' : '',
+      '世应只说明「你」和「事」的相对位置，不直接等于吉凶。',
+    ]).join(''),
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function meihuaSummary(r) {
+  const bu = r.bodyUse;
+  if (!bu || !bu.body || !bu.use) return null;
+  const q = String(r.question || '').trim();
+  return {
+    system: 'meihua',
+    title: '先看这一卦：方向大致在哪',
+    // 标签写体用关系（谁给谁力），不把「大吉」顶在最前面：
+    // 引擎的 level 是条件层面的刻度，放到标题旁边就会被读成结果。
+    chips: uniq([r.ben && r.ben.name, r.bian && `变${r.bian.name}`, bu.relation ? `体用 ${bu.relation.split('（')[0]}` : '']),
+    lead: `${q ? `你问的是「${q}」。` : ''}本卦「${r.ben && r.ben.name}」，动在第 ${r.moving} 爻，变卦「${r.bian && r.bian.name}」。`
+      + `体卦 ${bu.body.trigram}（${bu.body.element}）代表你，用卦 ${bu.use.trigram}（${bu.use.element}）代表这件事：${bu.relation}。`,
+    sections: [
+      { h: '过程与结果', t: `过程看互卦「${(r.hu && r.hu.name) || '—'}」，结果看变卦「${(r.bian && r.bian.name) || '—'}」。梅花给的是方向，不是细节——它不会告诉你几号、多少钱。` },
+      { h: '盘面给的分量', t: `这一卦的体用关系被标成「${bu.level}」。注意：这是条件层面的判断，不是结果已经发生；条件好但不动，一样没有结果。` },
+    ],
+    advice: [
+      '把它当「换个角度看这件事」：体用只分「谁在给、谁在耗」，剩下要你自己补具体动作。',
+      '如果要推进，先定一个最小动作（打个电话、发条消息），别等条件齐了再动。',
+    ],
+    caveat: '梅花取象的自由度大：同一卦，不同人读出的细节可以不同。本插件只取体用生克这一层。',
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function daliurenSummary(r) {
+  const sc = r.sanChuan || {};
+  if (!sc.chu || !sc.zhong || !sc.mo) return null;
+  const q = String(r.question || '').trim();
+  const say = (c) => `${c.zhi}（${c.liuQin || ''}·${c.jiangFull || ''}）`;
+  const plain = (c) => (LIUQIN_PLAIN[c.liuQin] ? `——${LIUQIN_PLAIN[c.liuQin]}` : '');
+  return {
+    system: 'daliuren',
+    title: '先看这一课：事情怎么走到这一步',
+    chips: uniq([r.geJu && r.geJu.name, `${sc.chu.zhi}→${sc.mo.zhi}`, r.yueJiang && `月将${r.yueJiang.zhi}`]),
+    lead: `${q ? `你问的是「${q}」。` : ''}三传是 ${sc.chu.zhi} → ${sc.zhong.zhi} → ${sc.mo.zhi}；`
+      + `末传落 ${sc.mo.zhi}（${sc.mo.liuQin || ''}·${sc.mo.jiangFull || ''}），课体是「${(r.geJu && r.geJu.name) || '—'}」。`,
+    sections: [
+      { h: '起手（初传）', t: `${say(sc.chu)}${plain(sc.chu)}。这是事情开头的样子。` },
+      { h: '转折（中传）', t: `${say(sc.zhong)}${plain(sc.zhong)}。中间会经过这一段，也是容易改道的地方。` },
+      { h: '落点（末传）', t: `${say(sc.mo)}${plain(sc.mo)}。末传比初传更接近结果——但也只是「照现在这样走下去会到哪」。` },
+    ],
+    advice: [
+      '先看初传：事情是从哪儿起的？把那个起点找出来，比猜结果有用。',
+      '中传若与初传相冲相克，说明中途会变；这时别把计划定死。',
+    ],
+    caveat: '三传讲的是传变形态，不给具体日期；同一课不同流派对课体的命名也有差异。',
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function qimenSummary(r) {
+  const dayGan = r.siZhu && r.siZhu.day ? String(r.siZhu.day)[0] : '';
+  const hourGan = r.siZhu && r.siZhu.time ? String(r.siZhu.time)[0] : '';
+  const palaces = r.palaces || [];
+  if (!palaces.length) return null;
+  const findStem = (g) => palaces.find((p) => p.tianPan === g)
+    || (r.centerPalace && r.centerPalace.tianPan === g ? r.centerPalace : null);
+  const mine = findStem(dayGan);
+  const thing = findStem(hourGan);
+  const q = String(r.question || '').trim();
+  // 「6宫」是给人看的界面里最别扭的一种写法：读奇门的人认的是乾宫、巽宫。
+  // 宫名从 PALACE_FIELD 的释义里取（「乾宫：…」），取不到再退回数字。
+  const pName = (p) => {
+    const f = p && PALACE[p.palace] && PALACE[p.palace].field;
+    return f ? f.split('：')[0] : (p ? `${p.palace}宫` : '盘中取不到');
+  };
+  const pDir = (p) => (p && PALACE[p.palace] && PALACE[p.palace].dir ? `（${PALACE[p.palace].dir}）` : '');
+  const cell = (p) => (p ? `${pName(p)}${pDir(p)}｜${p.gate || '—'}·${p.star || '—'}·${p.god || '—'}` : '盘中取不到');
+  const rel = (p) => {
+    if (!p || !p.gateRelation || !p.gateRelation.type) return '门与宫的关系没算到';
+    return `${p.gateRelation.type}（${p.gateRelation.note || ''}）`;
+  };
+  return {
+    system: 'qimen',
+    title: '先看这一局：条件和位置在哪',
+    // r.ju 已经含「阴遁/阳遁」，再单列一个「阴遁」标签是重复信息，占位置不增信息
+    chips: uniq([r.ju, r.zhiFu && `值符${r.zhiFu.star}`]),
+    lead: `${q ? `你问的是「${q}」。` : ''}日干 ${dayGan} 落在${cell(mine)}，时干 ${hourGan} 落在${cell(thing)}——前者代表你，后者代表这件事。`
+      + `你这边门与宫是${rel(mine)}；事情那边是${rel(thing)}。`,
+    sections: [
+      { h: '你这边的条件', t: mine
+        ? `你在${PALACE[mine.palace] ? PALACE[mine.palace].field : mine.palace + '宫'}；门是${mine.gate || '—'}——${GATES[mine.gate] || '门名只说明形态'}。`
+        : '日干落在中宫或取不到：中宫无门无神，按寄宫（多寄坤二）取用，读的时候要说清这是寄宫。' },
+      { h: '事情那边的条件', t: thing
+        ? `事情落在${PALACE[thing.palace] ? PALACE[thing.palace].field : thing.palace + '宫'}；门是${thing.gate || '—'}——${GATES[thing.gate] || '门名只说明形态'}。`
+        : '时干落在中宫或取不到，同样按寄宫看，别当成坤二本宫。' },
+      { h: '门名不是吉凶', t: '开门主启动、生门主生长、休门主等待、伤门主损耗、杜门主隐藏——这些说的是「这件事现在是什么形态」，不是好坏判决。要看它与日干宫、时干宫的生克。' },
+    ],
+    advice: [
+      '把「我这边」和「事情那边」的宫位对一下：两边相距越远，越需要中间人、流程或时间。',
+      '如果门名是伤门、死门，不是叫你别做，而是提醒这件事的代价和收尾要先想清楚。',
+    ],
+    caveat: uniq([r.juMethodNote || '', '奇门重方位与时机；本插件不给具体方位建议，只把宫位与门星神摊开。']).join(''),
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function tarotSummary(r) {
+  const cards = r.cards || [];
+  if (!cards.length) return null;
+  const q = String(r.question || '').trim();
+  // 「关节」取当下那一张（牌阵里通常叫现在/现况/建议），没有就取中间一张。
+  // 以前取的是「第一张逆位」，那是随机的——同一副牌换个抽牌顺序，结论就换了个位置。
+  const pivot = cards.find((c) => /现在|现况|当下|建议|核心/.test(c.position || ''))
+    || cards[Math.floor(cards.length / 2)];
+  return {
+    system: 'tarot',
+    title: '先看这几张牌：它们各在说什么',
+    // spread 里已经写了「3 张牌阵（过去/现在/未来）」，再挂一个「3 张」是重复
+    chips: uniq([r.spread]),
+    lead: `${q ? `你问的是「${q}」。` : ''}${r.spread || ''}：`
+      + cards.map((c) => `${c.position}「${c.name}」${c.orientation}`).join('，') + '。',
+    sections: cards.slice(0, 4).map((c) => ({
+      h: c.position,
+      t: `「${c.name}」${c.orientation}：${(c.keywords || []).slice(0, 3).join('、') || c.core || ''}。${c.positionHint || ''}`,
+    })),
+    advice: [
+      `最值得先看的是「${pivot.name}」（${pivot.position}·${pivot.orientation}）——${(pivot.keywords || []).slice(0, 3).join('、') || '它所在的位置，就是这件事现在的着力点'}。`,
+      '把牌当镜子：它给的是看事情的角度，不是判决。看完写一句「那我下一步做什么」。',
+    ],
+    caveat: r.systemNote || '塔罗为象征系统，牌义与元素对应存在流派差异。',
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function hepanSummary(r) {
+  const sc = r.score;
+  if (!sc) return null;
+  const dims = (r.dimensions || []).filter((d) => d && d.text);
+  // 合盘里 dayMaster 是「丁火」这样的一整串，不是 {stem,element}；两种写法都接住，
+  // 否则标签会渲染成 undefinedundefined，比不给还难看。
+  const name = (x) => {
+    const dm = x && x.dayMaster;
+    if (!dm) return '';
+    if (typeof dm === 'string') return dm.replace(/日主$/, '');
+    return `${dm.stem || ''}${dm.element || ''}`;
+  };
+  const a = name(r.a);
+  const b = name(r.b);
+  return {
+    system: 'hepan',
+    title: '先看这一张：你们大致怎么相处',
+    chips: uniq([a && b ? `${a} × ${b}` : '', sc.level, `${sc.total}/100`]),
+    lead: `${a && b ? `你们是 ${a} 与 ${b}。` : ''}合盘描述的是「相处方式与互补点」，不判合不合，也不决定关系成败。`
+      + `整体上盘面给的是「${sc.level}」（${sc.total}/100——分数只是相对刻度，不是及格线）。`,
+    sections: dims.slice(0, 3).map((d) => ({ h: d.label, t: d.text })),
+    advice: [
+      '一起看，别一个人看完拿去判断对方：前者是对话，后者是审判。',
+      '把上面的分歧当话题清单：哪一条你们真的在意，就聊哪一条。',
+    ],
+    caveat: (r.notes && r.notes[0]) || '合盘看的是相处方式与互补点，不决定关系成败。',
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
+  };
+}
+
+function trendSummary(r) {
+  const pts = r.points || [];
+  const segs = r.segments || [];
+  if (!pts.length || !segs.length) return null;
+  // 「现在」由调用方传进来的 asOf 决定（meta.nowYear），不读挂钟：
+  // 同一条线在任何时候重新生成，文字必须一模一样。
+  const nowYear = Number.isInteger(r.meta && r.meta.nowYear) ? r.meta.nowYear : null;
+  const cur = nowYear ? (pts.find((p) => p.year === nowYear) || null) : null;
+  const seg = cur
+    ? (segs.find((s) => cur.age >= s.startAge && cur.age <= s.endAge) || segs[0])
+    : segs[0];
+  const next = segs[segs.indexOf(seg) + 1];
+  const inSeg = pts.filter((p) => p.age >= seg.startAge && p.age <= seg.endAge);
+  const avg = inSeg.length ? inSeg.reduce((n, p) => n + p.score, 0) / inSeg.length : 0;
+  const allAvg = pts.reduce((n, p) => n + p.score, 0) / pts.length;
+  const tone = avg >= allAvg + 5 ? '比一生平均更亮' : avg <= allAvg - 5 ? '比一生平均更闷' : '与一生平均差不多';
+  const best = (r.highlights && r.highlights.best) || [];
+  const worst = (r.highlights && r.highlights.worst) || [];
+  const nowLine = cur
+    ? `你现在 ${cur.age} 岁（${nowYear} 年），在「${seg.ganZhi}」这一步的第 ${cur.age - seg.startAge + 1} 年（${seg.startAge}–${seg.endAge} 岁）`
+      + `${next ? `，再过 ${seg.endAge - cur.age + 1} 年到 ${next.startAge} 岁换「${next.ganZhi}」` : '，已是最后一步'}。`
+    : `没给当前日期（asOf），所以不标「现在在第几步」；先看第一步「${seg.ganZhi}」（${seg.startAge}–${seg.endAge} 岁）起手的样子。`;
+  return {
+    system: 'trend',
+    title: '先看这一条线：这些年大致什么走势',
+    chips: uniq([seg.ganZhi, `${seg.startAge}–${seg.endAge} 岁`, cur ? `${cur.age} 岁` : '']),
+    lead: `这条线按 ${(r.meta && r.meta.toAge) || pts.length} 岁排到 ${pts[pts.length - 1].year} 年，共 ${segs.length} 步大运。`
+      + nowLine,
+    sections: [
+      { h: '这一步的基调', t: `这一步里各年的平均分是 ${avg.toFixed(0)}，${tone}（全盘平均 ${allAvg.toFixed(0)}）。分数是相对刻度，不是绝对值。` },
+      { h: '这些年里最亮和最闷的', t: `${best.length ? `高点：${best.slice(0, 2).join('、')}` : '没有特别高的点'}；${worst.length ? `低点：${worst.slice(0, 2).join('、')}` : '没有特别低的点'}。高点适合推进，低点适合收口。` },
+      { h: '怎么用这条线', t: '它不是命运表，是把「顺/不顺」画成可视的起伏。真正决定走向的，是你在这几步里做了什么。' },
+    ],
+    advice: [
+      '把下一步换运的年龄记下来：换运前后半年，通常是最容易做决定、也最容易冲动的时候。',
+      '低点年别做大额投入，高点年别只观望——这两条比记分数管用。',
+    ],
+    caveat: '线按年岁等距绘制，实际每步大运十年；起点与交运按节气推算，出生时刻未知时按日估算。',
+    footer: '以上是把盘面符号翻译成话，不是断语；真正的判断要看现实里那几步。',
   };
 }
 
@@ -226,5 +593,12 @@ export function plainSummary(r) {
   if (!r || typeof r !== 'object') return null;
   if (r.system === 'bazi') return baziSummary(r);
   if (r.system === 'ziwei') return ziweiSummary(r);
+  if (r.system === 'liuyao') return liuyaoSummary(r);
+  if (r.system === 'meihua') return meihuaSummary(r);
+  if (r.system === 'daliuren') return daliurenSummary(r);
+  if (r.system === 'qimen') return qimenSummary(r);
+  if (r.system === 'tarot') return tarotSummary(r);
+  if (r.system === 'hepan') return hepanSummary(r);
+  if (r.system === 'trend') return trendSummary(r);
   return null;
 }

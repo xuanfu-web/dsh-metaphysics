@@ -88,5 +88,16 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber, parseRGB, hexToRGB, luminance, contrastRatio, pickOnColor, ON_DARK, ON_LIGHT, kindOfDirection };
+  /**
+   * 本机今天的日期（YYYY-MM-DD）。
+   * 只给「现在走到第几步」这类需要当前位置的展示用：引擎不读挂钟，
+   * 当前时间一律由界面以 asOf 传入，这样同一条线任何时候重新生成都一字不差。
+   */
+  function todayStamp(date) {
+    const d = date instanceof Date ? date : new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+
+  window.__MPCore = { NEED_ASK, needAsk, parseLines, toNumber, parseRGB, hexToRGB, luminance, contrastRatio, pickOnColor, ON_DARK, ON_LIGHT, kindOfDirection, todayStamp };
 })();
