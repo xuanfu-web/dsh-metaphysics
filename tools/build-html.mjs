@@ -685,6 +685,19 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       fs.writeFileSync(desktop, out, 'utf8');
       console.log(`written: ${desktop}  (${(out.length / 1024).toFixed(1)} KB)`);
     }
+  } else {
+    // 没加 --desktop 时，顺手看一眼桌面那份是不是停在旧版本。
+    // 不加这句的话，改了源码、只跑 build:html，桌面那份会一直停在上一个大版本，
+    // 而打开它的人是照徽标判断新旧的——看到「0.59.0」就以为是新的。
+    try {
+      const desktop = path.join(os.homedir(), 'Desktop', '命理排盘.html');
+      if (fs.existsSync(desktop) && path.resolve(desktop) !== path.resolve(target)) {
+        const verOf = (text) => (String(text).match(/__MP_VER = "([^"]+)"/) || [])[1] || '';
+        const dv = verOf(fs.readFileSync(desktop, 'utf8'));
+        const sv = verOf(out);
+        if (dv && sv && dv !== sv) console.log(`hint: 桌面那份还停在 ${dv}，要一并刷新请跑 npm run build:desktop`);
+      }
+    } catch (e) { /* 没有桌面目录或读不了就跳过，不影响构建 */ }
   }
 }
 
