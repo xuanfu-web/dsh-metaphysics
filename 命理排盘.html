@@ -340,6 +340,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .pp,.mp-it,.pp *,.mp-it *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   a[href]::after{content:""}
 }
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -430,6 +431,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
          切到六爻/梅花/六壬等起卦类 tab 时，web-ui.js 会自动把这两个框换成你的本机当前时刻。 -->
     <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="date" value="1990-05-12"></label>
     <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
+    <!-- 时辰未知：只在八字/人生K线出现。勾上＝不排时柱、起运降到按日，结果首行固定提示。
+         紫微/合盘不提供这个勾选——它们没有时支就整盘不成立，给了勾选等于诱导出一个假盘。 -->
+    <label class="chk" id="for-hourunknown" style="display:none"><input type="checkbox" id="hourunknown"> 时辰未知</label>
     <label class="field" id="for-gender">性别
       <select id="gender"><option value="female">女</option><option value="male">男</option></select>
     </label>
@@ -630,7 +634,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：134 个测试文件 / 6225 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：135 个测试文件 / 6252 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -5213,13 +5217,13 @@ function rootedWeightOf(pillars, el, factor) {
 }
 
 /** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑 */
-function buildRelations(pillars) {
-  const stems = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].stem);
-  const branches = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].branch);
+function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour']) {
+  const stems = keys.map((k) => pillars[k].stem);
+  const branches = keys.map((k) => pillars[k].branch);
 
   const stemOut = [];
-  for (let i = 0; i < 4; i++) {
-    for (let j = i + 1; j < 4; j++) {
+  for (let i = 0; i < stems.length; i++) {
+    for (let j = i + 1; j < stems.length; j++) {
       const a = stems[i];
       const b = stems[j];
       if (a === b) continue;
@@ -5250,8 +5254,8 @@ function buildRelations(pillars) {
       fullHuis.push(k);
     }
   }
-  for (let i = 0; i < 4; i++) {
-    for (let j = i + 1; j < 4; j++) {
+  for (let i = 0; i < branches.length; i++) {
+    for (let j = i + 1; j < branches.length; j++) {
       const a = branches[i];
       const b = branches[j];
       if (a === b) {
@@ -5400,6 +5404,10 @@ function renyuanOf(monthBranch, birthJdn, termJd) {
 function buildBazi(input) {
   assertCivil(input);
   let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
+  // 时辰未知：内部仍按「正午」跑完整条管线（大运、旺衰都要有个基准才能算），
+  // 但对外一律不承认这个钟点——时柱置空、文本不出现具体时刻、精度降为按日。
+  const hourUnknown = input.hourUnknown === true;
+  if (hourUnknown) { hour = 12; minute = 0; }
   const lateZi = input.lateZi !== false;
   const useTrueSolar = input.trueSolar !== false;
   // 1986–1991 中国夏令时：出生证钟面时间普遍是「拨快 1 小时」的钟面时间，
@@ -5742,9 +5750,10 @@ function buildBazi(input) {
   const renyuan = renyuanOf(BRANCHES[monthBranchIdx], jdnBase, prevJieTerm.jd);
   if (renyuan) renyuan.term = { name: prevJieTerm.name, time: formatJd(prevJieTerm.jd) };
 
-  return {
+  const out = {
     system: 'bazi',
-    relations: buildRelations(pillars),
+    // 时柱未知时不参与干支关系（否则「时干合日干」这类结论就建立在编造的钟点上）
+    relations: buildRelations(pillars, hourUnknown ? ['year', 'month', 'day'] : undefined),
     palaces: {
       taiyuan: { ganzhi: taiyuan.name, note: '月干进一、月支进三' },
       taixi: { ganzhi: taixi.name, note: '日干五合、日支六合' },
@@ -5806,6 +5815,61 @@ function buildBazi(input) {
     liunian,
     liunianFrom: thisYear,
   };
+
+  // ── 时辰未知：把「不该被当成已知」的东西全部收回 ──────────
+  // 内部按正午跑完整条管线，是为了让大运/旺衰有个基准；但对外必须守住三件事：
+  // 时柱不给、具体钟点不给、精度不冒充。任何一处漏了，用户就会把它当成算准的盘。
+  if (hourUnknown) {
+    const hourPillar = out.pillars.hour;
+    out.hourUnknown = true;
+    // 内部语义标记，不是钟点；正文里只说「正午」
+    out.provisionalHour = 'noon';
+    // 时柱整体不排：键保留为 null（不删键），下游 for...in 不会崩，但读不到值
+    out.pillars.hour = null;
+    // 命宫 / 身宫由「生月 + 生时支」定，时支没了就不能给
+    out.palaces.minggong = null;
+    out.palaces.shengong = null;
+    // 输入回显也不留钟点：否则等于把占位值还给了用户
+    out.input.civil.hour = null;
+    out.input.civil.minute = null;
+    const dateOnly = `${out.input.civil.year}-${String(out.input.civil.month).padStart(2, '0')}-${String(out.input.civil.day).padStart(2, '0')}`;
+    out.solarTime.civilText = `${dateOnly}（时辰未知）`;
+    out.solarTime.trueSolarText = `${dateOnly}（时辰未知）`;
+    // 大运：起运与交运都是「出生时刻 + 放大间隔」推出来的，没有出生时刻就只能到日
+    out.dayun.precision = 'day';
+    out.dayun.jiao = null;
+    out.dayun.note = '时柱暂缺：起运与交运按日估算，仅供参考';
+    out.dayun.list = out.dayun.list.map((d) => ({
+      ...d,
+      fromDate: d.fromDate ? String(d.fromDate).slice(0, 10) : d.fromDate,
+      toDate: d.toDate ? String(d.toDate).slice(0, 10) : d.toDate,
+    }));
+    // 五行不含时柱重算：否则等于把一个编出来的钟点算进了旺衰
+    if (hourPillar) {
+      const w = { ...out.wuxing };
+      w[hourPillar.stemElement] -= 1;
+      hourPillar.hidden.forEach((h, i) => { w[h.element] -= (WUXING_HIDDEN_WEIGHT[i] ?? 0.1); });
+      for (const k of Object.keys(w)) w[k] = Math.round(Math.max(0, w[k]) * 10) / 10;
+      out.wuxing = w;
+    }
+    // 神煞：时柱那一列清空；只落在时柱上的条目整条去掉（不能留个空壳说「时柱有X」）
+    if (out.shensha && out.shensha.detail) {
+      out.shensha.detail.hour = [];
+      if (Array.isArray(out.shensha.groups)) {
+        out.shensha.groups = out.shensha.groups
+          .map((g) => ({ ...g, items: (g.items || []).filter((i) => (i.pillars || []).some((k) => k !== 'hour')) }))
+          .filter((g) => g.items.length);
+        out.shensha.count = out.shensha.groups.reduce((n, g) => n + g.items.length, 0);
+      }
+    }
+    // 旺衰与格局：算法没变，但基准是正午——标出来，别让人以为是定时辰算的
+    out.strength.precision = 'three-pillars';
+    out.notes = [
+      '时柱暂缺：未提供出生时刻，时柱不参与任何判定',
+      '旺衰、格局、用神按年/月/日三柱估算，补上时柱后可能改变',
+    ];
+  }
+  return out;
 }
 
 return { HIDDEN_STEMS, RENYUAN_TABLE, STEM_ELEMENT, BRANCH_ELEMENT, buildRelations, tenGod, nayin, applyTrueSolar, renyuanOf, buildBazi };
@@ -15124,6 +15188,11 @@ const SYSTEM_LIMITS = {
   ],
   bazi: [
     {
+      id: 'bazi-hour-unknown',
+      title: '时辰未知时，只给三柱，不给紫微与合盘',
+      text: '不知道出生时辰时，本插件不排时柱，起运按日估算，并把「时柱按正午暂算」写在结果第一行。紫微（命宫由生月与生时支定）与合盘（夫妻宫、大运都依赖时支）一律不出盘——不是保守，是这两套离了时支就不成立，硬排出来只是看着像盘。',
+    },
+    {
       id: 'bazi-no-event',
       title: '不预测具体年份的事件',
       text: '不判「哪年结婚」「哪年升职」「哪年发财」。岁运并临、运年反吟、伏吟这类只作变动提示、不断吉凶——这些格局在十年里会反复出现，按它们断事，等于每年都能找到一次「应验」。',
@@ -20630,8 +20699,11 @@ function baziText(r) {
     + `　地势 ${p.dishi}　自坐 ${p.zizuo}　空亡 ${p.kongwang.join('')}`
     + (p.shensha && p.shensha.length ? `　神煞 ${p.shensha.join('、')}` : '');
   const wuxing = Object.entries(r.wuxing).map(([k, v]) => `${k}${v}`).join(' ');
+  // 命宫/身宫由「生月 + 生时支」定：时柱未知时它们是 null，不能拼字符串，也不能拿占位值顶上
   const palaces = r.palaces
-    ? `【胎元】${r.palaces.taiyuan.ganzhi}　胎息 ${r.palaces.taixi ? r.palaces.taixi.ganzhi : '—'}　命宫 ${r.palaces.minggong.ganzhi}　身宫 ${r.palaces.shengong.ganzhi}`
+    ? `【胎元】${r.palaces.taiyuan.ganzhi}　胎息 ${r.palaces.taixi ? r.palaces.taixi.ganzhi : '—'}`
+      + (r.palaces.minggong ? `　命宫 ${r.palaces.minggong.ganzhi}` : '　命宫 时柱暂缺，不排')
+      + (r.palaces.shengong ? `　身宫 ${r.palaces.shengong.ganzhi}` : '　身宫 时柱暂缺，不排')
     : '';
   const dayun = r.dayun.list.slice(0, 8)
     .map((d) => `${d.startAge}岁 ${d.ganzhi}(${d.stemTenGod})${d.luck ? `·${d.luck.tier}` : ''}${d.relations && d.relations.length ? `[${d.relations.join('')}]` : ''}`).join('　');
@@ -20671,10 +20743,12 @@ function baziText(r) {
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
+  const hourMissing = r.hourUnknown === true || !P.hour;
   return [
-    `【四柱】${P.year.ganzhi} ${P.month.ganzhi} ${P.day.ganzhi} ${P.hour.ganzhi}`,
+    `【四柱】${P.year.ganzhi} ${P.month.ganzhi} ${P.day.ganzhi}${P.hour ? ` ${P.hour.ganzhi}` : '（时柱暂缺）'}`,
     `日主：${r.dayMaster.stem}${r.dayMaster.element}（${r.dayMaster.yinYang}）　空亡：${r.kongwang.join('')}`,
-    line('年柱', P.year), line('月柱', P.month), line('日柱', P.day), line('时柱', P.hour),
+    line('年柱', P.year), line('月柱', P.month), line('日柱', P.day),
+    ...(hourMissing ? [] : [line('时柱', P.hour)]),
     `五行：${wuxing}`,
     ...(palaces ? [palaces] : []),
     `日主强弱：${r.strength.level}（${r.strength.score}）　${r.strength.detail}`,
@@ -21282,6 +21356,16 @@ function compute(input = {}) {
       if (ryc) r.renyuanClassic = { ...ryc, bookName: CLASSIC_BOOKS[ryc.book].name };
     }
   }
+  // 时辰未知：提示必须在第一行。用户先看到「这不是一张完整盘」，才不会被下面的时柱/命宫误导
+  if (r && r.system === 'bazi' && r.hourUnknown && r.summary) {
+    r.summary = `时柱按正午暂算，涉及时柱的结论仅供参考
+${r.summary}`;
+  }
+  // 趋势是降级而不是阻断：起运按日估算，也要在首行说清
+  if (r && r.system === 'trend' && r.hourUnknown && r.summary) {
+    r.summary = `时柱暂缺：起运与大运按日估算，仅供参考
+${r.summary}`;
+  }
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
@@ -21532,10 +21616,16 @@ function computeRaw(args = {}) {
       dst: args.dst !== false,
       // 流年表默认从「今年」起排；要复现历史结论就把基准年钉死
       nowYear: asOf ? asOf.year : undefined,
+      // 时辰未知：三柱模式（时柱不排、精度降到日、摘要首行固定提示）
+      hourUnknown: args.hourUnknown === true,
     });
     return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: baziText(result) };
   }
   if (system === 'ziwei') {
+    // 命宫由「生月 + 生时支」定：时支未知则整盘无处落脚，没有「大概的紫微盘」这种东西
+    if (args.hourUnknown === true) {
+      throw fail('HOUR_UNKNOWN', '紫微必须有出生时刻：命宫由生月与生时支定，时支未知则整盘不成立。请补上出生时刻，或改用八字三柱模式只看年/月/日。');
+    }
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
     const result = buildZiwei({
@@ -21592,6 +21682,10 @@ function computeRaw(args = {}) {
     return { ...result, summary: qimenText(result) };
   }
   if (system === 'hepan') {
+    // 双方夫妻宫、大运都依赖时支：任一方时辰未知就不出盘，免得「差不多」的合盘误导决定
+    if (args.hourUnknown === true || (args.partner && args.partner.hourUnknown === true)) {
+      throw fail('HOUR_UNKNOWN', '合盘需要双方都有出生时刻：夫妻宫与大运都依赖时支。请补齐时刻后再看，或用八字三柱模式各自看年/月/日。');
+    }
     const partner = args.partner;
     if (!partner || typeof partner !== 'object') {
       throw fail('E_PARTNER', '合盘需要 partner：{ datetime, gender, address? }，其中 partner.datetime 是对方的公历出生时间');
@@ -21814,8 +21908,15 @@ function computeRaw(args = {}) {
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      hourUnknown: args.hourUnknown === true,
     });
-    return { ...result, precision: dt.precision, summary: trendText(result) };
+    // 趋势没有独立的 dayun 字段（大运在 buildTrend 内部用），所以精度标记挂在结果顶层
+    return {
+      ...result,
+      ...(args.hourUnknown === true ? { hourUnknown: true, hourPrecision: 'day' } : {}),
+      precision: dt.precision,
+      summary: trendText(result),
+    };
   }
   if (system === 'fengshui') {
     const action = args.action === 'advise' ? 'advise' : args.action === 'xuankong' ? 'xuankong' : 'natal';
@@ -26318,7 +26419,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   async function run() {
     const runStart = mpNow();
     const date = el('date').value;
-    const time = el('time').value;
+    // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
+    const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
+    const time = hourUnknown ? '12:00' : el('time').value;
     let lineWarn = '';
     const timed = kindOf(tab) === 'cast' && usesTimeInput();
     // 所问之事必填：不给一份没有落点的解读
@@ -26338,6 +26441,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
       args.gender = el('gender').value;
+      if (hourUnknown) args.hourUnknown = true;
       if (el('latezi')) args.lateZi = el('latezi').checked;
       args.trueSolar = el('ts').checked;
       const addr = el('addr').value.trim();
@@ -26433,6 +26537,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       const nums = mbAnswersForEngine();
       if (nums.length) args.answers = nums;
     }
+    if (tab === 'trend' && hourUnknown) args.hourUnknown = true;
     if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
     if (tab === 'fengshui') {
       args.action = fsMode;
@@ -26635,7 +26740,16 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导；人格问卷同样与日期无关
     const showDT = tab !== 'tarot' && tab !== 'mbti' && !mhNum;
     el('for-date').style.display = showDT ? '' : 'none';
-    el('for-time').style.display = showDT && kindOf(tab) !== 'date' ? '' : 'none';
+    // 「时辰未知」只对八字与人生K线开放：紫微/合盘没有时支就没有盘，不提供这个勾选
+    const canUnknown = tab === 'bazi' || tab === 'trend';
+    const hu = el('hourunknown');
+    if (hu) {
+      const box = el('for-hourunknown');
+      if (box) box.style.display = showDT && canUnknown ? '' : 'none';
+      if (!canUnknown && hu.checked) hu.checked = false;
+    }
+    const hideTime = showDT && kindOf(tab) !== 'date' && !(canUnknown && hu && hu.checked);
+    el('for-time').style.display = hideTime ? '' : 'none';
   }
 
   /** 速查类子表单：择日/小六壬/人生K/风水/起名各自的小块与分段按钮 */
@@ -27011,6 +27125,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     // C3 深链：带 #mp= 打开时先还原那张盘；没有就照旧是默认示例盘
     const deep = readDeepLink();
     setTab(deep ? deep.tab : 'ziwei');
+  // 勾「时辰未知」当场收起时刻框：不让人以为还要填个点
+  if (el('hourunknown')) el('hourunknown').addEventListener('change', syncMhMode);
     if (deep) fillDeepForm(deep.form);
     Promise.resolve(run()).then(() => { if (deep) deepNote(deep); });
   });

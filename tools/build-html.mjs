@@ -369,7 +369,8 @@ function page() {
 <meta property="og:title" content="命理排盘 · 八套体系，一个页面">
 <meta property="og:description" content="八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗。本地计算，不采集数据；口径怎么取、差异在哪里，都能逐字对照。">
 <meta name="twitter:card" content="summary_large_image">
-<style>${CSS}</style>
+<style>${CSS}.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -429,6 +430,9 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
          切到六爻/梅花/六壬等起卦类 tab 时，web-ui.js 会自动把这两个框换成你的本机当前时刻。 -->
     <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="date" value="1990-05-12"></label>
     <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
+    <!-- 时辰未知：只在八字/人生K线出现。勾上＝不排时柱、起运降到按日，结果首行固定提示。
+         紫微/合盘不提供这个勾选——它们没有时支就整盘不成立，给了勾选等于诱导出一个假盘。 -->
+    <label class="chk" id="for-hourunknown" style="display:none"><input type="checkbox" id="hourunknown"> 时辰未知</label>
     <label class="field" id="for-gender">性别
       <select id="gender"><option value="female">女</option><option value="male">男</option></select>
     </label>

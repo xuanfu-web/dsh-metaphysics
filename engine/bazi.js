@@ -144,13 +144,13 @@ function rootedWeightOf(pillars, el, factor) {
 }
 
 /** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑 */
-export function buildRelations(pillars) {
-  const stems = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].stem);
-  const branches = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].branch);
+export function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour']) {
+  const stems = keys.map((k) => pillars[k].stem);
+  const branches = keys.map((k) => pillars[k].branch);
 
   const stemOut = [];
-  for (let i = 0; i < 4; i++) {
-    for (let j = i + 1; j < 4; j++) {
+  for (let i = 0; i < stems.length; i++) {
+    for (let j = i + 1; j < stems.length; j++) {
       const a = stems[i];
       const b = stems[j];
       if (a === b) continue;
@@ -181,8 +181,8 @@ export function buildRelations(pillars) {
       fullHuis.push(k);
     }
   }
-  for (let i = 0; i < 4; i++) {
-    for (let j = i + 1; j < 4; j++) {
+  for (let i = 0; i < branches.length; i++) {
+    for (let j = i + 1; j < branches.length; j++) {
       const a = branches[i];
       const b = branches[j];
       if (a === b) {
@@ -331,6 +331,10 @@ export function renyuanOf(monthBranch, birthJdn, termJd) {
 export function buildBazi(input) {
   assertCivil(input);
   let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
+  // 时辰未知：内部仍按「正午」跑完整条管线（大运、旺衰都要有个基准才能算），
+  // 但对外一律不承认这个钟点——时柱置空、文本不出现具体时刻、精度降为按日。
+  const hourUnknown = input.hourUnknown === true;
+  if (hourUnknown) { hour = 12; minute = 0; }
   const lateZi = input.lateZi !== false;
   const useTrueSolar = input.trueSolar !== false;
   // 1986–1991 中国夏令时：出生证钟面时间普遍是「拨快 1 小时」的钟面时间，
@@ -673,9 +677,10 @@ export function buildBazi(input) {
   const renyuan = renyuanOf(BRANCHES[monthBranchIdx], jdnBase, prevJieTerm.jd);
   if (renyuan) renyuan.term = { name: prevJieTerm.name, time: formatJd(prevJieTerm.jd) };
 
-  return {
+  const out = {
     system: 'bazi',
-    relations: buildRelations(pillars),
+    // 时柱未知时不参与干支关系（否则「时干合日干」这类结论就建立在编造的钟点上）
+    relations: buildRelations(pillars, hourUnknown ? ['year', 'month', 'day'] : undefined),
     palaces: {
       taiyuan: { ganzhi: taiyuan.name, note: '月干进一、月支进三' },
       taixi: { ganzhi: taixi.name, note: '日干五合、日支六合' },
@@ -737,4 +742,59 @@ export function buildBazi(input) {
     liunian,
     liunianFrom: thisYear,
   };
+
+  // ── 时辰未知：把「不该被当成已知」的东西全部收回 ──────────
+  // 内部按正午跑完整条管线，是为了让大运/旺衰有个基准；但对外必须守住三件事：
+  // 时柱不给、具体钟点不给、精度不冒充。任何一处漏了，用户就会把它当成算准的盘。
+  if (hourUnknown) {
+    const hourPillar = out.pillars.hour;
+    out.hourUnknown = true;
+    // 内部语义标记，不是钟点；正文里只说「正午」
+    out.provisionalHour = 'noon';
+    // 时柱整体不排：键保留为 null（不删键），下游 for...in 不会崩，但读不到值
+    out.pillars.hour = null;
+    // 命宫 / 身宫由「生月 + 生时支」定，时支没了就不能给
+    out.palaces.minggong = null;
+    out.palaces.shengong = null;
+    // 输入回显也不留钟点：否则等于把占位值还给了用户
+    out.input.civil.hour = null;
+    out.input.civil.minute = null;
+    const dateOnly = `${out.input.civil.year}-${String(out.input.civil.month).padStart(2, '0')}-${String(out.input.civil.day).padStart(2, '0')}`;
+    out.solarTime.civilText = `${dateOnly}（时辰未知）`;
+    out.solarTime.trueSolarText = `${dateOnly}（时辰未知）`;
+    // 大运：起运与交运都是「出生时刻 + 放大间隔」推出来的，没有出生时刻就只能到日
+    out.dayun.precision = 'day';
+    out.dayun.jiao = null;
+    out.dayun.note = '时柱暂缺：起运与交运按日估算，仅供参考';
+    out.dayun.list = out.dayun.list.map((d) => ({
+      ...d,
+      fromDate: d.fromDate ? String(d.fromDate).slice(0, 10) : d.fromDate,
+      toDate: d.toDate ? String(d.toDate).slice(0, 10) : d.toDate,
+    }));
+    // 五行不含时柱重算：否则等于把一个编出来的钟点算进了旺衰
+    if (hourPillar) {
+      const w = { ...out.wuxing };
+      w[hourPillar.stemElement] -= 1;
+      hourPillar.hidden.forEach((h, i) => { w[h.element] -= (WUXING_HIDDEN_WEIGHT[i] ?? 0.1); });
+      for (const k of Object.keys(w)) w[k] = Math.round(Math.max(0, w[k]) * 10) / 10;
+      out.wuxing = w;
+    }
+    // 神煞：时柱那一列清空；只落在时柱上的条目整条去掉（不能留个空壳说「时柱有X」）
+    if (out.shensha && out.shensha.detail) {
+      out.shensha.detail.hour = [];
+      if (Array.isArray(out.shensha.groups)) {
+        out.shensha.groups = out.shensha.groups
+          .map((g) => ({ ...g, items: (g.items || []).filter((i) => (i.pillars || []).some((k) => k !== 'hour')) }))
+          .filter((g) => g.items.length);
+        out.shensha.count = out.shensha.groups.reduce((n, g) => n + g.items.length, 0);
+      }
+    }
+    // 旺衰与格局：算法没变，但基准是正午——标出来，别让人以为是定时辰算的
+    out.strength.precision = 'three-pillars';
+    out.notes = [
+      '时柱暂缺：未提供出生时刻，时柱不参与任何判定',
+      '旺衰、格局、用神按年/月/日三柱估算，补上时柱后可能改变',
+    ];
+  }
+  return out;
 }

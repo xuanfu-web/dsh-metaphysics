@@ -102,6 +102,10 @@ const CSS = `
 .mp-tab:hover{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary)}
 .mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:var(--mp-on-brand,#fff);font-weight:600;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
+/* 「时辰未知」勾选：与时刻框同一行，字小一号，不抢主操作 */
+.mp-chk{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--dsw-alias-label-secondary);cursor:pointer;user-select:none;white-space:nowrap}
+.mp-chk input{margin:0;accent-color:var(--dsw-alias-brand-primary)}
+.mp-input:disabled{opacity:.45;cursor:not-allowed}
 /* box-sizing 必须写明：Chrome 下 select 默认 border-box、input 默认 content-box，同为 36px 时 input 实高 50px，底对齐后性别下拉的顶边比日期框低 14px */
 .mp-input{box-sizing:border-box;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);border-radius:9px;padding:7px 11px;font-size:14px;outline:none;width:100%;min-width:0;height:36px;
   transition:border-color .14s,box-shadow .14s,background .14s}
@@ -522,6 +526,8 @@ function App() {
   const [tab, setTab] = useState('ziwei');
   const [date, setDate] = useState('1990-05-12');
   const [time, setTime] = useState('14:30');
+  // 时辰未知：只对八字与人生 K 线开放；勾上则不排时柱、起运降到按日
+  const [hourUnknown, setHourUnknown] = useState(false);
   const [gender, setGender] = useState('female');
   const [address, setAddress] = useState('');
   // 合盘用的第二个人
@@ -625,7 +631,10 @@ function App() {
   const run = async (kind, override, modeOverride, over) => {
     const k = kind || tab;
     const mh = modeOverride || mhMode;
-    const dt = override ? override : { date, time };
+    // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
+    const canUnknown = k === 'bazi' || k === 'trend';
+    const huV = over && typeof over.hourUnknown === 'boolean' ? over.hourUnknown : hourUnknown;
+    const dt = override ? override : (canUnknown && huV ? { date, time: '12:00' } : { date, time });
     // over：示例等「临时覆盖」用，避免依赖 React 状态更新后再读（同一个 handler 里 setState 还没生效）
     const genderV = over && over.gender ? over.gender : gender;
     const addressV = over && typeof over.address === 'string' ? over.address : address;
@@ -679,6 +688,7 @@ function App() {
         // 交叉验证只对八字/紫微有意义：引擎会用同一份出生信息再排另一套盘
         if (k !== 'hepan') args.cross = crossOn;
         args.lateZi = lateZiV;
+        if (canUnknown && huV) args.hourUnknown = true;
       }
       if (k === 'liuyao') {
         const parsed = Core.parseLines(linesV);
@@ -716,6 +726,7 @@ function App() {
         while (nums.length && nums[nums.length - 1] == null) nums.pop();
         if (nums.length) args.answers = nums;
       }
+      if (k === 'trend' && canUnknown && huV) args.hourUnknown = true;
       if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = tsV; args.lateZi = lateZiV; }
       if (k === 'fengshui') {
         args.action = fsMode;
@@ -1391,7 +1402,13 @@ function App() {
         showDate ? field(isBirth ? '出生日期（公历）' : timeKind === 'date' ? '日期（公历）' : '起卦日期（公历）',
           h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
         showTime ? field(isBirth ? '出生时刻' : '起卦时刻',
-          h('input', { className: 'mp-input', type: 'time', value: time, onChange: (e) => editTime(e.target.value) })) : null,
+          h('input', { className: 'mp-input', type: 'time', value: time, disabled: hourUnknown && (tab === 'bazi'), onChange: (e) => editTime(e.target.value) })) : null,
+        // 时辰未知：只给八字与人生 K 线。紫微/合盘没有时支整盘不成立，不提供这个勾选
+        (tab === 'bazi' || tab === 'trend') ? h('label', { className: 'mp-chk', title: '不知道出生时辰时勾这里：不排时柱，起运按日估算，结果首行会写明' },
+          h('input', {
+            type: 'checkbox', checked: hourUnknown,
+            onChange: (e) => setHourUnknown(e.target.checked),
+          }), ' 时辰未知') : null,
         isBirth ? field('性别', h('select', {
           className: 'mp-input', value: gender, onChange: (e) => setGender(e.target.value),
         }, h('option', { value: 'female' }, '女'), h('option', { value: 'male' }, '男'))) : null,

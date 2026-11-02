@@ -557,7 +557,9 @@
   async function run() {
     const runStart = mpNow();
     const date = el('date').value;
-    const time = el('time').value;
+    // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
+    const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
+    const time = hourUnknown ? '12:00' : el('time').value;
     let lineWarn = '';
     const timed = kindOf(tab) === 'cast' && usesTimeInput();
     // 所问之事必填：不给一份没有落点的解读
@@ -577,6 +579,7 @@
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
       args.gender = el('gender').value;
+      if (hourUnknown) args.hourUnknown = true;
       if (el('latezi')) args.lateZi = el('latezi').checked;
       args.trueSolar = el('ts').checked;
       const addr = el('addr').value.trim();
@@ -672,6 +675,7 @@
       const nums = mbAnswersForEngine();
       if (nums.length) args.answers = nums;
     }
+    if (tab === 'trend' && hourUnknown) args.hourUnknown = true;
     if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
     if (tab === 'fengshui') {
       args.action = fsMode;
@@ -874,7 +878,16 @@
     // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导；人格问卷同样与日期无关
     const showDT = tab !== 'tarot' && tab !== 'mbti' && !mhNum;
     el('for-date').style.display = showDT ? '' : 'none';
-    el('for-time').style.display = showDT && kindOf(tab) !== 'date' ? '' : 'none';
+    // 「时辰未知」只对八字与人生K线开放：紫微/合盘没有时支就没有盘，不提供这个勾选
+    const canUnknown = tab === 'bazi' || tab === 'trend';
+    const hu = el('hourunknown');
+    if (hu) {
+      const box = el('for-hourunknown');
+      if (box) box.style.display = showDT && canUnknown ? '' : 'none';
+      if (!canUnknown && hu.checked) hu.checked = false;
+    }
+    const hideTime = showDT && kindOf(tab) !== 'date' && !(canUnknown && hu && hu.checked);
+    el('for-time').style.display = hideTime ? '' : 'none';
   }
 
   /** 速查类子表单：择日/小六壬/人生K/风水/起名各自的小块与分段按钮 */
@@ -1250,6 +1263,8 @@
     // C3 深链：带 #mp= 打开时先还原那张盘；没有就照旧是默认示例盘
     const deep = readDeepLink();
     setTab(deep ? deep.tab : 'ziwei');
+  // 勾「时辰未知」当场收起时刻框：不让人以为还要填个点
+  if (el('hourunknown')) el('hourunknown').addEventListener('change', syncMhMode);
     if (deep) fillDeepForm(deep.form);
     Promise.resolve(run()).then(() => { if (deep) deepNote(deep); });
   });

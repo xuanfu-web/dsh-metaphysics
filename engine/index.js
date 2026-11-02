@@ -114,8 +114,11 @@ function baziText(r) {
     + `　地势 ${p.dishi}　自坐 ${p.zizuo}　空亡 ${p.kongwang.join('')}`
     + (p.shensha && p.shensha.length ? `　神煞 ${p.shensha.join('、')}` : '');
   const wuxing = Object.entries(r.wuxing).map(([k, v]) => `${k}${v}`).join(' ');
+  // 命宫/身宫由「生月 + 生时支」定：时柱未知时它们是 null，不能拼字符串，也不能拿占位值顶上
   const palaces = r.palaces
-    ? `【胎元】${r.palaces.taiyuan.ganzhi}　胎息 ${r.palaces.taixi ? r.palaces.taixi.ganzhi : '—'}　命宫 ${r.palaces.minggong.ganzhi}　身宫 ${r.palaces.shengong.ganzhi}`
+    ? `【胎元】${r.palaces.taiyuan.ganzhi}　胎息 ${r.palaces.taixi ? r.palaces.taixi.ganzhi : '—'}`
+      + (r.palaces.minggong ? `　命宫 ${r.palaces.minggong.ganzhi}` : '　命宫 时柱暂缺，不排')
+      + (r.palaces.shengong ? `　身宫 ${r.palaces.shengong.ganzhi}` : '　身宫 时柱暂缺，不排')
     : '';
   const dayun = r.dayun.list.slice(0, 8)
     .map((d) => `${d.startAge}岁 ${d.ganzhi}(${d.stemTenGod})${d.luck ? `·${d.luck.tier}` : ''}${d.relations && d.relations.length ? `[${d.relations.join('')}]` : ''}`).join('　');
@@ -155,10 +158,12 @@ function baziText(r) {
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
+  const hourMissing = r.hourUnknown === true || !P.hour;
   return [
-    `【四柱】${P.year.ganzhi} ${P.month.ganzhi} ${P.day.ganzhi} ${P.hour.ganzhi}`,
+    `【四柱】${P.year.ganzhi} ${P.month.ganzhi} ${P.day.ganzhi}${P.hour ? ` ${P.hour.ganzhi}` : '（时柱暂缺）'}`,
     `日主：${r.dayMaster.stem}${r.dayMaster.element}（${r.dayMaster.yinYang}）　空亡：${r.kongwang.join('')}`,
-    line('年柱', P.year), line('月柱', P.month), line('日柱', P.day), line('时柱', P.hour),
+    line('年柱', P.year), line('月柱', P.month), line('日柱', P.day),
+    ...(hourMissing ? [] : [line('时柱', P.hour)]),
     `五行：${wuxing}`,
     ...(palaces ? [palaces] : []),
     `日主强弱：${r.strength.level}（${r.strength.score}）　${r.strength.detail}`,
@@ -766,6 +771,16 @@ export function compute(input = {}) {
       if (ryc) r.renyuanClassic = { ...ryc, bookName: CLASSIC_BOOKS[ryc.book].name };
     }
   }
+  // 时辰未知：提示必须在第一行。用户先看到「这不是一张完整盘」，才不会被下面的时柱/命宫误导
+  if (r && r.system === 'bazi' && r.hourUnknown && r.summary) {
+    r.summary = `时柱按正午暂算，涉及时柱的结论仅供参考
+${r.summary}`;
+  }
+  // 趋势是降级而不是阻断：起运按日估算，也要在首行说清
+  if (r && r.system === 'trend' && r.hourUnknown && r.summary) {
+    r.summary = `时柱暂缺：起运与大运按日估算，仅供参考
+${r.summary}`;
+  }
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
@@ -1016,10 +1031,16 @@ function computeRaw(args = {}) {
       dst: args.dst !== false,
       // 流年表默认从「今年」起排；要复现历史结论就把基准年钉死
       nowYear: asOf ? asOf.year : undefined,
+      // 时辰未知：三柱模式（时柱不排、精度降到日、摘要首行固定提示）
+      hourUnknown: args.hourUnknown === true,
     });
     return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: baziText(result) };
   }
   if (system === 'ziwei') {
+    // 命宫由「生月 + 生时支」定：时支未知则整盘无处落脚，没有「大概的紫微盘」这种东西
+    if (args.hourUnknown === true) {
+      throw fail('HOUR_UNKNOWN', '紫微必须有出生时刻：命宫由生月与生时支定，时支未知则整盘不成立。请补上出生时刻，或改用八字三柱模式只看年/月/日。');
+    }
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
     const result = buildZiwei({
@@ -1076,6 +1097,10 @@ function computeRaw(args = {}) {
     return { ...result, summary: qimenText(result) };
   }
   if (system === 'hepan') {
+    // 双方夫妻宫、大运都依赖时支：任一方时辰未知就不出盘，免得「差不多」的合盘误导决定
+    if (args.hourUnknown === true || (args.partner && args.partner.hourUnknown === true)) {
+      throw fail('HOUR_UNKNOWN', '合盘需要双方都有出生时刻：夫妻宫与大运都依赖时支。请补齐时刻后再看，或用八字三柱模式各自看年/月/日。');
+    }
     const partner = args.partner;
     if (!partner || typeof partner !== 'object') {
       throw fail('E_PARTNER', '合盘需要 partner：{ datetime, gender, address? }，其中 partner.datetime 是对方的公历出生时间');
@@ -1298,8 +1323,15 @@ function computeRaw(args = {}) {
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
+      hourUnknown: args.hourUnknown === true,
     });
-    return { ...result, precision: dt.precision, summary: trendText(result) };
+    // 趋势没有独立的 dayun 字段（大运在 buildTrend 内部用），所以精度标记挂在结果顶层
+    return {
+      ...result,
+      ...(args.hourUnknown === true ? { hourUnknown: true, hourPrecision: 'day' } : {}),
+      precision: dt.precision,
+      summary: trendText(result),
+    };
   }
   if (system === 'fengshui') {
     const action = args.action === 'advise' ? 'advise' : args.action === 'xuankong' ? 'xuankong' : 'natal';
