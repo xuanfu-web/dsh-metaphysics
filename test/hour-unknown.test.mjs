@@ -109,6 +109,42 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   ok(itHtml.includes('这两宫不排'), '解析里写明命宫身宫为何不排');
 }
 
+// ── 五、面板的历史文案：三柱盘不能崩（真机上踩过 ganzhi 取 null）──
+// 面板在「存历史」这一步调 HISTORY_LABEL；它对 pillars 逐项取 .ganzhi，
+// 时柱为 null 就抛 Cannot read properties of null。单页没有这段代码，
+// 所以只有面板会炸——这是面板真机回归（tools/e2e-panel.mjs）抓到的，
+// 这里把逻辑本身钉住，免得以后又只在浏览器里才暴露。
+{
+  const APP = fs.readFileSync(path.join(root, 'src', 'app.js'), 'utf8');
+  const at = APP.indexOf('function HISTORY_LABEL');
+  const NL = String.fromCharCode(10);
+  const end = at < 0 ? -1 : APP.indexOf(NL + '}', at);
+  const srcFn = at >= 0 && end > at ? APP.slice(at, end + 2) : '';
+  ok(!!srcFn, '取到面板的 HISTORY_LABEL');
+
+  let label = null;
+  try {
+    // eslint-disable-next-line no-new-func
+    label = new Function(srcFn + NL + 'return HISTORY_LABEL;')();
+  } catch (e) { label = null; }
+  ok(typeof label === 'function', 'HISTORY_LABEL 可独立求值');
+
+  if (typeof label === 'function') {
+    const three = compute({ ...BASE, hourUnknown: true, withInterpret: false });
+    let out = '';
+    let err = null;
+    try { out = label('bazi', three); } catch (e) { err = e; }
+    ok(!err, '三柱盘取历史文案不崩', err && err.message);
+    ok(/（时柱暂缺）$/.test(out || ''), '三柱历史文案明确写出「时柱暂缺」', out);
+    ok((out.match(/[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g) || []).length === 3, '历史里只写三个干支', out);
+
+    const four = compute({ ...BASE, withInterpret: false });
+    const out4 = label('bazi', four);
+    ok(!/时柱暂缺/.test(out4), '四柱盘的历史文案不加「暂缺」', out4);
+    ok((out4.match(/[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g) || []).length === 4, '历史里写四个干支', out4);
+  }
+}
+
 if (fails.length) {
   console.log(`\nFAIL ${fails.length} 项：`);
   for (const f of fails.slice(0, 15)) console.log('  -', f);

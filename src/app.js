@@ -19,7 +19,14 @@ const sameEntry = (a, b) =>
 
 /** 历史条目的显示文案：一屏能看出是哪个盘 */
 function HISTORY_LABEL(kind, r) {
-  if (kind === 'bazi') return Object.values(r.pillars || {}).map((p) => p.ganzhi).join(' ');
+  // 时辰未知时 pillars.hour 是 null：直接 map 会在存历史这一步抛错，
+  // 表现为「三柱盘一点排盘就报 Cannot read properties of null」。
+  // 三柱就把缺的那一柱写出来，别让历史条目看起来像四柱。
+  if (kind === 'bazi') {
+    const cols = ['year', 'month', 'day', 'hour'].map((k) => r.pillars && r.pillars[k]).filter(Boolean);
+    const text = cols.map((p) => p.ganzhi).join(' ');
+    return r.hourUnknown || (r.pillars && !r.pillars.hour) ? `${text}（时柱暂缺）` : text;
+  }
   if (kind === 'ziwei') return `${r.soul ? r.soul.branch : ''}宫 ${r.bureau ? r.bureau.name : ''} ${r.lunar ? r.lunar.year + '年' : ''}`.trim();
   if (kind === 'liuyao') return r.ben && r.ben.name ? r.ben.name : '';
   if (kind === 'meihua') return r.ben && r.ben.name ? `${r.ben.name} 动${r.moving}` : '';

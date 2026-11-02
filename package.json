@@ -81,7 +81,10 @@
     "rollback:plan": "node tools/release-rollback.mjs",
     "prompt:event": "node tools/event-prompt.mjs",
     "smoke": "node tools/smoke-all.mjs",
-    "e2e": "node tools/e2e-dom.mjs"
+    "e2e": "node tools/e2e-dom.mjs && node tools/e2e-panel.mjs",
+    "stress": "node test/stress.test.mjs",
+    "e2e:page": "node tools/e2e-dom.mjs",
+    "e2e:panel": "node tools/e2e-panel.mjs"
   },
   "exports": {
     ".": "./index.js",
@@ -118,6 +121,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2",
-    "playwright-core": "^1.49.1"
+    "playwright-core": "^1.49.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }
