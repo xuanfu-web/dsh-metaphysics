@@ -69,7 +69,8 @@ function godStats(pillars, dayStem) {
     if (g) total[g] += w;
     if (byGod[god] !== undefined) byGod[god] += w;
   };
-  for (const key of ['year', 'month', 'day', 'hour']) {
+  // 时辰未知时 pillars.hour 为 null：遍历跳过，不能对 null 取 .stem
+  for (const key of ['year', 'month', 'day', 'hour'].filter((k) => pillars[k])) {
     add(pillars[key].stem, key === 'day' ? 0.6 : 1);
     (HIDDEN[pillars[key].branch] || []).forEach((h, i) => add(h, HIDDEN_W[i] ?? 0.1));
   }
@@ -181,7 +182,7 @@ const POS_LABEL = { year: '年', month: '月', day: '日', hour: '时' };
 function rootProfile(pillars, dayStem) {
   const me = STEM_ELEMENT[dayStem];
   const out = { bi: 0, yin: 0, total: 0, details: [], helpers: [] };
-  for (const key of ['year', 'month', 'day', 'hour']) {
+  for (const key of ['year', 'month', 'day', 'hour'].filter((k) => pillars[k])) {
     const branch = pillars[key].branch;
     (HIDDEN[branch] || []).forEach((stem, i) => {
       const el = STEM_ELEMENT[stem];
@@ -241,7 +242,7 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
     const monthEl = BRANCH_ELEMENT[monthBranch];
     const monthSupport = monthEl === me || monthEl === roles.inMe;
     const group = SANHE_GROUPS.find((g) => g.element === me);
-    const branches = ['year', 'month', 'day', 'hour'].map((k) => pillars[k].branch);
+    const branches = ['year', 'month', 'day', 'hour'].filter((k) => pillars[k]).map((k) => pillars[k].branch);
     const ju = group && group.branches.every((b) => branches.includes(b)) ? group.branches.join('') : null;
     const status = breaks.length ? '破格' : monthSupport ? '成格' : '待定';
     out.push({

@@ -797,7 +797,10 @@ ${r.summary}`;
     });
   }
   // 八字 × 紫微交叉验证：同一份出生信息再排另一套盘，并列两边对同一件事的说法
-  if (args.cross === true && (r.system === 'bazi' || r.system === 'ziwei')) {
+  // 交叉验证要再排另一套盘：时辰未知时紫微排不出来，这条支路直接跳过，
+  // 不能拿正午排一张紫微盘来「交叉」，那是两张都不可信的盘互证。
+  if (args.cross === true && args.hourUnknown === true) r.crossSkipped = 'HOUR_UNKNOWN';
+  if (args.cross === true && args.hourUnknown !== true && (r.system === 'bazi' || r.system === 'ziwei')) {
     const cdt = parseDateTime(args.datetime);
     const common = {
       ...cdt,

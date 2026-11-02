@@ -494,7 +494,10 @@ function baziInterpret(r) {
       key: 'palaces', label: '胎命身',
       text: `胎元 ${r.palaces.taiyuan.ganzhi}（月干进一、月支进三）；`
         + `${r.palaces.taixi ? `胎息 ${r.palaces.taixi.ganzhi}（日干五合、日支六合）；` : ''}`
-        + `命宫 ${r.palaces.minggong.ganzhi}、身宫 ${r.palaces.shengong.ganzhi}（生月与生时两支合数定宫，天干随六十甲子）。`
+        + (r.palaces.minggong && r.palaces.shengong
+          ? `命宫 ${r.palaces.minggong.ganzhi}、身宫 ${r.palaces.shengong.ganzhi}（生月与生时两支合数定宫，天干随六十甲子）。`
+          // 时辰未知：这两宫由生时支定，没有时支就没有宫位——宁可空着，不能拿正午顶上
+          : '命宫与身宫由生月与生时支合数定宫：时柱暂缺，这两宫不排。')
         + '四宫是读盘的辅助坐标，不单独折吉凶。',
     }] : []),
     {

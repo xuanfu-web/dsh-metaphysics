@@ -96,7 +96,8 @@ export function rectifyBirth(opts) {
       hour,
       label: `${String(hour).padStart(2, '0')}:00 起`,
       dayGanzhi: chart.pillars.day.ganzhi,
-      hourGanzhi: chart.pillars.hour.ganzhi,
+      // 时辰未知时没有时柱可校正：给 null，让调用方自己判断要不要做这件事
+      hourGanzhi: chart.pillars.hour ? chart.pillars.hour.ganzhi : null,
       score: clean.length ? matched.length / clean.length : 0,
       hits: matched.length,
       total: clean.length,

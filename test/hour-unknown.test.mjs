@@ -69,6 +69,10 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   } catch (e) { err2 = e; }
   ok(err2 && err2.code === 'HOUR_UNKNOWN', '合盘：任一方时辰未知即阻断', err2 && err2.code);
 
+  // 交叉验证要再排紫微：时辰未知时不能拿正午排一张紫微来「互证」
+  const cx = compute({ ...BASE, hourUnknown: true, cross: true });
+  ok(cx.crossSkipped === 'HOUR_UNKNOWN' && !cx.cross, '交叉验证：时辰未知时跳过并标记，不产出假紫微盘');
+
   const t = compute({ system: 'trend', datetime: '1996-01-19T07:31', gender: 'male', hourUnknown: true });
   ok(t.hourUnknown === true, '趋势：允许出，但带标记');
   eq(t.hourPrecision, 'day', '趋势：起运降级为按日（顶层 hourPrecision 标记）');
