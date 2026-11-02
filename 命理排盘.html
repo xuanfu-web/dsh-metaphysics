@@ -634,7 +634,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：135 个测试文件 / 6253 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：135 个测试文件 / 6260 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -22981,6 +22981,8 @@ window.__MP_VER = "0.59.0";
 .mp-askcopy{border:1px solid var(--red);background:transparent;color:var(--red);font:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;transition:background .14s,color .14s}
 .mp-askcopy:hover{background:var(--red);color:var(--on-accent)}
 .mp-askcopy-hint{color:var(--muted);font-size:11.5px}
+/* 三柱盘提示：表下一行，别让人以为漏画了一列 */
+.pp-warn{margin:8px 0 0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--quan) 34%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--quan) 10%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.55}
 /* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
 .mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 .mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
@@ -24953,7 +24955,9 @@ window.__MP_VER = "0.59.0";
   };
 
   pp.baziHTML = function (r) {
-    const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']];
+    // 时辰未知时 pillars.hour 为 null：只画存在的柱，不能拿 null 去取 .stemTenGod
+    const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']]
+      .filter(([k]) => r.pillars[k]);
     const SHORT = { year: '年', month: '月', day: '日', hour: '时' };
     const ELC = { 木: 'wood', 火: 'fire', 土: 'earth', 金: 'metal', 水: 'water' };
     // 十神按五类分组上色：比劫 / 食伤 / 财 / 官杀 / 印。低饱和，避免抢干支五行主色
@@ -24981,7 +24985,7 @@ window.__MP_VER = "0.59.0";
       : GEN[seasonEl] === e ? '相'
         : GEN[e] === seasonEl ? '休'
           : OVR[e] === seasonEl ? '囚' : '死');
-    const wxRow = `<tr><td class="bz-lbl">五行</td><td class="bz-wxs" colspan="4">${
+    const wxRow = `<tr><td class="bz-lbl">五行</td><td class="bz-wxs" colspan="${cols.length}">${
       ['旺', '相', '休', '囚', '死'].map((st) => {
         const e = WX_ALL.find((x) => stateOf(x) === st) || seasonEl;
         return `<i><b class="wx-${ELC[e]}">${e}</b><em>${st}</em></i>`;
@@ -25084,6 +25088,7 @@ window.__MP_VER = "0.59.0";
       </div>` : '';
     return `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>
+      ${r.hourUnknown ? `<div class="pp-warn" role="note">时柱暂缺：未提供出生时刻，只排年/月/日三柱；起运与交运按日估算，涉及时柱的结论仅供参考。</div>` : ''}
       <div class="pp-rel"><div><b>天干</b>${(r.relations && r.relations.stems.length) ? r.relations.stems.join(' · ') : '—'}</div>
       <div><b>地支</b>${(r.relations && r.relations.branches.length) ? r.relations.branches.join(' · ') : '—'}</div></div>
       ${str}
@@ -25104,8 +25109,9 @@ window.__MP_VER = "0.59.0";
       ${r.palaces ? sect('胎命身', `<div class="pp-chips">
         <span class="pp-chip" title="${esc(r.palaces.taiyuan.note)}">胎元 ${esc(r.palaces.taiyuan.ganzhi)}</span>
         ${r.palaces.taixi ? `<span class="pp-chip" title="${esc(r.palaces.taixi.note)}">胎息 ${esc(r.palaces.taixi.ganzhi)}</span>` : ''}
-        <span class="pp-chip" title="${esc(r.palaces.minggong.note)}">命宫 ${esc(r.palaces.minggong.ganzhi)}</span>
-        <span class="pp-chip" title="${esc(r.palaces.shengong.note)}">身宫 ${esc(r.palaces.shengong.ganzhi)}</span>
+        ${r.palaces.minggong ? `<span class="pp-chip" title="${esc(r.palaces.minggong.note)}">命宫 ${esc(r.palaces.minggong.ganzhi)}</span>` : ''}
+        ${r.palaces.shengong ? `<span class="pp-chip" title="${esc(r.palaces.shengong.note)}">身宫 ${esc(r.palaces.shengong.ganzhi)}</span>` : ''}
+        ${(!r.palaces.minggong || !r.palaces.shengong) ? '<span class="pp-chip" title="命宫与身宫由生月与生时支合数定宫；时柱暂缺，这两宫不排">命宫·身宫 时柱暂缺不排</span>' : ''}
       </div>`) : ''}
       ${ssx}
       <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}</div>
