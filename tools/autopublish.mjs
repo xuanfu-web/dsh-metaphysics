@@ -18,6 +18,12 @@
 //
 // 依赖：<用户目录>/.dsh/metaphysics-autopublish.json（npmToken / githubUser / githubToken），
 //       指纹、锁、日志与错误文件都在 .gitignore 里。
+//
+// 凭据纪律（别省这几步）：
+//   - 这三个值只许躺在那一个文件里，不许进仓库、不许贴进对话/截图/日志；本脚本只读不打印。
+//   - 怀疑外泄就去 npm / GitHub 后台吊销重建（npm 用 Granular Token，勾 Read and write），
+//     然后只改文件里的 npmToken 字段，其它不动——下次发版自动用新值。
+//   - 仓库侧有闸：tools/check-patterns.mjs 会拦 token 形态的明文，命中只报文件行号。
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';

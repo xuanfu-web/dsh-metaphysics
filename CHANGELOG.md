@@ -155,6 +155,11 @@
 
 ## 未发布
 
+- **凭据扫描进约定闸：token 形态的字符串提交不进去**（`tools/check-patterns.mjs`）：
+  - 起因：npm / GitHub 的发布凭据存在 `<用户目录>/.dsh/metaphysics-autopublish.json`，只从环境变量喂给 `tools/release.mjs`；它一旦被贴进对话、写进文档或提交到仓库，撤回版本也撤不回已推送的历史。
+  - 新增第 8 条规则：全仓（跳过 `node_modules` / `.git` / `.workbuddy`）扫 `npm_xxx`、`gh[pousr]_xxx`、`github_pat_xxx`、PEM 私钥头。**命中只打印「文件:行」与原因，绝不回显匹配到的内容**——检查本身不能变成泄露通道。
+  - 自检：往仓库根放一个 `npm_` + 40 位的假串，闸门退出码 1 并指出 `_leak-probe.js:1`；删掉后恢复通过。当前 299 个文件无命中。
+
 - **面板（宿主侧栏）真机回归：补上最后一层没测过的 UI，并抓到一个三柱盘必崩的 bug**（`tools/e2e-panel.mjs`、`src/app.js`、`package.json`）：
   - 缺口在哪：单页 E2E 跑的是 `src/web-ui.js`，面板跑的是 `src/app.js`——两条渲染链只有 `panel-kit` 共用。面板自己的状态（勾选联动、本地历史、深链落地、首屏卡片）此前只有静态字符串断言，等于没跑过。
   - 怎么测：真 Chrome + **真 React 18**，配一个最小宿主——假 `slots` 注册表（`register` / `inject` / `spec`）、假 `ctx.effect`、`assemble()` 打出的全量 client（含引擎），本机 http 起服务（`file://` 下 localStorage 会抛 SecurityError）。把 `PanelIcon` 画进侧栏、主面板画进 `#main`，然后照用户顺序点：切体系 → 排盘 → 勾「时辰未知」→ 起卦 → 切深色 → 缩到 520px → 带 `#mp=` 深链重开。43 项断言。
