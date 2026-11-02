@@ -519,6 +519,23 @@
 .mp-askcopy-hint{color:var(--muted);font-size:11.5px}
 /* 三柱盘提示：表下一行，别让人以为漏画了一列 */
 .pp-warn{margin:8px 0 0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--quan) 34%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--quan) 10%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.55}
+/* 顶部人话总结：第一屏唯一的「先说结论」块，边框与留白都比盘面重一档 */
+.mp-br{margin:0 0 12px;padding:14px 16px 12px;border:1px solid color-mix(in srgb,var(--red) 26%,var(--line));border-radius:12px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--red) 6%,var(--card)),var(--card));color:var(--ink)}
+.mp-br-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.mp-br-h>b{font-size:13.5px;letter-spacing:.04em;color:var(--red)}
+.mp-br-chips{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.mp-br-chips span{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--band);border:1px solid var(--hair);color:var(--label)}
+.mp-br-lead{margin:0 0 10px;font-size:13.5px;line-height:1.75;color:var(--ink)}
+.mp-br-sec{margin:9px 0 0;padding-top:8px;border-top:1px dashed var(--hair)}
+.mp-br-sec b{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:3px}
+.mp-br-sec p{margin:0;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.mp-br-adv{margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--hair)}
+.mp-br-adv b{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:4px}
+.mp-br-adv ul{margin:0;padding-left:17px;font-size:12.5px;line-height:1.7;color:var(--ink2)}
+.mp-br-adv li{margin:2px 0}
+.mp-br-cav{margin:10px 0 0;padding:7px 9px;border-radius:8px;background:color-mix(in srgb,var(--quan) 12%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.6}
+.mp-br-foot{margin:8px 0 0;color:var(--muted);font-size:11px}
 /* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
 .mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 .mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
@@ -1534,7 +1551,7 @@
       </div>`;
     })() : '';
     pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
-    return `<div class="pp">
+    return (r.brief ? pp.summaryHTML(r.brief) : '') + `<div class="pp">
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
       <input type="radio" name="ppm" id="ppm-da" class="pp-r">
       <input type="radio" name="ppm" id="ppm-ln" class="pp-r">
@@ -2490,6 +2507,29 @@
     </section>`;
   };
 
+  /**
+   * 盘面顶部的人话总结（engine/plain-summary.js 的结果 → 一个方框）。
+   * 位置固定在最前：先给结论，再用下面的盘面作依据——反过来大多数人读不到第二屏。
+   */
+  pp.summaryHTML = function (b) {
+    if (!b || !b.lead) return '';
+    const secs = (b.sections || []).map((x) => `<div class="mp-br-sec"><b>${esc(x.h)}</b><p>${esc(x.t)}</p></div>`).join('');
+    const adv = (b.advice && b.advice.length)
+      ? `<div class="mp-br-adv"><b>可以试着做的</b><ul>${b.advice.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>`
+      : '';
+    const chips = (b.chips && b.chips.length)
+      ? `<div class="mp-br-chips">${b.chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>`
+      : '';
+    return `<section class="mp-br" aria-label="先说结论">
+      <div class="mp-br-h"><b>${esc(b.title || '先看这一张')}</b>${chips}</div>
+      <p class="mp-br-lead">${esc(b.lead)}</p>
+      ${secs}
+      ${adv}
+      ${b.caveat ? `<p class="mp-br-cav">※ ${esc(b.caveat)}</p>` : ''}
+      ${b.footer ? `<p class="mp-br-foot">${esc(b.footer)}</p>` : ''}
+    </section>`;
+  };
+
   pp.baziHTML = function (r) {
     // 时辰未知时 pillars.hour 为 null：只画存在的柱，不能拿 null 去取 .stemTenGod
     const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']]
@@ -2622,7 +2662,7 @@
         ${ssGroups.map((g) => `<div class="pp-ssg"><span class="ssg-gt">${g.cat}</span><span class="ssg-gi">${g.items.map((i) => `<span class="pp-ssi ${i.luck || 'neutral'}" title="${esc(`${i.via}查${i.target} ｜ ${i.rule}`)}">${i.name}<em>${i.pillars.map((k) => SHORT[k] || '').join('')}</em></span>`).join('')}</span></div>`).join('')}
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>` : '';
-    return `<div class="pp" style="padding:12px">
+    return (r.brief ? pp.summaryHTML(r.brief) : '') + `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>
       ${r.hourUnknown ? `<div class="pp-warn" role="note">时柱暂缺：未提供出生时刻，只排年/月/日三柱；起运与交运按日估算，涉及时柱的结论仅供参考。</div>` : ''}
       <div class="pp-rel"><div><b>天干</b>${(r.relations && r.relations.stems.length) ? r.relations.stems.join(' · ') : '—'}</div>

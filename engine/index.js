@@ -757,6 +757,10 @@ export function compute(input = {}) {
     delete args.partner2;
   }
   const r = jsonSafe(computeRaw(args));
+  // 顶部那段「人话总结」：只给命盘类（八字/紫微）。生成失败就整块不显示，不能因此拖垮排盘。
+  if (r && (r.system === 'bazi' || r.system === 'ziwei')) {
+    try { r.brief = plainSummary(r); } catch (e) { r.briefError = String(e && e.message || e); }
+  }
   if (revision) r.revision = revision;
   if (r && r.system === 'bazi') {
     r.classics = classicsFor(r);
@@ -1682,7 +1686,16 @@ function nameText(r) {
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 export function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
-  const parts = [base];
+  // 先给一段人话，再给盘面细节：模型照这段复述，就不至于一开口就是术语表
+  const NL = String.fromCharCode(10);
+  const brief = result.brief
+    ? ['【先说结论】' + result.brief.lead]
+      .concat((result.brief.sections || []).map((x) => ['　', x.h, '：', x.t].join('')))
+      .concat((result.brief.advice || []).length ? ['　可以试着做的：' + result.brief.advice.map((a) => String(a).replace(/。$/, '')).join('；') + '。'] : [])
+      .concat(result.brief.caveat ? ['　※ ' + result.brief.caveat] : [])
+      .join(NL) + NL
+    : '';
+  const parts = [brief + base];
   if (result.shadow && result.shadow.id) {
     const s = result.shadow;
     parts.push(`【影子盘】${s.id}（同参数同 ID；版本 ${s.version}）`
@@ -1759,6 +1772,7 @@ export { askLink, parseAskLink, formOf, restNote, askPackages };
 // 问事解读提示：把一张盘打包成「先答他所问、不堆术语、回到现实核对」的提示，供面板一键复制
 // （本仓 esbuild 不接受 `export {} from`，先静态 import 再 export）
 import { buildEventPrompt, ASK_KINDS } from './event-prompt.js';
+import { plainSummary } from './plain-summary.js';
 export { buildEventPrompt, ASK_KINDS };
 
 

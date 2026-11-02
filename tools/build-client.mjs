@@ -8,7 +8,7 @@ import { DIRECTIONS } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'index'];
+  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -22,8 +22,9 @@ const ASK = ['followup'];
 // 问事解读提示：liuyao/meihua/daliuren/qimen/tarot/xiaoliuren 这六个问事体系要带，命盘类不带
 const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
 // 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎
-const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', ...INTERPRET];
-const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', ...INTERPRET];
+// 顶部人话总结：只有八字与紫微有，所以挂在各自栈上，不塞进 INTERPRET
+const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', 'plain-summary', ...INTERPRET];
+const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', 'plain-summary', ...INTERPRET];
 
 export const CHUNKS = {
   bazi: {

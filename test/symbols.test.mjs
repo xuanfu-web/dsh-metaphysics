@@ -114,7 +114,10 @@ ok('八卦生成器已暴露', typeof triGlyph === 'function');
   const bzH = PP.baziHTML(BZ);
   ok('八字盘含五行符号', bzH.includes('mp-wxi'));
   ok('五行符号挂在 wx 色类内', /class="pp-chip wx-\w+"><svg class="mp-wxi"/.test(bzH));
-  ok('用神行含五行符号', /class="wx-\w+"><svg class="mp-wxi"/.test(bzH.split('喜')[1] || ''));
+  // 原写法按「喜」字切分，盘面顶部加了人话总结后会被总结里的「喜欢」带偏；
+  // 改成从「用神」这一节往后找，意图不变（用神行里必须有五行小图标）。
+  const ysAt = bzH.indexOf('用神');
+  ok('用神行含五行符号', ysAt > 0 && /class="wx-\w+"><svg class="mp-wxi"/.test(bzH.slice(ysAt)));
 }
 
 // ── 五、不破坏既有结构（回归护栏）────────────────────────────
