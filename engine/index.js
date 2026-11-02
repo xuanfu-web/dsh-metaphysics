@@ -785,7 +785,15 @@ export function compute(input = {}) {
       if (ryc) r.renyuanClassic = { ...ryc, bookName: CLASSIC_BOOKS[ryc.book].name };
     }
   }
-  // 时辰未知：提示必须在第一行。用户先看到「这不是一张完整盘」，才不会被下面的时柱/命宫误导
+  // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
+  if (r && r.precision && r.precision.level === 'approx' && r.summary) {
+    r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
+  }
+  // 没有经度就没有真太阳时：时柱可能整柱偏（海外出生尤其常见），必须显式告警而不是藏在括号里
+  if (r && (r.system === 'bazi' || r.system === 'ziwei') && r.input && r.input.longitude == null && r.summary) {
+    r.summary = `⚠ 未提供出生地或经度：按东八区平太阳时排盘，时柱可能与本命盘相差一个时辰；海外出生请先把当地时间换算成东八区标准时。\n${r.summary}`;
+  }
+  // 时辰未知：固定提示必须在第一行。放在所有警告之后 prepend，才不会被地警告/精度提示挤到第二行
   if (r && r.system === 'bazi' && r.hourUnknown && r.summary) {
     r.summary = `时柱按正午暂算，涉及时柱的结论仅供参考
 ${r.summary}`;
@@ -794,14 +802,6 @@ ${r.summary}`;
   if (r && r.system === 'trend' && r.hourUnknown && r.summary) {
     r.summary = `时柱暂缺：起运与大运按日估算，仅供参考
 ${r.summary}`;
-  }
-  // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
-  if (r && r.precision && r.precision.level === 'approx' && r.summary) {
-    r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
-  }
-  // 没有经度就没有真太阳时：时柱可能整柱偏（海外出生尤其常见），必须显式告警而不是藏在括号里
-  if (r && (r.system === 'bazi' || r.system === 'ziwei') && r.input && r.input.longitude == null && r.summary) {
-    r.summary = `⚠ 未提供出生地或经度：按东八区平太阳时排盘，时柱可能与本命盘相差一个时辰；海外出生请先把当地时间换算成东八区标准时。\n${r.summary}`;
   }
   // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
   if (args.withInterpret) {

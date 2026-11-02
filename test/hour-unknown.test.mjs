@@ -52,7 +52,23 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   ok(r.dayun.list.every((d) => !d.fromDate || !/:\d{2}/.test(d.fromDate)), '大运交运日只到日，不带时刻');
 }
 
-// ── 二、默认路径逐字节不变 ───────────────────────────────
+// ── 二、没有出生地 / 远期精度提示时，固定提示仍必须在第一行 ──
+// 反例：地警告与 ΔT 精度提示也在「往摘要最前插」，若固定提示插得早，就会被挤到第二行。
+{
+  const noAddr = compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male', hourUnknown: true });
+  eq(noAddr.summary.split('\n')[0], NOTICE, '无出生地：摘要首行仍是固定提示');
+  ok(noAddr.summary.includes('未提供出生地或经度'), '无出生地：地警告仍在摘要里（排第二行即可）');
+
+  const far = compute({ system: 'bazi', datetime: '2150-01-01T00:00', gender: 'male', hourUnknown: true });
+  eq(far.summary.split('\n')[0], NOTICE, '远期盘（ΔT 精度提示）也压不下固定提示');
+
+  // 工具层也要能传这个参数：agent 不能只靠面板
+  const toolSrc = fs.readFileSync(path.join(root, 'index.js'), 'utf8');
+  ok(/hourUnknown:\s*\{/.test(toolSrc), '工具 schema 暴露 hourUnknown');
+  ok(/三柱/.test(toolSrc), '工具描述写明三柱模式');
+}
+
+// ── 三、默认路径逐字节不变 ───────────────────────────────
 {
   const a = compute(BASE);
   ok(!a.hourUnknown, '不传 hourUnknown 时不带该标记');
@@ -62,7 +78,7 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   ok(b.pillars.hour.ganzhi === a.pillars.hour.ganzhi, '直接调 buildBazi 与 compute 的时柱一致');
 }
 
-// ── 三、下游：紫微/合盘阻断，趋势降级 ─────────────────────
+// ── 四、下游：紫微/合盘阻断，趋势降级 ─────────────────────
 {
   let err = null;
   try { compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', hourUnknown: true }); } catch (e) { err = e; }
@@ -89,7 +105,7 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   ok(!/12:00/.test(JSON.stringify(t)), '趋势：全文无 12:00');
 }
 
-// ── 四、渲染层：三柱盘必须画得出来（实机踩过 stemTenGod 崩）────
+// ── 五、渲染层：三柱盘必须画得出来（实机踩过 stemTenGod 崩）────
 {
   const r = compute({ ...BASE, hourUnknown: true, withInterpret: true });
   let html = '';
@@ -97,6 +113,7 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   try { html = PP.baziHTML(r); } catch (e) { err = e; }
   ok(!err, 'baziHTML 不崩（时柱为 null 时不得取 .stemTenGod）', err && err.message);
   ok(html.includes('时柱暂缺'), '盘面写明时柱暂缺，不让人以为漏画一列');
+  ok(html.includes(NOTICE), '盘面首屏提示含固定句（逐字）');
   // 三柱 × 10 行标签 = 30 个格；四柱才是 40
   eq((html.match(/data-c=/g) || []).length, 30, '盘面只画三列');
   ok(!/命宫\s*[甲乙丙丁戊己庚辛壬癸]/.test(html), '命宫不拿正午顶上');
@@ -109,7 +126,7 @@ const NOTICE = '时柱按正午暂算，涉及时柱的结论仅供参考';
   ok(itHtml.includes('这两宫不排'), '解析里写明命宫身宫为何不排');
 }
 
-// ── 五、面板的历史文案：三柱盘不能崩（真机上踩过 ganzhi 取 null）──
+// ── 六、面板的历史文案：三柱盘不能崩（真机上踩过 ganzhi 取 null）──
 // 面板在「存历史」这一步调 HISTORY_LABEL；它对 pillars 逐项取 .ganzhi，
 // 时柱为 null 就抛 Cannot read properties of null。单页没有这段代码，
 // 所以只有面板会炸——这是面板真机回归（tools/e2e-panel.mjs）抓到的，

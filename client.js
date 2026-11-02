@@ -1609,7 +1609,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.59.1",factory(fa){
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>`:"";return p.briefHTML(e)+`<div class="pp" style="padding:12px">
       <table class="pp-bz">${h}<tbody>${R}</tbody></table>
-      ${e.hourUnknown?'<div class="pp-warn" role="note">时柱暂缺：未提供出生时刻，只排年/月/日三柱；起运与交运按日估算，涉及时柱的结论仅供参考。</div>':""}
+      ${e.hourUnknown?'<div class="pp-warn" role="note">时柱暂缺：只排年/月/日三柱，起运与交运按日估算。时柱按正午暂算，涉及时柱的结论仅供参考。</div>':""}
       <div class="pp-rel"><div><b>天干</b>${e.relations&&e.relations.stems.length?e.relations.stems.join(" · "):"—"}</div>
       <div><b>地支</b>${e.relations&&e.relations.branches.length?e.relations.branches.join(" · "):"—"}</div></div>
       ${Ke}
