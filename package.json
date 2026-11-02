@@ -79,7 +79,8 @@
     "release": "node tools/release.mjs",
     "push:tag": "node tools/push-tag.mjs",
     "rollback:plan": "node tools/release-rollback.mjs",
-    "prompt:event": "node tools/event-prompt.mjs"
+    "prompt:event": "node tools/event-prompt.mjs",
+    "smoke": "node tools/smoke-all.mjs"
   },
   "exports": {
     ".": "./index.js",

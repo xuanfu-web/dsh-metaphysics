@@ -2239,7 +2239,6 @@
    * 与 curveHTML 的分工：curveHTML 是八字里的「大运阶梯 + 流年折线」；这张是同一批
    * 评分的 K 线形态，单独成块可直接截图，也嵌在八字结果底部。
    */
-  let klineSeq = 0;
   pp.trendChart = function (r) {
     const pts = r && Array.isArray(r.points) ? r.points : [];
     if (pts.length < 2) return '';
@@ -2256,7 +2255,20 @@
     const sc = (p) => num(p.score);
     const yb = M.t + ph;
     const stripTop = yb + 20, stripH = 22;
-    const clipId = `klclip${(klineSeq += 1)}`;
+    // clipPath 的 id 要唯一，但**不能靠全局自增**：自增会让同一张盘两次渲染出不同的 id，
+    // 截图对拍、快照测试永远对不上，同一页重复渲染也在无谓地制造新 id。
+    // 改成盘面内容的短哈希——不同盘不同 id，同一张盘永远同一个 id。
+    const clipKey = (() => {
+      let h = 2166136261;
+      const feed = (v) => {
+        const t = String(v == null ? '' : v);
+        for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+      };
+      feed(n); feed(pts[0] && pts[0].age); feed(pts[n - 1] && pts[n - 1].age);
+      for (const p of pts) feed(p && p.score);
+      return (h >>> 0).toString(36);
+    })();
+    const clipId = `klclip${clipKey}`;
 
     // 大运交替底色 + 分界虚线 + 底部段名条（段名放条纹里，避开顶部高低岁标记）
     const bands = segs.map((s, i) => {

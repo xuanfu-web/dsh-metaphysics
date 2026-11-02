@@ -316,6 +316,7 @@ npm run build:verification # 重建 docs/verification.html 与 README 徽章（�
 # 存到别处：node tools/build-html.mjs --out "D:\某处\命理排盘.html"
 npm test             # 顺序跑完 test/ 下全部 *.test.mjs 并汇总
 npm run test:ci      # 构建 + 产物自检 + 回归 + 断言基线 + 测试自检 + HTML 注入面 + 工程约定（CI 跑的就是这条）
+npm run smoke        # 全体系冒烟：19 个 tab × 关键选项 × 边界日期，看「排盘→渲染→文本」三条链有没有崩
 npm run test:baseline # 断言数确实要减少时，显式重建基线
 npm run check:html   # 单独跑 HTML 注入面扫描
 npm run check:patterns # 单独跑工程约定检查
