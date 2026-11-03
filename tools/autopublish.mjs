@@ -385,19 +385,28 @@ async function commitAndPush(cfg) {
     log(`⚠ 未纳入自动提交（不在允许清单，请人工确认）：${skipped.slice(0, 12).join(' / ')}${skipped.length > 12 ? ` …共 ${skipped.length} 项` : ''}`);
   }
   if (!keep.length) {
-    log('允许清单内没有改动，本轮不提交');
-    return;
-  }
-  // 分批传路径：一次塞几百个会撞命令行长度上限
-  for (let i = 0; i < keep.length; i += 50) {
-    const r = git(['add', '-A', '--', ...keep.slice(i, i + 50)]);
-    if (r.status !== 0) fail(`git add 失败：\n${r.stdout}${r.stderr}`);
-  }
-  const msg = 'chore(autopublish): 自动构建并推送\n\n由 tools/autopublish.mjs 定时任务生成：跑七道闸、重建 client.js 与命理排盘.html 后提交推送。不发 npm、不改版本号、不打 tag——发版按主题攒够后手动走 tools/release.mjs。';
-  const c = git(['-c', 'core.autocrlf=false', 'commit', '-m', msg]);
-  if (c.status !== 0 && !/nothing to commit/i.test(c.stdout + c.stderr)) {
-    log('git commit 失败：\n' + c.stdout + c.stderr);
-    fail('git commit 失败');
+    // 工作区干净不等于没有可推的东西：发版提交、手工 commit 都可能已经落在本地，
+    // 只是还没推到 origin。原先这里直接 return，主流程却照样打印「已推送」，
+    // 于是本地领先远端一整版，日志仍显示成功。
+    const ahead = git(['rev-list', '--count', 'origin/main..HEAD']);
+    const n = ahead.status === 0 ? Number(ahead.stdout.trim()) : 0;
+    if (!n) {
+      log('允许清单内没有改动，本地也不领先远端，本轮不推送');
+      return false;
+    }
+    log(`允许清单内没有改动，但本地领先远端 ${n} 个提交，继续推送`);
+  } else {
+    // 分批传路径：一次塞几百个会撞命令行长度上限
+    for (let i = 0; i < keep.length; i += 50) {
+      const r = git(['add', '-A', '--', ...keep.slice(i, i + 50)]);
+      if (r.status !== 0) fail(`git add 失败：\n${r.stdout}${r.stderr}`);
+    }
+    const msg = 'chore(autopublish): 自动构建并推送\n\n由 tools/autopublish.mjs 定时任务生成：跑七道闸、重建 client.js 与命理排盘.html 后提交推送。不发 npm、不改版本号、不打 tag——发版按主题攒够后手动走 tools/release.mjs。';
+    const c = git(['-c', 'core.autocrlf=false', 'commit', '-m', msg]);
+    if (c.status !== 0 && !/nothing to commit/i.test(c.stdout + c.stderr)) {
+      log('git commit 失败：\n' + c.stdout + c.stderr);
+      fail('git commit 失败');
+    }
   }
   // 远端在两次运行之间前进过：先 rebase 再接上（冲突就放弃本轮，下一轮重试）
   git(['fetch', 'origin', '--quiet']);
@@ -412,6 +421,7 @@ async function commitAndPush(cfg) {
   }
   await pushWithRetry(authArgs(cfg).concat(['push', 'origin', 'main']), 'git push', cfg);
   log(`已推送 main（版本仍为 ${PKG.version}，未发布 npm）`);
+  return true;
 }
 
 async function main() {
@@ -480,11 +490,16 @@ async function main() {
   }
 
   const finalHash = fingerprint();
-  await commitAndPush(cfg);
+  const pushed = await commitAndPush(cfg);
   writeJson(STATE, { hash: finalHash, version: PKG.version, npmLatest: latest, at: new Date().toISOString() });
   clearError();
-  log(`完成：已推送 main（版本 ${PKG.version} 未发 npm；npm latest ${latest || '未知'}）`);
-  console.log(`已推送 main（版本 ${PKG.version}，未发 npm；npm latest ${latest || '未知'}）`);
+  if (pushed) {
+    log(`完成：已推送 main（版本 ${PKG.version} 未发 npm；npm latest ${latest || '未知'}）`);
+    console.log(`已推送 main（版本 ${PKG.version}，未发 npm；npm latest ${latest || '未知'}）`);
+  } else {
+    log(`完成：无改动可推送（版本 ${PKG.version}；npm latest ${latest || '未知'}）`);
+    console.log(`无改动可推送（版本 ${PKG.version}；npm latest ${latest || '未知'}）`);
+  }
 }
 
 main().catch((e) => {

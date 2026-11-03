@@ -133,3 +133,15 @@ ok('暂存走显式路径清单', /git\(\['add', '-A', '--', \.\.\.keep/.test(sr
 ok('清单外的改动只报不删', /未纳入自动提交（不在允许清单/.test(srcLF)
   && !/commitAndPush[\s\S]{0,1400}(rmSync|unlinkSync)/.test(srcLF));
 ok('拿不到改动清单时整轮放弃', /git status 失败/.test(srcLF));
+
+// ── ⑥ 假成功：工作区干净但本地领先远端，也必须真的推上去 ─────────────
+// 真实事故：0.61.0 发版提交只落在本地，autopublish 看到「允许清单内没有改动」
+// 就直接返回，主流程却照样打印「完成：已推送 main」——远端整整落后一个版本，
+// 日志还是绿的。干净工作区 ≠ 没有可推的东西。
+ok('无改动时先查本地是否领先远端', /if \(!keep\.length\)[\s\S]{0,600}origin\/main\.\.HEAD/.test(srcLF));
+ok('本地领先时继续走推送', /允许清单内没有改动，但本地领先远端[\s\S]{0,2200}pushWithRetry/.test(srcLF));
+ok('不再领先时明确返回 false', /if \(!keep\.length\)[\s\S]{0,600}if \(!n\)[\s\S]{0,200}return false;/.test(srcLF));
+ok('推送成功后返回 true', /await pushWithRetry\(authArgs\(cfg\)[^;]*\);\n\s*log\([\s\S]{0,160}return true;/.test(srcLF));
+ok('主流程按实际推送结果分别报告', /const pushed = await commitAndPush\(cfg\)/.test(srcLF)
+  && /if \(pushed\)[\s\S]{0,400}无改动可推送/.test(srcLF));
+ok('不再无条件打印已推送', !/clearError\(\);\n\s*log\(`完成：已推送 main/.test(srcLF));
