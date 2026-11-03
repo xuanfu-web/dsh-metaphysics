@@ -105,6 +105,8 @@ body.view-flat .start{display:none}
 #mh-num input{width:124px}
 #changing{width:132px}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:var(--ring);background:var(--panel)}
+/* 日期格式写错：输入过程中就转红，失焦会退回最近一次有效值 */
+.field input[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 2px rgba(167,44,35,.12)}
 .field.check{flex-direction:row;align-items:center;gap:8px;padding-bottom:8px}
 /* 所问之事：多行文本，样式与输入框一致；整组可伸缩，空间不足时自动换行独占一行 */
 .field textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;line-height:1.5;outline:none;width:100%;min-width:0;resize:vertical}
@@ -440,7 +442,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   <div class="bar">
     <!-- 初始值是「命盘类（紫微/八字）」的示例默认：出生时间必然是过去，不取当前时刻。
          切到六爻/梅花/六壬等起卦类 tab 时，web-ui.js 会自动把这两个框换成你的本机当前时刻。 -->
-    <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="date" value="1990-05-12"></label>
+    <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1990-05-12" value="1990-05-12"></label>
     <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
     <!-- 时辰未知：只在八字/人生K线出现。勾上＝不排时柱、起运降到按日，结果首行固定提示。
          紫微/合盘不提供这个勾选——它们没有时支就整盘不成立，给了勾选等于诱导出一个假盘。 -->
@@ -458,7 +460,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <label class="field" id="for-liuyao" style="display:none">六爻<input id="lines" placeholder="9 7 8 8 7 6，空则随机"></label>
     <!-- 合盘：第二个人的出生信息；合盘方式决定用八字还是紫微两盘对照 -->
     <div class="grp" id="for-hepan" style="display:none">
-      <label class="field">对方出生日期<input id="pdate" type="date" value="1992-08-15"></label>
+      <label class="field">对方出生日期<input id="pdate" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1992-08-15" value="1992-08-15"></label>
       <label class="field">对方出生时刻<input id="ptime" type="time" value="10:00"></label>
       <label class="field">对方性别
         <select id="pgender"><option value="female">女</option><option value="male">男</option></select>
@@ -474,7 +476,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
         <input id="h3on" type="checkbox"> 三方合盘（加入第三人）
       </label>
       <div class="grp" id="for-hepan3" style="display:none">
-        <label class="field">第三方出生日期<input id="p2date" type="date" value="1990-01-01"></label>
+        <label class="field">第三方出生日期<input id="p2date" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1990-01-01" value="1990-01-01"></label>
         <label class="field">第三方出生时刻<input id="p2time" type="time" value="12:00"></label>
         <label class="field">第三方性别
           <select id="p2gender"><option value="female">女</option><option value="male">男</option></select>
@@ -595,7 +597,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
         <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
         <label class="field" id="fs-period" style="display:none">运（1–9）<input id="fsperiod" type="number" min="1" max="9" value="9"></label>
         <label class="field" id="fs-offset" style="display:none">兼向度数<input id="fsoffset" type="number" min="-7.5" max="7.5" step="0.5" placeholder="0 = 正向；±4.5 以上用替卦"></label>
-        <label class="field" id="fs-date" style="display:none">飞星日期<input id="fsdate" type="date"></label>
+        <label class="field" id="fs-date" style="display:none">飞星日期<input id="fsdate" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 2026-11-03"></label>
         <label class="field" id="fs-time" style="display:none">时刻<input id="fstime" type="time" value="12:00"></label>
       </div>
       <!-- 人格问卷：4 题一页、1–5 打分。题目与 1–5 的说明由 web-ui 从引擎取，
@@ -645,7 +647,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：152 个测试文件 / 7524 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：153 个测试文件 / 7565 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -30266,6 +30268,86 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
+
+  // ── 公历日期输入：固定「年-月-日」 ─────────────────────────────
+  // 原生 date 控件的顺序跟随浏览器区域，容易出现月/日/年或日/月/年。
+  // 改成文本输入 + 数字掩码：显示始终是 YYYY-MM-DD，也认 1990/5/12、1990年5月12日。
+  function isoDateOk(s) {
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    if (!ymd) return false;
+    const y = Number(ymd[1]);
+    const mo = Number(ymd[2]);
+    const d = Number(ymd[3]);
+    if (mo < 1 || mo > 12 || d < 1) return false;
+    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return d <= days[mo - 1];
+  }
+  function normalizeDateText(raw) {
+    const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
+    if (!ymd) return '';
+    const iso = `${ymd[1]}-${pad(ymd[2])}-${pad(ymd[3])}`;
+    return isoDateOk(iso) ? iso : '';
+  }
+  function maskDateText(raw) {
+    const s = String(raw || '').trim();
+    // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
+    // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
+    // 斜杠/中文/点号视为粘贴，直接归一。
+    if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
+    if (/[年月日/.]/.test(s)) {
+      const full = normalizeDateText(s);
+      if (full) return full;
+    }
+    const digits = s.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+  }
+  /** 程序填值（示例 / 切 tab）：同步掩码与「最近一次有效值」 */
+  function setDateField(id, iso) {
+    const input = el(id);
+    if (!input) return;
+    const v = normalizeDateText(iso) || '';
+    input.value = v;
+    input.dataset.last = v;
+    input.setAttribute('aria-invalid', 'false');
+  }
+  function bindDateInput(id) {
+    const input = el(id);
+    if (!input) return;
+    const initial = normalizeDateText(input.value);
+    if (initial) input.value = initial;
+    input.dataset.last = initial || '';
+    input.setAttribute('type', 'text');
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('placeholder', '年-月-日，如 1990-05-12');
+    input.addEventListener('input', () => {
+      const next = maskDateText(input.value);
+      if (input.value !== next) input.value = next;
+      const iso = normalizeDateText(next);
+      if (iso) input.dataset.last = iso;
+      input.setAttribute('aria-invalid', iso || !next.trim() ? 'false' : 'true');
+    });
+    input.addEventListener('blur', () => {
+      const raw = input.value.trim();
+      if (!raw) { input.setAttribute('aria-invalid', 'false'); return; }
+      const iso = normalizeDateText(raw);
+      if (iso) {
+        input.value = iso;
+        input.dataset.last = iso;
+        input.setAttribute('aria-invalid', 'false');
+        return;
+      }
+      // 写错了就退回最近一次有效值，别把一个非法日期留在框里等着排盘
+      input.value = input.dataset.last || '';
+      input.setAttribute('aria-invalid', 'false');
+    });
+  }
+  function bindDateInputs() {
+    ['date', 'pdate', 'p2date', 'fsdate'].forEach(bindDateInput);
+  }
   // 首屏耗时只在本机显示，不上报
   const mpNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
@@ -30562,7 +30644,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 
   /** 程序填值：写入 input 并记下「这是程序填的」，不置手动标记 */
   function fillDateTime(v) {
-    el('date').value = v.date;
+    setDateField('date', v.date);
     el('time').value = v.time;
     autoDate = v.date;
     autoTime = v.time;
@@ -30939,6 +31021,21 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     const myRun = ++runSeq;
     const startTab = tab;
     const date = el('date').value;
+    if (usesTimeInput() && !isoDateOk(date)) {
+      last = null;
+      el('out').innerHTML = '<div class="err">请填写公历日期，按「年-月-日」输入，例如 1990-05-12。</div>';
+      return;
+    }
+    if (tab === 'hepan' && !isoDateOk(el('pdate').value)) {
+      last = null;
+      el('out').innerHTML = '<div class="err">请填写对方的公历出生日期，按「年-月-日」输入，例如 1992-08-15。</div>';
+      return;
+    }
+    if (tab === 'hepan' && el('h3on') && el('h3on').checked && !isoDateOk(el('p2date').value)) {
+      last = null;
+      el('out').innerHTML = '<div class="err">请填写第三方的公历出生日期，按「年-月-日」输入，例如 1990-01-01。</div>';
+      return;
+    }
     // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
     const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
     const time = hourUnknown ? '12:00' : el('time').value;
@@ -31073,6 +31170,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
           const off = el('fsoffset') ? el('fsoffset').value.trim() : '';
           if (off !== '') args.sittingOffset = Number(off);
           const fd = el('fsdate') ? el('fsdate').value.trim() : '';
+          if (fd && !isoDateOk(fd)) {
+            last = null;
+            el('out').innerHTML = '<div class="err">飞星日期请按「年-月-日」填写，例如 2026-11-03。</div>';
+            return;
+          }
           if (fd) args.fortuneDate = fd;
           const ft = el('fstime') ? el('fstime').value.trim() : '';
           if (ft) args.fortuneTime = ft;
@@ -31464,6 +31566,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    bindDateInputs();
     // 两套入口（平铺 tab 与分组卡片）走同一条激活路径，避免行为分叉
     document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => activate(b.dataset.tab)));
     document.querySelectorAll('.view-switch [data-view]').forEach((b) => b.addEventListener('click', () => {
@@ -31523,7 +31626,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     // 看示例：填固定示例盘并切到八字，走与真实排盘完全相同的渲染路径
     const sampleBtn = el('sample');
     if (sampleBtn) sampleBtn.addEventListener('click', () => {
-      el('date').value = SAMPLE.date;
+      setDateField('date', SAMPLE.date);
       el('time').value = SAMPLE.time;
       el('gender').value = 'male';
       el('addr').value = '河北石家庄';

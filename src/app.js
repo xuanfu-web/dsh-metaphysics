@@ -264,7 +264,93 @@ const CSS = `
 }
 `;
 
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
+
+// ── 公历日期输入：固定「年-月-日」 ─────────────────────────────────
+// 原生 <input type="date"> 的显示顺序由浏览器区域决定，非中文区域会显示成
+// 月/日/年，用户很容易填反。这里统一成文本输入 + 数字掩码：
+// 只接受数字，自动补成 YYYY-MM-DD；也认 1990/5/12、1990年5月12日 这类写法。
+const pad2 = (n) => String(n).padStart(2, '0');
+function isoDateOk(s) {
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+  if (!ymd) return false;
+  const y = Number(ymd[1]);
+  const mo = Number(ymd[2]);
+  const d = Number(ymd[3]);
+  if (mo < 1 || mo > 12 || d < 1) return false;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return d <= days[mo - 1];
+}
+function normalizeDateText(raw) {
+  const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
+  if (!ymd) return '';
+  const iso = `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`;
+  return isoDateOk(iso) ? iso : '';
+}
+function maskDateText(raw) {
+  const s = String(raw || '').trim();
+  // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
+  // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
+  // 斜杠/中文/点号视为粘贴，直接归一。
+  if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
+  if (/[年月日/.]/.test(s)) {
+    const full = normalizeDateText(s);
+    if (full) return full;
+  }
+  const digits = s.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+}
+
+function DateInput(props) {
+  const value = props.value || '';
+  const [draft, setDraft] = useState(value);
+  const last = useRef(value);
+  useEffect(() => {
+    last.current = value;
+    setDraft(value);
+  }, [value]);
+  const commit = () => {
+    const raw = draft.trim();
+    if (!raw) {
+      setDraft(last.current);
+      if (props.onInvalid) props.onInvalid('');
+      return;
+    }
+    const iso = normalizeDateText(raw);
+    if (iso) {
+      last.current = iso;
+      setDraft(iso);
+      if (iso !== value) props.onChange(iso);
+      return;
+    }
+    setDraft(last.current);
+    if (props.onInvalid) props.onInvalid(raw);
+  };
+  return h('input', {
+    className: 'mp-input',
+    type: 'text',
+    inputMode: 'numeric',
+    autoComplete: 'off',
+    placeholder: '年-月-日，如 1990-05-12',
+    value: draft,
+    onChange: (e) => {
+      const next = maskDateText(e.target.value);
+      setDraft(next);
+      const iso = normalizeDateText(next);
+      if (iso) {
+        last.current = iso;
+        props.onChange(iso);
+      }
+    },
+    onBlur: commit,
+    onKeyDown: (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    },
+  });
+}
 
 // ── 十六型人格问卷：题目由引擎给，前端不再抄一份 ──────────────────
 // compute 不带 answers 时回的就是问卷（needAnswers + questions + 1–5 的说法），
@@ -1530,7 +1616,11 @@ function App() {
     h('div', { key: 'head', className: 'mp-panel' },
       h('div', { className: 'mp-row' },
         showDate ? field(isBirth ? '出生日期（公历）' : timeKind === 'date' ? '日期（公历）' : '起卦日期（公历）',
-          h('input', { className: 'mp-input', type: 'date', value: date, onChange: (e) => editDate(e.target.value) })) : null,
+          h(DateInput, {
+            value: date,
+            onChange: editDate,
+            onInvalid: () => setNotice('日期请按「年-月-日」填写，例如 1990-05-12。'),
+          })) : null,
         // 勾了「时辰未知」就把钟点灰掉：run 里用的是写死的 12:00，
         // 灰掉之前只判 bazi 会让 trend 上的钟点看着能改、改了却不进盘
         showTime ? field(isBirth ? '出生时刻' : '起卦时刻',
@@ -1554,8 +1644,10 @@ function App() {
             onChange: (e) => setCrossOn(e.target.checked),
           }),
           h('span', { className: 'mp-lbl' }, '八字 × 紫微 交叉验证')) : null,
-        tab === 'hepan' ? field('对方出生日期', h('input', {
-          className: 'mp-input', type: 'date', value: pDate, onChange: (e) => setPDate(e.target.value),
+        tab === 'hepan' ? field('对方出生日期', h(DateInput, {
+          value: pDate,
+          onChange: setPDate,
+          onInvalid: () => setNotice('对方出生日期请按「年-月-日」填写，例如 1992-08-15。'),
         })) : null,
         tab === 'hepan' ? field('对方出生时刻', h('input', {
           className: 'mp-input', type: 'time', value: pTime, onChange: (e) => setPTime(e.target.value),
@@ -1576,8 +1668,10 @@ function App() {
             onChange: (e) => setThirdOn(e.target.checked),
           }),
           h('span', { className: 'mp-lbl' }, '三方合盘（加入第三人）')) : null,
-        (tab === 'hepan' && thirdOn) ? field('第三方出生日期', h('input', {
-          className: 'mp-input', type: 'date', value: p2Date, onChange: (e) => setP2Date(e.target.value),
+        (tab === 'hepan' && thirdOn) ? field('第三方出生日期', h(DateInput, {
+          value: p2Date,
+          onChange: setP2Date,
+          onInvalid: () => setNotice('第三方出生日期请按「年-月-日」填写，例如 1990-01-01。'),
         })) : null,
         (tab === 'hepan' && thirdOn) ? field('第三方出生时刻', h('input', {
           className: 'mp-input', type: 'time', value: p2Time, onChange: (e) => setP2Time(e.target.value),

@@ -113,6 +113,8 @@ body.view-flat .start{display:none}
 #mh-num input{width:124px}
 #changing{width:132px}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:var(--ring);background:var(--panel)}
+/* 日期格式写错：输入过程中就转红，失焦会退回最近一次有效值 */
+.field input[aria-invalid="true"]{border-color:var(--bad);box-shadow:0 0 0 2px rgba(167,44,35,.12)}
 .field.check{flex-direction:row;align-items:center;gap:8px;padding-bottom:8px}
 /* 所问之事：多行文本，样式与输入框一致；整组可伸缩，空间不足时自动换行独占一行 */
 .field textarea{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;line-height:1.5;outline:none;width:100%;min-width:0;resize:vertical}
@@ -439,7 +441,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
   <div class="bar">
     <!-- 初始值是「命盘类（紫微/八字）」的示例默认：出生时间必然是过去，不取当前时刻。
          切到六爻/梅花/六壬等起卦类 tab 时，web-ui.js 会自动把这两个框换成你的本机当前时刻。 -->
-    <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="date" value="1990-05-12"></label>
+    <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1990-05-12" value="1990-05-12"></label>
     <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
     <!-- 时辰未知：只在八字/人生K线出现。勾上＝不排时柱、起运降到按日，结果首行固定提示。
          紫微/合盘不提供这个勾选——它们没有时支就整盘不成立，给了勾选等于诱导出一个假盘。 -->
@@ -457,7 +459,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
     <label class="field" id="for-liuyao" style="display:none">六爻<input id="lines" placeholder="9 7 8 8 7 6，空则随机"></label>
     <!-- 合盘：第二个人的出生信息；合盘方式决定用八字还是紫微两盘对照 -->
     <div class="grp" id="for-hepan" style="display:none">
-      <label class="field">对方出生日期<input id="pdate" type="date" value="1992-08-15"></label>
+      <label class="field">对方出生日期<input id="pdate" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1992-08-15" value="1992-08-15"></label>
       <label class="field">对方出生时刻<input id="ptime" type="time" value="10:00"></label>
       <label class="field">对方性别
         <select id="pgender"><option value="female">女</option><option value="male">男</option></select>
@@ -473,7 +475,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
         <input id="h3on" type="checkbox"> 三方合盘（加入第三人）
       </label>
       <div class="grp" id="for-hepan3" style="display:none">
-        <label class="field">第三方出生日期<input id="p2date" type="date" value="1990-01-01"></label>
+        <label class="field">第三方出生日期<input id="p2date" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1990-01-01" value="1990-01-01"></label>
         <label class="field">第三方出生时刻<input id="p2time" type="time" value="12:00"></label>
         <label class="field">第三方性别
           <select id="p2gender"><option value="female">女</option><option value="male">男</option></select>
@@ -594,7 +596,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
         <label class="field" id="fs-advise2" style="display:none">朝向<input id="facing" placeholder="如 午 / 巽" value="午"></label>
         <label class="field" id="fs-period" style="display:none">运（1–9）<input id="fsperiod" type="number" min="1" max="9" value="9"></label>
         <label class="field" id="fs-offset" style="display:none">兼向度数<input id="fsoffset" type="number" min="-7.5" max="7.5" step="0.5" placeholder="0 = 正向；±4.5 以上用替卦"></label>
-        <label class="field" id="fs-date" style="display:none">飞星日期<input id="fsdate" type="date"></label>
+        <label class="field" id="fs-date" style="display:none">飞星日期<input id="fsdate" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 2026-11-03"></label>
         <label class="field" id="fs-time" style="display:none">时刻<input id="fstime" type="time" value="12:00"></label>
       </div>
       <!-- 人格问卷：4 题一页、1–5 打分。题目与 1–5 的说明由 web-ui 从引擎取，

@@ -14,6 +14,86 @@
 
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
+
+  // ── 公历日期输入：固定「年-月-日」 ─────────────────────────────
+  // 原生 date 控件的顺序跟随浏览器区域，容易出现月/日/年或日/月/年。
+  // 改成文本输入 + 数字掩码：显示始终是 YYYY-MM-DD，也认 1990/5/12、1990年5月12日。
+  function isoDateOk(s) {
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    if (!ymd) return false;
+    const y = Number(ymd[1]);
+    const mo = Number(ymd[2]);
+    const d = Number(ymd[3]);
+    if (mo < 1 || mo > 12 || d < 1) return false;
+    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return d <= days[mo - 1];
+  }
+  function normalizeDateText(raw) {
+    const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
+    if (!ymd) return '';
+    const iso = `${ymd[1]}-${pad(ymd[2])}-${pad(ymd[3])}`;
+    return isoDateOk(iso) ? iso : '';
+  }
+  function maskDateText(raw) {
+    const s = String(raw || '').trim();
+    // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
+    // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
+    // 斜杠/中文/点号视为粘贴，直接归一。
+    if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
+    if (/[年月日/.]/.test(s)) {
+      const full = normalizeDateText(s);
+      if (full) return full;
+    }
+    const digits = s.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+  }
+  /** 程序填值（示例 / 切 tab）：同步掩码与「最近一次有效值」 */
+  function setDateField(id, iso) {
+    const input = el(id);
+    if (!input) return;
+    const v = normalizeDateText(iso) || '';
+    input.value = v;
+    input.dataset.last = v;
+    input.setAttribute('aria-invalid', 'false');
+  }
+  function bindDateInput(id) {
+    const input = el(id);
+    if (!input) return;
+    const initial = normalizeDateText(input.value);
+    if (initial) input.value = initial;
+    input.dataset.last = initial || '';
+    input.setAttribute('type', 'text');
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('autocomplete', 'off');
+    input.setAttribute('placeholder', '年-月-日，如 1990-05-12');
+    input.addEventListener('input', () => {
+      const next = maskDateText(input.value);
+      if (input.value !== next) input.value = next;
+      const iso = normalizeDateText(next);
+      if (iso) input.dataset.last = iso;
+      input.setAttribute('aria-invalid', iso || !next.trim() ? 'false' : 'true');
+    });
+    input.addEventListener('blur', () => {
+      const raw = input.value.trim();
+      if (!raw) { input.setAttribute('aria-invalid', 'false'); return; }
+      const iso = normalizeDateText(raw);
+      if (iso) {
+        input.value = iso;
+        input.dataset.last = iso;
+        input.setAttribute('aria-invalid', 'false');
+        return;
+      }
+      // 写错了就退回最近一次有效值，别把一个非法日期留在框里等着排盘
+      input.value = input.dataset.last || '';
+      input.setAttribute('aria-invalid', 'false');
+    });
+  }
+  function bindDateInputs() {
+    ['date', 'pdate', 'p2date', 'fsdate'].forEach(bindDateInput);
+  }
   // 首屏耗时只在本机显示，不上报
   const mpNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
@@ -310,7 +390,7 @@
 
   /** 程序填值：写入 input 并记下「这是程序填的」，不置手动标记 */
   function fillDateTime(v) {
-    el('date').value = v.date;
+    setDateField('date', v.date);
     el('time').value = v.time;
     autoDate = v.date;
     autoTime = v.time;
@@ -687,6 +767,21 @@
     const myRun = ++runSeq;
     const startTab = tab;
     const date = el('date').value;
+    if (usesTimeInput() && !isoDateOk(date)) {
+      last = null;
+      el('out').innerHTML = '<div class="err">请填写公历日期，按「年-月-日」输入，例如 1990-05-12。</div>';
+      return;
+    }
+    if (tab === 'hepan' && !isoDateOk(el('pdate').value)) {
+      last = null;
+      el('out').innerHTML = '<div class="err">请填写对方的公历出生日期，按「年-月-日」输入，例如 1992-08-15。</div>';
+      return;
+    }
+    if (tab === 'hepan' && el('h3on') && el('h3on').checked && !isoDateOk(el('p2date').value)) {
+      last = null;
+      el('out').innerHTML = '<div class="err">请填写第三方的公历出生日期，按「年-月-日」输入，例如 1990-01-01。</div>';
+      return;
+    }
     // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
     const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
     const time = hourUnknown ? '12:00' : el('time').value;
@@ -821,6 +916,11 @@
           const off = el('fsoffset') ? el('fsoffset').value.trim() : '';
           if (off !== '') args.sittingOffset = Number(off);
           const fd = el('fsdate') ? el('fsdate').value.trim() : '';
+          if (fd && !isoDateOk(fd)) {
+            last = null;
+            el('out').innerHTML = '<div class="err">飞星日期请按「年-月-日」填写，例如 2026-11-03。</div>';
+            return;
+          }
           if (fd) args.fortuneDate = fd;
           const ft = el('fstime') ? el('fstime').value.trim() : '';
           if (ft) args.fortuneTime = ft;
@@ -1212,6 +1312,7 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    bindDateInputs();
     // 两套入口（平铺 tab 与分组卡片）走同一条激活路径，避免行为分叉
     document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => activate(b.dataset.tab)));
     document.querySelectorAll('.view-switch [data-view]').forEach((b) => b.addEventListener('click', () => {
@@ -1271,7 +1372,7 @@
     // 看示例：填固定示例盘并切到八字，走与真实排盘完全相同的渲染路径
     const sampleBtn = el('sample');
     if (sampleBtn) sampleBtn.addEventListener('click', () => {
-      el('date').value = SAMPLE.date;
+      setDateField('date', SAMPLE.date);
       el('time').value = SAMPLE.time;
       el('gender').value = 'male';
       el('addr').value = '河北石家庄';
