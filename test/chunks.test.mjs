@@ -38,7 +38,10 @@ for (const name of Object.keys(CHUNKS)) {
   ok(`${file} 返回 Engine.compute`, exp && exp.Engine && typeof exp.Engine.compute === 'function');
   ok(`${file} 自包含（不依赖 require.async）`, !code.includes('require.async('));
   const gz = zlib.gzipSync(Buffer.from(code, 'utf8')).length;
-  ok(`${file} gzip < 220KB`, gz < 220 * 1024, `${Math.round(gz / 1024)}KB`);
+  // 上限 220 → 228KB：H4 的十二颗杂曜安星诀（engine/ziwei-zuoyao.js，11KB 源码 / 6.5KB gzip）
+  // 是面板与复制提问要用的真内容，随紫微引擎进每一个分块；ziwei/bazi/hepan 三块原本就贴着旧线，
+  // 抬 8KB 后最紧的一块余量仍不到 9KB，再加库就得拆块而不是再抬线。
+  ok(`${file} gzip < 228KB`, gz < 228 * 1024, `${Math.round(gz / 1024)}KB`);
 }
 
 // 入口：只带界面，按 tab 取分块；切换 tab 后仍用对应分块的 Engine

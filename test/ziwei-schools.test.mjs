@@ -1,5 +1,6 @@
-// 紫微 · 十类流派开关：默认盘必须一字不变，显式切换才改盘。
-// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时；身主两派另见 ziwei-shenzhu.test.mjs。
+// 紫微 · 十一类流派开关：默认盘必须一字不变，显式切换才改盘。
+// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时 / 杂曜全表；身主两派另见 ziwei-shenzhu.test.mjs。
+import fs from 'node:fs';
 import { compute } from '../engine/index.js';
 import {
   buildZiwei, ziweiSchoolsOf, schoolBrightness,
@@ -21,7 +22,10 @@ const mutagens = (r) => r.palaces.flatMap((p) => p.stars)
   .filter((s) => s.mutagen).map((s) => `${s.name}${s.mutagen}`).sort();
 
 // ── 一、开关表与默认值 ─────────────────────────────────────
-eq('十类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).length, 10);
+// 键名一起钉住：加一类要写理由，删一类会动到旧盘与存档，谁都不能顺手改
+eq('十一类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
+  ['brightnessSchool', 'changshengSchool', 'gengYearSihua', 'jiekongSchool', 'kuiyueSchool',
+    'lateZishi', 'shenzhuSchool', 'tiankongSchool', 'tianmaSchool', 'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
 ok('默认值都在可选范围内', Object.entries(ZIWEI_SCHOOL_DEFAULTS)
   .every(([k, v]) => ZIWEI_SCHOOL_OPTIONS[k].includes(v)));
 eq('全部走默认', ziweiSchoolsOf({}), { ...ZIWEI_SCHOOL_DEFAULTS });
@@ -144,7 +148,11 @@ const C = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male
 eq('compute 回显开关', [C.schools.brightnessSchool, C.schools.jiekongSchool], ['QS', 'double']);
 ok('compute 摘要写流派行', /【流派】.*亮度 QS.*截空 double/.test(C.summary),
   C.summary.split('\n').find((l) => /流派/.test(l)));
-ok('规则里列全九项', /亮度 QS/.test(C.rules.schools) && /晚子时 current-day/.test(C.rules.schools), C.rules.schools);
+ok('规则里把十一类口径逐条列全（漏一类就是旧盘对不上账）',
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜']
+    .every((label) => C.rules.schools.includes(label)),
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜']
+    .filter((label) => !C.rules.schools.includes(label)).join(','));
 const NEST = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', schools: { tianmaSchool: 'month-branch' } });
 eq('compute 接受嵌套 schools', NEST.schools.tianmaSchool, 'month-branch');
 const BAD = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', brightnessSchool: 'nope' });
@@ -153,3 +161,16 @@ const CROSS = compute({ system: 'bazi', datetime: '1990-06-15T10:00', gender: 'm
 ok('八字交叉验证也接受流派参数', !!CROSS.cross);
 const DET = buildZiwei({ ...BASE, kuiyueSchool: 'qs2' });
 eq('同参数可复现', JSON.stringify(buildZiwei({ ...BASE, kuiyueSchool: 'qs2' }).palaces), JSON.stringify(DET.palaces));
+
+// ── 十二、接线漏检锁：新增开关必须同时出现在四处，少一处就是静默失效 ──
+// 引擎里有开关、工具 schema 里没有 → AI 传了不认；口径对照里没有 → 并排看不到这一档。
+const SERVER = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+const FLAT = fs.readFileSync(new URL('../engine/index.js', import.meta.url), 'utf8');
+const CALIBER = fs.readFileSync(new URL('../engine/diff.js', import.meta.url), 'utf8');
+for (const key of Object.keys(ZIWEI_SCHOOL_OPTIONS)) {
+  const inSchema = new RegExp('^[ \\t]*' + key + ':[ \\t]*\\{', 'm').test(SERVER);
+  ok(`${key}：工具 schema 收这个参数`, inSchema);
+  ok(`${key}：compute 平铺透传认这个参数`, FLAT.includes(`'${key}'`) || FLAT.includes(`${key}:`));
+  ok(`${key}：口径并排给了这一档开关`, CALIBER.includes(`'${key}'`) || CALIBER.includes(`"${key}"`));
+  ok(`${key}：默认值与可选值都对得上`, ZIWEI_SCHOOL_OPTIONS[key].includes(ZIWEI_SCHOOL_DEFAULTS[key]));
+}

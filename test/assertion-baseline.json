@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 7139,
+  "total": 7518,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -71,7 +71,7 @@
       "fail": 0
     },
     "caliber-diff.test.mjs": {
-      "pass": 244,
+      "pass": 250,
       "fail": 0
     },
     "caliber.test.mjs": {
@@ -310,12 +310,16 @@
       "pass": 24,
       "fail": 0
     },
+    "name-surname-lib.test.mjs": {
+      "pass": 48,
+      "fail": 0
+    },
     "name-wuge.test.mjs": {
-      "pass": 103,
+      "pass": 107,
       "fail": 0
     },
     "names.test.mjs": {
-      "pass": 39,
+      "pass": 42,
       "fail": 0
     },
     "narrow-report.test.mjs": {
@@ -458,6 +462,10 @@
       "pass": 19,
       "fail": 0
     },
+    "tarot-cards.test.mjs": {
+      "pass": 89,
+      "fail": 0
+    },
     "tarot.test.mjs": {
       "pass": 133,
       "fail": 0
@@ -530,6 +538,10 @@
       "pass": 5,
       "fail": 0
     },
+    "yijing-text.test.mjs": {
+      "pass": 67,
+      "fail": 0
+    },
     "yingqi.test.mjs": {
       "pass": 28,
       "fail": 0
@@ -548,6 +560,10 @@
     },
     "zeri-candidates.test.mjs": {
       "pass": 48,
+      "fail": 0
+    },
+    "zeri-shensha.test.mjs": {
+      "pass": 22,
       "fail": 0
     },
     "ziwei-fly-triad.test.mjs": {
@@ -575,7 +591,7 @@
       "fail": 0
     },
     "ziwei-schools.test.mjs": {
-      "pass": 73,
+      "pass": 117,
       "fail": 0
     },
     "ziwei-shenzhu.test.mjs": {
@@ -584,6 +600,10 @@
     },
     "ziwei-words.test.mjs": {
       "pass": 55,
+      "fail": 0
+    },
+    "ziwei-zuoyao.test.mjs": {
+      "pass": 96,
       "fail": 0
     },
     "ziwei.test.mjs": {

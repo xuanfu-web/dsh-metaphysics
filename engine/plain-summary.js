@@ -501,7 +501,11 @@ function tarotSummary(r) {
       + cards.map((c) => `${c.position}「${c.name}」${c.orientation}`).join('，') + '。',
     sections: cards.slice(0, 4).map((c) => ({
       h: c.position,
-      t: `「${c.name}」${c.orientation}：${(c.keywords || []).slice(0, 3).join('、') || c.core || ''}。${c.positionHint || ''}`,
+      t: `「${c.name}」${c.orientation}：${(c.keywords || []).slice(0, 3).join('、') || c.core || ''}。`
+        // 逐张库带的三层信息：牌面画了什么、占星落在哪、宫廷牌顶谁；缺就不硬凑
+        + `${c.image ? `牌面上${c.image}。` : ''}`
+        + `${c.astro ? `占星对应是${c.astro}。` : (c.role ? `它在盘上顶的是「${c.role}」那个角色。` : '')}`
+        + `${c.positionHint || ''}`,
     })),
     advice: [
       `最值得先看的是「${pivot.name}」（${pivot.position}·${pivot.orientation}）——${(pivot.keywords || []).slice(0, 3).join('、') || '它所在的位置，就是这件事现在的着力点'}。`,

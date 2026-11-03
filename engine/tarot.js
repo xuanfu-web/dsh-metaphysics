@@ -1,13 +1,18 @@
 // 塔罗牌：78 张（22 大阿卡纳 + 56 小阿卡纳），抽牌、牌阵与解读
 //
+// 逐张库（英文名、牌面图像、旬主星/旬座、生命树源质）在 engine/tarot-cards.js，
+// 本文件只负责组牌、抽牌与解读；两侧共用同一份牌名，牌名对不上会直接测出来。
+//
 // 【流派说明】塔罗是一套象征系统，而非确定性预言。本文件采用：
-//   · 牌名、编号：RWS（韦特）体系 —— 力量 = VIII、正义 = XI；
+//   · 牌名、编号、牌面：RWS（韦特）体系 —— 力量 = VIII、正义 = XI；
 //     马赛体系里两者的编号相反（VIII 正义 / XI 力量），仅编号差异，牌义不变。
-//   · 大牌元素：黄金黎明（Golden Dawn）对应的行星/星座归属（详见 MAJOR_EXT 注释）。
-//   · 小牌元素：权杖火、圣杯水、宝剑风、星币土（通行）。
+//   · 大牌元素：黄金黎明（Golden Dawn）对应；行星/星座按守护星关系互核（详见 tarot-cards.js 口径注释）。
+//   · 小牌元素：权杖火、圣杯水、宝剑风、星币土（通行）；2-10 号牌另给三分相旬位，首牌给源质。
+//   · 宫廷牌：只给花色元素，不给星座与主星——公开表里两套映射互相冲突，合并不成一句真话。
 //   · 逆位读法：取「同一股力量未顺过来 / 用力过猛 / 内在化」三义，
 //     不采用「逆位即纯凶」的流派；不同流派对逆位的取舍不同，此处取中性偏提醒。
 // 以上差异在 reading 与结果字段 systemNote 中均有标注，避免被当作唯一正解。
+import { CARD_LIB, CARD_COUNTS } from './tarot-cards.js';
 
 const MAJOR = [
   ['愚者', '0', '新开始 冒险 纯真 无限可能', '鲁莽 逃避 原地打转 不切实际'],
@@ -139,27 +144,24 @@ const MINOR = {
 
 const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
 
-// 小牌牌阶：编号（A..10 / 宫廷）与数值 1..14，供排序与结构分析使用
-// 核心寓意按「牌阶」给（跨花色通用），花色含义由 suit/element/domain 与关键词承担，
-// 因此小牌的 core 是「花色：牌阶寓意」的组合句，不是逐张独立撰写的牌义。
+// 小牌牌阶：编号（A..10 / 宫廷）与数值 1..14，供排序与结构分析使用。
+// 每张牌的核心寓意自 H3 起逐张撰写（engine/tarot-cards.js），不再按「牌阶」套通用句。
 const RANK_META = {
-  一: { number: 'A', value: 1, core: '起点，一切刚被点燃' },
-  二: { number: '2', value: 2, core: '两股力量之间的平衡' },
-  三: { number: '3', value: 3, core: '第一次成形，成果与代价同来' },
-  四: { number: '4', value: 4, core: '停下来，把结构暂时稳住' },
-  五: { number: '5', value: 5, core: '失衡带来的摩擦' },
-  六: { number: '6', value: 6, core: '修复，让事情重新流动' },
-  七: { number: '7', value: 7, core: '收成之前的审视与取舍' },
-  八: { number: '8', value: 8, core: '把节奏重新握在自己手里' },
-  九: { number: '9', value: 9, core: '接近满盈的临界' },
-  十: { number: '10', value: 10, core: '一个周期走到收束' },
-  侍从: { number: '侍从', value: 11, core: '学徒式的试探' },
-  骑士: { number: '骑士', value: 12, core: '带上方向的行动' },
-  王后: { number: '王后', value: 13, core: '成熟的照顾与吸引' },
-  国王: { number: '国王', value: 14, core: '掌控局面与承担' },
+  一: { number: 'A', value: 1 },
+  二: { number: '2', value: 2 },
+  三: { number: '3', value: 3 },
+  四: { number: '4', value: 4 },
+  五: { number: '5', value: 5 },
+  六: { number: '6', value: 6 },
+  七: { number: '7', value: 7 },
+  八: { number: '8', value: 8 },
+  九: { number: '9', value: 9 },
+  十: { number: '10', value: 10 },
+  侍从: { number: '侍从', value: 11 },
+  骑士: { number: '骑士', value: 12 },
+  王后: { number: '王后', value: 13 },
+  国王: { number: '国王', value: 14 },
 };
-
-// 小牌核心寓意 = 花色 + 牌阶寓意的组合句（花色含义另由 suit/element/domain 承担）
 
 // 牌位：每个位带一句位义说明（positionHint）
 const SPREADS = {
@@ -181,6 +183,9 @@ const SPREADS = {
 };
 
 const COURT = ['侍从', '骑士', '王后', '国王'];
+// 宫廷牌的「牌位」＝这个角色在牌阵里通常顶替的位置（人物 or 自身的一个侧面），
+// 与占星无关，所以宫廷牌没有星座也照样能读。
+const COURT_ROLE = { 侍从: '学徒与消息', 骑士: '推进与风格', 王后: '滋养与吸引', 国王: '掌控与承担' };
 const ELEMENT_ORDER = ['火', '水', '风', '土'];
 const ELEM_NAME = { 火: '热情与行动', 水: '情感与关系', 风: '思维与沟通', 土: '现实与资源' };
 const ELEM_TIP = {
@@ -209,17 +214,37 @@ const POS_TAIL = {
   潜在: '它还没浮出水面，却已经在左右你的选择。',
 };
 
-const SYSTEM_NOTE = '塔罗为象征系统，牌义与元素对应存在流派差异；此处采用 RWS（韦特）牌名/编号与黄金黎明的元素归属，仅供自我觉察与娱乐。';
+const SYSTEM_NOTE = '塔罗为象征系统，牌义与元素对应存在流派差异；此处采用 RWS（韦特）牌名/编号/牌面与黄金黎明的元素归属，仅供自我觉察与娱乐。'
+  + '小牌 2-10 按三分相旬位补行星与星座，首牌只标生命树源质；宫廷牌在公开资料里有两套互相冲突的星座映射，故不给宫廷牌占星对应，只给角色定位。';
 
+// 牌面元素对应：数字牌给「某星在某座某旬」，首牌给源质（它是该元素的根源，不落单一星座），
+// 宫廷牌留空——两套公开映射互相冲突，口径见 SYSTEM_NOTE。
+function astroOf(name) {
+  const c = CARD_LIB[name];
+  if (!c) return '';
+  if (c.astro) return c.astro;
+  return c.sephira ? `${c.sephira}·${c.el}之根源` : '';
+}
+
+// 逐张库规模（面板与测试用它核对「78 张都有图像、36 张有旬位」这类说法）
+export const TAROT_STATS = CARD_COUNTS;
+
+/** 牌面数据（大 22 + 小 56）：英文名、牌面图像、元素对应、核心寓意均来自逐张库 */
 export function tarotDeck() {
   const deck = [];
   MAJOR.forEach(([name, numeral, up, down], i) => {
     const [element, core] = MAJOR_EXT[i];
-    deck.push({ name, arcana: '大阿卡纳', element, number: numeral, value: i, core, up, down });
+    const lib = CARD_LIB[name];
+    deck.push({
+      name, arcana: '大阿卡纳', element, number: numeral, value: i, core, up, down,
+      en: lib.en, sign: lib.sign, planet: lib.planet, astro: astroOf(name), image: lib.img,
+    });
   });
   for (const [suit, element, domain] of SUITS) {
     for (const [rankCn, up, down] of MINOR[suit]) {
       const meta = RANK_META[rankCn];
+      const lib = CARD_LIB[`${suit}${rankCn}`];
+      const court = meta.value >= 11;
       deck.push({
         name: `${suit}${rankCn}`,
         arcana: '小阿卡纳',
@@ -230,9 +255,17 @@ export function tarotDeck() {
         rankCn,
         number: meta.number,
         value: meta.value,
-        core: `${suit}：${meta.core}`,
+        core: lib.core,
         up,
         down,
+        en: lib.en,
+        image: lib.img,
+        role: COURT_ROLE[rankCn] || '',
+        sephira: lib.sephira,
+        decan: lib.decan,
+        sign: lib.sign,
+        planet: court ? '' : lib.planet,
+        astro: astroOf(`${suit}${rankCn}`),
       });
     }
   }
@@ -285,9 +318,14 @@ export function tarotReading({ question = '', cards = [] } = {}) {
         ? '逆位并不等于凶，更像这股力量还没顺过来，或用力过了头'
         : '正位，这股力量目前是通的';
       const hint = c.positionHint || (SPREADS[n] && SPREADS[n][i] ? SPREADS[n][i].hint : '这一位要看的是它在你处境里的位置');
-      const core = meta.core ? `它的核心是「${meta.core}」，` : '';
+      // 牌面图像与元素对应来自逐张库：数字牌给「某星在某座某旬」，首牌给源质，
+      // 宫廷牌没有占星可给，就把它顶的角色（学徒/推进/滋养/掌控）说出来。
+      const img = meta.image ? `牌面上${meta.image}，` : '';
+      const ast = meta.astro ? `它对应的占星位置是${meta.astro}，` : '';
+      const role = !ast && meta.role ? `它在这里顶的是「${meta.role}」那个角色，` : '';
+      const core = meta.core ? `它的核心是「${meta.core}」。` : '';
       const tail = POS_TAIL[c.position] || '把它放回你的处境里对照，看看哪一句戳中了你。';
-      return `${c.position}（${hint}）是「${c.name}」${ori}：${kws}。${core}${oriNote}。${tail}`;
+      return `${c.position}（${hint}）是「${c.name}」${ori}：${kws}。${img}${ast}${role}${core}${oriNote}。${tail}`;
     });
     paras.push(lines.join(''));
   }
@@ -379,6 +417,15 @@ export function drawTarot({ count = 3, question = '', at, random = Math.random }
       ...(c.rankCn ? { rankCn: c.rankCn } : {}),
       value: c.value,
       core: c.core,
+      en: c.en,
+      image: c.image,
+      // 空值不进结果：宫廷牌没有星座/主星，首牌没有旬位，别让字段带着空串冒充「已给出」
+      ...(c.astro ? { astro: c.astro } : {}),
+      ...(c.sephira ? { sephira: c.sephira } : {}),
+      ...(c.decan ? { decan: c.decan } : {}),
+      ...(c.role ? { role: c.role } : {}),
+      ...(c.sign ? { sign: c.sign } : {}),
+      ...(c.planet ? { planet: c.planet } : {}),
       upright,
       orientation: upright ? '正位' : '逆位',
       keywords: splitKeywords(upright ? c.up : c.down),

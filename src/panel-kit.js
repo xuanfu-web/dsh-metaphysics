@@ -184,6 +184,14 @@
 .pp-ss .ss-s.bad{color:var(--ji)}
 .pp-ss .ss-s.neutral{color:var(--quan)}
 .pp-ssx{margin-top:10px;font-family:system-ui,sans-serif}
+/* 杂曜全表：诀文整段默认折起来，点开才摊——一行一条，行高比正文松一点好对着盘看 */
+.pp-zy{margin-top:6px;font-family:system-ui,sans-serif}
+.pp-zy summary{font-size:12px;color:var(--label);cursor:pointer;list-style:none}
+.pp-zy summary::-webkit-details-marker{display:none}
+.pp-zy summary::before{content:'＋ ';color:var(--muted)}
+.pp-zy[open] summary::before{content:'－ '}
+.pp-zy-v{font-size:12px;line-height:1.85;color:var(--muted);margin-top:5px;padding-left:9px;border-left:2px solid var(--hair)}
+.pp-zy-s{font-size:11.5px;line-height:1.7;color:var(--faint);margin-top:5px}
 .pp-ssx .ssx-h{display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
 .pp-ssx .ssx-h b{color:var(--red);font-size:14px;font-weight:600}
 .pp-ssg{display:flex;gap:8px;align-items:baseline;margin-top:5px;font-size:12.5px;line-height:1.7}
@@ -436,6 +444,8 @@
 .mp-tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:13px;line-height:1.7}
 .mp-tt-kw span{border-bottom:1px dotted var(--line)}
 .mp-tt-el{margin-top:auto;font-size:12px;color:var(--muted)}
+.mp-tt-en{font-size:11.5px;color:var(--muted);margin-top:-5px}
+.mp-tt-img{font-size:12px;color:var(--muted);line-height:1.65}
 .mp-tt-core{font-size:12.5px;color:var(--ink2);line-height:1.7;border-left:2px solid var(--line);padding-left:8px}
 .mp-tt-no{font-size:12px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
 .mp-tt-tip{margin-top:12px;font-size:12px;color:var(--muted)}
@@ -1416,9 +1426,11 @@
       const vh = viewHua && viewHua[s.name];
       const vm = vh ? `<i class="pp-m view ${MUT[vh]}">${vh}</i>` : '';
       const b = s.brightness ? `<em class="pp-b ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
+      // 全表杂曜的入庙标记（天官/天福只有四宫入庙，来路是庙地专论，不是十四主星那张亮度表）
+      const tm = s.inTemple ? '<em class="pp-b good">庙</em>' : '';
       // 顺序：星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
-      return `<span class="pp-st ${cls}">${s.name}${b}${m}${vm}</span>`;
+      return `<span class="pp-st ${cls}">${s.name}${b}${tm}${m}${vm}</span>`;
     }).join('');
   }
 
@@ -1550,6 +1562,16 @@
       ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
+    // 杂曜全表：开了就把每颗的定宫诀摊开。星名是查得到的，诀文才是这块内容真正的价值——
+    // 不看诀，十二颗杂曜在盘上只等于十二个陌生名字。
+    const zy = r.zuoyao;
+    const zyHTML = !zy ? '' : (zy.placed && zy.placed.length
+      ? `<div class="pp-sec"><div class="pp-sec-h">杂曜全表 · 已排 ${zy.placed.length} 颗（${zy.starTotal} 颗盘）</div>
+        <div class="pp-chips">${zy.placed.map((x) => `<span class="pp-chip${x.inTemple ? ' ok' : ''}" title="${esc(x.meaning || '')}">${esc(x.name)} ${esc(x.branch)}（${esc(x.palace)}）${x.inTemple ? '·庙' : ''}</span>`).join('')}</div>
+        <details class="pp-zy"><summary>逐颗安星诀（${zy.placed.length} 条 · 出多处近代通行辑本并核，属通行说，不是《全书》原文）</summary><div class="pp-zy-v">${esc(zy.verses).replace(/\n/g, '<br>')}</div></div></details>
+        ${zy.skipped && zy.skipped.length ? `<div class="pp-zy-s">${zy.skipped.map((s) => esc(s)).join('')}</div>` : ''}</div>`
+      : `<div class="pp-sec"><div class="pp-sec-h">杂曜 · 本盘 ${zy.starTotal} 颗（通行简盘）</div>
+        <div class="pp-zy-s">开「杂曜全表」追加十二颗：解神·天巫·天月·阴煞（生月）／天官·天福·天厨（生年干）／蜚廉·天德·年解（生年支）／天才（命宫＋生年支）·天寿（身宫＋生年支）。${zy.skipped && zy.skipped.length ? `不另立：${zy.skipped.map((s) => esc(s)).join('')}` : ''}</div></div>`);
     // 命宫四化飞星：宫干化出的星落在哪一宫，跟着同一支化串到成环
     const flyHTML = r.flyChains ? (() => {
       const chips = ['禄', '权', '科', '忌'].map((t) => {
@@ -1602,7 +1624,7 @@
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}${zyHTML}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────
@@ -1613,8 +1635,9 @@
     return list.map((s) => {
       const cls = TYPE_CLASS[s.type] || 'aux';
       const br = s.brightness ? `<em class="dt-br ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
+      const tm = s.inTemple ? '<em class="dt-br good">庙</em>' : '';
       const mu = s.mutagen ? `<i class="pp-m ${MUT[s.mutagen]}">${s.mutagen}</i>` : '';
-      return `<span class="dt-st ${cls}">${s.name}${br}${mu}</span>`;
+      return `<span class="dt-st ${cls}">${s.name}${br}${tm}${mu}</span>`;
     }).join('');
   }
 
@@ -1965,10 +1988,12 @@
       <div class="mp-tt-card ${c.upright ? 'tt-up' : 'tt-rev'}">
         <div class="mp-tt-pos" title="${esc(c.positionHint || '')}">${c.position}</div>
         <div class="mp-tt-name">${c.name}${c.number ? `<span class="mp-tt-no">${c.number}</span>` : ''}</div>
+        ${c.en ? `<div class="mp-tt-en">${c.en}</div>` : ''}
         <div class="mp-tt-ori">${c.orientation}</div>
+        ${c.image ? `<div class="mp-tt-img">牌面：${c.image}</div>` : ''}
         ${c.core ? `<div class="mp-tt-core">${c.core}</div>` : ''}
         <div class="mp-tt-kw">${c.keywords.map((k) => `<span>${k}</span>`).join('')}</div>
-        <div class="mp-tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}</div>
+        <div class="mp-tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}${c.astro ? ` · ${c.astro}` : (c.role ? ` · ${c.role}` : '')}</div>
       </div>`).join('');
     // 所问之事是用户原文，必须转义后再进 innerHTML（塔罗面板曾漏这一处）
     const q = r.question ? esc(r.question) : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>';
@@ -2552,7 +2577,7 @@
         </div>`
       : `<div class="mp-nm-wu"><div class="mp-nm-wu-h"><b>五格</b><i>这一版算不了</i></div><div class="mp-nm-m">${esc(r.wuge ? r.wuge.reason : '未算')}</div></div>`;
     const ph = r.phonetics && r.phonetics.available
-      ? `<div class="mp-nm-ph"><b>音韵</b><span class="mp-nm-ph-lv${r.phonetics.level === '顺口' ? ' ok' : r.phonetics.level === '拗口' ? ' bad' : ' warn'}">${esc(r.phonetics.level)}</span><em>${esc(r.phonetics.chars.map((x) => `${x.py}${x.tone}`).join(' '))}　声调 ${esc(r.phonetics.tonePattern)}</em>${(r.phonetics.issues || []).map((x) => `<span class="mp-nm-ph-i">${esc(x.text)}</span>`).join('')}</div>`
+      ? `<div class="mp-nm-ph"><b>音韵</b><span class="mp-nm-ph-lv${r.phonetics.level === '顺口' ? ' ok' : r.phonetics.level === '拗口' ? ' bad' : ' warn'}">${esc(r.phonetics.level)}</span><em>${esc(r.phonetics.chars.map((x) => `${x.py}${x.tone}`).join(' '))}　声调 ${esc(r.phonetics.tonePattern)}${(r.phonetics.alt || []).length ? `　又读 ${esc(r.phonetics.alt.map((x) => `${x.char} ${x.py}${x.tone}`).join('、'))}` : ''}</em>${(r.phonetics.issues || []).map((x) => `<span class="mp-nm-ph-i">${esc(x.text)}</span>`).join('')}</div>`
       : `<div class="mp-nm-ph"><b>音韵</b><em>${esc(r.phonetics ? r.phonetics.reason : '未算')}</em></div>`;
     return `<section class="mp-nm" aria-label="名字评估">
       ${head(r.fullName || '', `字库 ${r.stats && r.stats.libSize ? r.stats.libSize : ''} 字${r.stats && r.stats.unknown ? `　未收录 ${r.stats.unknown}` : ''}`)}
@@ -3618,15 +3643,21 @@
   pp.zeriHTML = function (r) {
     if (!r || !r.compare || r.compare.mode !== 'candidates' || !Array.isArray(r.days)) return pp.quickHTML(r);
     const meta = r.meta || {};
+    const ref = r.shenshaRef || {};
     const bestDate = r.compare.best ? r.compare.best.date : '';
     const rows = r.days.map((d) => {
       const isBest = d.date === bestDate;
       const cls = d.excluded || d.verdict === '回避' ? 'bad' : d.verdict === '推荐' ? 'good' : '';
+      const g = d.grade || {};
+      const gradeCell = g.label
+        ? `<b>${esc(g.label)}</b><em>吉${esc(g.ji)} / 凶${esc(g.xiong)}　${esc(g.decision || '')}</em>`
+        : '—';
       return `<tr class="mp-zr-row${isBest ? ' top' : ''}${d.excluded ? ' off' : ''}">
         <th scope="row"><b>${esc(d.date)}</b>${isBest ? '<i class="mp-zr-best">最优</i>' : ''}
           <em>${esc(d.weekday)}　${esc(d.lunar)}</em></th>
         <td><b>${esc(d.dayGanZhi)}</b><em>${esc(d.zhiXing)}日</em></td>
         <td class="mp-zr-score">${esc(d.score)}</td>
+        <td class="mp-zr-grade">${gradeCell}</td>
         <td><span class="mp-zr-v ${cls}">${esc(d.verdict)}</span></td>
         <td class="mp-zr-why">${esc(d.reasons.join('；') || '无特别加减分')}</td>
       </tr>`;
@@ -3642,12 +3673,14 @@
         <span>候选 ${esc(meta.days)} 天${meta.shengXiao ? `　当事人属${esc(meta.shengXiao)}` : '（未给属相，未做冲煞排除）'}</span></div>
       <div class="mp-zr-lead">${bestLead}</div>
       <table class="mp-zr-t"><thead><tr>
-        <th scope="col">日期</th><th scope="col">日干支 / 建除</th><th scope="col">分</th><th scope="col">结论</th><th scope="col">理由</th>
+        <th scope="col">日期</th><th scope="col">日干支 / 建除</th><th scope="col">分</th><th scope="col">卷十等第</th><th scope="col">结论</th><th scope="col">理由</th>
       </tr></thead><tbody>${rows}</tbody></table>
       <div class="mp-zr-lists">
         ${list('推荐', r.best)}${list('可用', r.usable)}${list('回避', r.avoid)}
       </div>
       <p class="mp-zr-note">${esc(r.compare.note || '')}</p>
+      ${ref.text ? `<p class="mp-zr-note">神煞依据：${esc(ref.text)}（${esc(ref.edition || '')}）；起法 ${esc((ref.volumes || []).join('、'))}。未实现起法：${esc((ref.unsupported || []).join('、'))}（不计分）。</p>` : ''}
+      ${ref.juan10 ? `<p class="mp-zr-note">卷十依据：${esc(ref.juan10.text)}（${esc(ref.juan10.corpusLines || '')}）；${esc(ref.juan10.thresholdsNote || '')}${esc(ref.juan10.note || '')}</p>` : ''}
       <p class="mp-zr-note">${esc(meta.scope || '')}</p>
       <p class="mp-zr-note">${esc(r.disclaimer || '')}</p>
     </section>`;

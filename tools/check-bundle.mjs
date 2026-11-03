@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import zlib from 'node:zlib';
-import { assemble, assembleEntry, assembleChunk, minifyBundle, CHUNKS } from './build-client.mjs';
+import { assemble, assembleEntry, assembleChunk, minifyBundle, CHUNKS, MODULE_ORDER as ORDER } from './build-client.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -163,6 +163,25 @@ const entryGzip = zlib.gzipSync(Buffer.from(raw, 'utf8')).length;
 if (entryGzip >= 100 * 1024) problems.push(`client.js gzip ${Math.round(entryGzip / 1024)}KB 超出 100KB 预算`);
 if (chunksGzip > CHUNKS_TOTAL_GZIP_CAP) {
   problems.push(`引擎分块合计 gzip ${(chunksGzip / 1024 / 1024).toFixed(2)}MB 超出 ${(CHUNKS_TOTAL_GZIP_CAP / 1024 / 1024).toFixed(2)}MB 预算`);
+}
+
+// ---- 7. 模块顺序：被依赖的模块必须排在依赖者之前 ----
+// 打包后每个模块是一条 IIFE 赋值，按 ORDER 顺序执行；`const { x } = (__mods.dep || {})`
+// 在初始化时就把值取走了。dep 排在后面 → 取到的是空对象 → x 永远 undefined，
+// 不报错，只在结果里静默少一块内容（新加数据表时最容易踩）。
+// 分块缺依赖不能一概而论（index 跨体系引用、interpret 引用 liuyao 都是故意落空的），
+// 所以这里只锁全局顺序这一条硬事实。
+const IMPORT_RE = /^import\s*\{([\s\S]*?)\}\s*from\s*'\.\/([a-z-]+)\.js';?/gm;
+const rankOf = new Map(ORDER.map((n, i) => [n, i]));
+for (const name of ORDER) {
+  const src = fs.readFileSync(path.join(root, 'engine', `${name}.js`), 'utf8');
+  for (const m of src.matchAll(IMPORT_RE)) {
+    const dep = m[2];
+    const ri = rankOf.get(dep);
+    if (ri === undefined) { problems.push(`${name}.js 引用了未登记的模块 ./${dep}.js（ORDER 里没有）`); continue; }
+    if (ri < rankOf.get(name)) continue;
+    problems.push(`模块顺序倒置：${name}.js 依赖 ${dep}.js，但 ORDER 里 ${dep} 排在 ${name} 之后或同位——分块里会取到 undefined`);
+  }
 }
 
 if (problems.length) {

@@ -1,5 +1,6 @@
 // 六爻（纳甲）引擎：摇卦、装卦、六亲、六神、世应、变卦
 import { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xunKongOf } from './calendar.js';
+import { jingText } from './yijing-text.js';
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -580,6 +581,9 @@ export function buildLiuyao(input = {}) {
       body.labels = bodyLabels(body);
       return body;
     })(),
+    // 经文原文在排盘时就算好挂上来，解释层只负责摆位置：
+    // 这样 yijing-text 只进六爻/梅花那一个分块，不必为了原文把 12KB 塞进 8 个分块。
+    jing: jingText({ benName: ben.name, bianName: bian ? bian.name : '', movingPositions: moving.map((i) => i + 1) }),
   };
 }
 

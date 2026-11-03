@@ -30,6 +30,13 @@ const STROKE_ANCHORS = { 静: 16, 涛: 18, 灵: 24, 兰: 23, 丰: 18, 书: 10, �
 const rdIdx = new Map(READING.map((x) => [x[0], x[3]]));
 const badAnchor = Object.entries(STROKE_ANCHORS).filter(([c, n]) => rdIdx.get(c) !== n);
 eq('康熙笔画锚点全部对上', badAnchor, []);
+// 扩充字库的生成口径：繁体映射会串义的字按人名通行取法覆盖
+const EXTRA_STROKE_ANCHORS = { 千: 3, 才: 3, 发: 12, 钟: 17, 苏: 22, 采: 8, 万: 15, 镌: 18, 伟: 11, 丽: 19, 杰: 12, 凯: 12, 娟: 10 };
+eq('扩充字笔画锚点对上', Object.entries(EXTRA_STROKE_ANCHORS).filter(([c, n]) => rdIdx.get(c) !== n), []);
+const rdPy = new Map(READING.map((x) => [x[0], x[1] + x[2]]));
+eq('长按人名读 chang2', rdPy.get('长'), 'chang2');
+eq('兴按人名读 xing1', rdPy.get('兴'), 'xing1');
+eq('种按人名读 zhong4', rdPy.get('种'), 'zhong4');
 eq('王 4 画', SURNAME_STROKES['王'], 4);
 eq('李 7 画', SURNAME_STROKES['李'], 7);
 eq('张 11 画', SURNAME_STROKES['张'], 11);

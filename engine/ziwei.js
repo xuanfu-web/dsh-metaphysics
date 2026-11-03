@@ -6,6 +6,7 @@ import { applyDst } from './dst.js';
 import { assertCivil } from './validate.js';
 import { nayinOf } from './nayin.js';
 import { resolveAddress } from './geo.js';
+import { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } from './ziwei-zuoyao.js';
 
 const fix = (i) => ((i % 12) + 12) % 12;
 
@@ -78,6 +79,8 @@ export const MUTAGEN = {
 // 默认值对齐本插件既有盘面：亮度用内置通行表，庚干用阳武阴同，
 // 天马按年支、魁钺用全书理解一、天使天伤不换、长生按现有五行局表、
 // 晚子时仍算当日；天空/截空旬空默认不排（旧盘没有这两组星，保持 49 颗）。
+// 全表十二颗杂曜同样默认不排：星数一多，旧盘的句柄与存档会静默变盘，
+// 所以 zuoyaoSchool 默认 minimal，要 61 颗的通行全表得显式打开。
 // 其余选项只在显式指定时改变盘面，不影响默认输出。
 export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   brightnessSchool: 'default',
@@ -90,6 +93,7 @@ export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   changshengSchool: 'yin-yang-shun-ni',
   lateZishi: 'current-day',
   shenzhuSchool: 'common',
+  zuoyaoSchool: 'minimal',
 });
 
 export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
@@ -103,6 +107,7 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
   lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
   shenzhuSchool: ['common', 'verse'],
+  zuoyaoSchool: ['minimal', 'full'],
 });
 
 export function ziweiSchoolsOf(input = {}) {
@@ -457,6 +462,7 @@ export function buildZiwei(input) {
       if (b) star.brightness = b;
     }
     starsByBranch[idx].push(star);
+    return star;
   };
 
   for (const s of ZIWEI_GROUP) put(ziwei + s.offset, s.name, '主星');
@@ -542,6 +548,17 @@ export function buildZiwei(input) {
   const swapTianshi = schools.tianshiTianshang === 'zhongzhou' && !forward;
   put(soulIndex - (swapTianshi ? 5 : 7), '天伤', '杂曜');
   put(soulIndex - (swapTianshi ? 7 : 5), '天使', '杂曜');
+
+  // 全表杂曜（默认不排，zuoyaoSchool: 'full' 才加十二颗）
+  // 每颗都带安星诀依据，落宫由 engine/ziwei-zuoyao.js 的查表/公式复算，不硬编宫位。
+  let zuoyaoPlaced = [];
+  if (schools.zuoyaoSchool === 'full') {
+    zuoyaoPlaced = placeZuoyao({ lunarMonth, yearStem, yearBranch: yb, soulIndex, bodyIndex });
+    for (const s of zuoyaoPlaced) {
+      const star = put(s.branch, s.name, s.type);
+      if (s.inTemple) star.inTemple = true;
+    }
+  }
 
   // 生年四化（庚干按所选变体）
   const mutagenMap = mutagenOf(yearStem, schools);
@@ -742,6 +759,22 @@ export function buildZiwei(input) {
     ziwei: BRANCHES[ziwei],
     tianfu: BRANCHES[tianfu],
     changqu,
+    // 杂曜全表的这一层只写「这一盘怎么定宫」：面板、独立页与「复制提问」共用。
+    // 默认（minimal）时 placed 为空，但 skipped 照旧给出，说明为什么少了两颗。
+    zuoyao: {
+      mode: schools.zuoyaoSchool,
+      starTotal: schools.zuoyaoSchool === 'full' ? 61 : 49,
+      placed: zuoyaoPlaced.map((s) => ({
+        name: s.name,
+        branch: BRANCHES[s.branch],
+        palace: palaceNames[s.branch],
+        basis: s.basis,
+        meaning: s.meaning,
+        ...(s.inTemple ? { inTemple: true } : {}),
+      })),
+      verses: schools.zuoyaoSchool === 'full' ? zuoyaoVerseBlock(zuoyaoPlaced) : '',
+      skipped: ZUOYAO_SKIPPED.map((s) => `${s.name}：${s.reason}`),
+    },
     palaces,
     liunian,
     daxian: {
@@ -757,7 +790,10 @@ export function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）；庚干四化只作用于生年四化`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）；庚干四化只作用于生年四化`,
+      zuoyao: schools.zuoyaoSchool === 'full'
+        ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
+        : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
       leapMonth: '闰月默认按日切分（1–15 归本月、16 起归次月，主流排盘口径）；可传 leapMonth: next（整月归次月）或 prev（整月归本月），leapAsNext: true 等同 next',
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',

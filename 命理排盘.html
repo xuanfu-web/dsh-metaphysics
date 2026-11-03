@@ -645,7 +645,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：147 个测试文件 / 7139 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：152 个测试文件 / 7518 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -1012,6 +1012,9 @@ const CALIBER_SWITCHES = {
     }),
     ziweiSchoolSwitch('shenzhuSchool', '身主：子午皆火星 / 子铃午火', '身主', 'common', 'verse', {
       common: '子午皆火星', verse: '子铃午火（安身主诀逐字）',
+    }),
+    ziweiSchoolSwitch('zuoyaoSchool', '杂曜：49 颗简盘 / 61 颗全表', '杂曜全表', 'minimal', 'full', {
+      minimal: '49 颗（简盘）', full: '61 颗（加十二颗杂曜）',
     }),
   ],
   qimen: [
@@ -5930,9 +5933,807 @@ function buildBazi(input) {
 return { HIDDEN_STEMS, RENYUAN_TABLE, STEM_ELEMENT, BRANCH_ELEMENT, buildRelations, tenGod, nayin, applyTrueSolar, renyuanOf, buildBazi };
 })();
 
+__mods['yijing-text'] = (function () {
+// 《周易》经文原文库：64 卦辞 + 384 爻辞 + 乾用九 / 坤用六，共 386 条爻辞。
+//
+// 底本来源（本会话抓取，三份互校，非人工凭记忆录入）：
+//   A  npm @freizl/yijing 2.1.0  zh-CN/64gua.json
+//   B  npm iching-shifa（dist/index.js 内卦爻表）
+//   C  github.com/liujuntao123/yijing master（64 个 JSON，卦序 1..64）
+// 生成方式：三份逐条对齐后折叠简繁、异体（彙→汇、來→来、復→复、師→师、歸→归、遯→遁 等 12 字），
+// 再逐条投票：三源一致直接采用；两源一致采用多数；三源互异（6 条）与已知讹字逐条人工裁定，
+// 裁定理由写在生成脚本里。三份底本实际含错，多数投票确实抓到两处：
+//   · A 姤九五整句重复一次；· A 大有九二误置同人六二「同人于宗，吝」。
+// 校勘依据只用《周易》本书内部互证（《彖传》《小象传》《系辞》引文）与通行注疏本，不引外书。
+//   例：复初九取「不远复，无祗悔，元吉」——《系辞下》原文引用，《小象》「不远之复」同证；
+//       讼九四取「复即命」——《小象》「复即命，渝安贞；不失也」。
+// 〔一作…〕标的是有据可查的异文（20 处），不改写正文、不下判断。
+// 古文用字（撝、豶、纆、餗、繻、祗、咷、菑、沫…）保留原字，未做现代字替换。
+// 结构自证：爻题不抄底本，一律由卦画推出（初/上 位在前，二三四五 题在前），
+// 再与本引擎 liuyao.js 的 TRIGRAM_BITS 逐位核对——底本会把爻题按阴位顺序写错
+// （iching-shifa 把大有九二标成「六二」），这样生成就不可能带上底本的错。
+// 用九 / 用六只存在于乾、坤两卦，是该卦 yao 数组的第 7 条。回归锁见 test/yijing-text.test.mjs。
+// 出处指针（未抓取，仅备查，ctext.org 明示禁止爬取）：https://ctext.org/book-of-changes
+
+/** 京房全名 → 经文。gua 为卦辞（含卦名前缀），yao 为爻辞（含爻题前缀），乾/坤 的 yao 有 7 条 */
+const YIJING = {
+  '乾为天': {
+    order: 1, core: '乾', full: '乾为天', gua: '乾：元亨，利贞。',
+    yao: [
+      '初九：潜龙，勿用。',
+      '九二：见龙在田，利见大人。',
+      '九三：君子终日乾乾，夕惕若，厉，无咎。',
+      '九四：或跃在渊，无咎。',
+      '九五：飞龙在天，利见大人。',
+      '上九：亢龙有悔。',
+      '用九：见群龙无首，吉。',
+    ],
+  },
+  '坤为地': {
+    order: 2, core: '坤', full: '坤为地', gua: '坤：元亨，利牝马之贞。君子有攸往，先迷后得主，利西南得朋，东北丧朋。安贞，吉。',
+    yao: [
+      '初六：履霜，坚冰至。',
+      '六二：直，方，大，不习无不利。',
+      '六三：含章可贞。或从王事，无成有终。',
+      '六四：括囊；无咎，无誉。',
+      '六五：黄裳，元吉。',
+      '上六：龙战于野，其血玄黄。',
+      '用六：利永贞。',
+    ],
+  },
+  '水雷屯': {
+    order: 3, core: '屯', full: '水雷屯', gua: '屯：元亨，利贞，勿用有攸往，利建侯。',
+    yao: [
+      '初九：磐桓；利居贞，利建侯。',
+      '六二：屯如邅如，乘马班如。匪寇婚媾，女子贞不字，十年乃字。',
+      '六三：即鹿无虞，惟入于林中，君子几不如舍，往吝。〔一作既鹿〕',
+      '六四：乘马班如，求婚媾，往吉，无不利。',
+      '九五：屯其膏，小贞吉，大贞凶。',
+      '上六：乘马班如，泣血涟如。',
+    ],
+  },
+  '山水蒙': {
+    order: 4, core: '蒙', full: '山水蒙', gua: '蒙：亨。匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。',
+    yao: [
+      '初六：发蒙，利用刑人，用说桎梏，以往吝。',
+      '九二：包蒙吉；纳妇吉；子克家。',
+      '六三：勿用娶女；见金夫，不有躬，无攸利。',
+      '六四：困蒙，吝。',
+      '六五：童蒙，吉。',
+      '上九：击蒙；不利为寇，利御寇。',
+    ],
+  },
+  '水天需': {
+    order: 5, core: '需', full: '水天需', gua: '需：有孚，光亨，贞吉。利涉大川。',
+    yao: [
+      '初九：需于郊。利用恒，无咎。',
+      '九二：需于沙。小有言，终吉。',
+      '九三：需于泥，致寇至。',
+      '六四：需于血，出自穴。',
+      '九五：需于酒食，贞吉。',
+      '上六：入于穴，有不速之客三人来，敬之终吉。',
+    ],
+  },
+  '天水讼': {
+    order: 6, core: '讼', full: '天水讼', gua: '讼：有孚，窒。惕中吉。终凶。利见大人，不利涉大川。',
+    yao: [
+      '初六：不永所事，小有言，终吉。',
+      '九二：不克讼，归而逋，其邑人三百户，无眚。',
+      '六三：食旧德，贞厉，终吉，或从王事，无成。',
+      '九四：不克讼，复即命，渝安贞，吉。〔一作复自命〕',
+      '九五：讼元吉。',
+      '上九：或锡之鞶带，终朝三褫之。',
+    ],
+  },
+  '地水师': {
+    order: 7, core: '师', full: '地水师', gua: '师：贞，丈人，吉无咎。',
+    yao: [
+      '初六：师出以律，否臧凶。',
+      '九二：在师中吉，无咎，王三锡命。',
+      '六三：师或舆尸，凶。',
+      '六四：师左次，无咎。',
+      '六五：田有禽，利执言，无咎。长子帅师，弟子舆尸，贞凶。',
+      '上六：大君有命，开国承家，小人勿用。',
+    ],
+  },
+  '水地比': {
+    order: 8, core: '比', full: '水地比', gua: '比：吉。原筮元永贞，无咎。不宁方来，后夫凶。',
+    yao: [
+      '初六：有孚，比之，无咎。有孚盈缶，终来有它，吉。',
+      '六二：比之自内，贞吉。',
+      '六三：比之匪人。',
+      '六四：外比之，贞吉。',
+      '九五：显比，王用三驱，失前禽。邑人不诫，吉。',
+      '上六：比之无首，凶。',
+    ],
+  },
+  '风天小畜': {
+    order: 9, core: '小畜', full: '风天小畜', gua: '小畜：亨。密云不雨，自我西郊。',
+    yao: [
+      '初九：复自道，何其咎，吉。',
+      '九二：牵复，吉。',
+      '九三：舆说辐，夫妻反目。',
+      '六四：有孚，血去惕出，无咎。',
+      '九五：有孚挛如，富以其邻。',
+      '上九：既雨既处，尚德载，妇贞厉。月几望，君子征凶。',
+    ],
+  },
+  '天泽履': {
+    order: 10, core: '履', full: '天泽履', gua: '履：履虎尾，不咥人，亨。',
+    yao: [
+      '初九：素履，往无咎。',
+      '九二：履道坦坦，幽人贞吉。',
+      '六三：眇能视，跛能履，履虎尾，咥人，凶。武人为于大君。',
+      '九四：履虎尾，愬愬终吉。',
+      '九五：夬履，贞厉。',
+      '上九：视履考祥，其旋元吉。',
+    ],
+  },
+  '地天泰': {
+    order: 11, core: '泰', full: '地天泰', gua: '泰：小往大来，吉亨。',
+    yao: [
+      '初九：拔茅茹，以其汇，征吉。',
+      '九二：包荒，用冯河，不遐遗，朋亡，得尚于中行。',
+      '九三：无平不陂，无往不复，艰贞无咎。勿恤其孚，于食有福。',
+      '六四：翩翩，不富，以其邻，不戒以孚。',
+      '六五：帝乙归妹，以祉元吉。',
+      '上六：城复于隍，勿用师。自邑告命，贞吝。',
+    ],
+  },
+  '天地否': {
+    order: 12, core: '否', full: '天地否', gua: '否：否之匪人，不利君子贞，大往小来。',
+    yao: [
+      '初六：拔茅茹，以其汇，贞吉亨。',
+      '六二：包承。小人吉，大人否，亨。',
+      '六三：包羞。',
+      '九四：有命，无咎，畴离祉。',
+      '九五：休否，大人吉。其亡其亡，系于苞桑。',
+      '上九：倾否，先否后喜。',
+    ],
+  },
+  '天火同人': {
+    order: 13, core: '同人', full: '天火同人', gua: '同人：同人于野，亨。利涉大川，利君子贞。',
+    yao: [
+      '初九：同人于门，无咎。',
+      '六二：同人于宗，吝。',
+      '九三：伏戎于莽，升其高陵，三岁不兴。',
+      '九四：乘其墉，弗克攻，吉。',
+      '九五：同人，先号咷而后笑，大师克相遇。〔一作号啕〕',
+      '上九：同人于郊，无悔。',
+    ],
+  },
+  '火天大有': {
+    order: 14, core: '大有', full: '火天大有', gua: '大有：元亨。',
+    yao: [
+      '初九：无交害，匪咎，艰则无咎。',
+      '九二：大车以载，有攸往，无咎。',
+      '九三：公用亨于天子，小人弗克。',
+      '九四：匪其彭，无咎。',
+      '六五：厥孚交如，威如；吉。',
+      '上九：自天佑之，吉无不利。',
+    ],
+  },
+  '地山谦': {
+    order: 15, core: '谦', full: '地山谦', gua: '谦：亨，君子有终。',
+    yao: [
+      '初六：谦谦君子，用涉大川，吉。',
+      '六二：鸣谦，贞吉。',
+      '九三：劳谦，君子有终，吉。',
+      '六四：无不利，㧑谦。〔一作撝谦〕',
+      '六五：不富，以其邻，利用侵伐，无不利。',
+      '上六：鸣谦，利用行师，征邑国。',
+    ],
+  },
+  '雷地豫': {
+    order: 16, core: '豫', full: '雷地豫', gua: '豫：利建侯，行师。',
+    yao: [
+      '初六：鸣豫，凶。',
+      '六二：介于石，不终日，贞吉。',
+      '六三：盱豫，悔。迟有悔。',
+      '九四：由豫，大有得。勿疑。朋盍簪。',
+      '六五：贞疾，恒不死。',
+      '上六：冥豫，成有渝，无咎。',
+    ],
+  },
+  '泽雷随': {
+    order: 17, core: '随', full: '泽雷随', gua: '随：元亨利贞，无咎。',
+    yao: [
+      '初九：官有渝，贞吉。出门交有功。',
+      '六二：系小子，失丈夫。',
+      '六三：系丈夫，失小子。随有求得，利居贞。',
+      '九四：随有获，贞凶。有孚在道，以明，何咎。',
+      '九五：孚于嘉，吉。',
+      '上六：拘系之，乃从维之。王用亨于西山。',
+    ],
+  },
+  '山风蛊': {
+    order: 18, core: '蛊', full: '山风蛊', gua: '蛊：元亨，利涉大川。先甲三日，后甲三日。',
+    yao: [
+      '初六：干父之蛊，有子，考无咎，厉终吉。',
+      '九二：干母之蛊，不可贞。',
+      '九三：干父之蛊，小有悔，无大咎。',
+      '六四：裕父之蛊，往见吝。',
+      '六五：干父之蛊，用誉。',
+      '上九：不事王侯，高尚其事。',
+    ],
+  },
+  '地泽临': {
+    order: 19, core: '临', full: '地泽临', gua: '临：元，亨，利，贞。至于八月有凶。',
+    yao: [
+      '初九：咸临，贞吉。',
+      '九二：咸临，吉无不利。',
+      '六三：甘临，无攸利。既忧之，无咎。',
+      '六四：至临，无咎。',
+      '六五：知临，大君之宜，吉。',
+      '上六：敦临，吉无咎。',
+    ],
+  },
+  '风地观': {
+    order: 20, core: '观', full: '风地观', gua: '观：盥而不荐，有孚颙若。',
+    yao: [
+      '初六：童观，小人无咎，君子吝。',
+      '六二：窥观，利女贞。',
+      '六三：观我生，进退。',
+      '六四：观国之光，利用宾于王。',
+      '九五：观我生，君子无咎。',
+      '上九：观其生，君子无咎。',
+    ],
+  },
+  '火雷噬嗑': {
+    order: 21, core: '噬嗑', full: '火雷噬嗑', gua: '噬嗑：亨。利用狱。',
+    yao: [
+      '初九：履校灭趾，无咎。〔一作屦校灭趾〕',
+      '六二：噬肤灭鼻，无咎。',
+      '六三：噬腊肉，遇毒；小吝，无咎。',
+      '九四：噬乾胏，得金矢，利艰贞，吉。',
+      '六五：噬乾肉，得黄金，贞厉，无咎。',
+      '上九：何校灭耳，凶。',
+    ],
+  },
+  '山火贲': {
+    order: 22, core: '贲', full: '山火贲', gua: '贲：亨，小利有攸往。〔一作小利有所往〕',
+    yao: [
+      '初九：贲其趾，舍车而徒。',
+      '六二：贲其须。',
+      '九三：贲如濡如，永贞吉。',
+      '六四：贲如皤如，白马翰如，匪寇婚媾。',
+      '六五：贲于丘园，束帛戋戋，吝，终吉。',
+      '上九：白贲，无咎。',
+    ],
+  },
+  '山地剥': {
+    order: 23, core: '剥', full: '山地剥', gua: '剥：不利有攸往。',
+    yao: [
+      '初六：剥床以足，蔑贞凶。',
+      '六二：剥床以辨，蔑贞凶。',
+      '六三：剥之，无咎。',
+      '六四：剥床以肤，凶。',
+      '六五：贯鱼，以宫人宠，无不利。',
+      '上九：硕果不食，君子得舆，小人剥庐。',
+    ],
+  },
+  '地雷复': {
+    order: 24, core: '复', full: '地雷复', gua: '复：亨。出入无疾，朋来无咎。反复其道，七日来复，利有攸往。',
+    yao: [
+      '初九：不远复，无祗悔，元吉。〔一作不复远〕',
+      '六二：休复，吉。',
+      '六三：频复，厉无咎。',
+      '六四：中行独复。',
+      '六五：敦复，无悔。',
+      '上六：迷复，凶，有灾眚。用行师，终有大败，以其国君，凶；至于十年，不克征。',
+    ],
+  },
+  '天雷无妄': {
+    order: 25, core: '无妄', full: '天雷无妄', gua: '无妄：元亨，利贞。其匪正有眚，不利有攸往。',
+    yao: [
+      '初九：无妄，往吉。',
+      '六二：不耕获，不菑畬，则利有攸往。',
+      '六三：无妄之灾，或系之牛，行人之得，邑人之灾。',
+      '九四：可贞，无咎。',
+      '九五：无妄之疾，勿药有喜。',
+      '上九：无妄，行有眚，无攸利。',
+    ],
+  },
+  '山天大畜': {
+    order: 26, core: '大畜', full: '山天大畜', gua: '大畜：利贞，不家食吉，利涉大川。',
+    yao: [
+      '初九：有厉利已。',
+      '九二：舆说辐。〔一作舆说輹〕',
+      '九三：良马逐，利艰贞。曰闲舆卫，利有攸往。',
+      '六四：童牛之牿，元吉。',
+      '六五：豶豕之牙，吉。',
+      '上九：何天之衢，亨。',
+    ],
+  },
+  '山雷颐': {
+    order: 27, core: '颐', full: '山雷颐', gua: '颐：贞吉。观颐，自求口实。',
+    yao: [
+      '初九：舍尔灵龟，观我朵颐，凶。',
+      '六二：颠颐，拂经，于丘颐，征凶。',
+      '六三：拂颐，贞凶，十年勿用，无攸利。',
+      '六四：颠颐，吉，虎视眈眈，其欲逐逐，无咎。',
+      '六五：拂经，居贞吉，不可涉大川。',
+      '上九：由颐，厉吉，利涉大川。',
+    ],
+  },
+  '泽风大过': {
+    order: 28, core: '大过', full: '泽风大过', gua: '大过：栋桡，利有攸往，亨。',
+    yao: [
+      '初六：藉用白茅，无咎。',
+      '九二：枯杨生稊，老夫得其女妻，无不利。',
+      '九三：栋桡，凶。',
+      '九四：栋隆，吉；有它吝。',
+      '九五：枯杨生华，老妇得士夫，无咎无誉。',
+      '上六：过涉灭顶，凶，无咎。',
+    ],
+  },
+  '坎为水': {
+    order: 29, core: '坎', full: '坎为水', gua: '坎：习坎，有孚，维心亨，行有尚。',
+    yao: [
+      '初六：习坎，入于坎窞，凶。',
+      '九二：坎有险，求小得。',
+      '六三：来之坎坎，险且枕，入于坎窞，勿用。',
+      '六四：樽酒簋贰，用缶，纳约自牖，终无咎。',
+      '九五：坎不盈，祗既平，无咎。',
+      '上六：系用徽纆，置于丛棘，三岁不得，凶。',
+    ],
+  },
+  '离为火': {
+    order: 30, core: '离', full: '离为火', gua: '离：利贞，亨。畜牝牛，吉。',
+    yao: [
+      '初九：履错然，敬之无咎。',
+      '六二：黄离，元吉。',
+      '九三：日昃之离，不鼓缶而歌，则大耋之嗟，凶。',
+      '九四：突如其来如，焚如，死如，弃如。',
+      '六五：出涕沱若，戚嗟若，吉。',
+      '上九：王用出征，有嘉折首，获匪其丑，无咎。〔一作获其匪丑〕',
+    ],
+  },
+  '泽山咸': {
+    order: 31, core: '咸', full: '泽山咸', gua: '咸：亨，利贞，取女吉。',
+    yao: [
+      '初六：咸其拇。',
+      '六二：咸其腓，凶，居吉。',
+      '九三：咸其股，执其随，往吝。',
+      '九四：贞吉，悔亡，憧憧往来，朋从尔思。',
+      '九五：咸其脢，无悔。',
+      '上六：咸其辅颊舌。',
+    ],
+  },
+  '雷风恒': {
+    order: 32, core: '恒', full: '雷风恒', gua: '恒：亨，无咎，利贞，利有攸往。',
+    yao: [
+      '初六：浚恒，贞凶，无攸利。',
+      '九二：悔亡。',
+      '九三：不恒其德，或承之羞，贞吝。',
+      '九四：田无禽。',
+      '六五：恒其德，贞，妇人吉，夫子凶。',
+      '上六：振恒，凶。',
+    ],
+  },
+  '天山遁': {
+    order: 33, core: '遁', full: '天山遁', gua: '遁：亨，小利贞。',
+    yao: [
+      '初六：遁尾，厉，勿用有攸往。',
+      '六二：执之用黄牛之革，莫之胜说。',
+      '九三：系遁，有疾厉，畜臣妾吉。',
+      '九四：好遁，君子吉，小人否。',
+      '九五：嘉遁，贞吉。',
+      '上九：肥遁，无不利。',
+    ],
+  },
+  '雷天大壮': {
+    order: 34, core: '大壮', full: '雷天大壮', gua: '大壮：利贞',
+    yao: [
+      '初九：壮于趾，征凶，有孚。',
+      '九二：贞吉。',
+      '九三：小人用壮，君子用罔，贞厉。羝羊触藩，羸其角。',
+      '九四：贞吉悔亡，藩决不羸，壮于大舆之輹。',
+      '六五：丧羊于易，无悔。',
+      '上六：羝羊触藩，不能退，不能遂，无攸利，艰则吉。',
+    ],
+  },
+  '火地晋': {
+    order: 35, core: '晋', full: '火地晋', gua: '晋：康侯用锡马蕃庶，昼日三接。',
+    yao: [
+      '初六：晋如，摧如，贞吉。罔孚，裕无咎。',
+      '六二：晋如，愁如，贞吉。受兹介福，于其王母。',
+      '六三：众允，悔亡。',
+      '九四：晋如硕鼠，贞厉。',
+      '六五：悔亡，失得勿恤，往吉，无不利。',
+      '上九：晋其角，维用伐邑，厉吉无咎，贞吝。',
+    ],
+  },
+  '地火明夷': {
+    order: 36, core: '明夷', full: '地火明夷', gua: '明夷：利艰贞。',
+    yao: [
+      '初九：明夷于飞，垂其翼。君子于行，三日不食，有攸往，主人有言。',
+      '六二：明夷，夷于左股，用拯马壮，吉。',
+      '九三：明夷于南狩，得其大首，不可疾贞。',
+      '六四：入于左腹，获明夷之心，出于门庭。〔一作于出门庭〕',
+      '六五：箕子之明夷，利贞。',
+      '上六：不明晦，初登于天，后入于地。',
+    ],
+  },
+  '风火家人': {
+    order: 37, core: '家人', full: '风火家人', gua: '家人：利女贞。',
+    yao: [
+      '初九：闲有家，悔亡。',
+      '六二：无攸遂，在中馈，贞吉。',
+      '九三：家人嗃嗃，悔厉吉；妇子嘻嘻，终吝。',
+      '六四：富家，大吉。',
+      '九五：王假有家，勿恤吉。〔一作勿恤往吉〕',
+      '上九：有孚威如，终吉。',
+    ],
+  },
+  '火泽睽': {
+    order: 38, core: '睽', full: '火泽睽', gua: '睽：小事吉。',
+    yao: [
+      '初九：悔亡，丧马勿逐，自复；见恶人无咎。',
+      '九二：遇主于巷，无咎。',
+      '六三：见舆曳，其牛掣，其人天且劓，无初有终。',
+      '九四：睽孤，遇元夫，交孚，厉无咎。',
+      '六五：悔亡，厥宗噬肤，往何咎。',
+      '上九：睽孤，见豕负涂，载鬼一车，先张之弧，后说之弧，匪寇婚媾，往遇雨则吉。',
+    ],
+  },
+  '水山蹇': {
+    order: 39, core: '蹇', full: '水山蹇', gua: '蹇：利西南，不利东北；利见大人，贞吉。',
+    yao: [
+      '初六：往蹇，来誉。',
+      '六二：王臣蹇蹇，匪躬之故。',
+      '九三：往蹇来反。',
+      '六四：往蹇来连。',
+      '九五：大蹇朋来。',
+      '上六：往蹇来硕，吉；利见大人。',
+    ],
+  },
+  '雷水解': {
+    order: 40, core: '解', full: '雷水解', gua: '解：利西南，无所往，其来复吉。有攸往，夙吉。',
+    yao: [
+      '初六：无咎。',
+      '九二：田获三狐，得黄矢，贞吉。',
+      '六三：负且乘，致寇至，贞吝。',
+      '九四：解而拇，朋至斯孚。',
+      '六五：君子维有解，吉；有孚于小人。',
+      '上六：公用射隼于高墉之上，获之，无不利。',
+    ],
+  },
+  '山泽损': {
+    order: 41, core: '损', full: '山泽损', gua: '损：有孚，元吉，无咎，可贞，利有攸往。曷之用，二簋可用享。',
+    yao: [
+      '初九：已事遄往，无咎，酌损之。〔一作巳事遄往〕',
+      '九二：利贞，征凶，弗损，益之。',
+      '六三：三人行，则损一人；一人行，则得其友。',
+      '六四：损其疾，使遄有喜，无咎。',
+      '六五：或益之，十朋之龟弗克违，元吉。',
+      '上九：弗损益之，无咎，贞吉，利有攸往，得臣无家。',
+    ],
+  },
+  '风雷益': {
+    order: 42, core: '益', full: '风雷益', gua: '益：利有攸往，利涉大川。',
+    yao: [
+      '初九：利用为大作，元吉，无咎。',
+      '六二：或益之，十朋之龟弗克违，永贞吉。王用享于帝，吉。',
+      '六三：益之用凶事，无咎。有孚中行，告公用圭。',
+      '六四：中行，告公从。利用为依迁国。',
+      '九五：有孚惠心，勿问元吉。有孚惠我德。',
+      '上九：莫益之，或击之，立心勿恒，凶。',
+    ],
+  },
+  '泽天夬': {
+    order: 43, core: '夬', full: '泽天夬', gua: '夬：扬于王庭，孚号，有厉，告自邑，不利即戎，利有攸往。',
+    yao: [
+      '初九：壮于前趾，往不胜为咎。〔一作往不胜为吝〕',
+      '九二：惕号，莫夜有戎，勿恤。',
+      '九三：壮于頄，有凶。君子夬夬，独行，遇雨，若濡，有愠，无咎。',
+      '九四：臀无肤，其行次且。牵羊悔亡，闻言不信。',
+      '九五：苋陆夬夬，中行无咎。',
+      '上六：无号，终有凶。',
+    ],
+  },
+  '天风姤': {
+    order: 44, core: '姤', full: '天风姤', gua: '姤：女壮，勿用取女。',
+    yao: [
+      '初六：系于金柅，贞吉，有攸往，见凶，羸豕孚踟躅。〔一作羸豕踟躅〕',
+      '九二：包有鱼，无咎，不利宾。',
+      '九三：臀无肤，其行次且，厉，无大咎。',
+      '九四：包无鱼，起凶。',
+      '九五：以杞包瓜，含章，有陨自天。',
+      '上九：姤其角，吝，无咎。',
+    ],
+  },
+  '泽地萃': {
+    order: 45, core: '萃', full: '泽地萃', gua: '萃：亨。王假有庙，利见大人，亨，利贞。用大牲吉，利有攸往。',
+    yao: [
+      '初六：有孚不终，乃乱乃萃，若号一握为笑，勿恤，往无咎。',
+      '六二：引吉，无咎，孚乃利用禴。',
+      '六三：萃如，嗟如，无攸利，往无咎，小吝。',
+      '九四：大吉，无咎。',
+      '九五：萃有位，无咎。匪孚，元永贞，悔亡。',
+      '上六：赍咨涕洟，无咎。',
+    ],
+  },
+  '地风升': {
+    order: 46, core: '升', full: '地风升', gua: '升：元亨，用见大人，勿恤，南征吉。',
+    yao: [
+      '初六：允升，大吉。',
+      '九二：孚乃利用禴，无咎。',
+      '九三：升虚邑。',
+      '六四：王用亨于岐山，吉无咎。',
+      '六五：贞吉，升阶。',
+      '上六：冥升，利于不息之贞。',
+    ],
+  },
+  '泽水困': {
+    order: 47, core: '困', full: '泽水困', gua: '困：亨，贞，大人吉，无咎，有言不信。',
+    yao: [
+      '初六：臀困于株木，入于幽谷，三岁不觌。',
+      '九二：困于酒食，朱绂方来，利用亨祀，征凶，无咎。',
+      '六三：困于石，据于蒺藜，入于其宫，不见其妻，凶。',
+      '九四：来徐徐，困于金车，吝，有终。',
+      '九五：劓刖，困于赤绂，乃徐有说，利用祭祀。',
+      '上六：困于葛藟，于臲卼，曰动悔。有悔，征吉。',
+    ],
+  },
+  '水风井': {
+    order: 48, core: '井', full: '水风井', gua: '井：改邑不改井，无丧无得，往来井井。汔至，亦未繘井，羸其瓶，凶。',
+    yao: [
+      '初六：井泥不食，旧井无禽。',
+      '九二：井谷射鲋，瓮敝漏。',
+      '九三：井渫不食，为我心恻，可用汲，王明，并受其福。〔一作为我民恻〕',
+      '六四：井甃，无咎。',
+      '九五：井冽，寒泉食。',
+      '上六：井收勿幕，有孚元吉。',
+    ],
+  },
+  '泽火革': {
+    order: 49, core: '革', full: '泽火革', gua: '革：己日乃孚，元亨利贞，悔亡。〔一作巳日乃孚〕',
+    yao: [
+      '初九：巩用黄牛之革。',
+      '六二：己日乃革之，征吉，无咎。〔一作巳日乃革之〕',
+      '九三：征凶，贞厉，革言三就，有孚。',
+      '九四：悔亡，有孚改命，吉。',
+      '九五：大人虎变，未占有孚。',
+      '上六：君子豹变，小人革面，征凶，居贞吉。',
+    ],
+  },
+  '火风鼎': {
+    order: 50, core: '鼎', full: '火风鼎', gua: '鼎：元吉，亨。',
+    yao: [
+      '初六：鼎颠趾，利出否，得妾以其子，无咎。',
+      '九二：鼎有实，我仇有疾，不我能即，吉。',
+      '九三：鼎耳革，其行塞，雉膏不食，方雨亏悔，终吉。',
+      '九四：鼎折足，覆公餗，其形渥，凶。',
+      '六五：鼎黄耳，金铉，利贞。',
+      '上九：鼎玉铉，大吉，无不利。',
+    ],
+  },
+  '震为雷': {
+    order: 51, core: '震', full: '震为雷', gua: '震：亨。震来虩虩，笑言哑哑。震惊百里，不丧匕鬯。',
+    yao: [
+      '初九：震来虩虩，后笑言哑哑，吉。',
+      '六二：震来厉，亿丧贝，跻于九陵，勿逐，七日得。',
+      '六三：震苏苏，震行无眚。',
+      '九四：震遂泥。',
+      '六五：震往来厉，亿无丧，有事。',
+      '上六：震索索，视矍矍，征凶。震不于其躬，于其邻，无咎。婚媾有言。',
+    ],
+  },
+  '艮为山': {
+    order: 52, core: '艮', full: '艮为山', gua: '艮：艮其背，不获其身，行其庭，不见其人，无咎。',
+    yao: [
+      '初六：艮其趾，无咎，利永贞。',
+      '六二：艮其腓，不拯其随，其心不快。',
+      '九三：艮其限，列其夤，厉薰心。',
+      '六四：艮其身，无咎。',
+      '六五：艮其辅，言有序，悔亡。',
+      '上九：敦艮，吉。',
+    ],
+  },
+  '风山渐': {
+    order: 53, core: '渐', full: '风山渐', gua: '渐：女归吉，利贞。',
+    yao: [
+      '初六：鸿渐于干，小子厉，有言，无咎。',
+      '六二：鸿渐于磐，饮食衎衎，吉。',
+      '九三：鸿渐于陆，夫征不复，妇孕不育，凶；利御寇。',
+      '六四：鸿渐于木，或得其桷，无咎。',
+      '九五：鸿渐于陵，妇三岁不孕，终莫之胜，吉。',
+      '上九：鸿渐于逵，其羽可用为仪，吉。〔一作鸿渐于陆〕',
+    ],
+  },
+  '雷泽归妹': {
+    order: 54, core: '归妹', full: '雷泽归妹', gua: '归妹：征凶，无攸利。',
+    yao: [
+      '初九：归妹以娣，跛能履，征吉。',
+      '九二：眇能视，利幽人之贞。',
+      '六三：归妹以须，反归以娣。',
+      '九四：归妹愆期，迟归有时。',
+      '六五：帝乙归妹，其君之袂，不如其娣之袂良，月几望，吉。',
+      '上六：女承筐无实，士刲羊无血，无攸利。',
+    ],
+  },
+  '雷火丰': {
+    order: 55, core: '丰', full: '雷火丰', gua: '丰：亨，王假之，勿忧，宜日中。',
+    yao: [
+      '初九：遇其配主，虽旬无咎，往有尚。',
+      '六二：丰其蔀，日中见斗，往得疑疾，有孚发若，吉。',
+      '九三：丰其沛，日中见沫，折其右肱，无咎。〔一作日中见昧〕',
+      '九四：丰其蔀，日中见斗，遇其夷主，吉。',
+      '六五：来章，有庆誉，吉。',
+      '上六：丰其屋，蔀其家，窥其户，阒其无人，三岁不觌，凶。',
+    ],
+  },
+  '火山旅': {
+    order: 56, core: '旅', full: '火山旅', gua: '旅：小亨，旅贞吉。',
+    yao: [
+      '初六：旅琐琐，斯其所取灾。',
+      '六二：旅即次，怀其资，得童仆贞。',
+      '九三：旅焚其次，丧其童仆，贞厉。',
+      '九四：旅于处，得其资斧，我心不快。',
+      '六五：射雉一矢亡，终以誉命。',
+      '上九：鸟焚其巢，旅人先笑后号啕。丧牛于易，凶。',
+    ],
+  },
+  '巽为风': {
+    order: 57, core: '巽', full: '巽为风', gua: '巽：小亨，利攸往，利见大人。',
+    yao: [
+      '初六：进退，利武人之贞。',
+      '九二：巽在床下，用史巫纷若，吉，无咎。',
+      '九三：频巽，吝。',
+      '六四：悔亡，田获三品。',
+      '九五：贞吉悔亡，无不利。无初有终，先庚三日，后庚三日，吉。',
+      '上九：巽在床下，丧其资斧，贞凶。',
+    ],
+  },
+  '兑为泽': {
+    order: 58, core: '兑', full: '兑为泽', gua: '兑：亨，利贞。',
+    yao: [
+      '初九：和兑，吉。',
+      '九二：孚兑，吉，悔亡。',
+      '六三：来兑，凶。',
+      '九四：商兑，未宁，介疾有喜。',
+      '九五：孚于剥，有厉。',
+      '上六：引兑。',
+    ],
+  },
+  '风水涣': {
+    order: 59, core: '涣', full: '风水涣', gua: '涣：亨。王假有庙，利涉大川，利贞。',
+    yao: [
+      '初六：用拯马壮，吉。',
+      '九二：涣奔其机，悔亡。',
+      '六三：涣其躬，无悔。',
+      '六四：涣其群，元吉。涣有丘，匪夷所思。',
+      '九五：涣汗其大号，涣王居，无咎。',
+      '上九：涣其血，去逖出，无咎。',
+    ],
+  },
+  '水泽节': {
+    order: 60, core: '节', full: '水泽节', gua: '节：亨。苦节，不可贞。',
+    yao: [
+      '初九：不出户庭，无咎。',
+      '九二：不出门庭，凶。',
+      '六三：不节若，则嗟若，无咎。',
+      '六四：安节，亨。',
+      '九五：甘节，吉；往有尚。',
+      '上六：苦节，贞凶，悔亡。',
+    ],
+  },
+  '风泽中孚': {
+    order: 61, core: '中孚', full: '风泽中孚', gua: '中孚：豚鱼吉，利涉大川，利贞。',
+    yao: [
+      '初九：虞吉，有它不燕。',
+      '九二：鸣鹤在阴，其子和之，我有好爵，吾与尔靡之。',
+      '六三：得敌，或鼓或罢，或泣或歌。',
+      '六四：月几望，马匹亡，无咎。',
+      '九五：有孚挛如，无咎。',
+      '上九：翰音登于天，贞凶。',
+    ],
+  },
+  '雷山小过': {
+    order: 62, core: '小过', full: '雷山小过', gua: '小过：亨，利贞，可小事，不可大事。飞鸟遗之音，不宜上，宜下，大吉。',
+    yao: [
+      '初六：飞鸟以凶。',
+      '六二：过其祖，遇其妣；不及其君，遇其臣；无咎。',
+      '九三：弗过防之，从或戕之，凶。',
+      '九四：无咎，弗过遇之。往厉必戒，勿用永贞。',
+      '六五：密云不雨，自我西郊，公弋取彼在穴。',
+      '上六：弗遇过之，飞鸟离之，凶，是谓灾眚。',
+    ],
+  },
+  '水火既济': {
+    order: 63, core: '既济', full: '水火既济', gua: '既济：亨，小利贞，初吉终乱。',
+    yao: [
+      '初九：曳其轮，濡其尾，无咎。',
+      '六二：妇丧其茀，勿逐，七日得。',
+      '九三：高宗伐鬼方，三年克之，小人勿用。',
+      '六四：繻有衣袽，终日戒。〔一作𦈡有衣袽〕',
+      '九五：东邻杀牛，不如西邻之禴祭，实受其福。',
+      '上六：濡其首，厉。',
+    ],
+  },
+  '火水未济': {
+    order: 64, core: '未济', full: '火水未济', gua: '未济：亨，小狐汔济，濡其尾，无攸利。',
+    yao: [
+      '初六：濡其尾，吝。',
+      '九二：曳其轮，贞吉。',
+      '六三：未济，征凶，利涉大川。',
+      '九四：贞吉，悔亡，震用伐鬼方，三年有赏于大国。',
+      '六五：贞吉，无悔，君子之光，有孚，吉。',
+      '上九：有孚于饮酒，无咎，濡其首，有孚失是。',
+    ],
+  },
+};
+
+/** 卦核（单字）→ 全名；用于只给「屯」「乾」这类别名的输入 */
+const CORE_OF = Object.fromEntries(Object.values(YIJING).map((e) => [e.core, e.full]));
+
+/**
+ * 取卦经文。接受京房全名（水雷屯）、卦名（屯）或带书名号的写法，取不到返回 null。
+ * @param {string} name
+ */
+function yijingOf(name) {
+  const key = String(name ?? '').replace(/[《》\s「」]/g, '');
+  if (!key) return null;
+  return YIJING[key] || YIJING[CORE_OF[key]] || null;
+}
+
+/**
+ * 取某一位的爻辞原文。pos 1..6 为六爻（自下而上），7 为乾用九 / 坤用六；取不到返回 ''。
+ * @param {{yao:string[]}|null} entry yijingOf 的结果
+ * @param {number} pos
+ */
+function yaoAt(entry, pos) {
+  if (!entry) return '';
+  const p = Number(pos);
+  if (!Number.isInteger(p) || p < 1 || p > 7) return '';
+  return entry.yao[p - 1] ?? '';
+}
+
+/**
+ * 排出「经文原文」这一段：本卦卦辞 + 动爻爻辞（六爻多动则逐条）+ 互卦卦辞 + 变卦卦辞。
+ * 六爻皆变且为乾坤时补用九 / 用六——这是京房体系里的动爻取辞规则，不是本模块的发挥。
+ * 无卦可查时返回 ''，调用方据此省略整节，不影响其它解释。
+ * @param {{benName?:string, huName?:string, bianName?:string, movingPositions?:number[]}} opts
+ */
+function jingText({ benName, huName, bianName, movingPositions } = {}) {
+  const ben = yijingOf(benName);
+  if (!ben) return '';
+  const out = [`本卦「${ben.full}」`, ben.gua];
+  const moving = [...new Set((Array.isArray(movingPositions) ? movingPositions : [])
+    .map((p) => Number(p)).filter((p) => Number.isInteger(p) && p >= 1 && p <= 6))].sort((a, b) => a - b);
+  for (const p of moving) {
+    const line = yaoAt(ben, p);
+    if (line) out.push(line);
+  }
+  if (moving.length === 6) {
+    const yong = yaoAt(ben, 7);
+    if (yong) out.push(yong);
+  }
+  if (!moving.length) out.push('六爻皆静，无动爻，只按卦辞看。');
+  const hu = yijingOf(huName);
+  if (hu && hu.full !== ben.full) out.push(`互卦「${hu.full}」`, hu.gua);
+  const bian = yijingOf(bianName);
+  if (bian && bian.full !== ben.full) {
+    out.push(`变卦「${bian.full}」`, bian.gua);
+  }
+  if (out.some((l) => l.includes('〔'))) out.push('〔一作…〕为古籍异文，非正文改写。');
+  return out.join('\n');
+}
+
+/** 经文条目总数：64 卦辞 + 386 爻条，供测试与体积监控引用 */
+const YIJING_COUNTS = {
+  gua: Object.keys(YIJING).length,
+  yao: Object.values(YIJING).reduce((s, e) => s + e.yao.length, 0),
+};
+
+return { YIJING, yijingOf, yaoAt, jingText, YIJING_COUNTS };
+})();
+
 __mods.liuyao = (function () {
 // 六爻（纳甲）引擎：摇卦、装卦、六亲、六神、世应、变卦
 const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xunKongOf } = (__mods.calendar || {});
+const { jingText } = (__mods['yijing-text'] || {});
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -6513,6 +7314,9 @@ function buildLiuyao(input = {}) {
       body.labels = bodyLabels(body);
       return body;
     })(),
+    // 经文原文在排盘时就算好挂上来，解释层只负责摆位置：
+    // 这样 yijing-text 只进六爻/梅花那一个分块，不必为了原文把 12KB 塞进 8 个分块。
+    jing: jingText({ benName: ben.name, bianName: bian ? bian.name : '', movingPositions: moving.map((i) => i + 1) }),
   };
 }
 
@@ -6971,6 +7775,324 @@ function yingqiWindow(result, useGod, opts = {}) {
 return { chongOf, heOf, jinTuiOf, hexBody, bodyRelations, bodyLabels, HEXAGRAM_COUNT, hexagramFromBits, YONGSHEN_RULES, yongshenOf, tossLines, buildLiuyao, zhiElementOf, monthStateOf, dayRelationOf, yongshenStrength, FUSHEN_VERDICTS, fushenAccess, hexagramStrength, jinTuiPower, YINGQI_TEMPO, yingqiWindow };
 })();
 
+__mods['ziwei-zuoyao'] = (function () {
+// 紫微杂曜安星库（H4）：全表里通行、但本插件默认盘不排的十二颗杂曜。
+// 每条给：定宫依据、安星诀原文、逐宫查表或公式、五行与基本义、出处与互核情况。
+//
+// 口径（三条硬规矩）：
+//  ① 只收「至少两处独立来源给出同一张表」的星；查不到的宁可不收，不凭记忆补一格。
+//  ② 诀文逐字照抄来源，转抄例子与诀文冲突时以诀文为准，冲突本身写进 note（例：天才的
+//     网络例子自相矛盾，见该条）。
+//  ③ 异名不合并：年支系的「蜚廉」与博士十二神的「飞廉」是两颗星，同名不同宫；
+//     「解神」按月安（月解），另有按年安的「年解」，两者都收、都标依据，不互相替换。
+// 龙德／月德同样按年支可安，但与岁前十二神的龙德同名而异宫，本库不另立（见 SKIPPED）。
+
+const { BRANCHES } = (__mods.calendar || {});
+
+const fix = (i) => ((i % 12) + 12) % 12;
+
+// ── 逐宫查表（键 = 依据值，值 = 地支序 0=子） ──────────────────
+
+// 解神（月解）：正二在申、三四在戌、五六在子、七八在寅、九十在辰、十一十二在午。
+// 另一写法「单月冲宫觅解神，双月还依单月辰」——按月建（正月起寅）取对冲，
+// 正月建寅冲申、三月建辰冲戌……与上表逐格相同，故两式互核通过。
+const TABLE_JIESHEN = { 1: 8, 2: 8, 3: 10, 4: 10, 5: 0, 6: 0, 7: 2, 8: 2, 9: 4, 10: 4, 11: 6, 12: 6 };
+
+// 天巫：正五九月在巳、二六十月在申、三七十一月在寅、四八十二月在亥（巳申寅亥四生位轮十二月）。
+const TABLE_TIANWU = { 1: 5, 5: 5, 9: 5, 2: 8, 6: 8, 10: 8, 3: 2, 7: 2, 11: 2, 4: 11, 8: 11, 12: 11 };
+
+// 天月：一犬二蛇三在龙，四虎五羊六兔宫，七猪八羊九在虎，十马冬犬腊寅中。
+const TABLE_TIANUE = { 1: 10, 2: 5, 3: 4, 4: 2, 5: 7, 6: 3, 7: 11, 8: 7, 9: 2, 10: 6, 11: 10, 12: 2 };
+
+// 阴煞：正七月在寅、二八月在子、三九月在戌、四十月在申、五十一月在午、六十二月在辰。
+const TABLE_YINSHA = { 1: 2, 7: 2, 2: 0, 8: 0, 3: 10, 9: 10, 4: 8, 10: 8, 5: 6, 11: 6, 6: 4, 12: 4 };
+
+// 天官贵人（生年干）：甲羊乙龙壬犬宜，丙蛇丁虎己辛鸡，戊兔庚猪癸宜马。
+// 天福贵人（生年干）：甲爱金鸡乙爱猴，丁猪丙鼠己虎头，戊寻玉兔庚壬马，辛癸逢蛇爵禄荣。
+// 另有合并诀「甲喜羊鸡乙龙猴……」把两星排在同一行，逐干拆开与本表全同；
+// 戊年两星同在卯宫（合并诀只举「戊玉兔」一格，两诀合看才知道是同居）。
+const TABLE_TIANGUAN = { 甲: 7, 乙: 4, 丙: 5, 丁: 2, 戊: 3, 己: 9, 庚: 11, 辛: 9, 壬: 10, 癸: 6 };
+const TABLE_TIANFU = { 甲: 9, 乙: 8, 丙: 0, 丁: 11, 戊: 3, 己: 2, 庚: 6, 辛: 5, 壬: 6, 癸: 5 };
+
+// 天厨（生年干）：甲丁食蛇口，乙戊辛马方，丙从鼠口得，己食于猴房，庚食虎头上，壬鸡癸猪堂。
+// 另一传本「甲丁蛇位号天厨，丙鼠壬鸡癸伴猪，乙戊辛干皆向马，己猴庚虎福神殊」——字面不同、
+// 逐干落宫相同；另有排盘文直接列出十干表，三处一致。
+const TABLE_TIANCHU = { 甲: 5, 乙: 6, 丙: 0, 丁: 5, 戊: 6, 己: 8, 庚: 2, 辛: 6, 壬: 9, 癸: 11 };
+
+// 蜚廉（生年支）：「蜚廉分方顺年移，西南东北各轮之」——子年起申宫，按西方（申酉戌）、
+// 南方（巳午未）、东方（寅卯辰）、北方（亥子丑）四组顺轮十二年支。
+const TABLE_FEILIAN = { 子: 8, 丑: 9, 寅: 10, 卯: 5, 辰: 6, 巳: 7, 午: 2, 未: 3, 申: 4, 酉: 11, 戌: 0, 亥: 1 };
+
+// 天德／年解（生年支）：「天德星君起酉宫，顺至生年定其踪；年解戌宫逆行去，数至生年可解凶。」
+const TIANDE_START = 9;   // 酉起子，顺行
+const NIANJIE_START = 10; // 戌起子，逆行
+
+// ── 库（顺序即面板与全文的展示顺序） ──────────────────────────
+
+const ZUOYAO_LIB = [
+  {
+    name: '解神',
+    basis: '生月',
+    type: '吉星',
+    wuxing: '阴水（一说属土，通行表不取五行断）',
+    verse: '正二在申三四在戍，五六在子七八在寅，九十月坐于辰宫，十一十二在午宫。\n（另一式：单月冲宫觅解神，双月还依单月辰。）',
+    table: TABLE_JIESHEN,
+    meaning: '消灾解厄：灾厄临身前先有感应，逢凶化吉之力。与按生年安的「年解」不是同一颗星。',
+    temple: null,
+    refs: ['https://m.yi958.com/ziwei/posts/15175', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://wk.baidu.com/view/2d750d65783e0912a2162a58'],
+    check: '三源同表；两式（查表法／月建对冲法）逐月互核一致',
+    note: '解神即「月解」，网络转抄常与年解混为一条，本库分列两星。',
+  },
+  {
+    name: '天巫',
+    basis: '生月',
+    type: '吉星',
+    wuxing: '阳土',
+    verse: '正五九月在巳，二六十月在申，三七十一在寅，四八十二在亥。\n（另一式：巳申寅亥天巫位，分轮十二月星君。）',
+    table: TABLE_TIANWU,
+    meaning: '升迁与香火：主地位提升、近宗教玄学；会吉星则名声显。',
+    temple: null,
+    refs: ['https://m.yi958.com/ziwei/posts/15175', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://wk.baidu.com/view/2d750d65783e0912a2162a58'],
+    check: '三源同表（四生位轮十二月，两式同一）',
+    note: '',
+  },
+  {
+    name: '天月',
+    basis: '生月',
+    type: '煞星',
+    wuxing: '阴土',
+    verse: '一犬二蛇三在龙，四虎五羊六兔宫，七猪八羊九在虎，十马冬犬腊寅中。',
+    table: TABLE_TIANUE,
+    meaning: '病符之星：主小病缠身、体弱，也主与世无争、缺主见。',
+    temple: null,
+    refs: ['https://m.yi958.com/ziwei/posts/15175', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://zhidao.baidu.com/question/252564654384154444.html'],
+    check: '三源逐字同诀（八月在未、十二月在寅两处最易抄错，三源皆同）',
+    note: '',
+  },
+  {
+    name: '阴煞',
+    basis: '生月',
+    type: '煞星',
+    wuxing: '阴土',
+    verse: '正七月在寅，二八月在子，三九月在戍，四十月在申，五十一在午，六十二在辰。\n（另一式：寅子戌，申午辰，分六月，阴煞临。）',
+    table: TABLE_YINSHA,
+    meaning: '疑心与暗耗：主多疑、易受小人拖累，也主自我约束反省。',
+    temple: null,
+    refs: ['https://m.yi958.com/ziwei/posts/15175', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.meipian.cn/58g6z14p'],
+    check: '三源同表（隔六月同宫，正七寅、二八子……）',
+    note: '',
+  },
+  {
+    name: '天官',
+    basis: '生年干',
+    type: '吉星',
+    wuxing: '阳土',
+    verse: '甲羊乙龙壬犬宜，丙蛇丁虎己辛鸡，戊兔庚猪癸宜马，其人贵显可先知。',
+    table: TABLE_TIANGUAN,
+    meaning: '主贵显、清闲：喜入命宫或官禄宫；与天同、天梁庙地同宫主尊荣高寿，余者平常。',
+    temple: ['寅', '申', '巳', '卯'],
+    refs: ['https://ziweiscience.com/index.php/2024-06-25/anxingfa/', 'https://m.yi958.com/ziwei/posts/15175', 'https://www.daowen.com/book/content/226294168/14993368.html'],
+    check: '两诀（分立式／合并式）逐干互核一致；入庙四宫另见专论',
+    note: '己、辛同年干落酉，属原表如此，不是抄重。',
+  },
+  {
+    name: '天福',
+    basis: '生年干',
+    type: '吉星',
+    wuxing: '阳土',
+    verse: '甲爱金鸡乙爱猴，丁猪丙鼠己虎头，戊寻玉兔庚壬马，辛癸逢蛇爵禄荣。',
+    table: TABLE_TIANFU,
+    meaning: '主爵禄、吉祥：乐于助人、爱享受，运限逢之受人注目。',
+    temple: ['寅', '申', '巳', '卯'],
+    refs: ['https://ziweiscience.com/index.php/2024-06-25/anxingfa/', 'https://m.yi958.com/ziwei/posts/15175', 'https://www.daowen.com/book/content/226294168/14993368.html'],
+    check: '两诀逐干互核一致；庚、壬同年干落午，戊年与天官同居卯宫',
+    note: '合并诀「壬犬马癸马蛇游」把壬午、癸巳排在一起，与分立式同。',
+  },
+  {
+    name: '天厨',
+    basis: '生年干',
+    type: '吉星',
+    wuxing: '阴土',
+    verse: '甲丁食蛇口，乙戊辛马方，丙从鼠口得，己食于猴房，庚食虎头上，壬鸡癸猪堂。\n（另传：甲丁蛇位号天厨，丙鼠壬鸡癸伴猪，乙戊辛干皆向马，己猴庚虎福神殊。）',
+    table: TABLE_TIANCHU,
+    meaning: '俸禄与口福：主食禄、公职，也主厨艺与鉴赏；会天才更显烹饪之资。',
+    temple: null,
+    refs: ['https://m.yi958.com/ziwei/posts/15175', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.bilibili.com/opus/1015667810277261321', 'https://baijiahao.baidu.com/s?id=1841437745877521371'],
+    check: '两字面不同的诀 + 一处十干明表，四处逐干全同',
+    note: '甲丁同居巳，乙戊辛同居午，是原表同宫而非抄重。',
+  },
+  {
+    name: '蜚廉',
+    basis: '生年支',
+    type: '煞星',
+    wuxing: '阴火',
+    verse: '蜚廉分方顺年移，西南东北各轮之。\n（释：子年起申宫，十二年支先西方申酉戌、次南方巳午未、续东方寅卯辰、最后北方亥子丑。）',
+    table: TABLE_FEILIAN,
+    meaning: '口舌是非：主小人、诽谤、虚惊，宜静不宜争。',
+    temple: null,
+    refs: ['http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.bilibili.com/opus/1015667810277261321'],
+    check: '两源同诀同释（王亭之中州派讲义与安星口诀本），四方位轮年支的落宫逐支一致',
+    note: '与博士十二神的「飞廉」同名异星：飞廉按禄存起、随大限顺逆，蜚廉只按生年支，两不相代。',
+  },
+  {
+    name: '天德',
+    basis: '生年支',
+    type: '吉星',
+    wuxing: '阳火',
+    verse: '天德星君起酉宫，顺至生年定其踪。',
+    formula: (c) => fix(TIANDE_START + c.yearBranch),
+    meaning: '福佑之星：主逢凶化吉、有扶助，与岁前十二神的「天德」同名异宫。',
+    temple: null,
+    refs: ['http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.bilibili.com/opus/1015667810277261321'],
+    check: '两源同诀（酉宫起子顺行）',
+    note: '岁前十二神里也有「天德」（太岁起顺数第十位），本盘两处都会出现，同名不同星，不可互换。',
+  },
+  {
+    name: '年解',
+    basis: '生年支',
+    type: '吉星',
+    wuxing: '阳水',
+    verse: '年解戌宫逆行去，数至生年可解凶。',
+    formula: (c) => fix(NIANJIE_START - c.yearBranch),
+    meaning: '一生灾厄的总闸：与按生月安的「解神（月解）」分属两颗，年解管大事、月解管当期。',
+    temple: null,
+    refs: ['http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.bilibili.com/opus/1015667810277261321'],
+    check: '两源同诀（戌宫起子逆行）',
+    note: '',
+  },
+  {
+    name: '天才',
+    basis: '命宫＋生年支',
+    type: '杂曜',
+    wuxing: '阳木',
+    verse: '命宫起子天才顺。\n（释：自命宫起子年，顺数至本生年支安之。）',
+    formula: (c) => fix(c.soulIndex + c.yearBranch),
+    meaning: '才智与技艺：主聪明、有专长，会天厨增烹饪之资，会主星庙旺方显。',
+    temple: null,
+    refs: ['https://ziweiscience.com/index.php/2024-06-25/anxingfa/', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.meipian.cn/58g6z14p'],
+    check: '三源同诀（命宫起子顺数生年支）',
+    note: '360doc 转抄的例子自相矛盾：说命宫在午、戌年生人，按诀数到辰（该盘夫妻宫正在辰），却写成「巳宫安天才」。以诀文为准，例子判为笔误。',
+  },
+  {
+    name: '天寿',
+    basis: '身宫＋生年支',
+    type: '杂曜',
+    wuxing: '阳土',
+    verse: '身宫起子天寿堂。\n（释：自身宫起子年，顺数至本生年支安之。）',
+    formula: (c) => fix(c.bodyIndex + c.yearBranch),
+    meaning: '寿年与长者缘：主稳重、近长辈，与天才对看（一按命宫、一按身宫）。',
+    temple: null,
+    refs: ['https://ziweiscience.com/index.php/2024-06-25/anxingfa/', 'http://www.360doc.cn/article/6029610_1149007117.html', 'https://m.meipian.cn/58g6z14p'],
+    check: '三源同诀；转抄例子「亥年生人身宫在卯→寅宫」与公式复算一致',
+    note: '',
+  },
+];
+
+// 按年支可安、但本库刻意不另立的星：写清楚为什么不留，免得日后「顺手补上」造成同名双宫。
+const ZUOYAO_SKIPPED = [
+  {
+    name: '龙德',
+    reason: '「龙德起羊（未）」按年支可安，但岁前十二神已有同名「龙德」（太岁起顺数第八位），两处同名异宫会让面板与断语打架。岁前那一套已在宫位神煞里呈现，故不另立。',
+    refs: ['https://m.bilibili.com/opus/1015667810277261321'],
+  },
+  {
+    name: '月德',
+    reason: '「月起巳」按年支安月德；只见于「年支六曜诀」一条脉络，且与神煞体系无对应，收进来会给出无法验证的庙旺断，故不收。',
+    refs: ['https://m.bilibili.com/opus/1015667810277261321', 'http://www.360doc.cn/article/6029610_1149007117.html'],
+  },
+];
+
+const ZUOYAO_NAMES = ZUOYAO_LIB.map((s) => s.name);
+
+/** 全表统计：供面板与测试核对「收了几颗、几颗有庙、几颗有明表」 */
+const ZUOYAO_STATS = Object.freeze({
+  total: ZUOYAO_LIB.length,
+  byBasis: Object.freeze(ZUOYAO_LIB.reduce((acc, s) => {
+    acc[s.basis] = (acc[s.basis] || 0) + 1;
+    return acc;
+  }, {})),
+  withTable: ZUOYAO_LIB.filter((s) => s.table).length,
+  withFormula: ZUOYAO_LIB.filter((s) => s.formula).length,
+  withTemple: ZUOYAO_LIB.filter((s) => s.temple && s.temple.length).length,
+  byType: Object.freeze(ZUOYAO_LIB.reduce((acc, s) => {
+    acc[s.type] = (acc[s.type] || 0) + 1;
+    return acc;
+  }, {})),
+  skipped: ZUOYAO_SKIPPED.map((s) => s.name),
+});
+
+/** 单颗星的落宫（表格优先，公式其次）；依据缺字段时返回 null，不猜宫。 */
+function zuoyaoBranch(star, ctx) {
+  if (star.table) {
+    const key = star.basis === '生月' ? ctx.lunarMonth
+      : star.basis === '生年干' ? ctx.yearStem
+        : star.basis === '生年支' ? BRANCHES[fix(ctx.yearBranch)]
+          : null;
+    if (key === null || key === undefined) return null;
+    const v = star.table[key];
+    return typeof v === 'number' ? fix(v) : null;
+  }
+  if (star.formula) {
+    // 四颗公式曜全都要生年支；天才另要命宫、天寿另要身宫。少一个就整颗不排。
+    if (typeof ctx.yearBranch !== 'number') return null;
+    if (star.basis === '命宫＋生年支' && typeof ctx.soulIndex !== 'number') return null;
+    if (star.basis === '身宫＋生年支' && typeof ctx.bodyIndex !== 'number') return null;
+    const v = star.formula(ctx);
+    return typeof v === 'number' && Number.isFinite(v) ? fix(v) : null;
+  }
+  return null;
+}
+
+/**
+ * 安十二颗杂曜。ctx = { lunarMonth, yearStem, yearBranch, soulIndex, bodyIndex }
+ * 返回 [{ name, type, branch, basis, verse }]，branch 为地支序。
+ * 任何一颗算不出宫位（例如没传命宫）就整颗跳过，绝不安到默认宫。
+ */
+function placeZuoyao(ctx = {}) {
+  const out = [];
+  for (const star of ZUOYAO_LIB) {
+    const branch = zuoyaoBranch(star, ctx);
+    if (branch === null) continue;
+    out.push({
+      name: star.name,
+      type: star.type,
+      branch,
+      basis: star.basis,
+      verse: star.verse,
+      meaning: star.meaning,
+      ...(star.temple && star.temple.length ? { temple: star.temple } : {}),
+      ...(star.temple && star.temple.includes(BRANCHES[branch]) ? { inTemple: true } : {}),
+    });
+  }
+  return out;
+}
+
+/** 一行摘要：全表收了哪些星、按什么定宫 */
+function zuoyaoBriefText() {
+  const groups = [];
+  for (const [basis, n] of Object.entries(ZUOYAO_STATS.byBasis)) {
+    groups.push(`${basis} ${ZUOYAO_LIB.filter((s) => s.basis === basis).map((s) => s.name).join('、')}（${n}）`);
+  }
+  return groups.join('　');
+}
+
+/**
+ * 安星诀全文（逐颗一行：星名＋定宫依据＋诀文＋互核情况）。
+ * 面板、独立页与「复制提问」共用这一段：外部模型只拿到盘面星名是不够的，
+ * 得知道这一颗是怎么定宫的，才不会把杂曜当成随意摆放的装饰。
+ */
+function zuoyaoVerseBlock(list) {
+  const rows = (list && list.length ? list : ZUOYAO_LIB);
+  return rows.map((s) => {
+    const star = ZUOYAO_LIB.find((x) => x.name === s.name) || s;
+    const at = typeof s.branch === 'number' ? `（本盘落${BRANCHES[fix(s.branch)]}宫）` : '';
+    return `${star.name}｜${star.basis}${at}｜${String(star.verse || '').replace(/\n/g, '')}｜互核：${star.check || '—'}`;
+  }).join('\n');
+}
+
+return { TABLE_JIESHEN, TABLE_TIANWU, TABLE_TIANUE, TABLE_YINSHA, TABLE_TIANGUAN, TABLE_TIANFU, TABLE_TIANCHU, TABLE_FEILIAN, TIANDE_START, NIANJIE_START, ZUOYAO_LIB, ZUOYAO_SKIPPED, ZUOYAO_NAMES, ZUOYAO_STATS, zuoyaoBranch, placeZuoyao, zuoyaoBriefText, zuoyaoVerseBlock };
+})();
+
 __mods.ziwei = (function () {
 // 紫微斗数安星：命身宫 → 五行局 → 紫微/天府 → 十四主星 → 诸辅煞杂曜 → 十二宫 → 四化 → 大限小限流年 → 格局
 const { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } = (__mods.calendar || {});
@@ -6980,6 +8102,7 @@ const { applyDst } = (__mods.dst || {});
 const { assertCivil } = (__mods.validate || {});
 const { nayinOf } = (__mods.nayin || {});
 const { resolveAddress } = (__mods.geo || {});
+const { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } = (__mods['ziwei-zuoyao'] || {});
 
 const fix = (i) => ((i % 12) + 12) % 12;
 
@@ -7052,6 +8175,8 @@ const MUTAGEN = {
 // 默认值对齐本插件既有盘面：亮度用内置通行表，庚干用阳武阴同，
 // 天马按年支、魁钺用全书理解一、天使天伤不换、长生按现有五行局表、
 // 晚子时仍算当日；天空/截空旬空默认不排（旧盘没有这两组星，保持 49 颗）。
+// 全表十二颗杂曜同样默认不排：星数一多，旧盘的句柄与存档会静默变盘，
+// 所以 zuoyaoSchool 默认 minimal，要 61 颗的通行全表得显式打开。
 // 其余选项只在显式指定时改变盘面，不影响默认输出。
 const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   brightnessSchool: 'default',
@@ -7064,6 +8189,7 @@ const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   changshengSchool: 'yin-yang-shun-ni',
   lateZishi: 'current-day',
   shenzhuSchool: 'common',
+  zuoyaoSchool: 'minimal',
 });
 
 const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
@@ -7077,6 +8203,7 @@ const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
   lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
   shenzhuSchool: ['common', 'verse'],
+  zuoyaoSchool: ['minimal', 'full'],
 });
 
 function ziweiSchoolsOf(input = {}) {
@@ -7431,6 +8558,7 @@ function buildZiwei(input) {
       if (b) star.brightness = b;
     }
     starsByBranch[idx].push(star);
+    return star;
   };
 
   for (const s of ZIWEI_GROUP) put(ziwei + s.offset, s.name, '主星');
@@ -7516,6 +8644,17 @@ function buildZiwei(input) {
   const swapTianshi = schools.tianshiTianshang === 'zhongzhou' && !forward;
   put(soulIndex - (swapTianshi ? 5 : 7), '天伤', '杂曜');
   put(soulIndex - (swapTianshi ? 7 : 5), '天使', '杂曜');
+
+  // 全表杂曜（默认不排，zuoyaoSchool: 'full' 才加十二颗）
+  // 每颗都带安星诀依据，落宫由 engine/ziwei-zuoyao.js 的查表/公式复算，不硬编宫位。
+  let zuoyaoPlaced = [];
+  if (schools.zuoyaoSchool === 'full') {
+    zuoyaoPlaced = placeZuoyao({ lunarMonth, yearStem, yearBranch: yb, soulIndex, bodyIndex });
+    for (const s of zuoyaoPlaced) {
+      const star = put(s.branch, s.name, s.type);
+      if (s.inTemple) star.inTemple = true;
+    }
+  }
 
   // 生年四化（庚干按所选变体）
   const mutagenMap = mutagenOf(yearStem, schools);
@@ -7716,6 +8855,22 @@ function buildZiwei(input) {
     ziwei: BRANCHES[ziwei],
     tianfu: BRANCHES[tianfu],
     changqu,
+    // 杂曜全表的这一层只写「这一盘怎么定宫」：面板、独立页与「复制提问」共用。
+    // 默认（minimal）时 placed 为空，但 skipped 照旧给出，说明为什么少了两颗。
+    zuoyao: {
+      mode: schools.zuoyaoSchool,
+      starTotal: schools.zuoyaoSchool === 'full' ? 61 : 49,
+      placed: zuoyaoPlaced.map((s) => ({
+        name: s.name,
+        branch: BRANCHES[s.branch],
+        palace: palaceNames[s.branch],
+        basis: s.basis,
+        meaning: s.meaning,
+        ...(s.inTemple ? { inTemple: true } : {}),
+      })),
+      verses: schools.zuoyaoSchool === 'full' ? zuoyaoVerseBlock(zuoyaoPlaced) : '',
+      skipped: ZUOYAO_SKIPPED.map((s) => `${s.name}：${s.reason}`),
+    },
     palaces,
     liunian,
     daxian: {
@@ -7731,7 +8886,10 @@ function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）；庚干四化只作用于生年四化`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）；庚干四化只作用于生年四化`,
+      zuoyao: schools.zuoyaoSchool === 'full'
+        ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
+        : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
       leapMonth: '闰月默认按日切分（1–15 归本月、16 起归次月，主流排盘口径）；可传 leapMonth: next（整月归次月）或 prev（整月归本月），leapAsNext: true 等同 next',
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
@@ -8327,17 +9485,170 @@ function flowOf(chart, asOf) {
 return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_BREAK_RULES, PATTERN_TONE, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, enrichLiunian, asOfParts, flowOf };
 })();
 
+__mods['tarot-cards'] = (function () {
+// 塔罗 78 张逐张库（H3）。
+//
+// 【底本与口径】牌面 = Rider-Waite-Smith（1909）；占星对应取黄金黎明/通行 Western 表，
+// 与三处独立来源互核后写死（tarotoo 数据集、维基百科「托特塔罗牌」对应表、公开中文黄金黎明表）。
+// 三条口径，宁可留空也不合成一句假共识：
+//   · 数字牌 2-10：花色定三分相星座（本位→固定→变动），二三四／五六七／八十 依次落进这三个星座；
+//     同一组内第一／二／三张各占该星座的第一／二／三旬，旬主星按迦勒底连续序（白羊一旬起火星）：
+//     例：权杖二＝火星在白羊座第一旬，权杖四＝金星在白羊座第三旬，圣杯九＝木星在双鱼座第二旬。
+//     另一派「每个星座的第一旬归本星座守护星」的旬主星表（巨蟹一旬起月亮）与 777 系不同，
+//     本库取 777/黄金黎明一路，因为小牌的星座-行星对应就是按它排的；两派不合并。
+//   · 首牌：只给源质 Kether（王冠）与花色三分相，不落单一星座——它是该元素的根源，不是某一段。
+//   · 宫廷牌：不给星座与主星。公开表里「国王＝本位／王后＝固定／骑士＝变动」
+//     与黄金黎明的四元素层级（骑士＝火、国王＝风、王后＝土、侍从＝水）两套映射互相冲突，
+//     同一套里还各派不一（权杖与圣杯的国王、王后在两派里对调），故留空并在 systemNote 里说明。
+//   · 大牌：行星与星座按守护星关系互核（天蝎兼收火星／冥王星，水瓶兼收土星／天王星，
+//     双鱼兼收木星／海王星）；22 条径（希伯来字母）这一层未经核对，本库不出。
+// 源质序（seph）：首牌 1 → 十牌 10，对应 SEPHIROTH 下标。大牌与小牌同名不同层级，故大牌留空。
+//
+// 每行：[牌名, 英文名, 元素(小牌), 旬主星/行星, 星座, 源质序, 牌面图像, 核心寓意(小牌)]
+
+// 花色 → 三分相星座（本位、固定、变动）
+const SUIT_SIGNS = {"权杖":["白羊座","狮子座","射手座"],"圣杯":["巨蟹座","天蝎座","双鱼座"],"宝剑":["天秤座","水瓶座","双子座"],"星币":["摩羯座","金牛座","处女座"]};
+
+// 花色 → 2..10 号牌的旬主星
+const DECAN_PLANETS = {"权杖":["火星","太阳","金星","土星","木星","火星","水星","月亮","土星"],"圣杯":["金星","水星","月亮","火星","太阳","金星","土星","木星","火星"],"宝剑":["月亮","土星","木星","金星","水星","月亮","木星","火星","太阳"],"星币":["木星","火星","太阳","水星","月亮","土星","太阳","金星","水星"]};
+
+// 十源质（首牌→十牌）
+const SEPHIROTH = ["Kether（王冠）","Chokmah（智慧）","Binah（理解）","Chesed（仁慈）","Geburah（严烈）","Tiphareth（美丽）","Netzach（胜利）","Hod（光辉）","Yesod（基础）","Malkuth（国度）"];
+
+// 旬位（同组内第一／二／三张 → 该星座的第一／二／三旬）
+const DECAN_CN = ["第一旬","第二旬","第三旬"];
+
+const CARD_ROWS = [
+  ["愚者","The Fool","","天王星","水瓶座","","年轻人立于崖边，行囊只一件、白玫瑰在手里，抬头看天没看脚下",""],
+  ["魔术师","The Magician","","水星","双子座","","桌上摊开权杖、圣杯、宝剑、星币四样，他一手举杖一手指天",""],
+  ["女祭司","The High Priestess","","月亮","巨蟹座","","黑白两柱之间坐着戴月冠的女子，膝上摊着一卷书",""],
+  ["皇后","The Empress","","金星","金牛座","","麦田与树林里，丰盈的女子倚坐，长袍上缀着石榴",""],
+  ["皇帝","The Emperor","","火星","白羊座","","山巅石座上披甲端坐，一手权杖一手球体，座侧雕着羊头",""],
+  ["教皇","The Hierophant","","金星","金牛座","","两级石座间举着三重十字，两名黑衣侍者跪在脚前",""],
+  ["恋人","The Lovers","","水星","双子座","","树上天使张开双翼俯视，下方一男一女赤诚相对",""],
+  ["战车","The Chariot","","月亮","巨蟹座","","黑白两头狮身人面像并拉战车，驭者握缰不回头",""],
+  ["力量","Strength","","太阳","狮子座","","白衣女子双手轻扶狮口，头顶一道无限符号",""],
+  ["隐者","The Hermit","","水星","处女座","","灰袍老人独立山顶，提一盏六角星灯，拄杖往下看",""],
+  ["命运之轮","Wheel of Fortune","","木星","射手座","","巨轮悬在半空，四角各有一活物捧书，轮上轮下各有升降",""],
+  ["正义","Justice","","金星","天秤座","","座上人一手天平一手剑，黄帐在后，目光平直",""],
+  ["倒吊人","The Hanged Man","","海王星","双鱼座","","一人单足绑在 T 形树上，双手背在身后，头边一圈亮光",""],
+  ["死神","Death","","火星","天蝎座","","白马踏过田野，马上骷髅举旗，远处太阳从两塔之间升起",""],
+  ["节制","Temperance","","木星","射手座","","天使一脚踏地一脚入水，两杯之间倒出一道水线",""],
+  ["恶魔","The Devil","","土星","摩羯座","","石台上长角巨物蹲着，台前男女各锁一条松垮的铁链",""],
+  ["高塔","The Tower","","火星","白羊座","","闪电劈落塔顶，火焰中两人坠落，王冠被掀上天",""],
+  ["星星","The Star","","土星","水瓶座","","夜空下女子单膝跪入水，一壶倒在地上、一壶举向天，八颗星环绕",""],
+  ["月亮","The Moon","","木星","双鱼座","","塔间小狗与狼对月而吠，螯虾从池中探出，路在两山间拐弯",""],
+  ["太阳","The Sun","","太阳","狮子座","","向日葵墙下，裸身孩童骑在白马上张开手臂，天晴无云",""],
+  ["审判","Judgement","","冥王星","天蝎座","","天使吹号，棺木里的人起身张开手臂，红旗上是一道十字",""],
+  ["世界","The World","","土星","摩羯座","","蓝色天空里，花环中的舞者手持两杖，四角各有一活物",""],
+  ["权杖一","Ace of Wands","火","","",1,"云中伸出一只手，握住一根粗壮权杖，远处是城堡与花园","热情被点着了，先做出第一下"],
+  ["权杖二","Two of Wands","火","火星","白羊座",2,"城墙上的人一手扶杖一手托地球仪，望着山海分界的方向","本钱已经在手，下一步是敢不敢出门"],
+  ["权杖三","Three of Wands","火","太阳","白羊座",3,"崖边的人背身望着海面船只，三根权杖立在身旁","布局已经出手，等第一次回声"],
+  ["权杖四","Four of Wands","火","金星","白羊座",4,"四根权杖搭成挂花环的拱门，两人举花迎接，城堡在后","阶段性站稳了，值得停下来庆一下"],
+  ["权杖五","Five of Wands","火","土星","狮子座",5,"五个人各持一根木棒相互比划，天色明亮，无人拦阻","摩擦是真的，但没人真的受伤"],
+  ["权杖六","Six of Wands","火","木星","狮子座",6,"头戴桂冠的人骑在马上，手持饰花的权杖走在队伍前","成果被看见了，也别忘了带谁一起"],
+  ["权杖七","Seven of Wands","火","火星","狮子座",7,"高处的人紧握一根权杖，下方六根斜着刺上来","占了高地，就得挨得住围攻"],
+  ["权杖八","Eight of Wands","火","水星","射手座",8,"八根权杖平行掠过原野与河流，尖端指向同一个方向","节奏对上了，消息和进展一起来"],
+  ["权杖九","Nine of Wands","火","月亮","射手座",9,"头上缠着绷带的人靠着一根权杖警戒，身后八根排成栅栏","撑到这一步，守的是最后一口气"],
+  ["权杖十","Ten of Wands","火","土星","射手座",10,"一个人把十根权杖抱成一座山往前挪，远处是村舍","担子超重，先问哪些不是你的"],
+  ["权杖侍从","Page of Wands","火","","","","少年双手举着一根比他还高的权杖端详，身后是热闹市集","热忱和消息来了，先接住再验货"],
+  ["权杖骑士","Knight of Wands","火","","","","红袍骑士骑着跃起的斑点马，手中权杖直指前方","冲劲最盛时，也正是方向最模糊时"],
+  ["权杖王后","Queen of Wands","火","","","","黑衣女子一手权杖一手向日葵，脚边蜷着一只黑猫","感染力是资源，先用在自己身上"],
+  ["权杖国王","King of Wands","火","","","","披甲国王坐在宝座上手持权杖，脚边有火蜥蜴来回","敢定方向也敢担后果，权威才立得住"],
+  ["圣杯一","Ace of Cups","水","","",1,"手心托着一只满溢的圣杯，五道水流下，水面浮着白色睡莲","情感有了出口，先允许它流动"],
+  ["圣杯二","Two of Cups","水","金星","巨蟹座",2,"两人各持一杯相对而饮，中间悬着双蛇缠绕的短杖","两边都递出去，才算对等的关系"],
+  ["圣杯三","Three of Cups","水","水星","巨蟹座",3,"三位女子挽手举杯相庆，身前果盘与鲜花累累","喜悦要有人分才会长成倍"],
+  ["圣杯四","Four of Cups","水","月亮","巨蟹座",4,"树下的人抱臂闭目，云里又递来一杯，眼前三只杯没动","不是没机会，是不肯再看一眼"],
+  ["圣杯五","Five of Cups","水","火星","天蝎座",5,"黑袍人低头看着三只倾倒的空杯，身后还有两只立着，河上有桥","损失看得见，剩下的也还在"],
+  ["圣杯六","Six of Cups","水","太阳","天蝎座",6,"高墙前的两个孩童互递装满花的杯，地面铺着落叶","旧事带着甜，别把它当作现在"],
+  ["圣杯七","Seven of Cups","水","金星","天蝎座",7,"云雾里浮着七只杯，各盛冠冕、龙、宝石等不同的幻象","选项越多，越要挑能落地的那个"],
+  ["圣杯八","Eight of Cups","水","土星","双鱼座",8,"月下的人转身离开排成两列的八只杯，往山里走","已经拥有的填不满，所以要走"],
+  ["圣杯九","Nine of Cups","水","木星","双鱼座",9,"双臂交叠的人满足地坐在整齐九只杯前，身后挂着头饰","心愿到手了，享受也别过量"],
+  ["圣杯十","Ten of Cups","水","火星","双鱼座",10,"一对男女相向鞠躬，孩子们在一旁，十只杯架在彩虹上","圆满要有人一起才算数"],
+  ["圣杯侍从","Page of Cups","水","","","","少年扶着一只杯，杯中一条鱼探出头来","灵感很软，要留一点天真才接得住"],
+  ["圣杯骑士","Knight of Cups","水","","","","骑士骑白马平举圣杯缓行，岸边有浪与远山","邀约优雅，也要问一句怎么落地"],
+  ["圣杯王后","Queen of Cups","水","","","","女子凝视一只覆着七颗珠的杯，座边海潮翻卷","共情是天赋，边界是功课"],
+  ["圣杯国王","King of Cups","水","","","","宝座立在波涛中的礁石上，国王一手杯一手权杖","情绪稳了才谈掌控，别让浪替你说话"],
+  ["宝剑一","Ace of Swords","风","","",1,"云中一手举剑，剑尖穿过一顶桂冠，两侧山壁陡峭","一句真话能切开结，先算得起代价"],
+  ["宝剑二","Two of Swords","风","月亮","天秤座",2,"蒙眼女子坐在海边石上，双手各持一剑交叉","两边都有理，所以迟迟落不下子"],
+  ["宝剑三","Three of Swords","风","土星","天秤座",3,"空中三只剑穿过一颗悬着的心，雨落下来","伤要先承认，才谈得上愈合"],
+  ["宝剑四","Four of Swords","风","木星","天秤座",4,"石台上躺着的骑士雕像双手合十，三剑在上、一剑在下","休息不是逃，是为了把判断找回来"],
+  ["宝剑五","Five of Swords","风","金星","水瓶座",5,"一人抱着三把剑回头而笑，另两人从背影离场","赢了的代价也是代价"],
+  ["宝剑六","Six of Swords","风","水星","水瓶座",6,"船夫撑舟带披斗篷的乘客离岸，六把剑插在船侧","先离开现场，事情会轻一点"],
+  ["宝剑七","Seven of Swords","风","月亮","水瓶座",7,"一人回头抱着五把剑溜走，营地里还剩两把没动","策略一旦藏着，就得准备被拆穿"],
+  ["宝剑八","Eight of Swords","风","木星","双子座",8,"蒙眼捆身的女子立在八把剑围成的栅栏里，远处是水面","困住的是念头，不是手脚"],
+  ["宝剑九","Nine of Swords","风","火星","双子座",9,"床上女子掩面坐起，床头的帘上挂着九把剑","天亮前最难熬，但它真的会亮"],
+  ["宝剑十","Ten of Swords","风","太阳","双子座",10,"十把剑穿身倒卧的人，身旁天际已经发白","到了谷底，就只剩向上的路"],
+  ["宝剑侍从","Page of Swords","风","","","","少年侧身举剑回望，身后一群飞鸟掠过","求知与警觉是好的，别变成抢白"],
+  ["宝剑骑士","Knight of Swords","风","","","","白马骑士举剑疾驰，树木被风向一边压弯","话说得快，先想清楚要砍在哪里"],
+  ["宝剑王后","Queen of Swords","风","","","","侧坐的女子右手举剑指天，左手平伸，座上刻着蝴蝶与月","明辨是力量，尖刻只是它的影子"],
+  ["宝剑国王","King of Swords","风","","","","国王正面端坐持剑，面容严厉，宝座雕纹繁复","判断要有原则，也要留一条能说话的路"],
+  ["星币一","Ace of Pentacles","土","","",1,"手心托着一枚大星币，下方是整齐花园，远处山势陡峭","机会得落进地里才长得出来"],
+  ["星币二","Two of Pentacles","土","木星","摩羯座",2,"舞动的人把两枚星币套在无限符号里，海面两艘船正遇风浪","收支两头要平衡，得每天重新调"],
+  ["星币三","Three of Pentacles","土","火星","摩羯座",3,"教堂里工匠正在刻石，两人拿着图纸与他商议","手艺被认可，是因为能被验收"],
+  ["星币四","Four of Pentacles","土","太阳","摩羯座",4,"一人把一枚星币紧抱在胸前，头顶与脚边各压着一枚","守住不等于安全，先分清哪笔是不敢花"],
+  ["星币五","Five of Pentacles","土","水星","金牛座",5,"两人踏雪经过亮着窗灯的石教堂，其中一人腿有不便","匮乏里最难的是开口求助"],
+  ["星币六","Six of Pentacles","土","月亮","金牛座",6,"举秤者分发钱币，两名提篮的乞者跪在脚边","给和受都留体面，这笔账才走得长"],
+  ["星币七","Seven of Pentacles","土","土星","金牛座",7,"农夫倚着镰刀望着藤架上七枚星币，果实尚未熟透","收成前的等待，别用急躁去浇水"],
+  ["星币八","Eight of Pentacles","土","太阳","处女座",8,"工匠埋头锤打一枚星币，身后山坡上八枚排成一列","熟练来自重复，先把这一件做完"],
+  ["星币九","Nine of Pentacles","土","金星","处女座",9,"长袍女子站在葡萄园里，戴着猎鹰的手套举起，墙内是城堡","自足是挣来的，也允许自己享受它"],
+  ["星币十","Ten of Pentacles","土","水星","处女座",10,"庭院中老人持杖，情侣与孩子相对，十枚星币绕成花环","基业是长期的，短视会啃地基"],
+  ["星币侍从","Page of Pentacles","土","","","","少年双手捧着一枚星币细看，身后是开阔田野","踏实起步，先学能验证的那一部分"],
+  ["星币骑士","Knight of Pentacles","土","","","","骑士骑黑马静立不动，双手平托一枚星币","慢不是停滞，是把每一步压实"],
+  ["星币王后","Queen of Pentacles","土","","","","女子一手星币一手藤蔓，脚边一只野兔","照料和务实互相养，别只留一头"],
+  ["星币国王","King of Pentacles","土","","","","藤蔓缠绕的宝座上，国王手持星币，座侧雕着牛头","资源怎么用才算守得住，这是他的题"],
+];
+
+// 牌名 → 逐张数据（占星列按大牌／小牌口径组装成一句，不留空串冒充「已考证」）
+const CARD_LIB = {};
+for (const [name, en, el, planet, sign, seph, img, core] of CARD_ROWS) {
+  const tree = seph ? SEPHIROTH[seph - 1] : '';
+  const decan = seph >= 2 && seph <= 10 ? DECAN_CN[(seph - 2) % 3] : '';
+  CARD_LIB[name] = {
+    en,
+    el,
+    planet,
+    sign,
+    sephira: tree,
+    decan,
+    img,
+    core,
+    astro: planet && sign ? `${planet}在${sign}${decan ? `（${decan}）` : ''}` : planet || '',
+  };
+}
+
+const CARD_COUNTS = {
+  total: CARD_ROWS.length,
+  major: 22,
+  minor: 56,
+  // 有旬主星＋旬座的数字牌 36 张；首牌 4 张只给源质；宫廷 16 张不给占星（口径见顶部）
+  pipAstro: CARD_ROWS.filter((r) => r[3] && r[4] && r[5] >= 2).length,
+  aceTree: CARD_ROWS.filter((r) => r[5] === 1).length,
+  courtNoAstro: CARD_ROWS.filter((r) => ['侍从', '骑士', '王后', '国王'].includes(r[0].slice(-2))).length,
+  majorAstro: CARD_ROWS.filter((r) => !r[2] && r[3] && r[4]).length,
+  withImg: CARD_ROWS.filter((r) => r[6]).length,
+  withCore: CARD_ROWS.filter((r) => r[7]).length,
+};
+
+return { SUIT_SIGNS, DECAN_PLANETS, SEPHIROTH, DECAN_CN, CARD_ROWS, CARD_LIB, CARD_COUNTS };
+})();
+
 __mods.tarot = (function () {
 // 塔罗牌：78 张（22 大阿卡纳 + 56 小阿卡纳），抽牌、牌阵与解读
 //
+// 逐张库（英文名、牌面图像、旬主星/旬座、生命树源质）在 engine/tarot-cards.js，
+// 本文件只负责组牌、抽牌与解读；两侧共用同一份牌名，牌名对不上会直接测出来。
+//
 // 【流派说明】塔罗是一套象征系统，而非确定性预言。本文件采用：
-//   · 牌名、编号：RWS（韦特）体系 —— 力量 = VIII、正义 = XI；
+//   · 牌名、编号、牌面：RWS（韦特）体系 —— 力量 = VIII、正义 = XI；
 //     马赛体系里两者的编号相反（VIII 正义 / XI 力量），仅编号差异，牌义不变。
-//   · 大牌元素：黄金黎明（Golden Dawn）对应的行星/星座归属（详见 MAJOR_EXT 注释）。
-//   · 小牌元素：权杖火、圣杯水、宝剑风、星币土（通行）。
+//   · 大牌元素：黄金黎明（Golden Dawn）对应；行星/星座按守护星关系互核（详见 tarot-cards.js 口径注释）。
+//   · 小牌元素：权杖火、圣杯水、宝剑风、星币土（通行）；2-10 号牌另给三分相旬位，首牌给源质。
+//   · 宫廷牌：只给花色元素，不给星座与主星——公开表里两套映射互相冲突，合并不成一句真话。
 //   · 逆位读法：取「同一股力量未顺过来 / 用力过猛 / 内在化」三义，
 //     不采用「逆位即纯凶」的流派；不同流派对逆位的取舍不同，此处取中性偏提醒。
 // 以上差异在 reading 与结果字段 systemNote 中均有标注，避免被当作唯一正解。
+const { CARD_LIB, CARD_COUNTS } = (__mods['tarot-cards'] || {});
 
 const MAJOR = [
   ['愚者', '0', '新开始 冒险 纯真 无限可能', '鲁莽 逃避 原地打转 不切实际'],
@@ -8469,27 +9780,24 @@ const MINOR = {
 
 const ROMAN = ['0', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX', 'XXI'];
 
-// 小牌牌阶：编号（A..10 / 宫廷）与数值 1..14，供排序与结构分析使用
-// 核心寓意按「牌阶」给（跨花色通用），花色含义由 suit/element/domain 与关键词承担，
-// 因此小牌的 core 是「花色：牌阶寓意」的组合句，不是逐张独立撰写的牌义。
+// 小牌牌阶：编号（A..10 / 宫廷）与数值 1..14，供排序与结构分析使用。
+// 每张牌的核心寓意自 H3 起逐张撰写（engine/tarot-cards.js），不再按「牌阶」套通用句。
 const RANK_META = {
-  一: { number: 'A', value: 1, core: '起点，一切刚被点燃' },
-  二: { number: '2', value: 2, core: '两股力量之间的平衡' },
-  三: { number: '3', value: 3, core: '第一次成形，成果与代价同来' },
-  四: { number: '4', value: 4, core: '停下来，把结构暂时稳住' },
-  五: { number: '5', value: 5, core: '失衡带来的摩擦' },
-  六: { number: '6', value: 6, core: '修复，让事情重新流动' },
-  七: { number: '7', value: 7, core: '收成之前的审视与取舍' },
-  八: { number: '8', value: 8, core: '把节奏重新握在自己手里' },
-  九: { number: '9', value: 9, core: '接近满盈的临界' },
-  十: { number: '10', value: 10, core: '一个周期走到收束' },
-  侍从: { number: '侍从', value: 11, core: '学徒式的试探' },
-  骑士: { number: '骑士', value: 12, core: '带上方向的行动' },
-  王后: { number: '王后', value: 13, core: '成熟的照顾与吸引' },
-  国王: { number: '国王', value: 14, core: '掌控局面与承担' },
+  一: { number: 'A', value: 1 },
+  二: { number: '2', value: 2 },
+  三: { number: '3', value: 3 },
+  四: { number: '4', value: 4 },
+  五: { number: '5', value: 5 },
+  六: { number: '6', value: 6 },
+  七: { number: '7', value: 7 },
+  八: { number: '8', value: 8 },
+  九: { number: '9', value: 9 },
+  十: { number: '10', value: 10 },
+  侍从: { number: '侍从', value: 11 },
+  骑士: { number: '骑士', value: 12 },
+  王后: { number: '王后', value: 13 },
+  国王: { number: '国王', value: 14 },
 };
-
-// 小牌核心寓意 = 花色 + 牌阶寓意的组合句（花色含义另由 suit/element/domain 承担）
 
 // 牌位：每个位带一句位义说明（positionHint）
 const SPREADS = {
@@ -8511,6 +9819,9 @@ const SPREADS = {
 };
 
 const COURT = ['侍从', '骑士', '王后', '国王'];
+// 宫廷牌的「牌位」＝这个角色在牌阵里通常顶替的位置（人物 or 自身的一个侧面），
+// 与占星无关，所以宫廷牌没有星座也照样能读。
+const COURT_ROLE = { 侍从: '学徒与消息', 骑士: '推进与风格', 王后: '滋养与吸引', 国王: '掌控与承担' };
 const ELEMENT_ORDER = ['火', '水', '风', '土'];
 const ELEM_NAME = { 火: '热情与行动', 水: '情感与关系', 风: '思维与沟通', 土: '现实与资源' };
 const ELEM_TIP = {
@@ -8539,17 +9850,37 @@ const POS_TAIL = {
   潜在: '它还没浮出水面，却已经在左右你的选择。',
 };
 
-const SYSTEM_NOTE = '塔罗为象征系统，牌义与元素对应存在流派差异；此处采用 RWS（韦特）牌名/编号与黄金黎明的元素归属，仅供自我觉察与娱乐。';
+const SYSTEM_NOTE = '塔罗为象征系统，牌义与元素对应存在流派差异；此处采用 RWS（韦特）牌名/编号/牌面与黄金黎明的元素归属，仅供自我觉察与娱乐。'
+  + '小牌 2-10 按三分相旬位补行星与星座，首牌只标生命树源质；宫廷牌在公开资料里有两套互相冲突的星座映射，故不给宫廷牌占星对应，只给角色定位。';
 
+// 牌面元素对应：数字牌给「某星在某座某旬」，首牌给源质（它是该元素的根源，不落单一星座），
+// 宫廷牌留空——两套公开映射互相冲突，口径见 SYSTEM_NOTE。
+function astroOf(name) {
+  const c = CARD_LIB[name];
+  if (!c) return '';
+  if (c.astro) return c.astro;
+  return c.sephira ? `${c.sephira}·${c.el}之根源` : '';
+}
+
+// 逐张库规模（面板与测试用它核对「78 张都有图像、36 张有旬位」这类说法）
+const TAROT_STATS = CARD_COUNTS;
+
+/** 牌面数据（大 22 + 小 56）：英文名、牌面图像、元素对应、核心寓意均来自逐张库 */
 function tarotDeck() {
   const deck = [];
   MAJOR.forEach(([name, numeral, up, down], i) => {
     const [element, core] = MAJOR_EXT[i];
-    deck.push({ name, arcana: '大阿卡纳', element, number: numeral, value: i, core, up, down });
+    const lib = CARD_LIB[name];
+    deck.push({
+      name, arcana: '大阿卡纳', element, number: numeral, value: i, core, up, down,
+      en: lib.en, sign: lib.sign, planet: lib.planet, astro: astroOf(name), image: lib.img,
+    });
   });
   for (const [suit, element, domain] of SUITS) {
     for (const [rankCn, up, down] of MINOR[suit]) {
       const meta = RANK_META[rankCn];
+      const lib = CARD_LIB[`${suit}${rankCn}`];
+      const court = meta.value >= 11;
       deck.push({
         name: `${suit}${rankCn}`,
         arcana: '小阿卡纳',
@@ -8560,9 +9891,17 @@ function tarotDeck() {
         rankCn,
         number: meta.number,
         value: meta.value,
-        core: `${suit}：${meta.core}`,
+        core: lib.core,
         up,
         down,
+        en: lib.en,
+        image: lib.img,
+        role: COURT_ROLE[rankCn] || '',
+        sephira: lib.sephira,
+        decan: lib.decan,
+        sign: lib.sign,
+        planet: court ? '' : lib.planet,
+        astro: astroOf(`${suit}${rankCn}`),
       });
     }
   }
@@ -8615,9 +9954,14 @@ function tarotReading({ question = '', cards = [] } = {}) {
         ? '逆位并不等于凶，更像这股力量还没顺过来，或用力过了头'
         : '正位，这股力量目前是通的';
       const hint = c.positionHint || (SPREADS[n] && SPREADS[n][i] ? SPREADS[n][i].hint : '这一位要看的是它在你处境里的位置');
-      const core = meta.core ? `它的核心是「${meta.core}」，` : '';
+      // 牌面图像与元素对应来自逐张库：数字牌给「某星在某座某旬」，首牌给源质，
+      // 宫廷牌没有占星可给，就把它顶的角色（学徒/推进/滋养/掌控）说出来。
+      const img = meta.image ? `牌面上${meta.image}，` : '';
+      const ast = meta.astro ? `它对应的占星位置是${meta.astro}，` : '';
+      const role = !ast && meta.role ? `它在这里顶的是「${meta.role}」那个角色，` : '';
+      const core = meta.core ? `它的核心是「${meta.core}」。` : '';
       const tail = POS_TAIL[c.position] || '把它放回你的处境里对照，看看哪一句戳中了你。';
-      return `${c.position}（${hint}）是「${c.name}」${ori}：${kws}。${core}${oriNote}。${tail}`;
+      return `${c.position}（${hint}）是「${c.name}」${ori}：${kws}。${img}${ast}${role}${core}${oriNote}。${tail}`;
     });
     paras.push(lines.join(''));
   }
@@ -8709,6 +10053,15 @@ function drawTarot({ count = 3, question = '', at, random = Math.random } = {}) 
       ...(c.rankCn ? { rankCn: c.rankCn } : {}),
       value: c.value,
       core: c.core,
+      en: c.en,
+      image: c.image,
+      // 空值不进结果：宫廷牌没有星座/主星，首牌没有旬位，别让字段带着空串冒充「已给出」
+      ...(c.astro ? { astro: c.astro } : {}),
+      ...(c.sephira ? { sephira: c.sephira } : {}),
+      ...(c.decan ? { decan: c.decan } : {}),
+      ...(c.role ? { role: c.role } : {}),
+      ...(c.sign ? { sign: c.sign } : {}),
+      ...(c.planet ? { planet: c.planet } : {}),
       upright,
       orientation: upright ? '正位' : '逆位',
       keywords: splitKeywords(upright ? c.up : c.down),
@@ -8728,7 +10081,7 @@ function drawTarot({ count = 3, question = '', at, random = Math.random } = {}) 
 
 
 
-return { MAJOR, SUITS, MINOR, ROMAN, SPREADS, tarotDeck, tarotReading, drawTarot };
+return { MAJOR, SUITS, MINOR, ROMAN, SPREADS, TAROT_STATS, tarotDeck, tarotReading, drawTarot };
 })();
 
 __mods.meihua = (function () {
@@ -8737,6 +10090,7 @@ const { BRANCHES } = (__mods.calendar || {});
 const { solarToLunar } = (__mods.lunar || {});
 const { fail } = (__mods.fail || {});
 const { hexagramFromBits } = (__mods.liuyao || {});
+const { jingText } = (__mods['yijing-text'] || {});
 
 // 先天八卦数：乾1 兑2 离3 震4 巽5 坎6 艮7 坤8
 const TRI_NAME = ['', '乾', '兑', '离', '震', '巽', '坎', '艮', '坤'];
@@ -8843,6 +10197,8 @@ function buildMeihua(input = {}) {
     bian: { name: bian.name, upper: bian.upper, lower: bian.lower },
     cuo: { name: cuo.name },
     zong: { name: zong.name },
+    // 经文原文在排盘时算好挂上，解释层只摆位置（同 liuyao.js，见 engine/yijing-text.js）
+    jing: jingText({ benName: ben.name, huName: hu.name, bianName: bian.name, movingPositions: [moving] }),
     bodyUse: {
       body: { trigram: bodyTri, element: TRI_ELEMENT[bodyTri] },
       use: { trigram: useTri, element: TRI_ELEMENT[useTri] },
@@ -10424,6 +11780,680 @@ function buildXuankong(input) {
 return { NINE_STARS, PALACE_DIRECTION, DAYOUTIAN, LUCKY_STARS, UNLUCKY_STARS, MOUNTAINS_24, mountainInfo, sittingFromFacing, STAR_LAYOUT_ROLE, mingGua, eightStars, guaYearOf, yearZibaiStar, yearlyFlying, timeFlyingOf, periodOfYear, MOUNTAIN_META, TIGUA_SOURCE, TIGUA_TABLE, JIAN_XIANG_THRESHOLD, jianXiangOf, WANG_SHAN_WANG_XIANG, XUANKONG_SOURCES, XUANKONG_DISCLAIMER, xuankongChart, buildFengshui };
 })();
 
+__mods['name-extra'] = (function () {
+// 起名字库扩充（2026-11-02）：671 个常用名用字，按五行分组。
+// 读数/笔画由 Unihan kRSUnicode + 康熙部首笔画 + 繁体映射复算；
+// 千(3)、才(3)、发(12)、钟(17)、苏(22)、采(8)、万(15)、镌(18) 因繁体映射串义，按人名通行取法覆盖；
+// 长、兴、种 三字按人名读法覆盖 kMandarin 单读。
+
+const EXTRA_READING = [
+  // ── 木（210）──
+  ['杰', 'jie', 2, 12], ['军', 'jun', 1, 9], ['强', 'qiang', 2, 12], ['彬', 'bin', 1, 11],
+  ['国', 'guo', 2, 11], ['春', 'chun', 1, 9], ['梅', 'mei', 2, 11], ['英', 'ying', 1, 11],
+  ['玉', 'yu', 4, 5], ['桂', 'gui', 4, 10], ['莉', 'li', 4, 13], ['芊', 'qian', 1, 9],
+  ['苏', 'su', 1, 22], ['苑', 'yuan', 4, 11], ['苓', 'ling', 2, 11], ['荔', 'li', 4, 12],
+  ['慕', 'mu', 4, 15], ['懋', 'mao', 4, 17], ['楦', 'xuan', 4, 13], ['树', 'shu', 4, 16],
+  ['柳', 'liu', 3, 9], ['杨', 'yang', 2, 13], ['桦', 'hua', 4, 16], ['桃', 'tao', 2, 10],
+  ['杏', 'xing', 4, 7], ['朵', 'duo', 3, 6], ['根', 'gen', 1, 10], ['桥', 'qiao', 2, 16],
+  ['楼', 'lou', 2, 15], ['榜', 'bang', 3, 14], ['模', 'mo', 2, 15], ['格', 'ge', 2, 10],
+  ['籍', 'ji', 2, 20], ['箭', 'jian', 4, 15], ['篪', 'chi', 2, 16], ['箫', 'xiao', 1, 18],
+  ['笙', 'sheng', 1, 11], ['程', 'cheng', 2, 12], ['秦', 'qin', 2, 10], ['稳', 'wen', 3, 19],
+  ['栗', 'li', 4, 14], ['梨', 'li', 2, 11], ['杜', 'du', 4, 7], ['村', 'cun', 1, 7],
+  ['校', 'xiao', 4, 10], ['标', 'biao', 1, 15], ['桩', 'zhuang', 1, 15], ['梵', 'fan', 4, 11],
+  ['棣', 'di', 4, 12], ['椿', 'chun', 1, 13], ['榉', 'ju', 3, 21], ['橄', 'gan', 3, 16],
+  ['橦', 'tong', 2, 16], ['芦', 'lu', 2, 22], ['苍', 'cang', 1, 16], ['茅', 'mao', 2, 11],
+  ['荀', 'xun', 2, 12], ['艺', 'yi', 4, 21], ['艾', 'ai', 4, 8], ['藤', 'teng', 2, 21],
+  ['蕖', 'qu', 2, 18], ['荐', 'jian', 4, 19], ['茏', 'long', 2, 22], ['枞', 'cong', 1, 15],
+  ['柽', 'cheng', 1, 17], ['柞', 'zha', 4, 9], ['柚', 'you', 4, 9], ['枳', 'zhi', 3, 9],
+  ['枸', 'gou', 3, 9], ['枇', 'pi', 2, 8], ['杷', 'pa', 2, 8], ['柃', 'ling', 2, 9],
+  ['桉', 'an', 1, 10], ['栟', 'ben', 1, 10], ['榔', 'lang', 2, 13], ['槲', 'hu', 2, 15],
+  ['橼', 'yuan', 2, 19], ['檩', 'lin', 3, 17], ['檗', 'bo', 4, 17], ['椴', 'duan', 4, 13],
+  ['槭', 'qi', 4, 15], ['芙', 'fu', 2, 10], ['蓝', 'lan', 2, 20], ['芍', 'shao', 2, 9],
+  ['茹', 'ru', 2, 12], ['菖', 'chang', 1, 14], ['菘', 'song', 1, 14], ['萝', 'luo', 2, 25],
+  ['葳', 'wei', 1, 15], ['葭', 'jia', 1, 15], ['蒲', 'pu', 2, 16], ['蓼', 'liao', 3, 17],
+  ['蕤', 'rui', 2, 18], ['藜', 'li', 2, 21], ['蘅', 'heng', 2, 22], ['苹', 'ping', 2, 22],
+  ['篁', 'huang', 2, 15], ['篆', 'zhuan', 4, 15], ['篇', 'pian', 1, 15], ['笺', 'jian', 1, 14],
+  ['种', 'zhong', 4, 14], ['科', 'ke', 1, 9], ['季', 'ji', 4, 8], ['秉', 'bing', 3, 8],
+  ['秩', 'zhi', 4, 10], ['稔', 'ren', 3, 13], ['稻', 'dao', 4, 15], ['乔', 'qiao', 2, 12],
+  ['娇', 'jiao', 1, 15], ['巧', 'qiao', 3, 5], ['俏', 'qiao', 4, 9], ['柱', 'zhu', 4, 9],
+  ['栖', 'qi', 1, 12], ['栉', 'zhi', 4, 19], ['榭', 'xie', 4, 14], ['檠', 'qing', 2, 17],
+  ['櫆', 'kui', 2, 18], ['櫂', 'zhao', 4, 18], ['柟', 'nan', 2, 9], ['枥', 'li', 4, 20],
+  ['栌', 'lu', 2, 20], ['桤', 'qi', 1, 14], ['梣', 'chen', 2, 11], ['梃', 'ting', 3, 11],
+  ['梼', 'tao', 2, 18], ['椁', 'guo', 3, 15], ['椋', 'liang', 2, 12], ['椤', 'luo', 2, 23],
+  ['楗', 'jian', 4, 13], ['楝', 'lian', 4, 13], ['楫', 'ji', 2, 13], ['榀', 'pin', 3, 13],
+  ['榇', 'chen', 4, 20], ['榈', 'lv', 2, 19], ['榍', 'xie', 4, 14], ['榧', 'fei', 3, 14],
+  ['槎', 'cha', 2, 14], ['槔', 'gao', 1, 14], ['槠', 'zhu', 1, 20], ['樘', 'tang', 2, 15],
+  ['樨', 'xi', 1, 15], ['橹', 'lu', 3, 19], ['檫', 'cha', 2, 18], ['秣', 'mo', 4, 10],
+  ['稞', 'ke', 1, 13], ['稹', 'zhen', 3, 15], ['穰', 'rang', 2, 22], ['穑', 'se', 4, 18],
+  ['笏', 'hu', 4, 10], ['笈', 'ji', 2, 10], ['笕', 'jian', 3, 13], ['笋', 'sun', 3, 12],
+  ['笳', 'jia', 1, 11], ['筌', 'quan', 2, 12], ['筇', 'qiong', 2, 12], ['筑', 'zhu', 4, 16],
+  ['筚', 'bi', 4, 17], ['筵', 'yan', 2, 13], ['箐', 'qing', 4, 14], ['箓', 'lu', 4, 22],
+  ['箦', 'ze', 2, 17], ['箴', 'zhen', 1, 15], ['篌', 'hou', 2, 15], ['篙', 'gao', 1, 16],
+  ['篝', 'gou', 1, 16], ['簃', 'yi', 2, 17], ['簌', 'su', 4, 17], ['籁', 'lai', 4, 22],
+  ['籀', 'zhou', 4, 19], ['奕', 'yi', 4, 9], ['可', 'ke', 3, 5], ['雅', 'ya', 3, 12],
+  ['毅', 'yi', 4, 15], ['健', 'jian', 4, 11], ['康', 'kang', 1, 11], ['彦', 'yan', 4, 9],
+  ['家', 'jia', 1, 12], ['庆', 'qing', 4, 15], ['高', 'gao', 1, 10], ['久', 'jiu', 3, 3],
+  ['功', 'gong', 1, 5], ['贵', 'gui', 4, 12], ['绮', 'qi', 3, 14], ['虹', 'hong', 2, 9],
+  ['皓', 'hao', 4, 12], ['婧', 'jing', 4, 11], ['婕', 'jie', 2, 11], ['义', 'yi', 4, 13],
+  ['廉', 'lian', 2, 13], ['勤', 'qin', 2, 13], ['俭', 'jian', 3, 15], ['谷', 'gu', 3, 15],
+  ['谨', 'jin', 3, 18], ['敬', 'jing', 4, 13], ['恭', 'gong', 1, 10], ['宽', 'kuan', 1, 15],
+  ['棋', 'qi', 2, 12], ['笔', 'bi', 3, 12], ['歌', 'ge', 1, 14], ['翠', 'cui', 4, 14],
+  ['雁', 'yan', 4, 12], ['莺', 'ying', 1, 21], ['麒', 'qi', 2, 19], ['骐', 'qi', 2, 18],
+  ['仪', 'yi', 2, 15], ['喆', 'zhe', 2, 12], ['翊', 'yi', 4, 11], ['芯', 'xin', 1, 10],
+  ['娟', 'juan', 1, 10], ['凯', 'kai', 3, 12],
+  // ── 火（89）──
+  ['德', 'de', 2, 15], ['志', 'zhi', 4, 14], ['丽', 'li', 4, 19], ['娜', 'na', 4, 10],
+  ['天', 'tian', 1, 4], ['哲', 'zhe', 2, 10], ['映', 'ying', 4, 9], ['辉', 'hui', 1, 15],
+  ['耀', 'yao', 4, 20], ['烁', 'shuo', 4, 19], ['燃', 'ran', 2, 16], ['燊', 'shen', 1, 16],
+  ['焰', 'yan', 4, 12], ['曙', 'shu', 3, 18], ['煦', 'xu', 4, 13], ['赤', 'chi', 4, 7],
+  ['绯', 'fei', 1, 14], ['忠', 'zhong', 1, 8], ['念', 'nian', 4, 8], ['情', 'qing', 2, 12],
+  ['昌', 'chang', 1, 8], ['昇', 'sheng', 1, 8], ['昶', 'chang', 3, 9], ['晁', 'chao', 2, 10],
+  ['晞', 'xi', 1, 11], ['暧', 'ai', 4, 17], ['曌', 'zhao', 4, 16], ['昉', 'fang', 3, 8],
+  ['昫', 'xu', 4, 9], ['晅', 'xuan', 3, 10], ['旸', 'yang', 2, 13], ['炘', 'xin', 1, 8],
+  ['炆', 'wen', 2, 8], ['炬', 'ju', 4, 9], ['炳', 'bing', 3, 9], ['烈', 'lie', 4, 10],
+  ['烊', 'yang', 2, 10], ['焱', 'yan', 4, 12], ['煌', 'huang', 2, 13], ['熀', 'huang', 3, 14],
+  ['燎', 'liao', 2, 16], ['燚', 'yi', 4, 16], ['燧', 'sui', 4, 17], ['燮', 'xie', 4, 17],
+  ['爔', 'xi', 1, 20], ['恕', 'shu', 4, 10], ['慈', 'ci', 2, 14], ['晃', 'huang', 3, 10],
+  ['晢', 'zhe', 2, 11], ['晰', 'xi', 1, 12], ['暐', 'wei', 3, 13], ['暘', 'yang', 2, 13],
+  ['曈', 'tong', 2, 16], ['良', 'liang', 2, 7], ['郎', 'lang', 2, 13], ['耿', 'geng', 3, 10],
+  ['离', 'li', 2, 19], ['午', 'wu', 3, 4], ['炯', 'jiong', 3, 9], ['焜', 'kun', 1, 12],
+  ['煐', 'ying', 1, 13], ['婷', 'ting', 2, 12], ['妮', 'ni', 1, 8], ['媛', 'yuan', 4, 12],
+  ['隆', 'long', 2, 17], ['代', 'dai', 4, 5], ['之', 'zhi', 1, 4], ['政', 'zheng', 4, 8],
+  ['登', 'deng', 1, 12], ['达', 'da', 2, 16], ['通', 'tong', 1, 14], ['长', 'chang', 2, 8],
+  ['进', 'jin', 4, 15], ['显', 'xian', 3, 23], ['绫', 'ling', 2, 14], ['章', 'zhang', 1, 11],
+  ['采', 'cai', 3, 8], ['礼', 'li', 3, 18], ['理', 'li', 3, 12], ['中', 'zhong', 1, 4],
+  ['让', 'rang', 4, 24], ['腾', 'teng', 2, 20], ['鹭', 'lu', 4, 24], ['麟', 'lin', 2, 23],
+  ['翎', 'ling', 2, 11], ['龙', 'long', 2, 16], ['绿', 'lv', 4, 14], ['立', 'li', 4, 5],
+  ['力', 'li', 4, 2],
+  // ── 土（89）──
+  ['伟', 'wei', 3, 11], ['勇', 'yong', 3, 9], ['怡', 'yi', 2, 9], ['婉', 'wan', 3, 11],
+  ['娅', 'ya', 4, 11], ['威', 'wei', 1, 9], ['卫', 'wei', 4, 15], ['嫣', 'yan', 1, 14],
+  ['燕', 'yan', 4, 16], ['艳', 'yan', 4, 24], ['优', 'you', 1, 17], ['允', 'yun', 3, 4],
+  ['友', 'you', 3, 4], ['有', 'you', 3, 6], ['央', 'yang', 1, 5], ['亚', 'ya', 4, 8],
+  ['爱', 'ai', 4, 13], ['壮', 'zhuang', 4, 7], ['庄', 'zhuang', 1, 13], ['岱', 'dai', 4, 8],
+  ['峤', 'jiao', 4, 15], ['崑', 'kun', 1, 11], ['崙', 'lun', 2, 11], ['崴', 'wai', 3, 12],
+  ['嶂', 'zhang', 4, 14], ['峦', 'luan', 2, 22], ['峒', 'dong', 4, 9], ['峄', 'yi', 4, 16],
+  ['峪', 'yu', 4, 10], ['崤', 'xiao', 2, 11], ['嶙', 'lin', 2, 15], ['砺', 'li', 4, 20],
+  ['砥', 'di', 3, 10], ['碇', 'ding', 4, 13], ['碚', 'bei', 4, 13], ['磬', 'qing', 4, 16],
+  ['圭', 'gui', 1, 6], ['圻', 'qi', 2, 7], ['垠', 'yin', 2, 9], ['垣', 'yuan', 2, 9],
+  ['堃', 'kun', 1, 11], ['境', 'jing', 4, 14], ['增', 'zeng', 1, 15], ['墀', 'chi', 2, 14],
+  ['墉', 'yong', 1, 14], ['壎', 'xun', 1, 17], ['圩', 'wei', 2, 6], ['坂', 'ban', 3, 12],
+  ['坊', 'fang', 1, 7], ['坞', 'wu', 4, 13], ['坝', 'ba', 4, 24], ['垌', 'dong', 4, 9],
+  ['垓', 'gai', 1, 9], ['垭', 'ya', 1, 11], ['埂', 'geng', 3, 10], ['埕', 'cheng', 2, 10],
+  ['埙', 'xun', 1, 13], ['堇', 'jin', 3, 11], ['塬', 'yuan', 2, 13], ['塾', 'shu', 2, 14],
+  ['畴', 'chou', 2, 19], ['畦', 'qi', 2, 11], ['畹', 'wan', 3, 13], ['研', 'yan', 2, 9],
+  ['砚', 'yan', 4, 12], ['磐', 'pan', 2, 15], ['砂', 'sha', 1, 9], ['峥', 'zheng', 1, 11],
+  ['嵘', 'rong', 2, 17], ['岷', 'min', 2, 8], ['峨', 'e', 2, 10], ['嵋', 'mei', 2, 12],
+  ['崧', 'song', 1, 11], ['岫', 'xiu', 4, 8], ['屹', 'yi', 4, 6], ['旺', 'wang', 4, 8],
+  ['缨', 'ying', 1, 23], ['娥', 'e', 2, 10], ['跃', 'yue', 4, 21], ['翔', 'xiang', 2, 12],
+  ['羽', 'yu', 3, 6], ['翼', 'yi', 4, 17], ['黄', 'huang', 2, 12], ['道', 'dao', 4, 16],
+  ['伊', 'yi', 1, 6], ['越', 'yue', 4, 12], ['以', 'yi', 3, 5], ['予', 'yu', 3, 4],
+  ['禹', 'yu', 3, 9],
+  // ── 金（143）──
+  ['馨', 'xin', 1, 20], ['诚', 'cheng', 2, 13], ['铃', 'ling', 2, 13], ['银', 'yin', 2, 14],
+  ['铜', 'tong', 2, 14], ['铁', 'tie', 3, 21], ['钊', 'zhao', 1, 10], ['钿', 'dian', 4, 13],
+  ['铄', 'shuo', 4, 23], ['锟', 'kun', 1, 16], ['镕', 'rong', 2, 18], ['镛', 'yong', 1, 19],
+  ['镒', 'yi', 4, 18], ['铖', 'cheng', 2, 15], ['玫', 'mei', 2, 9], ['玥', 'yue', 4, 9],
+  ['珂', 'ke', 1, 10], ['珉', 'min', 2, 10], ['珀', 'po', 4, 10], ['珮', 'pei', 4, 11],
+  ['琛', 'chen', 1, 13], ['琢', 'zuo', 2, 13], ['琥', 'hu', 3, 13], ['琨', 'kun', 1, 13],
+  ['瑀', 'yu', 3, 14], ['瑗', 'yuan', 4, 14], ['瑛', 'ying', 1, 14], ['瑭', 'tang', 2, 15],
+  ['璎', 'ying', 1, 22], ['瓒', 'zan', 4, 24], ['瑨', 'jin', 4, 15], ['倩', 'qian', 4, 10],
+  ['姗', 'shan', 1, 8], ['姝', 'shu', 1, 9], ['娴', 'xian', 2, 15], ['嫦', 'chang', 2, 14],
+  ['声', 'sheng', 1, 17], ['胜', 'sheng', 4, 12], ['才', 'cai', 2, 3], ['千', 'qian', 1, 3],
+  ['士', 'shi', 4, 3], ['小', 'xiao', 3, 3], ['上', 'shang', 4, 3], ['玙', 'yu', 2, 19],
+  ['玚', 'yang', 2, 14], ['玠', 'jie', 4, 9], ['玢', 'bin', 1, 9], ['玟', 'wen', 2, 9],
+  ['玳', 'dai', 4, 10], ['珈', 'jia', 1, 10], ['珖', 'guang', 1, 11], ['珙', 'gong', 3, 11],
+  ['珞', 'luo', 4, 11], ['珺', 'jun', 4, 12], ['琇', 'xiu', 4, 12], ['琊', 'ya', 2, 12],
+  ['琍', 'li', 2, 12], ['琎', 'jin', 4, 17], ['琏', 'lian', 3, 16], ['琚', 'ju', 1, 13],
+  ['琤', 'cheng', 1, 13], ['琬', 'wan', 3, 13], ['琮', 'cong', 2, 13], ['琯', 'guan', 3, 13],
+  ['琰', 'yan', 3, 13], ['琲', 'bei', 4, 13], ['琴', 'qin', 2, 13], ['瑁', 'mao', 4, 14],
+  ['瑆', 'xing', 1, 14], ['瑢', 'rong', 2, 15], ['瑱', 'tian', 4, 15], ['瑷', 'ai', 4, 18],
+  ['璆', 'qiu', 2, 16], ['璋', 'zhang', 1, 16], ['璘', 'lin', 2, 17], ['璜', 'huang', 2, 17],
+  ['璞', 'pu', 2, 17], ['璠', 'fan', 2, 17], ['璩', 'qu', 2, 18], ['璪', 'zao', 3, 18],
+  ['璨', 'can', 4, 18], ['钟', 'zhong', 1, 17], ['钥', 'yao', 4, 25], ['钲', 'zheng', 1, 13],
+  ['钺', 'yue', 4, 13], ['铉', 'xuan', 4, 13], ['铨', 'quan', 2, 14], ['铸', 'zhu', 4, 22],
+  ['锌', 'xin', 1, 15], ['锏', 'jian', 3, 20], ['锶', 'si', 1, 17], ['锷', 'e', 4, 17],
+  ['镌', 'juan', 1, 18], ['镐', 'gao', 3, 18], ['镜', 'jing', 4, 19], ['镝', 'di', 1, 19],
+  ['镠', 'liu', 2, 19], ['镡', 'chan', 2, 20], ['镧', 'lan', 2, 25], ['镫', 'deng', 4, 20],
+  ['镯', 'zhuo', 2, 21], ['镱', 'yi', 4, 21], ['镳', 'biao', 1, 23], ['镶', 'xiang', 1, 25],
+  ['钏', 'chuan', 4, 11], ['钗', 'chai', 1, 11], ['钤', 'qian', 2, 12], ['钫', 'fang', 1, 12],
+  ['铼', 'lai', 2, 16], ['舜', 'shun', 4, 12], ['朝', 'chao', 2, 12], ['赛', 'sai', 4, 17],
+  ['仕', 'shi', 4, 5], ['佐', 'zuo', 3, 7], ['儒', 'ru', 2, 16], ['仁', 'ren', 2, 4],
+  ['宗', 'zong', 1, 8], ['守', 'shou', 3, 6], ['定', 'ding', 4, 8], ['宝', 'bao', 3, 20],
+  ['盛', 'sheng', 4, 11], ['真', 'zhen', 1, 10], ['纯', 'chun', 2, 10], ['紫', 'zi', 3, 11],
+  ['缜', 'zhen', 3, 16], ['识', 'shi', 2, 19], ['顺', 'shun', 4, 12], ['升', 'sheng', 1, 4],
+  ['寿', 'shou', 4, 14], ['财', 'cai', 2, 10], ['绣', 'xiu', 4, 18], ['彩', 'cai', 3, 11],
+  ['婵', 'chan', 2, 15], ['瑟', 'se', 4, 14], ['鹊', 'que', 4, 19], ['骏', 'jun', 4, 17],
+  ['骥', 'ji', 4, 27], ['宙', 'zhou', 4, 8], ['石', 'shi', 2, 5], ['青', 'qing', 1, 8],
+  ['慎', 'shen', 4, 14], ['帅', 'shuai', 4, 9], ['靖', 'jing', 4, 13],
+  // ── 水（140）──
+  ['华', 'hua', 2, 14], ['红', 'hong', 2, 9], ['萍', 'ping', 2, 14], ['斌', 'bin', 1, 11],
+  ['妍', 'yan', 2, 9], ['美', 'mei', 3, 9], ['妹', 'mei', 4, 8], ['媚', 'mei', 4, 12],
+  ['妙', 'miao', 4, 7], ['妤', 'yu', 2, 7], ['凡', 'fan', 2, 3], ['百', 'bai', 3, 6],
+  ['万', 'wan', 4, 15], ['井', 'jing', 3, 4], ['品', 'pin', 3, 9], ['民', 'min', 2, 5],
+  ['求', 'qiu', 2, 6], ['孚', 'fu', 2, 7], ['朋', 'peng', 2, 8], ['霞', 'xia', 2, 17],
+  ['霁', 'ji', 4, 22], ['霄', 'xiao', 1, 15], ['霭', 'ai', 3, 24], ['霂', 'mu', 4, 15],
+  ['湖', 'hu', 2, 13], ['沅', 'yuan', 2, 8], ['沄', 'yun', 2, 16], ['沣', 'feng', 1, 22],
+  ['泸', 'lu', 2, 20], ['泷', 'long', 2, 20], ['泠', 'ling', 2, 9], ['沫', 'mo', 4, 9],
+  ['沭', 'shu', 4, 9], ['泺', 'luo', 4, 19], ['洪', 'hong', 2, 10], ['洱', 'er', 3, 10],
+  ['涓', 'juan', 1, 11], ['涔', 'cen', 2, 11], ['涧', 'jian', 4, 16], ['淋', 'lin', 2, 12],
+  ['淑', 'shu', 1, 12], ['淞', 'song', 1, 12], ['淡', 'dan', 4, 12], ['淮', 'huai', 2, 12],
+  ['淳', 'chun', 2, 12], ['溯', 'su', 4, 14], ['溶', 'rong', 2, 14], ['滢', 'ying', 2, 19],
+  ['满', 'man', 3, 15], ['潇', 'xiao', 1, 20], ['漪', 'yi', 1, 15], ['漫', 'man', 4, 15],
+  ['漾', 'yang', 4, 15], ['潭', 'tan', 2, 16], ['澎', 'peng', 2, 16], ['濛', 'meng', 2, 18],
+  ['瀛', 'ying', 2, 20], ['泛', 'fan', 4, 9], ['泱', 'yang', 1, 9], ['泮', 'pan', 4, 9],
+  ['泌', 'mi', 4, 9], ['泫', 'xuan', 4, 9], ['洌', 'lie', 4, 10], ['洮', 'tao', 2, 10],
+  ['浠', 'xi', 1, 11], ['浣', 'huan', 4, 11], ['浚', 'jun', 4, 11], ['浔', 'xun', 2, 16],
+  ['涑', 'su', 4, 11], ['涟', 'lian', 2, 15], ['涣', 'huan', 4, 13], ['涤', 'di', 2, 15],
+  ['淀', 'dian', 4, 17], ['渌', 'lu', 4, 12], ['渑', 'mian', 3, 17], ['渔', 'yu', 2, 15],
+  ['温', 'wen', 1, 14], ['港', 'gang', 3, 13], ['渲', 'xuan', 4, 13], ['游', 'you', 2, 13],
+  ['渺', 'miao', 3, 13], ['湟', 'huang', 2, 13], ['湫', 'jiao', 3, 13], ['源', 'yuan', 2, 14],
+  ['溱', 'qin', 2, 14], ['滁', 'chu', 2, 14], ['滂', 'pang', 1, 14], ['滇', 'dian', 1, 14],
+  ['滏', 'fu', 3, 14], ['滔', 'tao', 1, 14], ['滕', 'teng', 2, 14], ['滦', 'luan', 2, 27],
+  ['漆', 'qi', 1, 15], ['演', 'yan', 3, 15], ['漠', 'mo', 4, 15], ['漩', 'xuan', 2, 15],
+  ['潋', 'lian', 4, 21], ['潍', 'wei', 2, 18], ['潜', 'qian', 2, 16], ['潞', 'lu', 4, 16],
+  ['濠', 'hao', 2, 18], ['濡', 'ru', 2, 18], ['濮', 'pu', 2, 18], ['濯', 'zhuo', 2, 18],
+  ['灞', 'ba', 4, 25], ['霙', 'ying', 1, 17], ['沂', 'yi', 2, 8], ['沔', 'mian', 3, 8],
+  ['泾', 'jing', 1, 11], ['学', 'xue', 2, 16], ['欢', 'huan', 1, 22], ['喜', 'xi', 3, 12],
+  ['福', 'fu', 2, 14], ['富', 'fu', 4, 12], ['名', 'ming', 2, 6], ['好', 'hao', 3, 6],
+  ['贝', 'bei', 4, 7], ['麦', 'mai', 4, 11], ['武', 'wu', 3, 8], ['一', 'yi', 1, 1],
+  ['泰', 'tai', 4, 9], ['兴', 'xing', 1, 15], ['治', 'zhi', 4, 9], ['邦', 'bang', 1, 11],
+  ['恒', 'heng', 2, 10], ['发', 'fa', 1, 12], ['赋', 'fu', 4, 15], ['碧', 'bi', 4, 14],
+  ['雷', 'lei', 2, 13], ['霜', 'shuang', 1, 17], ['凤', 'feng', 4, 14], ['鹏', 'peng', 2, 19],
+  ['鹤', 'he', 4, 21], ['鸥', 'ou', 1, 22], ['鸣', 'ming', 2, 14], ['翰', 'han', 4, 16],
+  ['飞', 'fei', 1, 9], ['豪', 'hao', 2, 14], ['虎', 'hu', 3, 8], ['兵', 'bing', 1, 7],
+];
+
+const EXTRA_LIB = [
+  // ── 木（210）──
+  ['杰', '木', '才能出众', 'm'], ['军', '木', '军旅坚毅', 'm'], ['强', '木', '刚健有力', 'm'],
+  ['彬', '木', '文质彬彬', 'm'], ['国', '木', '家国担当', 'n'], ['春', '木', '春意生机', 'n'],
+  ['梅', '木', '梅花傲雪', 'f'], ['英', '木', '英华出众', 'n'], ['玉', '木', '温润如玉', 'f'],
+  ['桂', '木', '桂香高洁', 'n'], ['莉', '木', '茉莉清雅', 'f'], ['芊', '木', '草木芊绵', 'f'],
+  ['苏', '木', '复苏新生', 'n'], ['苑', '木', '苑囿文雅', 'n'], ['苓', '木', '茯苓甘润', 'f'],
+  ['荔', '木', '荔枝明艳', 'f'], ['慕', '木', '仰慕追远', 'n'], ['懋', '木', '勤勉盛大', 'm'],
+  ['楦', '木', '楦木成器', 'n'], ['树', '木', '树立成材', 'n'], ['柳', '木', '柳枝柔韧', 'f'],
+  ['杨', '木', '杨树挺拔', 'n'], ['桦', '木', '白桦正直', 'n'], ['桃', '木', '桃李芳华', 'f'],
+  ['杏', '木', '杏花明丽', 'f'], ['朵', '木', '花朵轻盈', 'f'], ['根', '木', '根深本固', 'n'],
+  ['桥', '木', '桥梁通达', 'n'], ['楼', '木', '楼阁高远', 'n'], ['榜', '木', '榜样立身', 'm'],
+  ['模', '木', '楷模可法', 'm'], ['格', '木', '格调方正', 'n'], ['籍', '木', '典籍文雅', 'n'],
+  ['箭', '木', '箭矢进取', 'm'], ['篪', '木', '竹篪清音', 'n'], ['箫', '木', '箫声悠远', 'n'],
+  ['笙', '木', '笙歌和鸣', 'n'], ['程', '木', '前程有序', 'n'], ['秦', '木', '秦地厚重', 'n'],
+  ['稳', '木', '稳当笃实', 'n'], ['栗', '木', '栗实坚实', 'n'], ['梨', '木', '梨花洁白', 'f'],
+  ['杜', '木', '杜若芬芳', 'n'], ['村', '木', '村野质朴', 'n'], ['校', '木', '校序文教', 'n'],
+  ['标', '木', '标格出众', 'm'], ['桩', '木', '桩基稳固', 'm'], ['梵', '木', '梵音清净', 'n'],
+  ['棣', '木', '棠棣和睦', 'n'], ['椿', '木', '椿树长寿', 'm'], ['榉', '木', '榉木坚实', 'n'],
+  ['橄', '木', '橄榄和平', 'n'], ['橦', '木', '橦木挺立', 'n'], ['芦', '木', '芦苇柔韧', 'n'],
+  ['苍', '木', '苍翠辽阔', 'n'], ['茅', '木', '茅草质朴', 'n'], ['荀', '木', '荀草芳洁', 'n'],
+  ['艺', '木', '才艺出众', 'n'], ['艾', '木', '艾草温厚', 'f'], ['藤', '木', '藤蔓绵延', 'n'],
+  ['蕖', '木', '芙蕖清丽', 'f'], ['荐', '木', '荐举贤能', 'n'], ['茏', '木', '茏葱茂盛', 'n'],
+  ['枞', '木', '枞树常青', 'n'], ['柽', '木', '柽柳坚韧', 'n'], ['柞', '木', '柞木坚实', 'n'],
+  ['柚', '木', '柚实丰硕', 'n'], ['枳', '木', '枳壳有用', 'n'], ['枸', '木', '枸木长青', 'n'],
+  ['枇', '木', '枇杷成荫', 'n'], ['杷', '木', '枇杷甘美', 'n'], ['柃', '木', '柃木细密', 'n'],
+  ['桉', '木', '桉树挺拔', 'n'], ['栟', '木', '栟榈常绿', 'n'], ['榔', '木', '榔木坚实', 'n'],
+  ['槲', '木', '槲叶宽厚', 'n'], ['橼', '木', '香橼清芬', 'n'], ['檩', '木', '檩条承重', 'n'],
+  ['檗', '木', '黄檗味苦', 'n'], ['椴', '木', '椴木细白', 'n'], ['槭', '木', '槭叶明丽', 'n'],
+  ['芙', '木', '芙蓉清艳', 'f'], ['蓝', '木', '蓝草青碧', 'n'], ['芍', '木', '芍药明媚', 'f'],
+  ['茹', '木', '茹含柔韧', 'f'], ['菖', '木', '菖蒲清芬', 'n'], ['菘', '木', '菘菜朴实', 'n'],
+  ['萝', '木', '女萝绵延', 'f'], ['葳', '木', '葳蕤繁盛', 'f'], ['葭', '木', '蒹葭苍苍', 'f'],
+  ['蒲', '木', '蒲草柔韧', 'n'], ['蓼', '木', '蓼花淡雅', 'f'], ['蕤', '木', '葳蕤华美', 'f'],
+  ['藜', '木', '藜藿质朴', 'n'], ['蘅', '木', '杜蘅香草', 'f'], ['苹', '木', '苹草清雅', 'f'],
+  ['篁', '木', '竹篁幽深', 'n'], ['篆', '木', '篆书古雅', 'n'], ['篇', '木', '篇章有序', 'n'],
+  ['笺', '木', '笺纸雅致', 'f'], ['种', '木', '种德收福', 'n'], ['科', '木', '科第有成', 'n'],
+  ['季', '木', '四季有序', 'n'], ['秉', '木', '秉持正直', 'm'], ['秩', '木', '秩序井然', 'n'],
+  ['稔', '木', '岁稔丰实', 'n'], ['稻', '木', '稻谷丰登', 'n'], ['乔', '木', '乔木高耸', 'n'],
+  ['娇', '木', '娇柔明丽', 'f'], ['巧', '木', '巧思灵慧', 'f'], ['俏', '木', '俏丽灵动', 'f'],
+  ['柱', '木', '柱石担当', 'm'], ['栖', '木', '栖居安稳', 'n'], ['栉', '木', '栉比有序', 'n'],
+  ['榭', '木', '亭榭雅致', 'n'], ['檠', '木', '灯檠照夜', 'n'], ['櫆', '木', '櫆木挺立', 'n'],
+  ['櫂', '木', '舟櫂行远', 'n'], ['柟', '木', '楠木坚韧', 'n'], ['枥', '木', '枥马志远', 'm'],
+  ['栌', '木', '栌木坚实', 'n'], ['桤', '木', '桤木速生', 'n'], ['梣', '木', '梣木细密', 'n'],
+  ['梃', '木', '梃木挺直', 'n'], ['梼', '木', '梼木坚韧', 'n'], ['椁', '木', '椁木厚重', 'n'],
+  ['椋', '木', '椋鸟群飞', 'n'], ['椤', '木', '椤木常绿', 'n'], ['楗', '木', '楗木固本', 'n'],
+  ['楝', '木', '楝花清苦', 'n'], ['楫', '木', '舟楫济渡', 'n'], ['榀', '木', '榀木成架', 'n'],
+  ['榇', '木', '榇木质朴', 'n'], ['榈', '木', '棕榈常青', 'n'], ['榍', '木', '榍木细坚', 'n'],
+  ['榧', '木', '榧木香实', 'n'], ['槎', '木', '星槎远行', 'n'], ['槔', '木', '桔槔提水', 'n'],
+  ['槠', '木', '槠木结实', 'n'], ['樘', '木', '樘木成室', 'n'], ['樨', '木', '木樨清香', 'f'],
+  ['橹', '木', '橹楫行舟', 'n'], ['檫', '木', '檫木初生', 'n'], ['秣', '木', '秣马厉兵', 'n'],
+  ['稞', '木', '青稞丰实', 'n'], ['稹', '木', '稹密周到', 'n'], ['穰', '木', '丰穰满仓', 'n'],
+  ['穑', '木', '稼穑勤劳', 'n'], ['笏', '木', '笏板端持', 'n'], ['笈', '木', '书笈负行', 'n'],
+  ['笕', '木', '竹笕引泉', 'n'], ['笋', '木', '春笋新生', 'n'], ['笳', '木', '胡笳悠远', 'n'],
+  ['筌', '木', '筌蹄得意', 'n'], ['筇', '木', '筇竹清瘦', 'n'], ['筑', '木', '筑室成业', 'n'],
+  ['筚', '木', '筚路蓝缕', 'n'], ['筵', '木', '筵席和乐', 'n'], ['箐', '木', '竹箐深青', 'n'],
+  ['箓', '木', '符箓玄远', 'n'], ['箦', '木', '箦床安寝', 'n'], ['箴', '木', '箴言规正', 'n'],
+  ['篌', '木', '箜篌清音', 'n'], ['篙', '木', '竹篙撑舟', 'n'], ['篝', '木', '篝火夜明', 'n'],
+  ['簃', '木', '楼簃清幽', 'n'], ['簌', '木', '簌簌轻响', 'n'], ['籁', '木', '天籁清远', 'n'],
+  ['籀', '木', '籀文古拙', 'n'], ['奕', '木', '神采奕奕', 'n'], ['可', '木', '可心如意', 'n'],
+  ['雅', '木', '雅正清和', 'f'], ['毅', '木', '刚毅果决', 'm'], ['健', '木', '健朗有力', 'm'],
+  ['康', '木', '康宁和乐', 'm'], ['彦', '木', '俊彦有才', 'm'], ['家', '木', '家和人兴', 'n'],
+  ['庆', '木', '庆云呈祥', 'm'], ['高', '木', '高远志洁', 'm'], ['久', '木', '久远恒长', 'n'],
+  ['功', '木', '功成不居', 'm'], ['贵', '木', '贵而不骄', 'm'], ['绮', '木', '绮丽华美', 'f'],
+  ['虹', '木', '虹霓明丽', 'f'], ['皓', '木', '皓月当空', 'n'], ['婧', '木', '婧秀美好', 'f'],
+  ['婕', '木', '婕妤温婉', 'f'], ['义', '木', '义正担当', 'm'], ['廉', '木', '廉正自守', 'm'],
+  ['勤', '木', '勤勉不懈', 'm'], ['俭', '木', '俭以养德', 'm'], ['谷', '木', '谷虚能容', 'n'],
+  ['谨', '木', '谨言慎行', 'n'], ['敬', '木', '敬慎有礼', 'n'], ['恭', '木', '恭谨温良', 'n'],
+  ['宽', '木', '宽厚容人', 'n'], ['棋', '木', '棋局从容', 'n'], ['笔', '木', '笔耕不辍', 'n'],
+  ['歌', '木', '歌韵悠扬', 'f'], ['翠', '木', '翠色欲滴', 'f'], ['雁', '木', '雁行有序', 'f'],
+  ['莺', '木', '莺啼春晓', 'f'], ['麒', '木', '麒麟祥瑞', 'm'], ['骐', '木', '骐骥千里', 'm'],
+  ['仪', '木', '仪范端庄', 'n'], ['喆', '木', '喆睿明达', 'm'], ['翊', '木', '翊赞高飞', 'n'],
+  ['芯', '木', '芯香清婉', 'f'], ['娟', '木', '娟秀清丽', 'f'], ['凯', '木', '凯旋豪迈', 'm'],
+  // ── 火（89）──
+  ['德', '火', '德行厚正', 'm'], ['志', '火', '志向高远', 'm'], ['丽', '火', '明丽秀美', 'f'],
+  ['娜', '火', '婀娜多姿', 'f'], ['天', '火', '天宇开阔', 'n'], ['哲', '火', '明哲通达', 'm'],
+  ['映', '火', '映照生辉', 'n'], ['辉', '火', '光辉焕发', 'n'], ['耀', '火', '光耀门庭', 'm'],
+  ['烁', '火', '烁亮明盛', 'n'], ['燃', '火', '燃志进取', 'm'], ['燊', '火', '炽盛兴旺', 'm'],
+  ['焰', '火', '光焰明朗', 'n'], ['曙', '火', '曙色初开', 'n'], ['煦', '火', '和煦温暖', 'n'],
+  ['赤', '火', '赤诚热烈', 'm'], ['绯', '火', '绯红明艳', 'f'], ['忠', '火', '忠厚守信', 'm'],
+  ['念', '火', '念兹在兹', 'n'], ['情', '火', '情意温厚', 'f'], ['昌', '火', '昌盛兴隆', 'n'],
+  ['昇', '火', '旭日上升', 'n'], ['昶', '火', '日长天朗', 'n'], ['晁', '火', '晨光初照', 'n'],
+  ['晞', '火', '晨露待晞', 'n'], ['暧', '火', '暧然温煦', 'n'], ['曌', '火', '日月当空', 'n'],
+  ['昉', '火', '天方亮', 'n'], ['昫', '火', '日光温煦', 'n'], ['晅', '火', '日光明朗', 'n'],
+  ['旸', '火', '日出晴明', 'n'], ['炘', '火', '火热明亮', 'n'], ['炆', '火', '温火细烹', 'n'],
+  ['炬', '火', '火炬照路', 'm'], ['炳', '火', '炳然显著', 'n'], ['烈', '火', '刚烈有节', 'm'],
+  ['烊', '火', '熔金流彩', 'n'], ['焱', '火', '火花飞腾', 'm'], ['煌', '火', '辉煌明亮', 'n'],
+  ['熀', '火', '火光闪耀', 'n'], ['燎', '火', '燎原之势', 'm'], ['燚', '火', '火势炽盛', 'm'],
+  ['燧', '火', '取火启明', 'n'], ['燮', '火', '调和燮理', 'n'], ['爔', '火', '晨光熹微', 'n'],
+  ['恕', '火', '恕道宽厚', 'n'], ['慈', '火', '慈爱温厚', 'f'], ['晃', '火', '明光晃朗', 'n'],
+  ['晢', '火', '明亮昭著', 'n'], ['晰', '火', '清晰明辨', 'n'], ['暐', '火', '日盛光明', 'n'],
+  ['暘', '火', '日出晴明', 'n'], ['曈', '火', '曚昽初明', 'n'], ['良', '火', '良善温厚', 'n'],
+  ['郎', '火', '俊朗少年', 'm'], ['耿', '火', '耿直光明', 'm'], ['离', '火', '离火明丽', 'n'],
+  ['午', '火', '午日正中', 'n'], ['炯', '火', '目光炯炯', 'n'], ['焜', '火', '明亮光辉', 'n'],
+  ['煐', '火', '光彩焕发', 'f'], ['婷', '火', '婷婷玉立', 'f'], ['妮', '火', '妮子亲切', 'f'],
+  ['媛', '火', '媛德温婉', 'f'], ['隆', '火', '隆盛高显', 'm'], ['代', '火', '代有传承', 'n'],
+  ['之', '火', '行之有恒', 'n'], ['政', '火', '政通人和', 'm'], ['登', '火', '登高望远', 'm'],
+  ['达', '火', '通达明理', 'm'], ['通', '火', '通明畅达', 'n'], ['长', '火', '长乐未央', 'n'],
+  ['进', '火', '进取不息', 'm'], ['显', '火', '显扬光达', 'm'], ['绫', '火', '绫罗轻柔', 'f'],
+  ['章', '火', '文章华彩', 'n'], ['采', '火', '采采流水', 'n'], ['礼', '火', '礼敬和正', 'm'],
+  ['理', '火', '理明通达', 'm'], ['中', '火', '中正平和', 'n'], ['让', '火', '谦让有度', 'n'],
+  ['腾', '火', '腾达向上', 'm'], ['鹭', '火', '鹭立清波', 'f'], ['麟', '火', '麟趾呈祥', 'm'],
+  ['翎', '火', '翎羽华美', 'f'], ['龙', '火', '龙腾四海', 'm'], ['绿', '火', '绿意盎然', 'f'],
+  ['立', '火', '立身有成', 'n'], ['力', '火', '力行致远', 'm'],
+  // ── 土（89）──
+  ['伟', '土', '伟岸担当', 'm'], ['勇', '土', '勇敢果决', 'm'], ['怡', '土', '怡然和悦', 'f'],
+  ['婉', '土', '婉约温润', 'f'], ['娅', '土', '娅然清秀', 'f'], ['威', '土', '威严有度', 'm'],
+  ['卫', '土', '护卫担当', 'm'], ['嫣', '土', '嫣然明丽', 'f'], ['燕', '土', '燕子轻盈', 'f'],
+  ['艳', '土', '明艳照人', 'f'], ['优', '土', '优游从容', 'n'], ['允', '土', '允执厥中', 'n'],
+  ['友', '土', '友睦和善', 'n'], ['有', '土', '有守有为', 'n'], ['央', '土', '中央端正', 'n'],
+  ['亚', '土', '亚次有序', 'n'], ['爱', '土', '仁爱温厚', 'f'], ['壮', '土', '壮健有力', 'm'],
+  ['庄', '土', '庄重端方', 'n'], ['岱', '土', '岱岳崇高', 'm'], ['峤', '土', '山峤高峻', 'm'],
+  ['崑', '土', '崑仑高远', 'm'], ['崙', '土', '崑仑苍茫', 'n'], ['崴', '土', '山崴峻拔', 'n'],
+  ['嶂', '土', '层嶂叠翠', 'n'], ['峦', '土', '山峦绵延', 'n'], ['峒', '土', '山峒清幽', 'n'],
+  ['峄', '土', '峄山孤秀', 'n'], ['峪', '土', '山谷幽深', 'n'], ['崤', '土', '崤函险要', 'n'],
+  ['嶙', '土', '嶙峋有骨', 'n'], ['砺', '土', '砥砺前行', 'm'], ['砥', '土', '砥柱中流', 'm'],
+  ['碇', '土', '碇泊安稳', 'n'], ['碚', '土', '碚石坚稳', 'n'], ['磬', '土', '磬音清越', 'n'],
+  ['圭', '土', '圭璧端洁', 'n'], ['圻', '土', '疆圻辽阔', 'n'], ['垠', '土', '垠际无涯', 'n'],
+  ['垣', '土', '垣墙守护', 'n'], ['堃', '土', '厚德载物', 'm'], ['境', '土', '境界高远', 'n'],
+  ['增', '土', '增益进取', 'n'], ['墀', '土', '丹墀明亮', 'n'], ['墉', '土', '墉垣坚固', 'n'],
+  ['壎', '土', '埙乐和鸣', 'n'], ['圩', '土', '圩堤护田', 'n'], ['坂', '土', '坡坂上行', 'n'],
+  ['坊', '土', '街坊和乐', 'n'], ['坞', '土', '山坞清幽', 'n'], ['坝', '土', '堤坝稳固', 'n'],
+  ['垌', '土', '田垌开阔', 'n'], ['垓', '土', '垓下辽阔', 'n'], ['垭', '土', '山垭通达', 'n'],
+  ['埂', '土', '田埂有序', 'n'], ['埕', '土', '埕地和畅', 'n'], ['埙', '土', '埙音古朴', 'n'],
+  ['堇', '土', '堇菜清雅', 'f'], ['塬', '土', '塬上高平', 'n'], ['塾', '土', '塾学育人', 'n'],
+  ['畴', '土', '田畴丰茂', 'n'], ['畦', '土', '畦田整齐', 'n'], ['畹', '土', '畹亩兰芳', 'f'],
+  ['研', '土', '研精致思', 'n'], ['砚', '土', '砚田笔耕', 'n'], ['磐', '土', '磐石坚定', 'n'],
+  ['砂', '土', '砂砾成珠', 'n'], ['峥', '土', '峥嵘岁月', 'm'], ['嵘', '土', '峥嵘高峻', 'm'],
+  ['岷', '土', '岷山高远', 'n'], ['峨', '土', '峨眉秀拔', 'n'], ['嵋', '土', '峨嵋秀丽', 'n'],
+  ['崧', '土', '崧岳崇高', 'm'], ['岫', '土', '云岫出山', 'n'], ['屹', '土', '屹然挺立', 'm'],
+  ['旺', '土', '旺达兴隆', 'm'], ['缨', '土', '缨络华美', 'f'], ['娥', '土', '娥眉秀美', 'f'],
+  ['跃', '土', '跃马扬鞭', 'm'], ['翔', '土', '翔集高远', 'm'], ['羽', '土', '羽翼丰满', 'n'],
+  ['翼', '土', '翼展云天', 'n'], ['黄', '土', '黄中通理', 'n'], ['道', '土', '道法自然', 'm'],
+  ['伊', '土', '伊人清婉', 'f'], ['越', '土', '越超卓然', 'n'], ['以', '土', '以诚立身', 'n'],
+  ['予', '土', '予怀温厚', 'n'], ['禹', '土', '禹功远志', 'm'],
+  // ── 金（143）──
+  ['馨', '金', '德馨远闻', 'f'], ['诚', '金', '诚正守信', 'n'], ['铃', '金', '铃音清越', 'f'],
+  ['银', '金', '银白光洁', 'n'], ['铜', '金', '铜质坚厚', 'n'], ['铁', '金', '铁骨铮铮', 'm'],
+  ['钊', '金', '钊勉进取', 'm'], ['钿', '金', '钿饰明丽', 'f'], ['铄', '金', '铄金流彩', 'n'],
+  ['锟', '金', '锟铻利剑', 'm'], ['镕', '金', '镕铸成器', 'n'], ['镛', '金', '大钟和鸣', 'n'],
+  ['镒', '金', '镒金厚重', 'n'], ['铖', '金', '铖金坚利', 'm'], ['玫', '金', '玫瑰芬芳', 'f'],
+  ['玥', '金', '神珠温润', 'f'], ['珂', '金', '珂玉洁白', 'f'], ['珉', '金', '珉石似玉', 'n'],
+  ['珀', '金', '琥珀温润', 'n'], ['珮', '金', '玉佩叮咚', 'f'], ['琛', '金', '琛宝珍贵', 'n'],
+  ['琢', '金', '琢磨成器', 'n'], ['琥', '金', '琥珀生辉', 'n'], ['琨', '金', '琨玉坚美', 'm'],
+  ['瑀', '金', '瑀玉温润', 'f'], ['瑗', '金', '瑗玉大孔', 'f'], ['瑛', '金', '瑛华晶莹', 'f'],
+  ['瑭', '金', '瑭玉温润', 'n'], ['璎', '金', '璎珞华美', 'f'], ['瓒', '金', '瓒圭礼器', 'n'],
+  ['瑨', '金', '瑨玉坚美', 'n'], ['倩', '金', '倩丽美好', 'f'], ['姗', '金', '姗姗从容', 'f'],
+  ['姝', '金', '姝丽端庄', 'f'], ['娴', '金', '娴静文雅', 'f'], ['嫦', '金', '嫦娥明丽', 'f'],
+  ['声', '金', '声名清远', 'n'], ['胜', '金', '胜志有为', 'm'], ['才', '金', '才思敏捷', 'n'],
+  ['千', '金', '千山辽阔', 'n'], ['士', '金', '士志弘毅', 'm'], ['小', '金', '小巧玲珑', 'f'],
+  ['上', '金', '上进不息', 'n'], ['玙', '金', '玙璠美玉', 'n'], ['玚', '金', '玚圭礼玉', 'n'],
+  ['玠', '金', '玠圭瑞玉', 'n'], ['玢', '金', '玢玉纹理', 'n'], ['玟', '金', '玟玉温润', 'f'],
+  ['玳', '金', '玳瑁华美', 'n'], ['珈', '金', '珈饰华美', 'f'], ['珖', '金', '珖玉温润', 'n'],
+  ['珙', '金', '珙璧大玉', 'n'], ['珞', '金', '珞珞坚石', 'f'], ['珺', '金', '珺玉温润', 'f'],
+  ['琇', '金', '琇玉洁白', 'f'], ['琊', '金', '琅琊秀色', 'n'], ['琍', '金', '琍玉玲珑', 'f'],
+  ['琎', '金', '琎玉似石', 'n'], ['琏', '金', '琏瑚礼器', 'n'], ['琚', '金', '琚玉佩玉', 'f'],
+  ['琤', '金', '琤琮玉声', 'n'], ['琬', '金', '琬圭温润', 'f'], ['琮', '金', '琮璧礼天', 'n'],
+  ['琯', '金', '琯玉古雅', 'n'], ['琰', '金', '琰圭上尖', 'f'], ['琲', '金', '琲珠成串', 'f'],
+  ['琴', '金', '琴音和雅', 'f'], ['瑁', '金', '瑁圭礼器', 'n'], ['瑆', '金', '瑆玉光洁', 'f'],
+  ['瑢', '金', '瑢玉温润', 'f'], ['瑱', '金', '瑱玉充耳', 'f'], ['瑷', '金', '瑷玉美善', 'f'],
+  ['璆', '金', '璆琳美玉', 'n'], ['璋', '金', '璋圭瑞器', 'm'], ['璘', '金', '璘彬有文', 'n'],
+  ['璜', '金', '璜璧礼器', 'n'], ['璞', '金', '璞玉浑金', 'n'], ['璠', '金', '璠玙美玉', 'n'],
+  ['璩', '金', '璩玉环佩', 'n'], ['璪', '金', '璪玉华饰', 'n'], ['璨', '金', '璨然明丽', 'n'],
+  ['钟', '金', '钟声远扬', 'n'], ['钥', '金', '钥启门庭', 'n'], ['钲', '金', '钲鼓清亮', 'n'],
+  ['钺', '金', '钺斧威仪', 'm'], ['铉', '金', '铉鼎之重', 'n'], ['铨', '金', '铨衡公正', 'n'],
+  ['铸', '金', '铸造成器', 'n'], ['锌', '金', '锌白坚润', 'n'], ['锏', '金', '锏锏刚直', 'm'],
+  ['锶', '金', '锶光清亮', 'n'], ['锷', '金', '锷锋锐利', 'm'], ['镌', '金', '镌刻铭心', 'n'],
+  ['镐', '金', '镐京古都', 'n'], ['镜', '金', '镜明如水', 'n'], ['镝', '金', '镝锋鸣响', 'n'],
+  ['镠', '金', '镠金精纯', 'n'], ['镡', '金', '镡剑厚重', 'n'], ['镧', '金', '镧光清润', 'n'],
+  ['镫', '金', '镫鞍稳当', 'n'], ['镯', '金', '镯环明丽', 'f'], ['镱', '金', '镱光清亮', 'n'],
+  ['镳', '金', '镳马疾驰', 'n'], ['镶', '金', '镶饰华美', 'f'], ['钏', '金', '钏镯清脆', 'f'],
+  ['钗', '金', '钗头明丽', 'f'], ['钤', '金', '钤印守信', 'n'], ['钫', '金', '钫钟清鸣', 'n'],
+  ['铼', '金', '铼金坚亮', 'n'], ['舜', '金', '舜日尧天', 'm'], ['朝', '金', '朝阳向上', 'n'],
+  ['赛', '金', '赛过进取', 'n'], ['仕', '金', '仕途有为', 'm'], ['佐', '金', '佐理有成', 'm'],
+  ['儒', '金', '儒雅博学', 'm'], ['仁', '金', '仁厚爱人', 'm'], ['宗', '金', '宗本承先', 'n'],
+  ['守', '金', '守正不移', 'n'], ['定', '金', '安定有定', 'n'], ['宝', '金', '珍宝可贵', 'n'],
+  ['盛', '金', '兴盛丰盛', 'n'], ['真', '金', '真诚不伪', 'f'], ['纯', '金', '纯良清正', 'f'],
+  ['紫', '金', '紫气东来', 'f'], ['缜', '金', '缜密周全', 'n'], ['识', '金', '见识明达', 'n'],
+  ['顺', '金', '顺遂和达', 'm'], ['升', '金', '升腾向上', 'm'], ['寿', '金', '寿康安泰', 'm'],
+  ['财', '金', '财源广进', 'm'], ['绣', '金', '锦绣前程', 'f'], ['彩', '金', '彩云呈祥', 'f'],
+  ['婵', '金', '婵娟明丽', 'f'], ['瑟', '金', '琴瑟和鸣', 'f'], ['鹊', '金', '鹊报佳音', 'f'],
+  ['骏', '金', '骏马奔腾', 'm'], ['骥', '金', '骥足千里', 'm'], ['宙', '金', '宇宙辽阔', 'n'],
+  ['石', '金', '石坚志定', 'm'], ['青', '金', '青出于蓝', 'n'], ['慎', '金', '慎思笃行', 'n'],
+  ['帅', '金', '帅毅英朗', 'm'], ['靖', '金', '靖安和正', 'n'],
+  // ── 水（140）──
+  ['华', '水', '华彩光华', 'n'], ['红', '水', '红润明丽', 'f'], ['萍', '水', '浮萍清圆', 'f'],
+  ['斌', '水', '文质彬彬', 'm'], ['妍', '水', '妍丽美好', 'f'], ['美', '水', '美善温润', 'f'],
+  ['妹', '水', '妹好亲切', 'f'], ['媚', '水', '妩媚明丽', 'f'], ['妙', '水', '妙思灵秀', 'f'],
+  ['妤', '水', '婕妤温婉', 'f'], ['凡', '水', '凡而不庸', 'n'], ['百', '水', '百川归海', 'n'],
+  ['万', '水', '万流归海', 'n'], ['井', '水', '井泉清冽', 'n'], ['品', '水', '品正清雅', 'n'],
+  ['民', '水', '民厚安和', 'n'], ['求', '水', '求索不止', 'n'], ['孚', '水', '孚信立身', 'n'],
+  ['朋', '水', '朋交和乐', 'n'], ['霞', '水', '霞光满天', 'f'], ['霁', '水', '雨霁天晴', 'n'],
+  ['霄', '水', '云霄高远', 'n'], ['霭', '水', '云霭温和', 'n'], ['霂', '水', '霂雨润物', 'n'],
+  ['湖', '水', '湖光浩渺', 'n'], ['沅', '水', '沅水清长', 'n'], ['沄', '水', '沄水流转', 'n'],
+  ['沣', '水', '沣水丰沛', 'n'], ['泸', '水', '泸水清深', 'n'], ['泷', '水', '泷水奔流', 'n'],
+  ['泠', '水', '泠泠清响', 'f'], ['沫', '水', '沫花轻盈', 'f'], ['沭', '水', '沭水润泽', 'n'],
+  ['泺', '水', '泺水清源', 'n'], ['洪', '水', '洪流浩大', 'm'], ['洱', '水', '洱海清碧', 'n'],
+  ['涓', '水', '涓流不息', 'f'], ['涔', '水', '涔涔细雨', 'n'], ['涧', '水', '山涧清幽', 'n'],
+  ['淋', '水', '淋漓畅快', 'n'], ['淑', '水', '淑善温良', 'f'], ['淞', '水', '淞江雾凇', 'n'],
+  ['淡', '水', '淡泊明志', 'n'], ['淮', '水', '淮水长流', 'n'], ['淳', '水', '淳厚质朴', 'n'],
+  ['溯', '水', '溯本求源', 'n'], ['溶', '水', '溶溶月色', 'n'], ['滢', '水', '滢澈清亮', 'f'],
+  ['满', '水', '满而不溢', 'n'], ['潇', '水', '潇洒清逸', 'n'], ['漪', '水', '涟漪轻漾', 'f'],
+  ['漫', '水', '漫远从容', 'n'], ['漾', '水', '水漾清波', 'f'], ['潭', '水', '潭水深沉', 'n'],
+  ['澎', '水', '澎湃有力', 'n'], ['濛', '水', '濛濛细雨', 'n'], ['瀛', '水', '瀛洲浩渺', 'n'],
+  ['泛', '水', '泛舟江湖', 'n'], ['泱', '水', '泱泱大度', 'n'], ['泮', '水', '泮宫文教', 'n'],
+  ['泌', '水', '泌泉清甘', 'n'], ['泫', '水', '泫然清露', 'f'], ['洌', '水', '清洌甘甜', 'n'],
+  ['洮', '水', '洮水长流', 'n'], ['浠', '水', '浠水清涟', 'n'], ['浣', '水', '浣纱清丽', 'f'],
+  ['浚', '水', '浚深通远', 'm'], ['浔', '水', '浔阳江头', 'n'], ['涑', '水', '涑水清流', 'n'],
+  ['涟', '水', '涟漪轻柔', 'f'], ['涣', '水', '涣然冰释', 'n'], ['涤', '水', '涤故更新', 'n'],
+  ['淀', '水', '淀水澄明', 'n'], ['渌', '水', '渌水清波', 'n'], ['渑', '水', '渑水长流', 'n'],
+  ['渔', '水', '渔歌晚唱', 'n'], ['温', '水', '温润和厚', 'f'], ['港', '水', '港湾安泊', 'n'],
+  ['渲', '水', '渲染成画', 'n'], ['游', '水', '游刃有余', 'n'], ['渺', '水', '渺远辽阔', 'n'],
+  ['湟', '水', '湟水浩荡', 'n'], ['湫', '水', '湫水清深', 'n'], ['源', '水', '源远流长', 'n'],
+  ['溱', '水', '溱水丰沛', 'n'], ['滁', '水', '滁水清幽', 'n'], ['滂', '水', '滂沱丰沛', 'n'],
+  ['滇', '水', '滇池浩渺', 'n'], ['滏', '水', '滏水清流', 'n'], ['滔', '水', '滔滔不绝', 'm'],
+  ['滕', '水', '滕水腾涌', 'n'], ['滦', '水', '滦水长流', 'n'], ['漆', '水', '漆园吏隐', 'n'],
+  ['演', '水', '演迤绵长', 'n'], ['漠', '水', '漠野辽阔', 'n'], ['漩', '水', '漩涡流转', 'n'],
+  ['潋', '水', '潋滟波光', 'f'], ['潍', '水', '潍水长流', 'n'], ['潜', '水', '潜心笃志', 'n'],
+  ['潞', '水', '潞水安流', 'n'], ['濠', '水', '濠梁观鱼', 'n'], ['濡', '水', '濡润涵养', 'n'],
+  ['濮', '水', '濮水清远', 'n'], ['濯', '水', '濯缨清流', 'n'], ['灞', '水', '灞桥烟柳', 'n'],
+  ['霙', '水', '霙雪花明', 'f'], ['沂', '水', '沂水春风', 'n'], ['沔', '水', '沔水悠悠', 'n'],
+  ['泾', '水', '泾渭分明', 'n'], ['学', '水', '学而不厌', 'n'], ['欢', '水', '欢欣和乐', 'n'],
+  ['喜', '水', '喜乐安宁', 'n'], ['福', '水', '福泽绵长', 'n'], ['富', '水', '富足丰盈', 'n'],
+  ['名', '水', '名实相符', 'n'], ['好', '水', '好善和乐', 'f'], ['贝', '水', '贝珠珍美', 'f'],
+  ['麦', '水', '麦浪丰登', 'n'], ['武', '水', '武毅有威', 'm'], ['一', '水', '一心一意', 'n'],
+  ['泰', '水', '泰然安和', 'm'], ['兴', '水', '兴旺进取', 'm'], ['治', '水', '治世有方', 'm'],
+  ['邦', '水', '邦国安定', 'm'], ['恒', '水', '恒久有常', 'm'], ['发', '水', '发荣滋长', 'n'],
+  ['赋', '水', '赋性聪敏', 'n'], ['碧', '水', '碧玉清莹', 'f'], ['雷', '水', '雷厉风行', 'm'],
+  ['霜', '水', '霜华清冷', 'f'], ['凤', '水', '凤鸣朝阳', 'f'], ['鹏', '水', '鹏程万里', 'm'],
+  ['鹤', '水', '鹤立清远', 'm'], ['鸥', '水', '鸥鹭忘机', 'n'], ['鸣', '水', '鸣珂锵玉', 'm'],
+  ['翰', '水', '翰墨书香', 'm'], ['飞', '水', '飞鸿远志', 'm'], ['豪', '水', '豪迈开阔', 'm'],
+  ['虎', '水', '虎步生风', 'm'], ['兵', '水', '兵毅果敢', 'm'],
+];
+
+return { EXTRA_READING, EXTRA_LIB };
+})();
+
+__mods['surname-data'] = (function () {
+// 姓氏库：998 个单姓 + 82 个复姓的康熙笔画与读音。
+//
+// 口径与 engine/name-data.js 顶部一致（康熙字典繁体字形 + 偏旁按本字计：氵→水4、艹→艸6、辶→辵7、
+// 阝右→邑7、王→玉5、月→肉6…）。拼音里 ü 写作 v，声调 1–4 单列；声调 0 只出现在拼音为空的行。
+//
+// 每一行怎么定下来的：三份独立资料互证（康熙笔画表 / 起名用字表 / 姓氏词典），
+// 三份都缺时用 Unihan 的康熙部首结构值（部首本字画数 + 剩余画数）复算，两者一致才收。
+// 仍分歧的字逐个手工裁定，理由写在下面「手工裁定」一節——这些是会被五格直接吃进去的数字。
+//
+// 手工裁定（括号里是被推翻的机器多数票）：
+//  温13（结构值 14：昷的剩余画数 Unihan 记多一笔）、赖16（旧表 20：賴是贝部九画，7+9=16）、
+//  万15（按繁体萬，艸6+9）、钟17/锺17（按繁体鍾）、迟19（按繁体遲，辵7+12）、
+//  沈8（水4+尤4；Unihan 计简体 7）、曹11、姜9（旧表已如此）、姬10、卜2、母5、年6、郄13、
+//  岳8（不取嶽17）、表9、里7、须12、历16、节13、栗10、萨20、嬴16、暨14、夔21、么3（从幺）、
+//  御11（不取禦16）、板8（不取闆17）；瓮（瓮/甕两形差 10 画）不收录，五格会明确报缺笔画。
+//
+// 只给笔画不给读音的 71 个字：作为姓氏有多读（如 乐 Lè/Yuè、查 Zhā/Chá），
+// 资料之间给不出唯一读法，与其猜一个错的，不如留空——面板与音韵分析会跳过这些字。
+const SURNAME_ROWS = [
+['乙', 1, 'yi', 3], ['卜', 2, 'bu', 3], ['刀', 2, 'dao', 1], ['刁', 2, 'diao', 1], ['丁', 2, 'ding', 1], ['九', 2, 'jiu', 3],
+  ['力', 2, 'li', 4], ['乜', 2, 'nie', 4], ['人', 2, 'ren', 2], ['寸', 3, 'cun', 4], ['大', 3, '', 0], ['干', 3, 'gan', 1],
+  ['弓', 3, 'gong', 1], ['己', 3, 'ji', 3], ['么', 3, 'yao', 1], ['千', 3, 'qian', 1], ['山', 3, 'shan', 1],
+  ['上', 3, 'shang', 4], ['士', 3, 'shi', 4], ['夕', 3, 'xi', 1], ['于', 3, 'yu', 2], ['子', 3, 'zi', 2], ['巴', 4, 'ba', 1],
+  ['卞', 4, 'bian', 4], ['不', 4, '', 0], ['才', 4, 'cai', 2], ['仇', 4, 'qiu', 2], ['丹', 4, 'dan', 1],
+  ['方', 4, 'fang', 1], ['夫', 4, '', 0], ['父', 4, 'fu', 4], ['戈', 4, 'ge', 1], ['公', 4, 'gong', 1], ['勾', 4, 'gou', 1],
+  ['户', 4, 'hu', 4], ['化', 4, '', 0], ['及', 4, 'ji', 2], ['介', 4, 'jie', 4], ['井', 4, 'jing', 3], ['亢', 4, 'kang', 4],
+  ['孔', 4, 'kong', 3], ['六', 4, 'lu', 4], ['毛', 4, 'mao', 2], ['木', 4, 'mu', 4], ['牛', 4, 'niu', 2], ['亓', 4, 'qi', 2],
+  ['仁', 4, 'ren', 2], ['壬', 4, 'ren', 2], ['仍', 4, 'reng', 2], ['少', 4, '', 0], ['殳', 4, 'shu', 1],
+  ['水', 4, 'shui', 3], ['太', 4, 'tai', 4], ['天', 4, 'tian', 1], ['王', 4, 'wang', 2], ['文', 4, 'wen', 2],
+  ['毋', 4, 'wu', 2], ['五', 4, 'wu', 3], ['尹', 4, 'yin', 3], ['尤', 4, 'you', 2], ['友', 4, 'you', 3],
+  ['元', 4, 'yuan', 2], ['允', 4, 'yun', 3], ['仉', 4, 'zhang', 3], ['之', 4, 'zhi', 1], ['支', 4, 'zhi', 1],
+  ['止', 4, 'zhi', 3], ['中', 4, '', 0], ['白', 5, 'bai', 2], ['包', 5, 'bao', 1], ['北', 5, '', 0], ['本', 5, 'ben', 3],
+  ['丙', 5, 'bing', 3], ['布', 5, 'bu', 4], ['出', 5, 'chu', 1], ['代', 5, 'dai', 4], ['付', 5, 'fu', 4],
+  ['甘', 5, 'gan', 1], ['功', 5, 'gong', 1], ['古', 5, 'gu', 3], ['禾', 5, 'he', 2], ['弘', 5, 'hong', 2],
+  ['甲', 5, 'jia', 3], ['巨', 5, 'ju', 4], ['句', 5, 'gou', 1], ['可', 5, '', 0], ['令', 5, 'ling', 4], ['卯', 5, 'mao', 3],
+  ['母', 5, 'mu', 3], ['皮', 5, 'pi', 2], ['平', 5, 'ping', 2], ['巧', 5, 'qiao', 3], ['丘', 5, 'qiu', 1],
+  ['冉', 5, 'ran', 3], ['申', 5, 'shen', 1], ['生', 5, 'sheng', 1], ['石', 5, 'shi', 2], ['史', 5, 'shi', 3],
+  ['世', 5, 'shi', 4], ['市', 5, 'shi', 4], ['示', 5, 'shi', 4], ['司', 5, 'si', 1], ['台', 5, 'tai', 2],
+  ['田', 5, 'tian', 2], ['仝', 5, 'tong', 2], ['戊', 5, 'wu', 4], ['仙', 5, 'xian', 1], ['玄', 5, 'xuan', 2],
+  ['以', 5, 'yi', 3], ['永', 5, 'yong', 3], ['用', 5, 'yong', 4], ['由', 5, 'you', 2], ['玉', 5, 'yu', 4], ['占', 5, '', 0],
+  ['召', 5, 'shao', 4], ['正', 5, 'zheng', 4], ['左', 5, 'zuo', 3], ['安', 6, 'an', 1], ['百', 6, 'bai', 3],
+  ['充', 6, 'chong', 1], ['次', 6, 'ci', 4], ['多', 6, 'duo', 1], ['伏', 6, 'fu', 2], ['光', 6, 'guang', 1],
+  ['圭', 6, 'gui', 1], ['亥', 6, 'hai', 4], ['合', 6, '', 0], ['后', 6, 'hou', 4], ['回', 6, 'hui', 2], ['吉', 6, 'ji', 2],
+  ['考', 6, 'kao', 3], ['匡', 6, 'kuang', 1], ['老', 6, 'lao', 3], ['米', 6, 'mi', 3], ['牟', 6, 'mou', 2],
+  ['年', 6, 'nian', 2], ['朴', 6, 'piao', 2], ['求', 6, 'qiu', 2], ['曲', 6, 'qu', 1], ['全', 6, 'quan', 2],
+  ['任', 6, 'ren', 2], ['戎', 6, 'rong', 2], ['舌', 6, 'she', 2], ['守', 6, 'shou', 3], ['夙', 6, 'su', 4], ['同', 6, '', 0],
+  ['危', 6, 'wei', 1], ['仵', 6, 'wu', 3], ['伍', 6, 'wu', 3], ['西', 6, 'xi', 1], ['向', 6, 'xiang', 4],
+  ['刑', 6, 'xing', 2], ['行', 6, 'xing', 2], ['休', 6, '', 0], ['羊', 6, 'yang', 2], ['仰', 6, 'yang', 3],
+  ['伊', 6, 'yi', 1], ['衣', 6, 'yi', 1], ['夷', 6, 'yi', 2], ['印', 6, 'yin', 4], ['有', 6, 'you', 3], ['宇', 6, 'yu', 3],
+  ['羽', 6, 'yu', 3], ['在', 6, 'zai', 4], ['兆', 6, 'zhao', 4], ['仲', 6, 'zhong', 4], ['朱', 6, 'zhu', 1],
+  ['竹', 6, 'zhu', 2], ['字', 6, 'zi', 4], ['贝', 7, 'bei', 4], ['孛', 7, 'bei', 4], ['别', 7, 'bie', 2], ['伯', 7, 'bo', 2],
+  ['步', 7, 'bu', 4], ['岑', 7, 'cen', 2], ['车', 7, 'che', 1], ['成', 7, 'cheng', 2], ['池', 7, 'chi', 2],
+  ['赤', 7, 'chi', 4], ['初', 7, 'chu', 1], ['但', 7, 'dan', 4], ['豆', 7, 'dou', 4], ['杜', 7, 'du', 4], ['佛', 7, '', 0],
+  ['甫', 7, 'fu', 3], ['改', 7, 'gai', 3], ['告', 7, 'gao', 4], ['谷', 7, 'gu', 3], ['汗', 7, '', 0], ['何', 7, 'he', 2],
+  ['宏', 7, 'hong', 2], ['夹', 7, 'jia', 1], ['江', 7, 'jiang', 1], ['局', 7, 'ju', 2], ['牢', 7, 'lao', 2],
+  ['冷', 7, 'leng', 3], ['李', 7, 'li', 3], ['里', 7, 'li', 3], ['利', 7, 'li', 4], ['良', 7, 'liang', 2],
+  ['吕', 7, 'lv', 3], ['杞', 7, 'qi', 3], ['汝', 7, 'ru', 3], ['佘', 7, 'she', 2], ['束', 7, 'shu', 4], ['似', 7, '', 0],
+  ['宋', 7, 'song', 4], ['佟', 7, 'tong', 2], ['彤', 7, 'tong', 2], ['完', 7, 'wan', 2], ['尾', 7, '', 0],
+  ['位', 7, 'wei', 4], ['巫', 7, 'wu', 1], ['吴', 7, 'wu', 2], ['吾', 7, '', 0], ['希', 7, 'xi', 1], ['系', 7, '', 0],
+  ['孝', 7, 'xiao', 4], ['辛', 7, 'xin', 1], ['延', 7, 'yan', 2], ['言', 7, 'yan', 2], ['冶', 7, 'ye', 3],
+  ['余', 7, 'yu', 2], ['艾', 8, 'ai', 4], ['昂', 8, 'ang', 2], ['板', 8, 'ban', 3], ['卑', 8, 'bei', 1], ['帛', 8, 'bo', 2],
+  ['昌', 8, 'chang', 1], ['抄', 8, 'chao', 1], ['承', 8, 'cheng', 2], ['狄', 8, 'di', 2], ['典', 8, 'dian', 3],
+  ['定', 8, 'ding', 4], ['东', 8, 'dong', 1], ['房', 8, 'fang', 2], ['奉', 8, 'feng', 4], ['扶', 8, 'fu', 2],
+  ['府', 8, 'fu', 3], ['庚', 8, 'geng', 1], ['官', 8, 'guan', 1], ['果', 8, 'guo', 3], ['函', 8, 'han', 2],
+  ['杭', 8, 'hang', 2], ['和', 8, 'he', 2], ['呼', 8, 'hu', 1], ['虎', 8, 'hu', 3], ['汲', 8, 'ji', 2], ['季', 8, 'ji', 4],
+  ['佼', 8, 'jiao', 3], ['金', 8, 'jin', 1], ['京', 8, 'jing', 1], ['咎', 8, 'jiu', 4], ['居', 8, 'ju', 1], ['卷', 8, '', 0],
+  ['抗', 8, 'kang', 4], ['空', 8, 'kong', 1], ['狂', 8, 'kuang', 2], ['来', 8, 'lai', 2], ['林', 8, 'lin', 2],
+  ['枚', 8, 'mei', 2], ['门', 8, 'men', 2], ['孟', 8, 'meng', 4], ['宓', 8, 'mi', 4], ['明', 8, 'ming', 2],
+  ['沐', 8, 'mu', 4], ['牧', 8, 'mu', 4], ['佴', 8, 'nai', 4], ['奈', 8, 'nai', 4], ['念', 8, 'nian', 4],
+  ['朋', 8, 'peng', 2], ['祁', 8, 'qi', 2], ['其', 8, '', 0], ['奇', 8, '', 0], ['歧', 8, 'qi', 2], ['青', 8, 'qing', 1],
+  ['屈', 8, 'qu', 1], ['沙', 8, 'sha', 1], ['尚', 8, 'shang', 4], ['沈', 8, 'shen', 3], ['始', 8, 'shi', 3],
+  ['侍', 8, 'shi', 4], ['受', 8, 'shou', 4], ['叔', 8, 'shu', 1], ['姒', 8, 'si', 4], ['所', 8, 'suo', 3], ['帖', 8, '', 0],
+  ['宛', 8, '', 0], ['汪', 8, 'wang', 1], ['委', 8, '', 0], ['沃', 8, 'wo', 4], ['武', 8, 'wu', 3], ['昔', 8, 'xi', 1],
+  ['析', 8, 'xi', 1], ['冼', 8, 'xian', 3], ['忻', 8, 'xin', 1], ['姓', 8, 'xing', 4], ['幸', 8, 'xing', 4],
+  ['依', 8, 'yi', 1], ['宜', 8, 'yi', 2], ['易', 8, 'yi', 4], ['於', 8, 'yu', 1], ['岳', 8, 'yue', 4], ['长', 8, 'zhang', 3],
+  ['折', 8, 'she', 2], ['政', 8, 'zheng', 4], ['枝', 8, '', 0], ['周', 8, 'zhou', 1], ['竺', 8, 'zhu', 2],
+  ['卓', 8, 'zhuo', 2], ['宗', 8, 'zong', 1], ['哀', 9, 'ai', 1], ['柏', 9, 'bai', 3], ['拜', 9, 'bai', 4],
+  ['保', 9, 'bao', 3], ['表', 9, 'biao', 3], ['波', 9, 'bo', 1], ['查', 9, 'zha', 1], ['柴', 9, 'chai', 2],
+  ['春', 9, 'chun', 1], ['度', 9, '', 0], ['段', 9, 'duan', 4], ['法', 9, 'fa', 3], ['飞', 9, 'fei', 1], ['风', 9, '', 0],
+  ['封', 9, 'feng', 1], ['革', 9, '', 0], ['冠', 9, '', 0], ['哈', 9, 'ha', 3], ['罕', 9, 'han', 3], ['红', 9, 'hong', 2],
+  ['侯', 9, 'hou', 2], ['厚', 9, 'hou', 4], ['後', 9, 'hou', 4], ['狐', 9, 'hu', 2], ['宦', 9, 'huan', 4],
+  ['皇', 9, 'huang', 2], ['计', 9, 'ji', 4], ['纪', 9, 'ji', 3], ['建', 9, 'jian', 4], ['姜', 9, 'jiang', 1],
+  ['军', 9, 'jun', 1], ['柯', 9, 'ke', 1], ['况', 9, 'kuang', 4], ['柳', 9, 'liu', 3], ['律', 9, 'lv', 4],
+  ['芒', 9, 'mang', 2], ['冒', 9, '', 0], ['弭', 9, 'mi', 3], ['南', 9, 'nan', 2], ['泥', 9, '', 0], ['祈', 9, 'qi', 2],
+  ['俟', 9, 'qi', 2], ['泣', 9, 'qi', 4], ['前', 9, 'qian', 2], ['秋', 9, 'qiu', 1], ['泉', 9, 'quan', 2],
+  ['却', 9, 'que', 4], ['柔', 9, 'rou', 2], ['厍', 9, 'she', 4], ['施', 9, 'shi', 1], ['是', 9, 'shi', 4],
+  ['首', 9, 'shou', 3], ['帅', 9, 'shuai', 4], ['拓', 9, 'tuo', 4], ['泰', 9, 'tai', 4], ['威', 9, 'wei', 1],
+  ['韦', 9, 'wei', 2], ['相', 9, 'xiang', 4], ['香', 9, 'xiang', 1], ['肖', 9, 'xiao', 1], ['信', 9, '', 0],
+  ['星', 9, 'xing', 1], ['性', 9, 'xing', 4], ['宣', 9, 'xuan', 1], ['姚', 9, 'yao', 2], ['要', 9, 'yao', 1],
+  ['奕', 9, 'yi', 4], ['羿', 9, 'yi', 4], ['盈', 9, 'ying', 2], ['勇', 9, 'yong', 3], ['俞', 9, 'yu', 2], ['禹', 9, 'yu', 3],
+  ['昝', 9, 'zan', 3], ['招', 9, 'zhao', 1], ['俎', 9, 'zu', 3], ['晁', 10, 'chao', 2], ['城', 10, 'cheng', 2],
+  ['乘', 10, '', 0], ['肥', 10, 'fei', 2], ['刚', 10, 'gang', 1], ['皋', 10, '', 0], ['高', 10, 'gao', 1],
+  ['耿', 10, 'geng', 3], ['宫', 10, 'gong', 1], ['恭', 10, 'gong', 1], ['拱', 10, 'gong', 3], ['贡', 10, 'gong', 4],
+  ['桂', 10, 'gui', 4], ['邗', 10, 'han', 2], ['盍', 10, 'he', 2], ['洪', 10, 'hong', 2], ['候', 10, 'hou', 4],
+  ['花', 10, 'hua', 1], ['桓', 10, 'huan', 2], ['姬', 10, 'ji', 1], ['家', 10, 'jia', 1], ['晋', 10, 'jin', 4],
+  ['酒', 10, 'jiu', 3], ['库', 10, 'ku', 4], ['栗', 10, 'li', 4], ['凌', 10, 'ling', 2], ['留', 10, 'liu', 2],
+  ['旅', 10, 'lv', 3], ['伦', 10, 'lun', 2], ['洛', 10, 'luo', 4], ['马', 10, 'ma', 3], ['秘', 10, '', 0],
+  ['纳', 10, 'na', 4], ['倪', 10, 'ni', 2], ['旁', 10, '', 0], ['秦', 10, 'qin', 2], ['邛', 10, 'qiong', 2],
+  ['容', 10, 'rong', 2], ['芮', 10, 'rui', 4], ['桑', 10, 'sang', 1], ['闪', 10, 'shan', 3], ['师', 10, 'shi', 1],
+  ['时', 10, 'shi', 2], ['书', 10, 'shu', 1], ['素', 10, 'su', 4], ['孙', 10, 'sun', 1], ['索', 10, 'suo', 3],
+  ['唐', 10, 'tang', 2], ['桐', 10, 'tong', 2], ['徒', 10, 'tu', 2], ['翁', 10, 'weng', 1], ['乌', 10, 'wu', 1],
+  ['奚', 10, 'xi', 1], ['席', 10, 'xi', 2], ['夏', 10, 'xia', 4], ['校', 10, '', 0], ['修', 10, 'xiu', 1],
+  ['徐', 10, 'xu', 2], ['轩', 10, 'xuan', 1], ['晏', 10, 'yan', 4], ['洋', 10, 'yang', 2], ['益', 10, 'yi', 4],
+  ['殷', 10, 'yin', 1], ['员', 10, 'yun', 4], ['原', 10, 'yuan', 2], ['袁', 10, 'yuan', 2], ['宰', 10, 'zai', 3],
+  ['展', 10, 'zhan', 3], ['钊', 10, 'zhao', 1], ['针', 10, 'zhen', 1], ['真', 10, 'zhen', 1], ['衷', 10, 'zhong', 1],
+  ['祝', 10, 'zhu', 4], ['祖', 10, 'zu', 3], ['敖', 11, 'ao', 2], ['班', 11, 'ban', 1], ['毕', 11, 'bi', 4],
+  ['闭', 11, 'bi', 4], ['曹', 11, 'cao', 2], ['常', 11, 'chang', 2], ['巢', 11, 'chao', 2], ['崇', 11, 'chong', 2],
+  ['啜', 11, 'chuai', 4], ['从', 11, 'cong', 2], ['崔', 11, 'cui', 1], ['笪', 11, 'da', 2], ['第', 11, 'di', 4],
+  ['浮', 11, 'fu', 2], ['符', 11, 'fu', 2], ['盖', 11, 'ge', 3], ['苟', 11, 'gou', 3], ['贯', 11, 'guan', 4],
+  ['国', 11, 'guo', 2], ['海', 11, 'hai', 3], ['胡', 11, 'hu', 2], ['斛', 11, 'hu', 2], ['扈', 11, 'hu', 4],
+  ['祭', 11, 'ji', 4], ['坚', 11, 'jian', 1], ['将', 11, '', 0], ['康', 11, 'kang', 1], ['寇', 11, 'kou', 4],
+  ['苦', 11, 'ku', 3], ['犁', 11, 'li', 2], ['梁', 11, 'liang', 2], ['聊', 11, 'liao', 2], ['娄', 11, 'lou', 2],
+  ['鹿', 11, 'lu', 4], ['麻', 11, 'ma', 2], ['麦', 11, 'mai', 4], ['茅', 11, 'mao', 2], ['茆', 11, 'mao', 2],
+  ['茂', 11, 'mao', 4], ['梅', 11, 'mei', 2], ['苗', 11, 'miao', 2], ['敏', 11, 'min', 3], ['那', 11, 'na', 1],
+  ['偶', 11, 'ou', 3], ['浦', 11, 'pu', 3], ['戚', 11, 'qi', 1], ['牵', 11, 'qian', 1], ['乾', 11, '', 0],
+  ['卿', 11, 'qing', 1], ['区', 11, 'ou', 1], ['雀', 11, '', 0], ['商', 11, 'shang', 1], ['绍', 11, 'shao', 4],
+  ['宿', 11, 'su', 4], ['眭', 11, 'sui', 1], ['堂', 11, 'tang', 2], ['涂', 11, 'tu', 2], ['庹', 11, 'tuo', 3],
+  ['望', 11, 'wang', 4], ['伟', 11, 'wei', 3], ['尉', 11, 'yu', 4], ['问', 11, 'wen', 4], ['务', 11, 'wu', 4],
+  ['悟', 11, 'wu', 4], ['悉', 11, 'xi', 1], ['习', 11, 'xi', 2], ['邢', 11, 'xing', 2], ['胥', 11, 'xu', 1],
+  ['许', 11, 'xu', 3], ['雪', 11, 'xue', 3], ['焉', 11, 'yan', 1], ['闫', 11, 'yan', 2], ['野', 11, 'ye', 3],
+  ['英', 11, 'ying', 1], ['鱼', 11, 'yu', 2], ['御', 11, 'yu', 4], ['苑', 11, 'yuan', 4], ['粘', 11, '', 0],
+  ['张', 11, 'zhang', 1], ['章', 11, 'zhang', 1], ['终', 11, 'zhong', 1], ['紫', 11, 'zi', 3], ['跋', 12, 'ba', 2],
+  ['邶', 12, 'bei', 4], ['贲', 12, 'ben', 1], ['邴', 12, 'bing', 3], ['曾', 12, 'zeng', 1], ['钞', 12, 'chao', 1],
+  ['程', 12, 'cheng', 2], ['淳', 12, 'chun', 2], ['答', 12, '', 0], ['单', 12, 'shan', 4], ['淡', 12, 'dan', 4],
+  ['登', 12, 'deng', 1], ['邸', 12, 'di', 3], ['栋', 12, 'dong', 4], ['钭', 12, 'tou', 3], ['堵', 12, 'du', 3],
+  ['贰', 12, 'er', 4], ['斐', 12, 'fei', 3], ['费', 12, 'fei', 4], ['冯', 12, 'feng', 2], ['傅', 12, 'fu', 4],
+  ['富', 12, 'fu', 4], ['淦', 12, 'gan', 4], ['辜', 12, 'gu', 1], ['妫', 12, 'gui', 1], ['贵', 12, 'gui', 4],
+  ['寒', 12, 'han', 2], ['贺', 12, 'he', 4], ['闳', 12, 'hong', 2], ['黄', 12, 'huang', 2], ['惠', 12, 'hui', 4],
+  ['嵇', 12, 'ji', 1], ['集', 12, 'ji', 2], ['焦', 12, 'jiao', 1], ['接', 12, 'jie', 1], ['捷', 12, 'jie', 2],
+  ['荆', 12, 'jing', 1], ['景', 12, 'jing', 3], ['开', 12, 'kai', 1], ['劳', 12, 'lao', 2], ['理', 12, 'li', 3],
+  ['买', 12, 'mai', 3], ['贸', 12, 'mao', 4], ['闵', 12, 'min', 3], ['赧', 12, 'nan', 3], ['能', 12, 'nai', 4],
+  ['甯', 12, 'ning', 4], ['钮', 12, 'niu', 3], ['彭', 12, 'peng', 2], ['普', 12, 'pu', 3], ['强', 12, 'qiang', 2],
+  ['乔', 12, 'qiao', 2], ['钦', 12, 'qin', 1], ['清', 12, 'qing', 1], ['邱', 12, 'qiu', 1], ['茹', 12, 'ru', 2],
+  ['阮', 12, 'ruan', 3], ['森', 12, 'sen', 1], ['善', 12, 'shan', 4], ['邵', 12, 'shao', 4], ['盛', 12, 'sheng', 4],
+  ['疏', 12, 'shu', 1], ['舒', 12, 'shu', 1], ['税', 12, 'shui', 4], ['舜', 12, 'shun', 4], ['斯', 12, 'si', 1],
+  ['粟', 12, 'su', 4], ['邰', 12, 'tai', 2], ['覃', 12, 'qin', 2], ['童', 12, 'tong', 2], ['屠', 12, 'tu', 2],
+  ['无', 12, 'wu', 2], ['喜', 12, 'xi', 3], ['项', 12, 'xiang', 4], ['象', 12, 'xiang', 4], ['须', 12, 'xu', 1],
+  ['寻', 12, 'xun', 2], ['荀', 12, 'xun', 2], ['尧', 12, 'yao', 2], ['庾', 12, 'yu', 3], ['喻', 12, 'yu', 4],
+  ['越', 12, 'yue', 4], ['云', 12, 'yun', 2], ['迮', 12, 'ze', 2], ['掌', 12, 'zhang', 3], ['植', 12, 'zhi', 2],
+  ['智', 12, 'zhi', 4], ['訾', 12, 'zi', 1], ['阿', 13, '', 0], ['爱', 13, 'ai', 4], ['楚', 13, 'chu', 3],
+  ['督', 13, 'du', 1], ['顿', 13, 'dun', 4], ['浑', 13, 'hun', 2], ['戢', 13, 'ji', 2], ['贾', 13, 'jia', 3],
+  ['揭', 13, '', 0], ['节', 13, '', 0], ['解', 13, 'xie', 4], ['靳', 13, 'jin', 4], ['经', 13, 'jing', 1],
+  ['敬', 13, 'jing', 4], ['靖', 13, 'jing', 4], ['隽', 13, '', 0], ['郎', 13, 'lang', 2], ['雷', 13, 'lei', 2],
+  ['廉', 13, 'lian', 2], ['零', 13, 'ling', 2], ['禄', 13, 'lu', 4], ['路', 13, 'lu', 4], ['莫', 13, 'mo', 4],
+  ['貊', 13, 'mo', 4], ['睦', 13, 'mu', 4], ['农', 13, 'nong', 2], ['逄', 13, 'pang', 2], ['辟', 13, '', 0],
+  ['琦', 13, 'qi', 2], ['郄', 13, 'qie', 4], ['琴', 13, 'qin', 2], ['禽', 13, 'qin', 2], ['勤', 13, 'qin', 2],
+  ['裘', 13, 'qiu', 2], ['渠', 13, '', 0], ['塞', 13, '', 0], ['莘', 13, 'shen', 1], ['圣', 13, 'sheng', 4],
+  ['诗', 13, 'shi', 1], ['势', 13, 'shi', 4], ['睢', 13, '', 0], ['塔', 13, 'ta', 3], ['汤', 13, 'tang', 1],
+  ['脱', 13, 'tuo', 1], ['陀', 13, 'tuo', 2], ['微', 13, 'wei', 1], ['温', 13, 'wen', 1], ['烟', 13, 'yan', 1],
+  ['扬', 13, 'yang', 2], ['杨', 13, 'yang', 2], ['徭', 13, 'yao', 2], ['业', 13, 'ye', 4], ['义', 13, 'yi', 4],
+  ['裔', 13, 'yi', 4], ['雍', 13, 'yong', 1], ['犹', 13, 'you', 2], ['游', 13, 'you', 2], ['愚', 13, 'yu', 2],
+  ['虞', 13, 'yu', 2], ['郁', 13, 'yu', 4], ['愈', 13, 'yu', 4], ['毓', 13, 'yu', 4], ['恽', 13, 'yun', 4],
+  ['载', 13, '', 0], ['詹', 13, 'zhan', 1], ['湛', 13, 'zhan', 4], ['庄', 13, 'zhuang', 1], ['资', 13, 'zi', 1],
+  ['碧', 14, 'bi', 4], ['宾', 14, 'bin', 1], ['苌', 14, 'chang', 2], ['畅', 14, 'chang', 4], ['称', 14, '', 0],
+  ['慈', 14, 'ci', 2], ['翠', 14, 'cui', 4], ['翟', 14, 'zhai', 2], ['端', 14, 'duan', 1], ['尔', 14, 'er', 3],
+  ['逢', 14, 'feng', 2], ['凤', 14, 'feng', 4], ['福', 14, 'fu', 2], ['郜', 14, 'gao', 4], ['管', 14, 'guan', 3],
+  ['郝', 14, 'hao', 3], ['赫', 14, 'he', 4], ['华', 14, 'hua', 4], ['滑', 14, 'hua', 2], ['箕', 14, 'ji', 1],
+  ['暨', 14, 'ji', 4], ['嘉', 14, 'jia', 1], ['郏', 14, 'jia', 2], ['菅', 14, 'jian', 1], ['竭', 14, 'jie', 2],
+  ['僪', 14, '', 0], ['莱', 14, 'lai', 2], ['连', 14, 'lian', 2], ['廖', 14, 'liao', 4], ['闽', 14, 'min', 3],
+  ['宁', 14, 'ning', 4], ['裴', 14, 'pei', 2], ['仆', 14, '', 0], ['溥', 14, 'pu', 3], ['齐', 14, 'qi', 2],
+  ['旗', 14, 'qi', 2], ['綦', 14, 'qi', 2], ['侨', 14, 'qiao', 2], ['荣', 14, 'rong', 2], ['瑞', 14, 'rui', 4],
+  ['僧', 14, 'seng', 1], ['韶', 14, 'shao', 2], ['慎', 14, 'shen', 4], ['实', 14, 'shi', 2], ['寿', 14, 'shou', 4],
+  ['说', 14, '', 0], ['硕', 14, 'shuo', 4], ['速', 14, 'su', 4], ['滕', 14, 'teng', 2], ['通', 14, 'tong', 1],
+  ['闻', 14, 'wen', 2], ['郗', 14, 'xi', 1], ['郤', 14, 'xi', 4], ['熊', 14, 'xiong', 2], ['绪', 14, 'xu', 4],
+  ['银', 14, 'yin', 2], ['源', 14, 'yuan', 2], ['臧', 14, 'zang', 1], ['赵', 14, 'zhao', 4], ['肇', 14, 'zhao', 4],
+  ['甄', 14, 'zhen', 1], ['种', 14, '', 0], ['褒', 15, 'bao', 1], ['暴', 15, 'bao', 4], ['褚', 15, 'chu', 3],
+  ['逮', 15, '', 0], ['德', 15, 'de', 2], ['董', 15, 'dong', 3], ['樊', 15, 'fan', 2], ['范', 15, 'fan', 4],
+  ['葛', 15, 'ge', 3], ['巩', 15, 'gong', 3], ['缑', 15, 'gou', 1], ['穀', 15, 'gu', 3], ['广', 15, 'guang', 3],
+  ['郭', 15, 'guo', 1], ['虢', 15, 'guo', 2], ['汉', 15, 'han', 4], ['辉', 15, 'hui', 1], ['荤', 15, 'hun', 1],
+  ['稽', 15, '', 0], ['翦', 15, 'jian', 3], ['剑', 15, 'jian', 4], ['进', 15, 'jin', 4], ['驹', 15, 'ju', 1],
+  ['剧', 15, 'ju', 4], ['乐', 15, 'yue', 4], ['黎', 15, 'li', 2], ['厉', 15, 'li', 4], ['练', 15, 'lian', 4],
+  ['刘', 15, 'liu', 2], ['楼', 15, 'lou', 2], ['鲁', 15, 'lu', 3], ['逯', 15, 'lu', 4], ['闾', 15, 'lv', 2],
+  ['满', 15, 'man', 3], ['漫', 15, 'man', 4], ['摩', 15, '', 0], ['墨', 15, 'mo', 4], ['慕', 15, 'mu', 4],
+  ['欧', 15, 'ou', 1], ['盘', 15, 'pan', 2], ['漆', 15, 'qi', 1], ['庆', 15, 'qing', 4], ['锐', 15, 'rui', 4],
+  ['赏', 15, 'shang', 3], ['驷', 15, 'si', 4], ['谈', 15, 'tan', 2], ['郯', 15, 'tan', 2], ['万', 15, 'wan', 4],
+  ['卫', 15, 'wei', 4], ['线', 15, 'xian', 4], ['兴', 15, '', 0], ['养', 15, 'yang', 3], ['叶', 15, 'ye', 4],
+  ['仪', 15, 'yi', 2], ['禚', 15, 'zhuo', 2], ['鲍', 16, 'bao', 4], ['苍', 16, 'cang', 1], ['潮', 16, 'chao', 2],
+  ['陈', 16, 'chen', 2], ['谌', 16, 'chen', 2], ['澄', 16, '', 0], ['错', 16, 'cuo', 4], ['达', 16, 'da', 2],
+  ['道', 16, 'dao', 4], ['雕', 16, 'diao', 1], ['都', 16, 'du', 1], ['笃', 16, 'du', 3], ['鄂', 16, 'e', 4],
+  ['过', 16, 'guo', 1], ['蒿', 16, 'hao', 1], ['衡', 16, 'heng', 2], ['霍', 16, 'huo', 4], ['机', 16, 'ji', 1],
+  ['冀', 16, 'ji', 4], ['谏', 16, 'jian', 4], ['蒯', 16, 'kuai', 3], ['赖', 16, 'lai', 4], ['历', 16, 'li', 4],
+  ['龙', 16, 'long', 2], ['卢', 16, 'lu', 2], ['陆', 16, 'lu', 4], ['骆', 16, 'luo', 4], ['蒙', 16, 'meng', 2],
+  ['磨', 16, '', 0], ['穆', 16, 'mu', 4], ['诺', 16, 'nuo', 4], ['潘', 16, 'pan', 1], ['频', 16, '', 0],
+  ['凭', 16, 'ping', 2], ['蒲', 16, 'pu', 2], ['钱', 16, 'qian', 2], ['潜', 16, 'qian', 2], ['桥', 16, 'qiao', 2],
+  ['融', 16, 'rong', 2], ['撒', 16, 'sa', 3], ['树', 16, 'shu', 4], ['潭', 16, 'tan', 2], ['陶', 16, 'tao', 2],
+  ['学', 16, 'xue', 2], ['阎', 16, 'yan', 2], ['燕', 16, 'yan', 1], ['阴', 16, 'yin', 1], ['嬴', 16, 'ying', 2],
+  ['遇', 16, 'yu', 4], ['运', 16, 'yun', 4], ['战', 16, 'zhan', 4], ['诸', 16, 'zhu', 1], ['蔡', 17, 'cai', 4],
+  ['操', 17, 'cao', 1], ['丑', 17, 'chou', 3], ['蹉', 17, 'cuo', 1], ['澹', 17, 'dan', 4], ['独', 17, 'du', 2],
+  ['繁', 17, 'po', 2], ['韩', 17, 'han', 2], ['检', 17, 'jian', 3], ['謇', 17, 'jian', 3], ['蹇', 17, 'jian', 3],
+  ['蒋', 17, 'jiang', 3], ['矫', 17, 'jiao', 3], ['鞠', 17, 'ju', 1], ['励', 17, 'li', 4], ['敛', 17, 'lian', 3],
+  ['隆', 17, 'long', 2], ['弥', 17, '', 0], ['糜', 17, 'mi', 2], ['缪', 17, 'miao', 4], ['蓬', 17, 'peng', 2],
+  ['赛', 17, 'sai', 4], ['声', 17, 'sheng', 1], ['霜', 17, 'shuang', 1], ['隋', 17, '', 0], ['檀', 17, 'tan', 2],
+  ['蔚', 17, 'wei', 4], ['邬', 17, 'wu', 1], ['戏', 17, '', 0], ['鲜', 17, 'xian', 1], ['谢', 17, 'xie', 4],
+  ['阳', 17, 'yang', 2], ['应', 17, 'ying', 1], ['营', 17, 'ying', 2], ['辕', 17, 'yuan', 2], ['斋', 17, 'zhai', 1],
+  ['钟', 17, 'zhong', 1], ['锺', 17, 'zhong', 1], ['纵', 17, '', 0], ['邹', 17, 'zou', 1], ['储', 18, 'chu', 3],
+  ['丛', 18, 'cong', 2], ['戴', 18, 'dai', 4], ['丰', 18, 'feng', 1], ['归', 18, 'gui', 1], ['环', 18, 'huan', 2],
+  ['简', 18, 'jian', 3], ['蒉', 18, '', 0], ['礼', 18, 'li', 3], ['谬', 18, 'miu', 4], ['聂', 18, 'nie', 4],
+  ['濮', 18, 'pu', 2], ['骑', 18, 'qi', 2], ['璩', 18, 'qu', 2], ['瞿', 18, 'qu', 2], ['阙', 18, 'que', 1],
+  ['双', 18, 'shuang', 1], ['松', 18, 'song', 1], ['锁', 18, 'suo', 3], ['隗', 18, 'wei', 3], ['魏', 18, 'wei', 4],
+  ['萧', 18, 'xiao', 1], ['鄢', 18, 'yan', 1], ['颜', 18, 'yan', 2], ['鄞', 18, 'yin', 2], ['镇', 18, 'zhen', 4],
+  ['颛', 18, 'zhuan', 1], ['濯', 18, 'zhuo', 2], ['薄', 19, 'bo', 2], ['迟', 19, 'chi', 2], ['郸', 19, 'dan', 1],
+  ['邓', 19, 'deng', 4], ['关', 19, 'guan', 1], ['蓟', 19, 'ji', 4], ['镜', 19, 'jing', 4], ['旷', 19, 'kuang', 4],
+  ['类', 19, 'lei', 4], ['离', 19, 'li', 2], ['祢', 19, 'mi', 2], ['庞', 19, 'pang', 2], ['谯', 19, 'qiao', 2],
+  ['麹', 19, 'qu', 1], ['麴', 19, 'qu', 1], ['绳', 19, 'sheng', 2], ['谭', 19, 'tan', 2], ['薛', 19, 'xue', 1],
+  ['蚁', 19, 'yi', 3], ['郑', 19, 'zheng', 4], ['宝', 20, 'bao', 3], ['藏', 20, '', 0], ['党', 20, 'dang', 3],
+  ['窦', 20, 'dou', 4], ['怀', 20, 'huai', 2], ['籍', 20, 'ji', 2], ['阚', 20, 'kan', 4], ['蓝', 20, 'lan', 2],
+  ['泷', 20, '', 0], ['罗', 20, 'luo', 2], ['壤', 20, 'rang', 3], ['萨', 20, 'sa', 4], ['释', 20, 'shi', 4],
+  ['腾', 20, 'teng', 2], ['咸', 20, 'xian', 2], ['严', 20, 'yan', 2], ['铎', 21, 'duo', 2], ['藩', 21, 'fan', 1],
+  ['顾', 21, 'gu', 4], ['夔', 21, 'kui', 2], ['饶', 21, 'rao', 2], ['随', 21, 'sui', 2], ['藤', 21, 'teng', 2],
+  ['铁', 21, 'tie', 3], ['续', 21, 'xu', 4], ['边', 22, 'bian', 1], ['龚', 22, 'gong', 1], ['邝', 22, 'kuang', 4],
+  ['蔺', 22, 'lin', 4], ['权', 22, 'quan', 2], ['穰', 22, 'rang', 2], ['苏', 22, 'su', 1], ['袭', 22, 'xi', 2],
+  ['隐', 22, '', 0], ['兰', 23, 'lan', 2], ['栾', 23, 'luan', 2], ['让', 24, 'rang', 4], ['酆', 25, 'feng', 1],
+  ['蛮', 25, 'man', 2], ['衅', 25, 'xin', 4], ['郦', 26, 'li', 4], ['钻', 27, 'zuan', 1], ['鬱', 29, 'yu', 4]
+];
+
+/** [复姓, 首字康熙笔画, 末字康熙笔画, 拼音连写, 首字声调] */
+const COMPOUND_ROWS = [
+['百里', 6, 7, 'baili', 3], ['碧鲁', 14, 15, 'bilu', 4], ['淳于', 12, 3, 'chunyu', 2], ['单于', 12, 3, 'chanyu', 2],
+  ['澹台', 17, 5, 'tantai', 2], ['第五', 11, 4, 'diwu', 4], ['东方', 8, 4, 'dongfang', 1], ['东郭', 8, 15, 'dongguo', 1],
+  ['东门', 8, 8, 'dongmen', 1], ['端木', 14, 4, 'duanmu', 1], ['段干', 9, 3, 'duangan', 4], ['范姜', 15, 9, 'fanjiang', 4],
+  ['费莫', 12, 13, 'feimo', 4], ['富察', 12, 14, 'fucha', 4], ['公良', 4, 7, 'gongliang', 1], ['公叔', 4, 8, 'gongshu', 1],
+  ['公孙', 4, 10, 'gongsun', 1], ['公西', 4, 6, 'gongxi', 1], ['公羊', 4, 6, 'gongyang', 1], ['公冶', 4, 7, 'gongye', 1],
+  ['谷梁', 7, 11, 'guliang', 3], ['榖梁', 14, 11, 'guliang', 3], ['毌丘', 4, 5, 'guanqiu', 4], ['赫连', 14, 14, 'helian', 4],
+  ['呼延', 8, 7, 'huyan', 1], ['皇甫', 9, 7, 'huangfu', 2], ['夹谷', 7, 7, 'jiagu', 2], ['句龙', 5, 16, 'goulong', 1],
+  ['乐正', 15, 5, 'yuezheng', 4], ['梁丘', 11, 5, 'liangqiu', 2], ['令狐', 5, 9, 'linghu', 2], ['闾丘', 15, 5, 'lvqiu', 2],
+  ['马佳', 10, 8, 'majia', 3], ['慕容', 15, 10, 'murong', 4], ['那拉', 11, 9, '', 0], ['纳喇', 10, 12, 'nala', 4],
+  ['南宫', 9, 10, 'nangong', 2], ['南门', 9, 8, 'nanmen', 2], ['欧阳', 15, 17, 'ouyang', 1], ['濮阳', 18, 17, 'puyang', 2],
+  ['漆雕', 15, 16, 'qidiao', 1], ['亓官', 4, 8, 'qiguan', 2], ['壤驷', 20, 15, 'rangsi', 3], ['上官', 3, 8, 'shangguan', 4],
+  ['申屠', 5, 12, 'shentu', 1], ['司空', 5, 8, 'sikong', 1], ['司寇', 5, 11, 'sikou', 1], ['司马', 5, 10, 'sima', 1],
+  ['司徒', 5, 10, 'situ', 1], ['拓跋', 9, 12, 'tuoba', 4], ['太史', 4, 5, 'taishi', 4], ['太叔', 4, 8, 'taishu', 4],
+  ['佟佳', 7, 8, 'tongjia', 2], ['图门', 14, 8, 'tumen', 2], ['完颜', 7, 18, 'wanyan', 2], ['万俟', 15, 9, 'moqi', 4],
+  ['微生', 13, 5, 'weisheng', 1], ['尉迟', 11, 19, 'yuchi', 4], ['闻人', 14, 2, 'wenren', 2], ['乌孙', 10, 10, 'wusun', 1],
+  ['乌雅', 10, 12, 'wuya', 1], ['巫马', 7, 10, 'wuma', 1], ['西门', 6, 8, 'ximen', 1], ['夏侯', 10, 9, 'xiahou', 4],
+  ['鲜于', 17, 3, 'xianyu', 1], ['轩辕', 10, 17, 'xuanyuan', 1], ['羊舌', 6, 6, 'yangshe', 2], ['宇文', 6, 4, 'yuwen', 3],
+  ['宰父', 10, 4, 'zaifu', 3], ['张简', 11, 18, 'zhangjian', 1], ['张廖', 11, 14, 'zhangliao', 1],
+  ['章佳', 11, 8, 'zhangjia', 1], ['仉督', 4, 13, 'zhangdu', 3], ['长孙', 8, 10, 'zhangsun', 3],
+  ['钟离', 17, 19, 'zhongli', 1], ['锺离', 17, 19, 'zhongli', 1], ['仲孙', 6, 10, 'zhongsun', 4], ['诸葛', 16, 15, 'zhuge', 1],
+  ['颛孙', 18, 10, 'zhuansun', 1], ['子车', 3, 7, 'ziju', 3], ['宗政', 8, 8, 'zongzheng', 1], ['左丘', 5, 5, 'zuoqiu', 3]
+];
+
+/** 又读：主读之外常见的姓音（面板与音韵分析两个都认）。 */
+const SURNAME_ALT = {"尉":["wei",4],"覃":["tan",2],"蔚":["yu",4],"隗":["kui",2],"柏":["bo",2],"乐":["le",4],"能":["neng",2],"查":["cha",2],"石":["dan",4]};
+
+const SURNAME_COUNTS = {
+  single: 998,
+  compound: 82,
+  strokeOnly: 71,
+  alt: 9,
+};
+
+return { SURNAME_ROWS, COMPOUND_ROWS, SURNAME_ALT, SURNAME_COUNTS };
+})();
+
 __mods['name-data'] = (function () {
 // 起名用字的数据层：读音（声调用数字另存）+ 康熙笔画、常见姓氏笔画与读音、81 数理。
 //
@@ -10437,9 +12467,11 @@ __mods['name-data'] = (function () {
 //    调用方可以用 strokeOverrides 覆盖任意字的笔画，覆盖值会被标注为「用户指定」。
 //
 // 读数口径：拼音只写声母韵母（ü 写作 v），声调 1–4 单独一列；轻声不收录（人名用字几乎不读轻声）。
+const { EXTRA_READING } = (__mods['name-extra'] || {});
+const { SURNAME_ROWS, COMPOUND_ROWS, SURNAME_ALT, SURNAME_COUNTS } = (__mods['surname-data'] || {});
 
 /** [字, 拼音(无声调), 声调, 康熙笔画] */
-const READING = [
+const BASE_READING = [
   // ── 木 ──
   ['梓', 'zi', 3, 11], ['桐', 'tong', 2, 10], ['楠', 'nan', 2, 13], ['楷', 'kai', 3, 13],
   ['松', 'song', 1, 8], ['柏', 'bai', 3, 9], ['枫', 'feng', 1, 13], ['榕', 'rong', 2, 14],
@@ -10547,85 +12579,29 @@ const READING = [
   ['浦', 'pu', 3, 11],
 ];
 
-/** 常见单姓的康熙笔画（复姓见 DOUBLE_SURNAMES）。没有的姓可用 surnameStrokes 传入。 */
-const SURNAME_STROKES = {
-  王: 4, 李: 7, 张: 11, 刘: 15, 陈: 16, 杨: 13, 黄: 12, 赵: 14, 吴: 7, 周: 8,
-  徐: 10, 孙: 10, 马: 10, 朱: 6, 胡: 11, 郭: 15, 何: 7, 高: 10, 林: 8, 罗: 20,
-  郑: 19, 梁: 11, 谢: 17, 宋: 7, 唐: 10, 许: 11, 韩: 17, 冯: 12, 曹: 11, 彭: 12,
-  曾: 12, 萧: 18, 田: 5, 董: 15, 潘: 16, 袁: 10, 蔡: 17, 余: 7, 于: 3, 杜: 7,
-  叶: 15, 程: 12, 魏: 18, 吕: 7, 丁: 2, 任: 6, 姚: 9, 卢: 16, 姜: 9, 崔: 11,
-  钟: 17, 谭: 19, 陆: 16, 范: 15, 金: 8, 石: 5, 廖: 14, 贾: 13, 夏: 10, 韦: 9,
-  付: 5, 方: 4, 白: 5, 邹: 17, 孟: 8, 熊: 14, 秦: 10, 邱: 12, 江: 7, 尹: 4,
-  薛: 19, 段: 9, 雷: 13, 侯: 9, 龙: 16, 史: 5, 陶: 16, 黎: 15, 贺: 12, 顾: 21,
-  毛: 4, 郝: 14, 龚: 22, 邵: 12, 钱: 16, 严: 20, 武: 8, 戴: 18, 莫: 13, 孔: 4,
-  向: 6, 常: 11, 康: 11, 易: 8, 文: 4, 施: 9, 洪: 10, 安: 6, 颜: 18, 温: 13,
-  章: 11, 鲁: 15, 葛: 15, 伍: 6, 申: 5, 尤: 4, 焦: 12, 柳: 9, 邢: 11, 路: 13,
-  岳: 8, 乔: 12, 赖: 20, 万: 15, 苏: 22, 蒋: 17, 沈: 8, 汪: 8, 邓: 19, 覃: 12,
-  房: 8, 边: 22, 辛: 7, 涂: 11, 甘: 5, 封: 9, 储: 18, 邬: 17, 路: 13, 詹: 13,
-};
+const READING = [...BASE_READING, ...EXTRA_READING];
 
-/** 常见单姓读音：[拼音, 声调] */
-const SURNAME_READING = {
-  王: ['wang', 2], 李: ['li', 3], 张: ['zhang', 1], 刘: ['liu', 2], 陈: ['chen', 2],
-  杨: ['yang', 2], 黄: ['huang', 2], 赵: ['zhao', 4], 吴: ['wu', 2], 周: ['zhou', 1],
-  徐: ['xu', 2], 孙: ['sun', 1], 马: ['ma', 3], 朱: ['zhu', 1], 胡: ['hu', 2],
-  郭: ['guo', 1], 何: ['he', 2], 高: ['gao', 1], 林: ['lin', 2], 罗: ['luo', 2],
-  郑: ['zheng', 4], 梁: ['liang', 2], 谢: ['xie', 4], 宋: ['song', 4], 唐: ['tang', 2],
-  许: ['xu', 3], 韩: ['han', 2], 冯: ['feng', 2], 曹: ['cao', 2], 彭: ['peng', 2],
-  曾: ['zeng', 1], 萧: ['xiao', 1], 田: ['tian', 2], 董: ['dong', 3], 潘: ['pan', 1],
-  袁: ['yuan', 2], 蔡: ['cai', 4], 余: ['yu', 2], 于: ['yu', 2], 杜: ['du', 4],
-  叶: ['ye', 4], 程: ['cheng', 2], 魏: ['wei', 4], 吕: ['lv', 3], 丁: ['ding', 1],
-  任: ['ren', 2], 姚: ['yao', 2], 卢: ['lu', 2], 姜: ['jiang', 1], 崔: ['cui', 1],
-  钟: ['zhong', 1], 谭: ['tan', 2], 陆: ['lu', 4], 范: ['fan', 4], 金: ['jin', 1],
-  石: ['shi', 2], 廖: ['liao', 4], 贾: ['jia', 3], 夏: ['xia', 4], 韦: ['wei', 2],
-  付: ['fu', 4], 方: ['fang', 1], 白: ['bai', 2], 邹: ['zou', 1], 孟: ['meng', 4],
-  熊: ['xiong', 2], 秦: ['qin', 2], 邱: ['qiu', 1], 江: ['jiang', 1], 尹: ['yin', 3],
-  薛: ['xue', 1], 段: ['duan', 4], 雷: ['lei', 2], 侯: ['hou', 2], 龙: ['long', 2],
-  史: ['shi', 3], 陶: ['tao', 2], 黎: ['li', 2], 贺: ['he', 4], 顾: ['gu', 4],
-  毛: ['mao', 2], 郝: ['hao', 3], 龚: ['gong', 1], 邵: ['shao', 4], 钱: ['qian', 2],
-  严: ['yan', 2], 武: ['wu', 3], 戴: ['dai', 4], 莫: ['mo', 4], 孔: ['kong', 3],
-  向: ['xiang', 4], 常: ['chang', 2], 康: ['kang', 1], 易: ['yi', 4], 文: ['wen', 2],
-  施: ['shi', 1], 洪: ['hong', 2], 安: ['an', 1], 颜: ['yan', 2], 温: ['wen', 1],
-  章: ['zhang', 1], 鲁: ['lu', 3], 葛: ['ge', 3], 伍: ['wu', 3], 申: ['shen', 1],
-  尤: ['you', 2], 焦: ['jiao', 1], 柳: ['liu', 3], 邢: ['xing', 2], 路: ['lu', 4],
-  岳: ['yue', 4], 乔: ['qiao', 2], 赖: ['lai', 4], 万: ['wan', 4], 苏: ['su', 1],
-  蒋: ['jiang', 3], 沈: ['shen', 3], 汪: ['wang', 1], 邓: ['deng', 4], 覃: ['tan', 2],
-  房: ['fang', 2], 边: ['bian', 1], 辛: ['xin', 1], 涂: ['tu', 2], 甘: ['gan', 1],
-  封: ['feng', 1], 储: ['chu', 3], 邬: ['wu', 1], 詹: ['zhan', 1],
-  欧: ['ou', 1],
-  阳: ['yang', 2],
-  司: ['si', 1],
-  上: ['shang', 4],
-  官: ['guan', 1],
-  诸: ['zhu', 1],
-  东: ['dong', 1],
-  皇: ['huang', 2],
-  甫: ['fu', 3],
-  尉: ['yu', 4],
-  迟: ['chi', 2],
-  令: ['ling', 4],
-  狐: ['hu', 2],
-  慕: ['mu', 4],
-  徒: ['tu', 2],
-  公: ['gong', 1],
-};
+/**
+ * 姓氏数据来自 engine/surname-data.js（单姓 998 + 复姓 82），这里只按原有形状摊开：
+ *  SURNAME_STROKES[ch]      → 康熙笔画
+ *  SURNAME_READING[ch]      → [拼音(ü 写作 v), 声调]，只有笔画没有读音的姓不入此表
+ *  SURNAME_ALT_READING[ch]  → 又读（多音姓氏的第二读，音韵行里会并列显示）
+ *  DOUBLE_SURNAMES[name]    → { s: [首字画, 末字画], py, tone }
+ * 没有收录的姓：笔画可用 strokeOverrides / surnameStrokes 传入，五格会照算。
+ */
+const SURNAME_STROKES = {};
+const SURNAME_READING = {};
+const SURNAME_ALT_READING = {};
+const DOUBLE_SURNAMES = {};
+for (const [ch, kx, py, tone] of SURNAME_ROWS) {
+  SURNAME_STROKES[ch] = kx;
+  if (py) SURNAME_READING[ch] = [py, tone];
+}
+for (const [name, a, b, py, tone] of COMPOUND_ROWS) DOUBLE_SURNAMES[name] = { s: [a, b], py, tone };
+for (const [ch, v] of Object.entries(SURNAME_ALT)) SURNAME_ALT_READING[ch] = v;
 
-/** 常见复姓：两字各自的康熙笔画（s）与读音（首字拼音连写，声调取首字） */
-const DOUBLE_SURNAMES = {
-  欧阳: { s: [15, 17], py: 'ouyang', tone: 1 },
-  司马: { s: [5, 10], py: 'sima', tone: 1 },
-  上官: { s: [3, 8], py: 'shangguan', tone: 4 },
-  诸葛: { s: [15, 15], py: 'zhuge', tone: 1 },
-  东方: { s: [8, 4], py: 'dongfang', tone: 1 },
-  皇甫: { s: [9, 7], py: 'huangfu', tone: 2 },
-  尉迟: { s: [11, 19], py: 'yuchi', tone: 4 },
-  令狐: { s: [5, 8], py: 'linghu', tone: 4 },
-  慕容: { s: [14, 10], py: 'murong', tone: 4 },
-  宇文: { s: [6, 4], py: 'yuwen', tone: 3 },
-  司徒: { s: [5, 10], py: 'situ', tone: 1 },
-  夏侯: { s: [10, 9], py: 'xiahou', tone: 4 },
-  公孙: { s: [4, 10], py: 'gongsun', tone: 1 },
-};
+const SURNAME_STATS = SURNAME_COUNTS;
+
 
 /**
  * 81 数理（通行本）：索引即数，[吉凶, 意象]。
@@ -10655,7 +12631,7 @@ const SHULI_81 = [null,
   ['吉', '万物回春'],
 ];
 
-return { READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81 };
+return { READING, SURNAME_STROKES, SURNAME_READING, SURNAME_ALT_READING, DOUBLE_SURNAMES, SURNAME_STATS, SHULI_81 };
 })();
 
 __mods.name = (function () {
@@ -10666,20 +12642,33 @@ __mods.name = (function () {
 //       音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断。
 const { buildBazi } = (__mods.bazi || {});
 const { assertCivil } = (__mods.validate || {});
-const { READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81 } = (__mods['name-data'] || {});
+const { READING, SURNAME_STROKES, SURNAME_READING, SURNAME_ALT_READING, DOUBLE_SURNAMES, SHULI_81 } = (__mods['name-data'] || {});
+const { EXTRA_LIB } = (__mods['name-extra'] || {});
 
 const SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
 const KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
 const SHENG_BY = { 火: '木', 土: '火', 金: '土', 水: '金', 木: '水' }; // 生我者
 const KE_BY = { 土: '木', 水: '土', 火: '水', 金: '火', 木: '金' }; // 克我者
 const ALL = ['木', '火', '土', '金', '水'];
+// 常用名用字（覆盖男女常见名与近年的热门用字）：只用于给候选/替换字加权，
+// 不参与五行判定；字库扩大后靠它把生僻但笔画讨巧的字排到后面。
+const COMMON_NAME_CHARS = new Set([...(
+  '伟刚勇毅俊峰军强磊涛明超杰鹏华飞鑫波斌宇浩凯健帆帅旭宁龙林欢岩中志国建文博诚晨昊' +
+  '天阳亮睿泽轩然煜宸涵楷桐瑞铭航辰一诺思远嘉懿沐梓奕安可欣哲德智靖翊豪虎兵立力禹予' +
+  '以皓曦昱晟熠烨炜灿霖潇灏瀚渊澜澄澈润沛泓淇淳泰坤垚岳峻嵘峥岱崧翔翼羽麒麟骏骐骥腾' +
+  '龙凤鸣翰武捷喆亦逸宜' +
+  '芳娜秀英敏静丽艳娟霞桂华玲燕红梅兰珍淑云凤春丹萍慧惠巧美婷雪倩颖洁琳璐琪瑶妍彤' +
+  '伊仪芯萱玥晴雨梦诗悦怡欣佳嘉思语诺溪若芷芮茉柠萌蕾薇菲蕊菁茜莎莲荷菡芸雯霏霓露' +
+  '霜冰清沁汐湉淼泉温馨婉媛妮娅嫣妤姝姗娴嫦婵玫珂珮瑛璎璇瑾璟琦珊珠琬瑷瑢瑗瑀珺琇珞' +
+  '琴瑟念慈爱恬甜暖曦晞晗昕虹映岚'
+)]);
 
 /**
  * 自建常用字库：[字, 五行, 释义, 性别倾向('m'|'f'|'n')]
  * 五行按字义与偏旁通行归类；同一字各派归类偶有出入，这里取最常见的一种。
  * 未收录的字在评估时一律标「未收录」，不推断五行。
  */
-const CHAR_LIB = [
+const BASE_CHAR_LIB = [
   // 木
   ['梓', '木', '梓树，喻成长、手艺与念乡', 'n'], ['桐', '木', '梧桐，高洁、引来凤凰', 'n'],
   ['楠', '木', '楠木，坚韧贵重', 'n'], ['楷', '木', '楷模，端正可法', 'm'],
@@ -10890,6 +12879,8 @@ const CHAR_LIB = [
   ['沧', '水', '沧海，苍茫', 'm'], ['浦', '水', '浦，水滨', 'n'],
 ];
 
+const CHAR_LIB = [...BASE_CHAR_LIB, ...EXTRA_LIB];
+
 const EL_INDEX = new Map();
 const EXTRA_INDEX = new Map();
 for (const [c, py, tone, st] of READING) {
@@ -11040,12 +13031,14 @@ const TONE_LABEL = { 1: '一', 2: '二', 3: '三', 4: '四' };
 /**
  * 音韵的机械检查：全名同调 / 相邻同声母 / 相邻同韵母 / 相邻同音（叠字）。
  * 只报可数的事实，不替人判断好不好听，也不查语义谐音（那需要词库，没做就说没做）。
+ * surnameLen：姓占几个字（复姓传 2），这些位置才允许查姓氏表读音——葛、拉 这类字不在起名用字库里。
  */
-function phonetics(fullName) {
+function phonetics(fullName, surnameLen = 1) {
   const chars = [...String(fullName || '')];
   if (chars.length < 2) return { available: false, reason: '至少两个字才谈得上音韵' };
+  const surLen = Math.min(Math.max(1, surnameLen | 0), chars.length);
   const items = chars.map((ch, i) => {
-    const r = readingOf(ch, i === 0 ? 'surname' : 'given');
+    const r = readingOf(ch, i < surLen ? 'surname' : 'given');
     return r ? { char: ch, py: r.py, tone: r.tone, ...splitPinyin(r.py) } : { char: ch, py: null, tone: null, ini: null, fin: null };
   });
   const missing = items.filter((x) => !x.py).map((x) => x.char);
@@ -11073,11 +13066,15 @@ function phonetics(fullName) {
     issues.push({ type: 'initial', text: `三字同声母 ${[...inis][0]}，连着读容易黏在一起` });
   }
   const level = issues.length === 0 ? '顺口' : issues.length === 1 ? '略拗' : '拗口';
+  const alt = chars.slice(0, surLen)
+    .filter((ch) => SURNAME_READING[ch] && SURNAME_ALT_READING[ch])
+    .map((ch) => ({ char: ch, py: SURNAME_ALT_READING[ch][0], tone: SURNAME_ALT_READING[ch][1] }));
   return {
     available: true,
     chars: items.map((x) => ({ char: x.char, py: x.py, tone: x.tone })),
     tonePattern: items.map((x) => x.tone).join('-'),
     issues,
+    alt,
     level,
   };
 }
@@ -11095,7 +13092,8 @@ function suggestFor(element, genderPref, exclude, count = 3) {
   const pool = CHAR_LIB.filter((c) => c[1] === element && !exclude.has(c[0]));
   pool.sort((a, b) => {
     const fit = (x) => (x[3] === genderPref || x[3] === 'n' ? 1 : 0);
-    return fit(b) - fit(a);
+    const common = (x) => (COMMON_NAME_CHARS.has(x[0]) ? 1 : 0);
+    return (common(b) - common(a)) || (fit(b) - fit(a));
   });
   return pool.slice(0, count).map((c) => ({ char: c[0], element: c[1], meaning: c[2] }));
 }
@@ -11197,7 +13195,7 @@ function assessName(input) {
 
   const ov = overridesOf(input);
   const wu = wuge(surname, given, ov);
-  const ph = phonetics(surname + given);
+  const ph = phonetics(surname + given, [...String(surname || '')].length);
 
   return {
     system: 'name',
@@ -11272,6 +13270,9 @@ function generateNames(input) {
       // 性别倾向：优先本性别与中性，避免两个字都强烈偏另一性别
       const fit = (x) => (x[3] === gPref || x[3] === 'n' ? 1 : 0);
       const gScore = fit(a) + fit(b) - (a[3] !== gPref && a[3] !== 'n' && b[3] !== gPref && b[3] !== 'n' ? 2 : 0);
+      const ca = COMMON_NAME_CHARS.has(a[0]);
+      const cb = COMMON_NAME_CHARS.has(b[0]);
+      const commonScore = (ca && cb ? 2 : 0) + (ca || cb ? 1 : 0);
       const aSt = poolStroke.get(a[0]);
       const bSt = poolStroke.get(b[0]);
       let wuScore = 0;
@@ -11289,6 +13290,7 @@ function generateNames(input) {
         ],
         elements: [a[1], b[1]],
         allFavorable: fav.list.includes(a[1]) && fav.list.includes(b[1]),
+        commonScore,
         genderScore: gScore,
         wugeScore: wuScore,
         order: (i * 7 + j * 13) % 9973, // 打散字库顺序，避免候选清一色都是前几个字
@@ -11297,7 +13299,8 @@ function generateNames(input) {
   }
   const mixed = (c) => (c.elements[0] !== c.elements[1] ? 1 : 0); // 两字异行，比同气堆叠更有层次
   scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x))
-    || (y.wugeScore - x.wugeScore) || (y.genderScore - x.genderScore) || (x.order - y.order));
+    || (y.commonScore - x.commonScore) || (y.wugeScore - x.wugeScore)
+    || (y.genderScore - x.genderScore) || (x.order - y.order));
   // 去重 + 用字轮换：先收「两个字都没出现过」的候选，再放宽——避免 20 个候选里 13 个都用同一个「梓」
   const out = [];
   const usedNames = new Set();
@@ -11315,7 +13318,7 @@ function generateNames(input) {
     out.push({
       rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars,
       wuge: wuge(surname, cand.name, ov),
-      phonetics: phonetics(surname + cand.name),
+      phonetics: phonetics(surname + cand.name, [...String(surname || '')].length),
     });
     return true;
   };
@@ -11341,7 +13344,7 @@ function generateNames(input) {
     candidates: out,
     notes: [
       `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可用 charElements 指定五行后评估。`,
-      '候选排序依次看：合喜用 → 两字异行 → 五格（人格/地格/总格/外格 吉多者先）→ 性别倾向 → 字库序，是排序不是「吉名」判定。',
+      '候选排序依次看：合喜用 → 两字异行 → 常用字优先 → 五格（人格/地格/总格/外格 吉多者先）→ 性别倾向 → 字库序，是排序不是「吉名」判定。',
       sReady
         ? '五格按康熙字典繁体笔画与通行本 81 数理算；姓的笔画取自内置姓氏表，没覆盖的姓可传 surnameStrokes 或 strokeOverrides。'
         : '姓的笔画不在内置姓氏表里，这一轮没按五格排序（不半算）；可传 surnameStrokes 或 strokeOverrides 后重算。',
@@ -13913,11 +15916,975 @@ function buildXiaoliuren(input) {
 return { PALACES, PALACE_ORDER, buildXiaoliuren };
 })();
 
+__mods['zeri-shensha'] = (function () {
+// 择日神煞宜忌层：底本《钦定协纪辨方书》（四库全书本）。
+//
+// 数据分三层：
+//   1. 卷十一「用事」逐条宜忌清单——每个事项宜某神、忌某神，原文直接编码；
+//   2. 卷四「建除十二神」、卷五/卷六「义例」、卷九「立成」的起法——按节气月与日干支
+//      逐日推算当日命中哪些神煞；
+//   3. 卷十「宜忌」的吉凶轻重六等与德神制化——六等判词逐字编码，德神能否解忌按卷十
+//      各条的「遇德/犹忌」按语编码。
+//
+// 口径边界：六等判词是原文，吉/凶权重与比值阈值是本仓校准，不是古籍常数；卷十等第表按
+// 「月支 × 日建除」逐格列等，本层只编码可逐条引证的判词与制化条件，未把整张表逐格数字化。
+// 没有可靠起法的条目（土王用事后、血忌、伏社日、八风等）不参与计分，逐日列出 unsupported，
+// 不猜、不补。卷四「建除同位异名」把福德/天巫/天喜/天医/土府等并入建除，本层照此归并，
+// 同一建除日只计一次，避免一月破同时按「月破」「大耗」重复扣分。
+
+const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+const ZHIXING = ['建', '除', '满', '平', '定', '执', '破', '危', '成', '收', '开', '闭'];
+const SEASON_OF = {
+  寅: '春', 卯: '春', 辰: '春',
+  巳: '夏', 午: '夏', 未: '夏',
+  申: '秋', 酉: '秋', 戌: '秋',
+  亥: '冬', 子: '冬', 丑: '冬',
+};
+const MONTH_NO = { 寅: 1, 卯: 2, 辰: 3, 巳: 4, 午: 5, 未: 6, 申: 7, 酉: 8, 戌: 9, 亥: 10, 子: 11, 丑: 12 };
+const SANHE = {
+  寅: '寅午戌', 午: '寅午戌', 戌: '寅午戌',
+  亥: '亥卯未', 卯: '亥卯未', 未: '亥卯未',
+  申: '申子辰', 子: '申子辰', 辰: '申子辰',
+  巳: '巳酉丑', 酉: '巳酉丑', 丑: '巳酉丑',
+};
+
+// ── 卷四 建除十二神「同位异名」 ─────────────────────────────
+// 建【兵福 小时 土府】、除【吉期 兵宝】、满【福德 天巫 天狗】、平【死神】、
+// 定【时阴 官符 死气】、执【枝德 小耗】、破【大耗】、成【天医 天喜】、
+// 收【…】、开【时阳 生气】、闭【血支】。天狗只作「申月戌日」的条件神煞，不并入满日。
+const XING_ALIAS = {
+  建: ['建日', '兵福', '小时', '土府', '月建'],
+  除: ['除日', '吉期', '兵宝'],
+  满: ['满日', '福德', '天巫'],
+  平: ['平日', '死神'],
+  定: ['定日', '时阴', '官符', '死气'],
+  执: ['执日', '枝德', '小耗'],
+  破: ['破日', '大耗', '月破'],
+  危: ['危日'],
+  成: ['成日', '天医', '天喜'],
+  收: ['收日'],
+  开: ['开日', '时阳', '生气'],
+  闭: ['闭日', '血支'],
+};
+const XING_NAME_MAP = {};
+for (const [xing, names] of Object.entries(XING_ALIAS)) for (const n of names) XING_NAME_MAP[n] = xing;
+
+// ── 卷五 义例三：月神起法 ───────────────────────────────────
+// 天德：堪舆经「正月丁二月坤三月壬四月辛五月乾六月甲七月癸八月艮九月丙十月乙十一月巽十二月庚」。
+// 四仲月（卯午酉子）天德居四维，无日可值，表中记 null。
+const TIAN_DE = { 寅: '丁', 卯: null, 辰: '壬', 巳: '辛', 午: null, 未: '甲', 申: '癸', 酉: null, 戌: '丙', 亥: '乙', 子: null, 丑: '庚' };
+// 天德合：历例「正月壬三月丁四月丙六月己七月戊九月辛十月庚十二月乙」。
+const TIAN_DE_HE = { 寅: '壬', 卯: null, 辰: '丁', 巳: '丙', 午: null, 未: '己', 申: '戊', 酉: null, 戌: '辛', 亥: '庚', 子: null, 丑: '乙' };
+// 月德：历例「正五九月在丙，二六十月在甲，三七十一月在壬，四八十二月在庚」。
+const YUE_DE = { 寅: '丙', 卯: '甲', 辰: '壬', 巳: '庚', 午: '丙', 未: '甲', 申: '壬', 酉: '庚', 戌: '丙', 亥: '甲', 子: '壬', 丑: '庚' };
+// 月德合：历例「正五九月在辛，二六十月在己，三七十一月在丁，四八十二月在乙」。
+const YUE_DE_HE = { 寅: '辛', 卯: '己', 辰: '丁', 巳: '乙', 午: '辛', 未: '己', 申: '丁', 酉: '乙', 戌: '辛', 亥: '己', 子: '丁', 丑: '乙' };
+// 月空：历例「寅午戌月壬，亥卯未月庚，申子辰月丙，巳酉丑月甲」。
+const YUE_KONG = { 寅: '壬', 卯: '庚', 辰: '丙', 巳: '甲', 午: '壬', 未: '庚', 申: '丙', 酉: '甲', 戌: '壬', 亥: '庚', 子: '丙', 丑: '甲' };
+// 天恩：历例「甲子至戊辰、己卯至癸未、己酉至癸丑，凡十五日」。
+const TIAN_EN = ['甲子', '乙丑', '丙寅', '丁卯', '戊辰', '己卯', '庚辰', '辛巳', '壬午', '癸未', '己酉', '庚戌', '辛亥', '壬子', '癸丑'];
+// 天赦：历例「春戊寅，夏甲午，秋戊申，冬甲子」。
+const SEASON_SHE = { 春: '戊寅', 夏: '甲午', 秋: '戊申', 冬: '甲子' };
+// 天愿：卷五按语据神煞起例改正后的十二辰（原历例传写多误）。
+const TIAN_YUAN = {
+  寅: '乙亥', 卯: '甲戌', 辰: '乙酉', 巳: '丙申', 午: '丁未', 未: '戊午',
+  申: '己巳', 酉: '庚辰', 戌: '辛卯', 亥: '壬寅', 子: '癸丑', 丑: '甲子',
+};
+// 母仓：历例「春亥子，夏寅卯，秋辰戌丑未，冬申酉」；土王后巳午未实现。
+const SEASON_MU_CANG = { 春: ['亥', '子'], 夏: ['寅', '卯'], 秋: ['辰', '戌', '丑', '未'], 冬: ['申', '酉'] };
+// 月恩：历例「正月丙、二月丁、三月庚、四月己、五月戊、六月辛、七月壬、八月癸、九月庚、十月乙、十一月甲、十二月辛」。
+const YUE_EN = { 寅: '丙', 卯: '丁', 辰: '庚', 巳: '己', 午: '戊', 未: '辛', 申: '壬', 酉: '癸', 戌: '庚', 亥: '乙', 子: '甲', 丑: '辛' };
+// 四相：历例「春丙丁，夏戊己，秋壬癸，冬甲乙」。
+const SEASON_SI_XIANG = { 春: ['丙', '丁'], 夏: ['戊', '己'], 秋: ['壬', '癸'], 冬: ['甲', '乙'] };
+// 时德：历例「春午，夏辰，秋子，冬寅」。
+const SEASON_SHI_DE = { 春: '午', 夏: '辰', 秋: '子', 冬: '寅' };
+// 王官守相民日：卷五按语从旧说，王日寅巳申亥、官日卯午酉子；守日从邵泰衢改正为辰未戌丑。
+const SEASON_WANG = { 春: '寅', 夏: '巳', 秋: '申', 冬: '亥' };
+const SEASON_GUAN = { 春: '卯', 夏: '午', 秋: '酉', 冬: '子' };
+const SEASON_SHOU = { 春: '辰', 夏: '未', 秋: '戌', 冬: '丑' };
+const SEASON_XIANG = { 春: '巳', 夏: '申', 秋: '亥', 冬: '寅' };
+const SEASON_MIN = { 春: '午', 夏: '酉', 秋: '子', 冬: '卯' };
+// 四击：通书「春戌，夏丑，秋辰，冬未」。
+const SEASON_SI_JI = { 春: '戌', 夏: '丑', 秋: '辰', 冬: '未' };
+// 九空：历例「正月在辰逆行四季」，曹震圭以三合墓冲释之。
+const JIU_KONG = { 寅: '辰', 卯: '丑', 辰: '戌', 巳: '未', 午: '辰', 未: '丑', 申: '戌', 酉: '未', 戌: '辰', 亥: '丑', 子: '戌', 丑: '未' };
+// 五墓：历例「正二月乙未，四五月丙戌，七八月辛丑，十月十一月壬辰，四季月戊辰」。
+const WU_MU = { 寅: '乙未', 卯: '乙未', 辰: '戊辰', 巳: '丙戌', 午: '丙戌', 未: '戊辰', 申: '辛丑', 酉: '辛丑', 戌: '戊辰', 亥: '壬辰', 子: '壬辰', 丑: '戊辰' };
+// 四耗：历例「春壬子，夏乙卯，秋戊午，冬辛酉」。
+const SEASON_SI_HAO = { 春: ['壬子'], 夏: ['乙卯'], 秋: ['戊午'], 冬: ['辛酉'] };
+// 四废：历例「春庚申辛酉，夏壬子癸亥，秋甲寅乙卯，冬丙午丁巳」。
+const SEASON_SI_FEI = { 春: ['庚申', '辛酉'], 夏: ['壬子', '癸亥'], 秋: ['甲寅', '乙卯'], 冬: ['丙午', '丁巳'] };
+// 四忌：神煞起例「春甲子，夏丙子，秋庚子，冬壬子」。
+const SEASON_SI_JI4 = { 春: ['甲子'], 夏: ['丙子'], 秋: ['庚子'], 冬: ['壬子'] };
+// 四穷：历例「春乙亥，夏丁亥，秋辛亥，冬癸亥」。
+const SEASON_SI_QIONG = { 春: ['乙亥'], 夏: ['丁亥'], 秋: ['辛亥'], 冬: ['癸亥'] };
+// 九坎/九焦：历例「正月在辰逆行四季，五月在卯逆行四仲，九月在寅逆行四孟」。
+const JIU_KAN = { 寅: '辰', 卯: '丑', 辰: '戌', 巳: '未', 午: '卯', 未: '子', 申: '酉', 酉: '午', 戌: '寅', 亥: '亥', 子: '申', 丑: '巳' };
+// 五虚：历例「春巳酉丑，夏申子辰，秋亥卯未，冬寅午戌」。
+const SEASON_WU_XU = { 春: ['巳', '酉', '丑'], 夏: ['申', '子', '辰'], 秋: ['亥', '卯', '未'], 冬: ['寅', '午', '戌'] };
+// 触水龙：丙子、癸丑、癸未。
+const CHU_SHUI_LONG = ['丙子', '癸丑', '癸未'];
+// 八专：曾门经「丁未、己未、庚申、甲寅、癸丑」。
+const BA_ZHUAN = ['丁未', '己未', '庚申', '甲寅', '癸丑'];
+// 无禄：通书十日「甲辰乙巳庚辰辛巳丙申戊戌丁亥己丑壬申癸亥」。
+const WU_LU = ['甲辰', '乙巳', '庚辰', '辛巳', '丙申', '戊戌', '丁亥', '己丑', '壬申', '癸亥'];
+// 重日：己亥。
+const CHONG_RI = ['己亥'];
+// 五合：寅卯日；五离/除神：申酉日（卷五）。
+// 解神：历例「正二月申，三四月戌，五六月子，七八月寅，九十月辰，十一月十二月午」。
+const JIE_SHEN = { 寅: '申', 卯: '申', 辰: '戌', 巳: '戌', 午: '子', 未: '子', 申: '寅', 酉: '寅', 戌: '辰', 亥: '辰', 子: '午', 丑: '午' };
+// 复日：历例「正七月甲庚，二八月乙辛，四十月丙壬，五十一月丁癸，三九六十二月戊己」。
+const FU_RI = {
+  寅: ['甲', '庚'], 卯: ['乙', '辛'], 辰: ['戊', '己'], 巳: ['丙', '壬'], 午: ['丁', '癸'], 未: ['戊', '己'],
+  申: ['甲', '庚'], 酉: ['乙', '辛'], 戌: ['戊', '己'], 亥: ['丙', '壬'], 子: ['丁', '癸'], 丑: ['戊', '己'],
+};
+// 鸣吠十三日、鸣吠对十一日：卷五按语据神煞起例改正（通书旧本有误）。
+const MING_FEI = ['甲午', '丙午', '庚午', '壬午', '甲申', '丙申', '庚申', '壬申', '乙酉', '丁酉', '己酉', '辛酉', '癸酉'];
+const MING_FEI_DUI = ['丙子', '庚子', '壬子', '甲寅', '丙寅', '庚寅', '壬寅', '乙卯', '丁卯', '辛卯', '癸卯'];
+
+// ── 卷六 义例四：月神起法 ───────────────────────────────────
+// 三合：日支落在月建三合局的另外两支。
+// 临日：历例「正月午、二月亥、三月申、四月丑、五月戌、六月卯、七月子、八月巳、九月寅、十月未、十一月辰、十二月酉」。
+const LIN_RI = { 寅: '午', 卯: '亥', 辰: '申', 巳: '丑', 午: '戌', 未: '卯', 申: '子', 酉: '巳', 戌: '寅', 亥: '未', 子: '辰', 丑: '酉' };
+// 驿马：正月起申逆行四孟；天后同位。
+const YI_MA = { 寅: '申', 卯: '巳', 辰: '寅', 巳: '亥', 午: '申', 未: '巳', 申: '寅', 酉: '亥', 戌: '申', 亥: '巳', 子: '寅', 丑: '亥' };
+// 劫煞：正月起亥逆行四孟。
+const JIE_SHA = { 寅: '亥', 卯: '申', 辰: '巳', 巳: '寅', 午: '亥', 未: '申', 申: '巳', 酉: '寅', 戌: '亥', 亥: '申', 子: '巳', 丑: '寅' };
+// 灾煞：正月起子逆行四仲（卷六按语从曹震圭说）。
+const ZAI_SHA = { 寅: '子', 卯: '酉', 辰: '午', 巳: '卯', 午: '子', 未: '酉', 申: '午', 酉: '卯', 戌: '子', 亥: '酉', 子: '午', 丑: '卯' };
+// 月煞/月虚：正月起丑逆行四季。
+const YUE_SHA = { 寅: '丑', 卯: '戌', 辰: '未', 巳: '辰', 午: '丑', 未: '戌', 申: '未', 酉: '辰', 戌: '丑', 亥: '戌', 子: '未', 丑: '辰' };
+// 月刑：与岁刑同（三刑）。
+const YUE_XING = { 寅: '巳', 卯: '子', 辰: '辰', 巳: '申', 午: '午', 未: '丑', 申: '寅', 酉: '酉', 戌: '未', 亥: '亥', 子: '卯', 丑: '戌' };
+// 月害：正月起巳逆行十二辰。
+const YUE_HAI = { 寅: '巳', 卯: '辰', 辰: '卯', 巳: '寅', 午: '丑', 未: '子', 申: '亥', 酉: '戌', 戌: '酉', 亥: '申', 子: '未', 丑: '午' };
+// 大时/大败/咸池：正月起卯逆行四仲。
+const DA_SHI = { 寅: '卯', 卯: '子', 辰: '酉', 巳: '午', 午: '卯', 未: '子', 申: '酉', 酉: '午', 戌: '卯', 亥: '子', 子: '酉', 丑: '午' };
+// 游祸：正月起巳逆行四孟。
+const YOU_HUO = { 寅: '巳', 卯: '寅', 辰: '亥', 巳: '申', 午: '巳', 未: '寅', 申: '亥', 酉: '申', 戌: '巳', 亥: '寅', 子: '亥', 丑: '申' };
+// 天吏：正月起酉逆行四仲。
+const TIAN_LI = { 寅: '酉', 卯: '午', 辰: '卯', 巳: '子', 午: '酉', 未: '午', 申: '卯', 酉: '子', 戌: '酉', 亥: '午', 子: '卯', 丑: '子' };
+// 六合：正月在亥逆行十二辰。
+const LIU_HE = { 寅: '亥', 卯: '戌', 辰: '酉', 巳: '申', 午: '未', 未: '午', 申: '巳', 酉: '辰', 戌: '卯', 亥: '寅', 子: '丑', 丑: '子' };
+// 五富：正月起亥顺行四孟。
+const WU_FU = { 寅: '亥', 卯: '寅', 辰: '巳', 巳: '申', 午: '亥', 未: '寅', 申: '巳', 酉: '申', 戌: '亥', 亥: '寅', 子: '巳', 丑: '申' };
+// 天仓：正月起寅逆行十二辰。
+const TIAN_CANG = { 寅: '寅', 卯: '丑', 辰: '子', 巳: '亥', 午: '戌', 未: '酉', 申: '申', 酉: '未', 戌: '午', 亥: '巳', 子: '辰', 丑: '卯' };
+// 天贼：正月在丑逆行十二辰。
+const TIAN_ZEI = { 寅: '丑', 卯: '子', 辰: '亥', 巳: '戌', 午: '酉', 未: '申', 申: '未', 酉: '午', 戌: '巳', 亥: '辰', 子: '卯', 丑: '寅' };
+// 要安、玉宇、金堂、敬安、普护、福生、圣心、益后、续世：九神逐月表。
+const YAO_AN = { 寅: '寅', 卯: '申', 辰: '卯', 巳: '酉', 午: '辰', 未: '戌', 申: '巳', 酉: '亥', 戌: '午', 亥: '子', 子: '未', 丑: '丑' };
+const YU_YU = { 寅: '卯', 卯: '酉', 辰: '辰', 巳: '戌', 午: '巳', 未: '亥', 申: '午', 酉: '子', 戌: '未', 亥: '丑', 子: '申', 丑: '寅' };
+const JIN_TANG = { 寅: '辰', 卯: '戌', 辰: '巳', 巳: '亥', 午: '午', 未: '子', 申: '未', 酉: '丑', 戌: '申', 亥: '寅', 子: '酉', 丑: '卯' };
+const JING_AN = { 寅: '未', 卯: '丑', 辰: '申', 巳: '寅', 午: '酉', 未: '卯', 申: '戌', 酉: '辰', 戌: '亥', 亥: '巳', 子: '子', 丑: '午' };
+const PU_HU = { 寅: '申', 卯: '寅', 辰: '酉', 巳: '卯', 午: '戌', 未: '辰', 申: '亥', 酉: '巳', 戌: '子', 亥: '午', 子: '丑', 丑: '未' };
+const FU_SHENG = { 寅: '酉', 卯: '卯', 辰: '戌', 巳: '辰', 午: '亥', 未: '巳', 申: '子', 酉: '午', 戌: '丑', 亥: '未', 子: '寅', 丑: '申' };
+const SHENG_XIN = { 寅: '亥', 卯: '巳', 辰: '子', 巳: '午', 午: '丑', 未: '未', 申: '寅', 酉: '申', 戌: '卯', 亥: '酉', 子: '辰', 丑: '戌' };
+const YI_HOU = { 寅: '子', 卯: '午', 辰: '丑', 巳: '未', 午: '寅', 未: '申', 申: '卯', 酉: '酉', 戌: '辰', 亥: '戌', 子: '巳', 丑: '亥' };
+const XU_SHI = { 寅: '丑', 卯: '未', 辰: '寅', 巳: '申', 午: '卯', 未: '酉', 申: '辰', 酉: '戌', 戌: '巳', 亥: '亥', 子: '午', 丑: '子' };
+// 阳德：正月起戌顺行六阳辰；阴德：正月起酉逆行六阴辰。
+const YANG_DE = { 寅: '戌', 卯: '子', 辰: '寅', 巳: '辰', 午: '午', 未: '申', 申: '戌', 酉: '子', 戌: '寅', 亥: '辰', 子: '午', 丑: '申' };
+const YIN_DE = { 寅: '酉', 卯: '未', 辰: '巳', 巳: '卯', 午: '丑', 未: '亥', 申: '酉', 酉: '未', 戌: '巳', 亥: '卯', 子: '丑', 丑: '亥' };
+// 天马：正月起午顺行六阳辰；兵禁：正月起寅逆行六阳辰。
+const TIAN_MA = { 寅: '午', 卯: '申', 辰: '戌', 巳: '子', 午: '寅', 未: '辰', 申: '午', 酉: '申', 戌: '戌', 亥: '子', 子: '寅', 丑: '辰' };
+const BING_JIN = { 寅: '寅', 卯: '子', 辰: '戌', 巳: '申', 午: '午', 未: '辰', 申: '寅', 酉: '子', 戌: '戌', 亥: '申', 子: '午', 丑: '辰' };
+// 地囊：卷六按语据纳甲改正后的逐月两日。
+const DI_NANG = {
+  寅: ['庚子', '庚午'], 卯: ['乙未', '癸丑'], 辰: ['甲子', '壬午'], 巳: ['己卯', '己酉'],
+  午: ['壬戌', '甲辰'], 未: ['丙辰', '丙戌'], 申: ['丁巳', '丁亥'], 酉: ['丙寅', '丙申'],
+  戌: ['辛丑', '辛未'], 亥: ['戊寅', '戊申'], 子: ['辛卯', '辛酉'], 丑: ['癸酉', '乙卯'],
+};
+// 土符：正月丑、二月巳、三月酉、四月寅、五月午、六月戌、七月卯、八月未、九月亥、十月辰、十一月申、十二月子。
+const TU_FU = { 寅: '丑', 卯: '巳', 辰: '酉', 巳: '寅', 午: '午', 未: '戌', 申: '卯', 酉: '未', 戌: '亥', 亥: '辰', 子: '申', 丑: '子' };
+// 大煞：正月戌、二月巳、三月午、四月未、五月寅、六月卯、七月辰、八月亥、九月子、十月丑、十一月申、十二月酉。
+const DA_SHA = { 寅: '戌', 卯: '巳', 辰: '午', 巳: '未', 午: '寅', 未: '卯', 申: '辰', 酉: '亥', 戌: '子', 亥: '丑', 子: '申', 丑: '酉' };
+// 归忌：孟月丑、仲月寅、季月子。
+// 往亡：正月寅、二月巳、三月申、四月亥、五月卯、六月午、七月酉、八月子、九月辰、十月未、十一月戌、十二月丑。
+const WANG_WANG = { 寅: '寅', 卯: '巳', 辰: '申', 巳: '亥', 午: '卯', 未: '午', 申: '酉', 酉: '子', 戌: '辰', 亥: '未', 子: '戌', 丑: '丑' };
+// 月厌/地火：正月在戌逆行十二辰；厌对/六仪/招摇：正月起辰逆行十二辰。
+const YUE_YAN = { 寅: '戌', 卯: '酉', 辰: '申', 巳: '未', 午: '午', 未: '巳', 申: '辰', 酉: '卯', 戌: '寅', 亥: '丑', 子: '子', 丑: '亥' };
+const YAN_DUI = { 寅: '辰', 卯: '卯', 辰: '寅', 巳: '丑', 午: '子', 未: '亥', 申: '戌', 酉: '酉', 戌: '申', 亥: '未', 子: '午', 丑: '巳' };
+// 天火：正月在子顺行四仲。
+const TIAN_HUO = { 寅: '子', 卯: '卯', 辰: '午', 巳: '酉', 午: '子', 未: '卯', 申: '午', 酉: '酉', 戌: '子', 亥: '卯', 子: '午', 丑: '酉' };
+
+// ── 卷四 阴阳不将：历例逐月日表 ─────────────────────────────
+const BU_JIANG = {
+  寅: ['辛亥', '辛丑', '辛卯', '庚子', '庚寅', '己亥', '己丑', '己卯', '丁亥', '丁丑', '丁卯', '丙子', '丙寅'],
+  卯: ['庚戌', '庚子', '庚寅', '己亥', '己丑', '丁亥', '丁丑', '丙戌', '丙子', '丙寅', '乙亥', '乙丑'],
+  辰: ['己酉', '己亥', '己丑', '丁酉', '丁亥', '丁丑', '丙戌', '丙子', '乙酉', '乙亥', '乙丑', '甲戌', '甲子'],
+  巳: ['丁酉', '丁亥', '丙申', '丙戌', '丙子', '乙酉', '乙亥', '甲申', '甲戌', '甲子', '戊申', '戊戌', '戊子'],
+  午: ['丙申', '丙戌', '乙未', '乙酉', '乙亥', '甲申', '甲戌', '戊申', '戊戌', '癸未', '癸酉', '癸亥'],
+  未: ['乙未', '乙酉', '甲午', '甲申', '甲戌', '戊午', '戊申', '戊戌', '癸未', '癸酉', '壬午', '壬申', '壬戌'],
+  申: ['乙巳', '乙未', '乙酉', '甲午', '甲申', '戊午', '戊申', '癸巳', '癸未', '癸酉', '壬午', '壬申'],
+  酉: ['甲辰', '甲午', '甲申', '戊辰', '戊午', '戊申', '癸巳', '癸未', '壬辰', '壬午', '壬申', '辛巳', '辛未'],
+  戌: ['戊辰', '戊午', '癸卯', '癸巳', '癸未', '壬辰', '壬午', '辛卯', '辛巳', '辛未', '庚辰', '庚午'],
+  亥: ['癸卯', '癸巳', '壬寅', '壬辰', '壬午', '辛卯', '辛巳', '庚寅', '庚辰', '庚午', '己卯', '己巳'],
+  子: ['壬寅', '壬辰', '辛丑', '辛卯', '辛巳', '庚寅', '庚辰', '己丑', '己卯', '己巳', '丁丑', '丁卯', '丁巳'],
+  丑: ['辛丑', '辛卯', '庚子', '庚寅', '庚辰', '己丑', '己卯', '丁丑', '丁卯', '丙子', '丙寅', '丙辰'],
+};
+
+// ── 卷十一 用事：逐条宜忌（原文按顺序编码，已把「防」还原为「护」等异体） ──
+const SHENSHA_LISTS = {
+  祭祀: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '天巫', '开日', '普护', '福生', '圣心', '益后', '续世'],
+    avoid: ['天狗', '寅日'],
+  },
+  宴会: {
+    use: ['天德', '月德', '天德合', '月德合', '天恩', '天赦', '天愿', '月恩', '四相', '时德', '王日', '民日', '三合', '福德', '天喜', '开日', '六合', '五合'],
+    avoid: ['月破', '平日', '收日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '四废', '五离', '酉日'],
+  },
+  开市: {
+    use: ['天愿', '民日', '满日', '成日', '开日', '五富'],
+    avoid: ['月破', '大耗', '平日', '收日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '大时', '天吏', '小耗', '四耗', '四废', '四穷', '五墓', '九空'],
+  },
+  立券交易: {
+    use: ['天愿', '民日', '三合', '满日', '六合', '五富', '五合'],
+    avoid: ['月破', '大耗', '平日', '收日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '大时', '天吏', '小耗', '四耗', '四废', '四穷', '五墓', '九空', '五离'],
+  },
+  纳财: {
+    use: ['母仓', '天愿', '月恩', '四相', '时德', '民日', '三合', '满日', '收日', '六合', '五富', '天仓'],
+    avoid: ['月破', '大耗', '平日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '大时', '天吏', '小耗', '四耗', '四废', '四穷', '九空'],
+  },
+  般移: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '民日', '驿马', '天马', '成日', '开日'],
+    avoid: ['月破', '平日', '收日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月厌', '大时', '天吏', '四废', '五墓', '归忌', '往亡'],
+  },
+  兴造动土: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '三合', '开日'],
+    avoid: ['月建', '土府', '月破', '平日', '收日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月厌', '大时', '天吏', '四废', '五墓', '土符', '地囊', '土王用事后'],
+  },
+  安葬: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '六合', '鸣吠'],
+    avoid: ['月建', '月破', '平日', '收日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '四废', '四忌', '四穷', '五墓', '复日', '重日'],
+  },
+  破土: {
+    use: ['鸣吠', '鸣吠对'],
+    avoid: ['月建', '土府', '月破', '平日', '收日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '四废', '五墓', '土符', '地囊', '复日', '重日', '土王用事后'],
+  },
+  行幸遣使: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '王日', '驿马', '天马', '建日', '吉期', '天喜', '开日'],
+    avoid: ['月破', '平日', '收日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月厌', '大时', '天吏', '天贼', '四废', '五墓', '往亡', '巳日'],
+  },
+  上官赴任: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '王日', '官日', '守日', '相日', '临日', '建日', '吉期', '天喜', '开日'],
+    avoid: ['月破', '平日', '收日', '满日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月厌', '大时', '天吏', '四废', '五墓', '往亡'],
+  },
+  结婚姻: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '民日', '三合', '天喜', '六合', '五合'],
+    avoid: ['月建', '月破', '平日', '收日', '满日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '大时', '天吏', '四废', '四忌', '四穷', '五墓', '五离', '八专'],
+  },
+  纳采问名: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '月恩', '四相', '时德', '民日', '三合', '天喜'],
+    avoid: ['月建', '月破', '平日', '收日', '满日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '大时', '天吏', '四废', '四忌', '四穷', '五墓', '五离', '八专'],
+  },
+  嫁娶: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '天愿', '三合', '天喜', '六合', '不将'],
+    avoid: ['月破', '平日', '收日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '厌对', '大时', '天吏', '四废', '四忌', '四穷', '五墓', '往亡', '八专', '亥日'],
+  },
+  求医疗病: {
+    use: ['天德', '月德', '天德合', '月德合', '天赦', '月恩', '四相', '时德', '天后', '除日', '破日', '天医', '开日', '解神', '除神'],
+    avoid: ['月建', '平日', '死神', '收日', '满日', '闭日', '劫煞', '灾煞', '月煞', '月刑', '月害', '月厌', '大时', '游祸', '天吏', '死气', '四废', '五墓', '往亡', '未日', '每月十五日', '朔望日'],
+  },
+  入学: {
+    use: ['成日', '开日'],
+    avoid: [],
+  },
+};
+
+/** 事项 → 卷十一条目（一个事项可对应多条，如安葬兼看破土）。 */
+const TASK_ENTRIES = {
+  嫁娶: ['嫁娶'],
+  订婚: ['纳采问名'],
+  领证: ['结婚姻'],
+  提亲: ['纳采问名'],
+  收送聘金: ['纳采问名'],
+  满月酒: ['祭祀', '宴会'],
+  开业: ['开市'],
+  交易: ['立券交易'],
+  投资: ['纳财'],
+  签订合同: ['立券交易'],
+  签约: ['立券交易'],
+  纳财: ['纳财'],
+  入宅: ['般移'],
+  搬家: ['般移'],
+  搬家入宅: ['般移'],
+  动土: ['兴造动土'],
+  装修: ['兴造动土'],
+  装修建造: ['兴造动土'],
+  试车买车: ['立券交易'],
+  安葬: ['安葬', '破土'],
+  出行: ['行幸遣使'],
+  旅行: ['行幸遣使'],
+  赴任: ['上官赴任'],
+  访亲友: ['宴会'],
+  入学: ['入学'],
+  祭祀: ['祭祀'],
+  求医: ['求医疗病'],
+};
+
+/** 已实现起法的神煞名（含别名）。名单外又出现在卷十一清单里的，记入 unsupported。 */
+const KNOWN_SHENSHA = new Set([
+  '天德', '月德', '天德合', '月德合', '月空', '天恩', '天赦', '天愿', '母仓', '月恩', '四相', '时德',
+  '王日', '官日', '守日', '相日', '民日', '四击', '九空', '五墓', '四耗', '四废', '四忌', '四穷',
+  '九坎', '九焦', '五虚', '触水龙', '八专', '无禄', '重日', '五合', '五离', '除神', '解神', '复日',
+  '鸣吠', '鸣吠对', '三合', '临日', '驿马', '天后', '劫煞', '灾煞', '月煞', '月虚', '月刑', '月害',
+  '大时', '大败', '咸池', '游祸', '天吏', '六合', '五富', '天仓', '天贼', '要安', '玉宇', '金堂',
+  '敬安', '普护', '福生', '圣心', '益后', '续世', '阳德', '阴德', '天马', '兵禁', '地囊', '土符',
+  '大煞', '归忌', '往亡', '月厌', '地火', '厌对', '六仪', '招摇', '天火', '不将', '天狗',
+  '天医', '天喜', '天巫', '福德', '吉期', '兵宝', '兵福', '小时', '土府', '月建', '月破', '大耗',
+  '小耗', '死神', '死气', '时阴', '官符', '枝德', '血支', '时阳', '生气',
+  '建日', '除日', '满日', '平日', '定日', '执日', '破日', '危日', '成日', '收日', '开日', '闭日',
+]);
+
+/** 卷十一出现、但本层没有可靠起法/历法条件的条目：不猜，直接列出来。 */
+const UNSUPPORTED_NAMES = new Set(['土王用事后', '血忌', '伏社日', '八风', '气往亡', '专日', '伐日', '四离', '四绝', '上朔']);
+
+const ZERI_SHENSHA_BASIS = {
+  text: '《钦定协纪辨方书》卷十一「用事」逐条宜忌 + 卷十「宜忌」吉凶轻重六等',
+  edition: '四库全书本（清乾隆内府刊本；殆知阁整理本对校）',
+  volumes: ['卷四 义例二 建除十二神', '卷五 义例三 月神', '卷六 义例四 月神', '卷九 立成', '卷十 宜忌', '卷十一 用事'],
+  unsupported: [...UNSUPPORTED_NAMES],
+  note: '神煞按节气月与日干支确定性起算；六等判词逐字取卷十，德神制化按卷十各条按语；未实现的条目不计分，逐日 shensha.unsupported 会列出。',
+};
+
+const uniquePush = (arr, value) => { if (!arr.includes(value)) arr.push(value); };
+
+/** 中文数字月日解析：用于「每月十五日」「每月一日六日…」这类规则。 */
+function lunarDaysOf(name) {
+  if (name === '朔望日') return [1, 15];
+  if (!name.startsWith('每月') || !name.endsWith('日')) return null;
+  const body = name.slice(2, -1).replace(/日/g, '');
+  const re = /二十[一二三四五六七八九]?|十[一二三四五六七八九]?|[一二三四五六七八九]/g;
+  const table = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+  const out = [];
+  for (const m of body.matchAll(re)) {
+    const s = m[0];
+    let n = 0;
+    if (s.startsWith('二十')) n = 20 + (s.length === 3 ? table[s[2]] : 0);
+    else if (s.startsWith('十')) n = 10 + (s.length === 2 ? table[s[1]] : 0);
+    else n = table[s] || 0;
+    if (n >= 1 && n <= 30) out.push(n);
+  }
+  return out.length ? out : null;
+}
+
+/** 日干/日支类禁忌：「寅日」「丁日」「亥子日」。 */
+function dayRuleOf(name) {
+  if (!name.endsWith('日') || name === '朔望日') return null;
+  const body = name.slice(0, -1);
+  if (body.length === 1) {
+    if (BRANCHES.includes(body)) return { kind: 'branch', values: [body] };
+    if (STEMS.includes(body)) return { kind: 'stem', values: [body] };
+  }
+  if (body.length === 2 && [...body].every((c) => BRANCHES.includes(c))) return { kind: 'branch', values: [...body] };
+  return null;
+}
+
+/**
+ * 逐日神煞。
+ * @param {{monthBranch:string, dayGz:string, xing?:string, lunarDay?:number}} input
+ *   monthBranch 为节气月支（寅=正月）；xing 不传时按日支与月支现算。
+ */
+function computeDayShensha(input) {
+  const monthBranch = input && input.monthBranch;
+  const dayGz = input && input.dayGz;
+  const result = {
+    monthBranch, monthNumber: MONTH_NO[monthBranch] || 0, season: SEASON_OF[monthBranch] || '',
+    dayGz, dayStem: '', dayBranch: '', xing: '', lunarDay: input && input.lunarDay,
+    names: [],
+  };
+  if (!BRANCHES.includes(monthBranch) || typeof dayGz !== 'string' || dayGz.length !== 2) return result;
+  const dayStem = dayGz[0];
+  const dayBranch = dayGz[1];
+  if (!STEMS.includes(dayStem) || !BRANCHES.includes(dayBranch)) return result;
+  const season = SEASON_OF[monthBranch];
+  const xing = input.xing && ZHIXING.includes(input.xing)
+    ? input.xing
+    : ZHIXING[((BRANCHES.indexOf(dayBranch) - BRANCHES.indexOf(monthBranch)) % 12 + 12) % 12];
+  const names = new Set();
+  const add = (n) => { if (n) names.add(n); };
+
+  // 建除同位异名：同一建除日只以一组名字出现，计分时按建除归并。
+  for (const n of XING_ALIAS[xing] || []) add(n);
+
+  if (TIAN_DE[monthBranch] && TIAN_DE[monthBranch] === dayStem) add('天德');
+  if (TIAN_DE_HE[monthBranch] && TIAN_DE_HE[monthBranch] === dayStem) add('天德合');
+  if (YUE_DE[monthBranch] === dayStem) add('月德');
+  if (YUE_DE_HE[monthBranch] === dayStem) add('月德合');
+  if (YUE_KONG[monthBranch] === dayStem) add('月空');
+  if (TIAN_EN.includes(dayGz)) add('天恩');
+  if (SEASON_SHE[season] === dayGz) add('天赦');
+  if (TIAN_YUAN[monthBranch] === dayGz) add('天愿');
+  if (SEASON_MU_CANG[season].includes(dayBranch)) add('母仓');
+  if (YUE_EN[monthBranch] === dayStem) add('月恩');
+  if (SEASON_SI_XIANG[season].includes(dayStem)) add('四相');
+  if (SEASON_SHI_DE[season] === dayBranch) add('时德');
+  if (SEASON_WANG[season] === dayBranch) add('王日');
+  if (SEASON_GUAN[season] === dayBranch) add('官日');
+  if (SEASON_SHOU[season] === dayBranch) add('守日');
+  if (SEASON_XIANG[season] === dayBranch) add('相日');
+  if (SEASON_MIN[season] === dayBranch) add('民日');
+  if (SEASON_SI_JI[season] === dayBranch) add('四击');
+  if (JIU_KONG[monthBranch] === dayBranch) add('九空');
+  if (WU_MU[monthBranch] === dayGz) add('五墓');
+  if (SEASON_SI_HAO[season].includes(dayGz)) add('四耗');
+  if (SEASON_SI_FEI[season].includes(dayGz)) add('四废');
+  if (SEASON_SI_JI4[season].includes(dayGz)) add('四忌');
+  if (SEASON_SI_QIONG[season].includes(dayGz)) add('四穷');
+  if (JIU_KAN[monthBranch] === dayBranch) { add('九坎'); add('九焦'); }
+  if (SEASON_WU_XU[season].includes(dayBranch)) add('五虚');
+  if (CHU_SHUI_LONG.includes(dayGz)) add('触水龙');
+  if (BA_ZHUAN.includes(dayGz)) add('八专');
+  if (WU_LU.includes(dayGz)) add('无禄');
+  if (CHONG_RI.includes(dayGz)) add('重日');
+  if (dayBranch === '寅' || dayBranch === '卯') add('五合');
+  if (dayBranch === '申' || dayBranch === '酉') { add('五离'); add('除神'); }
+  if (JIE_SHEN[monthBranch] === dayBranch) add('解神');
+  if (FU_RI[monthBranch].includes(dayStem)) add('复日');
+  if (MING_FEI.includes(dayGz)) add('鸣吠');
+  if (MING_FEI_DUI.includes(dayGz)) add('鸣吠对');
+
+  if (LIN_RI[monthBranch] === dayBranch) add('临日');
+  if (YI_MA[monthBranch] === dayBranch) { add('驿马'); add('天后'); }
+  if (JIE_SHA[monthBranch] === dayBranch) add('劫煞');
+  if (ZAI_SHA[monthBranch] === dayBranch) add('灾煞');
+  if (YUE_SHA[monthBranch] === dayBranch) { add('月煞'); add('月虚'); }
+  if (YUE_XING[monthBranch] === dayBranch) add('月刑');
+  if (YUE_HAI[monthBranch] === dayBranch) add('月害');
+  if (DA_SHI[monthBranch] === dayBranch) { add('大时'); add('大败'); add('咸池'); }
+  if (YOU_HUO[monthBranch] === dayBranch) add('游祸');
+  if (TIAN_LI[monthBranch] === dayBranch) add('天吏');
+  if (LIU_HE[monthBranch] === dayBranch) add('六合');
+  if (WU_FU[monthBranch] === dayBranch) add('五富');
+  if (TIAN_CANG[monthBranch] === dayBranch) add('天仓');
+  if (TIAN_ZEI[monthBranch] === dayBranch) add('天贼');
+  if (YAO_AN[monthBranch] === dayBranch) add('要安');
+  if (YU_YU[monthBranch] === dayBranch) add('玉宇');
+  if (JIN_TANG[monthBranch] === dayBranch) add('金堂');
+  if (JING_AN[monthBranch] === dayBranch) add('敬安');
+  if (PU_HU[monthBranch] === dayBranch) add('普护');
+  if (FU_SHENG[monthBranch] === dayBranch) add('福生');
+  if (SHENG_XIN[monthBranch] === dayBranch) add('圣心');
+  if (YI_HOU[monthBranch] === dayBranch) add('益后');
+  if (XU_SHI[monthBranch] === dayBranch) add('续世');
+  if (YANG_DE[monthBranch] === dayBranch) add('阳德');
+  if (YIN_DE[monthBranch] === dayBranch) add('阴德');
+  if (TIAN_MA[monthBranch] === dayBranch) add('天马');
+  if (BING_JIN[monthBranch] === dayBranch) add('兵禁');
+  if (DI_NANG[monthBranch].includes(dayGz)) add('地囊');
+  if (TU_FU[monthBranch] === dayBranch) add('土符');
+  if (DA_SHA[monthBranch] === dayBranch) add('大煞');
+  if (WANG_WANG[monthBranch] === dayBranch) add('往亡');
+  if (YUE_YAN[monthBranch] === dayBranch) { add('月厌'); add('地火'); }
+  if (YAN_DUI[monthBranch] === dayBranch) { add('厌对'); add('六仪'); add('招摇'); }
+  if (TIAN_HUO[monthBranch] === dayBranch) add('天火');
+
+  // 归忌：孟月丑、仲月寅、季月子。
+  const meng = ['寅', '巳', '申', '亥'].includes(monthBranch);
+  const zhong = ['子', '卯', '午', '酉'].includes(monthBranch);
+  if ((meng && dayBranch === '丑') || (zhong && dayBranch === '寅') || (!meng && !zhong && dayBranch === '子')) add('归忌');
+  // 三合：月建三合局中除去月支的另外两支。
+  if (SANHE[monthBranch] && [...SANHE[monthBranch]].filter((b) => b !== monthBranch).includes(dayBranch)) add('三合');
+  // 不将：卷四历例逐月日表。
+  if (BU_JIANG[monthBranch].includes(dayGz)) add('不将');
+  // 天狗：申月戌日（满日）；卷五按语明确「非谓凡为满日皆天狗」。
+  if (monthBranch === '申' && dayBranch === '戌') add('天狗');
+
+  result.dayStem = dayStem;
+  result.dayBranch = dayBranch;
+  result.xing = xing;
+  result.names = [...names];
+  return result;
+}
+
+function addXingHit(list, xing, rawName) {
+  let item = list.find((x) => x.xing === xing);
+  if (!item) { item = { xing, names: [] }; list.push(item); }
+  uniquePush(item.names, rawName);
+}
+
+/**
+ * 某事项在当日的神煞命中。
+ * 返回 use/avoid 各分四类：xing（建除）、shensha（神煞）、day（日干/日支禁忌）、lunar（农历日禁忌）。
+ */
+function taskShenshaHits(task, day) {
+  const entries = TASK_ENTRIES[task] || [];
+  const out = {
+    entries,
+    use: { xing: [], shensha: [], day: [], lunar: [] },
+    avoid: { xing: [], shensha: [], day: [], lunar: [] },
+    unsupported: [],
+  };
+  if (!day || !day.xing || !Array.isArray(day.names)) return out;
+  const addList = (bucket, names) => {
+    for (const name of names) {
+      if (UNSUPPORTED_NAMES.has(name)) { uniquePush(out.unsupported, name); continue; }
+      const lunar = lunarDaysOf(name);
+      if (lunar) {
+        if (Number.isInteger(day.lunarDay) && lunar.includes(day.lunarDay)) uniquePush(bucket.lunar, name);
+        continue;
+      }
+      const rule = dayRuleOf(name);
+      if (rule) {
+        const hit = rule.kind === 'branch'
+          ? rule.values.includes(day.dayBranch)
+          : rule.values.includes(day.dayStem);
+        if (hit) uniquePush(bucket.day, name);
+        continue;
+      }
+      const xing = XING_NAME_MAP[name];
+      if (xing) {
+        if (xing === day.xing) addXingHit(bucket.xing, xing, name);
+        continue;
+      }
+      if (KNOWN_SHENSHA.has(name)) {
+        if (day.names.includes(name)) uniquePush(bucket.shensha, name);
+        continue;
+      }
+      uniquePush(out.unsupported, name);
+    }
+  };
+  for (const entry of entries) {
+    const list = SHENSHA_LISTS[entry];
+    if (!list) continue;
+    addList(out.use, list.use);
+    addList(out.avoid, list.avoid);
+  }
+  return out;
+}
+
+/** 把建除命中格式化成「满日」「土府（建日）」这样的可读串。 */
+function xingHitText(hit) {
+  const raw = hit.names.join('、');
+  return hit.names.includes(`${hit.xing}日`) ? raw : `${raw}（${hit.xing}日）`;
+}
+
+// ── 卷十 宜忌：吉凶轻重六等与德神制化 ────────────────────────
+// 原文（殆知阁整理本第 4853 行）：
+// 「今参互较量，除建破等日条例简易及专忌之日无庸分别外，余分为六等：
+//   其上吉足胜凶，从宜不从忌；上次吉足抵凶，遇德从宜不从忌，不遇从宜亦从忌；
+//   中等吉不抵凶，遇德则吉胜，从宜不从忌，不遇从忌不从宜；
+//   中次凶胜于吉，遇德始相抵，从宜亦从忌，不遇从忌不从宜；
+//   其下凶又逢凶，遇德从忌不从宜，不遇诸事皆忌；
+//   最下凶叠大凶，遇德仍诸事皆忌。」
+// 判词逐字照录；权重与比值阈值是本仓校准，见 GRADE_THRESHOLDS。
+// 卷十等第表按「月支 × 日建除」逐格列等，本层只编码可逐条引证的判词与德神制化条件。
+
+const DECISION = {
+  YI: '从宜不从忌',
+  YI_JI: '从宜亦从忌',
+  PING: '不宜不忌',
+  JI: '从忌不从宜',
+  ALL_JI: '诸事皆忌',
+};
+
+const GRADE_TEXT =
+  '今参互较量除建破等日条例简易及专忌之日无庸分别外余分为六等'
+  + '其上吉足胜凶从宜不从忌'
+  + '上次吉足抵凶遇德从宜不从忌不遇从宜亦从忌'
+  + '中等吉不抵凶遇德则吉胜从宜不从忌不遇从忌不从宜'
+  + '中次凶胜于吉遇德始相抵从宜亦从忌不遇从忌不从宜'
+  + '其下凶又逢凶遇德从忌不从宜不遇诸事皆忌'
+  + '最下凶叠大凶遇德仍诸事皆忌'
+  + '然后吉凶轻重各有区分而用静用作趋避各当云表例并列于后';
+
+/** 六等判词。withDe / withoutDe 是「遇德」「不遇德」两列的决断。 */
+const GRADE_RULES = [
+  {
+    key: '上', label: '上吉',
+    doctrine: '吉足胜凶，从宜不从忌',
+    withDe: DECISION.YI, withoutDe: DECISION.YI,
+  },
+  {
+    key: '上次', label: '上次',
+    doctrine: '吉足抵凶，遇德从宜不从忌，不遇从宜亦从忌',
+    withDe: DECISION.YI, withoutDe: DECISION.YI_JI,
+  },
+  {
+    key: '中', label: '中',
+    doctrine: '吉不抵凶，遇德则吉胜，从宜不从忌，不遇从忌不从宜',
+    withDe: DECISION.YI, withoutDe: DECISION.JI,
+  },
+  {
+    key: '中次', label: '中次',
+    doctrine: '凶胜于吉，遇德始相抵，从宜亦从忌，不遇从忌不从宜',
+    withDe: DECISION.YI_JI, withoutDe: DECISION.JI,
+  },
+  {
+    key: '下', label: '下',
+    doctrine: '凶又逢凶，遇德从忌不从宜，不遇诸事皆忌',
+    withDe: DECISION.JI, withoutDe: DECISION.ALL_JI,
+  },
+  {
+    key: '下下', label: '下下',
+    doctrine: '凶叠大凶，遇德仍诸事皆忌',
+    withDe: DECISION.ALL_JI, withoutDe: DECISION.ALL_JI,
+  },
+];
+
+/** 卷十铺注条例：「吉凶相抵，不注宜亦不注忌」——六等之外的持平态。 */
+const GRADE_PING = {
+  key: '平', label: '平',
+  doctrine: '吉凶相抵，不注宜亦不注忌',
+  withDe: DECISION.PING, withoutDe: DECISION.PING,
+};
+
+const GRADE_RULE_BY_KEY = Object.fromEntries(GRADE_RULES.map((r) => [r.key, r]));
+
+/** 六等比值阈值：本仓校准，不是古籍常数。 */
+const GRADE_THRESHOLDS = {
+  up: 3 / 2,
+  upCi: 1,
+  mid: 2 / 3,
+  midCi: 1 / 2,
+  xiaXiaWeight: 12,
+};
+
+/** 吉项权重（本仓校准，按卷十对神煞轻重的相对比较分档）。 */
+const XING_GOOD = { 建: 1, 除: 2, 满: 2, 平: 1, 定: 2, 执: 1, 破: 1, 危: 1, 成: 2, 收: 1, 开: 3, 闭: 1 };
+const SHENSHA_GOOD = {
+  天德: 3, 月德: 3, 天德合: 3, 月德合: 3, 天赦: 3, 天愿: 3,
+  月恩: 2, 四相: 2, 时德: 2, 王日: 2, 官日: 2, 守日: 2, 相日: 2, 民日: 2, 临日: 2,
+  三合: 2, 六合: 2, 五合: 2, 五富: 2, 天仓: 2, 母仓: 2, 驿马: 2, 天马: 2, 不将: 2,
+  鸣吠: 2, 鸣吠对: 2, 解神: 2, 除神: 2, 天后: 2, 普护: 2, 福生: 2, 圣心: 2, 益后: 2, 续世: 2,
+  阳德: 2, 阴德: 2, 天恩: 1, 月空: 1,
+};
+
+/** 凶项权重（同上；月破/三煞/月刑/月厌按卷十「忌同月破」「所忌与三煞同」分档）。 */
+const XING_BAD = { 建: 2, 除: 1, 满: 2, 平: 2, 定: 1, 执: 1, 破: 4, 危: 1, 成: 1, 收: 2, 开: 1, 闭: 1 };
+const SHENSHA_BAD = {
+  月破: 4, 大耗: 4, 四忌: 4, 四穷: 4,
+  劫煞: 3, 灾煞: 3, 月煞: 3, 月刑: 3, 月厌: 3, 往亡: 3, 天狗: 3,
+  月害: 2, 大时: 2, 大败: 2, 天吏: 2, 四废: 2, 五墓: 2, 天贼: 2, 厌对: 2, 九空: 2,
+  重日: 2, 复日: 2, 土符: 2, 地囊: 2, 五离: 2, 八专: 2, 游祸: 2, 大煞: 2, 四击: 2, 天火: 2,
+  小耗: 1, 四耗: 1, 归忌: 1, 九坎: 1, 九焦: 1, 五虚: 1, 月虚: 1, 地火: 1, 咸池: 1,
+  兵禁: 1, 血忌: 1, 六仪: 1, 招摇: 1,
+};
+const DAY_TABOO_WEIGHT = 2;
+
+// 卷十「遇德」列：德神含德合、天赦、天愿（原文或称「德愿」「德赦」）。
+const DE_COLUMN = ['天德', '月德', '天德合', '月德合', '天赦', '天愿'];
+// 月支三合局分组，用于卷十「某月值某日」的条件。
+const MONTH_GROUP = {
+  寅: '寅申巳亥', 申: '寅申巳亥', 巳: '寅申巳亥', 亥: '寅申巳亥',
+  辰: '辰戌丑未', 戌: '辰戌丑未', 丑: '辰戌丑未', 未: '辰戌丑未',
+  子: '子午卯酉', 午: '子午卯酉', 卯: '子午卯酉', 酉: '子午卯酉',
+};
+
+/**
+ * 德神制化表。cls:
+ *   keJie  德神可解（卷十「与德合并则吉胜」「余皆不忌」）
+ *   buJie  德神犹忌（「德神临此失力」「不能化解」「犹忌」）
+ *   wuShe  与德义不相属（「与并犹忌」，不因德而解）
+ * anyOf 为可起作用的德神名单；whenXing / whenName / whenMonthXing 为卷十的月日条件
+ * （whenMonthXing 逐月指定建除，如「巳月值平日」）；
+ * residualEntries 是「余皆不忌」之后仍然忌的卷十一次目。
+ */
+const DE_RULES = {
+  月建: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合', '天赦', '月恩', '四相'],
+    residualEntries: ['兴造动土', '破土'],
+    quote: '与天德月德天德合月德合天赦月恩四相并，止忌营建宫室修宫室缮城郭筑堤防兴造动土修仓库修置产室开渠穿井安碓硙补垣修饰垣墙平治道涂破屋坏垣伐木栽种破土，余皆不忌',
+  },
+  月破: {
+    cls: 'buJie', anyOf: [],
+    quote: '月破为月建之冲又为月建气绝之地，德神临此失力不能为福，故与并犹忌',
+  },
+  满日: {
+    cls: 'keJie', anyOf: ['月德', '天德合', '月德合', '月恩', '四相'],
+    whenName: { 寅: '守日', 申: '守日', 子: '相日', 午: '相日', 卯: '相日', 酉: '相日' },
+    quote: '寅申月值守日，子午卯酉月值相日，与月德天德合月德合月恩四相并，则不忌',
+  },
+  闭日: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合', '天赦', '天愿'],
+    whenName: { 子: '王日', 午: '王日', 卯: '王日', 酉: '王日', 辰: '官日', 戌: '官日', 丑: '官日', 未: '官日' },
+    quote: '子午卯酉月值王日，辰戌丑未月值官日天吏，与天德月德天德合月德合天赦天愿并，凡所忌者则不注宜，所宜者亦不注忌',
+  },
+  劫煞: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合'],
+    whenXing: { 寅申巳亥: '收', 辰戌丑未: '除', 子午卯酉: '执' },
+    residualEntries: ['求医疗病'],
+    quote: '与天德月德天德合月德合并，止忌安抚边境选将训兵出师求医疗病，余皆不忌',
+  },
+  灾煞: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合'],
+    whenXing: { 寅申巳亥: '开', 辰戌丑未: '满' },
+    residualEntries: ['求医疗病'],
+    quote: '寅申巳亥月值开日，辰戌丑未月值满日，与天德月德天德合月德合并，止忌安抚边境选将训兵出师求医疗病，余皆不忌',
+  },
+  月煞: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合', '天愿'],
+    whenXing: { 子午卯酉: '危' },
+    residualEntries: ['求医疗病'],
+    quote: '卯酉月值六合，子午月值月害，与德愿并而后从德愿所宜；寅申巳亥月值闭日、辰戌丑未月值平日，凶又逢凶，不与德神并则诸事皆忌',
+  },
+  月刑: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合', '天愿'],
+    whenMonthXing: { 巳: '平' },
+    residualEntries: ['求医疗病'],
+    quote: '巳月值平日相日六合，与德愿并则化凶为吉，止忌军事疗病，余皆不忌',
+  },
+  月害: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合'],
+    whenMonthXing: { 卯: '除', 酉: '除', 丑: '执', 未: '执' },
+    residualEntries: ['求医疗病'],
+    quote: '卯酉月值除日守日，丑未月值执日大时，必与德神并而后止忌军事疗病，余不忌',
+  },
+  月厌: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合'],
+    whenMonthXing: { 寅: '成', 申: '成', 丑: '开', 未: '开' },
+    residualEntries: ['行幸遣使', '上官赴任', '结婚姻', '纳采问名', '嫁娶', '求医疗病', '般移'],
+    quote: '寅申月值成日，丑未月值开日，再与德神并则吉胜矣，止忌行幸遣使安抚边境选将训兵出师上官赴任临政亲民结婚姻纳采问名嫁娶求医疗病般移远回栽种，余皆不忌',
+  },
+  大时: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合'],
+    whenXing: { 寅申巳亥: '除', 辰戌丑未: '执' },
+    residualEntries: [],
+    quote: '寅申巳亥月值除日官日，辰戌月值执日六合，丑未月值执日六害，与德神并则吉胜，止忌军事，余皆不忌',
+  },
+  天吏: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合'],
+    whenXing: { 寅申巳亥: '危' },
+    residualEntries: ['求医疗病'],
+    quote: '寅申巳亥月值危日，与德合并则吉胜，止忌军事疗病，余皆不忌',
+  },
+  厌对: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合', '天赦'],
+    residualEntries: [],
+    quote: '与天德月德天德合月德合天赦并则不忌',
+  },
+  复日: {
+    cls: 'keJie', anyOf: ['天德', '月德', '天德合', '月德合', '天赦', '六合'],
+    residualEntries: [],
+    quote: '今定为鸣吠遇复日则忌，德赦六合遇复日则不忌',
+  },
+  天狗: {
+    cls: 'buJie', anyOf: [],
+    quote: '申月又为天狗忌祭祀，与德合并犹忌',
+  },
+  游祸: {
+    cls: 'buJie', anyOf: [],
+    quote: '与德合天赦并犹忌，其旺如故故犹忌也',
+  },
+  四忌: {
+    cls: 'buJie', anyOf: [],
+    quote: '此八日皆以旺极为凶，故德神不能化解',
+  },
+  四穷: {
+    cls: 'buJie', anyOf: [],
+    quote: '此八日皆以旺极为凶，故德神不能化解',
+  },
+  往亡: {
+    cls: 'buJie', anyOf: [],
+    quote: '虽值德合赦愿不能无疑，故与并犹忌',
+  },
+  九坎: {
+    cls: 'wuShe', anyOf: [],
+    quote: '九坎九焦忌见义例，与德合义不相属，故与并犹忌',
+  },
+  九焦: {
+    cls: 'wuShe', anyOf: [],
+    quote: '九坎九焦忌见义例，与德合义不相属，故与并犹忌',
+  },
+  土符: {
+    cls: 'wuShe', anyOf: [],
+    quote: '土符地囊归忌血忌仿此',
+  },
+  地囊: {
+    cls: 'wuShe', anyOf: [],
+    quote: '土符地囊归忌血忌仿此',
+  },
+  归忌: {
+    cls: 'wuShe', anyOf: [],
+    quote: '土符地囊归忌血忌仿此',
+  },
+  血忌: {
+    cls: 'wuShe', anyOf: [],
+    quote: '土符地囊归忌血忌仿此',
+  },
+};
+
+/** 卷十依据：六等判词、制化表与校准说明。 */
+const ZERI_JUAN10_BASIS = {
+  text: '《钦定协纪辨方书》卷十「宜忌」吉凶轻重六等与德神制化',
+  edition: '四库全书本（清乾隆内府刊本；殆知阁整理本对校）',
+  gradeText: GRADE_TEXT,
+  corpusLines: '卷十 宜忌（殆知阁整理本 4576–5095 行；六等判词见 4853 行）',
+  grades: GRADE_RULES,
+  ping: GRADE_PING,
+  thresholds: GRADE_THRESHOLDS,
+  thresholdsNote: '吉凶权重与比值阈值（3/2、1、2/3、1/2）是本仓校准，不是古籍常数。',
+  deRules: Object.entries(DE_RULES).map(([name, r]) => ({
+    name,
+    cls: r.cls,
+    anyOf: r.anyOf,
+    residualEntries: r.residualEntries || [],
+    quote: r.quote,
+  })),
+  note: '六等判词逐字取卷十；德神制化按卷十各条按语编码。等第表的逐月逐日单元格未全量数字化，未编码的组合按保守值（不因德而解）处理。',
+};
+
+const DE_COLUMN_SET = new Set(DE_COLUMN);
+const deRuleOfXing = (hit) => {
+  for (const n of hit.names || []) if (DE_RULES[n]) return DE_RULES[n];
+  return null;
+};
+const deRuleOfShensha = (name) => {
+  if (DE_RULES[name]) return DE_RULES[name];
+  if (name === '大耗') return DE_RULES.月破;
+  if (name === '大败') return DE_RULES.大时;
+  if (name === '月虚') return DE_RULES.月煞;
+  if (name === '地火') return DE_RULES.月厌;
+  if (name === '六仪' || name === '招摇') return DE_RULES.厌对;
+  return null;
+};
+const conditionMet = (rule, day) => {
+  if (rule.whenXing) {
+    const want = rule.whenXing[MONTH_GROUP[day.monthBranch]];
+    if (!want || want !== day.xing) return false;
+  }
+  if (rule.whenName) {
+    const want = rule.whenName[day.monthBranch];
+    if (!want || !day.names.includes(want)) return false;
+  }
+  if (rule.whenMonthXing) {
+    const want = rule.whenMonthXing[day.monthBranch];
+    if (!want || want !== day.xing) return false;
+  }
+  return true;
+};
+const anyOfMet = (rule, day) => Array.isArray(rule.anyOf) && rule.anyOf.some((n) => day.names.includes(n));
+
+/**
+ * 按卷十「六等」与德神制化给当日定等。
+ * @param {ReturnType<typeof taskShenshaHits>} hits
+ * @param {ReturnType<typeof computeDayShensha>} day
+ * @returns {{key:string,label:string,doctrine:string,decision:string,withDe:boolean,de:string[],
+ *   ji:number,xiong:number,score:number,ratio:number|null,good:object[],resolved:object[],
+ *   remains:object[],forced:object[],allJiCombo:boolean,thresholds:object,note:string}}
+ */
+function gradeDay(hits, day) {
+  const entries = hits && Array.isArray(hits.entries) ? hits.entries : [];
+  const info = day && Array.isArray(day.names) ? day : { monthBranch: '', xing: '', names: [] };
+  const de = DE_COLUMN.filter((n) => DE_COLUMN_SET.has(n) && info.names.includes(n));
+  const withDe = de.length > 0;
+  const good = [];
+  const remains = [];
+  const resolved = [];
+  const forced = [];
+  let ji = 0;
+  let xiong = 0;
+
+  for (const hit of (hits && hits.use && hits.use.xing) || []) {
+    const w = XING_GOOD[hit.xing] || 1;
+    ji += w;
+    good.push({ name: xingHitText(hit), w, kind: 'xing' });
+  }
+  for (const n of (hits && hits.use && hits.use.shensha) || []) {
+    const w = SHENSHA_GOOD[n] || 1;
+    ji += w;
+    good.push({ name: n, w, kind: 'shensha' });
+  }
+
+  const settle = (label, w, rule, kind) => {
+    if (!rule) {
+      xiong += w;
+      remains.push({ name: label, w, cls: 'none', kind });
+      return;
+    }
+    if (rule.cls === 'buJie' || rule.cls === 'wuShe') {
+      xiong += w;
+      remains.push({ name: label, w, cls: rule.cls, kind });
+      return;
+    }
+    if (!conditionMet(rule, info) || !anyOfMet(rule, info)) {
+      xiong += w;
+      remains.push({ name: label, w, cls: rule.cls, kind, pending: true });
+      return;
+    }
+    if ((rule.residualEntries || []).some((e) => entries.includes(e))) {
+      xiong += w;
+      const item = { name: label, w, cls: rule.cls, kind, residual: true };
+      remains.push(item);
+      forced.push(item);
+      return;
+    }
+    resolved.push({ name: label, w, cls: rule.cls, kind });
+  };
+
+  for (const hit of (hits && hits.avoid && hits.avoid.xing) || []) {
+    settle(xingHitText(hit), XING_BAD[hit.xing] || 2, deRuleOfXing(hit), 'xing');
+  }
+  for (const n of (hits && hits.avoid && hits.avoid.shensha) || []) {
+    settle(n, SHENSHA_BAD[n] || 1, deRuleOfShensha(n), 'shensha');
+  }
+  for (const n of (hits && hits.avoid && hits.avoid.day) || []) {
+    xiong += DAY_TABOO_WEIGHT;
+    remains.push({ name: n, w: DAY_TABOO_WEIGHT, cls: 'day', kind: 'day' });
+  }
+  for (const n of (hits && hits.avoid && hits.avoid.lunar) || []) {
+    xiong += DAY_TABOO_WEIGHT;
+    remains.push({ name: n, w: DAY_TABOO_WEIGHT, cls: 'lunar', kind: 'lunar' });
+  }
+
+  const avoidNames = [
+    ...((hits && hits.avoid && hits.avoid.xing) || []).flatMap((h) => h.names || []),
+    ...((hits && hits.avoid && hits.avoid.shensha) || []),
+  ];
+  // 卷十：月厌叠月破/灾煞，虽与德神并仍诸事皆忌。
+  const allJiCombo = avoidNames.includes('月厌')
+    && (avoidNames.includes('月破') || avoidNames.includes('灾煞'));
+
+  let key;
+  if (ji === 0 && xiong === 0) key = '平';
+  else if (xiong === 0) key = '上';
+  else if (ji === 0) key = xiong >= GRADE_THRESHOLDS.xiaXiaWeight ? '下下' : '下';
+  else {
+    const ratio = ji / xiong;
+    if (ratio >= GRADE_THRESHOLDS.up) key = '上';
+    else if (ratio >= GRADE_THRESHOLDS.upCi) key = '上次';
+    else if (ratio >= GRADE_THRESHOLDS.mid) key = '中';
+    else if (ratio >= GRADE_THRESHOLDS.midCi) key = '中次';
+    else key = '下';
+  }
+  if (allJiCombo) key = '下下';
+
+  const rule = key === '平' ? GRADE_PING : GRADE_RULE_BY_KEY[key];
+  let decision = key === '平' ? DECISION.PING : (withDe ? rule.withDe : rule.withoutDe);
+  if (forced.length) decision = DECISION.JI;
+
+  const ratio = xiong === 0 ? null : Number((ji / xiong).toFixed(2));
+  return {
+    key,
+    label: rule.label,
+    doctrine: rule.doctrine,
+    decision,
+    withDe,
+    de,
+    ji,
+    xiong,
+    score: ji - xiong,
+    ratio,
+    good,
+    resolved,
+    remains,
+    forced,
+    allJiCombo,
+    thresholds: GRADE_THRESHOLDS,
+    note: '六等判词为卷十原文；吉凶权重与比值阈值为本仓校准，非古籍常数。',
+  };
+}
+
+return { XING_ALIAS, SHENSHA_LISTS, TASK_ENTRIES, ZERI_SHENSHA_BASIS, computeDayShensha, taskShenshaHits, xingHitText, DECISION, GRADE_TEXT, GRADE_RULES, GRADE_PING, GRADE_THRESHOLDS, XING_GOOD, SHENSHA_GOOD, XING_BAD, SHENSHA_BAD, DE_RULES, ZERI_JUAN10_BASIS, gradeDay };
+})();
+
 __mods.zeri = (function () {
-// 择日：逐日按黄历「建除简表宜忌」+ 建除神适配 + 冲属相排除打分排序。
-// 口径透明：这是排序引导，不是吉凶断语；未收录逐日神煞，冲煞按日支对生肖。
+// 择日：逐日按《协纪辨方书》卷十一「用事」命中宜忌，再用卷十「宜忌」六等与德神制化定吉凶方向，
+// 叠冲属相排除后排序。口径透明：这是排序引导，不是吉凶断语。
 const { fromJDN, toJDN } = (__mods.calendar || {});
 const { buildAlmanac, SHENGXIAO } = (__mods.almanac || {});
+const { computeDayShensha, taskShenshaHits, xingHitText, gradeDay, ZERI_SHENSHA_BASIS, ZERI_JUAN10_BASIS } = (__mods['zeri-shensha'] || {});
 const { fail } = (__mods.fail || {});
 
 // 择日的入参错误一律带 E_INPUT：裸 new Error 到工具层只剩 [E_INTERNAL]，
@@ -13981,20 +16948,40 @@ const ZHIXING_FAVOR = {
   medical: ['除', '开'],
 };
 
-const VERDICT = (score, ctx) => {
+const VERDICT_RANK = { 推荐: 3, 可用: 2, 平平: 1, 回避: 0 };
+
+/** 由卷十「六等」与德神制化判定的决断，映射到界面用语。 */
+const verdictOf = (grade, ctx) => {
   if (ctx.chongSelf) {
     return { verdict: '回避', text: `当日冲${ctx.chongSelf}（当事人属相）：传统择日径直排除，不进推荐与可用名单。`, excluded: true };
   }
-  if (score >= 3) return { verdict: '推荐', text: '宜项与建除相配，此日对所问事项顺遂。', excluded: false };
-  if (score >= 1) {
+  const basis = `${grade.label}（${grade.doctrine}）→ ${grade.decision}`;
+  const tally = `吉 ${grade.ji}、凶 ${grade.xiong}`;
+  if (grade.forced.length) {
     return {
-      verdict: '可用',
-      text: ctx.jiHit.length ? `可考虑，但当日忌${ctx.jiHit.join('、')}：宜项加分、忌项减分，未抵消干净。` : '未见冲克，可用；若有更好的日子，优先取推荐日。',
+      verdict: '回避',
+      text: `卷十 ${grade.label}，但所问事项正在德神亦不解的余忌之列（${grade.forced.map((g) => g.name).join('、')}）：${grade.doctrine}，故仍忌。`,
       excluded: false,
     };
   }
-  if (score >= 0) return { verdict: '平平', text: ctx.jiHit.length ? `当日忌${ctx.jiHit.join('、')}，宜项不相干，不作首选。` : '宜忌不相干，无助力也无冲克。', excluded: false };
-  return { verdict: '回避', text: ctx.jiHit.length ? `当日忌${ctx.jiHit.join('、')}，对所问事项不宜。` : '减分项多于加分项，此日不宜。', excluded: false };
+  if (grade.decision === '从宜不从忌') {
+    if (grade.score >= 2) {
+      return { verdict: '推荐', text: `卷十作 ${basis}；${tally}，宜项足以胜忌。`, excluded: false };
+    }
+    return { verdict: '可用', text: `卷十作 ${basis}；${tally}，可用但助力不厚。`, excluded: false };
+  }
+  if (grade.decision === '从宜亦从忌') {
+    return { verdict: '可用', text: `卷十作 ${basis}；${tally}，宜忌并见，择时仍须避开忌项。`, excluded: false };
+  }
+  if (grade.decision === '不宜不忌') {
+    return { verdict: '平平', text: `卷十作 ${basis}；${tally}，无所助也无所忌。`, excluded: false };
+  }
+  if (grade.decision === '从忌不从宜') {
+    const why = ctx.avoidText.length ? `忌项：${ctx.avoidText.join('、')}。` : '';
+    return { verdict: '回避', text: `卷十作 ${basis}；${tally}，${why}此日对所问事项不宜。`, excluded: false };
+  }
+  const why = ctx.avoidText.length ? `忌项：${ctx.avoidText.join('、')}；` : '';
+  return { verdict: '回避', text: `卷十作 ${basis}；${tally}，${why}传统作诸事皆忌。`, excluded: false };
 };
 
 /**
@@ -14076,21 +17063,33 @@ function buildZeri(input) {
 
   const makeRow = (p) => {
     const a = buildAlmanac(p);
-    let score = 0;
-    const reasons = [];
-    const yiHit = spec.yi.filter((w) => a.yi.includes(w));
-    if (yiHit.length) { score += 2; reasons.push(`宜${yiHit.join('、')}（+2）`); }
-    const relHit = spec.related.filter((w) => a.yi.includes(w));
-    if (relHit.length) { score += 1; reasons.push(`关联宜项${relHit.join('、')}（+1）`); }
-    const jiHit = [...spec.yi, ...spec.related].filter((w) => a.ji.includes(w));
-    if (jiHit.length) { score -= 3; reasons.push(`忌${jiHit.join('、')}（-3）`); }
-    const chongSelf = shengXiao && a.chong.shengXiao === shengXiao ? shengXiao : null;
-    if (chongSelf) { score -= 2; reasons.push(`冲${shengXiao}（当事人属相，径直排除）`); }
-    if (zhixingSet.includes(a.zhiXing)) { score += 1; reasons.push(`建除${a.zhiXing}神利${task}（+1）`); }
-    if (a.zhiXing === '破' && spec.category !== 'burial') { score -= 1; reasons.push('破日（-1）'); }
-    if (a.zhiXing === '危' && spec.category !== 'travel' && spec.category !== 'worship') { score -= 1; reasons.push('危日（-1）'); }
+    const monthBranch = a.ganzhi.month.slice(-1);
+    const dayInfo = computeDayShensha({
+      monthBranch,
+      dayGz: a.ganzhi.day,
+      xing: a.zhiXing,
+      lunarDay: a.lunar.day,
+    });
+    const hits = taskShenshaHits(task, dayInfo);
 
-    const v = VERDICT(score, { chongSelf, jiHit });
+    const grade = gradeDay(hits, dayInfo);
+    const favor = zhixingSet.includes(a.zhiXing);
+    const score = grade.score;
+
+    const reasons = [];
+    // 建除适配是现代简表，只作同分参考，不进卷十吉凶轻重。
+    if (favor) reasons.push(`建除${a.zhiXing}神利${task}（现代简表，参考不计分）`);
+    if (grade.good.length) reasons.push(`宜项：${grade.good.map((g) => `${g.name}(${g.w})`).join('、')}，合吉 ${grade.ji}`);
+    if (grade.remains.length) reasons.push(`忌项：${grade.remains.map((g) => `${g.name}(${g.w})`).join('、')}，合凶 ${grade.xiong}`);
+    if (grade.resolved.length) reasons.push(`德神可解：${grade.resolved.map((g) => g.name).join('、')}`);
+    if (grade.forced.length) reasons.push(`德神犹忌（所问正在余忌）：${grade.forced.map((g) => g.name).join('、')}`);
+    reasons.push(`卷十 ${grade.label}：${grade.doctrine}，${grade.decision}`);
+
+    const chongSelf = shengXiao && a.chong.shengXiao === shengXiao ? shengXiao : null;
+    if (chongSelf) reasons.push(`冲${shengXiao}（当事人属相，径直排除）`);
+
+    const avoidText = grade.remains.map((g) => g.name);
+    const v = verdictOf(grade, { chongSelf, avoidText });
     return {
       date: a.meta.date,
       weekday: a.meta.weekday,
@@ -14101,9 +17100,44 @@ function buildZeri(input) {
       ji: a.ji,
       chong: a.chong.shengXiao,
       score,
+      favor,
       reasons,
       verdict: v.verdict,
       verdictText: v.text,
+      grade: {
+        key: grade.key,
+        label: grade.label,
+        doctrine: grade.doctrine,
+        decision: grade.decision,
+        withDe: grade.withDe,
+        de: grade.de,
+        ji: grade.ji,
+        xiong: grade.xiong,
+        ratio: grade.ratio,
+        resolved: grade.resolved.map((g) => g.name),
+        remains: grade.remains.map((g) => g.name),
+        forced: grade.forced.map((g) => g.name),
+        ...(grade.allJiCombo ? { combo: '月厌叠月破/灾煞：虽遇德仍诸事皆忌' } : {}),
+        note: grade.note,
+      },
+      shensha: {
+        monthBranch,
+        xing: dayInfo.xing,
+        names: dayInfo.names,
+        use: {
+          xing: hits.use.xing.map((h) => xingHitText(h)),
+          shensha: hits.use.shensha,
+          day: hits.use.day,
+          lunar: hits.use.lunar,
+        },
+        avoid: {
+          xing: hits.avoid.xing.map((h) => xingHitText(h)),
+          shensha: hits.avoid.shensha,
+          day: hits.avoid.day,
+          lunar: hits.avoid.lunar,
+        },
+        ...(hits.unsupported.length ? { unsupported: hits.unsupported } : {}),
+      },
       ...(v.excluded ? { excluded: true } : {}),
     };
   };
@@ -14112,7 +17146,10 @@ function buildZeri(input) {
     ? candidates.map(makeRow)
     : Array.from({ length: days }, (_, i) => makeRow(fromJDN(toJDN(start.year, start.month, start.day) + i)));
 
-  const ranked = list.slice().sort((x, y) => y.score - x.score || (x.date < y.date ? -1 : 1));
+  // 先按卷十决断排（推荐 > 可用 > 平平 > 回避），同档再按吉凶差分，最后用建除适配作同分参考。
+  const rankOf = (d) => (d.excluded ? -1 : (VERDICT_RANK[d.verdict] ?? 0));
+  const ranked = list.slice().sort((x, y) => rankOf(y) - rankOf(x) || y.score - x.score
+    || Number(y.favor) - Number(x.favor) || (x.date < y.date ? -1 : 1));
   const startDate = candidates
     ? candidates.slice().sort((x, y) => (ymd(x) < ymd(y) ? -1 : 1)).map(ymd)[0]
     : ymd(start);
@@ -14133,7 +17170,7 @@ function buildZeri(input) {
         ties: pool.filter((d) => d.score === top.score).map((d) => d.date),
       } : null,
       spread: Math.max(...scores) - Math.min(...scores),
-      note: '候选日只在这几天里比：分数来自建除宜忌与冲煞，胜出只表示更合所问事项，不代表「好多少」。',
+      note: '候选日只在这几天里比：先按卷十「六等」与德神制化定宜忌方向，再以吉凶权重差分；胜出只表示更合所问事项，不代表「好多少」。',
     };
   }
 
@@ -14146,9 +17183,7 @@ function buildZeri(input) {
       days: list.length,
       shengXiao,
       ...(candidates ? { candidates: candidates.map(ymd) } : {}),
-      scope: shengXiao
-        ? `宜忌按建除简表；已给当事人属相（${shengXiao}），凡当日冲该属相径直排除。评分仅用于排序引导。`
-        : '宜忌按建除简表；未给当事人属相，未做冲属相排除。评分仅用于排序引导。',
+      scope: `宜忌按《协纪辨方书》卷十一「用事」逐条神煞，吉凶轻重按卷十「宜忌」六等与德神制化；${shengXiao ? `已给当事人属相（${shengXiao}），凡当日冲该属相径直排除。` : '未给当事人属相，未做冲属相排除。'}六等阈值为本仓校准（吉凶权重比 3/2、1、2/3、1/2），非古籍常数；卷十等第表的逐月逐日单元格未全量编码。评分仅用于排序引导。`,
     },
     best: ranked.filter((d) => d.verdict === '推荐' && !d.excluded).slice(0, 5).map((d) => d.date),
     usable: ranked.filter((d) => d.verdict === '可用' && !d.excluded).slice(0, 5).map((d) => d.date),
@@ -14156,8 +17191,34 @@ function buildZeri(input) {
     days: list,
     ...(compare ? { compare } : {}),
     excludedCount: list.filter((d) => d.excluded).length,
-    sources: ['宜忌：建除十二神通行简表', '建除适配与冲煞：传统通行口径', '排序：宜忌加减分 + 属相排除（确定性）'],
-    disclaimer: '择日为传统黄历口径的本地计算，属民俗参考；评分只用于排序，不构成择日结论。',
+    shenshaRef: {
+      text: ZERI_SHENSHA_BASIS.text,
+      edition: ZERI_SHENSHA_BASIS.edition,
+      volumes: ZERI_SHENSHA_BASIS.volumes,
+      unsupported: ZERI_SHENSHA_BASIS.unsupported,
+      note: ZERI_SHENSHA_BASIS.note,
+      juan10: {
+        text: ZERI_JUAN10_BASIS.text,
+        corpusLines: ZERI_JUAN10_BASIS.corpusLines,
+        note: ZERI_JUAN10_BASIS.note,
+        thresholdsNote: ZERI_JUAN10_BASIS.thresholdsNote,
+        grades: ZERI_JUAN10_BASIS.grades.map((g) => ({
+          key: g.key, label: g.label, doctrine: g.doctrine, withDe: g.withDe, withoutDe: g.withoutDe,
+        })),
+        ping: ZERI_JUAN10_BASIS.ping,
+        deRules: ZERI_JUAN10_BASIS.deRules.map((r) => ({
+          name: r.name, cls: r.cls, anyOf: r.anyOf, residualEntries: r.residualEntries,
+        })),
+      },
+    },
+    sources: [
+      '宜忌：建除十二神通行简表（黄历层，逐日 yi/ji 原样保留）',
+      '神煞宜忌：《钦定协纪辨方书》卷十一「用事」逐条',
+      '吉凶轻重：卷十「宜忌」六等与德神制化（遇德/不遇德）',
+      '神煞起法：卷四建除、卷五/卷六义例、卷九立成',
+      '排序：卷十决断 + 吉凶权重差分 + 属相排除（确定性）',
+    ],
+    disclaimer: '择日为传统黄历口径的本地计算，属民俗参考；神煞依卷十一逐条宜忌，吉凶轻重依卷十「六等」与德神制化，六等阈值为本仓校准，逐月逐日等第表未逐格数字化。评分只用于排序，不构成择日结论。',
   };
 }
 
@@ -14952,6 +18013,18 @@ const KNOWLEDGE = [
     status: 'variant',
     note: '串连几跳为止、是否允许借对宫飞化，各派不一；本插件只跟单一支化逐宫走，走满 12 宫或成环即停。',
   },
+  {
+    id: 'ziwei-zaoyao',
+    // 挂在 work / health 不是随手加的：这十二颗里被真正用到的就那几组——
+    // 天官、天福、天厨主贵显与俸禄（看事业、公职），天月、解神、阴煞主病符与消灾（看疾厄）。
+    // overall 已有三张占位，这张在 overall 排不上号，所以按落宫实质挂后两维。
+    system: 'ziwei', dims: ['overall', 'work', 'health'],
+    gist: '杂曜多而轻：全表六十余颗，本盘默认只排 49 颗，开开关才补十二颗。',
+    detail: '通行全表的杂曜按「定宫依据」分四路：解神、天巫、天月、阴煞只看生月（如解神「正二在申三四在戍，五六在子七八在寅」）；天官、天福、天厨只看生年干（如天厨「甲丁食蛇口，乙戊辛马方」）；蜚廉、天德、年解只看生年支（天德「起酉宫，顺至生年」，年解「戌宫逆行去」）；天才、天寿借命宫与身宫——自命宫／身宫起子年，顺数到本生年支安之。十二颗各有各的诀，没有一条通用规则能推出来，所以只能逐颗查表。它们的作用是补细节（口舌、病符、贵显、寿年、香火），不改主星与四化搭出的骨架，这也是默认盘不排它们的原因：星一多，容易被当成一条条独立的吉凶判决。',
+    source: '通行安星诀：王亭之《中州派紫微斗数初级讲义·安星法》、网络《紫微斗数安星法口诀》本、《全书安星法》转录本，三处并核',
+    status: 'settled',
+    note: '同名不同星不合并：年支系的蜚廉≠博士十二神的飞廉，按年安的天德≠岁前十二神的天德，年解≠按月安的解神（月解）。龙德、月德虽可按年支安，但与岁前神煞同名异宫，本库不另立。转抄例子有一处与自家诀文相抵（天才：命宫在午、戌年生人，按诀应在辰宫，却写「巳宫安天才」），判为笔误，一律以诀文为准。',
+  },
 
   // ── 六爻 ──────────────────────────────────────────────
   {
@@ -15163,6 +18236,15 @@ const KNOWLEDGE = [
     source: '韦特体系传统；逆位读法属近代流派分歧',
     status: 'variant',
     note: '逆位是否参与解读本身就有分歧（有牌阵传统完全不用逆位）。本插件按削弱加内向综合取象，并在开头声明。',
+  },
+  {
+    id: 'tarot-correspondence',
+    system: 'tarot', dims: ['overall'],
+    gist: '小牌 2-10 按花色三分相排旬位，首牌只归生命树源质，宫廷牌不配星座。',
+    detail: '通行表把四组花色各配一个元素三分相（权杖火＝白羊/狮子/射手，圣杯水＝巨蟹/天蝎/双鱼，宝剑风＝天秤/水瓶/双子，星币土＝摩羯/金牛/处女）：数字 2-4、5-7、8-10 依次落进这三个星座，同组三张各占该星座的第一、二、三旬；旬主星按迦勒底连续序（白羊第一旬起火星，其后土→木→火→日→金→水→月轮下去）定，例：权杖二＝火星在白羊第一旬、权杖四＝金星在白羊第三旬、圣杯九＝木星在双鱼第二旬。四张首牌对应生命树的 Kether 到 Malkuth 之外的「元素之根源」，只归源质不配单一星座。',
+    source: 'RWS（1909）牌面；牌义取自黄金黎明体系（Liber 777 一脉的公开对应表，与三处独立资料互核）',
+    status: 'variant',
+    note: '两处不合并：一是旬主星表本身有两派——本库按迦勒底连续序（白羊一旬起火星，巨蟹一旬起金星），另一派把每个星座的第一旬归本星座守护星（巨蟹一旬起月亮），两派在半个黄道上给出的旬主不同，本库取 777/黄金黎明一路因为小牌的星座-行星对应就是按它排的；二是宫廷牌（侍从/骑士/王后/国王）在公开资料里有两套互相冲突的映射：一套按「国王＝本位宫、王后＝固定宫、骑士＝变动宫」，另一套按黄金黎明四元素层级（骑士＝火、国王＝风、王后＝土、侍从＝水）推星座，两派在多数花色上把国王与王后对调。本插件两派都不合并：数字牌取连续序标注旬位，宫廷牌只给元素与角色定位，星座与主星留空。',
   },
   {
     id: 'bazi-dayun-jiaoqi',
@@ -15995,6 +19077,9 @@ const CARD_CITATIONS = {
   'ziwei-feixing': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '宫干飞化属飞星派传法，非《全书》单条原文' },
   'ziwei-sanfang-fei': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '三方四正同飞属飞星派读法，未定位到单条原文' },
   'ziwei-jichuanji': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '忌转忌串连属飞星派读法，未定位到单条原文' },
+  // 2026-11-02 复核：维基文库本《紫微斗数全书》卷一是赋文与格局、卷二是安身命例，均无杂曜安星诀；
+  // 十二颗杂曜的诀文来自近代通行安星诀的多处并核，按口径只作通行说，不冒充《全书》原文。
+  'ziwei-zaoyao': { status: 'general', book: '通行安星诀（中州派讲义 / 安星口诀本）', chapter: '杂曜安星诀', reason: '诀文见多处近代通行辑本且逐颗互核一致，但未定位到古籍单条原文，故不署《全书》' },
   // ── 六爻：增删卜易（维基文库本，繁体照录）
   'liuyao-yongshen': { refs: ['zs-yongshen'] },
   'liuyao-fushen': { refs: ['zs-fushen'] },
@@ -16024,6 +19109,7 @@ const CARD_CITATIONS = {
   'qimen-gan-shengke': { status: 'general', book: '奇门遁甲统宗', chapter: '卷十二·玄机赋（下）', reason: '底本有「奇仪与日干」生克条，未见单列「干与落宫」生克条；干宫取象为通行读法，不拿十神条文冒充' },
   'qimen-ganying': { status: 'general', book: '奇门十干应克 / 奇门遁甲元灵经', chapter: '通行 100 组表 / 卷二·天盘加地盘吉凶', reason: '100 组为通行表汇编，元灵经只存甲、乙、丙三组，非单条原文' },
   'tarot-orientation': { status: 'general', book: '韦特塔罗', chapter: '逆位读法', reason: '韦特体系无中文古籍原文，逆位读法属近代流派' },
+  'tarot-correspondence': { status: 'general', book: 'Liber 777 一脉的公开对应表', chapter: '小阿卡纳 2-10 的旬位与十源质', reason: '属近代西方神秘学对应表，无中文古籍原文；本插件按三处独立公开资料互核后取数字牌旬位，宫廷牌两派映射冲突故不配星座' },
 };
 
 function allCitations() {
@@ -17565,7 +20651,7 @@ function ziweiInterpret(r) {
 // ══════════════════════════════════════════════════════════
 // 卦象通用：卦辞 / 爻辞 / 动爻 / 生活落点
 // ══════════════════════════════════════════════════════════
-function hexSections({ benName, benUpper, benLower, bianName, bianUpper, bianLower, movingLine, moving }) {
+function hexSections({ benName, benUpper, benLower, bianName, bianUpper, bianLower, movingLine, moving, jing: jingText }) {
   const ben = hexInfo(benName, benUpper, benLower);
   const sections = [
     {
@@ -17584,6 +20670,10 @@ function hexSections({ benName, benUpper, benLower, bianName, bianUpper, bianLow
       text: `动爻变化之后得到「${bian.full}」，${bian.meaning}。变卦往往指向事情后来的样子：从「${ben.full}」走到「${bian.full}」，可以理解为局面会从${ben.scene}转为${bian.scene}。`,
     });
   }
+  // 经文原文由排盘层算好挂进结果（engine/yijing-text.js），这里只做摆放：
+  // 先读白话大意，再对原文，最后才落到生活里。
+  const jing = String(jingText || '');
+  if (jing) sections.push({ key: 'jingText', label: '经文原文', text: jing });
   sections.push({
     key: 'scene', label: '落到生活里',
     text: `把这一卦放进日常：${ben.scene}。${bianName ? `而后续的方向是${hexInfo(bianName, bianUpper, bianLower).scene}。` : ''}你可以对照着看看，眼下哪件事最像这个描述。`,
@@ -17610,7 +20700,7 @@ function liuyaoInterpret(r, ask) {
   const { sections, ben: benInfo, bian: bianInfo } = hexSections({
     benName: ben.name, benUpper: ben.upper, benLower: ben.lower,
     bianName: bian.name, bianUpper: bian.upper, bianLower: bian.lower,
-    moving,
+    moving, jing: r.jing,
   });
 
   const shiLine = lines.find((l) => l.position === ben.shi);
@@ -17867,7 +20957,7 @@ function meihuaInterpret(r) {
   const { sections, ben: benInfo, bian: bianInfo } = hexSections({
     benName: ben.name, benUpper: ben.upper, benLower: ben.lower,
     bianName: bian.name, bianUpper: bian.upper, bianLower: bian.lower,
-    moving: movingLine,
+    moving: movingLine, jing: r.jing,
   });
 
   const bodyEl = pick(bu.body, 'element', '');
@@ -18597,7 +21687,7 @@ const READING_ORDERS = Object.freeze({
   meihua: ['所问与体用', '本卦/互卦/变卦', '五行生克', '应期与依据'],
   daliuren: ['天地盘（月将/贵人）', '四课', '三传', '课体与神将', '依据'],
   qimen: ['四柱与局数', '九宫（星门神/天盘干）', '用神落宫', '门宫·干宫·十干克应', '旺衰·击刑入墓', '依据'],
-  tarot: ['问题与牌阵', '逐牌（正逆/元素）', '牌间关系', '综合倾向', '边界'],
+  tarot: ['问题与牌阵', '逐牌（正逆/牌面/元素对应）', '牌间关系', '综合倾向', '边界'],
   fengshui: ['坐向与元运', '运盘/山盘/向盘', '旺山旺向', '取象与边界'],
 });
 
@@ -18654,6 +21744,21 @@ function askPrompt(r, opts = {}) {
     '',
     '——盘面摘要——',
     summary || '（这张盘没有摘要字段，请先让我重新排一次。）',
+    // 六爻/梅花带《周易》原文（engine/yijing-text.js 照录），别的外部模型才不至于只凭白话大意发挥；
+    // 读的是结果里已算好的 r.jing，这里不引原文库，ASK 栈因此不必多背 12KB。
+    ...(String((r && r.jing) || '').trim() ? [
+      '',
+      '——《周易》经文原文（本插件按三份底本互校照录，〔一作…〕是异文，不是改写）——',
+      String(r.jing).trim(),
+    ] : []),
+    // 紫微开了杂曜全表时同理：外部模型看到十二个杂曜名字，不知道它们是怎么定宫的，
+    // 很容易当成随意标注的装饰星。把安星诀一起递过去，它才有余力判断这颗落在这宫合不合情理。
+    ...(r && r.zuoyao && r.zuoyao.verses ? [
+      '',
+      `——紫微杂曜安星诀（本盘开了全表，${r.zuoyao.placed.length} 颗已按下列诀安入；诀文出多处近代通行辑本并核，属通行说，不是《紫微斗数全书》原文）——`,
+      String(r.zuoyao.verses).trim(),
+      `未另立：${(r.zuoyao.skipped || []).join('；')}`,
+    ] : []),
     '',
     '——回答要求——',
     '读者不懂命理。按下面的骨架答；任何一句他看不懂，就算没写完：',
@@ -20569,7 +23674,13 @@ function tarotUse(r) {
     name: c.position || '牌位',
     symbol: `${c.name}（${c.orientation || (c.upright ? '正位' : '逆位')}）`,
     why: `${c.positionHint || '这一位代表它所标的那个阶段'}；牌位决定它代表什么，牌面只说明它是什么样子。`,
-    fact: `${c.core || ''}${(c.keywords && c.keywords.length) ? `　关键词：${c.keywords.join('、')}` : ''}`,
+    // 逐张库的三层：占星对应（宫廷牌没有，就给角色）、牌面画了什么、核心与关键词
+    fact: [
+      c.core || '',
+      c.astro ? `占星对应：${c.astro}` : (c.role ? `牌位角色：${c.role}` : ''),
+      c.image ? `牌面：${c.image}` : '',
+      (c.keywords && c.keywords.length) ? `关键词：${c.keywords.join('、')}` : '',
+    ].filter(Boolean).join('　'),
   }));
   return cards.length ? cards : [{ name: '牌面', symbol: '—', why: '没有抽到牌', fact: '' }];
 }
@@ -21201,7 +24312,11 @@ function tarotSummary(r) {
       + cards.map((c) => `${c.position}「${c.name}」${c.orientation}`).join('，') + '。',
     sections: cards.slice(0, 4).map((c) => ({
       h: c.position,
-      t: `「${c.name}」${c.orientation}：${(c.keywords || []).slice(0, 3).join('、') || c.core || ''}。${c.positionHint || ''}`,
+      t: `「${c.name}」${c.orientation}：${(c.keywords || []).slice(0, 3).join('、') || c.core || ''}。`
+        // 逐张库带的三层信息：牌面画了什么、占星落在哪、宫廷牌顶谁；缺就不硬凑
+        + `${c.image ? `牌面上${c.image}。` : ''}`
+        + `${c.astro ? `占星对应是${c.astro}。` : (c.role ? `它在盘上顶的是「${c.role}」那个角色。` : '')}`
+        + `${c.positionHint || ''}`,
     })),
     advice: [
       `最值得先看的是「${pivot.name}」（${pivot.position}·${pivot.orientation}）——${(pivot.keywords || []).slice(0, 3).join('、') || '它所在的位置，就是这件事现在的着力点'}。`,
@@ -21373,6 +24488,7 @@ function requireGender(value, who = '') {
 const ZIWEI_SCHOOL_KEYS = [
   'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
   'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool',
+  'zuoyaoSchool',
 ];
 
 /** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
@@ -21515,6 +24631,7 @@ function ziweiText(r) {
       brightnessSchool: '亮度', gengYearSihua: '庚干四化', tianmaSchool: '天马', tiankongSchool: '天空',
       jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
       changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主',
+      zuoyaoSchool: '杂曜全表',
     };
     const diff = Object.entries(labels)
       .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])
@@ -21706,7 +24823,11 @@ function tarotText(r) {
     `【牌阵】${r.spread}${r.castAt ? `　抽牌于 ${r.castAt}` : ''}`,
   ];
   for (const c of r.cards) {
-    lines.push(`  ${c.position}：${c.name}（${c.orientation}）　${c.keywords.join('、')}`);
+    // 英文名与占星对应来自逐张库；宫廷牌没有占星，就顶出它的角色
+    const ast = c.astro ? `　${c.astro}` : (c.role ? `　${c.role}` : '');
+    const en = c.en ? ` [${c.en}]` : '';
+    lines.push(`  ${c.position}：${c.name}${en}（${c.orientation}）${ast}　${c.keywords.join('、')}`);
+    if (c.image) lines.push(`　　　　牌面：${c.image}`);
   }
   if (r.reading && r.reading.length) {
     lines.push('【解读】');
@@ -22850,7 +25971,10 @@ function zeriText(r) {
     ? `【择日·${r.meta.task}】候选 ${r.meta.days} 天：${r.meta.candidates.join('、')}${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`
     : `【择日·${r.meta.task}】${r.meta.startDate} 起 ${r.meta.days} 天${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`;
   const top = r.days.slice().sort((a, b) => b.score - a.score).slice(0, cand ? 12 : 5)
-    .map((d) => `· ${d.date} ${d.weekday}　${d.verdict}（${d.score}分）　宜${d.yi.slice(0, 3).join('/')}　${d.reasons.join('；') || '无特别加减分'}`);
+    .map((d) => {
+      const g = d.grade ? `，卷十${d.grade.label}·${d.grade.decision}` : '';
+      return `· ${d.date} ${d.weekday}　${d.verdict}（${d.score}分${g}）　宜${d.yi.slice(0, 3).join('/')}　${d.reasons.join('；') || '无特别加减分'}`;
+    });
   const bestLine = cand
     ? (r.compare.best
       ? `这一组里最优：${r.compare.best.date}（${r.compare.best.score}分，${r.compare.best.verdict}）`
@@ -22866,6 +25990,10 @@ function zeriText(r) {
     cand ? '候选日逐日：' : '逐日排序：',
     ...top,
     ...(cand ? [`比较口径：${r.compare.note}`] : []),
+    `神煞依据：${r.shenshaRef.text}；起法 ${r.shenshaRef.volumes.join('、')}。未实现起法：${r.shenshaRef.unsupported.join('、')}（不计分，逐日 shensha.unsupported 列出）。`,
+    ...(r.shenshaRef.juan10
+      ? [`卷十依据：${r.shenshaRef.juan10.text}（${r.shenshaRef.juan10.corpusLines}）；${r.shenshaRef.juan10.thresholdsNote}`]
+      : []),
     `口径：${r.meta.scope}`,
   ].join('\n');
 }
@@ -23065,7 +26193,7 @@ function nameText(r) {
     : `【五格】${wu ? wu.reason : '未算'}`;
   const ph = r.phonetics;
   const phLine = ph && ph.available
-    ? `【音韵】${ph.chars.map((x) => `${x.char}${x.py}${x.tone}`).join(' ')}｜声调 ${ph.tonePattern}｜${ph.level}${ph.issues.length ? `：${ph.issues.map((i) => i.text).join('；')}` : ''}`
+    ? `【音韵】${ph.chars.map((x) => `${x.char}${x.py}${x.tone}`).join(' ')}｜声调 ${ph.tonePattern}｜${ph.level}${(ph.alt || []).length ? `｜姓又读 ${ph.alt.map((x) => `${x.char}${x.py}${x.tone}`).join('、')}` : ''}${ph.issues.length ? `：${ph.issues.map((i) => i.text).join('；')}` : ''}`
     : `【音韵】${ph ? ph.reason : '未算'}`;
   return [
     `【名字评估】${r.fullName}`,
@@ -23478,6 +26606,14 @@ window.__MP_VER = "0.60.0";
 .pp-ss .ss-s.bad{color:var(--ji)}
 .pp-ss .ss-s.neutral{color:var(--quan)}
 .pp-ssx{margin-top:10px;font-family:system-ui,sans-serif}
+/* 杂曜全表：诀文整段默认折起来，点开才摊——一行一条，行高比正文松一点好对着盘看 */
+.pp-zy{margin-top:6px;font-family:system-ui,sans-serif}
+.pp-zy summary{font-size:12px;color:var(--label);cursor:pointer;list-style:none}
+.pp-zy summary::-webkit-details-marker{display:none}
+.pp-zy summary::before{content:'＋ ';color:var(--muted)}
+.pp-zy[open] summary::before{content:'－ '}
+.pp-zy-v{font-size:12px;line-height:1.85;color:var(--muted);margin-top:5px;padding-left:9px;border-left:2px solid var(--hair)}
+.pp-zy-s{font-size:11.5px;line-height:1.7;color:var(--faint);margin-top:5px}
 .pp-ssx .ssx-h{display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px;margin-top:10px}
 .pp-ssx .ssx-h b{color:var(--red);font-size:14px;font-weight:600}
 .pp-ssg{display:flex;gap:8px;align-items:baseline;margin-top:5px;font-size:12.5px;line-height:1.7}
@@ -23730,6 +26866,8 @@ window.__MP_VER = "0.60.0";
 .mp-tt-kw{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:13px;line-height:1.7}
 .mp-tt-kw span{border-bottom:1px dotted var(--line)}
 .mp-tt-el{margin-top:auto;font-size:12px;color:var(--muted)}
+.mp-tt-en{font-size:11.5px;color:var(--muted);margin-top:-5px}
+.mp-tt-img{font-size:12px;color:var(--muted);line-height:1.65}
 .mp-tt-core{font-size:12.5px;color:var(--ink2);line-height:1.7;border-left:2px solid var(--line);padding-left:8px}
 .mp-tt-no{font-size:12px;color:var(--muted);letter-spacing:.1em;margin-left:6px}
 .mp-tt-tip{margin-top:12px;font-size:12px;color:var(--muted)}
@@ -24710,9 +27848,11 @@ window.__MP_VER = "0.60.0";
       const vh = viewHua && viewHua[s.name];
       const vm = vh ? `<i class="pp-m view ${MUT[vh]}">${vh}</i>` : '';
       const b = s.brightness ? `<em class="pp-b ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
+      // 全表杂曜的入庙标记（天官/天福只有四宫入庙，来路是庙地专论，不是十四主星那张亮度表）
+      const tm = s.inTemple ? '<em class="pp-b good">庙</em>' : '';
       // 顺序：星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
-      return `<span class="pp-st ${cls}">${s.name}${b}${m}${vm}</span>`;
+      return `<span class="pp-st ${cls}">${s.name}${b}${tm}${m}${vm}</span>`;
     }).join('');
   }
 
@@ -24844,6 +27984,16 @@ window.__MP_VER = "0.60.0";
       ? `<div class="pp-chips">${r.daxianList.slice(0, 8).map((d) => `<span class="pp-chip" title="${esc(`${d.ganzhi} 宫干四化：` + d.mutagenHits.map((m) => `${m.star}化${m.type}→${m.palace || '未上盘'}`).join('、'))}">${d.branch} ${d.ages[0]}-${d.ages[1]}</span>`).join('')}</div>` : '';
     const lnHit = ln && ln.mutagenHits && ln.mutagenHits.length
       ? `<div class="pp-chips">${ln.mutagenHits.map((m) => `<span class="pp-chip ${m.type === '忌' ? 'warn' : m.type === '禄' ? 'ok' : ''}">${m.star}化${m.type}→${m.palace || '未上盘'}</span>`).join('')}</div>` : '';
+    // 杂曜全表：开了就把每颗的定宫诀摊开。星名是查得到的，诀文才是这块内容真正的价值——
+    // 不看诀，十二颗杂曜在盘上只等于十二个陌生名字。
+    const zy = r.zuoyao;
+    const zyHTML = !zy ? '' : (zy.placed && zy.placed.length
+      ? `<div class="pp-sec"><div class="pp-sec-h">杂曜全表 · 已排 ${zy.placed.length} 颗（${zy.starTotal} 颗盘）</div>
+        <div class="pp-chips">${zy.placed.map((x) => `<span class="pp-chip${x.inTemple ? ' ok' : ''}" title="${esc(x.meaning || '')}">${esc(x.name)} ${esc(x.branch)}（${esc(x.palace)}）${x.inTemple ? '·庙' : ''}</span>`).join('')}</div>
+        <details class="pp-zy"><summary>逐颗安星诀（${zy.placed.length} 条 · 出多处近代通行辑本并核，属通行说，不是《全书》原文）</summary><div class="pp-zy-v">${esc(zy.verses).replace(/\n/g, '<br>')}</div></div></details>
+        ${zy.skipped && zy.skipped.length ? `<div class="pp-zy-s">${zy.skipped.map((s) => esc(s)).join('')}</div>` : ''}</div>`
+      : `<div class="pp-sec"><div class="pp-sec-h">杂曜 · 本盘 ${zy.starTotal} 颗（通行简盘）</div>
+        <div class="pp-zy-s">开「杂曜全表」追加十二颗：解神·天巫·天月·阴煞（生月）／天官·天福·天厨（生年干）／蜚廉·天德·年解（生年支）／天才（命宫＋生年支）·天寿（身宫＋生年支）。${zy.skipped && zy.skipped.length ? `不另立：${zy.skipped.map((s) => esc(s)).join('')}` : ''}</div></div>`);
     // 命宫四化飞星：宫干化出的星落在哪一宫，跟着同一支化串到成环
     const flyHTML = r.flyChains ? (() => {
       const chips = ['禄', '权', '科', '忌'].map((t) => {
@@ -24896,7 +28046,7 @@ window.__MP_VER = "0.60.0";
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}`;
+    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}${zyHTML}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────
@@ -24907,8 +28057,9 @@ window.__MP_VER = "0.60.0";
     return list.map((s) => {
       const cls = TYPE_CLASS[s.type] || 'aux';
       const br = s.brightness ? `<em class="dt-br ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
+      const tm = s.inTemple ? '<em class="dt-br good">庙</em>' : '';
       const mu = s.mutagen ? `<i class="pp-m ${MUT[s.mutagen]}">${s.mutagen}</i>` : '';
-      return `<span class="dt-st ${cls}">${s.name}${br}${mu}</span>`;
+      return `<span class="dt-st ${cls}">${s.name}${br}${tm}${mu}</span>`;
     }).join('');
   }
 
@@ -25259,10 +28410,12 @@ window.__MP_VER = "0.60.0";
       <div class="mp-tt-card ${c.upright ? 'tt-up' : 'tt-rev'}">
         <div class="mp-tt-pos" title="${esc(c.positionHint || '')}">${c.position}</div>
         <div class="mp-tt-name">${c.name}${c.number ? `<span class="mp-tt-no">${c.number}</span>` : ''}</div>
+        ${c.en ? `<div class="mp-tt-en">${c.en}</div>` : ''}
         <div class="mp-tt-ori">${c.orientation}</div>
+        ${c.image ? `<div class="mp-tt-img">牌面：${c.image}</div>` : ''}
         ${c.core ? `<div class="mp-tt-core">${c.core}</div>` : ''}
         <div class="mp-tt-kw">${c.keywords.map((k) => `<span>${k}</span>`).join('')}</div>
-        <div class="mp-tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}</div>
+        <div class="mp-tt-el">${c.arcana} · ${c.element}${c.suit ? ' · ' + c.suit + (c.rankCn ? c.rankCn : '') : ''}${c.domain ? ' · ' + c.domain : ''}${c.astro ? ` · ${c.astro}` : (c.role ? ` · ${c.role}` : '')}</div>
       </div>`).join('');
     // 所问之事是用户原文，必须转义后再进 innerHTML（塔罗面板曾漏这一处）
     const q = r.question ? esc(r.question) : '<span class="pp-dim">（未填写，可在上方输入后重抽）</span>';
@@ -25846,7 +28999,7 @@ window.__MP_VER = "0.60.0";
         </div>`
       : `<div class="mp-nm-wu"><div class="mp-nm-wu-h"><b>五格</b><i>这一版算不了</i></div><div class="mp-nm-m">${esc(r.wuge ? r.wuge.reason : '未算')}</div></div>`;
     const ph = r.phonetics && r.phonetics.available
-      ? `<div class="mp-nm-ph"><b>音韵</b><span class="mp-nm-ph-lv${r.phonetics.level === '顺口' ? ' ok' : r.phonetics.level === '拗口' ? ' bad' : ' warn'}">${esc(r.phonetics.level)}</span><em>${esc(r.phonetics.chars.map((x) => `${x.py}${x.tone}`).join(' '))}　声调 ${esc(r.phonetics.tonePattern)}</em>${(r.phonetics.issues || []).map((x) => `<span class="mp-nm-ph-i">${esc(x.text)}</span>`).join('')}</div>`
+      ? `<div class="mp-nm-ph"><b>音韵</b><span class="mp-nm-ph-lv${r.phonetics.level === '顺口' ? ' ok' : r.phonetics.level === '拗口' ? ' bad' : ' warn'}">${esc(r.phonetics.level)}</span><em>${esc(r.phonetics.chars.map((x) => `${x.py}${x.tone}`).join(' '))}　声调 ${esc(r.phonetics.tonePattern)}${(r.phonetics.alt || []).length ? `　又读 ${esc(r.phonetics.alt.map((x) => `${x.char} ${x.py}${x.tone}`).join('、'))}` : ''}</em>${(r.phonetics.issues || []).map((x) => `<span class="mp-nm-ph-i">${esc(x.text)}</span>`).join('')}</div>`
       : `<div class="mp-nm-ph"><b>音韵</b><em>${esc(r.phonetics ? r.phonetics.reason : '未算')}</em></div>`;
     return `<section class="mp-nm" aria-label="名字评估">
       ${head(r.fullName || '', `字库 ${r.stats && r.stats.libSize ? r.stats.libSize : ''} 字${r.stats && r.stats.unknown ? `　未收录 ${r.stats.unknown}` : ''}`)}
@@ -26912,15 +30065,21 @@ window.__MP_VER = "0.60.0";
   pp.zeriHTML = function (r) {
     if (!r || !r.compare || r.compare.mode !== 'candidates' || !Array.isArray(r.days)) return pp.quickHTML(r);
     const meta = r.meta || {};
+    const ref = r.shenshaRef || {};
     const bestDate = r.compare.best ? r.compare.best.date : '';
     const rows = r.days.map((d) => {
       const isBest = d.date === bestDate;
       const cls = d.excluded || d.verdict === '回避' ? 'bad' : d.verdict === '推荐' ? 'good' : '';
+      const g = d.grade || {};
+      const gradeCell = g.label
+        ? `<b>${esc(g.label)}</b><em>吉${esc(g.ji)} / 凶${esc(g.xiong)}　${esc(g.decision || '')}</em>`
+        : '—';
       return `<tr class="mp-zr-row${isBest ? ' top' : ''}${d.excluded ? ' off' : ''}">
         <th scope="row"><b>${esc(d.date)}</b>${isBest ? '<i class="mp-zr-best">最优</i>' : ''}
           <em>${esc(d.weekday)}　${esc(d.lunar)}</em></th>
         <td><b>${esc(d.dayGanZhi)}</b><em>${esc(d.zhiXing)}日</em></td>
         <td class="mp-zr-score">${esc(d.score)}</td>
+        <td class="mp-zr-grade">${gradeCell}</td>
         <td><span class="mp-zr-v ${cls}">${esc(d.verdict)}</span></td>
         <td class="mp-zr-why">${esc(d.reasons.join('；') || '无特别加减分')}</td>
       </tr>`;
@@ -26936,12 +30095,14 @@ window.__MP_VER = "0.60.0";
         <span>候选 ${esc(meta.days)} 天${meta.shengXiao ? `　当事人属${esc(meta.shengXiao)}` : '（未给属相，未做冲煞排除）'}</span></div>
       <div class="mp-zr-lead">${bestLead}</div>
       <table class="mp-zr-t"><thead><tr>
-        <th scope="col">日期</th><th scope="col">日干支 / 建除</th><th scope="col">分</th><th scope="col">结论</th><th scope="col">理由</th>
+        <th scope="col">日期</th><th scope="col">日干支 / 建除</th><th scope="col">分</th><th scope="col">卷十等第</th><th scope="col">结论</th><th scope="col">理由</th>
       </tr></thead><tbody>${rows}</tbody></table>
       <div class="mp-zr-lists">
         ${list('推荐', r.best)}${list('可用', r.usable)}${list('回避', r.avoid)}
       </div>
       <p class="mp-zr-note">${esc(r.compare.note || '')}</p>
+      ${ref.text ? `<p class="mp-zr-note">神煞依据：${esc(ref.text)}（${esc(ref.edition || '')}）；起法 ${esc((ref.volumes || []).join('、'))}。未实现起法：${esc((ref.unsupported || []).join('、'))}（不计分）。</p>` : ''}
+      ${ref.juan10 ? `<p class="mp-zr-note">卷十依据：${esc(ref.juan10.text)}（${esc(ref.juan10.corpusLines || '')}）；${esc(ref.juan10.thresholdsNote || '')}${esc(ref.juan10.note || '')}</p>` : ''}
       <p class="mp-zr-note">${esc(meta.scope || '')}</p>
       <p class="mp-zr-note">${esc(r.disclaimer || '')}</p>
     </section>`;

@@ -112,7 +112,13 @@ function tarotUse(r) {
     name: c.position || '牌位',
     symbol: `${c.name}（${c.orientation || (c.upright ? '正位' : '逆位')}）`,
     why: `${c.positionHint || '这一位代表它所标的那个阶段'}；牌位决定它代表什么，牌面只说明它是什么样子。`,
-    fact: `${c.core || ''}${(c.keywords && c.keywords.length) ? `　关键词：${c.keywords.join('、')}` : ''}`,
+    // 逐张库的三层：占星对应（宫廷牌没有，就给角色）、牌面画了什么、核心与关键词
+    fact: [
+      c.core || '',
+      c.astro ? `占星对应：${c.astro}` : (c.role ? `牌位角色：${c.role}` : ''),
+      c.image ? `牌面：${c.image}` : '',
+      (c.keywords && c.keywords.length) ? `关键词：${c.keywords.join('、')}` : '',
+    ].filter(Boolean).join('　'),
   }));
   return cards.length ? cards : [{ name: '牌面', symbol: '—', why: '没有抽到牌', fact: '' }];
 }

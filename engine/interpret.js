@@ -1081,7 +1081,7 @@ function ziweiInterpret(r) {
 // ══════════════════════════════════════════════════════════
 // 卦象通用：卦辞 / 爻辞 / 动爻 / 生活落点
 // ══════════════════════════════════════════════════════════
-function hexSections({ benName, benUpper, benLower, bianName, bianUpper, bianLower, movingLine, moving }) {
+function hexSections({ benName, benUpper, benLower, bianName, bianUpper, bianLower, movingLine, moving, jing: jingText }) {
   const ben = hexInfo(benName, benUpper, benLower);
   const sections = [
     {
@@ -1100,6 +1100,10 @@ function hexSections({ benName, benUpper, benLower, bianName, bianUpper, bianLow
       text: `动爻变化之后得到「${bian.full}」，${bian.meaning}。变卦往往指向事情后来的样子：从「${ben.full}」走到「${bian.full}」，可以理解为局面会从${ben.scene}转为${bian.scene}。`,
     });
   }
+  // 经文原文由排盘层算好挂进结果（engine/yijing-text.js），这里只做摆放：
+  // 先读白话大意，再对原文，最后才落到生活里。
+  const jing = String(jingText || '');
+  if (jing) sections.push({ key: 'jingText', label: '经文原文', text: jing });
   sections.push({
     key: 'scene', label: '落到生活里',
     text: `把这一卦放进日常：${ben.scene}。${bianName ? `而后续的方向是${hexInfo(bianName, bianUpper, bianLower).scene}。` : ''}你可以对照着看看，眼下哪件事最像这个描述。`,
@@ -1126,7 +1130,7 @@ function liuyaoInterpret(r, ask) {
   const { sections, ben: benInfo, bian: bianInfo } = hexSections({
     benName: ben.name, benUpper: ben.upper, benLower: ben.lower,
     bianName: bian.name, bianUpper: bian.upper, bianLower: bian.lower,
-    moving,
+    moving, jing: r.jing,
   });
 
   const shiLine = lines.find((l) => l.position === ben.shi);
@@ -1383,7 +1387,7 @@ function meihuaInterpret(r) {
   const { sections, ben: benInfo, bian: bianInfo } = hexSections({
     benName: ben.name, benUpper: ben.upper, benLower: ben.lower,
     bianName: bian.name, bianUpper: bian.upper, bianLower: bian.lower,
-    moving: movingLine,
+    moving: movingLine, jing: r.jing,
   });
 
   const bodyEl = pick(bu.body, 'element', '');

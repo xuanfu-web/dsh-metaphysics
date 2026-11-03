@@ -10,9 +10,11 @@
 //    调用方可以用 strokeOverrides 覆盖任意字的笔画，覆盖值会被标注为「用户指定」。
 //
 // 读数口径：拼音只写声母韵母（ü 写作 v），声调 1–4 单独一列；轻声不收录（人名用字几乎不读轻声）。
+import { EXTRA_READING } from './name-extra.js';
+import { SURNAME_ROWS, COMPOUND_ROWS, SURNAME_ALT, SURNAME_COUNTS } from './surname-data.js';
 
 /** [字, 拼音(无声调), 声调, 康熙笔画] */
-export const READING = [
+const BASE_READING = [
   // ── 木 ──
   ['梓', 'zi', 3, 11], ['桐', 'tong', 2, 10], ['楠', 'nan', 2, 13], ['楷', 'kai', 3, 13],
   ['松', 'song', 1, 8], ['柏', 'bai', 3, 9], ['枫', 'feng', 1, 13], ['榕', 'rong', 2, 14],
@@ -120,85 +122,29 @@ export const READING = [
   ['浦', 'pu', 3, 11],
 ];
 
-/** 常见单姓的康熙笔画（复姓见 DOUBLE_SURNAMES）。没有的姓可用 surnameStrokes 传入。 */
-export const SURNAME_STROKES = {
-  王: 4, 李: 7, 张: 11, 刘: 15, 陈: 16, 杨: 13, 黄: 12, 赵: 14, 吴: 7, 周: 8,
-  徐: 10, 孙: 10, 马: 10, 朱: 6, 胡: 11, 郭: 15, 何: 7, 高: 10, 林: 8, 罗: 20,
-  郑: 19, 梁: 11, 谢: 17, 宋: 7, 唐: 10, 许: 11, 韩: 17, 冯: 12, 曹: 11, 彭: 12,
-  曾: 12, 萧: 18, 田: 5, 董: 15, 潘: 16, 袁: 10, 蔡: 17, 余: 7, 于: 3, 杜: 7,
-  叶: 15, 程: 12, 魏: 18, 吕: 7, 丁: 2, 任: 6, 姚: 9, 卢: 16, 姜: 9, 崔: 11,
-  钟: 17, 谭: 19, 陆: 16, 范: 15, 金: 8, 石: 5, 廖: 14, 贾: 13, 夏: 10, 韦: 9,
-  付: 5, 方: 4, 白: 5, 邹: 17, 孟: 8, 熊: 14, 秦: 10, 邱: 12, 江: 7, 尹: 4,
-  薛: 19, 段: 9, 雷: 13, 侯: 9, 龙: 16, 史: 5, 陶: 16, 黎: 15, 贺: 12, 顾: 21,
-  毛: 4, 郝: 14, 龚: 22, 邵: 12, 钱: 16, 严: 20, 武: 8, 戴: 18, 莫: 13, 孔: 4,
-  向: 6, 常: 11, 康: 11, 易: 8, 文: 4, 施: 9, 洪: 10, 安: 6, 颜: 18, 温: 13,
-  章: 11, 鲁: 15, 葛: 15, 伍: 6, 申: 5, 尤: 4, 焦: 12, 柳: 9, 邢: 11, 路: 13,
-  岳: 8, 乔: 12, 赖: 20, 万: 15, 苏: 22, 蒋: 17, 沈: 8, 汪: 8, 邓: 19, 覃: 12,
-  房: 8, 边: 22, 辛: 7, 涂: 11, 甘: 5, 封: 9, 储: 18, 邬: 17, 路: 13, 詹: 13,
-};
+export const READING = [...BASE_READING, ...EXTRA_READING];
 
-/** 常见单姓读音：[拼音, 声调] */
-export const SURNAME_READING = {
-  王: ['wang', 2], 李: ['li', 3], 张: ['zhang', 1], 刘: ['liu', 2], 陈: ['chen', 2],
-  杨: ['yang', 2], 黄: ['huang', 2], 赵: ['zhao', 4], 吴: ['wu', 2], 周: ['zhou', 1],
-  徐: ['xu', 2], 孙: ['sun', 1], 马: ['ma', 3], 朱: ['zhu', 1], 胡: ['hu', 2],
-  郭: ['guo', 1], 何: ['he', 2], 高: ['gao', 1], 林: ['lin', 2], 罗: ['luo', 2],
-  郑: ['zheng', 4], 梁: ['liang', 2], 谢: ['xie', 4], 宋: ['song', 4], 唐: ['tang', 2],
-  许: ['xu', 3], 韩: ['han', 2], 冯: ['feng', 2], 曹: ['cao', 2], 彭: ['peng', 2],
-  曾: ['zeng', 1], 萧: ['xiao', 1], 田: ['tian', 2], 董: ['dong', 3], 潘: ['pan', 1],
-  袁: ['yuan', 2], 蔡: ['cai', 4], 余: ['yu', 2], 于: ['yu', 2], 杜: ['du', 4],
-  叶: ['ye', 4], 程: ['cheng', 2], 魏: ['wei', 4], 吕: ['lv', 3], 丁: ['ding', 1],
-  任: ['ren', 2], 姚: ['yao', 2], 卢: ['lu', 2], 姜: ['jiang', 1], 崔: ['cui', 1],
-  钟: ['zhong', 1], 谭: ['tan', 2], 陆: ['lu', 4], 范: ['fan', 4], 金: ['jin', 1],
-  石: ['shi', 2], 廖: ['liao', 4], 贾: ['jia', 3], 夏: ['xia', 4], 韦: ['wei', 2],
-  付: ['fu', 4], 方: ['fang', 1], 白: ['bai', 2], 邹: ['zou', 1], 孟: ['meng', 4],
-  熊: ['xiong', 2], 秦: ['qin', 2], 邱: ['qiu', 1], 江: ['jiang', 1], 尹: ['yin', 3],
-  薛: ['xue', 1], 段: ['duan', 4], 雷: ['lei', 2], 侯: ['hou', 2], 龙: ['long', 2],
-  史: ['shi', 3], 陶: ['tao', 2], 黎: ['li', 2], 贺: ['he', 4], 顾: ['gu', 4],
-  毛: ['mao', 2], 郝: ['hao', 3], 龚: ['gong', 1], 邵: ['shao', 4], 钱: ['qian', 2],
-  严: ['yan', 2], 武: ['wu', 3], 戴: ['dai', 4], 莫: ['mo', 4], 孔: ['kong', 3],
-  向: ['xiang', 4], 常: ['chang', 2], 康: ['kang', 1], 易: ['yi', 4], 文: ['wen', 2],
-  施: ['shi', 1], 洪: ['hong', 2], 安: ['an', 1], 颜: ['yan', 2], 温: ['wen', 1],
-  章: ['zhang', 1], 鲁: ['lu', 3], 葛: ['ge', 3], 伍: ['wu', 3], 申: ['shen', 1],
-  尤: ['you', 2], 焦: ['jiao', 1], 柳: ['liu', 3], 邢: ['xing', 2], 路: ['lu', 4],
-  岳: ['yue', 4], 乔: ['qiao', 2], 赖: ['lai', 4], 万: ['wan', 4], 苏: ['su', 1],
-  蒋: ['jiang', 3], 沈: ['shen', 3], 汪: ['wang', 1], 邓: ['deng', 4], 覃: ['tan', 2],
-  房: ['fang', 2], 边: ['bian', 1], 辛: ['xin', 1], 涂: ['tu', 2], 甘: ['gan', 1],
-  封: ['feng', 1], 储: ['chu', 3], 邬: ['wu', 1], 詹: ['zhan', 1],
-  欧: ['ou', 1],
-  阳: ['yang', 2],
-  司: ['si', 1],
-  上: ['shang', 4],
-  官: ['guan', 1],
-  诸: ['zhu', 1],
-  东: ['dong', 1],
-  皇: ['huang', 2],
-  甫: ['fu', 3],
-  尉: ['yu', 4],
-  迟: ['chi', 2],
-  令: ['ling', 4],
-  狐: ['hu', 2],
-  慕: ['mu', 4],
-  徒: ['tu', 2],
-  公: ['gong', 1],
-};
+/**
+ * 姓氏数据来自 engine/surname-data.js（单姓 998 + 复姓 82），这里只按原有形状摊开：
+ *  SURNAME_STROKES[ch]      → 康熙笔画
+ *  SURNAME_READING[ch]      → [拼音(ü 写作 v), 声调]，只有笔画没有读音的姓不入此表
+ *  SURNAME_ALT_READING[ch]  → 又读（多音姓氏的第二读，音韵行里会并列显示）
+ *  DOUBLE_SURNAMES[name]    → { s: [首字画, 末字画], py, tone }
+ * 没有收录的姓：笔画可用 strokeOverrides / surnameStrokes 传入，五格会照算。
+ */
+export const SURNAME_STROKES = {};
+export const SURNAME_READING = {};
+export const SURNAME_ALT_READING = {};
+export const DOUBLE_SURNAMES = {};
+for (const [ch, kx, py, tone] of SURNAME_ROWS) {
+  SURNAME_STROKES[ch] = kx;
+  if (py) SURNAME_READING[ch] = [py, tone];
+}
+for (const [name, a, b, py, tone] of COMPOUND_ROWS) DOUBLE_SURNAMES[name] = { s: [a, b], py, tone };
+for (const [ch, v] of Object.entries(SURNAME_ALT)) SURNAME_ALT_READING[ch] = v;
 
-/** 常见复姓：两字各自的康熙笔画（s）与读音（首字拼音连写，声调取首字） */
-export const DOUBLE_SURNAMES = {
-  欧阳: { s: [15, 17], py: 'ouyang', tone: 1 },
-  司马: { s: [5, 10], py: 'sima', tone: 1 },
-  上官: { s: [3, 8], py: 'shangguan', tone: 4 },
-  诸葛: { s: [15, 15], py: 'zhuge', tone: 1 },
-  东方: { s: [8, 4], py: 'dongfang', tone: 1 },
-  皇甫: { s: [9, 7], py: 'huangfu', tone: 2 },
-  尉迟: { s: [11, 19], py: 'yuchi', tone: 4 },
-  令狐: { s: [5, 8], py: 'linghu', tone: 4 },
-  慕容: { s: [14, 10], py: 'murong', tone: 4 },
-  宇文: { s: [6, 4], py: 'yuwen', tone: 3 },
-  司徒: { s: [5, 10], py: 'situ', tone: 1 },
-  夏侯: { s: [10, 9], py: 'xiahou', tone: 4 },
-  公孙: { s: [4, 10], py: 'gongsun', tone: 1 },
-};
+export const SURNAME_STATS = SURNAME_COUNTS;
+
 
 /**
  * 81 数理（通行本）：索引即数，[吉凶, 意象]。

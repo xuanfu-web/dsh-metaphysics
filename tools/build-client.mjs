@@ -8,7 +8,7 @@ import { DIRECTIONS } from '../engine/interpret.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'geju', 'bazi', 'liuyao', 'ziwei', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
+  'classics', 'geju', 'bazi', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'ziwei-words', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -27,13 +27,13 @@ const BRIEF = ['plain-summary'];
 // 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎
 // 顶部人话总结：只有八字与紫微有，所以挂在各自栈上，不塞进 INTERPRET
 const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'classics', ...BRIEF, ...INTERPRET];
-const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei', 'ziwei-words', 'classics', ...BRIEF, ...INTERPRET];
+const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words', 'ziwei-zuoyao', 'ziwei', 'ziwei-words', 'classics', ...BRIEF, ...INTERPRET];
 
 export const CHUNKS = {
   bazi: {
     tabs: ['bazi'],
     // 八字页内嵌人生 K 线、可开紫微交叉验证；两项都在本块内完成
-    modules: [...BAZI_STACK, 'trend', 'ziwei', 'ziwei-words', 'crosscheck', 'verify', 'rectify', 'trace', ...ASK],
+    modules: [...BAZI_STACK, 'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words', 'crosscheck', 'verify', 'rectify', 'trace', ...ASK],
   },
   ziwei: {
     tabs: ['ziwei'],
@@ -53,16 +53,18 @@ export const CHUNKS = {
   name: {
     tabs: ['name'],
     modules: [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'geju', 'bazi', 'bazi-words',
-      'classics', 'name-data', 'name', ...BRIEF, ...ASK],
+      'classics', 'name-extra', 'surname-data', 'name-data', 'name', ...BRIEF, ...ASK],
   },
   fengshui: { tabs: ['fengshui'], modules: [...COMMON, 'fengshui', ...BRIEF, ...ASK] },
-  liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'liuyao', 'meihua', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
+  // 经文原文表只给六爻/梅花用（12KB gzip），所以挂在这一块，不进 INTERPRET 抬另外 7 块
+  liuyao: { tabs: ['liuyao', 'meihua'], modules: [...COMMON, 'classics', 'yijing-text', 'liuyao', 'meihua', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
   qimen: { tabs: ['qimen'], modules: [...COMMON, 'classics', 'qimen-ganying', 'qimen', 'qimen-interpret', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
   daliuren: { tabs: ['daliuren'], modules: [...COMMON, 'classics', 'daliuren', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT, 'trace'] },
-  tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT] },
+  // 逐张牌库只有塔罗用（16KB 原文），所以只挂在本块，不进公共栈
+  tarot: { tabs: ['tarot'], modules: [...COMMON, 'classics', 'tarot-cards', 'tarot', ...INTERPRET, ...ASK, ...BRIEF, ...EVENT_PROMPT] },
   almanac: { tabs: ['almanac'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', ...BRIEF, ...ASK] },
   convert: { tabs: ['convert'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'convert', ...BRIEF, ...ASK] },
-  zeri: { tabs: ['zeri'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'zeri', ...BRIEF, ...ASK] },
+  zeri: { tabs: ['zeri'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'zeri-shensha', 'zeri', ...BRIEF, ...ASK] },
   chenggu: { tabs: ['chenggu'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'chenggu', ...BRIEF, ...ASK] },
   xiaoliuren: { tabs: ['xiaoliuren'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'xiaoliuren', ...ASK, ...BRIEF, ...EVENT_PROMPT] },
   star: { tabs: ['star'], modules: [...COMMON, 'classics', 'star', ...BRIEF, ...ASK] },

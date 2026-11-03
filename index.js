@@ -180,7 +180,7 @@ export function apply(ctx) {
         system: {
           type: 'string',
           enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'],
-          description: 'bazi = 四柱八字（含调候寒暖与《穷通宝鉴》120 格用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、卦体关系、用神落位与月建日辰旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间内逐日打分排序）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（MBTI 风格 24 题问卷：给 answers 出类型，不给则先返回题目）；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局/玄空下卦，action 三选一）；name = 起名（391 字库的用字五行评估与候选生成；未收录字可传 charElements 指定五行）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
+          description: 'bazi = 四柱八字（含调候寒暖与《穷通宝鉴》120 格用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、卦体关系、用神落位与月建日辰旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间或候选日内逐日打分排序；宜忌依《协纪辨方书》卷十一「用事」逐条神煞，轻重依卷十「宜忌」六等与德神制化）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（MBTI 风格 24 题问卷：给 answers 出类型，不给则先返回题目）；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局/玄空下卦，action 三选一）；name = 起名（391 字库的用字五行评估与候选生成；未收录字可传 charElements 指定五行）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
         },
         datetime: {
           type: 'string',
@@ -439,6 +439,11 @@ export function apply(ctx) {
           type: 'string',
           enum: ['common', 'verse'],
           description: '紫微斗数：身主安法（只影响子/午年生人）。common（默认，通行表）子午皆火星；verse 按安身主诀「子午安身铃火宿」逐字取子铃星、午火星。',
+        },
+        zuoyaoSchool: {
+          type: 'string',
+          enum: ['minimal', 'full'],
+          description: '紫微斗数：杂曜取盘。minimal（默认，通行简盘 49 颗，与旧盘和存档一致）；full 另按安星诀补入十二颗杂曜（解神、天巫、天月、阴煞、天官、天福、天厨、蜚廉、天德、年解、天才、天寿），共 61 颗。诀文属近代通行辑本并核，非《紫微斗数全书》原文。',
         },
         action: {
           type: 'string',

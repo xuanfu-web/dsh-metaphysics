@@ -12,9 +12,24 @@ const PP = sandbox.window.__PP;
 
 // ── 一、字库：规模与去重 ───────────────────────────────────
 eq('字库无重复字', new Set(CHAR_LIB.map((c) => c[0])).size, CHAR_LIB.length);
-ok('字库已扩到 380 字以上', CHAR_LIB.length >= 380, CHAR_LIB.length);
+ok('字库已扩到 1000 字以上', CHAR_LIB.length >= 1000, CHAR_LIB.length);
+ok('字库不超过 1200 字（常用字为主）', CHAR_LIB.length <= 1200, CHAR_LIB.length);
 ok('五行取值合法', CHAR_LIB.every((c) => ['木', '火', '土', '金', '水'].includes(c[1])));
 ok('每条都有释义', CHAR_LIB.every((c) => typeof c[2] === 'string' && c[2].length >= 2));
+
+// 常用名覆盖率：拿一批真实在用的名字逐字查，缺字率不得超过 5%
+const COMMON_NAMES = [
+  '李伟杰', '王丽娜', '张伟', '王芳', '李娜', '刘洋', '陈静', '王秀英', '李秀英', '张敏',
+  '李强', '张磊', '李军', '王杰', '张涛', '王超', '李明', '李勇', '张建国', '李建军',
+  '王志强', '刘国强', '王桂英', '李玉兰', '张秀珍', '王淑珍', '李秀云', '张凤英', '王玉梅', '李丽华',
+  '张秀华', '王春梅', '李秀芳', '王玉芳', '刘小红', '陈晓明', '李志明', '张志刚', '王俊杰', '李梓涵',
+  '王沐宸', '张浩然', '李欣怡', '王雨桐', '陈思远', '刘子轩', '王浩然', '李若曦', '张一诺', '王奕辰',
+];
+const LIB = new Set(CHAR_LIB.map((c) => c[0]));
+const commonChars = [...new Set(COMMON_NAMES.map((n) => n.slice(1)).join(''))];
+const missed = commonChars.filter((c) => !LIB.has(c));
+ok(`常用名覆盖率 ≥95%（${commonChars.length - missed.length}/${commonChars.length}）`, missed.length / commonChars.length <= 0.05, missed);
+eq('常用名样本无缺字', missed, []);
 
 // ── 二、用户报的那个名字：丰秋林 ────────────────────────────
 const BY = new Map(CHAR_LIB.map((c) => [c[0], c[1]]));

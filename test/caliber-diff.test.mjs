@@ -145,9 +145,9 @@ const zwNon = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T14:30', ge
   .switches.find((x) => x.key === 'leapMonth');
 eq('非闰月盘闰月开关无变化', zwNon.total, 0);
 
-// 紫微十类流派开关：默认档与另一档都取自引擎枚举，且每一项真的能改盘
+// 紫微十一类流派开关：默认档与另一档都取自引擎枚举，且每一项真的能改盘
 const ZW_SWITCHES = CALIBER_SWITCHES.ziwei;
-eq('紫微 12 组口径（2 基础 + 10 流派）', ZW_SWITCHES.length, 12);
+eq('紫微 13 组口径（2 基础 + 11 流派）', ZW_SWITCHES.length, 13);
 const zwKeys = ZW_SWITCHES.map((x) => x.key);
 for (const key of Object.keys(ZIWEI_SCHOOL_OPTIONS)) {
   ok(`口径表含 ${key}`, zwKeys.includes(key), zwKeys.join(','));
@@ -162,7 +162,7 @@ eq('平铺优先于嵌套', ZW_SWITCHES.find((x) => x.key === 'kuiyueSchool').re
 eq('流派回显不计盘面差异', diffObjects({ schools: { a: 'x' }, rules: { schools: 'a' } }, { schools: { a: 'y' }, rules: { schools: 'b' } }).length, 0);
 
 const zwBase = caliberCompare({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' });
-eq('紫微对照 12 组', zwBase.switches.length, 12);
+eq('紫微对照 13 组', zwBase.switches.length, 13);
 const zwBaseRow = (key) => zwBase.switches.find((x) => x.key === key);
 for (const key of ['brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool']) {
   ok(`${key} 能检出盘面变化`, zwBaseRow(key).total > 0, `${zwBaseRow(key).currentLabel} → ${zwBaseRow(key).altLabel}：${zwBaseRow(key).total} 处`);
@@ -275,9 +275,10 @@ ok('渲染 details 容器', /^<details class="mp-cdiff"/.test(html.trim()), html
 ok('summary 先给一句话总结', html.includes('组开关中') && html.includes('影响此盘'), html.slice(0, 300));
 eq('两组开关两行', (html.match(/class="mp-cdiff-row"/g) || []).length, 2);
 const zwHtml = PP.caliberHTML(zwBase);
-eq('紫微口径卡 12 行', (zwHtml.match(/class="mp-cdiff-row"/g) || []).length, 12);
-ok('紫微口径卡列全九派', ['亮度表', '庚干四化', '天马', '天空', '截空旬空', '魁钺', '天伤天使', '长生', '晚子时']
-  .every((t) => zwHtml.includes(t)), zwHtml.slice(0, 400));
+eq('紫微口径卡 13 行', (zwHtml.match(/class="mp-cdiff-row"/g) || []).length, 13);
+ok('紫微口径卡列全十一派', ['亮度表', '庚干四化', '天马', '天空', '截空旬空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜']
+  .every((t) => zwHtml.includes(t)), ['亮度表', '庚干四化', '天马', '天空', '截空旬空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜']
+  .filter((t) => !zwHtml.includes(t)).join(','));
 ok('根因旧值→新值', html.includes('丙辰') && html.includes('乙卯') && html.includes('mp-cdiff-to'));
 ok('当前档与另一档并排', html.includes('当前 · 换日') && html.includes('换成 · 不换日'));
 ok('分类计数', /神煞 \d+ 处/.test(html), html.match(/神煞 \d+ 处/));

@@ -1,7 +1,11 @@
-// 择日：逐日按黄历「建除简表宜忌」+ 建除神适配 + 冲属相排除打分排序。
-// 口径透明：这是排序引导，不是吉凶断语；未收录逐日神煞，冲煞按日支对生肖。
+// 择日：逐日按《协纪辨方书》卷十一「用事」命中宜忌，再用卷十「宜忌」六等与德神制化定吉凶方向，
+// 叠冲属相排除后排序。口径透明：这是排序引导，不是吉凶断语。
 import { fromJDN, toJDN } from './calendar.js';
 import { buildAlmanac, SHENGXIAO } from './almanac.js';
+import {
+  computeDayShensha, taskShenshaHits, xingHitText, gradeDay,
+  ZERI_SHENSHA_BASIS, ZERI_JUAN10_BASIS,
+} from './zeri-shensha.js';
 import { fail } from './fail.js';
 
 // 择日的入参错误一律带 E_INPUT：裸 new Error 到工具层只剩 [E_INTERNAL]，
@@ -65,20 +69,40 @@ const ZHIXING_FAVOR = {
   medical: ['除', '开'],
 };
 
-const VERDICT = (score, ctx) => {
+const VERDICT_RANK = { 推荐: 3, 可用: 2, 平平: 1, 回避: 0 };
+
+/** 由卷十「六等」与德神制化判定的决断，映射到界面用语。 */
+const verdictOf = (grade, ctx) => {
   if (ctx.chongSelf) {
     return { verdict: '回避', text: `当日冲${ctx.chongSelf}（当事人属相）：传统择日径直排除，不进推荐与可用名单。`, excluded: true };
   }
-  if (score >= 3) return { verdict: '推荐', text: '宜项与建除相配，此日对所问事项顺遂。', excluded: false };
-  if (score >= 1) {
+  const basis = `${grade.label}（${grade.doctrine}）→ ${grade.decision}`;
+  const tally = `吉 ${grade.ji}、凶 ${grade.xiong}`;
+  if (grade.forced.length) {
     return {
-      verdict: '可用',
-      text: ctx.jiHit.length ? `可考虑，但当日忌${ctx.jiHit.join('、')}：宜项加分、忌项减分，未抵消干净。` : '未见冲克，可用；若有更好的日子，优先取推荐日。',
+      verdict: '回避',
+      text: `卷十 ${grade.label}，但所问事项正在德神亦不解的余忌之列（${grade.forced.map((g) => g.name).join('、')}）：${grade.doctrine}，故仍忌。`,
       excluded: false,
     };
   }
-  if (score >= 0) return { verdict: '平平', text: ctx.jiHit.length ? `当日忌${ctx.jiHit.join('、')}，宜项不相干，不作首选。` : '宜忌不相干，无助力也无冲克。', excluded: false };
-  return { verdict: '回避', text: ctx.jiHit.length ? `当日忌${ctx.jiHit.join('、')}，对所问事项不宜。` : '减分项多于加分项，此日不宜。', excluded: false };
+  if (grade.decision === '从宜不从忌') {
+    if (grade.score >= 2) {
+      return { verdict: '推荐', text: `卷十作 ${basis}；${tally}，宜项足以胜忌。`, excluded: false };
+    }
+    return { verdict: '可用', text: `卷十作 ${basis}；${tally}，可用但助力不厚。`, excluded: false };
+  }
+  if (grade.decision === '从宜亦从忌') {
+    return { verdict: '可用', text: `卷十作 ${basis}；${tally}，宜忌并见，择时仍须避开忌项。`, excluded: false };
+  }
+  if (grade.decision === '不宜不忌') {
+    return { verdict: '平平', text: `卷十作 ${basis}；${tally}，无所助也无所忌。`, excluded: false };
+  }
+  if (grade.decision === '从忌不从宜') {
+    const why = ctx.avoidText.length ? `忌项：${ctx.avoidText.join('、')}。` : '';
+    return { verdict: '回避', text: `卷十作 ${basis}；${tally}，${why}此日对所问事项不宜。`, excluded: false };
+  }
+  const why = ctx.avoidText.length ? `忌项：${ctx.avoidText.join('、')}；` : '';
+  return { verdict: '回避', text: `卷十作 ${basis}；${tally}，${why}传统作诸事皆忌。`, excluded: false };
 };
 
 /**
@@ -160,21 +184,33 @@ export function buildZeri(input) {
 
   const makeRow = (p) => {
     const a = buildAlmanac(p);
-    let score = 0;
-    const reasons = [];
-    const yiHit = spec.yi.filter((w) => a.yi.includes(w));
-    if (yiHit.length) { score += 2; reasons.push(`宜${yiHit.join('、')}（+2）`); }
-    const relHit = spec.related.filter((w) => a.yi.includes(w));
-    if (relHit.length) { score += 1; reasons.push(`关联宜项${relHit.join('、')}（+1）`); }
-    const jiHit = [...spec.yi, ...spec.related].filter((w) => a.ji.includes(w));
-    if (jiHit.length) { score -= 3; reasons.push(`忌${jiHit.join('、')}（-3）`); }
-    const chongSelf = shengXiao && a.chong.shengXiao === shengXiao ? shengXiao : null;
-    if (chongSelf) { score -= 2; reasons.push(`冲${shengXiao}（当事人属相，径直排除）`); }
-    if (zhixingSet.includes(a.zhiXing)) { score += 1; reasons.push(`建除${a.zhiXing}神利${task}（+1）`); }
-    if (a.zhiXing === '破' && spec.category !== 'burial') { score -= 1; reasons.push('破日（-1）'); }
-    if (a.zhiXing === '危' && spec.category !== 'travel' && spec.category !== 'worship') { score -= 1; reasons.push('危日（-1）'); }
+    const monthBranch = a.ganzhi.month.slice(-1);
+    const dayInfo = computeDayShensha({
+      monthBranch,
+      dayGz: a.ganzhi.day,
+      xing: a.zhiXing,
+      lunarDay: a.lunar.day,
+    });
+    const hits = taskShenshaHits(task, dayInfo);
 
-    const v = VERDICT(score, { chongSelf, jiHit });
+    const grade = gradeDay(hits, dayInfo);
+    const favor = zhixingSet.includes(a.zhiXing);
+    const score = grade.score;
+
+    const reasons = [];
+    // 建除适配是现代简表，只作同分参考，不进卷十吉凶轻重。
+    if (favor) reasons.push(`建除${a.zhiXing}神利${task}（现代简表，参考不计分）`);
+    if (grade.good.length) reasons.push(`宜项：${grade.good.map((g) => `${g.name}(${g.w})`).join('、')}，合吉 ${grade.ji}`);
+    if (grade.remains.length) reasons.push(`忌项：${grade.remains.map((g) => `${g.name}(${g.w})`).join('、')}，合凶 ${grade.xiong}`);
+    if (grade.resolved.length) reasons.push(`德神可解：${grade.resolved.map((g) => g.name).join('、')}`);
+    if (grade.forced.length) reasons.push(`德神犹忌（所问正在余忌）：${grade.forced.map((g) => g.name).join('、')}`);
+    reasons.push(`卷十 ${grade.label}：${grade.doctrine}，${grade.decision}`);
+
+    const chongSelf = shengXiao && a.chong.shengXiao === shengXiao ? shengXiao : null;
+    if (chongSelf) reasons.push(`冲${shengXiao}（当事人属相，径直排除）`);
+
+    const avoidText = grade.remains.map((g) => g.name);
+    const v = verdictOf(grade, { chongSelf, avoidText });
     return {
       date: a.meta.date,
       weekday: a.meta.weekday,
@@ -185,9 +221,44 @@ export function buildZeri(input) {
       ji: a.ji,
       chong: a.chong.shengXiao,
       score,
+      favor,
       reasons,
       verdict: v.verdict,
       verdictText: v.text,
+      grade: {
+        key: grade.key,
+        label: grade.label,
+        doctrine: grade.doctrine,
+        decision: grade.decision,
+        withDe: grade.withDe,
+        de: grade.de,
+        ji: grade.ji,
+        xiong: grade.xiong,
+        ratio: grade.ratio,
+        resolved: grade.resolved.map((g) => g.name),
+        remains: grade.remains.map((g) => g.name),
+        forced: grade.forced.map((g) => g.name),
+        ...(grade.allJiCombo ? { combo: '月厌叠月破/灾煞：虽遇德仍诸事皆忌' } : {}),
+        note: grade.note,
+      },
+      shensha: {
+        monthBranch,
+        xing: dayInfo.xing,
+        names: dayInfo.names,
+        use: {
+          xing: hits.use.xing.map((h) => xingHitText(h)),
+          shensha: hits.use.shensha,
+          day: hits.use.day,
+          lunar: hits.use.lunar,
+        },
+        avoid: {
+          xing: hits.avoid.xing.map((h) => xingHitText(h)),
+          shensha: hits.avoid.shensha,
+          day: hits.avoid.day,
+          lunar: hits.avoid.lunar,
+        },
+        ...(hits.unsupported.length ? { unsupported: hits.unsupported } : {}),
+      },
       ...(v.excluded ? { excluded: true } : {}),
     };
   };
@@ -196,7 +267,10 @@ export function buildZeri(input) {
     ? candidates.map(makeRow)
     : Array.from({ length: days }, (_, i) => makeRow(fromJDN(toJDN(start.year, start.month, start.day) + i)));
 
-  const ranked = list.slice().sort((x, y) => y.score - x.score || (x.date < y.date ? -1 : 1));
+  // 先按卷十决断排（推荐 > 可用 > 平平 > 回避），同档再按吉凶差分，最后用建除适配作同分参考。
+  const rankOf = (d) => (d.excluded ? -1 : (VERDICT_RANK[d.verdict] ?? 0));
+  const ranked = list.slice().sort((x, y) => rankOf(y) - rankOf(x) || y.score - x.score
+    || Number(y.favor) - Number(x.favor) || (x.date < y.date ? -1 : 1));
   const startDate = candidates
     ? candidates.slice().sort((x, y) => (ymd(x) < ymd(y) ? -1 : 1)).map(ymd)[0]
     : ymd(start);
@@ -217,7 +291,7 @@ export function buildZeri(input) {
         ties: pool.filter((d) => d.score === top.score).map((d) => d.date),
       } : null,
       spread: Math.max(...scores) - Math.min(...scores),
-      note: '候选日只在这几天里比：分数来自建除宜忌与冲煞，胜出只表示更合所问事项，不代表「好多少」。',
+      note: '候选日只在这几天里比：先按卷十「六等」与德神制化定宜忌方向，再以吉凶权重差分；胜出只表示更合所问事项，不代表「好多少」。',
     };
   }
 
@@ -230,9 +304,7 @@ export function buildZeri(input) {
       days: list.length,
       shengXiao,
       ...(candidates ? { candidates: candidates.map(ymd) } : {}),
-      scope: shengXiao
-        ? `宜忌按建除简表；已给当事人属相（${shengXiao}），凡当日冲该属相径直排除。评分仅用于排序引导。`
-        : '宜忌按建除简表；未给当事人属相，未做冲属相排除。评分仅用于排序引导。',
+      scope: `宜忌按《协纪辨方书》卷十一「用事」逐条神煞，吉凶轻重按卷十「宜忌」六等与德神制化；${shengXiao ? `已给当事人属相（${shengXiao}），凡当日冲该属相径直排除。` : '未给当事人属相，未做冲属相排除。'}六等阈值为本仓校准（吉凶权重比 3/2、1、2/3、1/2），非古籍常数；卷十等第表的逐月逐日单元格未全量编码。评分仅用于排序引导。`,
     },
     best: ranked.filter((d) => d.verdict === '推荐' && !d.excluded).slice(0, 5).map((d) => d.date),
     usable: ranked.filter((d) => d.verdict === '可用' && !d.excluded).slice(0, 5).map((d) => d.date),
@@ -240,7 +312,33 @@ export function buildZeri(input) {
     days: list,
     ...(compare ? { compare } : {}),
     excludedCount: list.filter((d) => d.excluded).length,
-    sources: ['宜忌：建除十二神通行简表', '建除适配与冲煞：传统通行口径', '排序：宜忌加减分 + 属相排除（确定性）'],
-    disclaimer: '择日为传统黄历口径的本地计算，属民俗参考；评分只用于排序，不构成择日结论。',
+    shenshaRef: {
+      text: ZERI_SHENSHA_BASIS.text,
+      edition: ZERI_SHENSHA_BASIS.edition,
+      volumes: ZERI_SHENSHA_BASIS.volumes,
+      unsupported: ZERI_SHENSHA_BASIS.unsupported,
+      note: ZERI_SHENSHA_BASIS.note,
+      juan10: {
+        text: ZERI_JUAN10_BASIS.text,
+        corpusLines: ZERI_JUAN10_BASIS.corpusLines,
+        note: ZERI_JUAN10_BASIS.note,
+        thresholdsNote: ZERI_JUAN10_BASIS.thresholdsNote,
+        grades: ZERI_JUAN10_BASIS.grades.map((g) => ({
+          key: g.key, label: g.label, doctrine: g.doctrine, withDe: g.withDe, withoutDe: g.withoutDe,
+        })),
+        ping: ZERI_JUAN10_BASIS.ping,
+        deRules: ZERI_JUAN10_BASIS.deRules.map((r) => ({
+          name: r.name, cls: r.cls, anyOf: r.anyOf, residualEntries: r.residualEntries,
+        })),
+      },
+    },
+    sources: [
+      '宜忌：建除十二神通行简表（黄历层，逐日 yi/ji 原样保留）',
+      '神煞宜忌：《钦定协纪辨方书》卷十一「用事」逐条',
+      '吉凶轻重：卷十「宜忌」六等与德神制化（遇德/不遇德）',
+      '神煞起法：卷四建除、卷五/卷六义例、卷九立成',
+      '排序：卷十决断 + 吉凶权重差分 + 属相排除（确定性）',
+    ],
+    disclaimer: '择日为传统黄历口径的本地计算，属民俗参考；神煞依卷十一逐条宜忌，吉凶轻重依卷十「六等」与德神制化，六等阈值为本仓校准，逐月逐日等第表未逐格数字化。评分只用于排序，不构成择日结论。',
   };
 }

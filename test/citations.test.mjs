@@ -127,7 +127,9 @@ ok('通根透干写明通行说误署滴天髓', /子平真诠/.test(CARD_CITATI
 ok('用神化进退已落到進神退神章', Array.isArray(CARD_CITATIONS['liuyao-jintui-yong'].refs)
   && CARD_CITATIONS['liuyao-jintui-yong'].refs[0] === 'zs-jintui');
 ok('用神化进退的 source 带原文索引', citationSourceOf('liuyao-jintui-yong').status === 'verified');
-ok('通行说剩六张（另有 1 张待补）', generalCards.length === 6 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
+// 塔罗牌义对应入表后通行说升到七张；H4 杂曜安星诀再升一张（诀文只作通行说，不署《全书》）。
+// 这条计数是有意的锁，新增卡片必须显式改这里，免得「通行说」在没人注意时悄悄变多。
+ok('通行说剩八张（另有 1 张待补）', generalCards.length === 8 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
 const ts = citationSourceOf('liuyao-yingqi-exact', '待补');
 ok('待补卡片标明 todo', ts.status === 'todo' && ts.source.includes('待补原文'), ts.source);
 const z = compute({ system: 'ziwei', datetime: '1955-01-02T00:00', gender: 'male', withInterpret: true });

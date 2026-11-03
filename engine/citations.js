@@ -590,6 +590,9 @@ export const CARD_CITATIONS = {
   'ziwei-feixing': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '宫干飞化属飞星派传法，非《全书》单条原文' },
   'ziwei-sanfang-fei': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '三方四正同飞属飞星派读法，未定位到单条原文' },
   'ziwei-jichuanji': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '忌转忌串连属飞星派读法，未定位到单条原文' },
+  // 2026-11-02 复核：维基文库本《紫微斗数全书》卷一是赋文与格局、卷二是安身命例，均无杂曜安星诀；
+  // 十二颗杂曜的诀文来自近代通行安星诀的多处并核，按口径只作通行说，不冒充《全书》原文。
+  'ziwei-zaoyao': { status: 'general', book: '通行安星诀（中州派讲义 / 安星口诀本）', chapter: '杂曜安星诀', reason: '诀文见多处近代通行辑本且逐颗互核一致，但未定位到古籍单条原文，故不署《全书》' },
   // ── 六爻：增删卜易（维基文库本，繁体照录）
   'liuyao-yongshen': { refs: ['zs-yongshen'] },
   'liuyao-fushen': { refs: ['zs-fushen'] },
@@ -619,6 +622,7 @@ export const CARD_CITATIONS = {
   'qimen-gan-shengke': { status: 'general', book: '奇门遁甲统宗', chapter: '卷十二·玄机赋（下）', reason: '底本有「奇仪与日干」生克条，未见单列「干与落宫」生克条；干宫取象为通行读法，不拿十神条文冒充' },
   'qimen-ganying': { status: 'general', book: '奇门十干应克 / 奇门遁甲元灵经', chapter: '通行 100 组表 / 卷二·天盘加地盘吉凶', reason: '100 组为通行表汇编，元灵经只存甲、乙、丙三组，非单条原文' },
   'tarot-orientation': { status: 'general', book: '韦特塔罗', chapter: '逆位读法', reason: '韦特体系无中文古籍原文，逆位读法属近代流派' },
+  'tarot-correspondence': { status: 'general', book: 'Liber 777 一脉的公开对应表', chapter: '小阿卡纳 2-10 的旬位与十源质', reason: '属近代西方神秘学对应表，无中文古籍原文；本插件按三处独立公开资料互核后取数字牌旬位，宫廷牌两派映射冲突故不配星座' },
 };
 
 export function allCitations() {

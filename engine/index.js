@@ -64,6 +64,7 @@ function requireGender(value, who = '') {
 const ZIWEI_SCHOOL_KEYS = [
   'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
   'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool',
+  'zuoyaoSchool',
 ];
 
 /** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
@@ -206,6 +207,7 @@ function ziweiText(r) {
       brightnessSchool: '亮度', gengYearSihua: '庚干四化', tianmaSchool: '天马', tiankongSchool: '天空',
       jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
       changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主',
+      zuoyaoSchool: '杂曜全表',
     };
     const diff = Object.entries(labels)
       .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])
@@ -397,7 +399,11 @@ function tarotText(r) {
     `【牌阵】${r.spread}${r.castAt ? `　抽牌于 ${r.castAt}` : ''}`,
   ];
   for (const c of r.cards) {
-    lines.push(`  ${c.position}：${c.name}（${c.orientation}）　${c.keywords.join('、')}`);
+    // 英文名与占星对应来自逐张库；宫廷牌没有占星，就顶出它的角色
+    const ast = c.astro ? `　${c.astro}` : (c.role ? `　${c.role}` : '');
+    const en = c.en ? ` [${c.en}]` : '';
+    lines.push(`  ${c.position}：${c.name}${en}（${c.orientation}）${ast}　${c.keywords.join('、')}`);
+    if (c.image) lines.push(`　　　　牌面：${c.image}`);
   }
   if (r.reading && r.reading.length) {
     lines.push('【解读】');
@@ -1541,7 +1547,10 @@ function zeriText(r) {
     ? `【择日·${r.meta.task}】候选 ${r.meta.days} 天：${r.meta.candidates.join('、')}${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`
     : `【择日·${r.meta.task}】${r.meta.startDate} 起 ${r.meta.days} 天${r.meta.shengXiao ? `　当事人属${r.meta.shengXiao}` : '（未给属相，未做冲煞排除）'}`;
   const top = r.days.slice().sort((a, b) => b.score - a.score).slice(0, cand ? 12 : 5)
-    .map((d) => `· ${d.date} ${d.weekday}　${d.verdict}（${d.score}分）　宜${d.yi.slice(0, 3).join('/')}　${d.reasons.join('；') || '无特别加减分'}`);
+    .map((d) => {
+      const g = d.grade ? `，卷十${d.grade.label}·${d.grade.decision}` : '';
+      return `· ${d.date} ${d.weekday}　${d.verdict}（${d.score}分${g}）　宜${d.yi.slice(0, 3).join('/')}　${d.reasons.join('；') || '无特别加减分'}`;
+    });
   const bestLine = cand
     ? (r.compare.best
       ? `这一组里最优：${r.compare.best.date}（${r.compare.best.score}分，${r.compare.best.verdict}）`
@@ -1557,6 +1566,10 @@ function zeriText(r) {
     cand ? '候选日逐日：' : '逐日排序：',
     ...top,
     ...(cand ? [`比较口径：${r.compare.note}`] : []),
+    `神煞依据：${r.shenshaRef.text}；起法 ${r.shenshaRef.volumes.join('、')}。未实现起法：${r.shenshaRef.unsupported.join('、')}（不计分，逐日 shensha.unsupported 列出）。`,
+    ...(r.shenshaRef.juan10
+      ? [`卷十依据：${r.shenshaRef.juan10.text}（${r.shenshaRef.juan10.corpusLines}）；${r.shenshaRef.juan10.thresholdsNote}`]
+      : []),
     `口径：${r.meta.scope}`,
   ].join('\n');
 }
@@ -1756,7 +1769,7 @@ function nameText(r) {
     : `【五格】${wu ? wu.reason : '未算'}`;
   const ph = r.phonetics;
   const phLine = ph && ph.available
-    ? `【音韵】${ph.chars.map((x) => `${x.char}${x.py}${x.tone}`).join(' ')}｜声调 ${ph.tonePattern}｜${ph.level}${ph.issues.length ? `：${ph.issues.map((i) => i.text).join('；')}` : ''}`
+    ? `【音韵】${ph.chars.map((x) => `${x.char}${x.py}${x.tone}`).join(' ')}｜声调 ${ph.tonePattern}｜${ph.level}${(ph.alt || []).length ? `｜姓又读 ${ph.alt.map((x) => `${x.char}${x.py}${x.tone}`).join('、')}` : ''}${ph.issues.length ? `：${ph.issues.map((i) => i.text).join('；')}` : ''}`
     : `【音韵】${ph ? ph.reason : '未算'}`;
   return [
     `【名字评估】${r.fullName}`,

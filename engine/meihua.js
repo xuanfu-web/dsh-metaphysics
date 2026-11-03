@@ -3,6 +3,7 @@ import { BRANCHES } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { fail } from './fail.js';
 import { hexagramFromBits } from './liuyao.js';
+import { jingText } from './yijing-text.js';
 
 // 先天八卦数：乾1 兑2 离3 震4 巽5 坎6 艮7 坤8
 const TRI_NAME = ['', '乾', '兑', '离', '震', '巽', '坎', '艮', '坤'];
@@ -109,6 +110,8 @@ export function buildMeihua(input = {}) {
     bian: { name: bian.name, upper: bian.upper, lower: bian.lower },
     cuo: { name: cuo.name },
     zong: { name: zong.name },
+    // 经文原文在排盘时算好挂上，解释层只摆位置（同 liuyao.js，见 engine/yijing-text.js）
+    jing: jingText({ benName: ben.name, huName: hu.name, bianName: bian.name, movingPositions: [moving] }),
     bodyUse: {
       body: { trigram: bodyTri, element: TRI_ELEMENT[bodyTri] },
       use: { trigram: useTri, element: TRI_ELEMENT[useTri] },

@@ -6,21 +6,34 @@
 import { buildBazi } from './bazi.js';
 import { assertCivil } from './validate.js';
 import {
-  READING, SURNAME_STROKES, SURNAME_READING, DOUBLE_SURNAMES, SHULI_81,
+  READING, SURNAME_STROKES, SURNAME_READING, SURNAME_ALT_READING, DOUBLE_SURNAMES, SHULI_81,
 } from './name-data.js';
+import { EXTRA_LIB } from './name-extra.js';
 
 const SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
 const KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
 const SHENG_BY = { 火: '木', 土: '火', 金: '土', 水: '金', 木: '水' }; // 生我者
 const KE_BY = { 土: '木', 水: '土', 火: '水', 金: '火', 木: '金' }; // 克我者
 const ALL = ['木', '火', '土', '金', '水'];
+// 常用名用字（覆盖男女常见名与近年的热门用字）：只用于给候选/替换字加权，
+// 不参与五行判定；字库扩大后靠它把生僻但笔画讨巧的字排到后面。
+const COMMON_NAME_CHARS = new Set([...(
+  '伟刚勇毅俊峰军强磊涛明超杰鹏华飞鑫波斌宇浩凯健帆帅旭宁龙林欢岩中志国建文博诚晨昊' +
+  '天阳亮睿泽轩然煜宸涵楷桐瑞铭航辰一诺思远嘉懿沐梓奕安可欣哲德智靖翊豪虎兵立力禹予' +
+  '以皓曦昱晟熠烨炜灿霖潇灏瀚渊澜澄澈润沛泓淇淳泰坤垚岳峻嵘峥岱崧翔翼羽麒麟骏骐骥腾' +
+  '龙凤鸣翰武捷喆亦逸宜' +
+  '芳娜秀英敏静丽艳娟霞桂华玲燕红梅兰珍淑云凤春丹萍慧惠巧美婷雪倩颖洁琳璐琪瑶妍彤' +
+  '伊仪芯萱玥晴雨梦诗悦怡欣佳嘉思语诺溪若芷芮茉柠萌蕾薇菲蕊菁茜莎莲荷菡芸雯霏霓露' +
+  '霜冰清沁汐湉淼泉温馨婉媛妮娅嫣妤姝姗娴嫦婵玫珂珮瑛璎璇瑾璟琦珊珠琬瑷瑢瑗瑀珺琇珞' +
+  '琴瑟念慈爱恬甜暖曦晞晗昕虹映岚'
+)]);
 
 /**
  * 自建常用字库：[字, 五行, 释义, 性别倾向('m'|'f'|'n')]
  * 五行按字义与偏旁通行归类；同一字各派归类偶有出入，这里取最常见的一种。
  * 未收录的字在评估时一律标「未收录」，不推断五行。
  */
-export const CHAR_LIB = [
+const BASE_CHAR_LIB = [
   // 木
   ['梓', '木', '梓树，喻成长、手艺与念乡', 'n'], ['桐', '木', '梧桐，高洁、引来凤凰', 'n'],
   ['楠', '木', '楠木，坚韧贵重', 'n'], ['楷', '木', '楷模，端正可法', 'm'],
@@ -231,6 +244,8 @@ export const CHAR_LIB = [
   ['沧', '水', '沧海，苍茫', 'm'], ['浦', '水', '浦，水滨', 'n'],
 ];
 
+export const CHAR_LIB = [...BASE_CHAR_LIB, ...EXTRA_LIB];
+
 const EL_INDEX = new Map();
 const EXTRA_INDEX = new Map();
 for (const [c, py, tone, st] of READING) {
@@ -381,12 +396,14 @@ const TONE_LABEL = { 1: '一', 2: '二', 3: '三', 4: '四' };
 /**
  * 音韵的机械检查：全名同调 / 相邻同声母 / 相邻同韵母 / 相邻同音（叠字）。
  * 只报可数的事实，不替人判断好不好听，也不查语义谐音（那需要词库，没做就说没做）。
+ * surnameLen：姓占几个字（复姓传 2），这些位置才允许查姓氏表读音——葛、拉 这类字不在起名用字库里。
  */
-export function phonetics(fullName) {
+export function phonetics(fullName, surnameLen = 1) {
   const chars = [...String(fullName || '')];
   if (chars.length < 2) return { available: false, reason: '至少两个字才谈得上音韵' };
+  const surLen = Math.min(Math.max(1, surnameLen | 0), chars.length);
   const items = chars.map((ch, i) => {
-    const r = readingOf(ch, i === 0 ? 'surname' : 'given');
+    const r = readingOf(ch, i < surLen ? 'surname' : 'given');
     return r ? { char: ch, py: r.py, tone: r.tone, ...splitPinyin(r.py) } : { char: ch, py: null, tone: null, ini: null, fin: null };
   });
   const missing = items.filter((x) => !x.py).map((x) => x.char);
@@ -414,11 +431,15 @@ export function phonetics(fullName) {
     issues.push({ type: 'initial', text: `三字同声母 ${[...inis][0]}，连着读容易黏在一起` });
   }
   const level = issues.length === 0 ? '顺口' : issues.length === 1 ? '略拗' : '拗口';
+  const alt = chars.slice(0, surLen)
+    .filter((ch) => SURNAME_READING[ch] && SURNAME_ALT_READING[ch])
+    .map((ch) => ({ char: ch, py: SURNAME_ALT_READING[ch][0], tone: SURNAME_ALT_READING[ch][1] }));
   return {
     available: true,
     chars: items.map((x) => ({ char: x.char, py: x.py, tone: x.tone })),
     tonePattern: items.map((x) => x.tone).join('-'),
     issues,
+    alt,
     level,
   };
 }
@@ -436,7 +457,8 @@ function suggestFor(element, genderPref, exclude, count = 3) {
   const pool = CHAR_LIB.filter((c) => c[1] === element && !exclude.has(c[0]));
   pool.sort((a, b) => {
     const fit = (x) => (x[3] === genderPref || x[3] === 'n' ? 1 : 0);
-    return fit(b) - fit(a);
+    const common = (x) => (COMMON_NAME_CHARS.has(x[0]) ? 1 : 0);
+    return (common(b) - common(a)) || (fit(b) - fit(a));
   });
   return pool.slice(0, count).map((c) => ({ char: c[0], element: c[1], meaning: c[2] }));
 }
@@ -538,7 +560,7 @@ export function assessName(input) {
 
   const ov = overridesOf(input);
   const wu = wuge(surname, given, ov);
-  const ph = phonetics(surname + given);
+  const ph = phonetics(surname + given, [...String(surname || '')].length);
 
   return {
     system: 'name',
@@ -613,6 +635,9 @@ export function generateNames(input) {
       // 性别倾向：优先本性别与中性，避免两个字都强烈偏另一性别
       const fit = (x) => (x[3] === gPref || x[3] === 'n' ? 1 : 0);
       const gScore = fit(a) + fit(b) - (a[3] !== gPref && a[3] !== 'n' && b[3] !== gPref && b[3] !== 'n' ? 2 : 0);
+      const ca = COMMON_NAME_CHARS.has(a[0]);
+      const cb = COMMON_NAME_CHARS.has(b[0]);
+      const commonScore = (ca && cb ? 2 : 0) + (ca || cb ? 1 : 0);
       const aSt = poolStroke.get(a[0]);
       const bSt = poolStroke.get(b[0]);
       let wuScore = 0;
@@ -630,6 +655,7 @@ export function generateNames(input) {
         ],
         elements: [a[1], b[1]],
         allFavorable: fav.list.includes(a[1]) && fav.list.includes(b[1]),
+        commonScore,
         genderScore: gScore,
         wugeScore: wuScore,
         order: (i * 7 + j * 13) % 9973, // 打散字库顺序，避免候选清一色都是前几个字
@@ -638,7 +664,8 @@ export function generateNames(input) {
   }
   const mixed = (c) => (c.elements[0] !== c.elements[1] ? 1 : 0); // 两字异行，比同气堆叠更有层次
   scored.sort((x, y) => (y.allFavorable - x.allFavorable) || (mixed(y) - mixed(x))
-    || (y.wugeScore - x.wugeScore) || (y.genderScore - x.genderScore) || (x.order - y.order));
+    || (y.commonScore - x.commonScore) || (y.wugeScore - x.wugeScore)
+    || (y.genderScore - x.genderScore) || (x.order - y.order));
   // 去重 + 用字轮换：先收「两个字都没出现过」的候选，再放宽——避免 20 个候选里 13 个都用同一个「梓」
   const out = [];
   const usedNames = new Set();
@@ -656,7 +683,7 @@ export function generateNames(input) {
     out.push({
       rank: out.length + 1, name: surname + cand.name, given: cand.name, chars: cand.chars,
       wuge: wuge(surname, cand.name, ov),
-      phonetics: phonetics(surname + cand.name),
+      phonetics: phonetics(surname + cand.name, [...String(surname || '')].length),
     });
     return true;
   };
@@ -682,7 +709,7 @@ export function generateNames(input) {
     candidates: out,
     notes: [
       `字库共 ${CHAR_LIB.length} 字，只在喜用五行（${fav.list.join('、')}）里选字；未覆盖的生僻好字可用 charElements 指定五行后评估。`,
-      '候选排序依次看：合喜用 → 两字异行 → 五格（人格/地格/总格/外格 吉多者先）→ 性别倾向 → 字库序，是排序不是「吉名」判定。',
+      '候选排序依次看：合喜用 → 两字异行 → 常用字优先 → 五格（人格/地格/总格/外格 吉多者先）→ 性别倾向 → 字库序，是排序不是「吉名」判定。',
       sReady
         ? '五格按康熙字典繁体笔画与通行本 81 数理算；姓的笔画取自内置姓氏表，没覆盖的姓可传 surnameStrokes 或 strokeOverrides。'
         : '姓的笔画不在内置姓氏表里，这一轮没按五格排序（不半算）；可传 surnameStrokes 或 strokeOverrides 后重算。',
