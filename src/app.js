@@ -4,7 +4,11 @@ function loadHistory() {
   try {
     const raw = window.localStorage && window.localStorage.getItem(HIST_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list.slice(0, 20) : [];
+    // 存储是外部输入：旧版本 / 手改 / 半截写入都可能留下不是对象的条目，
+    // 直接渲染会在 x.date.slice 上抛错，整个面板一起白掉。
+    return Array.isArray(list)
+      ? list.filter((x) => x && typeof x === 'object' && typeof x.kind === 'string').slice(0, 20)
+      : [];
   } catch (e) { return []; }
 }
 function saveHistory(list) {
@@ -14,8 +18,34 @@ function saveHistory(list) {
 }
 const sameEntry = (a, b) =>
   a.kind === b.kind && a.date === b.date && a.time === b.time && a.gender === b.gender
+  && !!a.hourUnknown === !!b.hourUnknown
+  // 真太阳时 / 晚子时也换一张盘：缺字段的旧条目按默认（都开）处理
+  && (a.trueSolar !== false) === (b.trueSolar !== false)
+  && (a.lateZi !== false) === (b.lateZi !== false)
   && a.address === b.address && a.lines === b.lines && a.question === b.question
-  && a.mhMode === b.mhMode && a.upper === b.upper && a.lower === b.lower;
+  && a.mhMode === b.mhMode && a.upper === b.upper && a.lower === b.lower
+  // 方向 / 张数 / 动爻也换一张结果：漏比就会把两条不同的盘当成重复条目顶掉
+  && a.direction === b.direction && a.count === b.count && a.changing === b.changing
+  // 各体系自己的参数（流派、事项、起卦方式等）各比各的；旧条目缺字段时两边都是 undefined
+  && (a.kind !== 'qimen' || (a.qimenRule === b.qimenRule && a.qLateZi === b.qLateZi))
+  && (a.kind !== 'zeri' || (a.task === b.task && a.days === b.days
+    && a.shengXiao === b.shengXiao && a.zCand === b.zCand))
+  && (a.kind !== 'xiaoliuren' || (a.xlrMode === b.xlrMode
+    && a.num1 === b.num1 && a.num2 === b.num2 && a.num3 === b.num3))
+  && (a.kind !== 'trend' || a.toAge === b.toAge)
+  && (a.kind !== 'fengshui' || (a.fsMode === b.fsMode && a.fsPeriod === b.fsPeriod
+    && a.sitting === b.sitting && a.facing === b.facing))
+  && (a.kind !== 'name' || (a.nnMode === b.nnMode && a.surname === b.surname
+    && a.givenName === b.givenName && a.limitN === b.limitN))
+  && (a.kind !== 'convert' || (a.convMode === b.convMode
+    && a.lunarDate === b.lunarDate && !!a.leapMonth === !!b.leapMonth))
+  // 合盘换了对方的生日就是另一张盘，不能被当成重复条目顶掉
+  && (a.kind !== 'hepan' || (a.hpChart === b.hpChart
+    && a.partnerDate === b.partnerDate && a.partnerTime === b.partnerTime
+    && a.partnerGender === b.partnerGender && a.partnerAddress === b.partnerAddress
+    && !!a.thirdOn === !!b.thirdOn
+    && a.p2Date === b.p2Date && a.p2Time === b.p2Time
+    && a.p2Gender === b.p2Gender && a.p2Address === b.p2Address));
 
 /** 历史条目的显示文案：一屏能看出是哪个盘 */
 function HISTORY_LABEL(kind, r) {
@@ -337,13 +367,9 @@ function DateInput(props) {
     placeholder: '年-月-日，如 1990-05-12',
     value: draft,
     onChange: (e) => {
-      const next = maskDateText(e.target.value);
-      setDraft(next);
-      const iso = normalizeDateText(next);
-      if (iso) {
-        last.current = iso;
-        props.onChange(iso);
-      }
+      // 打字过程中只改草稿，不往上报：中间态「1990-05-1」也能解析成 1990-05-01，
+      // 一旦上报，父组件回写 value 会把刚敲的「2」冲掉，最终日期静默变成 1 号。
+      setDraft(maskDateText(e.target.value));
     },
     onBlur: commit,
     onKeyDown: (e) => {
@@ -785,7 +811,8 @@ function App() {
       // 推导链只覆盖六爻 / 八字 / 紫微；其余体系没有中间层可摊
       args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei' || k === 'qimen' || k === 'daliuren';
       if (k !== 'tarot') args.datetime = datetime;
-      if (k === 'bazi' || k === 'ziwei' || k === 'hepan') {
+      // 人生K线也是出生盘：出生地决定真太阳时，落进时柱后会改变整条运程
+      if (k === 'bazi' || k === 'ziwei' || k === 'hepan' || k === 'trend') {
         // 合盘的主方同样需要性别与出生地：漏掉这两个字段会让合盘拿不到性别（引擎已改为必填），
         // 或者在没有真太阳时的情况下排出与单盘不一致的四柱
         args.gender = genderV;
@@ -802,7 +829,7 @@ function App() {
           if (stale()) return;
         }
         // 交叉验证只对八字/紫微有意义：引擎会用同一份出生信息再排另一套盘
-        if (k !== 'hepan') args.cross = crossOn;
+        if (k === 'bazi' || k === 'ziwei') args.cross = crossOn;
         args.lateZi = lateZiV;
         if (canUnknown && huV) args.hourUnknown = true;
       }
@@ -843,7 +870,8 @@ function App() {
         if (nums.length) args.answers = nums;
       }
       if (k === 'trend' && canUnknown && huV) args.hourUnknown = true;
-      if (k === 'trend') { args.gender = genderV; args.toAge = Number(toAge) || 60; args.trueSolar = tsV; args.lateZi = lateZiV; }
+      // 性别 / 出生地 / 两个开关已在上面的出生盘分支里给齐，这里只补 K 线自己的参数
+      if (k === 'trend') args.toAge = Number(toAge) || 60;
       if (k === 'fengshui') {
         args.action = fsMode;
         if (fsMode === 'natal') { args.gender = genderV; }
@@ -975,7 +1003,10 @@ function App() {
       }
       // timed：这次结果是否真的用到了「起卦时刻」（梅花数字起卦不用）
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
-      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff });
+      // 生时校正要按「这张盘用的出生信息」反推，而不是表单此刻的值：用户改完没重排时
+      // 两者可能不同，拿表单值算出来的候选时辰就贴到了另一张盘上。
+      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff,
+        gender: genderV, address: addressV, trueSolar: tsV, lateZi: lateZiV });
       // 首帧：等 React 提交并绘制两帧后再记总时长，避免把「还没画出来」算进渲染
       const draw = (n) => {
         if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => (n > 1 ? draw(n - 1) : commitPerf()));
@@ -990,12 +1021,38 @@ function App() {
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌；人格的输入是 24 个答案、没存进来，重放也没法还原。两者都不入历史
       if (k !== 'tarot' && k !== 'mbti') {
+        // 记「这次实际用的输入」，不是渲染闭包里的旧 state：切换体系 / 看示例 / 载入档案
+        // 都是在同一个 handler 里先 setState 再 run，闭包读到的还是上一张盘的日期。
+        const huV2 = !!(canUnknown && huV);
         const entry = {
-          kind: k, date, time, gender, address,
+          kind: k,
+          date: dt.date,
+          // 时辰未知时 dt.time 是 12:00 占位值，不能写进历史（会显示成假的正午出生）
+          time: huV2 ? '' : dt.time,
+          hourUnknown: huV2,
+          gender: genderV, address: addressV,
+          // 两个开关同样换个排法：不存下来，重放就只能跟着表单此刻的勾选走
+          trueSolar: tsV, lateZi: lateZiV,
           lines: k === 'liuyao' ? linesV : '',
           question: needAsk(k) ? questionV.trim() : '',
           direction, count,
-          mhMode, upper, lower, changing,
+          mhMode: mh, upper, lower, changing,
+          // 各体系自己的输入也是这张结果的输入：只存日期，重放就会按表单此刻的
+          // 流派 / 事项 / 起卦方式重算，看到的已不是当初那一张
+          ...(k === 'qimen' ? { qimenRule, qLateZi } : {}),
+          ...(k === 'zeri' ? { task, days, shengXiao, zCand } : {}),
+          ...(k === 'xiaoliuren' ? { xlrMode, num1, num2, num3 } : {}),
+          ...(k === 'trend' ? { toAge } : {}),
+          ...(k === 'fengshui' ? { fsMode, fsPeriod, sitting, facing } : {}),
+          ...(k === 'name' ? { nnMode, surname, givenName, limitN } : {}),
+          ...(k === 'convert' ? { convMode, lunarDate, leapMonth } : {}),
+          // 合盘的对方（及第三方）出生信息也是这张盘的输入：不存，重放就会拿表单里
+          // 此刻的对方生日重排，排出来的已不是当初看的那一张
+          ...(k === 'hepan' ? {
+            hpChart,
+            partnerDate: pDate, partnerTime: pTime, partnerGender: pGender, partnerAddress: pAddress,
+            thirdOn, p2Date, p2Time, p2Gender, p2Address,
+          } : {}),
           label: HISTORY_LABEL(k, r),
           at: Date.now(),
         };
@@ -1033,7 +1090,7 @@ function App() {
     }
     setTab(next);
     if (k === 'none') { run(next); return; } // 塔罗不看时间，直接抽牌（与 web-ui 一致）
-    const v = manual[k] || (k === 'cast' ? nowParts() : { date: SAMPLE.date, time: SAMPLE.time });
+    const v = manual[k] || (k === 'cast' || k === 'date' ? nowParts() : { date: SAMPLE.date, time: SAMPLE.time });
     setDate(v.date);
     setTime(v.time);
     run(next, v);
@@ -1361,18 +1418,21 @@ function App() {
   const runRectify = () => {
     if (!result || result.kind !== 'bazi') return;
     try {
-      const [y, m, d] = String(date).split('-').map(Number);
-      const [, mm] = String(time).split(':').map(Number);
+      // 用「这张盘自己的输入」反推，而不是表单此刻的值：改完日期没重排时两者不同，
+      // 按表单值算出来的候选时辰会贴到另一张盘上。
+      const at = result.at || { date, time };
+      const [y, m, d] = String(at.date).split('-').map(Number);
+      const [, mm] = String(at.time).split(':').map(Number);
       const events = rectEvents
         .filter((e) => Number(e.year))
         .map((e) => ({ year: Number(e.year), kind: e.kind }));
       setRectRes(Engine.rectifyBirth ? Engine.rectifyBirth({
         base: { year: y, month: m, day: d, minute: Number.isFinite(mm) ? mm : 0 },
-        gender,
+        gender: result.gender || gender,
         events,
-        lateZi,
-        trueSolar,
-        address: address.trim() || undefined,
+        lateZi: typeof result.lateZi === 'boolean' ? result.lateZi : lateZi,
+        trueSolar: typeof result.trueSolar === 'boolean' ? result.trueSolar : trueSolar,
+        address: String(result.address || '').trim() || undefined,
       }) : { error: '当前客户端未加载生时校正模块' });
     } catch (e) {
       setRectRes({ error: e && e.message ? e.message : String(e) });
@@ -1386,8 +1446,12 @@ function App() {
     setTab(x.kind);
     if (x.date) setDate(x.date);
     if (x.time) setTime(x.time);
+    setHourUnknown(!!x.hourUnknown);
     if (x.gender) setGender(x.gender);
     setAddress(x.address || '');
+    // 旧条目没这两个字段：保持表单现状，不能凭空把它们拨成 true
+    if (typeof x.trueSolar === 'boolean') setTrueSolar(x.trueSolar);
+    if (typeof x.lateZi === 'boolean') setLateZi(x.lateZi);
     setLines(x.lines || '');
     setQuestion(x.question || '');
     setDirection(x.direction || 'general');
@@ -1396,6 +1460,54 @@ function App() {
     setUpper(x.upper || '');
     setLower(x.lower || '');
     setChanging(x.changing || '');
+    // 各体系自己的参数：旧条目没存过就保持表单现状（不能凭空拨回默认值）
+    if (x.kind === 'qimen') {
+      if (typeof x.qimenRule === 'string') setQimenRule(x.qimenRule);
+      if (typeof x.qLateZi === 'string') setQLateZi(x.qLateZi);
+    }
+    if (x.kind === 'zeri') {
+      if (typeof x.task === 'string') setTask(x.task);
+      if (x.days != null) setDays(String(x.days));
+      if (typeof x.shengXiao === 'string') setShengXiao(x.shengXiao);
+      if (typeof x.zCand === 'string') setZCand(x.zCand);
+    }
+    if (x.kind === 'xiaoliuren') {
+      setXlrMode(x.xlrMode === 'number' ? 'number' : 'time');
+      if (x.num1 != null) setNum1(String(x.num1));
+      if (x.num2 != null) setNum2(String(x.num2));
+      if (x.num3 != null) setNum3(String(x.num3));
+    }
+    if (x.kind === 'trend' && x.toAge != null) setToAge(String(x.toAge));
+    if (x.kind === 'fengshui') {
+      if (typeof x.fsMode === 'string') setFsMode(x.fsMode);
+      if (x.fsPeriod != null) setFsPeriod(String(x.fsPeriod));
+      if (typeof x.sitting === 'string') setSitting(x.sitting);
+      if (typeof x.facing === 'string') setFacing(x.facing);
+    }
+    if (x.kind === 'name') {
+      if (typeof x.nnMode === 'string') setNnMode(x.nnMode);
+      if (typeof x.surname === 'string') setSurname(x.surname);
+      if (typeof x.givenName === 'string') setGivenName(x.givenName);
+      if (x.limitN != null) setLimitN(String(x.limitN));
+    }
+    if (x.kind === 'convert') {
+      if (typeof x.convMode === 'string') setConvMode(x.convMode);
+      if (typeof x.lunarDate === 'string') setLunarDate(x.lunarDate);
+      if (typeof x.leapMonth === 'boolean') setLeapMonth(x.leapMonth);
+    }
+    // 合盘：连对方 / 第三方一起还原，否则重排放的是表单里此刻的另一个人
+    if (x.kind === 'hepan') {
+      if (x.hpChart) setHpChart(x.hpChart);
+      if (typeof x.partnerDate === 'string') setPDate(x.partnerDate);
+      if (typeof x.partnerTime === 'string') setPTime(x.partnerTime);
+      if (typeof x.partnerGender === 'string') setPGender(x.partnerGender);
+      if (typeof x.partnerAddress === 'string') setPAddress(x.partnerAddress);
+      if (typeof x.thirdOn === 'boolean') setThirdOn(x.thirdOn);
+      if (typeof x.p2Date === 'string') setP2Date(x.p2Date);
+      if (typeof x.p2Time === 'string') setP2Time(x.p2Time);
+      if (typeof x.p2Gender === 'string') setP2Gender(x.p2Gender);
+      if (typeof x.p2Address === 'string') setP2Address(x.p2Address);
+    }
     setAskInvalid(false);
     setReplayArgs(x);
   };
@@ -1414,6 +1526,9 @@ function App() {
     setHourUnknown(!!p.hourUnknown);
     if (p.gender) setGender(p.gender);
     setAddress(p.address || '');
+    // 旧档案没存开关：按默认（都开）处理，不能沿用表单此刻的勾选
+    setTrueSolar(p.trueSolar !== false);
+    setLateZi(p.lateZi !== false);
   };
   const onProf = (e) => {
     const ev = PP.profEvent(e.target);
@@ -1434,8 +1549,12 @@ function App() {
       profFill(p);
       // 出生信息同时经 run 的覆盖参数直传：表单 state 要下一次渲染才生效，
       // 只靠 setState 会先按旧参数排一张、再按新参数排一张，用户看见闪一下别的盘。
+      // address 传字符串而不是 undefined：档案里没存出生地时要按「空」排，
+      // 不能因为 p.address 不存在就退回表单里上一张盘留下的地址。
       run(p.kind, { date: p.date, time: p.hourUnknown ? '12:00' : p.time }, undefined, {
-        gender: p.gender || undefined, address: p.address, hourUnknown: !!p.hourUnknown,
+        gender: p.gender || undefined, address: p.address || '', hourUnknown: !!p.hourUnknown,
+        // 档案里的两个开关同样要直传：只靠 setState 会先按旧勾选排一张、再闪成新的
+        trueSolar: p.trueSolar !== false, lateZi: p.lateZi !== false,
       });
       return;
     }
@@ -1460,7 +1579,7 @@ function App() {
     if (ev.action === 'put') {
       const wasEditing = profEditing;
       const entry = PP.profFromForm(
-        { kind: tab, date, time, hourUnknown, gender, address },
+        { kind: tab, date, time, hourUnknown, gender, address, trueSolar, lateZi },
         nameEl ? nameEl.value : PROF_NAME,
         profEditing || undefined,
       );
@@ -1872,12 +1991,13 @@ function App() {
         h('button', { className: 'mp-hist-clear', onClick: clearHist }, '清空')),
       h('div', { className: 'mp-hist-list' }, hist.map((x, i) =>
         h('button', {
-          key: i, className: 'mp-hist-item', title: `${x.date} ${x.time}`,
+          key: i, className: 'mp-hist-item',
+          title: `${String(x.date || '')} ${x.hourUnknown ? '时辰未知' : String(x.time || '')}`,
           onClick: () => replay(x),
         },
           h('b', null, (TABS.find((t) => t.k === x.kind) || {}).label || x.kind),
           h('span', null, x.label || '—'),
-          h('i', null, `${x.date.slice(5)} ${x.time}`))))) : null,
+          h('i', null, `${String(x.date || '').slice(5)} ${x.hourUnknown ? '时辰未知' : String(x.time || '')}`))))) : null,
 
     (timeKind === 'cast' && usesTimeInput) ? h('div', { key: 'auto', className: 'mp-auto' },
       // 文案分清「自动取的」和「你手动填的」，免得明明改过还说自动取

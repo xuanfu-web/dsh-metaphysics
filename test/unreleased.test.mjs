@@ -29,6 +29,9 @@ eq('null 返回空', JSON.stringify(unreleasedItems(null)), '[]');
 eq('CRLF 与 LF 同解', JSON.stringify(unreleasedItems(SAMPLE.replace(/\n/g, '\r\n'))), JSON.stringify(['甲事', '乙事']));
 eq('未发布段是最后一段时也收得住',
   JSON.stringify(unreleasedItems('## 未发布\n- **甲事**\n')), JSON.stringify(['甲事']));
+eq('版本段之后的旧「未发布」草稿不算当前清单',
+  JSON.stringify(unreleasedItems('## 0.9.0（已发布）\n\n- **已发**\n\n## 未发布\n\n- **旧草稿**\n')),
+  '[]');
 
 // ── 渲染 ──────────────────────────────────────────────────
 eq('空清单不渲染小牌（不留「另含 0 项」）', badgeHtml([]), '');

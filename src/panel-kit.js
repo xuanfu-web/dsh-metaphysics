@@ -3374,6 +3374,9 @@
       hourUnknown: hu,
       gender: String(src.gender || ''),
       address: String(src.address || ''),
+      // 两个开关也换一张盘：不随档案存，载入时就会跟着表单此刻的勾选排
+      trueSolar: src.trueSolar !== false,
+      lateZi: src.lateZi !== false,
       pinned: false,
       createdAt: Date.now(),
       lastUsedAt: 0,

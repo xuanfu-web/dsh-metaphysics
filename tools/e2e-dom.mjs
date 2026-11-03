@@ -64,6 +64,48 @@ await page.goto('file:///' + pageFile.replace(/\\/g, '/'), { waitUntil: 'load' }
 await page.waitForTimeout(400);
 ok(true, '页面加载完成');
 
+// ── 日期框：逐字输入不许吞位，隐藏字段不许拦不看日期的体系 ──────────
+// page.fill 一次写整串，测不到「敲到一半」：掩码把「1990-05-1」补成 1990-05-01 后，
+// 再敲 2 就变成 01 日的错盘。这里用真键盘一位一位打。
+{
+  await page.locator('#date').click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type('1990051', { delay: 20 });
+  const mid = await page.locator('#date').inputValue();
+  ok(mid === '1990-05-1', '单页 · 打到一半的「1990-05-1」原样保留', mid);
+  await page.keyboard.type('2', { delay: 20 });
+  const full = await page.locator('#date').inputValue();
+  ok(full === '1990-05-12', '单页 · 接着敲 2 补成 12 日（不是 1 日）', full);
+
+  // 塔罗不看日期：日期框清空也不该拿「请填写公历日期」拦住抽牌
+  await page.locator('#date').fill('');
+  await openTab('tarot');
+  await page.waitForTimeout(300);
+  await page.locator('#question').fill('这次跳槽能不能成');
+  await page.locator('#go').click();
+  await page.waitForTimeout(800);
+  const tarotOut = await page.evaluate(() => {
+    const out = document.getElementById('out');
+    const err = out && out.querySelector('.err');
+    return { err: err ? err.textContent.trim() : '', len: out ? out.innerHTML.length : 0 };
+  });
+  ok(!/公历日期/.test(tarotOut.err) && tarotOut.len > 50, '单页 · 日期空着也能抽塔罗（不拿隐藏字段拦人）',
+    tarotOut.err || `${tarotOut.len} 字`);
+
+  // 回到八字把日期补好，后面各 tab 沿用
+  await openTab('bazi');
+  await page.locator('#date').fill('1990-05-12');
+  await page.locator('#time').fill('14:30');
+  await page.locator('#go').click();
+  await page.waitForSelector('#out .pp-bz', { timeout: 8000 }).catch(() => {});
+  const baziErr = await page.evaluate(() => {
+    const e = document.querySelector('#out .err');
+    return e ? e.textContent.trim() : '';
+  });
+  ok(!baziErr, '单页 · 填好日期后八字正常出盘', baziErr.slice(0, 40));
+}
+
 /** 点某个 tab：平铺/分组两种视图里都找得到 */
 async function openTab(k) {
   // 平铺视图用 .tab，分组视图用 .tool；默认是分组视图，所以不能只找 .tab
@@ -161,7 +203,62 @@ for (const t of TABS) {
       ok(!/12:00/.test(txt), '八字 · 三柱结果不含 12:00');
       await box.uncheck({ force: true });
     }
+
+    // 生时校正的候选时辰属于「这张盘」：换一张盘必须清空，不能把旧候选贴上去
+    await page.locator('#go').click({ force: true });
+    await page.waitForSelector('#out .pp-bz', { timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    const rectBtn = page.locator('[data-rectify]');
+    ok((await rectBtn.count()) === 1, '八字 · 有「计算候选时辰」按钮');
+    if (await rectBtn.count()) {
+      await rectBtn.click();
+      await page.waitForTimeout(500);
+      const first = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
+      ok(first.length > 20, '八字 · 生时校正给出候选时辰', first.slice(0, 40));
+      await page.locator('#date').fill('1985-06-15');
+      await page.locator('#go').click({ force: true });
+      await page.waitForTimeout(800);
+      const after = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
+      ok(after === '', '八字 · 换一张盘后旧的候选时辰不残留', after.slice(0, 40));
+      await page.locator('#date').fill('1990-05-12');
+
+      // 出生地也是这张盘的输入：排完之后只改表单、不重排，候选时辰不能跟着换
+      await page.locator('#addr').fill('');
+      await page.locator('#go').click({ force: true });
+      await page.waitForSelector('#out .pp-bz', { timeout: 8000 }).catch(() => {});
+      await page.waitForTimeout(300);
+      await rectBtn.click();
+      await page.waitForTimeout(500);
+      const beforeAddr = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
+      await page.locator('#addr').fill('河北石家庄');
+      await rectBtn.click();
+      await page.waitForTimeout(500);
+      const afterAddr = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
+      ok(beforeAddr.length > 20 && afterAddr === beforeAddr,
+        '八字 · 改出生地不重排时候选时辰仍按这张盘的输入', afterAddr.slice(0, 40));
+      await page.locator('#addr').fill('');
+    }
   }
+}
+
+// 人生K线也是出生盘：出生地要进真太阳时，不能只对八字生效
+{
+  ok(await openTab('trend'), '人生K线 · 能切到 tab');
+  await page.waitForTimeout(400);
+  await page.locator('#date').fill('1991-08-08');
+  await page.locator('#time').fill('08:10');
+  await page.locator('#addr').fill('');
+  await page.locator('#go').click({ force: true });
+  await page.waitForTimeout(1200);
+  const kNoAddr = await page.evaluate(() => (document.getElementById('out') || {}).innerText || '');
+  await page.locator('#addr').fill('河北石家庄');
+  await page.locator('#go').click({ force: true });
+  await page.waitForTimeout(1200);
+  const kAddr = await page.evaluate(() => (document.getElementById('out') || {}).innerText || '');
+  ok(kNoAddr.length > 200 && kAddr !== kNoAddr,
+    '人生K线 · 出生地进入真太阳时（同一时刻换地址结果不同）', kAddr.slice(0, 40));
+  await page.locator('#addr').fill('');
+  ok(await openTab('bazi'), '单页 · 能切回八字');
 }
 
 // 深链：直接带 #mp=... 打开，落地应自动切 tab 并出结果
@@ -379,6 +476,32 @@ for (const t of TABS) {
   await p5.waitForTimeout(250);
   ok((await p5.locator('#profwrap .mp-prof-card').count()) === 0, '单页 · 第二次点才真删');
   ok((await bz()) === saved, '单页 · 删档案不动已经排出来的盘');
+
+  // 档案没存出生地：载入 / 改名都得清掉表单里上一张盘的地址，否则真太阳时按别人的地方算
+  await p5.fill('#date', '1975-07-07');
+  await p5.fill('#time', '09:09');
+  await p5.fill('#addr', '');
+  await p5.locator('#go').click();
+  await p5.waitForTimeout(1200);
+  await p5.fill('#profwrap .mp-prof-name', '无址阿测');
+  await p5.locator('#profwrap button[data-mp-prof="put"]').click();
+  await p5.waitForTimeout(300);
+  const noAddrCard = p5.locator('#profwrap .mp-prof-card').filter({ hasText: '无址阿测' });
+  ok((await noAddrCard.count()) === 1, '单页 · 没填出生地也能存档案');
+  const storedNoAddr = await p5.evaluate(() => {
+    try { return (JSON.parse(localStorage.getItem('dsh-metaphysics/profiles-v1') || '[]')[0] || {}).address; } catch (e) { return 'x'; }
+  });
+  ok(storedNoAddr === '', '单页 · 空出生地按空字符串存', String(storedNoAddr));
+  await p5.fill('#addr', '四川成都');
+  await noAddrCard.locator('.mp-prof-use').click();
+  await p5.waitForTimeout(1200);
+  const addrAfterUse = await p5.inputValue('#addr');
+  ok(addrAfterUse === '', '单页 · 载入无出生地档案会清掉残留地址', addrAfterUse);
+  await p5.fill('#addr', '四川成都');
+  await noAddrCard.locator('[data-mp-prof="edit"]').dispatchEvent('click');
+  await p5.waitForTimeout(200);
+  const addrAfterEdit = await p5.inputValue('#addr');
+  ok(addrAfterEdit === '', '单页 · 改名读回时也清掉残留地址', addrAfterEdit);
 
   // 旧版本 / 手改存储留下的「有日期没时刻」卡：不能拿表单里现成的 14:30 顶上排成另一个人
   await p5.evaluate(() => {

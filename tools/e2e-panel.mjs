@@ -243,6 +243,219 @@ const hist = await page.evaluate(() => {
 ok(Array.isArray(hist) && hist.length >= 1, '排过的盘进了本地历史', JSON.stringify(hist && hist.slice(0, 1)).slice(0, 80));
 ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近用过」出现该条目');
 
+// ── 五·五、日期框逐字输入：中间态不能被父组件回写截断 ──────────────
+// 掩码把「1990-05-1」解析成合法日期后，若边敲边 onChange，父组件回写 value 会把
+// 刚敲的 2 冲掉，最终静默变成 1 日。page.fill 一次写整串测不出来，这里用真键盘。
+{
+  const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
+  const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
+  await timeInput.fill('14:30');
+  await dateInput.click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type('1990051', { delay: 40 });
+  const mid = await dateInput.inputValue();
+  ok(mid === '1990-05-1', '面板 · 打到一半的「1990-05-1」原样保留', mid);
+  await page.keyboard.type('2', { delay: 40 });
+  const full = await dateInput.inputValue();
+  ok(full === '1990-05-12', '面板 · 接着敲 2 补成 12 日（不是 1 日）', full);
+
+  // 不先失焦、直接点排盘：失焦提交要先于点击生效，排的必须是 12 日那张
+  await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+  await page.waitForSelector('#main .pp-bz', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(500);
+  const typedHist = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]')[0] || null; } catch (e) { return null; }
+  });
+  ok(typedHist && typedHist.date === '1990-05-12', '面板 · 直接点排盘用的是刚敲的 12 日', JSON.stringify(typedHist && typedHist.date));
+}
+
+// ── 五·六、看示例：历史条目记的是示例盘自己的参数 ──────────────────
+// 切体系 / 看示例都是「同一个 handler 里先 setState 再 run」，历史若读渲染闭包里的
+// 旧 state，就会把上一张盘的性别、出生地记到示例盘名下，点回来排成另一个人。
+{
+  // 先把表单改成明显的另一组值，确保示例盘的参数与它不同
+  const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
+  const addrInput = page.locator('#main label.mp-field:has(span.mp-lbl:text-matches("出生地")) input');
+  const genderSel = page.locator('#main label.mp-field:has(span:text-is("性别")) select');
+  await dateInput.fill('1977-02-03');
+  await genderSel.selectOption('female');
+  await addrInput.fill('广东广州');
+  await page.locator('button.mp-btn').filter({ hasText: '看示例' }).first().click();
+  await page.waitForSelector('#main .pp-bz', { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(700);
+  const sampleHist = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]')[0] || null; } catch (e) { return null; }
+  });
+  ok(sampleHist && sampleHist.date === '1990-05-12' && sampleHist.gender === 'male'
+    && sampleHist.address === '河北石家庄', '面板 · 示例盘的历史条目是示例盘自己的参数',
+  JSON.stringify(sampleHist && { d: sampleHist.date, g: sampleHist.gender, a: sampleHist.address }));
+}
+
+// ── 五·七、合盘重放：对方生日是这张盘的输入 ──────────────────────
+// 历史只记主方生日时，改过对方资料再点旧条目，会拿表单里此刻的对方重排——
+// 排出来的已不是当初看的那张盘，而且两条不同对方的盘还会被当成重复条目顶掉。
+{
+  await page.locator('.mp-tool[data-tab="hepan"]').click();
+  await page.waitForTimeout(700);
+  const pDateInput = page.locator('#main label.mp-field:has(span:text-is("对方出生日期")) input');
+  const pTimeInput = page.locator('#main label.mp-field:has(span:text-is("对方出生时刻")) input');
+  const hpRun = async () => {
+    // 合盘的主按钮写的是「合盘」，不是「排盘」
+    await page.locator('button.mp-btn').filter({ hasText: /排盘|合盘/ }).first().click();
+    await page.waitForTimeout(1300);
+    return page.evaluate(() => {
+      try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]')[0] || null; } catch (e) { return null; }
+    });
+  };
+  await pDateInput.fill('1993-03-08');
+  await pTimeInput.fill('09:15');
+  const first = await hpRun();
+  ok(first && first.kind === 'hepan' && first.partnerDate === '1993-03-08' && first.partnerTime === '09:15',
+    '面板 · 合盘历史记住对方生日与时刻', JSON.stringify(first && { d: first.partnerDate, t: first.partnerTime }));
+  // 换成另一个对方再排：两条盘输入不同，不应被去重合并
+  await pDateInput.fill('1988-11-20');
+  await pTimeInput.fill('20:30');
+  const second = await hpRun();
+  ok(second && second.partnerDate === '1988-11-20', '面板 · 换对方后记下新的那张', JSON.stringify(second && second.partnerDate));
+  const histNow = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]'); } catch (e) { return []; }
+  });
+  const hpEntries = histNow.filter((x) => x && x.kind === 'hepan');
+  ok(hpEntries.some((x) => x.partnerDate === '1993-03-08') && hpEntries.some((x) => x.partnerDate === '1988-11-20'),
+    '面板 · 不同对方的合盘各占一条历史（未互相顶掉）', `${hpEntries.length} 条合盘`);
+  // 点回第一张：表单里的对方资料必须跟着还原，重排的才是当初那张盘
+  const backIdx = histNow.findIndex((x) => x && x.kind === 'hepan' && x.partnerDate === '1993-03-08');
+  await page.locator('.mp-hist-item').nth(backIdx).click();
+  await page.waitForTimeout(1300);
+  const back = {
+    date: await pDateInput.inputValue().catch(() => ''),
+    time: await pTimeInput.inputValue().catch(() => ''),
+  };
+  ok(back.date === '1993-03-08' && back.time === '09:15', '面板 · 点历史重放会还原对方生日与时刻', JSON.stringify(back));
+  // 回到八字 tab，后面的用例按八字面板继续
+  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await page.waitForTimeout(600);
+}
+
+// ── 五·八、真太阳时 / 晚子时：开关也是这张盘的输入 ─────────────────
+// 历史若不记这两个开关，重放时就跟着表单此刻的勾选走，同一张盘换个排法。
+{
+  const tsBox = page.locator('#main .mp-checks label').filter({ hasText: '真太阳时' }).locator('input');
+  const lateBox = page.locator('#main .mp-checks label').filter({ hasText: '晚子时换日' }).locator('input');
+  ok((await tsBox.count()) === 1 && (await lateBox.count()) === 1, '面板 · 有真太阳时与晚子时开关');
+  const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
+  const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
+  await dateInput.fill('1991-08-08');
+  // 选在时辰边界上：关掉真太阳时是辰时，开着（河北经度偏西约 22 分钟）退回卯时
+  await timeInput.fill('08:10');
+  await tsBox.uncheck();
+  await lateBox.uncheck();
+  await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+  await page.waitForTimeout(1300);
+  const offEntry = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]')[0] || null; } catch (e) { return null; }
+  });
+  ok(offEntry && offEntry.trueSolar === false && offEntry.lateZi === false,
+    '面板 · 历史条目记下真太阳时与晚子时', JSON.stringify(offEntry && { ts: offEntry.trueSolar, lz: offEntry.lateZi }));
+  const chartOff = await page.evaluate(() => {
+    const t = document.querySelector('#main .pp-bz');
+    return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
+  });
+  // 表单拨回默认（两个都开），再点历史：重排必须按条目当时关着的算
+  await tsBox.check();
+  await lateBox.check();
+  await page.locator('.mp-hist-item').first().click();
+  await page.waitForTimeout(1300);
+  ok(!(await tsBox.isChecked()) && !(await lateBox.isChecked()), '面板 · 点历史重放会还原两个开关');
+  const chartBack = await page.evaluate(() => {
+    const t = document.querySelector('#main .pp-bz');
+    return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
+  });
+  ok(chartOff && chartBack === chartOff, '面板 · 重放回来的是同一张盘', chartBack.slice(0, 32));
+  await tsBox.check();
+  await lateBox.check();
+}
+
+// ── 五·九、人生K线：出生地同样进真太阳时 ──────────────────────────
+// K 线页是出生盘，表单给了出生地与真太阳时开关；只对八字传地址会让同一份输入
+// 在两张表里算出不同的时柱。
+{
+  await page.locator('.mp-tool[data-tab="trend"]').click();
+  await page.waitForTimeout(700);
+  const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
+  const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
+  const addrInput = page.locator('#main label.mp-field:has(span.mp-lbl:text-matches("出生地")) input');
+  await dateInput.fill('1991-08-08');
+  await timeInput.fill('08:10');
+  await addrInput.fill('');
+  // 人生K线的主按钮写的是「起卦」
+  await page.locator('#main .mp-actions button.mp-btn').last().click();
+  await page.waitForTimeout(1600);
+  const klNo = await text('.mp-kline');
+  await addrInput.fill('河北石家庄');
+  await page.locator('#main .mp-actions button.mp-btn').last().click();
+  await page.waitForTimeout(1600);
+  const klYes = await text('.mp-kline');
+  ok(klNo.length > 100 && klYes !== klNo, '面板 · 人生K线也把出生地换算成真太阳时', klYes.slice(0, 40));
+  await addrInput.fill('');
+  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await page.waitForTimeout(500);
+}
+
+// ── 五·十、择日：所办事项也是这张盘的输入，历史按事项分开记 ──────────
+// 只看日期会把「开业」和「嫁娶」两种择日当成同一条历史：点旧的回来，
+// 下拉还停在后一次的事项上，排出来的已是另一件事。
+{
+  await page.locator('.mp-tool[data-tab="zeri"]').click();
+  await page.waitForTimeout(600);
+  const dateInput = page.locator('#main label.mp-field:has(span:text-is("日期（公历）")) input');
+  const taskSel = page.locator('#main label.mp-field:has(span:text-is("所办事项")) select');
+  const candInput = page.locator('#main label.mp-field:has(span:has-text("候选日")) input');
+  // 填候选日才走并排表（区间模式是文字版）：候选日本身也是这张盘的输入
+  const zeriRun = async () => {
+    await page.locator('#main .mp-actions button.mp-btn').last().click();
+    await page.waitForTimeout(1300);
+    return page.evaluate(() => {
+      const t = document.querySelector('#main .mp-zr');
+      return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
+    });
+  };
+  await dateInput.fill('2026-12-01');
+  await candInput.fill('2026-12-01, 2026-12-08, 2026-12-15');
+  await taskSel.selectOption('开业');
+  const kaiye = await zeriRun();
+  ok(kaiye.length > 100 && kaiye.includes('开业'), '面板 · 择日按所办事项出结果', kaiye.slice(0, 40));
+  const firstZeri = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]')[0] || null; } catch (e) { return null; }
+  });
+  ok(firstZeri && firstZeri.kind === 'zeri' && firstZeri.task === '开业',
+    '面板 · 择日历史记住所办事项', JSON.stringify(firstZeri && { k: firstZeri.kind, t: firstZeri.task }));
+  await taskSel.selectOption('嫁娶');
+  const jiaqu = await zeriRun();
+  ok(jiaqu !== kaiye, '面板 · 换事项后结果不同', jiaqu.slice(0, 40));
+  const zeriHist = await page.evaluate(() => {
+    try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]'); } catch (e) { return []; }
+  });
+  const zeriEntries = zeriHist.filter((x) => x && x.kind === 'zeri');
+  ok(zeriEntries.some((x) => x.task === '开业') && zeriEntries.some((x) => x.task === '嫁娶'),
+    '面板 · 不同事项各占一条择日历史（未互相顶掉）', `${zeriEntries.length} 条择日`);
+  // 点回「开业」那条：下拉与结果都要回到当初那张
+  const backIdx = zeriHist.findIndex((x) => x && x.kind === 'zeri' && x.task === '开业');
+  await page.locator('.mp-hist-item').nth(backIdx).click();
+  await page.waitForTimeout(1300);
+  const taskBack = await taskSel.inputValue().catch(() => '');
+  const zeriBack = await page.evaluate(() => {
+    const t = document.querySelector('#main .mp-zr');
+    return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
+  });
+  ok(taskBack === '开业', '面板 · 点历史重放还原所办事项', taskBack);
+  ok(zeriBack === kaiye, '面板 · 重放回来的是同一张择日盘', zeriBack.slice(0, 40));
+  // 回到八字 tab，后面的用例按八字面板继续
+  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await page.waitForTimeout(500);
+}
+
 // ── 六、面板独有：时辰未知的勾选联动 ────────────────────────────
 const huLabel = page.locator('label.mp-chk').filter({ hasText: '时辰未知' });
 ok((await huLabel.count()) === 1, '八字面板出现「时辰未知」勾选（单页是另一套控件）');

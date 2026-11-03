@@ -51,6 +51,37 @@ ok('历史写入 localStorage', /localStorage\.setItem\(HIST_KEY/.test(app));
 ok('历史上限 20 条', /slice\(0, 20\)/.test(app));
 ok('历史支持重放', /const replay = \(x\)/.test(app) && /setReplayArgs\(x\)/.test(app));
 ok('历史条目去重', /sameEntry\(x, entry\)/.test(app));
+ok('合盘历史条目带对方出生信息', /partnerDate: pDate, partnerTime: pTime/.test(app) && /thirdOn, p2Date, p2Time/.test(app));
+ok('合盘去重会比对对方信息', /a\.partnerDate === b\.partnerDate/.test(app) && /a\.p2Date === b\.p2Date/.test(app));
+ok('合盘重放还原对方信息', /if \(x\.kind === 'hepan'\)/.test(app) && /setPDate\(x\.partnerDate\)/.test(app)
+  && /setP2Address\(x\.p2Address\)/.test(app));
+ok('历史条目记下真太阳时与晚子时', /trueSolar: tsV, lateZi: lateZiV/.test(app));
+ok('历史去重认出两个开关（旧条目按默认都开）', /\(a\.trueSolar !== false\) === \(b\.trueSolar !== false\)/.test(app)
+  && /\(a\.lateZi !== false\) === \(b\.lateZi !== false\)/.test(app));
+ok('重放恢复真太阳时与晚子时', /setTrueSolar\(x\.trueSolar\)/.test(app) && /setLateZi\(x\.lateZi\)/.test(app));
+ok('历史条目记下各体系自己的参数', /k === 'zeri' \? \{ task, days, shengXiao, zCand \}/.test(app)
+  && /k === 'name' \? \{ nnMode, surname, givenName, limitN \}/.test(app)
+  && /k === 'qimen' \? \{ qimenRule, qLateZi \}/.test(app)
+  && /k === 'xiaoliuren' \? \{ xlrMode, num1, num2, num3 \}/.test(app)
+  && /k === 'fengshui' \? \{ fsMode, fsPeriod, sitting, facing \}/.test(app)
+  && /k === 'convert' \? \{ convMode, lunarDate, leapMonth \}/.test(app)
+  && /k === 'trend' \? \{ toAge \}/.test(app));
+ok('历史去重比对方向 / 张数 / 动爻', /a\.direction === b\.direction && a\.count === b\.count && a\.changing === b\.changing/.test(app));
+ok('历史去重比对各体系参数', /a\.kind !== 'zeri' \|\| \(a\.task === b\.task/.test(app)
+  && /a\.kind !== 'name' \|\| \(a\.nnMode === b\.nnMode/.test(app)
+  && /a\.kind !== 'qimen' \|\| \(a\.qimenRule === b\.qimenRule/.test(app));
+ok('重放恢复各体系参数', /if \(x\.kind === 'zeri'\)/.test(app) && /setTask\(x\.task\)/.test(app)
+  && /if \(x\.kind === 'name'\)/.test(app) && /setNnMode\(x\.nnMode\)/.test(app)
+  && /if \(x\.kind === 'xiaoliuren'\)/.test(app) && /setXlrMode\(x\.xlrMode === 'number'/.test(app));
+// 档案：两个开关随人存、随人回填（旧档案缺字段按默认都开）
+const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
+const ui = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
+ok('档案层存下真太阳时与晚子时', /trueSolar: src\.trueSolar !== false/.test(kit) && /lateZi: src\.lateZi !== false/.test(kit));
+ok('面板存档案时带上两个开关', /\{ kind: tab, date, time, hourUnknown, gender, address, trueSolar, lateZi \}/.test(app));
+ok('面板载入档案按档案里的开关排', /setTrueSolar\(p\.trueSolar !== false\)/.test(app)
+  && /trueSolar: p\.trueSolar !== false, lateZi: p\.lateZi !== false/.test(app));
+ok('独立页存档案与载入都恢复两个开关', /trueSolar: !\(tsBox && !tsBox\.checked\)/.test(ui)
+  && /tsBox\.checked = p\.trueSolar !== false/.test(ui) && /lzBox\.checked = p\.lateZi !== false/.test(ui));
 ok('塔罗不入历史（随机抽牌不可复现）', /k !== 'tarot'/.test(app));
 ok('历史可清空', /const clearHist = /.test(app) && /saveHistory\(\[\]\)/.test(app));
 

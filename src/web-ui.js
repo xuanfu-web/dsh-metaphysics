@@ -203,10 +203,16 @@
     const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
     for (const pair of puts) {
       const node = el(pair[0]);
-      if (node && pair[1]) node.value = pair[1];
+      // 空出生地也要写回去：留着上一个地址，这张盘的真太阳时就会按别人的地方算
+      if (node) node.value = pair[1] || '';
     }
     const hu = el('hourunknown');
     if (hu) hu.checked = !!p.hourUnknown;
+    // 旧档案没存开关：按默认（都开）处理，别沿用表单此刻的勾选
+    const tsBox = el('ts');
+    if (tsBox) tsBox.checked = p.trueSolar !== false;
+    const lzBox = el('latezi');
+    if (lzBox) lzBox.checked = p.lateZi !== false;
     // 把这次回填当成「用户填的」：否则切走再切回出生类体系时会被上一次的自动值顶掉
     onManualEdit();
     run();
@@ -219,9 +225,14 @@
     const hu = el('hourunknown');
     const box = el('profwrap');
     const nameEl = box ? box.querySelector('.mp-prof-name') : null;
+    const tsBox = el('ts');
+    const lzBox = el('latezi');
     return PP.profFromForm({
       kind: tab, date: v('date'), time: v('time'), gender: v('gender'), address: v('addr'),
       hourUnknown: !!(hu && hu.checked),
+      // 两个开关决定时柱：随档案存下来，载入才能回到当初那张盘
+      trueSolar: !(tsBox && !tsBox.checked),
+      lateZi: !(lzBox && !lzBox.checked),
     }, nameEl ? nameEl.value : '', profEditing || undefined);
   }
 
@@ -252,7 +263,8 @@
       const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
       for (const pair of puts) {
         const node = el(pair[0]);
-        if (node && pair[1]) node.value = pair[1];
+        // 同上：这张档案没存地址就把框清空，别让「更新」把别人的地址存进来
+        if (node) node.value = pair[1] || '';
       }
       const hu = el('hourunknown');
       if (hu) hu.checked = !!p.hourUnknown;
@@ -404,9 +416,10 @@
     fillDateTime(manual[k] || defaultFor(k));
   }
 
-  /** 当前 tab 是否真的用到日期/时刻（梅花「数字起卦」不用） */
+  /** 当前 tab 是否真的用到日期/时刻（塔罗、人格不看时间；梅花「数字起卦」也不用）
+   *  与 syncMhMode 里的显隐共用这一处判断：字段既然藏起来了，run() 就不能拿它拦人。 */
   function usesTimeInput() {
-    return !(tab === 'meihua' && mhMode === 'number');
+    return tab !== 'tarot' && tab !== 'mbti' && !(tab === 'meihua' && mhMode === 'number');
   }
 
   /** 用户手动改了日期或时刻 */
@@ -693,11 +706,11 @@
           day: Number(last.date.slice(8, 10)),
           minute: Number(last.time.slice(3, 5)) || 0,
         },
-        gender: el('gender').value,
+        gender: last.gender,
         events,
-        lateZi: el('latezi') ? el('latezi').checked : true,
-        trueSolar: el('ts') ? el('ts').checked : true,
-        address: el('addr') && el('addr').value.trim() ? el('addr').value.trim() : undefined,
+        lateZi: last.lateZi !== false,
+        trueSolar: last.trueSolar !== false,
+        address: last.address || undefined,
       }) : { error: '当前页面未加载生时校正模块' };
     } catch (e) { rectOut = { error: e && e.message ? e.message : String(e) }; }
     const out = el('rectout');
@@ -801,7 +814,8 @@
     // 推导链只覆盖六爻 / 八字 / 紫微
     args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
-    if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan') {
+    // 人生K线也是出生盘：出生地决定真太阳时，落进时柱后会改变整条运程
+    if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan' || tab === 'trend') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
       args.gender = el('gender').value;
       if (hourUnknown) args.hourUnknown = true;
@@ -883,8 +897,9 @@
         args.num3 = Number(el('num3').value) || undefined;
       } else {
         args.date = date;
-        const hh = Number(String(time).split(':')[0]);
-        args.hour = Number.isFinite(hh) ? hh : 12;
+        // Number('') 是 0：时刻框被清空时不能悄悄按子时起课，退回正午
+        const hm = /^(\d{1,2}):/.exec(String(time));
+        args.hour = hm ? Number(hm[1]) : 12;
       }
     }
     if (tab === 'convert') {
@@ -903,7 +918,8 @@
       if (nums.length) args.answers = nums;
     }
     if (tab === 'trend' && hourUnknown) args.hourUnknown = true;
-    if (tab === 'trend') { args.gender = el('gender').value; args.toAge = Number(el('toage').value) || 60; args.trueSolar = el('ts').checked; args.lateZi = el('latezi') ? el('latezi').checked : true; }
+    // 性别 / 出生地 / 两个开关已在上面的出生盘分支里给齐，这里只补 K 线自己的参数
+    if (tab === 'trend') args.toAge = Number(el('toage').value) || 60;
     if (tab === 'fengshui') {
       args.action = fsMode;
       if (fsMode === 'natal') { args.gender = el('gender').value; }
@@ -989,7 +1005,16 @@
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff };
+      // 新盘就是新的一轮：上一次的自评、贴合度、候选时辰不能跟着贴到这张盘上
+      // （它们只在模块里存着，重绘不会自己清）。
+      pastMarks = {}; pastFit = null; rectOut = null;
+      // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
+      // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff,
+        gender: args.gender || el('gender').value,
+        address: typeof args.address === 'string' ? args.address : '',
+        trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,
+        lateZi: typeof args.lateZi === 'boolean' ? args.lateZi : true };
       const paintStart = mpNow();
       paint();
       // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
@@ -1112,7 +1137,7 @@
     const mhNum = tab === 'meihua' && mhMode === 'number';
     el('mh-num').style.display = mhNum ? '' : 'none';
     // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导；人格问卷同样与日期无关
-    const showDT = tab !== 'tarot' && tab !== 'mbti' && !mhNum;
+    const showDT = usesTimeInput();
     el('for-date').style.display = showDT ? '' : 'none';
     // 「时辰未知」只对八字与人生K线开放：紫微/合盘没有时支就没有盘，不提供这个勾选
     const canUnknown = tab === 'bazi' || tab === 'trend';

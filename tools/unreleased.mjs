@@ -5,6 +5,7 @@ import fs from 'node:fs';
 
 const SECTION = /^##\s*未发布\s*$/;
 const NEXT_SECTION = /^##\s/;
+const VERSION_SECTION = /^##\s+\d+\.\d+\.\d+/;
 const TOP_ITEM = /^-\s+\*\*(.+?)\*\*/;
 
 /** 取「未发布」段的顶层粗体条目标题；遇到下一个 ## 即止，嵌套子条目不算一条。 */
@@ -12,6 +13,9 @@ export function unreleasedItems(md) {
   const lines = String(md == null ? '' : md).split(/\r?\n/);
   const start = lines.findIndex((l) => SECTION.test(l.trim()));
   if (start < 0) return [];
+  // 「未发布」只认文件顶部那一段：发版后顶部段改成版本号，历史里遗留的
+  // 旧草稿（例如误留在 0.58.0 之后的同名段）不能再被当成当前清单。
+  for (let i = 0; i < start; i++) if (VERSION_SECTION.test(lines[i].trim())) return [];
   const out = [];
   for (let i = start + 1; i < lines.length; i++) {
     if (NEXT_SECTION.test(lines[i])) break;
