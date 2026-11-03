@@ -376,6 +376,12 @@ function changedPaths() {
   return out;
 }
 
+// 本地领先 origin/main 多少个提交；取不到（还没 fetch 过、ref 不存在）按 0 算
+function aheadCount() {
+  const r = git(['rev-list', '--count', 'origin/main..HEAD']);
+  return r.status === 0 ? Number(r.stdout.trim()) || 0 : 0;
+}
+
 async function commitAndPush(cfg) {
   const paths = changedPaths();
   if (!paths) fail('git status 失败，无法确定要提交哪些文件（宁可不提交，也不做全量 add -A）');
@@ -388,8 +394,7 @@ async function commitAndPush(cfg) {
     // 工作区干净不等于没有可推的东西：发版提交、手工 commit 都可能已经落在本地，
     // 只是还没推到 origin。原先这里直接 return，主流程却照样打印「已推送」，
     // 于是本地领先远端一整版，日志仍显示成功。
-    const ahead = git(['rev-list', '--count', 'origin/main..HEAD']);
-    const n = ahead.status === 0 ? Number(ahead.stdout.trim()) : 0;
+    const n = aheadCount();
     if (!n) {
       log('允许清单内没有改动，本地也不领先远端，本轮不推送');
       return false;
@@ -454,9 +459,14 @@ async function main() {
     return;
   }
   if (!FORCE && state && state.hash === hash) {
-    // 无改动：不打印、不提交，但日志留一行——否则「任务到底跑没跑」事后查不出来
-    log(`无改动，跳过（指纹 ${hash.slice(0, 12)}，版本 ${PKG.version}）`);
-    return;
+    // 指纹没变也不等于没事干：只改文档、CHANGELOG 或发版回写的提交不进指纹，
+    // 但照样需要推上去——原先这里直接 return，本地就积压着永不推送的提交。
+    const n = aheadCount();
+    if (!n) {
+      log(`无改动，跳过（指纹 ${hash.slice(0, 12)}，版本 ${PKG.version}）`);
+      return;
+    }
+    log(`指纹未变（${hash.slice(0, 12)}），但本地领先远端 ${n} 个提交，继续推送`);
   }
 
   const latest = await npmLatest();
@@ -464,13 +474,13 @@ async function main() {
 
   if (DRY) {
     console.log(JSON.stringify({
-      action: 'commit-push', reason: FORCE ? 'force' : '源码/配置有改动',
+      action: 'commit-push', reason: FORCE ? 'force' : (state && state.hash === hash ? '本地领先远端，只推送已提交的 commit' : '源码/配置有改动'),
       version: PKG.version, npmLatest: latest, hash: hash.slice(0, 12),
     }, null, 2));
     return;
   }
 
-  log(`检测到改动：${state ? '指纹变化 ' + (state.hash || '').slice(0, 12) + ' → ' : '首次 '}${hash.slice(0, 12)}；提交并推送（不发 npm）`);
+  log(`${state && state.hash === hash ? '指纹未变，仅推送已提交的本地领先' : '检测到改动：' + (state ? '指纹变化 ' + (state.hash || '').slice(0, 12) + ' → ' : '首次 ') + hash.slice(0, 12)}；提交并推送（不发 npm）`);
 
   const gates = [
     ['build-client', ['tools/build-client.mjs']],

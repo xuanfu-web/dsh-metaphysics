@@ -138,10 +138,21 @@ ok('拿不到改动清单时整轮放弃', /git status 失败/.test(srcLF));
 // 真实事故：0.61.0 发版提交只落在本地，autopublish 看到「允许清单内没有改动」
 // 就直接返回，主流程却照样打印「完成：已推送 main」——远端整整落后一个版本，
 // 日志还是绿的。干净工作区 ≠ 没有可推的东西。
-ok('无改动时先查本地是否领先远端', /if \(!keep\.length\)[\s\S]{0,600}origin\/main\.\.HEAD/.test(srcLF));
+ok('无改动时先查本地是否领先远端', /if \(!keep\.length\)[\s\S]{0,400}const n = aheadCount\(\);/.test(srcLF));
+ok('领先数只有一份实现（取自 origin/main..HEAD）', /function aheadCount\(\)[\s\S]{0,200}'origin\/main\.\.HEAD'/.test(srcLF)
+  && (srcLF.match(/origin\/main\.\.HEAD/g) || []).length === 1);
 ok('本地领先时继续走推送', /允许清单内没有改动，但本地领先远端[\s\S]{0,2200}pushWithRetry/.test(srcLF));
-ok('不再领先时明确返回 false', /if \(!keep\.length\)[\s\S]{0,600}if \(!n\)[\s\S]{0,200}return false;/.test(srcLF));
+ok('不再领先时明确返回 false', /if \(!keep\.length\)[\s\S]{0,400}if \(!n\)[\s\S]{0,200}return false;/.test(srcLF));
 ok('推送成功后返回 true', /await pushWithRetry\(authArgs\(cfg\)[^;]*\);\n\s*log\([\s\S]{0,160}return true;/.test(srcLF));
 ok('主流程按实际推送结果分别报告', /const pushed = await commitAndPush\(cfg\)/.test(srcLF)
   && /if \(pushed\)[\s\S]{0,400}无改动可推送/.test(srcLF));
 ok('不再无条件打印已推送', !/clearError\(\);\n\s*log\(`完成：已推送 main/.test(srcLF));
+
+// ── ⑦ 同一类漏口在更早的一处：源码指纹未变，也不代表没有要推的提交 ───────
+// 文档回写、CHANGELOG、发版标记这些都不进指纹，改完 commit 后指纹一模一样，
+// 原先这里直接 return——本地积压的提交永远不会被推上去。
+ok('指纹未变时也查本地是否领先远端', /if \(!FORCE && state && state\.hash === hash\)[\s\S]{0,300}const n = aheadCount\(\);/.test(srcLF));
+ok('指纹未变且不领先才真的跳过', /if \(!FORCE && state && state\.hash === hash\)[\s\S]{0,400}if \(!n\) \{[\s\S]{0,200}无改动，跳过[\s\S]{0,80}return;/.test(srcLF));
+ok('指纹未变但领先时继续推送', /指纹未变（\$\{hash\.slice\(0, 12\)\}），但本地领先远端[\s\S]{0,80}继续推送/.test(srcLF));
+ok('日志区分「指纹未变只推送」与「检测到改动」', /指纹未变，仅推送已提交的本地领先/.test(srcLF)
+  && /检测到改动：/.test(srcLF));
