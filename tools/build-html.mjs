@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { buildModule, MODULE_ORDER } from './build-client.mjs';
+// 未发版改动清单：不发版本号时，页面靠它说出「这一版之后又改了什么」
+import { unreleasedFromChangelog, badgeHtml, methodBlockHtml } from './unreleased.mjs';
 // 询问方向的选项直接取自引擎，避免界面与解析层两处维护
 import { DIRECTIONS, DIRECTION_DEFAULT } from '../engine/interpret.js';
 import { GROUPS } from '../src/groups.mjs';
@@ -16,6 +18,9 @@ const TEST_FILES = Object.keys(baseline.files || {}).length;
 const TEST_ASSERTS = baseline.total || Object.values(baseline.files || {}).reduce((a, b) => a + b, 0);
 // 页面上标出版本：桌面那份拷贝是不是最新构建，一眼能看出来
 const VERSION = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
+// 版本号不动时，靠 CHANGELOG「未发布」段给页面一份改动说明——
+// 单文件页与桌面 exe 都只有这一处能自证「我这版到底带没带某个修复」。
+const UNRELEASED = unreleasedFromChangelog(path.join(root, 'CHANGELOG.md'));
 const DIR_OPTIONS = DIRECTIONS
   .map((d) => `<option value="${d.key}"${d.key === DIRECTION_DEFAULT ? ' selected' : ''}>${d.label}</option>`)
   .join('');
@@ -55,6 +60,10 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .brand-txt small{display:block;font-size:12.5px;letter-spacing:.02em;color:var(--dim);font-weight:400;margin-top:3px}
 .ver{display:inline-block;margin-left:8px;vertical-align:3px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);
   color:var(--dim);font:600 11px/1.5 system-ui,sans-serif;letter-spacing:.04em}
+/* 未发版改动小牌：紧跟版本徽标，鼠标悬停看逐条。字色用 --ink2 而不是 --dim——
+   这行是 11px 小字，压在 --panel2 上，用 --dim 浅色档只有 4.41:1，够不着 AA 的 4.5。 */
+.ver-note{display:inline-block;margin-left:6px;vertical-align:3px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);
+  color:var(--ink2);font:400 11px/1.5 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;letter-spacing:0;cursor:help}
 /* 等宽网格铺满一行：每格同宽、末行左对齐，不会出现右对齐造成的锯齿缺口 */
 .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));grid-auto-rows:minmax(36px,auto);gap:6px}
 .tab{display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 10px;border-radius:999px;border:1px solid transparent;background:color-mix(in srgb,var(--panel) 62%,transparent);color:var(--dim);cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap;
@@ -257,6 +266,8 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .view-switch{flex:none}
   .view-switch .seg button{white-space:nowrap}
   .brand .seal{width:34px;height:34px;border-radius:9px;font-size:17px}
+  /* 窄屏标题一行都紧张，未发版小牌让位给「方法与验证」里的完整清单，不在这里挤 */
+  .ver-note{display:none}
   /* 一行副标题 + 省略号：窄屏下让它换行会把「分组/平铺」顶到下一排，整块头重脚轻 */
   .brand-txt{min-width:0;overflow:hidden}
   .brand-txt small{font-size:11.5px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -385,7 +396,7 @@ function page() {
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v${VERSION}</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v${VERSION}</span>${badgeHtml(UNRELEASED)}<small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -647,6 +658,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
     <ul><li>测试：${TEST_FILES} 个测试文件 / ${TEST_ASSERTS} 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    ${methodBlockHtml(UNRELEASED)}
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>

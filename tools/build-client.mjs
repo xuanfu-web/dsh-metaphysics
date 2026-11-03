@@ -5,6 +5,11 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { GROUPS } from '../src/groups.mjs';
 import { DIRECTIONS } from '../engine/interpret.js';
+// 未发版改动清单（面板报错行要带出去，见 src/app.js 的错误边界）
+import { unreleasedFromChangelog } from './unreleased.mjs';
+
+const unreleasedLine = () =>
+  `    window.__MP_UNRELEASED = ${JSON.stringify(unreleasedFromChangelog(path.join(root, 'CHANGELOG.md')))};`;
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
@@ -226,6 +231,7 @@ ${ORDER.map(buildModule).join('\n')}
     window.Engine = Engine;
     window.__MP_VER = '${pkg.version}';
     window.__MPGroups = ${JSON.stringify(GROUPS)};
+${unreleasedLine()}
 ${core}
 ${kit}
 ${body}
@@ -255,6 +261,7 @@ window.__ModuleLoader__.load({
     const __MP_DIRECTIONS__ = ${JSON.stringify(DIRECTIONS)};
     window.__MP_VER = '${pkg.version}';
     window.__MPGroups = ${JSON.stringify(GROUPS)};
+${unreleasedLine()}
 ${lazy}
 ${core}
 ${kit}

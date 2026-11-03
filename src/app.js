@@ -422,7 +422,9 @@ class PanelGuard extends (React.Component || Object) {
       h('div', { className: 'mp-lbl' }, '命理面板渲染出错——把下面这段发给我'),
       h('pre', { style: { whiteSpace: 'pre-wrap', fontSize: 12, lineHeight: 1.5, maxHeight: 320, overflow: 'auto', margin: '8px 0' } },
         String((e && e.message) || e) + '\n\n' + stack),
-      h('div', { className: 'mp-lbl' }, '环境：__PP ' + (typeof PP) + ' · Engine ' + (typeof window.Engine) + ' · React ' + (typeof React) + ' · 版本 ' + (typeof PP === 'object' && PP && (window.__MP_VER || '?'))),
+      h('div', { className: 'mp-lbl' }, '环境：__PP ' + (typeof PP) + ' · Engine ' + (typeof window.Engine) + ' · React ' + (typeof React) + ' · 版本 ' + (typeof PP === 'object' && PP && (window.__MP_VER || '?'))
+        // 版本号没动时，靠「未发版改动 N 项」判断这份产物新不新——报错的人不用先猜自己装的是哪一版
+        + ((window.__MP_UNRELEASED || []).length ? ' · 未发版改动 ' + window.__MP_UNRELEASED.length + ' 项' : '')),
     ));
   }
 }

@@ -617,7 +617,17 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(errors.length === errsBefore, '复制提问流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
 }
 
-// ── 十三、全程无 JS 报错 ───────────────────────────────────────
+// ── 十三、未发版改动清单：面板运行时得真的拿得到 ────────────────
+// client.js 里那行注入是构建期写进去的，源码断言看不到压缩后的形态；
+// 错误边界的环境行（版本号 + 未发版改动 N 项）全靠它，所以在真 React 里读一次。
+{
+  const list = await page.evaluate(() => window.__MP_UNRELEASED);
+  // 只断言「是数组」：发版后这一段会被清空，届时这里应当是 []，不是 undefined
+  ok(Array.isArray(list), '面板运行时取得到未发版改动清单', JSON.stringify(list === undefined ? 'undefined' : list).slice(0, 140));
+  ok(list.every((t) => typeof t === 'string' && t.trim() === t && t.length > 0), '清单每条都是非空标题', list.join(' / ').slice(0, 140));
+}
+
+// ── 十四、全程无 JS 报错 ───────────────────────────────────────
 ok(errors.length === 0, '面板全程无 JS 报错', errors.slice(0, 3).join(' | '));
 
 await page.screenshot({ path: path.join(root, '_e2e-panel.png') });
