@@ -1,6 +1,8 @@
-## 0.61.2（2026-11-03，发版中）
+## 0.61.2（2026-11-03，已发布）
 
 > 本版主题：输入与状态 bug 批——跨盘残留、历史漏参、生时校正跟错盘、K 线出生地失效等 13 处，全部有真机回归锁；排盘引擎与历算口径一字未动。
+
+> 已发布：npm `dsh-metaphysics@0.61.2`，shasum `cd9281c6a9f9fbb9c3879b075877a3486f8c2257`，100 个文件；tag `v0.61.2` 已推，GitHub release 已建，tarball 已下载核对。
 
 - **0.61.1 之后又查出的一批输入与状态 bug**（`src/app.js`、`src/web-ui.js`、`src/panel-kit.js`、`test/date-input.test.mjs`、`test/features.test.mjs`、`tools/e2e-dom.mjs`、`tools/e2e-panel.mjs`）：
   - 现象一（面板 · 日期被截断）：0.61.1 把日期框改成受控输入后，打字过程中一解析出合法日期就 `props.onChange`，父组件回写 `value` 把草稿冲掉——敲 `1990-05-12`，中途 `1990-05-1` 被补成 `1990-05-01`，再敲 `2` 丢位，最终**静默排成 1 日**。`page.fill` 一次写整串测不出来，真实键盘逐字输入必现。
