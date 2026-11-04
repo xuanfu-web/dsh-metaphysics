@@ -1496,6 +1496,9 @@ function computeRaw(args = {}) {
     };
   }
   if (system === 'fengshui') {
+    if (args.action != null && !['natal', 'advise', 'xuankong'].includes(args.action)) {
+      throw fail('E_INPUT', `风水 action 只能是 natal / advise / xuankong，收到「${String(args.action).slice(0, 24)}」`);
+    }
     const action = args.action === 'advise' ? 'advise' : args.action === 'xuankong' ? 'xuankong' : 'natal';
     if (action === 'xuankong') {
       const result = buildFengshui({
@@ -1536,6 +1539,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: fengshuiText(result) };
   }
   if (system === 'name') {
+    if (args.action != null && !['assess', 'generate'].includes(args.action)) {
+      throw fail('E_INPUT', `起名 action 只能是 assess / generate，收到「${String(args.action).slice(0, 24)}」`);
+    }
     const action = args.action === 'generate' ? 'generate' : 'assess';
     const birth = args.datetime
       ? parseDateTime(args.datetime)

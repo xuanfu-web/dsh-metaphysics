@@ -1,6 +1,16 @@
-## 0.62.0（2026-11-04，待发布）
+## 0.62.1（2026-11-04，待发布）
 
-> 本段记录 0.61.2 之后按 50 项复查报告、以及第二轮复测的 16 项新发现完成的修复；尚未发版，单文件页与面板会把它列为「未发版改动」。
+> 本版主题：全项目复查补漏——星座/生命数字的日期尺与全插件统一、非法 action 不再静默落默认、次级入口的 null 守卫。
+
+- **星座 / 生命数字日期尺统一到 1600–2400**（`engine/star.js`、`engine/numerology.js`）：两套各自卡 1900–2100，同一份生日在八字/紫微/黄历可排，到星座/生命数字却被拒；现与 `parseDateTime` / `assertCivil` 同一把尺（越界由日期解析层报 `E_RANGE`），并补 1600 / 2400 / 1599 / 2401 边界断言。
+- **非法 action 不再静默落默认分支**（`engine/index.js`、`engine/fengshui.js`、`engine/name.js`）：`fengshui action:'nope'` 以前照样按 natal 排、`name action:'nope'` 照样按 assess 评名；现在直接 `E_INPUT` 并列出合法值（不传仍按默认）。
+- **次级入口 null 守卫**（`engine/trend.js`、`engine/mbti.js`、`engine/qimen.js`）：`buildTrend(null)` / `buildMbti(null)` / `buildQimen(null)` / `buildSnapshot(null)` 不再抛裸 TypeError，统一 `E_INPUT`。
+- **回归锁**：`test/guard-inputs.test.mjs` ⑲–㉑ 新增 14 条；`test/chunks.test.mjs` 的起名参数从旧别名 `evaluate` 改为 schema 支持的 `assess`。
+- 基线：**154 文件 / 7894 条断言**（7880 → 7894，全为新增）。
+
+## 0.62.0（2026-11-04，已发布）
+
+> 已发布：npm `dsh-metaphysics@0.62.0`，shasum `b9563b742dd7ef0f394e8f19b0a69934f6910f01`，101 个文件；tag `v0.62.0` 与 GitHub release 已建。
 
 - **复查报告 50 项：排盘口径、输入守卫与提示层**（`engine/*`、`index.js`、`src/panel-kit.js`、`test/*`）：
   - P0 · 紫微晚子时（`engine/index.js`、`engine/ziwei.js`）：`lateZi` 与紫微历史参数名 `lateZishi` 不互通，revise 回执「已应用」但盘仍按 current-day 排；现统一映射（`lateZi:false` → `current-day`），回执与盘面同源。`hourUnknown` 的过去盘也改为按正午占位，与主盘落在同一张盘上。

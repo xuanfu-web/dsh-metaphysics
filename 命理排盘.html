@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,7 +653,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：154 个测试文件 / 7880 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：154 个测试文件 / 7894 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -11509,6 +11509,9 @@ function buildSegments(list, direction, birthYear, toAge) {
  *          address?:string,longitude?:number,geo?:object}} input
  */
 function buildTrend(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '人生 K 线需要参数对象：至少给 datetime 与 gender（大运顺逆由性别决定）');
+  }
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
     throw fail('E_INPUT', '人生 K 线需要性别：大运顺逆由性别决定，不可缺省');
@@ -12114,8 +12117,12 @@ function buildFengshui(input) {
     if (!Number.isInteger(fy)) throw fail('E_INPUT', `fortuneYear 必须是整数年份，收到「${input.fortuneYear}」`);
     input = { ...input, fortuneYear: fy };
   }
-  if (input.action === 'advise') return buildAdvise(input);
-  if (input.action === 'xuankong') return buildXuankong(input);
+  const action = input.action;
+  if (action !== undefined && action !== null && action !== 'natal' && action !== 'advise' && action !== 'xuankong') {
+    throw fail('E_INPUT', `风水 action 只能是 natal / advise / xuankong，收到「${String(action).slice(0, 24)}」`);
+  }
+  if (action === 'advise') return buildAdvise(input);
+  if (action === 'xuankong') return buildXuankong(input);
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
     throw fail('E_INPUT', '风水命卦需要性别：男女命卦算法不同，不可缺省');
@@ -13954,6 +13961,9 @@ function buildName(input) {
   if (!input || typeof input !== 'object') {
     throw fail('E_INPUT', '起名参数不能为空：评名要 surname / givenName，起名要 surname 与性别/生日');
   }
+  if (input.action != null && input.action !== 'assess' && input.action !== 'generate') {
+    throw fail('E_INPUT', `起名 action 只能是 assess / generate，收到「${String(input.action).slice(0, 24)}」`);
+  }
   if (input.action === 'generate') return generateNames(input);
   return assessName(input);
 }
@@ -14238,6 +14248,7 @@ __mods.qimen = (function () {
 const { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = (__mods.calendar || {});
 const { solarToLunar } = (__mods.lunar || {});
 const { assertCivil, assertShifted } = (__mods.validate || {});
+const { fail } = (__mods.fail || {});
 const { ganyingOf, LIUYI_RU_MU } = (__mods['qimen-ganying'] || {});
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -14277,7 +14288,11 @@ const indexOfGz = (gz) => {
 };
 
 /** 由公历时刻构建快照（本地民用时间轴） */
-function buildSnapshot({ year, month, day, hour, minute, lateZiHourMode = 'same-day' }) {
+function buildSnapshot(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '奇门排盘参数不能为空：至少给 year / month / day / hour');
+  }
+  const { year, month, day, hour, minute, lateZiHourMode = 'same-day' } = input;
   assertCivil({ year, month, day, hour, minute });
   const jd = partsToJd({ year, month, day, hour, minute });
 
@@ -14683,6 +14698,9 @@ const findGong = (obj, val) =>
 
 /** 排盘主函数 */
 function buildQimen(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '奇门排盘参数不能为空：至少给 year / month / day / hour');
+  }
   // snapshot 是内部快照路径（已由 buildSnapshot 校验过），不必重复校验
   if (!input.snapshot) assertCivil(input);
   const snapshot = input.snapshot || buildSnapshot(input);
@@ -15712,7 +15730,7 @@ return { ZHIXING, ZHIXING_YI, ZHIXING_JI, SHENGXIAO, hourToBranch, zhixingOf, lu
 __mods.star = (function () {
 // 星座档案 + 当日娱乐向基调：纯本地确定性（同一天同一星座结果永远一致）。
 // 星座按太阳过宫的通行日期区间（公历）；当日基调由日期哈希生成，不是随机数。
-const { daysInMonth } = (__mods.validate || {});
+const { MAX_YEAR, MIN_YEAR, daysInMonth } = (__mods.validate || {});
 const { fail } = (__mods.fail || {});
 
 /** 12 星座（区间含起止日；摩羯跨年由两端分别匹配）。 */
@@ -15763,8 +15781,8 @@ const TONE_TEXT = {
 function buildStar(input) {
   const { year, month, day } = input || {};
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)
-    || year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
-    throw fail('E_INPUT', '星座需要真实存在的公历日期（year 1900–2100、month、day）——请向用户询问');
+    || year < MIN_YEAR || year > MAX_YEAR || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
+    throw fail('E_INPUT', `星座需要真实存在的公历日期（year ${MIN_YEAR}–${MAX_YEAR}、month、day）——请向用户询问`);
   }
   const sign = signOfDate(month, day);
   if (!sign) throw fail('E_INPUT', `无法识别星座：${year}-${month}-${day}`);
@@ -15800,7 +15818,7 @@ return { SIGNS, signOfDate, buildStar };
 __mods.numerology = (function () {
 // 生命数字（西方数字学）：生命路径数 / 生日数 / 态度数，11、22、33 主数保留。
 // 纯本地确定性；与八字/紫微是两套不可互证的体系，输出里明确提示。
-const { daysInMonth } = (__mods.validate || {});
+const { MAX_YEAR, MIN_YEAR, daysInMonth } = (__mods.validate || {});
 const { fail } = (__mods.fail || {});
 
 /** 1–9 与主数 11/22/33 的数义（白话提炼）。 */
@@ -15838,8 +15856,8 @@ const digitSum = (n) => String(Math.abs(Math.trunc(n))).split('').reduce((s, c) 
 function buildNumerology(input) {
   const { year, month, day } = input || {};
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)
-    || year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
-    throw fail('E_INPUT', '生命数字需要真实存在的公历出生日期（year 1900–2100、month、day）——请向用户询问，勿猜');
+    || year < MIN_YEAR || year > MAX_YEAR || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
+    throw fail('E_INPUT', `生命数字需要真实存在的公历出生日期（year ${MIN_YEAR}–${MAX_YEAR}、month、day）——请向用户询问，勿猜`);
   }
   const lifePath = reduceNumber(digitSum(year) + digitSum(month) + digitSum(day));
   const birthday = reduceNumber(day);
@@ -16218,6 +16236,7 @@ function strengthOf(pct, answered) {
  * 维度净分 > 0 取左字母，< 0 取右字母，= 0 按维度表的 tie 取（并标「临界」）。
  */
 function buildMbti(input = {}) {
+  input = input && typeof input === 'object' ? input : {};
   const answers = normalizeAnswers(input.answers);
   const answeredAll = answers.filter((v) => v !== null).length;
   if (answeredAll < 12) {
@@ -26483,6 +26502,9 @@ function computeRaw(args = {}) {
     };
   }
   if (system === 'fengshui') {
+    if (args.action != null && !['natal', 'advise', 'xuankong'].includes(args.action)) {
+      throw fail('E_INPUT', `风水 action 只能是 natal / advise / xuankong，收到「${String(args.action).slice(0, 24)}」`);
+    }
     const action = args.action === 'advise' ? 'advise' : args.action === 'xuankong' ? 'xuankong' : 'natal';
     if (action === 'xuankong') {
       const result = buildFengshui({
@@ -26523,6 +26545,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: fengshuiText(result) };
   }
   if (system === 'name') {
+    if (args.action != null && !['assess', 'generate'].includes(args.action)) {
+      throw fail('E_INPUT', `起名 action 只能是 assess / generate，收到「${String(args.action).slice(0, 24)}」`);
+    }
     const action = args.action === 'generate' ? 'generate' : 'assess';
     const birth = args.datetime
       ? parseDateTime(args.datetime)
@@ -26937,7 +26962,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.62.0";
+window.__MP_VER = "0.62.1";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。

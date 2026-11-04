@@ -5,6 +5,7 @@
 import { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { assertCivil, assertShifted } from './validate.js';
+import { fail } from './fail.js';
 import { ganyingOf, LIUYI_RU_MU } from './qimen-ganying.js';
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -44,7 +45,11 @@ const indexOfGz = (gz) => {
 };
 
 /** 由公历时刻构建快照（本地民用时间轴） */
-export function buildSnapshot({ year, month, day, hour, minute, lateZiHourMode = 'same-day' }) {
+export function buildSnapshot(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '奇门排盘参数不能为空：至少给 year / month / day / hour');
+  }
+  const { year, month, day, hour, minute, lateZiHourMode = 'same-day' } = input;
   assertCivil({ year, month, day, hour, minute });
   const jd = partsToJd({ year, month, day, hour, minute });
 
@@ -450,6 +455,9 @@ const findGong = (obj, val) =>
 
 /** 排盘主函数 */
 export function buildQimen(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '奇门排盘参数不能为空：至少给 year / month / day / hour');
+  }
   // snapshot 是内部快照路径（已由 buildSnapshot 校验过），不必重复校验
   if (!input.snapshot) assertCivil(input);
   const snapshot = input.snapshot || buildSnapshot(input);

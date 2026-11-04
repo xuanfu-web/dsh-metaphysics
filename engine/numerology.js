@@ -1,6 +1,6 @@
 // 生命数字（西方数字学）：生命路径数 / 生日数 / 态度数，11、22、33 主数保留。
 // 纯本地确定性；与八字/紫微是两套不可互证的体系，输出里明确提示。
-import { daysInMonth } from './validate.js';
+import { MAX_YEAR, MIN_YEAR, daysInMonth } from './validate.js';
 import { fail } from './fail.js';
 
 /** 1–9 与主数 11/22/33 的数义（白话提炼）。 */
@@ -38,8 +38,8 @@ const digitSum = (n) => String(Math.abs(Math.trunc(n))).split('').reduce((s, c) 
 export function buildNumerology(input) {
   const { year, month, day } = input || {};
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)
-    || year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
-    throw fail('E_INPUT', '生命数字需要真实存在的公历出生日期（year 1900–2100、month、day）——请向用户询问，勿猜');
+    || year < MIN_YEAR || year > MAX_YEAR || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
+    throw fail('E_INPUT', `生命数字需要真实存在的公历出生日期（year ${MIN_YEAR}–${MAX_YEAR}、month、day）——请向用户询问，勿猜`);
   }
   const lifePath = reduceNumber(digitSum(year) + digitSum(month) + digitSum(day));
   const birthday = reduceNumber(day);

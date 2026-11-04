@@ -473,8 +473,12 @@ export function buildFengshui(input) {
     if (!Number.isInteger(fy)) throw fail('E_INPUT', `fortuneYear 必须是整数年份，收到「${input.fortuneYear}」`);
     input = { ...input, fortuneYear: fy };
   }
-  if (input.action === 'advise') return buildAdvise(input);
-  if (input.action === 'xuankong') return buildXuankong(input);
+  const action = input.action;
+  if (action !== undefined && action !== null && action !== 'natal' && action !== 'advise' && action !== 'xuankong') {
+    throw fail('E_INPUT', `风水 action 只能是 natal / advise / xuankong，收到「${String(action).slice(0, 24)}」`);
+  }
+  if (action === 'advise') return buildAdvise(input);
+  if (action === 'xuankong') return buildXuankong(input);
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
     throw fail('E_INPUT', '风水命卦需要性别：男女命卦算法不同，不可缺省');

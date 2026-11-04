@@ -726,6 +726,9 @@ export function buildName(input) {
   if (!input || typeof input !== 'object') {
     throw fail('E_INPUT', '起名参数不能为空：评名要 surname / givenName，起名要 surname 与性别/生日');
   }
+  if (input.action != null && input.action !== 'assess' && input.action !== 'generate') {
+    throw fail('E_INPUT', `起名 action 只能是 assess / generate，收到「${String(input.action).slice(0, 24)}」`);
+  }
   if (input.action === 'generate') return generateNames(input);
   return assessName(input);
 }

@@ -352,6 +352,7 @@ function strengthOf(pct, answered) {
  * 维度净分 > 0 取左字母，< 0 取右字母，= 0 按维度表的 tie 取（并标「临界」）。
  */
 export function buildMbti(input = {}) {
+  input = input && typeof input === 'object' ? input : {};
   const answers = normalizeAnswers(input.answers);
   const answeredAll = answers.filter((v) => v !== null).length;
   if (answeredAll < 12) {

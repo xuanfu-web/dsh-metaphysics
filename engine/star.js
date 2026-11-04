@@ -1,6 +1,6 @@
 // 星座档案 + 当日娱乐向基调：纯本地确定性（同一天同一星座结果永远一致）。
 // 星座按太阳过宫的通行日期区间（公历）；当日基调由日期哈希生成，不是随机数。
-import { daysInMonth } from './validate.js';
+import { MAX_YEAR, MIN_YEAR, daysInMonth } from './validate.js';
 import { fail } from './fail.js';
 
 /** 12 星座（区间含起止日；摩羯跨年由两端分别匹配）。 */
@@ -51,8 +51,8 @@ const TONE_TEXT = {
 export function buildStar(input) {
   const { year, month, day } = input || {};
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)
-    || year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
-    throw fail('E_INPUT', '星座需要真实存在的公历日期（year 1900–2100、month、day）——请向用户询问');
+    || year < MIN_YEAR || year > MAX_YEAR || month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) {
+    throw fail('E_INPUT', `星座需要真实存在的公历日期（year ${MIN_YEAR}–${MAX_YEAR}、month、day）——请向用户询问`);
   }
   const sign = signOfDate(month, day);
   if (!sign) throw fail('E_INPUT', `无法识别星座：${year}-${month}-${day}`);

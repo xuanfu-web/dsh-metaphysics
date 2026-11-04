@@ -367,3 +367,24 @@ eq('农历 2400-12-29 换算公历越界 → E_RANGE', codeOf(() => E.compute({ 
 ok('convert 越界文案点名公历与范围、不提黄历',
   /公历日期/.test(convMsg) && /1600–2400/.test(convMsg) && !/黄历/.test(convMsg), convMsg);
 ok('农历 2400-11-01 仍可换算（边界内）', codeOf(() => E.compute({ system: 'convert', mode: 'lunar2solar', lunarYear: 2400, lunarMonth: 11, lunarDay: 1 })) === 'ACCEPTED');
+
+// ⑲ 星座 / 生命数字与其余体系同用 1600–2400 的日期尺（以前各自卡 1900–2100）
+for (const sys of ['star', 'numerology']) {
+  ok(`${sys} 1600-01-01 可排`, codeOf(() => E.compute({ system: sys, datetime: '1600-01-01T12:00' })) === 'ACCEPTED');
+  ok(`${sys} 2400-12-31 可排`, codeOf(() => E.compute({ system: sys, datetime: '2400-12-31T12:00' })) === 'ACCEPTED');
+  eq(`${sys} 1599 年报 E_RANGE`, codeOf(() => E.compute({ system: sys, datetime: '1599-12-31T12:00' })), 'E_RANGE');
+  eq(`${sys} 2401 年报 E_RANGE`, codeOf(() => E.compute({ system: sys, datetime: '2401-01-01T12:00' })), 'E_RANGE');
+}
+
+// ⑳ action 非法不再静默落默认分支（面板/schema 会拦，引擎直连也不能装作没看见）
+eq('fengshui action=nope → E_INPUT', codeOf(() => E.compute({ system: 'fengshui', action: 'nope', datetime: '1990-05-12T14:30', gender: 'male' })), 'E_INPUT');
+eq('name action=nope → E_INPUT', codeOf(() => E.compute({ system: 'name', action: 'nope', surname: '李', givenName: '沐' })), 'E_INPUT');
+
+// ㉑ 次级入口 null 不再抛裸 TypeError
+const TRD = await import('../engine/trend.js');
+const MBT = await import('../engine/mbti.js');
+const QMN = await import('../engine/qimen.js');
+eq('buildTrend(null) → E_INPUT', codeOf(() => TRD.buildTrend(null)), 'E_INPUT');
+eq('buildMbti(null) → E_INPUT', codeOf(() => MBT.buildMbti(null)), 'E_INPUT');
+eq('buildQimen(null) → E_INPUT', codeOf(() => QMN.buildQimen(null)), 'E_INPUT');
+eq('buildSnapshot(null) → E_INPUT', codeOf(() => QMN.buildSnapshot(null)), 'E_INPUT');

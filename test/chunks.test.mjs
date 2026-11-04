@@ -78,7 +78,7 @@ const cases = {
   ziwei: { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', shadow: true, trace: true, cross: true, withInterpret: true },
   trend: { system: 'trend', datetime: '1990-05-12T14:30', gender: 'female' },
   hepan: { system: 'hepan', datetime: '1990-05-12T14:30', gender: 'female', partner: { datetime: '1992-08-15T10:00', gender: 'female', trueSolar: true } },
-  name: { system: 'name', action: 'evaluate', surname: '张', givenName: '三', datetime: '1990-05-12T14:30', gender: 'female' },
+  name: { system: 'name', action: 'assess', surname: '张', givenName: '三', datetime: '1990-05-12T14:30', gender: 'female' },
   fengshui: { system: 'fengshui', action: 'natal', datetime: '1990-05-12T14:30', gender: 'female' },
   liuyao: { system: 'liuyao', lines: [9, 7, 8, 8, 7, 6], question: 'x', shadow: true, trace: true, withInterpret: true, direction: 'career' },
   meihua: { system: 'meihua', datetime: '2026-10-31T12:00', question: 'x', withInterpret: true },

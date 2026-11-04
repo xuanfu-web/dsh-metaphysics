@@ -85,6 +85,9 @@ function buildSegments(list, direction, birthYear, toAge) {
  *          address?:string,longitude?:number,geo?:object}} input
  */
 export function buildTrend(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '人生 K 线需要参数对象：至少给 datetime 与 gender（大运顺逆由性别决定）');
+  }
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
     throw fail('E_INPUT', '人生 K 线需要性别：大运顺逆由性别决定，不可缺省');
