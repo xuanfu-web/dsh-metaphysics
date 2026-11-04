@@ -1,8 +1,8 @@
 // 大六壬：天地盘、四课、九宗门三传。
 // 算法移植自本地 MIT 授权插件 @dhicoc/dsh-chinese-traditional-wisdom-skill 的
 // daliurenEngine.ts（仅取 classic 流派：贵人顺逆以天盘临方判定）。
-import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, xunKongOf } from './calendar.js';
-import { assertCivil } from './validate.js';
+import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, jdToParts, xunKongOf } from './calendar.js';
+import { assertCivil, assertShifted } from './validate.js';
 import { SANHE_ELEMENT } from './sanhe.js';
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -95,6 +95,8 @@ export function calcShensha(dayGz) {
 const JIA_ZI_60 = Array.from({ length: 60 }, (_, i) => GAN[i % 10] + ZHI[i % 12]);
 
 const ZHI_CHONG = { 子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅', 卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳' };
+// 十二支相刑：子卯互刑；寅→巳→申→寅；丑→戌→未→丑；辰午酉亥自刑。
+const ZHI_XING = { 子: '卯', 卯: '子', 寅: '巳', 巳: '申', 申: '寅', 丑: '戌', 戌: '未', 未: '丑', 辰: '辰', 午: '午', 酉: '酉', 亥: '亥' };
 const YI_MA = { 寅: '申', 午: '申', 戌: '申', 申: '寅', 子: '寅', 辰: '寅', 巳: '亥', 酉: '亥', 丑: '亥', 亥: '巳', 卯: '巳', 未: '巳' };
 
 const BA_ZHUAN_DAYS = ['壬子', '甲寅', '乙卯', '丁巳', '己未', '庚申', '辛酉', '癸亥'];
@@ -213,14 +215,77 @@ function multipleZeiKe(ke, dayGan, target) {
   return { zhi: ranked[0].k.shang, geJu: '涉害', detail: tied ? '察微' : '见机' };
 }
 
-function noZeiKe(ke, tdp, dayGan) {
+function noZeiKe(ke, tdp, dayGan, dayZhi) {
   const dw = GAN_WUXING[dayGan] ?? '土';
+  // 遥克：先整趟找「克我」的蒿矢，没有再找「我克」的弹射。
+  // 原先逐课先到先得，前面一课是弹射就会把后面的蒿矢挡掉。
   for (const k of ke) {
-    const rel = wuxingRelation(ZHI_WUXING[k.shang] ?? '土', dw);
-    if (rel === '克') return { zhi: k.shang, geJu: '遥克', detail: '蒿矢' };
-    if (rel === '被克') return { zhi: k.shang, geJu: '遥克', detail: '弹射' };
+    if (wuxingRelation(ZHI_WUXING[k.shang] ?? '土', dw) === '克') return { zhi: k.shang, geJu: '遥克', detail: '蒿矢' };
   }
-  return { zhi: tdp.diToTian['酉'], geJu: '昴星', detail: yinYang(dayGan) === '阳' ? '虎视' : '冬蛇掩目' };
+  for (const k of ke) {
+    if (wuxingRelation(ZHI_WUXING[k.shang] ?? '土', dw) === '被克') return { zhi: k.shang, geJu: '遥克', detail: '弹射' };
+  }
+  return { ...maoXing(tdp, dayGan, dayZhi) };
+}
+
+/** 昴星课：阳日虎视取地盘酉上神，阴日冬蛇掩目取天盘酉下神；
+ *  中/末传按阴阳日分别取支上、干上（阴日互换），不再走通用递推。 */
+function maoXing(tdp, dayGan, dayZhi) {
+  const ganShang = tdp.diToTian[GAN_JI_GONG[dayGan]];
+  const zhiShang = tdp.diToTian[dayZhi];
+  const yy = yinYang(dayGan);
+  if (yy === '阳') {
+    return { zhi: tdp.diToTian['酉'], zhong: zhiShang, mo: ganShang, geJu: '昴星', detail: '虎视' };
+  }
+  let tianYouDi = null;
+  for (const d of ZHI) if (tdp.diToTian[d] === '酉') { tianYouDi = d; break; }
+  return { zhi: tianYouDi, zhong: ganShang, mo: zhiShang, geJu: '昴星', detail: '冬蛇掩目' };
+}
+
+/** 八专课：干支同位且无克，阳日从干上神顺数三神、阴日从支上神逆数三神；
+ *  中/末同昴星（阳日支上→干上，阴日干上→支上）。 */
+function baZhuan(tdp, dayGan, dayZhi) {
+  const ganShang = tdp.diToTian[GAN_JI_GONG[dayGan]];
+  const zhiShang = tdp.diToTian[dayZhi];
+  const yy = yinYang(dayGan);
+  const start = yy === '阳' ? ganShang : zhiShang;
+  const i = ZHI.indexOf(start);
+  const zhi = ZHI[(i + (yy === '阳' ? 2 : -2) + 12) % 12];
+  return { zhi, zhong: yy === '阳' ? zhiShang : ganShang, mo: yy === '阳' ? ganShang : zhiShang };
+}
+
+/** 伏吟三传：有克依贼克法取初传，无克阳日取干上、阴日取支上；
+ *  中传取初传之刑，末传取中传之刑。初传自刑时中传换到与初传不同的那一节上神，仍自刑则取冲。 */
+function fuYinSanChuan(ke, tdp, dayGan, dayZhi) {
+  const xz = ke.filter((k) => k.relation === '下贼上');
+  const sk = ke.filter((k) => k.relation === '上克下');
+  const yy = yinYang(dayGan);
+  let chu;
+  let detail;
+  if (xz.length || sk.length) {
+    const r = xz.length
+      ? (xz.length === 1 && !sk.length ? { zhi: xz[0].shang } : multipleZeiKe(ke, dayGan, '下贼上'))
+      : (sk.length === 1 ? { zhi: sk[0].shang } : multipleZeiKe(ke, dayGan, '上克下'));
+    chu = r.zhi;
+    detail = '有克';
+  } else {
+    chu = yy === '阳' ? GAN_JI_GONG[dayGan] : dayZhi;
+    detail = yy === '阳' ? '自任' : '杜传';
+  }
+  const ganShang = tdp.diToTian[GAN_JI_GONG[dayGan]];
+  const zhiShang = tdp.diToTian[dayZhi];
+  let zhong;
+  if (ZHI_XING[chu] === chu) {
+    // 兜底要换到「另一个」上神：有克伏吟的初传常常就是第 1 课上神，
+    // 固定取支上（阳日）时它可能正等于初传，中传==初传的盘以前有 34%。
+    const alt = yy === '阳' ? [zhiShang, ganShang] : [ganShang, zhiShang];
+    zhong = alt.find((x) => x && x !== chu) || chu;
+  } else {
+    zhong = ZHI_XING[chu];
+  }
+  let mo = ZHI_XING[zhong];
+  if (mo === zhong) mo = ZHI_CHONG[zhong];
+  return { chu, zhong, mo, detail };
 }
 
 function fanYin(ke, dayGan, dayZhi, stats, isFB) {
@@ -254,6 +319,8 @@ export function buildDaliuren(input) {
 
   // 月将：取出生时刻之前最近的节气（中气换将）
   const jd = jdnBase - 0.5 + (hour * 60 + minute) / 1440;
+  // 晚子时换日后若跨出 1600–2400：与八字/称骨/梅花/小六壬同一把尺，直接拒绝
+  if (lateZi && hour >= 23) assertShifted(jdToParts(jd + 1), '大六壬');
   const terms = termWindow(year).filter((t) => t.jd <= jd);
   const last = terms.length ? terms[terms.length - 1] : null;
   const jieqiName = last ? last.name : '冬至';
@@ -269,17 +336,22 @@ export function buildDaliuren(input) {
   const isFanYinBaZhuan = isSamePos && stats.xiaZeiShang === 4;
 
   let chu;
+  let zhong;
+  let mo;
   let geJu;
   let detail;
   if (isFanYin || isFanYinBaZhuan) {
     const r = fanYin(ke, dayGan, dayZhi, stats, isFanYinBaZhuan);
     chu = r.zhi; geJu = '返吟'; detail = r.detail;
+    zhong = ZHI_CHONG[chu];
+    mo = ZHI_CHONG[zhong];
   } else if (isFuYin) {
-    chu = yinYang(dayGan) === '阳' ? GAN_JI_GONG[dayGan] : dayZhi;
-    geJu = '伏吟'; detail = yinYang(dayGan) === '阳' ? '自任' : '杜传';
+    const r = fuYinSanChuan(ke, tdp, dayGan, dayZhi);
+    chu = r.chu; zhong = r.zhong; mo = r.mo;
+    geJu = '伏吟'; detail = r.detail;
   } else if (isBaZhuan && stats.shangKeXia === 0 && stats.xiaZeiShang === 0) {
-    const i = ZHI.indexOf(dayZhi);
-    chu = ZHI[(i + (yinYang(dayGan) === '阳' ? 2 : -2) + 12) % 12];
+    const r = baZhuan(tdp, dayGan, dayZhi);
+    chu = r.zhi; zhong = r.zhong; mo = r.mo;
     geJu = '八专'; detail = '帷簿';
   } else if (stats.xiaZeiShang === 1 && stats.shangKeXia === 0) {
     chu = ke.find((k) => k.relation === '下贼上').shang; geJu = '贼克'; detail = '重审';
@@ -292,18 +364,15 @@ export function buildDaliuren(input) {
     const r = multipleZeiKe(ke, dayGan, '上克下');
     chu = r.zhi; geJu = r.geJu; detail = r.detail;
   } else if (stats.shangKeXia === 0 && stats.xiaZeiShang === 0) {
-    const r = noZeiKe(ke, tdp, dayGan);
+    const r = noZeiKe(ke, tdp, dayGan, dayZhi);
     chu = r.zhi; geJu = r.geJu; detail = r.detail;
+    if (r.zhong !== undefined) { zhong = r.zhong; mo = r.mo; }
   } else {
     chu = ke[0].shang; geJu = '贼克'; detail = '元首';
   }
 
-  let zhong;
-  let mo;
-  if (isFanYin) {
-    zhong = ZHI_CHONG[chu];
-    mo = ZHI_CHONG[zhong];
-  } else {
+  // 其余格局（贼克 / 遥克）中末传仍是「初传上神 → 中传上神」的通用递推
+  if (zhong === undefined) {
     zhong = tdp.diToTian[chu];
     mo = tdp.diToTian[zhong];
   }

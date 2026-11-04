@@ -3,10 +3,11 @@ import { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, for
 import { solarToLunar } from './lunar.js';
 import { applyTrueSolar } from './bazi.js';
 import { applyDst } from './dst.js';
-import { assertCivil } from './validate.js';
+import { assertCivil, assertShifted } from './validate.js';
 import { nayinOf } from './nayin.js';
 import { resolveAddress } from './geo.js';
 import { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } from './ziwei-zuoyao.js';
+import { SHA_STAR } from './ziwei-words.js';
 
 const fix = (i) => ((i % 12) + 12) % 12;
 
@@ -102,7 +103,7 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   tianmaSchool: ['year-branch', 'month-branch'],
   tiankongSchool: ['off', 'normal', 'shun-jia-shi'],
   jiekongSchool: ['off', 'double', 'single', 'zhanyan'],
-  kuiyueSchool: ['qs1', 'qs2', 'zhong-yiming', 'network'],
+  kuiyueSchool: ['qs1', 'qs2', 'zhong-yiming'],
   tianshiTianshang: ['normal', 'zhongzhou'],
   changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
   lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
@@ -224,7 +225,7 @@ function mutagenOf(stem, schools) {
   return MUTAGEN[stem] ?? {};
 }
 
-// 安魁钺四派：差异集中在庚辛壬癸年
+// 安魁钺三派：差异集中在庚辛壬癸年（「网络派」与 qs1 同表，不单列）
 export const KUI_YUE_SCHOOLS = {
   qs2: {
     甲: [1, 7], 戊: [1, 7], 庚: [6, 2], 乙: [0, 8], 己: [0, 8],
@@ -233,10 +234,6 @@ export const KUI_YUE_SCHOOLS = {
   'zhong-yiming': {
     甲: [1, 7], 戊: [1, 7], 庚: [2, 6], 乙: [0, 8], 己: [0, 8],
     丙: [11, 9], 丁: [11, 9], 辛: [2, 6], 壬: [5, 3], 癸: [5, 3],
-  },
-  network: {
-    甲: [1, 7], 戊: [1, 7], 庚: [1, 7], 乙: [0, 8], 己: [0, 8],
-    丙: [11, 9], 丁: [11, 9], 辛: [6, 2], 壬: [3, 5], 癸: [3, 5],
   },
 };
 
@@ -415,7 +412,12 @@ export function buildZiwei(input) {
   // 紫微按「时辰」起盘：真太阳时若跨时辰/跨日，命盘随之改变
   // 晚子时 next-day：23:00 后起盘日顺延一日，只改起盘日，不改真太阳时显示
   let eff = jdToParts(solar.jd);
-  if (schools.lateZishi === 'next-day' && eff.hour >= 23) eff = jdToParts(solar.jd + 1);
+  if (schools.lateZishi === 'next-day' && eff.hour >= 23) {
+    const shifted = jdToParts(solar.jd + 1);
+    // 晚子时 next-day 若把起盘日推到 2401，同样直接拒绝（直填 2401 本来就被 E_RANGE 拦）
+    assertShifted(shifted, '紫微');
+    eff = shifted;
+  }
   const year = eff.year;
   const month = eff.month;
   const day = eff.day;
@@ -642,7 +644,8 @@ export function buildZiwei(input) {
         branch: BRANCHES[branch],
         palace: palaceNames[branch],
         mutagen: self.mutagen ?? null,
-        sha: stars.filter((s) => s.type === '煞星').map((s) => s.name),
+        // 只有解读词库认的煞星才算「会煞」；full 档新加的天月/阴煞/蜚廉不参与清杂判定
+        sha: stars.filter((s) => s.type === '煞星' && SHA_STAR[s.name]).map((s) => s.name),
       };
     };
     const wc = pick(wenchang, '文昌');
@@ -1308,7 +1311,9 @@ export function enrichLiunian(chart) {
 export function asOfParts(v) {
   if (!v) return null;
   if (typeof v === 'object') return v;
-  const m = String(v).match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2}))?$/);
+  // 首尾空格照 datetime 的规矩 trim 掉：模型输出的 asOf 常带空格，
+  // 以前 ' 2026-10-22 ' 解析不出来，报 E_ASOF 说「请用 2026-10-22T16:00 这种格式」
+  const m = String(v).trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{1,2}))?$/);
   if (!m) return null;
   return {
     year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),

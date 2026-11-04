@@ -3148,6 +3148,10 @@
       date: raw.date,
       time: raw.hourUnknown === true ? '' : time,
       hourUnknown: raw.hourUnknown === true,
+      // 两个开关也决定时柱：白名单漏掉它们时，存进去就被剥掉，载入又被消费端按默认拨成「都开」。
+      // 旧档案缺字段仍按默认（都开）处理，与两端口径一致。
+      trueSolar: raw.trueSolar !== false,
+      lateZi: raw.lateZi !== false,
       gender: raw.gender === 'male' || raw.gender === 'female' ? raw.gender : '',
       address: isStr(raw.address) ? raw.address.slice(0, PROF_ADDR_MAX) : '',
       note: isStr(raw.note) ? raw.note.slice(0, PROF_NOTE_MAX) : '',

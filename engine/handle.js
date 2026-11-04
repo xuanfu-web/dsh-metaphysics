@@ -25,6 +25,8 @@ const PREFIX = 'mc1.';
 const SKIP = new Set([
   'handle', 'trace', 'shadow', 'shadowVersion', 'diff', 'withInterpret', 'detail', 'cross',
   'verifyPast', 'rectify', 'events', 'ask', 'followup', 'question', 'geocode', 'caliber',
+  // 联网解析的详细 geo 会随 display_name 变化，同一张盘却换来不同句柄；只留 longitude。
+  'geo', 'longitudeFromGeo',
   // 一句话改参是把原话翻成补丁：补丁已经落在其余参数里，原话本身不进句柄，
   // 否则同一张盘换个说法就换一个句柄，回放时还会再套一遍补丁。
   'revise',
@@ -171,8 +173,57 @@ export function decodeHandle(handle) {
   return payload;
 }
 
-/** 不能作为增量键的名字：`out['__proto__'] = v` 走的是 setter，会把 out 的原型换掉 */
+/** 不能作为增量键的名字：`out['__proto__'] = v` 走的是 setter，会把原型换掉 */
 const KEY_BLOCKED = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * 含义由「哪个体系」决定的键：值本身不说明是哪套盘的输入。
+ * 只列真正会坏事的那些——要么被工具层的入参守卫拦住（hour / date / mode），
+ * 要么换到的体系恰好也读同一个键名（minute 与 hour 同属 name；action 被 fengshui 与 name 共用）。
+ * 其余单体系键（num1–3 / upper / lines / count / 生肖…）只有原体系会读，留着也只是被忽略。
+ */
+const SYSTEM_KEYS = {
+  hour: ['chenggu', 'xiaoliuren', 'name'],
+  minute: ['name'],
+  date: ['xiaoliuren'],
+  mode: ['convert', 'meihua', 'xiaoliuren'],
+  action: ['fengshui', 'name'],
+};
+
+/**
+ * 换体系时，把句柄带进来的、新体系不认的输入键剔掉。
+ *
+ * 为什么：文档主推 `{ handle, system: "ziwei" }`（同一时间换一套盘看），而称骨 / 小六壬的句柄里
+ * 一定带着 `hour`，convert / 梅花 / 小六壬的句柄一定带着 `mode`。这些键并回参数后，工具层的
+ * 「hour 仅用于 chenggu / xiaoliuren」守卫会把它们当成用户本轮误传而直接报错——上一张盘的输入
+ * 挡住了这一张盘。本次显式重给的键不动：那确实是用户这次的意思，该报错仍然报错。
+ *
+ * @param {object} merged 已并好句柄与增量的参数（原地修改）
+ * @param {Set<string>} owned 本轮由调用方显式给出的键
+ */
+export function pruneForeignKeys(merged, owned) {
+  if (!isObject(merged)) return merged;
+  const system = merged.system;
+  if (typeof system !== 'string' || !system) return merged;
+  for (const [key, owners] of Object.entries(SYSTEM_KEYS)) {
+    if (owned.has(key) || merged[key] === undefined) continue;
+    if (owners.includes(system)) continue;
+    delete merged[key];
+  }
+  return merged;
+}
+
+/** 调用方本轮显式给出的键（undefined 视同没给，与 resolveHandle 的合并口径一致） */
+export function ownedKeys(...sources) {
+  const out = new Set();
+  for (const src of sources) {
+    if (!isObject(src)) continue;
+    for (const [k, v] of Object.entries(src)) {
+      if (v !== undefined && k !== 'handle') out.add(k);
+    }
+  }
+  return out;
+}
 
 /**
  * 把 handle 与增量参数并起来。没有 handle 时原样返回（深一层的浅拷贝，避免改调用方对象）。
@@ -189,6 +240,7 @@ export function resolveHandle(args = {}) {
     if (v === undefined || KEY_BLOCKED.has(k)) continue;
     out[k] = v;
   }
+  pruneForeignKeys(out, ownedKeys(rest));
   return out;
 }
 

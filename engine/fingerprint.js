@@ -22,7 +22,8 @@ function sortValue(value) {
   if (t === 'boolean') return value;
   if (Array.isArray(value)) return value.map(sortValue);
   if (t === 'object') {
-    const out = {};
+    // 普通对象上给 __proto__ 赋值走的是 setter，会把键吞掉；用无原型对象承接。
+    const out = Object.create(null);
     for (const key of Object.keys(value).sort()) {
       const item = value[key];
       if (item === undefined || typeof item === 'function' || typeof item === 'symbol') continue;

@@ -1,6 +1,8 @@
 // 六爻（纳甲）引擎：摇卦、装卦、六亲、六神、世应、变卦
 import { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xunKongOf } from './calendar.js';
 import { jingText } from './yijing-text.js';
+import { fail } from './fail.js';
+import { assertObject } from './validate.js';
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -117,6 +119,7 @@ function hexBranches(hex) {
 
 /** 单个卦的卦体属性：是否六冲卦 / 六合卦，及配对明细 */
 export function hexBody(hex) {
+  assertObject(hex, 'hexBody 的卦对象', '取 buildLiuyao 结果里的 ben / bian（含 name、upper、lower）');
   const { inner, outer, all } = hexBranches(hex);
   const chongPairs = pairThirds(all, ZHI_CHONG_PAIRS);
   const hePairs = pairThirds(all, ZHI_HE_PAIRS);
@@ -140,6 +143,8 @@ export function hexBody(hex) {
  * @param {number[]} [moving] 动爻位置（1~6）
  */
 export function bodyRelations(ben, bian = null, moving = []) {
+  assertObject(ben, 'bodyRelations 的本卦', 'hexagramFromBits / buildLiuyao 得到的卦对象（含 name、upper、lower）；静卦时 bian 传 null');
+  if (bian !== null && bian !== undefined) assertObject(bian, 'bodyRelations 的变卦', '卦对象或 null（静卦传 null）');
   const b = hexBody(ben);
   const out = {
     ben: { name: b.name, chong: b.chong, he: b.he, chongPairs: b.chongPairs, hePairs: b.hePairs, inner: b.inner, outer: b.outer },
@@ -262,6 +267,10 @@ export const HEXAGRAM_COUNT = HEXAGRAM_INDEX.size;
 
 /** 由六爻（自下而上，1 = 阳）求卦 */
 export function hexagramFromBits(bits) {
+  // 爻数不对以前静默返回 undefined（HEXAGRAM_INDEX.get 落空），调用方拿着 undefined 继续读 .name 才炸
+  if (!Array.isArray(bits) || bits.length !== 6 || bits.some((b) => b !== 0 && b !== 1)) {
+    throw fail('E_INPUT', `hexagramFromBits 需要 6 个爻位（自下而上，每项 0 或 1），收到 ${Array.isArray(bits) ? `${bits.length} 项` : String(bits) === 'null' ? 'null' : typeof bits}`);
+  }
   const upper = TRIGRAM_BY_VALUE[bitsValue(bits.slice(3))];
   const lower = TRIGRAM_BY_VALUE[bitsValue(bits.slice(0, 3))];
   return HEXAGRAM_INDEX.get(`${upper}|${lower}`);
@@ -326,6 +335,10 @@ const sideOf = (position) => (position <= 3 ? 'inner' : 'outer');
  * @param {{direction?:string, gender?:string}} [opts]
  */
 export function yongshenOf(result, opts = {}) {
+  // opts 允许省略或传 null（都按默认口径），但显式给了别的东西就必须是对象：
+  // 以前 yongshenOf(r, null) 会一路走到读 opts.direction，抛裸 TypeError
+  if (opts === null || opts === undefined) opts = {};
+  assertObject(opts, 'yongshenOf 的 opts', '{ direction?, gender? }；省略或 null 按默认口径');
   const r = result && typeof result === 'object' ? result : {};
   const ben = r.ben && typeof r.ben === 'object' ? r.ben : {};
   const lines = Array.isArray(ben.lines) ? ben.lines : [];
@@ -476,12 +489,22 @@ function isMoving(v) {
  * @param {object} input { lines?: number[] (自下而上, 6/7/8/9), dayGanZhi?: {stem, branch}, question?: string }
  */
 export function buildLiuyao(input = {}) {
-  const rawLines = Array.isArray(input.lines) && input.lines.length === 6
-    ? input.lines.slice()
-    : tossLines(input.random);
+  if (!input || typeof input !== 'object') throw fail('E_INPUT', '六爻起卦参数不能为空：至少给 lines 或 seed');
+  // lines 给了但不是数组（"7,8,9,6,7,8" / 789678 / {…}）以前等同于「没给」：
+  // 用户以为摇的是自己记下的那一卦，实际拿到一张随机盘，而且看不出来。
+  if (input.lines !== undefined && input.lines !== null && !Array.isArray(input.lines)) {
+    throw fail('E_LINES', `lines 必须是数组：自下而上 6 个爻值（6 老阴 / 7 少阳 / 8 少阴 / 9 老阳），收到 ${typeof input.lines}`);
+  }
+  const given = Array.isArray(input.lines) ? input.lines : null;
+  // 给了 lines 就按给定的装卦；长度不对是输入错误，不能悄悄改成随机摇卦
+  // 码一律用 E_LINES：爻值这一族错误对外只有一个口径，宿主层不必再按文案二次判
+  if (given && given.length !== 6) {
+    throw fail('E_LINES', `lines 必须是 6 个爻值（自下而上），收到 ${given.length} 个`);
+  }
+  const rawLines = given ? given.slice() : tossLines(input.random);
 
   const invalid = rawLines.filter((v) => ![6, 7, 8, 9].includes(v));
-  if (invalid.length) throw new Error(`爻值只能是 6/7/8/9，收到 ${JSON.stringify(rawLines)}`);
+  if (invalid.length) throw fail('E_LINES', `爻值只能是 6/7/8/9，收到 ${JSON.stringify(rawLines)}`);
 
   const bits = rawLines.map(lineToBit);
   const ben = hexagramFromBits(bits);

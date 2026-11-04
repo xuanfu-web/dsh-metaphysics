@@ -87,3 +87,43 @@ const COLD = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'ma
   const w = PP.baziHTML(compute({ system: 'bazi', datetime: '1990-06-15T12:00', gender: 'male' }));
   ok('热盘也渲染寒暖卡', /mp-cli/.test(w) && /壬水/.test(w));
 }
+
+// ── 湿热单列一档：接通死分支不能靠复用「湿滞」 ─────────────────────
+// 上一轮指出「hot && damp>=0.8」永不可达，本轮把它接通时直接判成湿滞（取丙火、忌水），
+// 于是所有偏热且带湿土的盘喜用从「水」翻成「火」——往蒸笼下添柴。现在单列「湿热」档取壬水。
+const WET_HOT = judgeClimate({ monthBranch: '午', dayStem: '甲', wuxing: { 火: 2, 水: 2.5 }, branches: ['丑', '辰'] });
+ok('热且湿判湿热', WET_HOT.kind === '湿热', WET_HOT.kind);
+ok('湿热调候取壬水（不复用湿滞的丙火）', WET_HOT.need.element === '水' && WET_HOT.need.stem === '壬', JSON.stringify(WET_HOT.need));
+ok('湿热忌火', WET_HOT.avoidElement === '火', WET_HOT.avoidElement);
+const WET_ONLY = judgeClimate({ monthBranch: '辰', dayStem: '甲', wuxing: { 火: 0, 水: 2 }, branches: ['丑', '辰'] });
+ok('不热之湿仍判湿滞取丙火', WET_ONLY.kind === '湿滞' && WET_ONLY.need.element === '火', `${WET_ONLY.kind}/${WET_ONLY.need.element}`);
+// 报告点名的两张盘：翻档即改喜用，这里锁「喜水忌火」回到上一轮口径
+for (const [dt, label] of [['1935-06-06T11:00', '1935-06-06 巳月'], ['1995-06-12T23:00', '1995-06-12 午月']]) {
+  const hot = compute({ system: 'bazi', datetime: dt, gender: 'male' });
+  const ys = hot.frame.yongshen;
+  ok(`${label} 判湿热且调候取水`, hot.climate.kind === '湿热' && hot.climate.need.element === '水', `${hot.climate.kind}/${hot.climate.need.element}`);
+  ok(`${label} 喜用仍含水、火没被顶到首位`, ys.favor.includes('水') && ys.favor[0] !== '火', ys.favor.join(''));
+  ok(`${label} 水没被删成忌神`, !ys.avoid.includes('水'), ys.avoid.join(''));
+}
+// 旁白里「不该再多的是什么」必须与忌神同源：早先模板按「档名含不含寒」猜，
+// 湿滞（忌水、取丙火）会念成「要的不是更多的火，而是丙火」。
+const TIAOHOU_SRC = read('engine/tiaohou.js');
+ok('旁白不再按档名猜忌神', !/kind\.includes\('寒'\)\s*\?\s*'水'/.test(TIAOHOU_SRC));
+for (const c of [COLD.climate, WET_HOT, WET_ONLY, compute({ system: 'bazi', datetime: '1990-06-15T12:00', gender: 'male' }).climate]) {
+  const got = /要的不是更多的(.)，而是/.exec(c.narration);
+  ok(`旁白忌神与 avoidElement 同源（${c.kind}）`, !!got && got[1] === c.avoidElement, `${c.kind}: ${c.narration.slice(-30)}`);
+}
+// 档位表不许有缺口：KIND_NAME / NEED / DAY_FEEL 三处同档，且每档写满五种日主
+const blockOf = (name) => {
+  const s = TIAOHOU_SRC.indexOf(`const ${name} = {`);
+  return TIAOHOU_SRC.slice(s, TIAOHOU_SRC.indexOf('\n};', s));
+};
+const objKeys = (block) => [...block.matchAll(/^ {2}([^:\s]+): \{/gm)].map((m) => m[1]);
+const nameKeys = (block) => [...block.matchAll(/([^\s,:{}'"]+):\s*'[^']*'/g)].map((m) => m[1]);
+const needKeys = objKeys(blockOf('NEED'));
+const kindKeys = nameKeys(blockOf('KIND_NAME'));
+const feelKeys = objKeys(blockOf('DAY_FEEL'));
+ok('NEED 与 KIND_NAME 同档', needKeys.length === kindKeys.length && kindKeys.every((k) => needKeys.includes(k)), `${kindKeys.join('/')} vs ${needKeys.join('/')}`);
+ok('DAY_FEEL 与 KIND_NAME 同档', feelKeys.length === kindKeys.length && kindKeys.every((k) => feelKeys.includes(k)), `${kindKeys.join('/')} vs ${feelKeys.join('/')}`);
+const feelBlock = blockOf('DAY_FEEL');
+ok('每档写满五行日主', (feelBlock.match(/^ {4}(木|火|土|金|水):/gm) || []).length === kindKeys.length * 5, String((feelBlock.match(/^ {4}(木|火|土|金|水):/gm) || []).length));

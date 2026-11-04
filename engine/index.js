@@ -11,7 +11,7 @@ import { buildQimen, buildSnapshot } from './qimen.js';
 import { geocodeAddress, resolveAddress } from './geo.js';
 import { toJDN, ganzhiName, dayGanzhiIndex } from './calendar.js';
 import { randomOf, isSeed } from './random.js';
-import { encodeHandle, decodeHandle, resolveHandle } from './handle.js';
+import { encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys } from './handle.js';
 import { askLink, parseAskLink, formOf, restNote, askPackages } from './bridge.js';
 import { parseRevision, displayValue } from './revise.js';
 import { interpret, DIRECTIONS, DIRECTION_DEFAULT } from './interpret.js';
@@ -36,20 +36,14 @@ import { buildName } from './name.js';
 import { buildTrace, traceMarkdown, SYSTEM_LABEL } from './trace.js';
 import { fail } from './fail.js';
 import { assertCivil } from './validate.js';
+import { parseDateTime, daysInMonth } from './datetime.js';
 
 export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
+export { parseDateTime };
 
 const pad = (n) => String(n).padStart(2, '0');
 
 const GENDERS = ['male', 'female'];
-
-function daysInMonth(year, month) {
-  if (month === 2) {
-    const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-    return leap ? 29 : 28;
-  }
-  return [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
-}
 
 /**
  * 性别是必填项：它决定大运/大限的顺逆，缺省按某一方排等于给出一张错盘。
@@ -74,41 +68,6 @@ function ziweiSchoolArgs(args) {
     if (args[key] !== undefined) out[key] = args[key];
   }
   if (args.schools && typeof args.schools === 'object') out.schools = args.schools;
-  return out;
-}
-
-/** 解析 'YYYY-MM-DDTHH:mm' / 'YYYY-MM-DD HH:mm' / 'YYYY-MM-DD'
- *  可以带秒（用户常直接粘 ISO 串），但引擎的民用时间口径到分钟：秒只校验、不参与换算。 */
-export function parseDateTime(text) {
-  if (typeof text !== 'string' || !text.trim()) {
-    throw fail('E_INPUT', '缺少 datetime（公历日期时间），例如 1990-05-12T14:30');
-  }
-  const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
-  if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 1990-05-12T14:30 这种格式`);
-  // 秒位以前只捕获不校验：\d{1,2} 放过 0–99，于是「T03:04:99」被静默折成 03:04。
-  // 与 1990-02-30 同一类问题——非法输入悄悄变成一个合法时刻，盘面照样排出，没人知道。
-  if (m[6] !== undefined && Number(m[6]) > 59) throw fail('E_INPUT', `秒超出范围：${m[6]}`);
-  const out = {
-    year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
-    hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),
-  };
-  if (out.month < 1 || out.month > 12) throw fail('E_INPUT', `月份超出范围：${out.month}`);
-  // 只校验 1..31 会让 1990-02-30、2026-04-31 这类日期静默滚到下个月，整盘错位且无人察觉
-  const maxDay = daysInMonth(out.year, out.month);
-  if (out.day < 1 || out.day > maxDay) {
-    throw fail('E_INPUT', `日期不存在：${out.year}-${out.month}-${out.day}（${out.year} 年 ${out.month} 月只有 ${maxDay} 天）`);
-  }
-  if (out.hour > 23 || out.minute > 59) throw fail('E_INPUT', `时间超出范围：${out.hour}:${out.minute}`);
-  // ΔT（地球自转改正）表只覆盖 1900–2100，超出后按端点值外推，精度不可保证
-  if (out.year < 1600 || out.year > 2400) {
-    throw fail('E_RANGE', `年份 ${out.year} 超出可计算范围（1600–2400）`);
-  }
-  if (out.year < 1900 || out.year > 2100) {
-    out.precision = {
-      level: 'approx',
-      note: `ΔT 模型仅覆盖 1900–2100，${out.year} 年按端点值外推，节气与朔望时刻可能有分钟级偏差，月柱在交节前后需复核`,
-    };
-  }
   return out;
 }
 
@@ -528,7 +487,7 @@ function jsonSafe(value) {
 // 只收影响盘面的参数：地址换成有效经度后不再把原文算进去，问事/方向按体系保留。
 const SHADOW_IGNORE = new Set([
   'shadow', 'shadowVersion', 'diff', 'trace', 'traceError', 'withInterpret', 'detail', 'cross', 'verifyPast', 'rectify', 'events',
-  'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise',
+  'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise', 'geo', 'longitudeFromGeo',
 ]);
 
 const num6 = (n) => {
@@ -609,15 +568,20 @@ function shadowParams(args, result) {
 
   // 其余体系：只剔除解析/附加模块参数，其余原样归一化
   const params = {};
+  // 一律 defineProperty，不用 params[key] =：key 恰好是 __proto__ 时赋值走原型 setter，
+  // 键会静默消失——两种不同的 __proto__ 值于是撞成同一个指纹（canonicalJson 已避过这个坑）
+  const put = (key, value) => Object.defineProperty(params, key, {
+    value, enumerable: true, writable: true, configurable: true,
+  });
   for (const [key, value] of Object.entries(args)) {
     if (SHADOW_IGNORE.has(key) || value === undefined) continue;
-    if (key === 'datetime') params.datetime = shadowDateTime(value);
-    else if (key === 'partner') params.partner = shadowPerson(value);
-    else if (key === 'gender') params.gender = String(value).toLowerCase();
+    if (key === 'datetime') put(key, shadowDateTime(value));
+    else if (key === 'partner') put(key, shadowPerson(value));
+    else if (key === 'gender') put(key, String(value).toLowerCase());
     else if (key === 'address') continue; // 调用侧先把地址换成经度，再由 longitude 参与；这里不收原文
-    else if (typeof value === 'number') params[key] = Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : null;
-    else if (typeof value === 'string') params[key] = value.trim();
-    else params[key] = value;
+    else if (typeof value === 'number') put(key, Number.isFinite(value) ? (Object.is(value, -0) ? 0 : value) : null);
+    else if (typeof value === 'string') put(key, value.trim());
+    else put(key, value);
   }
   if (system === 'daliuren' && params.lateZi === undefined) params.lateZi = true;
   if (system === 'tarot' && params.count === undefined) params.count = 3;
@@ -636,7 +600,7 @@ function shadowParams(args, result) {
   return params;
 }
 
-function shadowMeta(system, args) {
+function shadowMeta(system, args, asOfNorm = normalizeAsOf(args.asOf)) {
   const seed = args.seed;
   const seeded = !(seed === undefined || seed === null || seed === '');
   // 六爻给定了六爻值就是确定性起卦，不需要 seed 也能复算
@@ -647,9 +611,26 @@ function shadowMeta(system, args) {
     return { reproducible: false, reason: '未给 seed：重算会变成另一副牌 / 另一卦' };
   }
   if (system === 'bazi' || system === 'ziwei' || system === 'trend' || system === 'fengshui') {
-    return { reproducible: true, asOfPinned: !!args.asOf };
+    // 以归一化后的值为准：'2030-01-01' 算钉住了，'   ' 不算
+    return { reproducible: true, asOfPinned: !!asOfNorm };
   }
   return { reproducible: true };
+}
+
+/** asOf 也按同一套日期尺归一：2026-10-22 / 2026-10-22T16:00 / 带空格 三种写法应是同一张盘。
+ *  必须走 asOfParts，不能走 parseDateTime：排盘侧「只给日期」按中午 12:00 补时刻，
+ *  parseDateTime 补的是 00:00——以前指纹用后者，于是 '2030-01-01' 与 '2030-01-01T12:00'
+ *  出的盘逐字段相同，baseId 却是两个，跨版本对拍直接断在这里。
+ *  checkAsOf 与影子盘指纹共用这一个口径。 */
+function normalizeAsOf(value) {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value === 'object') return value; // 内部传的对象口径不动，由调用方负责
+  const s = String(value).trim();
+  if (!s) return null; // 只有空格 = 没钉 asOf，别让它算成第三种指纹
+  const parts = asOfParts(s);
+  if (!parts) return s; // 非法值留给 checkAsOf 报错，指纹不抢答
+  const p2 = (n) => String(n).padStart(2, '0');
+  return `${parts.year}-${p2(parts.month)}-${p2(parts.day)}T${p2(parts.hour)}:${p2(parts.minute)}`;
 }
 
 /**
@@ -661,14 +642,15 @@ export function chartFingerprint(args = {}, opts = {}) {
   const result = opts.result || null;
   const system = String((result && result.system) || args.system || '');
   const version = String(opts.version || (typeof globalThis !== 'undefined' && globalThis.__MP_VER) || 'dev');
+  const asOf = normalizeAsOf(args.asOf);
   const fp = fingerprintOf({
     system,
     params: shadowParams(args, result),
     seed: args.seed,
-    asOf: args.asOf ? String(args.asOf) : null,
+    asOf,
     version,
   });
-  return { ...fp, ...shadowMeta(system, args), system, version };
+  return { ...fp, ...shadowMeta(system, args, asOf), system, version };
 }
 
 const SHADOW_DIFF_IGNORE = new Set([
@@ -760,6 +742,21 @@ export function compute(input = {}) {
       }),
       ignored: rev.ignored,
     };
+    // 换体系有两条路：显式 `system`（resolveHandle 里已经剔过）、以及一句话改参
+    // （「换成八字看」把 system 翻成补丁，落在句柄合并之后）。后一条若不补这一刀，
+    // 称骨句柄里的 hour 会跟到八字盘上，被工具层当成误传报错。
+    args = pruneForeignKeys(args, ownedKeys(input, rev.patch));
+  }
+  // asOf 在入口就归一成 canonical 串（去首尾空格、只给日期补 12:00）：
+  // 排盘、句柄、影子盘指纹读同一份。以前只有指纹 trim，句柄照抄原文，
+  // '2030-01-01' 与 '2030-01-01T12:00' 出的明明是同一张盘，却各得一个 handle、一个 baseId。
+  // 没给 asOf 时一个键都不加：null 会整段进句柄，等于给所有旧深链换一次身份。
+  if (args.asOf !== undefined && args.asOf !== null && args.asOf !== '') {
+    const norm = normalizeAsOf(args.asOf);
+    if (norm === null) {
+      args = { ...args };
+      delete args.asOf; // 只有空格：按「没钉 asOf」处理，与 normalizeAsOf 的口径一致
+    } else if (norm !== args.asOf) args = { ...args, asOf: norm };
   }
   // partner2: null 视同未传：先归一化再排盘，否则同一对盘会因为显式 null 多出一个句柄
   if (args.partner2 === null) {
@@ -768,6 +765,15 @@ export function compute(input = {}) {
   }
   // 经度整形 + 守卫（非有限 / 超范围 → E_RANGE；数字串 → 数字）
   args = normalizeLongitudes(args);
+  // verifyPast 必须在「用它摊开过去流年」之前整形：这段逻辑在 compute() 里，
+  // 校验却留在 computeRaw()，数字串 "6" 会先被当成没传、再也没机会排。
+  if (args.verifyPast !== undefined && args.verifyPast !== null && args.verifyPast !== '') {
+    const n = Number(args.verifyPast);
+    if (!Number.isInteger(n) || n < 1 || n > 10) {
+      throw fail('E_INPUT', `verifyPast 要是 1–10 的整数（年数），收到「${args.verifyPast}」`);
+    }
+    args = { ...args, verifyPast: n };
+  }
   const r = jsonSafe(computeRaw(args));
   // 「所问之事」以前只有六爻和塔罗会落到结果里，梅花/六壬/奇门/小六壬都丢掉了：
   // 于是第一屏想说「你问的是……」却拿不到那句话。这里统一补齐，已有的值不动。
@@ -852,10 +858,13 @@ ${r.summary}`;
   }
   // 验前事：把过去若干年的流年信号摊开（只读，不改盘）
   if (Number.isInteger(args.verifyPast) && args.verifyPast > 0 && r.system === 'bazi') {
-    const years = Math.min(Math.max(args.verifyPast, 1), 10);
+    const years = args.verifyPast;
     const from = Number(r.liunianFrom) - years;
     const pastChart = buildBazi({
       ...parseDateTime(args.datetime),
+      // 与主盘同口径：主盘 hourUnknown 时内部按正午占位，过去盘若还用 00:00，
+      // 流年信号就来自子夜的盘，与用户看到的不是同一张
+      hourUnknown: args.hourUnknown === true,
       gender: requireGender(args.gender),
       lateZi: args.lateZi !== false,
       trueSolar: args.trueSolar !== false,
@@ -1058,8 +1067,20 @@ const LATE_ZI_MODES = ['same-day', 'next-day'];
  */
 function checkLongitude(value, who = '') {
   if (value === undefined || value === null || value === '') return undefined;
-  const n = Number(value);
   const tag = who ? `${who}的` : '';
+  // 只收 number 与十进制数字串。Number(true)=1、Number([])=0、Number(' ')=0 都是
+  // 「看起来能转成数」的静默错值，按 1°/0° 做真太阳时还会被句柄固化。
+  let n;
+  if (typeof value === 'number') n = value;
+  else if (typeof value === 'string') {
+    const s = value.trim();
+    if (!/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(s)) {
+      throw fail('E_RANGE', `${tag}经度不是十进制数字：收到「${value}」。经度写数字即可，例如北京 116.4`);
+    }
+    n = Number(s);
+  } else {
+    throw fail('E_RANGE', `${tag}经度必须是数字或数字字符串，收到 ${Array.isArray(value) ? 'array' : typeof value}`);
+  }
   if (!Number.isFinite(n)) throw fail('E_RANGE', `${tag}经度不是有限数值：收到「${value}」。经度写十进制数字即可，例如北京 116.4`);
   if (n < -180 || n > 180) throw fail('E_RANGE', `${tag}经度要在 −180 到 180 之间（东经为正），收到 ${n}`);
   return n;
@@ -1069,8 +1090,9 @@ function checkLongitude(value, who = '') {
  * 把主方 / 对方 / 第三方的经度统一成数字。
  * 下游按 `typeof === 'number'` 取值，所以 "86.0"（模型常给带引号的数）会被静默丢掉，
  * 少一次真太阳时修正而结果里毫无痕迹——这里先整形，再交给校验过的值。
+ * 宿主层也调它：地址解析前不归一，数字串形式的显式经度会被联网结果顶掉。
  */
-function normalizeLongitudes(args) {
+export function normalizeLongitudes(args) {
   const self = checkLongitude(args.longitude, '');
   const p = args.partner && typeof args.partner === 'object' ? checkLongitude(args.partner.longitude, '对方') : undefined;
   const p2 = args.partner2 && typeof args.partner2 === 'object' ? checkLongitude(args.partner2.longitude, '第三方') : undefined;
@@ -1095,7 +1117,9 @@ function detailOf(value) {
 
 /** asOf 只接受能解析成真实日期的字符串；非法值以前会静默回退到「此刻」 */
 function checkAsOf(asOf) {
-  if (asOf === undefined || asOf === null || asOf === '') return undefined;
+  // 空格串按「没给」处理，与影子盘指纹的 normalizeAsOf 同一条线：
+  // 否则一边算成没钉 asOf、另一边报 E_ASOF
+  if (asOf === undefined || asOf === null || (typeof asOf === 'string' && !asOf.trim())) return undefined;
   const parts = asOfParts(asOf);
   if (!parts) throw fail('E_ASOF', `无法解析 asOf：「${asOf}」，请用 2026-10-22T16:00 这种格式`);
   const { year, month, day, hour, minute } = parts;
@@ -1112,6 +1136,30 @@ function checkAsOf(asOf) {
 
 function computeRaw(args = {}) {
   const system = args.system;
+  // mode 是三个体系共用的键，以前传错组的值会被静默忽略（convert 收到 'number' 仍按公历转农历）。
+  // 这里按 system 分组校验，跨组直接报错，让模型改参数而不是拿到一张 silently wrong 的盘。
+  if (args.mode !== undefined && args.mode !== null && args.mode !== '') {
+    const MODE_BY_SYSTEM = {
+      convert: ['solar2lunar', 'lunar2solar'],
+      meihua: ['time', 'number'],
+      xiaoliuren: ['time', 'number'],
+    };
+    const allowed = MODE_BY_SYSTEM[system];
+    if (!allowed) {
+      throw fail('E_INPUT', `mode 只用于 ${Object.keys(MODE_BY_SYSTEM).join(' / ')}；${system || '当前体系'} 不收 mode`);
+    }
+    if (!allowed.includes(args.mode)) {
+      throw fail('E_INPUT', `${system} 的 mode 只能是 ${allowed.join(' / ')}，收到「${String(args.mode).slice(0, 24)}」`);
+    }
+  }
+  // 风水 fortuneYear 以前只认整数：2026.5 被静默当成「没给」，整块年飞星消失。
+  if (args.fortuneYear !== undefined && args.fortuneYear !== null && args.fortuneYear !== '') {
+    const n = Number(args.fortuneYear);
+    if (!Number.isInteger(n)) {
+      throw fail('E_INPUT', `fortuneYear 要是整数年份，收到「${args.fortuneYear}」`);
+    }
+    args = { ...args, fortuneYear: n };
+  }
   if (system === 'bazi') {
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
@@ -1135,6 +1183,11 @@ function computeRaw(args = {}) {
     // 命宫由「生月 + 生时支」定：时支未知则整盘无处落脚，没有「大概的紫微盘」这种东西
     if (args.hourUnknown === true) {
       throw fail('HOUR_UNKNOWN', '紫微必须有出生时刻：命宫由生月与生时支定，时支未知则整盘不成立。请补上出生时刻，或改用八字三柱模式只看年/月/日。');
+    }
+    // 与奇门同一个别名口径：lateZi 是八字/六壬的参数名，紫微的历史参数名是 lateZishi。
+    // 不归一的话 revise「晚子时算次日」会照常回执已应用，盘却按默认 current-day 排。
+    if (args.lateZi !== undefined && args.lateZishi === undefined) {
+      args = { ...args, lateZishi: args.lateZi === false ? 'current-day' : 'next-day' };
     }
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
@@ -1243,6 +1296,9 @@ function computeRaw(args = {}) {
   }
   if (system === 'meihua') {
     let result;
+    // 时间起卦必须与其它体系过同一把日期尺：以前把原串直接交给梅花私有解析器，
+    // 1990-02-30 / 13 月 / 25:00 都会被接受，再被正规化成另一天起卦。
+    if (args.mode !== 'number') parseDateTime(args.datetime);
     try {
       result = buildMeihua({
         mode: args.mode === 'number' ? 'number' : 'time',
@@ -1250,9 +1306,13 @@ function computeRaw(args = {}) {
         upper: args.upper,
         lower: args.lower,
         changing: args.changing,
+        lateZi: args.lateZi,
       });
     } catch (e) {
-      throw fail('E_INPUT', `梅花起卦参数不完整：${e && e.message ? e.message : e}`);
+      // 引擎自己定过码的（E_RANGE 越界 / E_INPUT 缺参）原样透传：一律压成 E_INPUT，
+      // 调用方就分不清「换个时间重试」和「补参数」，「参数不完整」也是句假话——参数齐，只是年号出了表。
+      const message = (e && e.message) || String(e);
+      throw fail((e && e.code) || 'E_INPUT', (e && e.code) ? message : `梅花起卦参数不完整：${message}`);
     }
     return { ...result, summary: meihuaText(result) };
   }
@@ -1285,7 +1345,8 @@ function computeRaw(args = {}) {
     try {
       result = buildLiuyao({ lines, question: args.question, dayGanZhi });
     } catch (e) {
-      throw fail('E_LINES', e && e.message ? e.message : e);
+      // 带码的原样透传：E_LINES 之外还有 E_INPUT（参数形状不对），压成 E_LINES 会把「没给爻值」说成「爻值不对」
+      throw fail((e && e.code) || 'E_LINES', e && e.message ? e.message : e);
     }
     // 用神挂在结果上：摘要、面板、解析三层读同一份，避免各自取一次走散
     const ug = yongshenOf(result, { direction: args.direction, gender: args.gender });
@@ -1340,7 +1401,8 @@ function computeRaw(args = {}) {
         candidates: args.candidates,
       });
     } catch (e) {
-      throw fail('E_INPUT', (e && e.message) || String(e));
+      // 同梅花：带码的（E_RANGE 越界）原样透传，别让择日的年份问题看起来像参数格式问题
+      throw fail((e && e.code) || 'E_INPUT', (e && e.message) || String(e));
     }
     return { ...result, summary: zeriText(result) };
   }
@@ -1351,7 +1413,7 @@ function computeRaw(args = {}) {
     if (hour === null || hour < 0 || hour > 23) {
       throw fail('E_INPUT', '称骨必须给时辰：datetime 带时分（如 1990-08-15T10:00），或额外给 hour（0–23）——缺时辰四柱不齐');
     }
-    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0 });
+    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0, lateZi: args.lateZi });
     return { ...result, summary: chengguText(result) };
   }
   if (system === 'convert') {
@@ -1384,6 +1446,7 @@ function computeRaw(args = {}) {
       num2: args.num2,
       num3: args.num3,
       question: args.question,
+      lateZi: args.lateZi,
     });
     return { ...result, summary: xiaoliurenText(result) };
   }
@@ -1440,7 +1503,7 @@ function computeRaw(args = {}) {
         sitting: args.sitting,
         facing: args.facing,
         ...(args.period !== undefined ? { period: args.period } : {}),
-        ...(Number.isInteger(args.fortuneYear) ? { fortuneYear: args.fortuneYear } : {}),
+        ...(args.fortuneYear !== undefined ? { fortuneYear: args.fortuneYear } : {}),
         ...(typeof args.sittingOffset === 'number' ? { sittingOffset: args.sittingOffset } : {}),
         ...(typeof args.sittingDegree === 'number' ? { sittingDegree: args.sittingDegree } : {}),
         ...(typeof args.facingOffset === 'number' ? { facingOffset: args.facingOffset } : {}),
@@ -1467,7 +1530,7 @@ function computeRaw(args = {}) {
       action: 'natal',
       year: dt.year, month: dt.month, day: dt.day,
       gender: requireGender(args.gender),
-      fortuneYear: Number.isInteger(args.fortuneYear) ? args.fortuneYear : undefined,
+      fortuneYear: args.fortuneYear,
       dst: args.dst !== false,
     });
     return { ...result, summary: fengshuiText(result) };
@@ -1865,7 +1928,7 @@ export { crossCheck, crossText, crossSection };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName };
 export { buildTrace, traceMarkdown };
-export { encodeHandle, decodeHandle, resolveHandle };
+export { encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys };
 // C3 对话桥替代：深链编解码、表单还原、三档复制包（面板与独立页共用一份）
 export { askLink, parseAskLink, formOf, restNote, askPackages };
 // 问事解读提示：把一张盘打包成「先答他所问、不堆术语、回到现实核对」的提示，供面板一键复制

@@ -11,6 +11,7 @@ import vm from 'node:vm';
 import { buildQimen, jiXingOf, ruMuOf, QIMEN_CONDITION_TABLES } from '../engine/qimen.js';
 import { interpretQimen } from '../engine/qimen-interpret.js';
 import { compute } from '../engine/index.js';
+import { STEMS, BRANCHES } from '../engine/calendar.js';
 import { knowledgeFor } from '../engine/interpret-knowledge.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -26,8 +27,8 @@ const ZHI_XING = {
   辰: '辰', 午: '午', 酉: '酉', 亥: '亥',
 };
 const ZHI_GONG = { 子: '1', 丑: '8', 寅: '8', 卯: '3', 辰: '4', 巳: '4', 午: '9', 未: '2', 申: '2', 酉: '7', 戌: '6', 亥: '6' };
-// 三奇入墓：乙木墓未、丙丁火墓戌
-const QI_MU_ZHI = { 乙: '未', 丙: '戌', 丁: '戌' };
+// 三奇入墓按《玄机赋》阴干逆行取墓：乙阴木墓戌、丙火墓戌、丁阴火墓丑
+const QI_MU_ZHI = { 乙: '戌', 丙: '戌', 丁: '丑' };
 
 // ── 一、表与独立推导一致 ──────────────────────────────────────
 for (const [stem, zhi] of Object.entries(YI_ZHI)) {
@@ -61,17 +62,17 @@ eq('中五宫与九宫列表无干', jiXingOf([{ palace: '5', tianPan: '戊' }])
 eq('空数组不报错', jiXingOf([]).length, 0);
 eq('undefined 不报错', jiXingOf(undefined).length, 0);
 
-eq('乙在坤二入墓', ruMuOf(fake([['2', '乙']])).length, 1);
+eq('乙在乾六入墓（玄机赋：乙阴木墓戌）', ruMuOf(fake([['6', '乙']])).length, 1);
 eq('丙在乾六入墓', ruMuOf(fake([['6', '丙']])).length, 1);
-eq('丁在乾六入墓', ruMuOf(fake([['6', '丁']])).length, 1);
-eq('乙在乾六不入墓', ruMuOf(fake([['6', '乙']])).length, 0);
+eq('丁在艮八入墓（玄机赋：丁阴火墓丑）', ruMuOf(fake([['8', '丁']])).length, 1);
+eq('乙在坤二不入墓', ruMuOf(fake([['2', '乙']])).length, 0);
 eq('六仪不判入墓', ruMuOf(fake([['6', '戊'], ['2', '己']])).length, 0);
 eq('入墓空数组不报错', ruMuOf([]).length, 0);
 
 {
   const hit = jiXingOf(fake([['3', '戊'], ['9', '辛']]));
   ok('击刑每条带出处口径', hit.every((x) => x.stem && x.palace && x.zhi && x.basis && x.basis.length >= 6), JSON.stringify(hit));
-  const mu = ruMuOf(fake([['2', '乙']]));
+  const mu = ruMuOf(fake([['6', '乙']]));
   ok('入墓每条带出处口径', mu.every((x) => x.basis && x.basis.includes('墓')), JSON.stringify(mu));
 }
 
@@ -159,4 +160,27 @@ eq('入墓空数组不报错', ruMuOf([]).length, 0);
   ok('知识库有 qimen-rumu', know.includes('qimen-rumu'), know.join(','));
   const jx = QIMEN_CONDITION_TABLES.jiXing;
   ok('知识条目逐条对上表（戊震三）', String(jx['戊'].palace) === '3' && String(jx['癸'].palace) === '4');
+}
+
+// ── 七、时旬空：按时柱所在旬取，不能拿日旬顶替 ──────────────────
+// 时家奇门的空亡跟「时辰」走。日旬与时旬不同时，旧实现会报出日旬空亡，
+// 盘面照样成立、也没人察觉——所以这里用独立推导逐盘核对。
+{
+  const JIAZI = Array.from({ length: 60 }, (_, i) => STEMS[i % 10] + BRANCHES[i % 12]);
+  const KONG = { 甲子: ['戌', '亥'], 甲戌: ['申', '酉'], 甲申: ['午', '未'], 甲午: ['辰', '巳'], 甲辰: ['寅', '卯'], 甲寅: ['子', '丑'] };
+  const xunOf = (gz) => JIAZI[Math.floor(JIAZI.indexOf(gz) / 10) * 10];
+  let differed = 0;
+  for (const dt of ['2024-03-15T10:00', '2024-03-15T14:00', '2024-03-16T00:00', '2024-05-05T18:00', '2025-01-20T08:00']) {
+    const r = compute({ system: 'qimen', datetime: dt });
+    const expect = KONG[xunOf(r.siZhu.time)];
+    ok(`时旬空 ${dt}（${r.siZhu.time}）→ ${expect.join('')}`, JSON.stringify(r.kongWang) === JSON.stringify(expect),
+      JSON.stringify({ hour: r.siZhu.time, day: r.siZhu.day, kong: r.kongWang, expect }));
+    if (xunOf(r.siZhu.day) !== xunOf(r.siZhu.time)) differed += 1;
+  }
+  ok('样本里确有日旬≠时旬，才能证明没有拿日旬顶替', differed > 0, String(differed));
+  // 锁定一例：2024-03-15T10:00 时柱丁巳（旬甲寅 → 空子丑），日柱戊寅（旬甲戌 → 空申酉）
+  const fixed = compute({ system: 'qimen', datetime: '2024-03-15T10:00' });
+  ok('日旬与时旬不同时取时旬（丁巳时 → 子丑，不是日旬申酉）',
+    fixed.siZhu.time === '丁巳' && JSON.stringify(fixed.kongWang) === '["子","丑"]',
+    JSON.stringify(fixed.kongWang));
 }

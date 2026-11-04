@@ -120,7 +120,6 @@ export function solarToLunar(year, month, day) {
   let num = 11;
   // 农历年以正月初一为界：月序越过「正」之后，岁次进一位
   let wrapped = false;
-  let cursorStart = dayNumberOf(newMoonJd(k));
 
   for (let i = 1; i <= 15; i++) {
     const startDay = dayNumberOf(newMoonJd(k + i - 1));
@@ -149,15 +148,9 @@ export function solarToLunar(year, month, day) {
       num = (num % 12) + 1;
       if (num === 1) wrapped = true; // 已越过正月初一
     }
-    cursorStart = endDay;
   }
 
   throw new Error(`农历换算失败：${year}-${month}-${day}`);
-}
-
-/** 农历月首的儒略日（供内部校验） */
-export function monthStartJd(year, month, day) {
-  return toJDN(year, month, day);
 }
 
 export { SYNODIC };

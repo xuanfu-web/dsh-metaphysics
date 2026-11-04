@@ -374,6 +374,22 @@ const GOOD = { id: 'a1', kind: 'bazi', label: '我', date: '1988-03-05', time: '
   const blank = PP.profFromForm({ kind: 'bazi', date: '1996-01-19', time: '07:31' }, '   ');
   eq('称呼只有空格时退回体系短名', blank.label, '八字');
 
+  // 两个开关也换一张盘：存卡 → 读回 → 仍是关，而不是被白名单剥掉后按默认拨成开
+  const off = PP.profFromForm({ kind: 'bazi', date: '1996-01-19', time: '07:31', trueSolar: false, lateZi: false }, '关掉校正');
+  eq('存卡时真太阳时保留 false', off.trueSolar, false);
+  eq('存卡时晚子时保留 false', off.lateZi, false);
+  const put = PP.profilesPut(off);
+  ok('开关随档案写进存储', put.ok === true);
+  const back = PP.profilesLoad().find((x) => x.id === off.id);
+  ok('读回来的卡还在', !!back);
+  eq('往返后真太阳时仍为关', back.trueSolar, false);
+  eq('往返后晚子时仍为关', back.lateZi, false);
+  const open = PP.profFromForm({ kind: 'bazi', date: '1996-01-19', time: '07:31' }, '都开');
+  eq('不传时按默认都开', open.trueSolar !== false && open.lateZi !== false, true);
+  PP.profilesPut(open);
+  const oldBack = PP.profilesLoad().find((x) => x.id === open.id);
+  ok('旧档案缺字段按默认都开', oldBack.trueSolar === true && oldBack.lateZi === true);
+
   // 外部存储里已经存在的坏卡：可以读出来，但不能直接拿去排
   ok('没时刻的八字卡不能直接排', PP.profUsable({ kind: 'bazi', time: '' }) === false);
   ok('时辰未知的卡可以直接排', PP.profUsable({ kind: 'bazi', time: '', hourUnknown: true }) === true);

@@ -17,7 +17,9 @@ const MUT_SCORE = { 禄: 10, 权: 5, 科: 8, 忌: -10 };
 const STRONG_LANDS = ['命宫', '夫妻', '福德', '财帛', '官禄'];
 
 const palaceByBranch = (chart, branch) => (chart.palaces || []).find((p) => p.branch === branch) || null;
-const mainStars = (p) => (p && p.stars ? p.stars.filter((s) => s.type === 'main' || s.type === '吉星' || s.type === '煞星').map((s) => s.name) : []);
+// buildZiwei 的星型标签是中文字面量：主星 / 辅星 / 吉星 / 煞星 / 杂曜。
+// 这里原先写 'main'，永远命中不了，合盘双方便只剩吉星与煞星。
+const mainStars = (p) => (p && p.stars ? p.stars.filter((s) => s.type === '主星' || s.type === '吉星' || s.type === '煞星').map((s) => s.name) : []);
 
 /** 一方的某宫（按地支）在对方盘中落到哪个宫位 */
 function landOn(host, branch) {

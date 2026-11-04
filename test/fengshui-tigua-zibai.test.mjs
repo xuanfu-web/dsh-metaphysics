@@ -159,7 +159,7 @@ const build = (args) => buildFengshui({ action: 'xuankong', sitting: '子', faci
   eq('阴遁时盘逆飞', h(2025, 6, 24).hour.fly, '逆飞');
   eq('日子时支取子', h(2025, 2, 24).meta.hourBranch, '子');
   eq('午时支取午', h(2025, 2, 24, 12).meta.hourBranch, '午');
-  ok('阴遁逆飞时中宫九紫、乾宫一白', h(2025, 6, 24).hour.palaces.find((p) => p.palace === '乾').num === 1, h(2025, 6, 24).hour.palaces);
+  ok('阴遁逆飞时中宫九紫、乾宫八白', h(2025, 6, 24).hour.palaces.find((p) => p.palace === '乾').num === 8, h(2025, 6, 24).hour.palaces);
 }
 
 // ── ⑨ 接线：玄空输出、摘要、compute 参数 ────────────────────────

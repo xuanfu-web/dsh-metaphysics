@@ -1,6 +1,8 @@
 // 择日：逐日按《协纪辨方书》卷十一「用事」命中宜忌，再用卷十「宜忌」六等与德神制化定吉凶方向，
 // 叠冲属相排除后排序。口径透明：这是排序引导，不是吉凶断语。
 import { fromJDN, toJDN } from './calendar.js';
+import { parseYmd } from './datetime.js';
+import { MAX_YEAR } from './validate.js';
 import { buildAlmanac, SHENGXIAO } from './almanac.js';
 import {
   computeDayShensha, taskShenshaHits, xingHitText, gradeDay,
@@ -105,23 +107,6 @@ const verdictOf = (grade, ctx) => {
   return { verdict: '回避', text: `卷十作 ${basis}；${tally}，${why}传统作诸事皆忌。`, excluded: false };
 };
 
-/**
- * 择日主函数。
- * @param {{task:string, startDate:string, days?:number, shengXiao?:string}} input
- *   startDate 必填（公历 YYYY-MM-DD），避免引擎在无时钟环境下静默取「今天」。
- */
-/** 严格解析公历日期：2 月 30 日这类不存在的日子直接判非法，不滚到下个月 */
-function parseYmd(raw) {
-  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(raw || '').trim());
-  if (!m) return null;
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  const day = Number(m[3]);
-  if (month < 1 || month > 12 || day < 1) return null;
-  const back = fromJDN(toJDN(year, month, day));
-  return back.year === year && back.month === month && back.day === day ? { year, month, day } : null;
-}
-
 const ymd = (p) => `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
 
 /**
@@ -132,6 +117,9 @@ const ymd = (p) => `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day
  *   candidates 给了就只比这几个候选日（2–12 个，去重、保持输入顺序），startDate 与 days 不参与。
  */
 export function buildZeri(input) {
+  if (!input || typeof input !== 'object') {
+    throw bad('择日参数不能为空：要给 task 与 startDate（或 candidates）');
+  }
   const task = input.task;
   if (!TASKS[task]) throw bad(`不支持的事项「${task}」。支持：${Object.keys(TASKS).join('、')}`);
   const shengXiaoRaw = typeof input.shengXiao === 'string' ? input.shengXiao.trim() : '';
@@ -149,7 +137,7 @@ export function buildZeri(input) {
     const seen = new Set();
     candidates = [];
     for (const raw of input.candidates) {
-      const p = parseYmd(raw);
+      const p = parseYmd(raw, '候选日');
       if (!p) throw bad(`候选日不是真实存在的公历日期：「${raw}」，请用 2026-12-01 这种格式`);
       const key = ymd(p);
       if (seen.has(key)) continue;
@@ -162,9 +150,12 @@ export function buildZeri(input) {
   let start = null;
   let days = 0;
   if (!candidates) {
-    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(input.startDate || '').trim());
-    if (!m) throw bad('择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
-    start = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+    start = parseYmd(input.startDate, 'startDate');
+    if (!start) {
+      throw bad(input.startDate
+        ? `startDate 不是真实存在的公历日期：「${input.startDate}」，请改用 2026-12-01 这种格式`
+        : '择日需要 startDate（公历 YYYY-MM-DD）——请向用户询问起算日，不要代填');
+    }
     // days 以前只认 Number.isInteger，于是 "45"（模型很爱给字符串）与 45.5 都静默变成 30 天：
     // 用户要的区间被悄悄改短，而结果里只看得到实际扫了几天，看不出被改过。
     // 现在：能规范成整数的（含数字串）就规范，范围外或非数字一律报错，不猜。
@@ -176,6 +167,13 @@ export function buildZeri(input) {
       if (!Number.isInteger(n)) throw bad(`择日的 days 要是 1–60 的整数，收到「${rawDays}」`);
       if (n < 1 || n > 60) throw bad(`择日的 days 要在 1–60 之间（${n} 超出范围）；更长请用分段多次查询`);
       days = n;
+    }
+    // 区间会一路扫到 start+days-1，越界得在这里说清楚：
+    // 让 buildAlmanac 去抛「黄历 的 year 超出支持范围」，用户填的是 startDate，跟黄历没关系。
+    const end = fromJDN(toJDN(start.year, start.month, start.day) + days - 1);
+    if (end.year > MAX_YEAR) {
+      throw fail('E_RANGE', `择日区间超出可计算范围：${ymd(start)} 起 ${days} 天会走到 ${ymd(end)}（上限 ${MAX_YEAR}-12-31）；`
+        + '请把 startDate 提前或减少 days');
     }
   }
 

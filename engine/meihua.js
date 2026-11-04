@@ -1,7 +1,9 @@
 // 梅花易数：时间/数字起卦、体用、互卦、变卦、错综卦
-import { BRANCHES } from './calendar.js';
+import { BRANCHES, fromJDN, toJDN } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { fail } from './fail.js';
+import { parseDateTime } from './datetime.js';
+import { assertShifted } from './validate.js';
 import { hexagramFromBits } from './liuyao.js';
 import { jingText } from './yijing-text.js';
 
@@ -45,6 +47,7 @@ function relation(bodyEl, useEl) {
  *   upper/lower/changing: 数字（number 模式，可给两数由程序取余）
  */
 export function buildMeihua(input = {}) {
+  if (!input || typeof input !== 'object') throw fail('E_INPUT', '梅花起卦参数不能为空：时间起卦要 datetime，数字起卦要 upper / lower');
   const mode = input.mode === 'number' ? 'number' : 'time';
   let upperNum;
   let lowerNum;
@@ -57,13 +60,31 @@ export function buildMeihua(input = {}) {
     if (!Number.isFinite(a) || !Number.isFinite(b)) throw fail('E_INPUT', '数字起卦需要两个数字（upper / lower），例如 upper=3、lower=5');
     upperNum = mod8(a);
     lowerNum = mod8(b);
-    moving = Number.isFinite(Number(input.changing)) && Number(input.changing) > 0
-      ? mod6(Number(input.changing))
-      : mod6(a + b);
+    if (input.changing !== undefined && input.changing !== null && input.changing !== '') {
+      // 以前 99 会被 mod 6 折成 3：用户指定动爻却得到另一爻，结果里看不出来
+      const ch = Number(input.changing);
+      if (!Number.isInteger(ch) || ch < 1 || ch > 6) {
+        throw fail('E_INPUT', `动爻 changing 必须是 1–6 的整数，收到「${input.changing}」`);
+      }
+      moving = ch;
+    } else {
+      moving = mod6(a + b);
+    }
     source = `数字起卦：${a} / ${b}`;
   } else {
     const dt = parseDateTime(input.datetime);
-    const lunar = solarToLunar(dt.year, dt.month, dt.day);
+    // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 归次日，年月日电数才落在同一子时
+    const lateZi = input.lateZi !== false;
+    let sy = dt.year;
+    let sm = dt.month;
+    let sd = dt.day;
+    if (lateZi && dt.hour >= 23) {
+      const next = assertShifted(fromJDN(toJDN(sy, sm, sd) + 1), '梅花时间起卦');
+      sy = next.year;
+      sm = next.month;
+      sd = next.day;
+    }
+    const lunar = solarToLunar(sy, sm, sd);
     const yearBranch = ((lunar.lunarYear - 4) % 12 + 12) % 12;
     const hb = Math.floor(((dt.hour + 1) % 24) / 2);
     const sum1 = yearBranch + 1 + lunar.month + lunar.day;
@@ -71,7 +92,7 @@ export function buildMeihua(input = {}) {
     upperNum = mod8(sum1);
     lowerNum = mod8(sum2);
     moving = mod6(sum2);
-    source = `时间起卦：${BRANCHES[yearBranch]}年${lunar.month}月${lunar.day}日${BRANCHES[hb]}时`;
+    source = `时间起卦：${BRANCHES[yearBranch]}年${lunar.month}月${lunar.day}日${BRANCHES[hb]}时${lateZi && dt.hour >= 23 ? '（晚子时按次日）' : ''}`;
   }
 
   const ben = hexName(upperNum, lowerNum);
@@ -124,16 +145,6 @@ export function buildMeihua(input = {}) {
       yinYang: b ? '阳' : '阴',
       moving: i === moving - 1,
     })),
-  };
-}
-
-function parseDateTime(text) {
-  if (typeof text !== 'string' || !text.trim()) throw fail('E_INPUT', '时间起卦需要 datetime，例如 2026-10-24T11:43');
-  const m = text.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2}))?$/);
-  if (!m) throw fail('E_INPUT', `无法解析 datetime：「${text}」，请用 2026-10-24T11:43 这种格式`);
-  return {
-    year: Number(m[1]), month: Number(m[2]), day: Number(m[3]),
-    hour: Number(m[4] ?? 0), minute: Number(m[5] ?? 0),
   };
 }
 

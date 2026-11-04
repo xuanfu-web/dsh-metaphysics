@@ -26,6 +26,18 @@ const landB = zB.palaces.find((p) => p.branch === zA.soul.branch);
 ok('互落宫：命宫按地支落到对方盘', !!landB && r.dimensions.some((d) => d.key === 'soul' && d.text.includes(landB.palace)),
   landB ? `${zA.soul.branch} → 对方${landB.palace}` : '未找到');
 
+// 2.5 主星不能丢：buildZiwei 的星型是中文「主星」，旧代码拿 'main' 比较，十四主星全被滤掉
+const mainAt = (chart, palace) => {
+  const p = chart.palaces.find((x) => x.palace === palace) || { stars: [] };
+  return (p.stars || []).filter((s) => s.type === '主星').map((s) => s.name);
+};
+const aSpouseMain = mainAt(zA, '夫妻');
+const bSoulMain = mainAt(zB, '命宫');
+ok('合盘保留夫妻宫主星', aSpouseMain.length > 0 && aSpouseMain.every((n) => r.a.spouseStars.includes(n)),
+  `${aSpouseMain.join(',')} ⊆ [${r.a.spouseStars.join(',')}]`);
+ok('合盘保留命宫主星', bSoulMain.every((n) => r.b.soulStars.includes(n)),
+  `${bSoulMain.join(',')} ⊆ [${r.b.soulStars.join(',')}]`);
+
 // 3 四化引动条数 = 双方生年四化数量之和
 const cntA = zA.palaces.reduce((n, p) => n + (p.stars || []).filter((s) => s.mutagen).length, 0);
 const cntB = zB.palaces.reduce((n, p) => n + (p.stars || []).filter((s) => s.mutagen).length, 0);

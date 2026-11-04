@@ -124,13 +124,14 @@ export const HUA_READ = {
   忌: { key: '执', gist: '容易在意、反复，是心里放不下的那一块' },
 };
 
-// ── 庙旺得利平不陷：同一条结论的七种语气 ──────────────────────────
+// ── 庙旺得利平闲不陷：同一条结论的语气档（含五档亮度表里的「闲」）─────────
 export const BRIGHT_READ = {
   庙: { word: '得地', tone: 'good', plain: '长处放得开，几乎是本色出演' },
   旺: { word: '有力', tone: 'good', plain: '特点容易显出来，做事有底气' },
   得: { word: '尚可', tone: 'neutral', plain: '能用，需要一点外力配合' },
   利: { word: '中平', tone: 'neutral', plain: '长处与短板都在，看怎么用' },
   平: { word: '偏弱', tone: 'neutral', plain: '不太争得到位置，宜借势' },
+  闲: { word: '闲地', tone: 'neutral', plain: '可用的力不多，宜顺势而不宜硬求' },
   不: { word: '不得地', tone: 'bad', plain: '长处不容易使上，得多绕一步' },
   陷: { word: '失地', tone: 'bad', plain: '容易往负面走，更需要自觉' },
 };

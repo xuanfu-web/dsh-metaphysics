@@ -86,10 +86,3 @@ export function applyDst(t) {
           : ''),
   };
 }
-
-/** 把夏令时说明折进 notes 数组（不改动其它口径）。 */
-export function withDstNote(notes, dst) {
-  const out = Array.isArray(notes) ? notes.slice() : [];
-  if (dst && dst.applied && dst.note) out.push(dst.note);
-  return out;
-}

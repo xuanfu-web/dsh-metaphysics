@@ -39,6 +39,11 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
   const none = verifyFit(r.past.rows, {});
   ok('未勾选时不算强行结论', none.answered === 0 && none.level === '未评');
   ok('pastSignals 可按截止年过滤', pastSignals({ liunian: r.past.rows }, r.past.rows[2].year).length === 3);
+  // 数字串以前被静默当成没传：校验在 computeRaw，取用却在 compute，晚了一步
+  const str6 = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', verifyPast: '6' });
+  ok('verifyPast 数字串按整数排过去流年', !!str6.past && str6.past.rows.length === 6, str6.past && str6.past.rows.length);
+  const huPast = compute({ system: 'bazi', datetime: '1990-05-12', gender: 'male', hourUnknown: true, verifyPast: 3 });
+  ok('时辰未知时验前事仍可用', !!huPast.past && huPast.past.rows.length === 3 && huPast.pillars.hour === null, String(huPast.past && huPast.past.rows.length));
   ok('面板有验前事区块', /验前事/.test(read('src/app.js')) && /pastMarks/.test(read('src/app.js')));
   ok('独立页有验前事区块', /验前事/.test(read('src/web-ui.js')) && /data-pmark/.test(read('src/web-ui.js')));
 }
@@ -49,11 +54,23 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
     system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', address: '河北石家庄',
     rectify: true, events: [{ year: 2019, kind: 'career' }, { year: 2022, kind: 'love' }, { year: 2024, kind: 'move' }],
   });
-  ok('校正返回候选', Array.isArray(r.rectify.candidates) && r.rectify.candidates.length === 14, String(r.rectify?.candidates?.length));
+  ok('校正返回候选', Array.isArray(r.rectify.candidates) && r.rectify.candidates.length >= 12 && r.rectify.candidates.length <= 14, String(r.rectify?.candidates?.length));
+  // 真太阳时会把相邻整点并进同一时辰，候选按「日柱+时柱」合并，不能重复列出同一张盘
+  ok('候选按盘面去重', new Set(r.rectify.candidates.map((c) => `${c.dayGanzhi}|${c.hourGanzhi}`)).size === r.rectify.candidates.length);
+  ok('合并组保留全部整点', r.rectify.candidates.every((c) => Array.isArray(c.hours) && c.hours.length >= 1));
   ok('候选按命中数降序', r.rectify.candidates.every((c, i, a) => i === 0 || a[i - 1].score >= c.score));
   ok('候选给出时柱与日柱', r.rectify.candidates.every((c) => c.hourGanzhi && c.dayGanzhi && c.label));
   ok('命中数与事件数一致', r.rectify.candidates.every((c) => c.hits <= c.total && c.total === 3));
   ok('给出去重与并列说明', /命中数最高/.test(r.rectify.note) && /不替代出生记录/.test(r.rectify.note));
+  // 事件跨度超过流年表固定 10 条时，晚的事件不能被当成「没对上」
+  const wide = compute({
+    system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male',
+    rectify: true, events: [{ year: 1991, kind: 'career' }, { year: 2015, kind: 'love' }, { year: 2019, kind: 'move' }],
+  });
+  ok('10 年窗口外的事件也参与打分', wide.rectify.candidates.every((c) => c.total === 3), String(wide.rectify.candidates[0].total));
+  ok('跨度大的事件仍有命中', wide.rectify.candidates[0].hits >= 2, `${wide.rectify.candidates[0].hits}/3`);
+  ok('说明里交代实际对账年数', /1991–2019.*29 年/.test(wide.rectify.note), wide.rectify.note.slice(0, 80));
+
   // 无事件时报错，而不是返回空表
   let code = '';
   try {

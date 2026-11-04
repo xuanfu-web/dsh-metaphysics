@@ -125,3 +125,22 @@ ok('工具层错误带 [E_COUNT] 前缀', toolErr.startsWith('[E_COUNT]'), toolE
 
 const okRes = await def.execute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male' });
 ok('工具层正常路径返回摘要', typeof okRes.summary === 'string' && okRes.summary.includes('【四柱】'));
+
+// ── ⑪ name 的「年/月/日 + 时」生辰路径（回归：hour 守卫把它封死）────────
+// schema 的 year 说明写着「配合 month/day/hour」，engine 的 name 分支也真读 args.hour / args.minute；
+// 工具层的 hour 白名单少了 name，等于文档宣传的写法只有 compute() 走得通，宿主调用一律 E_INPUT。
+const NAME_BIRTH = { system: 'name', action: 'generate', surname: '李', year: 1990, month: 5, day: 12, hour: 10 };
+const nameEngine = compute(NAME_BIRTH);
+ok('引擎按 year/month/day/hour 出候选名', Array.isArray(nameEngine.candidates) && nameEngine.candidates.length > 0);
+const nameTool = await def.execute(NAME_BIRTH);
+ok('工具层同参数不再报错', JSON.stringify(nameTool.candidates) === JSON.stringify(nameEngine.candidates), nameTool.candidates ? nameTool.candidates.length : '-');
+const nameMinuteTool = await def.execute({ ...NAME_BIRTH, minute: 30 });
+ok('name 认 minute（与 datetime 同盘）', JSON.stringify(nameMinuteTool.candidates) === JSON.stringify(compute({ ...NAME_BIRTH, minute: 30 }).candidates));
+const nameViaDateTime = await def.execute({ system: 'name', action: 'generate', surname: '李', datetime: '1990-05-12T10:00' });
+ok('分开字段与 datetime 两种写法同结果', JSON.stringify(nameViaDateTime.candidates) === JSON.stringify(nameTool.candidates));
+const guardText = await def.execute({ system: 'tarot', datetime: '1990-05-12T14:30', hour: 3 }).then(() => '', (e) => String(e.message));
+ok('hour 守卫文案列全三个体系', /chenggu \/ xiaoliuren \/ name/.test(guardText), guardText);
+const otherHour = await def.execute({ system: 'numerology', datetime: '1990-05-12', hour: 3 }).then(() => '', (e) => String(e.message));
+ok('其它体系显式传 hour 仍报错', /hour 仅用于/.test(otherHour), otherHour);
+const otherMinute = await def.execute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', minute: 30 }).then(() => '', (e) => String(e.message));
+ok('其它体系显式传 minute 报错', /minute 仅用于 name/.test(otherMinute), otherMinute);

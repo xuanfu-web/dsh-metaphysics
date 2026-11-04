@@ -13,6 +13,8 @@
 //     不采用「逆位即纯凶」的流派；不同流派对逆位的取舍不同，此处取中性偏提醒。
 // 以上差异在 reading 与结果字段 systemNote 中均有标注，避免被当作唯一正解。
 import { CARD_LIB, CARD_COUNTS } from './tarot-cards.js';
+import { fail } from './fail.js';
+import { assertObject } from './validate.js';
 
 const MAJOR = [
   ['愚者', '0', '新开始 冒险 纯真 无限可能', '鲁莽 逃避 原地打转 不切实际'],
@@ -289,7 +291,15 @@ function stamp(at) {
  * 生成解读（确定性：同样的 question + cards 必得同样的段落）
  * 段落数固定 6-8：开场 / 逐张（1-3 张各一段；5 张按 2+3 分两段）/ 结构 / 关键牌 / 建议 / 收尾
  */
-export function tarotReading({ question = '', cards = [] } = {}) {
+export function tarotReading(input = {}) {
+  assertObject(input, 'tarotReading 的参数', '{ question?, cards }：cards 用 drawTarot 抽出的牌面对象数组');
+  const question = input.question;
+  // cards 不是数组（字符串、对象）以前会被 filter 成空，回一句「没有抽到牌面」——
+  // 那是参数形状错了，不是真的没牌。
+  if (input.cards !== undefined && input.cards !== null && !Array.isArray(input.cards)) {
+    throw fail('E_INPUT', `tarotReading 的 cards 必须是牌面对象数组（drawTarot 的 cards），收到 ${typeof input.cards}`);
+  }
+  const cards = input.cards;
   const q = String(question || '').trim();
   const list = (Array.isArray(cards) ? cards : []).filter((c) => c && c.name);
   const n = list.length;
@@ -324,8 +334,9 @@ export function tarotReading({ question = '', cards = [] } = {}) {
       const ast = meta.astro ? `它对应的占星位置是${meta.astro}，` : '';
       const role = !ast && meta.role ? `它在这里顶的是「${meta.role}」那个角色，` : '';
       const core = meta.core ? `它的核心是「${meta.core}」。` : '';
+      const posName = c.position || `第 ${i + 1} 张`;
       const tail = POS_TAIL[c.position] || '把它放回你的处境里对照，看看哪一句戳中了你。';
-      return `${c.position}（${hint}）是「${c.name}」${ori}：${kws}。${img}${ast}${role}${core}${oriNote}。${tail}`;
+      return `${posName}（${hint}）是「${c.name}」${ori}：${kws}。${img}${ast}${role}${core}${oriNote}。${tail}`;
     });
     paras.push(lines.join(''));
   }
@@ -371,7 +382,8 @@ export function tarotReading({ question = '', cards = [] } = {}) {
     : revCard
       ? '全盘没有大阿卡纳，关节就落在第一张逆位上——那股还没顺过来的力量'
       : '全盘既没有大阿卡纳也没有逆位，走势平顺，就以第一张为参照';
-  paras.push(`全盘的关节是「${key.name}」（${key.position}·${key.upright === false ? '逆位' : '正位'}）${keyMeta.core ? `，${keyMeta.core}` : ''}。${keyReason}；其余几张可以看作它在不同位置上的回声。`);
+  const keyPos = key.position || `第 ${list.indexOf(key) + 1} 张`;
+  paras.push(`全盘的关节是「${key.name}」（${keyPos}·${key.upright === false ? '逆位' : '正位'}）${keyMeta.core ? `，${keyMeta.core}` : ''}。${keyReason}；其余几张可以看作它在不同位置上的回声。`);
 
   // ⑤ 建议：据牌面给 2-3 条可执行的行动建议
   const tips = [];
@@ -381,7 +393,7 @@ export function tarotReading({ question = '', cards = [] } = {}) {
   if (missing.length) tips.push(`补一点${missing[0]}的力量：${ELEM_TIP[missing[0]]}`);
   else if (heavy) tips.push(`${dominant}已经偏旺，${ELEM_WARN[dominant]}`);
   const adviceCard = list.find((c) => c.position === '建议');
-  if (adviceCard) tips.push(`把「${adviceCard.name}」${adviceCard.orientation}的关键词（${(adviceCard.keywords || []).join('、')}）当作接下来一周的小练习`);
+  if (adviceCard) tips.push(`把「${adviceCard.name}」${adviceCard.upright === false ? '逆位' : '正位'}的关键词（${(adviceCard.keywords || []).join('、')}）当作接下来一周的小练习`);
   const picked = tips.slice(0, 3);
   paras.push(`建议：其一，${picked[0]}；其二，${picked[1]}${picked[2] ? `；其三，${picked[2]}` : ''}。`);
 
@@ -392,8 +404,14 @@ export function tarotReading({ question = '', cards = [] } = {}) {
 }
 
 /** 抽牌：count 张，按牌阵给出位置。random 可注入（配合 seed 复现同一次抽牌） */
-export function drawTarot({ count = 3, question = '', at, random = Math.random } = {}) {
-  const n = [1, 3, 5].includes(count) ? count : 3;
+export function drawTarot(input = {}) {
+  const { count: rawCount, question = '', at, random = Math.random } = input || {};
+  let count = rawCount;
+  if (count === undefined || count === null || count === '') count = 3;
+  const n = Number(count);
+  if (![1, 3, 5].includes(n)) {
+    throw fail('E_INPUT', `塔罗张数只能是 1 / 3 / 5，收到「${count}」`);
+  }
   const rand = typeof random === 'function' ? random : Math.random;
   const deck = tarotDeck();
   for (let i = deck.length - 1; i > 0; i--) {

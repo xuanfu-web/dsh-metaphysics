@@ -1,3 +1,64 @@
+## 0.62.0（2026-11-04，待发布）
+
+> 本段记录 0.61.2 之后按 50 项复查报告、以及第二轮复测的 16 项新发现完成的修复；尚未发版，单文件页与面板会把它列为「未发版改动」。
+
+- **复查报告 50 项：排盘口径、输入守卫与提示层**（`engine/*`、`index.js`、`src/panel-kit.js`、`test/*`）：
+  - P0 · 紫微晚子时（`engine/index.js`、`engine/ziwei.js`）：`lateZi` 与紫微历史参数名 `lateZishi` 不互通，revise 回执「已应用」但盘仍按 current-day 排；现统一映射（`lateZi:false` → `current-day`），回执与盘面同源。`hourUnknown` 的过去盘也改为按正午占位，与主盘落在同一张盘上。
+  - P1 · 档案两个开关（`src/panel-kit.js`、`index.js`）：`profClean` 白名单漏掉 `trueSolar / lateZi`，存卡时被剥掉、载入时又按默认「都开」；现无条件落盘，旧档案缺字段仍按默认处理。
+  - P1 · 紫微合盘丢主星（`engine/ziwei-hepan.js`）：星型标签是中文字面量 `主星`，旧过滤拿 `main` 比对，主星永远进不了合盘；现按 `主星 / 吉星 / 煞星` 取。
+  - P1 · 奇门健康用神（`engine/qimen-interpret.js`）：天芮在中宫寄坤后被统一改名「禽芮」，按原名定位不到；驿马只存在 `r.ma.gong` 而不在 `palaces[].star`；主用神缺位时又被次级候选掩盖。现加星名别名、驿马单列、主用神缺位写入 `unresolved`，不再只剩一句「若以死门为用神」。
+  - P1 · 梅花时间起卦（`engine/meihua.js`、新增 `engine/datetime.js`）：原先自带一份宽松解析器，`1990-02-30`、13 月、25:00 都能过；现与八字/紫微共用 `parseDateTime`（1600–2400、逐日校验），数字起卦的动爻 `changing` 只收 1–6 整数，非法直接 `E_INPUT`。
+  - P1 · 大六壬三传（`engine/daliuren.js`）：遥克改为先全盘找蒿矢、没有再找弹射（不再逐课先到先得）；昴星按阳日虎视取地盘酉上神、阴日冬蛇取天盘酉下神，中末传按阴阳日分别取支上/干上；八专按阳顺阴逆数三神；伏吟初传自刑时中传换另一上神、仍自刑取冲。三传不再整盘套通用递推。
+  - P1 · 生时校正 10 年窗口（`engine/bazi.js`、`engine/index.js`、`engine/rectify.js`）：流年窗口新增 `liunianTo`，几十年前的事件可以逐年对账；候选按「日柱+时柱」合并（真太阳时会把相邻整点并进同一时辰），结果里报告合并掉了几个输入整点；虚岁改按公历年算，与趋势页同口径。
+  - P1 · 工具层参数（`index.js`）：`hour / date` 只给 `chenggu / xiaoliuren`，别的体系传了直接报错（原先收了不看，用户以为改了时刻）；`partner2` 也做地址长度校验；带句柄再换地址时丢掉上一轮派生的 `longitude / geo`，新地址真正重新解析；三方盘也按出生地解析经度；`system` 缺失时才在 `run()` 报错，schema 仍不写 `required`（只给 handle 的追问是主推用法）。
+  - P2 · 三奇入墓（`engine/qimen.js`）：按《玄机赋》阴干逆行取墓改为 乙→戌/乾六、丙→戌/乾六、丁→丑/艮八；原表把乙放未/坤二、丁放戌/乾六。
+  - P2 · 奇门时旬空（`engine/qimen.js`）：空亡改按**时柱所在旬**取（如甲子旬空戌亥），不再拿日旬顶替；补注释说明五鼠遁晚子时口径。
+  - P2 · 紫微亮度「闲」（`engine/ziwei-words.js`）：五档亮度表含「闲」，词库缺这一档会被当成庙旺；补 `闲地 / neutral / 可用的力不多`，测试锁定该档。
+  - P2 · 紫微魁钺流派（`engine/ziwei.js`、`engine/diff.js`、`index.js`）：删除与 qs1 同表的「network」选项，schema / 差异标签 / 测试同步，避免选了「网络派」实际按另一派排。
+  - P2 · 塔罗张数（`engine/tarot.js`）：`count` 只收 1 / 3 / 5，`2 / 4 / 0 / 7 / 3.5` 直接 `E_INPUT`；原先静默折成 3 张，牌阵与用户要求不符。
+  - P2 · 六爻爻值（`engine/liuyao.js`）：`lines` 必须正好 6 个、每个 6/7/8/9；空参数、缺爻、非法值统一 `E_INPUT`，不再在深处抛裸 TypeError。
+  - P2 · 输入标量（`engine/index.js`、`engine/fengshui.js`、`engine/trend.js`）：`verifyPast` 必须是 1–10 整数（6.5 / "6" 不再静默当没传、11 不再截成 10）；`fortuneYear` 必须是整数年份；`toAge` 必须是 10–100 整数；经度只收 number 与十进制数字串（`true / [] / " "` 不再按 1°/0° 静默算真太阳时）；`mode` 按体系分组校验，跨组直接报错；`asOf` 按同一日期尺归一，只给日期 / 带空格 / ISO 三种写法出同一张盘。
+  - P2 · 地支关系取句（`engine/bazi-words.js`）：半合/拱合、半会/拱会各自成句，不再落进泛泛的「合」；自刑仍优先于刑。
+  - P2 · 风水阴阳遁（`engine/fengshui.js`）：飞星补上 `forward` 方向，阴遁逆飞不再按顺飞排；`fortuneYear` 非整数报错而不是当没给。
+  - P2 · 称骨晚子时（`engine/chenggu.js`）：23:00–23:59 与八字/六壬/奇门同口径按次日取农历日与日柱，并在 `input` 里标 `lunarDateShifted`。
+  - P2 · 公农历范围（`engine/convert.js`）：与 `assertCivil` 统一到 1600–2400，非法日期与超范围年份改 `E_INPUT`，不再抛裸 Error 或把 1600 年说成 1900。
+  - P2 · 追问兜底（`engine/followup.js`）：12 个不产 `interpret.sections` 的体系，改为按 `summary` / 神煞分组回答，不再一律回「没有可追问的分节」。
+  - P2 · ΔT 低年段（`engine/calendar.js`）：1600–1900 改用 Meeus 多项式（1600 年约 120s）；原先整段取 1900 常数，1600 年误差 123s，与函数注释自相矛盾。
+  - P3 · 地址解析（`engine/geo.js`）：同名区县（中山区→大连、朝阳区按省份/默认北京）不再被同名城市抢走；「中山路」这类全国路名缺城市线索时返回未匹配并提示补城市；「河北区」不再按河北省会算。
+  - P3 · 联网 UA（`engine/geo.js`）：`User-Agent` 去掉版本号，只保留应用名与仓库地址，避免发版漏改造成失联（OSM 政策只要求可识别）。
+  - P3 · 产物与死代码（`engine/lunar.js`、`dst.js`、`yingqi.js`、`tiaohou.js`）：删掉未使用的 `cursorStart / monthStartJd / withDstNote / monthTone / monthSameBranches`，`YINGQI_RULE_IDS` 直接指向 `RULE_ORDER`；合并句柄增量时用无原型对象承接 `__proto__`，派生 `geo` 不进影子盘指纹；调候表重复的 `热` 键清理。
+  - P3 · 共用日期尺（`engine/datetime.js`、`engine/zeri.js`、`engine/index.js`）：日期校验收成一套 `parseYmd / parseDateTime`，择日与小六壬不再各写一份正则；空参数统一 `E_INPUT`（星座/生命数字/姓名/择日/小六壬/风水等）。
+  - P3 · 文案与文档：八字缺时柱的说明改为「旺衰、格局、用神、调候暂以正午时柱估算」，不再声称时柱不参与任何判定；日期 tab 默认今天确认为有意行为，不改代码。
+  - 回归锁：`test/tarot.test.mjs`、`test/tool-geo.test.mjs`、`test/qimen-rules.test.mjs`、`test/guard-inputs.test.mjs`、`test/verify.test.mjs`、`test/ziwei-words.test.mjs`、`test/ziwei-schools.test.mjs` 同步到新口径；地址同名/路名 8 条、奇门时旬空 6 条、fortuneYear 与引擎入参守卫 12 条为新增断言。
+- **复查收尾时又查出的「修了但没生效」四处**（`engine/index.js`、`engine/tarot.js`、`index.js`、`test/*`）：
+  - `lateZi` 只改到了八字 / 大六壬 / 紫微，`compute()` 往称骨、小六壬、梅花传参时仍把它漏在门外——引擎各自支持、工具层却收不到，用户关掉晚子时，这三套仍按换日排。三处分支补齐透传，并加断言锁「同一时刻开 / 关晚子时得到不同结果」。
+  - `verifyPast` 的数字串整形写在 `computeRaw()`，而「摊开过去流年」的代码在它上游的 `compute()` 里先跑了：`verifyPast:'6'` 先被当成没传、整形再也没机会执行。整形前移到 `compute()` 调用点之前，`'6'` 与 `6` 等价，非法值统一 `E_INPUT`。
+  - 塔罗全盘解读遇到缺 `position` 的牌会拼出「（undefined·正位）」；改为按牌在阵中的序位回退（`第 N 张`）。
+  - 三方合盘的第三方地址此前只做长度校验、没有走联网解析，出生地填了但真太阳时仍按 0° 算；第三方与主方 / 对方同一条解析路径。
+- **构建链补齐 `datetime` 与 `ziwei-words`**（`tools/build-client.mjs`）：`parseDateTime` 抽到 `engine/datetime.js` 后没进 `ORDER`，浏览器产物里会报 `parseDateTime is not a function`；`ziwei.js` 引用 `ziwei-words` 的 `SHA_STAR` 时，模块顺序又排在 `ziwei` 之后。两处都补进 `ORDER` / `COMMON`，18 个分块与单包重新生成，`layout / security / chunks / client-bundle / standalone` 恢复全绿。
+- **第二轮复测 16 项：本轮修复自己引入的回归，与上一轮没修到底的边角**（`engine/*`、`index.js`、`README.md`、`test/*`）：
+  - P2 · 调候「热且湿」被翻档（`engine/tiaohou.js`）：`judgeClimate` 里 `hot` 先短路，`hot && damp >= 0.8` 那条湿滞分支从未命中；上一轮为了接通它把热+湿并进「湿滞」，3.4% 的盘由「温热 / 需壬水」变成「湿滞 / 需丙火」——闷蒸之局判成「加火来蒸」，等于往蒸笼底下添柴，还顺手把 `favor` 首位换掉。现单列 `湿热` 一档（取水 / 壬 / 忌火），`KIND_NAME`、`DAY_FEEL` 五株日主同步；不热之湿（湿滞取丙火）一字未动。同一处旁白不再按「档名含不含寒」猜忌神（`湿滞` 会念成「要的不是更多的火，而是丙火」），改取 `NEED[kind].avoid`。回归锁：`test/tiaohou.test.mjs` 锁档位与取用、报告点名的两张盘（1935-06-06 / 1995-06-12）喜用仍含水、火没被顶到首位、水没被删成忌神、旁白忌神与 `avoidElement` 逐档对拍、档表三处不许留空。
+  - P2 · 奇门「最终倾向」7/7 方向恒不判决策（`engine/qimen-interpret.js`）：`用神有 N 个候选` 也算未决项，而 YONG_SHEN 每个方向本就是「主用神 + 一两个辅用神」、辅用神必然落宫 ⇒ `unresolved` 恒非空，上一轮加的倾向分支一次也没跑过；主用神缺位时又被死门这类次级候选撑住，「用神未上盘」永不触发。现只看主用神是否上盘（缺位写 `主用神X未上盘`），`primary` 优先取主用神行，辅用神同盘不再算未决、候选清单仍在 ④ 逐条列出。回归锁：`test/qimen.test.mjs` 锁七个方向都出倾向、未决项为空、措辞仍是条件式；把开门从盘上摘掉，career 仍须退回未决并点名缺哪个。
+  - P2 · `hour` 守卫把 `name` 自己宣传的生辰路径封死（`index.js`）：0.61.2 把 `hour` 限给 `chenggu / xiaoliuren`，而 name 的 schema 明写「年/月/日 + 时/分」，`{ system:"name", year, month, day, hour }` 被宿主当场拦下。白名单补 `name`，`minute` 单列只给 name；其它体系传 `hour / minute / date` 仍报错（收了不看会静默排出另一张盘）。回归锁：`test/args.test.mjs`。
+  - P2 · 句柄里的 `hour / date / mode` 让「带 handle 换 system」直接报错（`engine/handle.js`、`index.js`）：文档主推 `{ handle, system:"ziwei" }`，而称骨与小六壬的句柄必带 `hour`、convert / 梅花 / 小六壬必带 `mode`；并回参数后宿主按「用户本轮误传」拦下——上一张盘的输入挡住了这一张盘。新增 `SYSTEM_KEYS` 与 `pruneForeignKeys(merged, owned)`：换体系时剔掉新体系不读、本轮又没显式重给的键（`hour / minute / date / mode / action`），显式重给的照旧拦。顺带把联网解析的 `geo` 详情排除出句柄（`display_name` 换个语种就换一把句柄），只留 `longitude`。回归锁：`test/handle.test.mjs` 锁换体系后的新句柄不带上一张盘的 `hour`、一句话改参换体系同一条尺，`test/shadow.test.mjs` 锁 geo 文案不同而经度相同仍是同一张影子盘。
+  - P2 · schema 漏 `upper`，梅花数字起卦在工具面不可表达（`index.js`）：引擎读 `args.upper`，schema 只有 `lower / changing`，模型照 schema 组参永远起不出数字卦，而 `mode` 的说明还在教「数字起卦需 upper/lower」。补 `upper` 并写明与 `lower` 成对；同处加一条清单断言——从 `engine/index.js` 逐个扫 `args.*`，凡用户参数都必须在 schema 里声明（`geo / shadowVersion / schools` 三个宿主内部键单列），并给扫描设条数下限，防止「扫不到键」反而空过。回归锁：`test/guard-inputs.test.mjs` ⑭ 与「按 schema 组参能起出数字卦」「数字卦与引擎直连同卦」。
+  - P3 · geo 为挡「中山区」把 `县` 一起拉黑（`engine/geo.js`）：`长沙县 / 乌鲁木齐县 / 承德县` 整条解析失败，真太阳时被静默取消，摘要还写「未提供出生地或经度」。`NOT_CITY_AFTER` 去掉 `县`（县名多与辖它的市同名、县城就在城区边上，按本市经度估算比判「未匹配」准得多），`区` 与 `镇 / 乡 / 路` 仍挡（重庆开州区真有一个长沙镇）；命中县档时 `level` 写「区县」、`note` 说明借用城区经度。回归锁：`test/tool-geo.test.mjs` ⑦ 四条县名 + note 文案 + 工具层「长沙县」拿到 112.94 并进摘要、不再说「没查到」。
+  - P2 · `parseYmd` 没有年份闸（`engine/datetime.js`、`engine/validate.js`、`engine/zeri.js`）：`parseDateTime` 早就有 1600–2400，`parseYmd` 只查月/日，于是小六壬 `date:'0000-01-01' / '1500-01-01' / '2500-06-01' / '9999-12-31'` 静默出盘；择日越界虽然报错，文案却甩锅「黄历 的 year 超出支持范围」（`2400-12-30` 起算 +3 天也这样）。`parseYmd` 复用同一对 `MIN_YEAR / MAX_YEAR`，择日改用自己的 `who` 与字段名。回归锁：`test/guard-inputs.test.mjs` ⑮ 逐值 `E_RANGE`、两端点仍可排、闸的边界等于 `validate` 的常量、择日文案点名 `startDate` 且不再提黄历。
+  - P2 · 晚子时换日越过 1600–2400 边界（`engine/meihua.js`、`engine/xiaoliuren.js`、`engine/chenggu.js`、新增 `assertShifted`）：`2400-12-31T23:30` 通过入参校验后被整体搬到 2401 出盘，而直接填 `2401-01-01T00:30` 会被 `E_RANGE` 拒——同一张盘「换日就通、直填就拒」。三处换日统一走 `assertShifted`，报错点名是换日所致。回归锁：`test/guard-inputs.test.mjs` ⑮ 逐体系 `E_RANGE` 且文案含「晚子时按次日归后」。
+  - P2 · 三奇入墓换表后知识库与 README 仍教旧表（`engine/interpret-knowledge.js`、`README.md`）：盘面说「乙阴木墓于戌，戌在乾六宫」，同一页知识库说「乙木墓未（坤二）」，而且已经打进分块与单文件页、用户直接可见。词条改成辛/戌（乾六）、丁/丑（艮八）并写明「阴干取墓」口径，README 两处同步。回归锁：`test/interpret-knowledge.test.mjs` 的期望值由 `LIUYI_RU_MU` / `ruMuOf` 现推，改表不改文案立刻挂。
+  - P3 · 次级入口仍抛裸 TypeError、六爻 `lines` 非数组仍静默随机（`engine/liuyao.js`、`engine/tarot.js`、`engine/name.js`、`engine/convert.js`）：上一轮只修了 7 个 `build*` 主入口。`yongshenOf(r, null)` 一路走到读 `opts.direction`，`hexBody(null)`、name / convert 的空参数同样炸；更坏的是 `lines` 传字符串或对象时被当成「没给」，悄悄换成随机摇卦——用户以为排的是自己那六爻。八处次入口统一 `assertObject` / 显式报错，爻值这一族的码统一 `E_LINES`（长度不对不再改随机）。回归锁：`test/guard-inputs.test.mjs` ⑯ 11 组坏形状逐个 `E_INPUT`、文案既说「收到什么」也说「该传什么」、四条正常路径照旧出盘、留空 `lines` 仍走随机摇卦；`test/args.test.mjs` 从工具面走四个坏形状，两侧码一致（同一个错换个入口进来不能换码）。
+  - P3 · 影子盘 `asOf` 归一不彻底（`engine/index.js`、`engine/ziwei.js`）：`asOf:'2030-01-01'`（补 12:00）与 `'2030-01-01T12:00'` 出的盘逐字段相同、`baseId` 与句柄却各一套；首尾空格仍 `E_ASOF`（`datetime` 是 trim 的）；`shadowParams` 仍吞自有 `__proto__` 键（`canonicalJson` 已避过这个坑）。新增 `normalizeAsOf`（trim → `asOfParts` → 只给日期补 12:00），排盘、句柄、影子盘指纹与 `checkAsOf` 共用这一把尺；`asOfParts` 与 datetime 一样 trim；没给 `asOf` 时一个键都不加（`null` 整段进句柄等于给所有旧深链换身份）；`shadowParams` 一律 `defineProperty` 写键。回归锁：`test/shadow.test.mjs` ⑨ 三种写法同句柄同 `baseId`、整张盘 JSON 全等，反向锁 `00:00 / 12:30 / 次日 / 不钉 asOf` 各得不同身份，句柄回放同盘、纯空格按「没钉」处理、`__proto__` 不再撞指纹。深链那一侧不需要新断言：`test/bridge.test.mjs` 的「句柄原样进链接」与「参数往返一致」就是这条的探针——归一化最初写错位置（放进 `computeRaw` 而影子盘尾巴在 `compute`）时，就是这里先变红的。
+  - P3 · 六壬伏吟自刑兜底没换到「另一个」（`engine/daliuren.js`）：有克伏吟的初传常常就是第 1 课上神，兜底再取干上神 ⇒ 218 盘自刑伏吟里 74 盘（34%）中传 == 初传（`2026-01-01T01:30` → 辰/辰/戌）。兜底改为在干上 / 支上两个候选里取与初传不同的那个，仍无解才回退。回归锁：`test/daliuren.test.mjs` 锁点名盘不再辰/辰/戌、末传取冲，并扫 400 天 × 12 时辰（4800 盘）自刑伏吟零撞车。
+  - P3 · 生时校正两条（`engine/rectify.js`）：`[{year:1601},{year:2399}]` 是合法输入却跑 1267ms——窗口按事件年份逐年排盘，每个候选排 799 年流年（30 年跨度只要 9ms）。加 `MAX_SPAN = 120` 上限，报错里写清实算区间；另一条是出生前的事件此前照样进窗口并计分（`age` 为负），出生 1990 报 1985 会污染排名，现早于出生年直接 `E_INPUT`。回归锁：`test/guard-inputs.test.mjs` ④ 锁两条报错、120 年整窗仍放行、合法调用不再跑到秒级、窗口文案与实算区间同源。
+  - P3 · 数字串形式的显式经度被联网解析顶掉（`index.js`、`engine/index.js`）：`{ address, geocode:'online', longitude:'87.6' }` 解析成 121.5，改成 number 才正常——上一轮「保留用户 longitude」只保护了 number 类型，而解析前的判定读的是 `typeof === 'number'`。宿主在地址解析之前先调 `normalizeLongitudes`（`'87.6'` → 87.6；非十进制或超范围当场 `E_RANGE`，且不发网络请求）。回归锁：`test/tool-geo.test.mjs` ⑧ 锁数字串与数字两条路同盘、显式经度在场时零次联网、没给经度时联网解析照旧生效。
+  - 体积：这两轮的守卫与 geo 新增的 23 个地级市坐标（286 → 309）随 `COMMON` 进每一块，`bazi / hepan / ziwei` 由 223.9 / 223.1 / 219.8KB 涨到 228.5 / 227.4 / 223.9KB（gzip）⇒ `test/chunks.test.mjs` 的分块线 228 → 232KB，注释里写明抬的是守卫与坐标表、不是新库，下一次再往这三块塞引擎就得拆块；CI 侧 `check-bundle.mjs` 的 260KB 单块硬墙与 2.75MB 总量墙不变。
+- **回归锁与基线**（`test/*`、`test/assertion-baseline.json`）：塔罗测试从「非法张数静默折 3」改为「非法张数逐值报 `E_INPUT`」，那 4 组行为断言是有意替换、不是删除；两轮修复落地后基线更新为 **154 个文件 / 7880 条断言**（7718 → 7865 → 7880，全是新增的行为断言，没有删除或注释掉的旧断言）。
+
+- **发版前复查又抓到两处边界**（`engine/bazi.js`、`engine/daliuren.js`、`engine/qimen.js`、`engine/ziwei.js`、`engine/convert.js`、`test/guard-inputs.test.mjs`、`test/fuzz.test.mjs`）：
+  - 晚子时换日跨出 1600–2400：`2400-12-31T23:30` 在八字 / 大六壬 / 奇门（`lateZiHourMode:'next-day'`）/ 紫微（`lateZishi:'next-day'`）会被整体搬到 2401 继续出盘，而直填 `2401-01-01` 早被 `E_RANGE` 拒——同一张盘两套资格。四处统一走 `assertShifted`，报错点名「晚子时按次日归后落到 2401-01-01」；`22:30`、显式 `lateZi:false`、奇门 same-day、紫微 current-day 照旧可排。
+  - 农历 2400 年末（腊月 1–29 日）换算到公历 2401 时，原先一路走到 `buildAlmanac` 才抛「黄历 的 year 超出支持范围」（`E_INPUT`），把目标越界说成黄历的错；现 `convert` 在换算后先校验目标公历，报 `E_RANGE` 并点名「农历 2400 年腊月29日换算得到的公历日期 2401-02-12 超出可计算范围（1600–2400）」。
+  - 回归锁：`test/guard-inputs.test.mjs` ⑰⑱ 共 15 条（四体系越界文案、三套不换日照旧、convert 越界与边界内）；`test/fuzz.test.mjs` 边界日期改用 22:59，越界行为由 guard 测试单独钉住。
+
 ## 0.61.2（2026-11-03，已发布）
 
 > 本版主题：输入与状态 bug 批——跨盘残留、历史漏参、生时校正跟错盘、K 线出生地失效等 13 处，全部有真机回归锁；排盘引擎与历算口径一字未动。

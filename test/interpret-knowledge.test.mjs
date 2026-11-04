@@ -114,3 +114,43 @@ const l = compute({ system: 'liuyao', datetime: '2026-10-24T19:30', lines: [7, 8
 const liuyaoKnow = (l.dimensions || []).flatMap((d) => d.knowledge || []);
 ok('六爻：用神规则已挂载', liuyaoKnow.some((k) => k.id === 'liuyao-yongshen'), liuyaoKnow.map((k) => k.id).join(','));
 ok('六爻：待核实项被标注', (l.caveats || []).some((k) => k.status === 'todo') || (l.sections || []).some((s) => s.label === '尚未实现（不猜）'), '缺待核实声明');
+
+// ── 入墓知识卡必须与引擎墓库表同源 ────────────────────────────
+// 起因：本轮把三奇入墓改成《玄机赋》阴干逆行取墓（乙→戌/乾六、丁→丑/艮八），
+// 引擎、摘要、面板、推导链都换了，知识卡与 README 还在教旧表（乙木墓未→坤二、丙丁火墓戌→乾六）。
+// 用户在同一次回答里会看到两套矛盾的墓宫，而知识卡还带着「各家有异说」的标签，更像是对的那个。
+// 断言不从文案反推：期望值由 ruMuOf / LIUYI_RU_MU 现推，改表不改文案立刻挂。
+const fs = await import('node:fs');
+const path = await import('node:path');
+const { ruMuOf } = await import('../engine/qimen.js');
+const { LIUYI_RU_MU } = await import('../engine/qimen-ganying.js');
+const engineMu = {};
+for (const stem of ['乙', '丙', '丁']) {
+  for (const pal of ['1', '2', '3', '4', '6', '7', '8', '9']) {
+    const hit = ruMuOf([{ palace: pal, tianPan: stem }])[0];
+    if (hit) engineMu[stem] = { zhi: hit.zhi, palace: /在([\u4e00-\u9fa5]{2})宫/.exec(hit.basis)[1] };
+  }
+}
+for (const [stem, t] of Object.entries(LIUYI_RU_MU)) {
+  engineMu[stem] = { zhi: t.zhi, palace: /在([\u4e00-\u9fa5]{2})宫/.exec(t.basis)[1] };
+}
+ok('引擎侧墓库表九干齐全（三奇 + 六仪）', Object.keys(engineMu).length === 9, JSON.stringify(engineMu));
+const MU_RE = /([乙丙丁戊己庚辛壬癸]+)墓([子丑寅卯辰巳午未申酉戌亥])（([^）]+)）/g;
+const readMu = (text) => {
+  const out = {};
+  for (const m of text.matchAll(MU_RE)) for (const s of m[1]) out[s] = { zhi: m[2], palace: m[3] };
+  return out;
+};
+const drift = (doc, label) => {
+  const got = readMu(doc);
+  const bad = Object.keys(engineMu).filter((s) => !got[s] || got[s].zhi !== engineMu[s].zhi || got[s].palace !== engineMu[s].palace);
+  ok(`${label}的入墓表与引擎逐项一致`, bad.length === 0, bad.map((s) => `${s}:${got[s] ? `${got[s].zhi}${got[s].palace}` : '缺失'}≠${engineMu[s].zhi}${engineMu[s].palace}`).join('、'));
+  return got;
+};
+const rumu = KNOWLEDGE.find((k) => k.id === 'qimen-rumu') || {};
+const knowMu = drift(String(rumu.detail || ''), '知识卡 qimen-rumu');
+const readmeLine = (fs.readFileSync(path.resolve(import.meta.dirname, '../README.md'), 'utf8')
+  .split('\n').find((x) => x.startsWith('- **奇门宫位条件**')) || '');
+drift(readmeLine, 'README 奇门宫位条件');
+ok('知识卡写明异说取自何处', /玄机赋/.test(String(rumu.note || '')) && /五行墓库|阴干/.test(String(rumu.note || '')), String(rumu.note || ''));
+ok('知识卡不再出现旧表写法', !/乙木墓未/.test(String(rumu.detail || '')) && !/丙丁火墓戌/.test(String(rumu.detail || '')), String(rumu.detail || '').slice(0, 50));

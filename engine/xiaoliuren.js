@@ -2,7 +2,10 @@
 // 口径：通行掌诀；断语为白话提炼（非原文照录）。轻量快占，属民俗参考。
 import { solarToLunar } from './lunar.js';
 import { hourToBranch } from './almanac.js';
-import { BRANCHES } from './calendar.js';
+import { BRANCHES, fromJDN, toJDN } from './calendar.js';
+import { parseYmd } from './datetime.js';
+import { assertShifted } from './validate.js';
+import { fail } from './fail.js';
 
 /** 六宫：吉凶 + 白话断语。 */
 export const PALACES = {
@@ -24,6 +27,9 @@ const pick = (n) => PALACE_ORDER[(((n - 1) % 6) + 6) % 6];
  *   time 模式下 date 与 hour 必须成对（缺时辰则同一天任何时刻同宫，等于静默代填）。
  */
 export function buildXiaoliuren(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '小六壬起课参数不能为空：时间起课要 date / hour，数字起课要 num1 / num2 / num3');
+  }
   const mode = input.mode === 'number' ? 'number' : 'time';
   let m;
   let d;
@@ -31,20 +37,35 @@ export function buildXiaoliuren(input) {
   let originText;
   if (mode === 'time') {
     if (typeof input.hour !== 'number' || !Number.isInteger(input.hour) || input.hour < 0 || input.hour > 23) {
-      throw new Error('时间起课必须同时给 date 与 hour（0–23）：掐指按时辰推进，缺时辰不可代填');
+      throw fail('E_INPUT', '时间起课必须同时给 date 与 hour（0–23）：掐指按时辰推进，缺时辰不可代填');
     }
-    const mt = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(input.date || '').trim());
-    if (!mt) throw new Error('时间起课需要 date（公历 YYYY-MM-DD）——请向用户询问日期');
-    const lunar = solarToLunar(Number(mt[1]), Number(mt[2]), Number(mt[3]));
+    const mt = parseYmd(input.date, 'date');
+    if (!mt) {
+      throw fail('E_INPUT', input.date
+        ? `date 不是真实存在的公历日期：「${input.date}」，请用 2026-12-01 这种格式`
+        : '时间起课需要 date（公历 YYYY-MM-DD）——请向用户询问日期');
+    }
+    // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 归次日，否则同一子时前后会落到两个日子
+    let y = mt.year;
+    let mo = mt.month;
+    let dy = mt.day;
+    const lateZi = input.lateZi !== false;
+    if (lateZi && input.hour >= 23) {
+      const next = assertShifted(fromJDN(toJDN(y, mo, dy) + 1), '小六壬时间起课');
+      y = next.year;
+      mo = next.month;
+      dy = next.day;
+    }
+    const lunar = solarToLunar(y, mo, dy);
     const branch = hourToBranch(input.hour);
     m = lunar.month;
     d = lunar.day;
     h = BRANCHES.indexOf(branch) + 1;
-    originText = `农历${lunar.month}月${lunar.day}日 ${branch}时：月${m} → 日${d} → 时${h} 掐指落宫`;
+    originText = `农历${lunar.month}月${lunar.day}日 ${branch}时：月${m} → 日${d} → 时${h} 掐指落宫${lateZi && input.hour >= 23 ? '（晚子时按次日）' : ''}`;
   } else {
     const nums = [input.num1, input.num2, input.num3].map(Number);
     if (nums.some((x) => !Number.isInteger(x) || x < 1 || x > 99)) {
-      throw new Error('报数起课需要三个 1–99 的正整数（随口报即可）——缺数请向用户索要，不要代填');
+      throw fail('E_INPUT', '报数起课需要三个 1–99 的正整数（随口报即可）——缺数请向用户索要，不要代填');
     }
     [m, d, h] = nums;
     originText = `报数 ${m}、${d}、${h}：依次按月/日/时位掐指落宫`;

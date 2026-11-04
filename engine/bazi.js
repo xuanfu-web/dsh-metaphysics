@@ -6,7 +6,7 @@ import {
 } from './calendar.js';
 import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
-import { assertCivil, daysInMonth } from './validate.js';
+import { assertCivil, assertShifted, daysInMonth } from './validate.js';
 import { applyDst } from './dst.js';
 import { nayinOf } from './nayin.js';
 import { SANHE } from './sanhe.js';
@@ -375,6 +375,8 @@ export function buildBazi(input) {
   const jdnBase = Math.floor(jd + 0.5);
   const hourOfDay = jdToParts(jd).hour;
   const jdn = lateZi && hourOfDay >= 23 ? jdnBase + 1 : jdnBase;
+  // 晚子时换日后若跨出 1600–2400，直接拒绝：直填 2401 已被 E_RANGE 拦下，换日不能例外
+  if (lateZi && hourOfDay >= 23) assertShifted(jdToParts(jd + 1), '八字');
   const dayIdx = dayGanzhiIndex(jdn);
   const dayStem = STEMS[dayIdx % 10];
 
@@ -439,14 +441,18 @@ export function buildBazi(input) {
     dayunWindows.push({ step: i, ganzhi: g.name, fromJd, toJd });
   }
 
-  // 流年（默认从「今年」起排 10 年；传 input.nowYear 可钉死基准年，用于复现历史结论）
+  // 流年（默认从「今年」起排 10 年；传 input.nowYear 可钉死基准年，用于复现历史结论；
+  // input.liunianTo 可把窗口延到指定年，生时校正要拿几十年前的事件逐年对账）
   const thisYear = Number(input.nowYear) || new Date().getFullYear();
+  const liunianTo = Math.max(thisYear, Number(input.liunianTo) || thisYear + 9);
   const liunian = [];
-  for (let y = thisYear; y < thisYear + 10; y++) {
+  for (let y = thisYear; y <= liunianTo; y++) {
     const idx = (((y - 4) % 60) + 60) % 60;
     liunian.push({
       year: y,
-      age: y - solarYear + 1,
+      // 虚岁按公历年算，与 trend.js 的 birthYear 同口径；solarYear 是立春年，
+      // 拿它算会让立春前出生的人整体多一岁，且与趋势页对不上
+      age: y - year + 1,
       ganzhi: ganzhiName(idx).name,
       stemTenGod: tenGod(dayStem, ganzhiName(idx).stem),
     });
@@ -779,21 +785,32 @@ export function buildBazi(input) {
       for (const k of Object.keys(w)) w[k] = Math.round(Math.max(0, w[k]) * 10) / 10;
       out.wuxing = w;
     }
-    // 神煞：时柱那一列清空；只落在时柱上的条目整条去掉（不能留个空壳说「时柱有X」）
+    // 神煞：时柱那一列清空；命中里带时柱的条目要把时柱摘掉再留，
+    // 只有时柱命中的条目整条去掉（不能留个空壳说「时柱有X」，也不能让复合条目继续算时柱）
     if (out.shensha && out.shensha.detail) {
       out.shensha.detail.hour = [];
       if (Array.isArray(out.shensha.groups)) {
-        out.shensha.groups = out.shensha.groups
-          .map((g) => ({ ...g, items: (g.items || []).filter((i) => (i.pillars || []).some((k) => k !== 'hour')) }))
-          .filter((g) => g.items.length);
-        out.shensha.count = out.shensha.groups.reduce((n, g) => n + g.items.length, 0);
+        const kept = [];
+        for (const g of out.shensha.groups) {
+          const items = [];
+          for (const it of g.items || []) {
+            const pillars = (it.pillars || []).filter((k) => k !== 'hour');
+            if (!pillars.length) continue;
+            const via = String(it.via || '').split('、').filter((v) => v && !v.includes('时')).join('、');
+            items.push({ ...it, pillars, via });
+          }
+          if (items.length) kept.push({ ...g, items });
+        }
+        out.shensha.groups = kept;
+        out.shensha.count = kept.reduce((n, g) => n + g.items.reduce((m, i) => m + i.pillars.length, 0), 0);
       }
     }
-    // 旺衰与格局：算法没变，但基准是正午——标出来，别让人以为是定时辰算的
+    // 旺衰与格局：内部仍按正午时柱跑（否则没有可比的基准），但必须说清这是占位值，
+    // 不能写成「时柱不参与任何判定」——那与 strength/frame 实际用了时柱相矛盾
     out.strength.precision = 'three-pillars';
     out.notes = [
-      '时柱暂缺：未提供出生时刻，时柱不参与任何判定',
-      '旺衰、格局、用神按年/月/日三柱估算，补上时柱后可能改变',
+      '时柱暂缺：未提供出生时刻，时柱不对外给出，也不计入神煞与干支关系',
+      '旺衰、格局、用神、调候暂以正午时柱估算，补上出生时刻后可能改变',
     ];
   }
   return out;

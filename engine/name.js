@@ -4,7 +4,8 @@
 //       五格按康熙字典繁体笔画计（见 name-data.js 的口径说明），81 数理取通行本；
 //       音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断。
 import { buildBazi } from './bazi.js';
-import { assertCivil } from './validate.js';
+import { assertCivil, assertObject } from './validate.js';
+import { fail } from './fail.js';
 import {
   READING, SURNAME_STROKES, SURNAME_READING, SURNAME_ALT_READING, DOUBLE_SURNAMES, SHULI_81,
 } from './name-data.js';
@@ -491,11 +492,12 @@ function charInfo(ch) {
 
 /** 评估一个名字（姓 + 名 1–2 字）。给了生辰才做喜用匹配。 */
 export function assessName(input) {
+  assertObject(input, 'assessName 的参数', '{ surname, givenName, year?, month?, day? }');
   const surname = String(input.surname || '').trim();
-  if (!surname) throw new Error('缺少姓氏：请给 surname（如「李」）');
+  if (!surname) throw fail('E_INPUT', '缺少姓氏：请给 surname（如「李」）');
   const given = String(input.givenName || '').trim();
-  if (!given) throw new Error('缺少名字：请给 givenName（1–2 个汉字，如「沐宸」）');
-  if ([...given].length > 2) throw new Error('名请给 1–2 个汉字；复姓请把复姓整体写在 surname，名只留 1–2 字');
+  if (!given) throw fail('E_INPUT', '缺少名字：请给 givenName（1–2 个汉字，如「沐宸」）');
+  if ([...given].length > 2) throw fail('E_INPUT', '名请给 1–2 个汉字；复姓请把复姓整体写在 surname，名只留 1–2 字');
 
   let favorable = { list: [], basis: '' };
   let strength = null;
@@ -595,10 +597,11 @@ export function assessName(input) {
  * limit 1–20；同一字不重复；候选按「合喜用数 → 简洁 → 字库序」确定性排序。
  */
 export function generateNames(input) {
+  assertObject(input, 'generateNames 的参数', '{ surname, year, month, day, limit? }');
   const surname = String(input.surname || '').trim();
-  if (!surname) throw new Error('缺少姓氏：请给 surname（如「李」）');
+  if (!surname) throw fail('E_INPUT', '缺少姓氏：请给 surname（如「李」）');
   if (!Number.isInteger(input.year) || !Number.isInteger(input.month) || !Number.isInteger(input.day)) {
-    throw new Error('生成候选名需要完整出生年月日（公历）：不给生辰无法判断喜用五行');
+    throw fail('E_INPUT', '生成候选名需要完整出生年月日（公历）：不给生辰无法判断喜用五行');
   }
   assertCivil(input, 'birth');
   const gender = input.gender === 'female' ? 'female' : 'male';
@@ -720,6 +723,9 @@ export function generateNames(input) {
 
 /** 主函数：action='assess'（默认）或 'generate'。 */
 export function buildName(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '起名参数不能为空：评名要 surname / givenName，起名要 surname 与性别/生日');
+  }
   if (input.action === 'generate') return generateNames(input);
   return assessName(input);
 }

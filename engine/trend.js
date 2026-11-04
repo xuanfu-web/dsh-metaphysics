@@ -5,6 +5,7 @@
 // 只用于看形态与相对起伏；分高不等于真实吉凶，旺衰落在换档边界时连排序都不给。
 import { buildBazi, HIDDEN_STEMS, tenGod } from './bazi.js';
 import { ganzhiName, sexagenaryIndex, STEMS, BRANCHES } from './calendar.js';
+import { fail } from './fail.js';
 
 // ── 十神计分表 ────────────────────────────────────────────────
 // 三张表各自求和接近 0，保证分数有正负双向起伏；符号随日主旺衰方向翻转：
@@ -86,9 +87,17 @@ function buildSegments(list, direction, birthYear, toAge) {
 export function buildTrend(input) {
   const gender = input.gender;
   if (gender !== 'male' && gender !== 'female') {
-    throw new Error('人生 K 线需要性别：大运顺逆由性别决定，不可缺省');
+    throw fail('E_INPUT', '人生 K 线需要性别：大运顺逆由性别决定，不可缺省');
   }
-  const toAge = clamp(Number.isInteger(input.toAge) ? input.toAge : 100, 10, 100);
+  // 以前 toAge 只认整数：50.5 会被静默换成默认 100 岁，点数翻倍还看不出来
+  let toAge = 100;
+  if (input.toAge !== undefined && input.toAge !== null && input.toAge !== '') {
+    const n = Number(input.toAge);
+    if (!Number.isInteger(n) || n < 10 || n > 100) {
+      throw fail('E_INPUT', `toAge 要是 10–100 的整数（岁），收到「${input.toAge}」`);
+    }
+    toAge = n;
+  }
   const r = buildBazi({
     year: input.year,
     month: input.month,

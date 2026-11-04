@@ -2,7 +2,7 @@
  * Host 半：把排盘引擎注册成一个模型可调用的工具。
  * 纯计算；唯一的网络行为是按需把地址解析成经度（失败即退回内置坐标表）。
  */
-import { compute, renderText, geocodeAddress, caliberCompare, resolveHandle } from './engine/index.js';
+import { compute, renderText, geocodeAddress, caliberCompare, resolveHandle, pruneForeignKeys, ownedKeys, normalizeLongitudes } from './engine/index.js';
 import { createLru } from './engine/lru.js';
 import { cacheMetrics } from './engine/calendar.js';
 import { parseRevision, displayValue } from './engine/revise.js';
@@ -78,13 +78,18 @@ export function apply(ctx) {
     } catch (e) {
       throw e && e.code ? e : bad(`handle 无法使用：${String((e && e.message) || e)}`);
     }
+    if (typeof next.system !== 'string' || !next.system.trim()) {
+      throw bad('需要 system（或带 system 的 handle）：例如 { system: "bazi", datetime: "1990-05-12T14:30", gender: "male" }');
+    }
     // 一句话改参：先落到参数上，后面的地址解析、日期补全才按改后的体系走；
     // 改了什么同时留给对外回显（compute 里也会再算一遍，结果相同，这里以宿主这份为准）
     let revision = null;
+    let revisionChangedAddress = false;
     if (typeof next.revise === 'string' && next.revise.trim()) {
       const rev = parseRevision(next.revise);
       const before = { ...next };
-      next = { ...next, ...rev.patch };
+      revisionChangedAddress = typeof rev.patch.address === 'string';
+      next = pruneForeignKeys({ ...next, ...rev.patch }, ownedKeys(args, rev.patch));
       revision = {
         text: rev.text,
         applied: rev.labels.map((l) => {
@@ -95,6 +100,19 @@ export function apply(ctx) {
       };
     }
     if (next.shadow === true && !next.shadowVersion) next.shadowVersion = PKG_VERSION;
+    // hour / date / minute 只有会读它们的体系放行：其它体系收了也不看，用户以为改的是时刻，
+    // 实际仍按 datetime（或 00:00）排。宁可直接报错，也不静默排成另一张盘。
+    // name 例外——它除 datetime 外还支持「年/月/日(+时/分)」分开给生辰（engine/index.js 的 name 分支真读）。
+    const HOUR_SYSTEMS = new Set(['chenggu', 'xiaoliuren', 'name']);
+    if (next.hour !== undefined && next.hour !== null && !HOUR_SYSTEMS.has(next.system)) {
+      throw bad(`hour 仅用于 chenggu / xiaoliuren / name；${next.system} 请把时刻写进 datetime，例如 1990-05-12T14:30`);
+    }
+    if (next.minute !== undefined && next.minute !== null && next.system !== 'name') {
+      throw bad(`minute 仅用于 name（配合 year / month / day）；${next.system} 请把时刻写进 datetime，例如 1990-05-12T14:30`);
+    }
+    if (next.date !== undefined && next.date !== null && next.system !== 'xiaoliuren') {
+      throw bad(`date 仅用于 xiaoliuren 时间起课；${next.system} 请用 datetime`);
+    }
     // 自由文本长度上限：这些串会整段进句柄（handle 是参数的 base64url），
     // 不设限就等于允许一次调用把结果撑到几百 KB——摘要、句柄、影子盘四处都要重抄一遍。
     const MAX_LEN = { address: 80, question: 300, revise: 200, ask: 200, surname: 16, givenName: 16 };
@@ -103,9 +121,19 @@ export function apply(ctx) {
         throw bad(`${k} 最长 ${lim} 个字符（收到 ${next[k].length} 个）；写要点即可，例如「成都」「今年是否适合换工作」`);
       }
     }
-    if (next.partner && typeof next.partner === 'object' && typeof next.partner.address === 'string'
-      && next.partner.address.length > MAX_LEN.address) {
-      throw bad(`partner.address 最长 ${MAX_LEN.address} 个字符（收到 ${next.partner.address.length} 个）`);
+    for (const who of ['partner', 'partner2']) {
+      const p = next[who];
+      if (p && typeof p === 'object' && typeof p.address === 'string' && p.address.length > MAX_LEN.address) {
+        throw bad(`${who}.address 最长 ${MAX_LEN.address} 个字符（收到 ${p.address.length} 个）`);
+      }
+    }
+    // 经度先按引擎那把尺归一（"87.6" → 87.6；非十进制 / 超范围当场报错）：
+    // 下面的 resolveGeo 只认 typeof === 'number'，不归一时数字串形式的显式经度会被联网结果顶掉，
+    // 用户明明写了喀什 87.6，盘却按解析出的 121.5 排。
+    try {
+      next = normalizeLongitudes(next);
+    } catch (e) {
+      throw e && e.code ? e : bad(`经度无法使用：${String((e && e.message) || e)}`);
     }
     // 默认离线：内置表覆盖到地级市，足够真太阳时用；联网是把出生地原文发给第三方，必须显式开启
     const wantsOnline = next.geocode === 'online';
@@ -117,12 +145,34 @@ export function apply(ctx) {
         const geo = await geocodeCached(person.address, { online: true });
         if (geo && typeof geo.lon === 'number') {
           person.longitude = geo.lon;
+          // 标出来源：下一轮换了地址/一句话改参时，派生经度要丢掉重解析，
+          // 否则新地址被旧经度顶掉，盘不变、不联网、也不提示。
+          person.longitudeFromGeo = true;
           person.geo = geo;
         }
       } catch (e) {
         // 联网失败不影响排盘，退回内置表
       }
     };
+    // 句柄里带着上一轮的经度（可能是联网派生的）。本次显式给了新地址，或一句话改了出生地，
+    // 就先把派生经度清掉，让 resolveGeo 按新地址重新解析；用户亲手给的 longitude 不动。
+    const dropGeo = (person) => {
+      if (!person) return person;
+      const out = { ...person };
+      delete out.longitude;
+      delete out.geo;
+      delete out.longitudeFromGeo;
+      return out;
+    };
+    const hadHandle = typeof args.handle === 'string' && args.handle.trim() !== '';
+    if (hadHandle) {
+      // 换了地址却没另给经度：句柄里的旧经度（可能是联网派生的）必须让位，否则盘不变。
+      if ((typeof args.address === 'string' || revisionChangedAddress) && args.longitude === undefined) next = dropGeo(next);
+      if (args.partner && typeof args.partner === 'object' && args.partner.longitude === undefined
+        && typeof args.partner.address === 'string') next.partner = dropGeo(next.partner);
+      if (args.partner2 && typeof args.partner2 === 'object' && args.partner2.longitude === undefined
+        && typeof args.partner2.address === 'string') next.partner2 = dropGeo(next.partner2);
+    }
     // fengshui 不在名单里：玄空/八宅只看 year/month/day/gender 与坐向，
     // 经度对盘面毫无影响，把出生地发给第三方就是纯外泄。
     if (next.system === 'bazi' || next.system === 'ziwei' || next.system === 'hepan'
@@ -132,6 +182,12 @@ export function apply(ctx) {
     if (next.system === 'hepan' && next.partner && typeof next.partner === 'object') {
       next.partner = { ...next.partner }; // 不改调用方传进来的对象
       await resolveGeo(next.partner);
+    }
+    // 第三方也按出生地修正：只给主方与对方解析，三方盘里的第三人就永远用离线表，
+    // 与另外两人的口径不一致。
+    if (next.system === 'hepan' && next.partner2 && typeof next.partner2 === 'object') {
+      next.partner2 = { ...next.partner2 };
+      await resolveGeo(next.partner2);
     }
     // 宿主有时钟：日期类体系缺日期时补「今天」，免得模型自己猜日期；
     // 择日与此刻起课同理——补上后仍会把实际采用的日期写进结果，可回溯。
@@ -193,7 +249,11 @@ export function apply(ctx) {
         },
         hour: {
           type: 'integer',
-          description: '时辰小时（0–23）。chenggu 用它补时辰（datetime 不带时分时必填）；xiaoliuren 时间起课用它代替 datetime 的时分。',
+          description: '时辰小时（0–23）。chenggu 用它补时辰（datetime 不带时分时必填）；xiaoliuren 时间起课用它代替 datetime 的时分；name 用 year/month/day 给生辰时用它带出生时（也可用 datetime）。',
+        },
+        minute: {
+          type: 'integer',
+          description: '分钟（0–59），仅 name 使用：配合 year / month / day 给生辰，省略按整点。',
         },
         dst: {
           type: 'boolean',
@@ -223,7 +283,7 @@ export function apply(ctx) {
         lateZi: {
           type: 'boolean',
           description:
-            '23:00 后是否算次日（晚子时换日）。八字/大六壬默认 true（换日）；奇门默认 false（归当日），也可用 lateZiHourMode 指定。输出摘要会写明实际采用的口径。',
+            '23:00 后是否算次日（晚子时换日）。八字/大六壬/称骨/小六壬/梅花/紫微默认 true（换日）；奇门默认 false（归当日），也可用 lateZiHourMode 指定。输出摘要会写明实际采用的口径。',
         },
         trueSolar: {
           type: 'boolean',
@@ -373,7 +433,17 @@ export function apply(ctx) {
           },
           required: ['datetime', 'gender'],
         },
-        upper: { type: 'number', description: '梅花数字起卦：第一个数（定上卦）。' },
+        chart: {
+          type: 'string',
+          enum: ['bazi', 'ziwei'],
+          description: '仅 hepan 使用：合盘底层用哪套盘（bazi 四柱合参 / ziwei 紫微合盘），默认 bazi。',
+        },
+        rectifyHours: {
+          type: 'array',
+          items: { type: 'integer', minimum: 0, maximum: 23 },
+          description: '仅八字 rectify 使用：只在这些时辰（0–23）里候选；省略则用全部十二时辰。用于已知大致时段时缩小范围。',
+        },
+        upper: { type: 'number', description: '梅花数字起卦：第一个数（定上卦），与 lower 成对。' },
         lower: { type: 'number', description: '梅花数字起卦：第二个数（定下卦）。' },
         changing: { type: 'number', description: '梅花数字起卦：可手动指定动爻（1-6）；省略则按两数之和取。' },
         count: {
@@ -417,7 +487,7 @@ export function apply(ctx) {
         },
         kuiyueSchool: {
           type: 'string',
-          enum: ['qs1', 'qs2', 'zhong-yiming', 'network'],
+          enum: ['qs1', 'qs2', 'zhong-yiming'],
           description: '紫微斗数：天魁天钺安法，默认 qs1（全书理解一），差异集中在庚辛壬癸年。',
         },
         tianshiTianshang: {
@@ -491,13 +561,32 @@ export function apply(ctx) {
         surname: { type: 'string', description: '仅 name 使用：姓氏，如「李」（复姓整体写，如「欧阳」）。' },
         givenName: { type: 'string', description: '仅 name assess 使用：名（1–2 个汉字）。' },
         limit: { type: 'number', description: '仅 name generate 使用：候选个数（1–20，默认 10）。' },
+        charElements: {
+          type: 'object',
+          description: '仅 name 使用：给未收录字指定五行，如 {"琰":"火"}。字库里有该字时以字库为准。',
+          additionalProperties: { type: 'string', enum: ['木', '火', '土', '金', '水'] },
+        },
+        strokeOverrides: {
+          type: 'object',
+          description: '仅 name 使用：逐字覆盖康熙笔画，如 {"沐":8}。用于字库未收的字或按别派笔画计算。',
+          additionalProperties: { type: 'integer', minimum: 1 },
+        },
+        surnameStrokes: {
+          type: 'object',
+          description: '仅 name 使用：按姓氏逐字覆盖康熙笔画，如 {"欧":15,"阳":17}；strokeOverrides 优先。',
+          additionalProperties: { type: 'integer', minimum: 1 },
+        },
+        year: { type: 'integer', description: '公历出生年（仅 name 的 assess/generate，配合 month/day/hour；也可直接用 datetime）。' },
+        month: { type: 'integer', description: '公历出生月 1–12（仅 name）。' },
+        day: { type: 'integer', description: '公历出生日 1–31（仅 name）。' },
         answers: {
           type: 'array',
           items: { type: ['integer', 'null'] },
           description: '仅 mbti 使用：按题目顺序的 24 个分数，1（完全不像）–5（很像我）；跳过某题传 null。不给则返回问卷题目，答满 12 题即可出类型。',
         },
       },
-      required: ['system'],
+      // 不写 required：只带 handle 的追问是文档主推用法，schema 层拦住会让宿主先拒绝。
+      // 真正的必填校验放到 run()：system 或 handle 至少给一个。
     },
     output: {
       schema: { type: 'object' },

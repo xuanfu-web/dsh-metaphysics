@@ -141,7 +141,9 @@ function zibaiChart(center, forward = true) {
   const palaces = [];
   for (const palace of PALACE_ORDER) {
     const k = PALACE_ORDER.indexOf(palace) + 1;
-    const num = norm9(k - 5 + center);
+    // 顺飞沿 1→2→…→9 递增，逆飞沿同一条轨迹递减；之前忽略 forward，
+    // 阴遁盘标着「逆飞」却按顺飞排，日/时两盘会整盘错位
+    const num = norm9((forward ? 1 : -1) * (k - 5) + center);
     const s = NINE_STARS[num];
     palaces.push({ palace, direction: palace === '中' ? '中宫' : PALACE_DIRECTION[palace], num, name: s.name, star: s.star, element: s.element, lucky: s.lucky });
   }
@@ -461,6 +463,16 @@ const DISCLAIMER = '八宅与飞星为传统通行口径的本地计算，属民
  *  xuankong：要坐山或向山；运由 period（1–9）或 fortuneYear 定，缺省按九运并注明。
  */
 export function buildFengshui(input) {
+  if (!input || typeof input !== 'object') {
+    throw fail('E_INPUT', '风水参数不能为空：命卦要生日与性别，布局要坐向（sitting / facing）');
+  }
+  // fortuneYear 以前只在 Number.isInteger 时才用，2026.5 会被静默当成「没给」而不排飞星。
+  // 数字串可以整形，非整数直接报错，别让「给了却没用」从结果里看不出来。
+  if (input.fortuneYear !== undefined && input.fortuneYear !== null && input.fortuneYear !== '') {
+    const fy = Number(input.fortuneYear);
+    if (!Number.isInteger(fy)) throw fail('E_INPUT', `fortuneYear 必须是整数年份，收到「${input.fortuneYear}」`);
+    input = { ...input, fortuneYear: fy };
+  }
   if (input.action === 'advise') return buildAdvise(input);
   if (input.action === 'xuankong') return buildXuankong(input);
   const gender = input.gender;

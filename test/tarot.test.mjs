@@ -44,7 +44,7 @@ ok('小牌档位数值 A=1..国王=14', (() => {
 ok('小牌 domain 沿用 SUITS 领域', SUITS.every(([s, , domain]) => minors.filter((c) => c.suit === s).every((c) => c.domain === domain)));
 
 // ── 3) drawTarot：张数、位名、正逆一致、关键词与该牌正/逆位一致 ──
-const counts = [[1, 1], [3, 3], [5, 5], [2, 3], [4, 3], [0, 3], [7, 3]];
+const counts = [[1, 1], [3, 3], [5, 5]];
 for (const [input, expect] of counts) {
   const r = drawTarot({ count: input, question: '这份工作要不要接？' });
   ok(`count=${input} → ${expect} 张`, r.cards.length === expect, String(r.cards.length));
@@ -64,6 +64,17 @@ for (const [input, expect] of counts) {
   const names = new Set(r.cards.map((c) => c.name));
   ok(`  count=${input} 同一数组内不重复抽到同名牌`, names.size === r.cards.length);
 }
+ok('非法张数直接报错，不静默折成 3 张', (() => {
+  for (const bad of [2, 4, 0, 7, 3.5]) {
+    try {
+      drawTarot({ count: bad });
+      return false;
+    } catch (e) {
+      if (e.code !== 'E_INPUT') return false;
+    }
+  }
+  return true;
+})());
 ok('空 question → null', drawTarot({ count: 3 }).question === null);
 ok('question 透传并 trim', drawTarot({ count: 1, question: '  要不要换城市  ' }).question === '要不要换城市');
 ok('默认 count=3', drawTarot().cards.length === 3);
@@ -141,6 +152,13 @@ const r4 = tarotReading({ question: '四张测试', cards: fourCards });
 ok('4 张手输牌面段数仍在 6-8', r4.length >= 6 && r4.length <= 8, String(r4.length));
 ok('4 张手输牌面覆盖所有牌名', fourCards.every((c) => r4.some((p) => p.includes(c.name))));
 ok('4 张手输牌面不出现 NaN/undefined', r4.every((p) => !p.includes('NaN') && !p.includes('undefined')));
+
+// 外部手输/旧数据缺 position、缺 upright：不能把 undefined 渲染进牌义
+const bare = tarotReading({ cards: [{ name: '愚人' }, { name: '魔术师', upright: false }] });
+ok('缺 position 时按第 N 张兜底', bare.some((p) => p.includes('第 1 张')) && bare.some((p) => p.includes('第 2 张')));
+ok('缺 upright 时不出现 undefined', bare.every((p) => !p.includes('undefined') && !p.includes('NaN')));
+ok('缺 upright 按正位读', bare.some((p) => p.includes('愚人」正位')));
+ok('显式逆位仍读逆位', bare.some((p) => p.includes('魔术师」逆位')));
 
 // ── 7) 数据一致性兜底：牌阵表与导出 ──
 ok('SPREADS 1/3/5 位置数与张数一致', [1, 3, 5].every((n) => SPREADS[n].length === n));

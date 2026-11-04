@@ -42,8 +42,10 @@ const NEED = {
   寒燥: { element: '火', stem: '丙', avoid: '水', why: '天寒地干，先要一点阳和之气' },
   寒: { element: '火', stem: '丙', avoid: '水', why: '冬令气寒，非火不暖' },
   温热: { element: '水', stem: '壬', avoid: '火', why: '火气初旺，得水润泽才好用' },
+  // 热且湿：闷蒸之局。解法仍是泄热（壬水），不是「湿气重就加火」——那等于往蒸笼下添柴。
+  // 单列一档而不是并进「湿滞」，是因为湿滞属不热之湿（土湿要火蒸），两者取用相反。
+  湿热: { element: '水', stem: '壬', avoid: '火', why: '湿热交蒸，得壬水引热下行，再添火只会更闷' },
   燥热: { element: '水', stem: '壬', avoid: '火', why: '火炎土燥，非水不润' },
-  热: { element: '水', stem: '壬', avoid: '火', why: '夏令炎威，先求一泓清水' },
   湿滞: { element: '火', stem: '丙', avoid: '水', why: '湿气郁结，要火来蒸腾' },
   燥: { element: '水', stem: '壬', avoid: '火', why: '气燥不润，得水则舒' },
   平和: { element: null, stem: null, avoid: null, why: '寒暖相济，气候不是这一盘的主要矛盾' },
@@ -51,7 +53,7 @@ const NEED = {
 
 const KIND_NAME = {
   寒湿: '寒湿', 寒燥: '寒燥', 寒: '寒',
-  温热: '温热', 燥热: '燥热', 热: '热',
+  温热: '温热', 湿热: '湿热', 燥热: '燥热',
   湿滞: '湿滞', 燥: '燥', 平和: '平和',
 };
 
@@ -92,12 +94,12 @@ const DAY_FEEL = {
     金: '金在燥热里容易发烫变形，要水来淬',
     水: '水在燥热里最珍贵，一滴都不能浪费',
   },
-  热: {
-    木: '木在暑天要水，不然只长叶不结果',
-    火: '火已经当令，收着用比放出去更划算',
-    土: '土热则燥，得水则安',
-    金: '金在暑天要水来洗，才见光泽',
-    水: '水在暑天是命脉，要保住源头',
+  湿热: {
+    木: '木沤在湿热里容易烂根生虫，先要疏泄，不能再烘',
+    火: '火在闷热里只会更闷，得引一点水气把它透开',
+    土: '土湿热成泥沼，得疏得泄，再烘只会更黏',
+    金: '金在湿热里容易生锈，要泄热、要见燥，才显出锋',
+    水: '水不算少却带着热，得把热泄出去，水才用得干净',
   },
   湿滞: {
     木: '木泡在水里会烂根，先要疏土透气',
@@ -157,8 +159,11 @@ export function judgeClimate({ monthBranch, dayStem, wuxing = {}, branches = [] 
   else if (cold && drySide) kind = '寒燥';
   else if (cold) kind = '寒';
   else if (hot && drySide) kind = '燥热';
+  // 先判「热且湿」再判「单纯热」：原来 hot 先短路，hot && damp>=0.8 永远走不到。
+  // 接通它要单开一档「湿热」而不是套用「湿滞」：湿滞是不热之湿（要丙火蒸），
+  // 热而湿则是闷蒸（要壬水泄热）——复用湿滞会把偏热盘的喜用从水翻成火。
+  else if (hot && wetSide) kind = '湿热';
   else if (hot) kind = '温热';
-  else if (hot && damp >= 0.8) kind = '湿滞';
   else if (drySide) kind = '燥';
   else if (wetSide) kind = '湿滞';
 
@@ -200,7 +205,9 @@ function buildNarration({ kind, monthBranch, dayElement, need, fire, water }) {
   if (!need.element) {
     return `${head}。${feel}。调候不是这一盘的主要矛盾，取用仍以扶抑为主，寒暖只作微调。`;
   }
-  return `${head}。${feel}。所以这一局要的不是更多的${kind.includes('寒') ? '水' : '火'}，而是${need.stem}${need.element}——${need.why}。`;
+  // 「不该再多的是什么」按 NEED 的忌神填，不按档名猜：猜「寒→水、其它→火」时，
+  // 湿滞（忌水、取丙火）会念成「要的不是更多的火，而是丙火」。
+  return `${head}。${feel}。所以这一局要的不是更多的${need.avoid}，而是${need.stem}${need.element}——${need.why}。`;
 }
 
 /** 调候与扶抑的仲裁说明：冲突时把话说明白，不静默取一个 */

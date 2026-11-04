@@ -27,7 +27,7 @@ eq('煞星词条齐全', Object.keys(SHA_STAR).length, 14);
 eq('六煞名单就是那六颗', MAIN_SHA.slice().sort().join(','), ['地劫', '地空', '擎羊', '火星', '铃星', '陀罗'].sort().join(','));
 eq('吉星词条不少于 18 条', Object.keys(FU_STAR).length >= 18, true);
 eq('四化读法齐全', Object.keys(HUA_READ).join(''), '禄权科忌');
-eq('亮度七档齐全', Object.keys(BRIGHT_READ).join(''), '庙旺得利平不陷');
+eq('亮度八档齐全（含五档表的「闲」）', Object.keys(BRIGHT_READ).join(''), '庙旺得利平闲不陷');
 eq('格局读法三十四条', Object.keys(PATTERN_READ).length, 34);
 
 // 词库与引擎的格局表必须一一对应：多一条是编出来的格局，少一条会在面板上落空白
@@ -93,6 +93,7 @@ eq('宫名别名 事业 → 官禄', palaceFieldOf('事业')?.field, PALACE_FIEL
 eq('宫名别名 奴仆 → 交友', palaceFieldOf('奴仆')?.field, PALACE_FIELD.交友.field);
 eq('未知宫名返回 null', palaceFieldOf('不存在'), null);
 eq('亮度「庙」是 good', brightRead('庙')?.tone, 'good');
+eq('五档表的「闲」有措辞', brightRead('闲')?.tone, 'neutral');
 eq('亮度空值返回 null', brightRead(''), null);
 eq('未知星名返回 null', starExtraOf('不存在'), null);
 eq('双星顺序颠倒也能查到', starPairOf(['贪狼', '紫微'])?.gist, STAR_PAIR.紫微贪狼.gist);

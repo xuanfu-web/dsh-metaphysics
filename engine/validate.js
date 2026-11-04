@@ -54,3 +54,33 @@ export function assertCivil(input, who = '') {
   if (minute < 0 || minute > 59) throw fail('E_INPUT', `${p}minute 超出范围 0–59（收到 ${minute}）`);
   return input;
 }
+
+/**
+ * 次级入口（build* 之外的导出函数）的形状守卫。
+ * 这些函数以前直接读 input.surname / hex.lower / bits.slice，传错形状时在深处抛裸 TypeError，
+ * 调用方只看见 "Cannot read properties of null"，看不出是自己传错了什么。
+ * @param {*} value 待校验入参
+ * @param {string} who 函数名或参数名，用于定位
+ * @param {string} shape 该传什么（写清字段，别让调用方去猜）
+ */
+export function assertObject(value, who, shape) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    const got = value === null ? 'null' : value === undefined ? 'undefined' : Array.isArray(value) ? '数组' : typeof value;
+    throw fail('E_INPUT', `${who} 必须是对象（收到 ${got}）；${shape}`);
+  }
+  return value;
+}
+
+/**
+ * 晚子时换日（23:00–23:59 归次日）之后再量一次年份闸门。
+ * 2400-12-31T23:30 能过入参校验，却被整体搬到 2401 出盘；而直接传 2401-01-01T00:30 会被拒。
+ * 同一张盘不该有「换日就通、直填就拒」两条口径——边界附近的输入必须同进同出。
+ */
+export function assertShifted(date, who = '') {
+  const p = who ? `${who}：` : '';
+  if (date.year < MIN_YEAR || date.year > MAX_YEAR) {
+    throw fail('E_RANGE', `${p}晚子时按次日归后落到 ${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}，`
+      + `超出可计算范围 ${MIN_YEAR}–${MAX_YEAR}；请把时刻挪到 23 点前，或换一天起课`);
+  }
+  return date;
+}

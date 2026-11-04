@@ -5,12 +5,13 @@
 //   · 农历 → 公历：按目标农历年的「月首」序列反查（每月 29/30 天，闰月单独一轮），
 //     逐月定位后再加日偏移；不做「节气月」换算，农历就是朔望月口径。
 //
-// 诚实边界：只处理 1900–2100 的本地历法覆盖范围（与 lunar.js 一致）；闰月必须显式给出，
+// 诚实边界：只处理 1600–2400 的本地历法覆盖范围（与 lunar.js、assertCivil 一致）；闰月必须显式给出，
 // 不猜「第一个同名月」；农历日期越界（如小月三十）如实报错，不静默回退。
 import { solarToLunar } from './lunar.js';
 import { fromJDN, toJDN } from './calendar.js';
 import { buildAlmanac } from './almanac.js';
-import { assertCivil, daysInMonth } from './validate.js';
+import { assertCivil, assertObject, daysInMonth } from './validate.js';
+import { fail } from './fail.js';
 
 const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
 const MONTH_TEXT = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
@@ -69,6 +70,7 @@ function lunarMonths(lunarYear) {
  *   lunarYear?:number, lunarMonth?:number, lunarDay?:number, isLeapMonth?:boolean}} input
  */
 export function buildConvert(input) {
+  assertObject(input, '公农历互转的参数', '{ mode?, year, month, day } 或 { mode: "lunar2solar", lunarYear, lunarMonth, lunarDay }');
   const mode = input.mode === 'lunar2solar' ? 'lunar2solar' : 'solar2lunar';
   let solar;
   let lunar;
@@ -77,26 +79,33 @@ export function buildConvert(input) {
     solar = { year: input.year, month: input.month, day: input.day };
     assertCivil(solar, '公农历转换');
     if (solar.day > daysInMonth(solar.year, solar.month)) {
-      throw new Error(`非法日期：${solar.year} 年 ${solar.month} 月没有 ${solar.day} 日`);
+      throw fail('E_INPUT', `非法日期：${solar.year} 年 ${solar.month} 月没有 ${solar.day} 日`);
     }
     lunar = solarToLunar(solar.year, solar.month, solar.day);
   } else {
     const y = Number(input.lunarYear);
     const m = Number(input.lunarMonth);
     const d = Number(input.lunarDay);
-    if (![y, m, d].every(Number.isInteger)) throw new Error('农历转换需要 lunarYear / lunarMonth / lunarDay');
-    if (m < 1 || m > 12) throw new Error('农历月份须在 1–12');
+    if (![y, m, d].every(Number.isInteger)) throw fail('E_INPUT', '农历转换需要 lunarYear / lunarMonth / lunarDay（整数）');
+    if (y < 1600 || y > 2400) throw fail('E_INPUT', `农历年份 ${y} 超出可计算范围（1600–2400）`);
+    if (m < 1 || m > 12) throw fail('E_INPUT', '农历月份须在 1–12');
     const months = lunarMonths(y);
-    if (!months.length) throw new Error(`农历 ${y} 年超出本地历法覆盖范围（1900–2100）`);
+    if (!months.length) throw fail('E_INPUT', `农历 ${y} 年无法定位正月，请核对年份（1600–2400）`);
     const isLeap = input.isLeapMonth === true;
     const hit = months.find((x) => x.month === m && x.isLeap === isLeap);
     if (!hit) {
       const leapMonths = months.filter((x) => x.isLeap).map((x) => `闰${MONTH_TEXT[x.month - 1]}月`);
-      throw new Error(`农历 ${y} 年没有${leapMonths.length ? `该月（该年闰月为 ${leapMonths.join('、')}）` : '闰月'}：${isLeap ? '请确认闰月标记' : '请确认月份'}`);
+      throw fail('E_INPUT', `农历 ${y} 年没有${leapMonths.length ? `该月（该年闰月为 ${leapMonths.join('、')}）` : '闰月'}：${isLeap ? '请确认闰月标记' : '请确认月份'}`);
     }
-    if (d < 1 || d > hit.length) throw new Error(`农历 ${y} 年${isLeap ? '闰' : ''}${MONTH_TEXT[m - 1]}月只有 ${hit.length} 天，没有 ${d} 日`);
+    if (d < 1 || d > hit.length) throw fail('E_INPUT', `农历 ${y} 年${isLeap ? '闰' : ''}${MONTH_TEXT[m - 1]}月只有 ${hit.length} 天，没有 ${d} 日`);
     const p = fromJDN(hit.startJdn + d - 1);
     solar = { year: p.year, month: p.month, day: p.day };
+    // 农历 2400 年末几天会换到公历 2401：这属于「目标日期越界」，不是黄历的错；
+    // 以前一路走到 buildAlmanac 才抛「黄历的 year 超出支持范围」，代码还是 E_INPUT，用户看不懂。
+    if (solar.year < 1600 || solar.year > 2400) {
+      const solarText = `${solar.year}-${String(solar.month).padStart(2, '0')}-${String(solar.day).padStart(2, '0')}`;
+      throw fail('E_RANGE', `农历 ${y} 年${isLeap ? '闰' : ''}${MONTH_TEXT[m - 1]}月${d}日换算得到的公历日期 ${solarText} 超出可计算范围（1600–2400）`);
+    }
     const check = solarToLunar(p.year, p.month, p.day);
     if (check.month !== m || check.day !== d || check.isLeap !== isLeap) {
       note = '反查结果与目标农历日不完全一致，已按本地历法实际月首回推';
@@ -114,7 +123,7 @@ export function buildConvert(input) {
       solarDate: solarText,
       weekday: `星期${WEEK[(jdn + 1) % 7]}`,
       ...(note ? { note } : {}),
-      scope: '公农历互转按本地定朔历（1900–2100）；农历闰月须显式指定，不自动猜同名月',
+      scope: '公农历互转按本地定朔历（1600–2400）；农历闰月须显式指定，不自动猜同名月',
     },
     solar: { year: solar.year, month: solar.month, day: solar.day, text: solarText },
     lunar: {

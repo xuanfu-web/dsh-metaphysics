@@ -55,7 +55,16 @@ const REL_TEXT = {
   unknown: '五行缺失，关系未定',
 };
 
-const findPalace = (r, key) => r.palaces.find((p) => p.star === key || p.gate === key || p.god === key || p.palace === key) || null;
+// 天芮在中宫寄坤时被统一改名「禽芮」，表里仍按通行名写；不折叠就永远定位不到。
+// 驿马不在 palaces[].star 上，而是 r.ma.gong，单独走一条。
+const STAR_ALIAS = { 天芮: '禽芮' };
+const findPalace = (r, key) => {
+  if (key === '驿马') {
+    const gong = r.ma && r.ma.gong;
+    return gong ? (r.palaces.find((p) => p.palace === gong) || null) : null;
+  }
+  return r.palaces.find((p) => p.star === key || p.star === STAR_ALIAS[key] || p.gate === key || p.god === key || p.palace === key) || null;
+};
 const cell = (p) => `${p.palace}宫（${p.star}·${p.gate}·${p.god}）`;
 
 /** 按询问方向取用神及其落宫；解读与推导链共用这一张表，避免两处各写一份 */
@@ -111,7 +120,16 @@ export function interpretQimen(r, opts = {}) {
   // ③ 用神候选
   const yongList = ysInfo.rows.filter((x) => x.palace);
   if (!yongList.length) unresolved.push(`${ys.label}的用神未上盘`);
-  if (yongList.length > 1) unresolved.push(`用神有 ${yongList.length} 个候选（${yongList.map((x) => x.key).join('、')}）`);
+  else {
+    // 主用神缺位、只剩次级候选时不能装作没发生：原先主用神落空、死门仍能撑起 yongList，
+    // 「用神未上盘」的兜底永远不触发，健康解读就只剩一句「若以死门为用神」。
+    const missingPrimary = ys.primary.filter((k) => !ysInfo.rows.some((x) => x.key === k && x.palace));
+    if (missingPrimary.length) unresolved.push(`主用神${missingPrimary.join('、')}未上盘`);
+  }
+  // 「辅用神也在盘上」不算未决：YONG_SHEN 每个方向本就是「主用神 + 一两个辅用神」，
+  // 辅用神必然落宫，按候选数判未决等于 unresolved 恒非空，下面的倾向分支一次也没跑过
+  // （7 个方向全部退回「暂不给单一倾向」）。候选清单在 ④ 一节里逐条列出，不靠这里提醒。
+  const primaryYong = ysInfo.rows.find((x) => ys.primary.includes(x.key) && x.palace) || null;
   sections.push({
     key: 'yongshen',
     label: `用神候选（${ys.label}）`,
@@ -121,7 +139,7 @@ export function interpretQimen(r, opts = {}) {
   });
 
   // ④ 两宫关系（用神宫 × 值符宫）
-  const primary = yongList[0] || null;
+  const primary = primaryYong || yongList[0] || null;
   if (primary && zhiFuP) {
     if (primary.palace.palace === zhiFuP.palace) {
       sections.push({
@@ -200,6 +218,13 @@ export function interpretQimen(r, opts = {}) {
       key: 'tendency',
       label: '最终倾向',
       text: `暂不给单一倾向。未决项：${unresolved.join('；')}。先把用神定下来，再谈顺逆。`,
+    });
+  } else if (!primary || !zhiFuP) {
+    // 顺逆要拿「用神宫 × 值符宫」对比，两处任一落不到具体单宫就没法给结论
+    sections.push({
+      key: 'tendency',
+      label: '最终倾向',
+      text: `暂不给单一倾向。${primary ? '值符落宫在本盘没有对应单宫，缺对照宫' : '本盘没有可用的用神落宫'}，顺逆判断需要一个明确的对照，缺它就不硬凑。`,
     });
   } else {
     const rel = wuxingRelation(primary.palace.palaceElement, zhiFuP.palaceElement);

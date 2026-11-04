@@ -2,6 +2,8 @@
 // 历法层已换成本插件自己的 calendar/lunar，故只需核对排盘结果是否一致。
 import { compute } from '../engine/index.js';
 import { buildQimen } from '../engine/qimen.js';
+import { interpretQimen } from '../engine/qimen-interpret.js';
+import { resolveSubject } from '../engine/qimen-prompt.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
@@ -81,6 +83,35 @@ ok('用神随询问方向切换', (() => {
 })(), '事业 vs 感情 用神不同');
 ok('解读带免责声明', /传统术数|不是.*判决/.test(it.disclaimer + it.sections.map((s) => s.text).join('')));
 
+// ⑦.5 用神定位：天芮在中宫寄坤时盘面写作「禽芮」，表里按通行名写，必须折叠别名；
+// 驿马不在 palaces[].star 上，走 r.ma.gong。两处原先一个永远落空、一个从不解析。
+const hq = compute({ system: 'qimen', datetime: '2024-01-01T00:00', withInterpret: true, direction: 'health' });
+const hRow = hq.interpret.sections.find((s) => s.key === 'yongshen').text;
+ok('健康主用神天芮能定位到禽芮那宫', hq.palaces.some((p) => p.star === '禽芮')
+  && hRow.includes('天芮 →'), hRow);
+ok('天芮定位与盘面同一宫', (() => {
+  const p = hq.palaces.find((x) => x.star === '禽芮');
+  return hRow.includes(`天芮 → ${p.palace}宫`);
+})());
+const tq = compute({ system: 'qimen', datetime: '2024-01-01T00:00', withInterpret: true, direction: 'travel' });
+const tRow = tq.interpret.sections.find((s) => s.key === 'yongshen').text;
+ok('出行次级用神驿马按 ma.gong 解析', !!tq.ma.gong && tRow.includes(`驿马 → ${tq.ma.gong}宫`), tRow);
+
+// ⑦.6 甲日/甲时：甲不上天盘，改按旬首六仪代查并在文案里标明寄仪；不能定位不到还装作没事
+const jia = buildQimen({ year: 2024, month: 3, day: 1, hour: 10, minute: 0 });
+ok('样本确为甲日', jia.siZhu.day.startsWith('甲'), jia.siZhu.day);
+const sub = resolveSubject(jia, { how: 'dayStem' });
+ok('甲日按旬首六仪定位到宫', !!sub.palace, sub.symbol);
+ok('甲日文案标明寄仪', /甲（寄./.test(sub.symbol), sub.symbol);
+ok('定位成功时不报缺失', sub.missing === '', sub.missing);
+
+// ⑦.7 置闰：超九日落在芒种窗口时，局数必须跟着置闰后的「下元」走，而不是未覆盖位的旧局
+const zhiRun = buildQimen({ year: 2024, month: 12, day: 11, hour: 0, minute: 0, juMethod: 'zhirun' });
+const chaiBu = buildQimen({ year: 2024, month: 12, day: 11, hour: 0, minute: 0, juMethod: 'chaibu' });
+ok('置闰样本走的是置闰分支', /置闰下元/.test(zhiRun.juMethodNote), zhiRun.juMethodNote);
+ok('置闰后局数为大雪下元一局', zhiRun.ju === '阴遁一局 (下元)', zhiRun.ju);
+ok('置闰与拆补在此时取局不同', zhiRun.ju !== chaiBu.ju, `${zhiRun.ju} / ${chaiBu.ju}`);
+
 // ⑧ 换局事件枚举出来的「分裂样本」（由 tools/qimen-divergence.mjs 生成，非手挑）
 // 每条都锁定两种口径的具体输出，任一套改坏都会立刻报错。
 const SPLITS = [
@@ -127,8 +158,25 @@ ok('断语分四层：事实/单宫/关系/条件/倾向',
   keys2.join(','));
 const allText = ri2.interpret.sections.map((x) => x.text).join('');
 ok('禁止绝对措辞', !/必成|必败|绝对吉|绝对凶|铁断|注定|百分百/.test(allText));
-ok('用神多候选时不给单一倾向', ri2.interpret.unresolved.length > 0 && /暂不给单一倾向/.test(allText),
-  ri2.interpret.unresolved.join('；'));
+// 「用神多候选就不给单一倾向」是上一轮的口径，实测等于恒不判决策：YONG_SHEN 每个方向都是
+// 「主用神 + 辅用神」，辅用神必然落宫，7 个方向 7 次退回「暂不给」。改为只看主用神是否上盘。
+const SEVEN = ['general', 'wealth', 'career', 'love', 'health', 'study', 'travel'];
+const tendencies = SEVEN.map((d) => {
+  const x = compute({ system: 'qimen', datetime: '2026-06-22T03:00:15', withInterpret: true, direction: d });
+  return { d, text: x.interpret.sections.find((s) => s.key === 'tendency').text, un: x.interpret.unresolved };
+});
+ok('七个方向都给出倾向', tendencies.every((t) => /整体(偏向顺|偏向滞|中性)/.test(t.text)),
+  tendencies.filter((t) => !/整体(偏向顺|偏向滞|中性)/.test(t.text)).map((t) => t.d).join(','));
+ok('辅用神同盘不再算未决项', tendencies.every((t) => t.un.length === 0),
+  tendencies.map((t) => `${t.d}:${t.un.join('/')}`).join(' | '));
+ok('倾向仍留条件式措辞', tendencies.every((t) => /若.*实际取另一个候选/.test(t.text)) && !/必成|注定/.test(tendencies.map((t) => t.text).join('')));
+// 主用神真缺位时仍要退回未决：把开门从盘上摘掉，career（主用神开门）就该没有对照
+const bareQimen = compute({ system: 'qimen', datetime: '2026-06-22T03:00:15' });
+const noKaimen = { ...bareQimen, palaces: bareQimen.palaces.map((p) => (p.gate === '开门' ? { ...p, gate: '惊门' } : p)) };
+const heldBack = interpretQimen(noKaimen, { direction: 'career' });
+ok('主用神缺位仍退回未决',
+  /暂不给单一倾向/.test(heldBack.sections.find((s) => s.key === 'tendency').text) && /主用神开门未上盘/.test(heldBack.unresolved.join('')),
+  heldBack.unresolved.join('；'));
 ok('无输入错误时返回规则集版本', !!ri2.interpret.ruleset && typeof ri2.interpret.ruleset.juMethod === 'string', JSON.stringify(ri2.interpret.ruleset));
 if (fail > 0) { console.log(`FAIL ${fail} 项`); process.exit(1); }
 console.log(`\n奇门 ${pass} 项全部通过`);

@@ -38,10 +38,13 @@ for (const name of Object.keys(CHUNKS)) {
   ok(`${file} 返回 Engine.compute`, exp && exp.Engine && typeof exp.Engine.compute === 'function');
   ok(`${file} 自包含（不依赖 require.async）`, !code.includes('require.async('));
   const gz = zlib.gzipSync(Buffer.from(code, 'utf8')).length;
-  // 上限 220 → 228KB：H4 的十二颗杂曜安星诀（engine/ziwei-zuoyao.js，11KB 源码 / 6.5KB gzip）
-  // 是面板与复制提问要用的真内容，随紫微引擎进每一个分块；ziwei/bazi/hepan 三块原本就贴着旧线，
-  // 抬 8KB 后最紧的一块余量仍不到 9KB，再加库就得拆块而不是再抬线。
-  ok(`${file} gzip < 228KB`, gz < 228 * 1024, `${Math.round(gz / 1024)}KB`);
+  // 上限 220 → 228 → 232KB：抬线的这笔增量是「真内容」，不是新库——
+  // 0.61.2 之后这两轮复查给 geo 补了 23 个地级市坐标（286 → 309）与同名区/县判定（geo 在 COMMON 里，随每一块走），
+  // 又给次入口加了入参守卫、给 asOf 加了归一、给日期尺与 rectify 加了闸门：
+  // bazi / hepan / ziwei 从 223.9 / 223.1 / 219.8KB 涨到 228.5 / 227.4 / 223.9KB，最紧的一块只超线 523 字节。
+  // 上一轮写的「再加库就该拆块」仍然算数：这次抬的是守卫与坐标表，下次再往这三块塞引擎或数据表就得拆，
+  // 别再把线往上抬（CI 侧 check-bundle.mjs 另有 260KB 的单块硬墙与 2.75MB 总量墙兜着）。
+  ok(`${file} gzip < 232KB`, gz < 232 * 1024, `${Math.round(gz / 1024)}KB`);
 }
 
 // 入口：只带界面，按 tab 取分块；切换 tab 后仍用对应分块的 Engine

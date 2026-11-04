@@ -2,7 +2,7 @@
 //
 // 这一层的价值在于「发出去的那段话」本身要可核对：体系名要翻成人话、
 // 问题要原样带进去、摘要要带得动又别太长、绝对化表述不能混进去。
-import { askPrompt, readingOrderOf, READING_ORDERS } from '../engine/followup.js';
+import { askPrompt, followup, readingOrderOf, READING_ORDERS } from '../engine/followup.js';
 import { compute } from '../engine/index.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -162,4 +162,25 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
 
   const unknown = askPrompt({ system: 'no-such-system', summary: 'x' }, { question: 'q' });
   ok('未知体系的提问也带层次行', unknown.text.includes('no-such-system：基本信息 → 盘面事实'));
+}
+
+// ⑩ 追问：没有解析层的体系也要能用盘面摘要答，不能一律「没有可追问的分节」
+{
+  const xlr = compute({ system: 'xiaoliuren', datetime: '2026-11-01T22:10' });
+  const fx = followup(xlr, '事业怎么样');
+  ok('小六壬无解析层时仍作答', fx.ok === true && fx.answer.length > 20, fx.answer);
+  ok('小六壬答案给的是盘面摘要', fx.evidence.some((e) => e.includes('落宫')), fx.evidence.join(' | '));
+  ok('不把缺解析层说成没识别到方向', !/没有识别到具体年份或方面/.test(fx.answer));
+  ok('识别到的事业方向保留', fx.topic && fx.topic.key === 'career');
+
+  const cg = compute({ system: 'chenggu', datetime: '1990-05-06T23:30' });
+  const fc = followup(cg, '财运如何');
+  ok('称骨无解析层时仍作答', fc.ok === true && /财富/.test(fc.answer), fc.answer);
+  ok('称骨答案命中摘要行', fc.evidence.some((e) => /合计|歌诀/.test(e)), fc.evidence.join(' | '));
+
+  const bzOnlyDir = followup(compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male' }), '事业怎么样');
+  ok('八字只给方向时不再回「没识别到」', bzOnlyDir.ok === true && /事业/.test(bzOnlyDir.answer), bzOnlyDir.answer);
+
+  const empty = followup({ system: 'no-such-system' }, '事业');
+  ok('既无解析也无摘要时明确说明重排', empty.ok === false && /重新排一次盘/.test(empty.answer));
 }

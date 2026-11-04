@@ -78,6 +78,16 @@ function baziAnswer(r, q) {
         evidence: (dim.evidence || []).slice(0, 4), confidence: dim.confidence || '中',
       };
     }
+    // 方向识别到了、但这一盘没带解析层：不能说「没识别到」，只能交盘面结构并说明缺什么
+    const groups = (r.frame && r.frame.godStats && r.frame.godStats.groups) || {};
+    if (Object.keys(groups).length) {
+      const facts = ['比劫', '食伤', '财', '官杀', '印'].map((k) => `${k} ${Number(groups[k] || 0)}`);
+      return {
+        ok: true, year: null, topic,
+        answer: `「${topic.label}」这条线，这一盘只带了盘面结构：${facts.join('、')}。具体吉凶与建议需要解析层（排盘时加 withInterpret），追问这里不自行推演。`,
+        evidence: facts.slice(0, 3), confidence: '弱',
+      };
+    }
   }
   return {
     ok: false, year: null, topic,
@@ -147,11 +157,31 @@ function genericAnswer(r, q) {
     return { ok: true, year: null, topic, answer: hit.text, evidence: [`引用分节：${hit.label}`], confidence: '中' };
   }
   const first = sections[0];
+  if (first) {
+    return {
+      ok: false, year: null, topic,
+      answer: `这一盘的追问需要落到具体方面（事业 / 财富 / 感情 / 健康 / 学业 / 出行）。先看「${first.label}」这一节，或把问题说得更具体一点。`,
+      evidence: [], confidence: '弱',
+    };
+  }
+  // 没有解析层时，用盘面摘要直接答——这 12 个体系本来就不产 interpret.sections，
+  // 一律回「没有可追问的分节」等于让追问功能对它们失效
+  const summary = String((r && r.summary) || '').trim();
+  if (summary) {
+    const lines = summary.split('\n').map((s) => s.trim()).filter(Boolean);
+    const hits = topic ? lines.filter((l) => topic.words.some((w) => l.includes(w))) : [];
+    return {
+      ok: true, year: null, topic,
+      answer: hits.length
+        ? `${topic.label}相关的盘面字段：${hits.slice(0, 3).join('；')}。这一盘没带解析层，只列盘面事实，不在这里补吉凶结论。`
+        : `这一盘没有解析层，只能按盘面字段回答；可问的方向：${TOPICS.map((t) => t.label).join(' / ')}。下面任取摘要是盘面原文，未作推演。`,
+      evidence: (hits.length ? hits : lines).slice(0, 4),
+      confidence: '弱',
+    };
+  }
   return {
     ok: false, year: null, topic,
-    answer: first
-      ? `这一盘的追问需要落到具体方面（事业 / 财富 / 感情 / 健康 / 学业 / 出行）。先看「${first.label}」这一节，或把问题说得更具体一点。`
-      : '这一盘暂时没有可追问的分节；先看完整解析，再问具体方面。',
+    answer: '这一盘暂时没有可追问的分节，也没有摘要字段；先重新排一次盘，再问具体方面。',
     evidence: [], confidence: '弱',
   };
 }

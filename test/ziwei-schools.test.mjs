@@ -104,7 +104,7 @@ const KY = (school) => [starBranch(buildZiwei({ ...BASE, kuiyueSchool: school })
 eq('魁钺默认 qs1', KY('qs1'), ['丑', '未']);
 eq('qs2 庚年在午寅', KY('qs2'), ['午', '寅']);
 eq('中一鸣在寅午', KY('zhong-yiming'), ['寅', '午']);
-eq('网络派与 qs1 同', KY('network'), ['丑', '未']);
+ok('网络派不再单列（与 qs1 完全同表）', !ZIWEI_SCHOOL_OPTIONS.kuiyueSchool.includes('network'));
 
 // ── 八、天伤天使 ───────────────────────────────────────────
 const YIN_M = { ...BASE, year: 1991, month: 5, day: 12, gender: 'male' };

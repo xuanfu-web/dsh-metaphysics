@@ -322,7 +322,7 @@ export const CALIBER_SWITCHES = {
       off: '不排', single: '单星', double: '正副双星', zhanyan: '占验派',
     }),
     ziweiSchoolSwitch('kuiyueSchool', '魁钺：qs1 / qs2', '魁钺', 'qs1', 'qs2', {
-      qs1: 'qs1', qs2: 'qs2', 'zhong-yiming': '中一鸣', network: '网络',
+      qs1: 'qs1', qs2: 'qs2', 'zhong-yiming': '中一鸣',
     }),
     ziweiSchoolSwitch('tianshiTianshang', '天伤天使：常规 / 中州互换', '天伤天使', 'normal', 'zhongzhou', {
       normal: '常规', zhongzhou: '中州（阴男阳女互换）',

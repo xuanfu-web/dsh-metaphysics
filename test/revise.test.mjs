@@ -76,6 +76,15 @@ const sameDay = compute({ system: 'bazi', datetime: '1990-05-06T23:30', gender: 
 ok('晚子时算次日', late.input.lateZi === true && late.pillars.day.ganzhi !== sameDay.pillars.day.ganzhi,
   `${late.pillars.day.ganzhi} / ${sameDay.pillars.day.ganzhi}`);
 
+// 紫微只认历史参数名 lateZishi；revise 写的是 lateZi。不归一就会出现
+// 「回执说已应用、盘仍按 current-day」——农历日差一天，命宫/身宫整盘错位。
+const zLate = compute({ system: 'ziwei', datetime: '1990-05-06T23:30', gender: 'male', dst: false, revise: '晚子时算次日' });
+const zSame = compute({ system: 'ziwei', datetime: '1990-05-06T23:30', gender: 'male', dst: false, revise: '晚子时不换日' });
+ok('紫微 revise 晚子时真正换日', zLate.input.schools.lateZishi === 'next-day' && zLate.lunar.day !== zSame.lunar.day,
+  `${zLate.lunar.day} / ${zSame.lunar.day}`);
+ok('紫微 revise 回执与盘面同源', zLate.revision.applied.some((a) => a.key === 'lateZi') && zLate.input.schools.lateZishi === 'next-day', JSON.stringify(zLate.revision.applied));
+ok('紫微默认仍是当日', zSame.input.schools.lateZishi === 'current-day' && zSame.lunar.day === compute({ system: 'ziwei', datetime: '1990-05-06T23:30', gender: 'male', dst: false }).lunar.day);
+
 const nothing = compute({ ...BASE, revise: '随便说点什么' });
 ok('识别不到时盘面不变', JSON.stringify(nothing.pillars) === JSON.stringify(base.pillars));
 ok('识别不到时 applied 为空', nothing.revision.applied.length === 0);

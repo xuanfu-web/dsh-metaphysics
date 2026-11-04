@@ -151,3 +151,47 @@ ok('resolveHandle 无 handle 时浅拷贝', (() => {
   const out = resolveHandle(src);
   return out !== src && out.system === 'bazi';
 })());
+
+
+// ── ⑫ 跨体系复用句柄：句柄带进来的「按体系解释」的键不能让新盘报错 ────
+// 工具描述主推 { handle, system: "ziwei" }（同一份时间换一套盘看），而称骨 / 小六壬的句柄必带 hour、
+// convert / 梅花 / 小六壬的句柄必带 mode。守卫若拿合并后的参数判定，这条主推用法会整条报错。
+const fourPillars = (r) => !!(r && r.pillars && r.pillars.year && r.pillars.month && r.pillars.day && r.pillars.hour);
+const crossChenggu = compute({ system: 'chenggu', datetime: '1990-05-12', hour: 14, gender: 'male' });
+ok('称骨句柄里确实带着 hour', decodeHandle(crossChenggu.handle).hour === 14, JSON.stringify(decodeHandle(crossChenggu.handle)));
+const toZiwei = await def.execute({ handle: crossChenggu.handle, system: 'ziwei', gender: 'male' });
+ok('称骨句柄 → 紫微可排（不再被 hour 守卫拦）', toZiwei.system === 'ziwei' && Array.isArray(toZiwei.palaces) && toZiwei.palaces.length === 12, toZiwei.system || '-');
+ok('换体系后的新句柄不带上一张盘的 hour', decodeHandle(toZiwei.handle).hour === undefined, JSON.stringify(decodeHandle(toZiwei.handle)));
+// 梅花要取「句柄里确实带着 mode」的那一类：数字起卦的句柄没有时间，换八字必然缺 datetime，
+// 那是输入本身不带时间（诚实报错），不是被 mode 守卫拦下（误伤）。时间起卦才有可比性。
+const crossMeihua = compute({ system: 'meihua', mode: 'time', datetime: '1990-05-12T14:30' });
+ok('梅花时间起卦句柄里带着 mode', decodeHandle(crossMeihua.handle).mode === 'time');
+const mhToBazi = await def.execute({ handle: crossMeihua.handle, system: 'bazi', gender: 'male' });
+ok('梅花句柄 → 八字可排（mode 让位）', mhToBazi.system === 'bazi' && fourPillars(mhToBazi), mhToBazi.system || '-');
+// 数字起卦没有时间：换成八字只能报「缺 datetime」，不该由 hour/mode 守卫抢答
+const crossMhNum = compute({ system: 'meihua', mode: 'number', upper: 3, lower: 5 });
+const mhNumToBazi = await def.execute({ handle: crossMhNum.handle, system: 'bazi', gender: 'male' })
+  .then(() => '', (e) => String((e && e.message) || e));
+ok('梅花数字起卦句柄 → 八字：只说缺 datetime，不甩锅 mode', /缺少 datetime/.test(mhNumToBazi) && !/mode 只用于/.test(mhNumToBazi), mhNumToBazi);
+const crossConvert = compute({ system: 'convert', mode: 'solar2lunar', datetime: '1990-05-12' });
+const cvToBazi = await def.execute({ handle: crossConvert.handle, system: 'bazi', gender: 'female' });
+ok('转换句柄 → 八字可排（mode 让位）', cvToBazi.system === 'bazi' && fourPillars(cvToBazi), cvToBazi.system || '-');
+const crossXiao = await def.execute({ handle: compute({ system: 'xiaoliuren', date: '1990-05-12', hour: 14 }).handle, system: 'bazi', gender: 'male' })
+  .then(() => '', (e) => String((e && e.message) || e));
+ok('小六壬句柄 → 八字：报错只说缺 datetime，不再甩锅 hour', /缺少 datetime/.test(crossXiao) && !/hour 仅用于/.test(crossXiao), crossXiao);
+// 同体系复用不动句柄键
+const sameChenggu = await def.execute({ handle: crossChenggu.handle });
+ok('同体系复用不动 hour', sameChenggu.system === 'chenggu' && sameChenggu.handle === crossChenggu.handle, sameChenggu.system);
+// 本次显式给的键仍照报错：剔的只是句柄带进来的
+const explicitMode = await def.execute({ handle: crossChenggu.handle, system: 'ziwei', mode: 'number' }).then(() => '', (e) => String((e && e.message) || e));
+ok('显式误传 mode 仍报错', /mode 只用于/.test(explicitMode), explicitMode);
+const explicitHour = await def.execute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', hour: 10 }).then(() => '', (e) => String((e && e.message) || e));
+ok('显式误传 hour 仍报错', /hour 仅用于/.test(explicitHour), explicitHour);
+// 一句话改参换体系：补丁落在句柄合并之后，同一把尺要再量一次
+const reviseCross = await def.execute({ handle: crossChenggu.handle, revise: '换成八字看', gender: 'male' });
+ok('一句话换体系也剔掉句柄的 hour', reviseCross.system === 'bazi' && fourPillars(reviseCross), reviseCross.system);
+// resolveHandle 层：owned 的键不动
+const owned = resolveHandle({ handle: crossChenggu.handle, system: 'ziwei', hour: 8, gender: 'male' });
+ok('resolveHandle 保留本次显式 hour', owned.hour === 8 && owned.system === 'ziwei', JSON.stringify(owned.hour));
+const unowned = resolveHandle({ handle: crossChenggu.handle, system: 'ziwei' });
+ok('resolveHandle 剔掉句柄带来的 hour', unowned.hour === undefined, JSON.stringify(unowned.hour));

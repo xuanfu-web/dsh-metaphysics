@@ -1,9 +1,10 @@
 // 袁天罡称骨：按农历年/月/日/时辰四柱骨重求和，查通行本《称骨歌》原文，附白话释义。
 // 骨重表与歌诀均为通行本口径（各版本有异文，此处照录通行本）；释义是白话自撰，不是原文。
 import { solarToLunar } from './lunar.js';
-import { ganzhiName, toJDN, dayGanzhiIndex } from './calendar.js';
-import { assertCivil } from './validate.js';
+import { ganzhiName, toJDN, fromJDN, dayGanzhiIndex } from './calendar.js';
+import { assertCivil, assertShifted } from './validate.js';
 import { hourToBranch } from './almanac.js';
+import { fail } from './fail.js';
 
 /** 六十甲子年骨重（单位：钱；索引 = (农历年 - 4) mod 60，0 = 甲子）。 */
 export const YEAR_WEIGHT = [
@@ -142,9 +143,22 @@ export function buildChenggu(input) {
   const { year, month, day, hour } = input;
   const minute = input.minute || 0;
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
-    throw new Error('称骨必须给时辰：hour 为 0–23 的整数（缺时辰四柱不齐，骨重无法求和）');
+    throw fail('E_INPUT', '称骨必须给时辰：hour 为 0–23 的整数（缺时辰四柱不齐，骨重无法求和）');
   }
-  const lunar = solarToLunar(year, month, day);
+  // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 按次日取农历日与日柱，
+  // 否则同一子时的前后两个钟点会差一天的日重
+  const lateZi = input.lateZi !== false;
+  let sy = year;
+  let sm = month;
+  let sd = day;
+  if (lateZi && hour >= 23) {
+    const next = assertShifted(fromJDN(toJDN(year, month, day) + 1), '称骨');
+    sy = next.year;
+    sm = next.month;
+    sd = next.day;
+  }
+  const shifted = sy !== year || sm !== month || sd !== day;
+  const lunar = solarToLunar(sy, sm, sd);
   const lunarYear = lunar.lunarYear;
   const lunarMonth = lunar.month;
   const lunarDay = lunar.day;
@@ -161,11 +175,11 @@ export function buildChenggu(input) {
   const total = wYear + wMonth + wDay + wHour;
   const verdict = bandVerdict(total);
   const song = songOf(total);
-  const jdn = toJDN(year, month, day);
+  const jdn = toJDN(sy, sm, sd);
 
   return {
     system: 'chenggu',
-    input: { solar: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, hour, minute },
+    input: { solar: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, hour, minute, lateZi, lunarDateShifted: shifted },
     lunar: {
       text: `农历${yearGz.name}年${lunarMonthText(lunarMonth, lunar.isLeap)}${lunarDayText(lunarDay)} ${hourBranch}时`,
       year: lunarYear,

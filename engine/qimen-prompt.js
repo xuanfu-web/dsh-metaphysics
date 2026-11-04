@@ -4,6 +4,8 @@
 // 模型拿到一屏数据后最省力的写法就是「开门临生门，吉」——这不是解读，是把符号念一遍。
 // 所以提示里把「取哪个符号、为什么取它、它落在哪、和谁什么关系、回到现实查什么」写成硬步骤，
 // 并要求先给人话结论，再给依据。文案与取法分开存，取法可测，文案可改。
+import { xunShouLiuYi } from './qimen.js';
+
 export const QIMEN_PROMPT_VERSION = 'qimen-1';
 
 /** 九宫序号 → 方位与领域（读「事情落在哪个领域」时用，不直接当吉凶） */
@@ -122,11 +124,6 @@ const HARD_RULES = [
   '不确定就写不确定，并说明缺哪条信息才能确定。',
 ];
 
-const stemOf = (siZhu, key) => {
-  const v = siZhu && siZhu[key];
-  return v ? String(v).charAt(0) : '';
-};
-
 /** 天盘某干落在哪一宫（日干/时干/月干定位都走这里） */
 function palaceOfStem(q, stem) {
   if (!stem) return null;
@@ -136,6 +133,24 @@ function palaceOfStem(q, stem) {
   // 中宫按「寄坤二宫」取，但要把「这是中宫」说出来，不能让读者以为是坤二本宫。
   const c = q.centerPalace;
   return c && c.tianPan === stem ? c : null;
+}
+
+/** 某柱天干定宫：甲不上天盘，按本柱所在旬的旬首六仪代查，并在文案里标明寄仪 */
+function palaceOfPillarStem(q, siZhu, key, label) {
+  const gz = siZhu && siZhu[key] ? String(siZhu[key]) : '';
+  const stem = gz.charAt(0);
+  if (!stem) return { symbol: `${label}`, palace: null, missing: `四柱里没有${label}` };
+  if (stem !== '甲') {
+    const p = palaceOfStem(q, stem);
+    return { symbol: `${label} ${stem}`, palace: p, missing: p ? '' : `${label}${stem}未现于天盘` };
+  }
+  const yi = xunShouLiuYi(gz);
+  const p = palaceOfStem(q, yi);
+  return {
+    symbol: `${label} 甲（寄${yi}）`,
+    palace: p,
+    missing: p ? '' : `${label}甲寄${yi}，${yi}未现于天盘`,
+  };
 }
 
 function palaceOfGate(q, gate) {
@@ -152,18 +167,9 @@ function palaceOfGod(q, god) {
 export function resolveSubject(q, sub) {
   const si = q.siZhu || {};
   const how = String(sub.how || '');
-  if (how === 'dayStem') {
-    const s = stemOf(si, 'day');
-    return { symbol: `日干 ${s}`, palace: palaceOfStem(q, s), missing: s ? '' : '四柱里没有日干' };
-  }
-  if (how === 'hourStem') {
-    const s = stemOf(si, 'time');
-    return { symbol: `时干 ${s}`, palace: palaceOfStem(q, s), missing: s ? '' : '四柱里没有时干' };
-  }
-  if (how === 'monthStem') {
-    const s = stemOf(si, 'month');
-    return { symbol: `月干 ${s}`, palace: palaceOfStem(q, s), missing: s ? '' : '四柱里没有月干' };
-  }
+  if (how === 'dayStem') return palaceOfPillarStem(q, si, 'day', '日干');
+  if (how === 'hourStem') return palaceOfPillarStem(q, si, 'time', '时干');
+  if (how === 'monthStem') return palaceOfPillarStem(q, si, 'month', '月干');
   if (how === 'zhiFu') {
     const g = q.zhiFu && q.zhiFu.gong;
     return { symbol: `值符（${(q.zhiFu && q.zhiFu.star) || ''}）`, palace: (q.palaces || []).find((p) => p.palace === String(g)) || null, missing: g ? '' : '没有值符落宫' };

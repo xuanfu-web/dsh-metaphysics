@@ -4,7 +4,7 @@
 // 只把历法层换成本插件自己的 calendar/lunar 模块——节气、干支、农历都走同一套已验证的源码。
 import { termInstantJd, termWindow, jdToParts, partsToJd, formatJd, ganzhiName, sexagenaryIndex, STEMS, BRANCHES } from './calendar.js';
 import { solarToLunar } from './lunar.js';
-import { assertCivil } from './validate.js';
+import { assertCivil, assertShifted } from './validate.js';
 import { ganyingOf, LIUYI_RU_MU } from './qimen-ganying.js';
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -52,11 +52,15 @@ export function buildSnapshot({ year, month, day, hour, minute, lateZiHourMode =
   const baseJdn = partsToJd({ year, month, day, hour: 12, minute: 0 });
   const jdn = Math.floor(baseJdn + 0.5);
   const isLateZi = hour >= 23;
+  // 晚子时归次日若跨出 1600–2400，直接拒绝：不能拿 2401 的日柱排盘
+  if (isLateZi && lateZiHourMode === 'next-day') assertShifted(jdToParts(jd + 1), '奇门');
   const dayJdn = isLateZi && lateZiHourMode === 'next-day' ? jdn + 1 : jdn;
   const dayGz = ganzhiName((((dayJdn + 49) % 60) + 60) % 60).name;
 
-  // 时干支（五鼠遁）：23:00 之后时柱一律按次日的日干起子时，
-  // 这样 same-day / next-day 两种口径只有日柱不同、时柱一致（与参照实现一致）。
+  // 时干支（五鼠遁）：23:00 之后时柱一律按「次日」日干起子时。
+  // 因此 same-day / next-day 两种口径只差日柱、时柱保持一致；代价是会出现
+  // 「甲子日 + 丙子时」这种按当日日干推不出的组合（晚子时固定口径，README 与测试已锁）。
+  // 奇门以时柱定值符值使与局，两个口径的差异从日柱进入，不能把日柱当成无关紧要的细节。
   const hourBranchIdx = Math.floor(((hour + 1) % 24) / 2);
   const hourStemBasisJdn = isLateZi ? jdn + 1 : jdn;
   const hourBasisGz = ganzhiName((((hourStemBasisJdn + 49) % 60) + 60) % 60).name;
@@ -204,7 +208,8 @@ export function stemPalaceRelation(stem, palace) {
 // ── 六仪击刑 / 三奇入墓 ─────────────────────────────────────
 // 两者都是「天盘干落到某个宫就成立」的硬条件，与门迫一样只作宫位条件，不下吉凶。
 // 六仪击刑按地支相刑推：子刑卯、戌刑未、申刑寅、午自刑、辰自刑、寅刑巳；
-// 三奇入墓按五行墓库推：乙木墓未（未在坤二宫）、丙丁火墓戌（戌在乾六宫）。
+// 三奇入墓按《玄机赋》阴干逆行取墓：乙阴木墓戌、丙阳火墓戌（同落乾六），丁阴火墓丑（艮八）。
+// 注意别再混入「阳木墓未」——那套口径会把乙判到坤二，与本插件引文相反。
 const JI_XING = {
   戊: { palace: '3', zhi: '卯', basis: '甲子戊，子刑卯' },
   己: { palace: '2', zhi: '未', basis: '甲戌己，戌刑未' },
@@ -214,9 +219,9 @@ const JI_XING = {
   癸: { palace: '4', zhi: '巳', basis: '甲寅癸，寅刑巳' },
 };
 const RU_MU = {
-  乙: { palace: '2', zhi: '未', basis: '乙木墓于未，未在坤二宫' },
+  乙: { palace: '6', zhi: '戌', basis: '乙阴木墓于戌（玄机赋），戌在乾六宫' },
   丙: { palace: '6', zhi: '戌', basis: '丙火墓于戌，戌在乾六宫' },
-  丁: { palace: '6', zhi: '戌', basis: '丁火墓于戌，戌在乾六宫' },
+  丁: { palace: '8', zhi: '丑', basis: '丁阴火墓于丑（玄机赋），丑在艮八宫' },
 };
 
 /** 天盘六仪落刑宫 → [{palace, stem, zhi, basis}] */
@@ -357,7 +362,7 @@ function distributeBaShen(zhiFuGong, type) {
   return baShen;
 }
 
-function xunShouLiuYi(gz) {
+export function xunShouLiuYi(gz) {
   const tg = TIAN_GAN.indexOf(gz[0]);
   const dz = DI_ZHI.indexOf(gz[1]);
   if (tg === -1 || dz === -1) return '戊';
@@ -401,13 +406,18 @@ function calcJuShu(snapshot, juMethod = 'chaibu') {
       termName = snapshot.fuTouTermName || termName;
       note = `置闰法：超神 ${lead} 天，但不在芒种/大雪窗口，按超神接气取${termName}`;
     } else {
-      note = `置闰法：符头距${snapshot.nextTermName} ${lead} 天，未达置闰条件，按拆补处理`;
+      note = lead == null
+        ? '置闰法：缺少符头距下一节气天数，按拆补处理'
+        : `置闰法：符头距${snapshot.nextTermName} ${lead} 天，未达置闰条件，按拆补处理`;
     }
   }
   const nums = JU_NUMBERS_MAP[termName] || '111';
-  const num = Number(nums.charAt(yuan));
+  // 局数与元名必须同源：置闰把元改到「下元」后，局数也得取 nums 的第三位，
+  // 否则会排出「阴遁九局（下元）」却用上元的局数
+  const effYuan = yuanOverride >= 0 ? yuanOverride : yuan;
+  const num = Number(nums.charAt(effYuan));
   const CN = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九' };
-  const yuanName = ['上元', '中元', '下元'][yuanOverride >= 0 ? yuanOverride : yuan];
+  const yuanName = ['上元', '中元', '下元'][effYuan];
   return {
     jieQiName: termName,
     juMethod,
@@ -468,7 +478,8 @@ export function buildQimen(input) {
   });
   tianPan['5'] = diPan['5'] || ''; // 中五宫天盘取本宫地盘干
 
-  const kongZhi = KONG_WANG[snapshot.dayXun === xunOf(hourGz) ? xunOf(hourGz) : xunOf(hourGz)] || [];
+  // 时家奇门按时辰所在旬取空亡（如甲子旬空戌亥），不看日旬
+  const kongZhi = KONG_WANG[xunOf(hourGz)] || [];
   const kongGong = kongZhi.map((z) => ZHI_TO_GONG[z]).filter(Boolean);
   const maMap = { 申: '寅', 子: '寅', 辰: '寅', 寅: '申', 午: '申', 戌: '申', 亥: '巳', 卯: '巳', 未: '巳', 巳: '亥', 酉: '亥', 丑: '亥' };
   const maZhi = maMap[hourGz[1]] || '';
@@ -566,7 +577,7 @@ export function buildQimen(input) {
       '定局：以日干支符头定上中下元（子午卯酉上元、寅申巳亥中元、辰戌丑未下元），按节气取局数',
       '阴阳遁：冬至至夏至前用阳遁，夏至至冬至前用阴遁',
       '中五宫寄坤二宫；天盘随值符旋转，八神随值符落宫顺（阳）/逆（阴）布',
-      '本次未实现超神接气与置闰，采用拆补法',
+      '定局可选拆补法（默认）、超神接气法、置闰法：超神接气局随符头，置闰仅在芒种/大雪后符头超前 9 日以上时启用',
     ],
   };
 }

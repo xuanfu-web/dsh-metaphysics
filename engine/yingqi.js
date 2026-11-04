@@ -29,13 +29,6 @@ const BRANCHES_OF = (() => {
   return out;
 })();
 
-export const YINGQI_RULE_IDS = [
-  'jing-zhi-chong', 'dong-he-zhi', 'taiwang-mu-chong', 'shuaijue-sheng-wang',
-  'rumu-chong-kai', 'liuhe-xiang-ji', 'yuepo-xi-tian', 'xunkong-tian-chong',
-  'jixiang-keshen-shouke', 'xiong-keshen-fengsheng', 'huajin-zhi-he',
-  'huatui-ji-zhi-chong', 'bianyao-dongyao', 'shikong-yuanshen-zhi', 'shishuai-yuanshen-chong',
-];
-
 /**
  * 规则的排列顺序 = 原文《各門類應期總注章第又二十六》19 条的罗列次序。
  *
@@ -68,6 +61,9 @@ export const RULE_ORDER = [
   'shikong-yuanshen-zhi',
   'shishuai-yuanshen-chong',
 ];
+
+/** 规则编号表：与 RULE_ORDER 同一批规则，保留此导出名给老调用方 */
+export const YINGQI_RULE_IDS = RULE_ORDER;
 
 // 条文里给出、但落不到「某支」上的条目：列出来，避免被误以为已经做了
 export const NOT_IMPLEMENTED = [
@@ -108,7 +104,6 @@ export function yingqiState(line, bianLine, ctx = {}) {
   if (day && heOf(branch) === day) heWith.push({ with: '日辰', branch: day });
   if (moving && bianBranch && heOf(branch) === bianBranch) heWith.push({ with: '变爻', branch: bianBranch });
   // 太旺：月建同气（旺/相）且日辰生扶或比和
-  const monthTone = month ? (BRANCHES_OF[zhiElementOf(month)] || []) : [];
   const monthSame = !!(month && zhiElementOf(month) === element);
   const monthSheng = !!(month && zhiElementOf(month) === SHENG_ME[element]);
   const daySame = !!(day && zhiElementOf(day) === element);
@@ -121,7 +116,7 @@ export function yingqiState(line, bianLine, ctx = {}) {
   return {
     branch, element, moving, bianBranch, jinTui: jt, kongHit, monthPo, ruMu,
     heWith, taiWang, shuaiJue, monthSame, monthSheng, daySame, daySheng, monthKe,
-    muBranch, monthSameBranches: monthTone,
+    muBranch,
   };
 }
 
