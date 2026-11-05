@@ -53,7 +53,7 @@ ok(['大吉', '吉', '小凶', '凶'].some((k) => c.bodyUse.level.includes(k)) |
 
 // 缺参数必须报错
 throws(() => buildMeihua({ mode: 'time' }), /datetime/, '时间起卦缺 datetime 报错');
-throws(() => buildMeihua({ mode: 'number', upper: 1 }), /两个数字/, '数字起卦缺两个数报错');
+throws(() => buildMeihua({ mode: 'number', upper: 1 }), /两个整数/, '数字起卦缺两个数报错');
 
 // —— 常量表自洽 ——
 eq(TRI_NAME.length, 9, '八卦名表 9 项（含空位）');

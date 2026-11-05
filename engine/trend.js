@@ -4,6 +4,7 @@
 // 口径：这是一套**简化启发式**——十神计分表固定、正负号随日主旺衰方向翻转，
 // 只用于看形态与相对起伏；分高不等于真实吉凶，旺衰落在换档边界时连排序都不给。
 import { buildBazi, HIDDEN_STEMS, tenGod } from './bazi.js';
+import { bool } from './bool.js';
 import { ganzhiName, sexagenaryIndex, STEMS, BRANCHES } from './calendar.js';
 import { fail } from './fail.js';
 
@@ -107,10 +108,13 @@ export function buildTrend(input) {
     day: input.day,
     hour: Number.isInteger(input.hour) ? input.hour : 12,
     minute: Number.isInteger(input.minute) ? input.minute : 0,
+    // 时辰未知必须一路传到 buildBazi：它在内部统一按正午占位并收回时柱。
+    // 少了这一个键，摘要写着「按正午暂算」，旺衰却按 00:00 算成了另一档。
+    hourUnknown: bool(input.hourUnknown),
     gender,
-    lateZi: input.lateZi !== false,
-    trueSolar: input.trueSolar !== false,
-    dst: input.dst !== false,
+    lateZi: bool(input.lateZi, true),
+    trueSolar: bool(input.trueSolar, true),
+    dst: bool(input.dst, true),
     address: typeof input.address === 'string' ? input.address : undefined,
     longitude: typeof input.longitude === 'number' ? input.longitude : undefined,
     geo: input.geo && typeof input.geo === 'object' ? input.geo : undefined,

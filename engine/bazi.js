@@ -8,6 +8,7 @@ import { resolveAddress } from './geo.js';
 import { computeBaziShensha } from './shensha.js';
 import { assertCivil, assertShifted, daysInMonth } from './validate.js';
 import { applyDst } from './dst.js';
+import { bool } from './bool.js';
 import { nayinOf } from './nayin.js';
 import { SANHE } from './sanhe.js';
 import { analyzeBaziFrame, scoreLuck } from './geju.js';
@@ -333,13 +334,13 @@ export function buildBazi(input) {
   let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
   // 时辰未知：内部仍按「正午」跑完整条管线（大运、旺衰都要有个基准才能算），
   // 但对外一律不承认这个钟点——时柱置空、文本不出现具体时刻、精度降为按日。
-  const hourUnknown = input.hourUnknown === true;
+  const hourUnknown = bool(input.hourUnknown);
   if (hourUnknown) { hour = 12; minute = 0; }
-  const lateZi = input.lateZi !== false;
-  const useTrueSolar = input.trueSolar !== false;
+  const lateZi = bool(input.lateZi, true);
+  const useTrueSolar = bool(input.trueSolar, true);
   // 1986–1991 中国夏令时：出生证钟面时间普遍是「拨快 1 小时」的钟面时间，
   // 不校正会让时柱（乃至跨 23:00 的日柱）整档偏；显式传 dst:false 可关闭。
-  const dst = input.dst === false ? { applied: false, note: null } : applyDst({ year, month, day, hour, minute });
+  const dst = bool(input.dst, true) ? applyDst({ year, month, day, hour, minute }) : { applied: false, note: null };
   if (dst.applied) {
     year = dst.year; month = dst.month; day = dst.day; hour = dst.hour; minute = dst.minute;
   }
@@ -443,7 +444,7 @@ export function buildBazi(input) {
 
   // 流年（默认从「今年」起排 10 年；传 input.nowYear 可钉死基准年，用于复现历史结论；
   // input.liunianTo 可把窗口延到指定年，生时校正要拿几十年前的事件逐年对账）
-  const thisYear = Number(input.nowYear) || new Date().getFullYear();
+  const thisYear = Number(input.nowYear) || new Date().getFullYear(); // allow-clock: 未传 nowYear 时取本机年份；工具层 asOf 可钉死
   const liunianTo = Math.max(thisYear, Number(input.liunianTo) || thisYear + 9);
   const liunian = [];
   for (let y = thisYear; y <= liunianTo; y++) {

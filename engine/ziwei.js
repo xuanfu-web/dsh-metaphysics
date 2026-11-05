@@ -8,6 +8,7 @@ import { nayinOf } from './nayin.js';
 import { resolveAddress } from './geo.js';
 import { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } from './ziwei-zuoyao.js';
 import { SHA_STAR } from './ziwei-words.js';
+import { bool } from './bool.js';
 
 const fix = (i) => ((i % 12) + 12) % 12;
 
@@ -397,7 +398,7 @@ export function buildZiwei(input) {
   assertCivil(input);
   const schools = ziweiSchoolsOf(input);
   const { year: cy, month: cm, day: cd, hour: ch = 0, minute: cmin = 0, gender = 'male' } = input;
-  const useTrueSolar = input.trueSolar !== false;
+  const useTrueSolar = bool(input.trueSolar, true);
   const geo = input.geo || (input.address ? resolveAddress(input.address) : null);
   const longitude = typeof input.longitude === 'number'
     ? input.longitude
@@ -671,7 +672,7 @@ export function buildZiwei(input) {
   // 直接读挂钟的话，同一组参数（同一个句柄）跨年会排出不同的流年表，
   // 「同参数同盘」的承诺就只在当年成立。
   const asOfForLiunian = asOfParts(input.asOf);
-  const thisYear = (asOfForLiunian && asOfForLiunian.year) || new Date().getFullYear();
+  const thisYear = (asOfForLiunian && asOfForLiunian.year) || new Date().getFullYear(); // allow-clock: 未传 asOf 时按本机年份起流年；工具层 asOf 可钉死
   const liunian = [];
   for (let y = thisYear; y < thisYear + 12; y++) {
     const gz = ganzhiName((((y - 4) % 60) + 60) % 60);
@@ -1323,7 +1324,7 @@ export function asOfParts(v) {
 }
 
 export function flowOf(chart, asOf) {
-  const now = new Date();
+  const now = new Date(); // allow-clock: 流日/流时按调用时刻；显式 asOf 会覆盖
   const a = asOfParts(asOf) || {};
   const Y = a.year || now.getFullYear();
   const M = a.month || now.getMonth() + 1;

@@ -5,6 +5,7 @@ import { buildBazi, tenGod } from './bazi.js';
 import { STEMS, BRANCHES } from './calendar.js';
 import { assertCivil } from './validate.js';
 import { SANHE_GROUPS } from './sanhe.js';
+import { bool } from './bool.js';
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -217,7 +218,7 @@ export function buildHepan(input) {
       tenGodToA: godB,
       text: he5
         ? `日干五合（${aStem}${bStem}），传统称「天干五合」，主彼此吸引强，也容易黏在一起分不开。`
-        : `日干无五合：你在对方盘里是「${godA}」，对方在你盘里是「${godB}」。`,
+        : `日干无五合：对方在你盘里是「${godA}」，你在对方盘里是「${godB}」。`,
     },
     crossBranches: uniqCross.slice(0, 8),
     nayin: { a: nyA, b: nyB, label: nayinRel.name, text: nayinRel.text },
@@ -239,7 +240,7 @@ export function buildHepan(input) {
       wuxing: wxA,
       // 真太阳时口径要能被看到：合盘与单盘用同一套修正，否则同一个人会出现两套四柱
       longitude: A.input.longitude ?? null,
-      trueSolar: A.input.trueSolar !== false,
+      trueSolar: bool(A.input.trueSolar, true),
       solarNote: A.solarTime ? A.solarTime.note : '',
       summary: A.summary,
     },
@@ -252,7 +253,7 @@ export function buildHepan(input) {
       favor: favorB.join(''),
       wuxing: wxB,
       longitude: B.input.longitude ?? null,
-      trueSolar: B.input.trueSolar !== false,
+      trueSolar: bool(B.input.trueSolar, true),
       solarNote: B.solarTime ? B.solarTime.note : '',
       summary: B.summary,
     },

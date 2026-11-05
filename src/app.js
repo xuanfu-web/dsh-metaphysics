@@ -801,7 +801,9 @@ function App() {
         setResult(null);
         return;
       } finally {
-        setEngineLoading(false);
+        // 过期的一次不能关掉新一次的开机状态：A 的 ensureEngine 晚于 B 落定时，
+        // 这里无条件置 false 会让 B 还在加载时转圈先消失。
+        if (!stale()) setEngineLoading(false);
       }
       if (stale()) return;
       const datetime = `${dt.date}T${dt.time}`;
@@ -1081,7 +1083,9 @@ function App() {
       setEngineLoading(true);
       try { await ensureEngine(next); } catch (e) {
         if (switchSeq === perfSeq) setError(e && e.message ? e.message : String(e));
-      } finally { setEngineLoading(false); }
+      } finally {
+        if (switchSeq === perfSeq) setEngineLoading(false);
+      }
       if (switchSeq !== perfSeq) return;
       setTab(next);
       if (mbAns.filter((v) => v != null).length >= MBTI_MIN) run(next);
@@ -1643,7 +1647,9 @@ function App() {
     (async () => {
       let deep = null;
       try {
-        await ensureEngine('bazi');
+        // 预热当前 tab（首屏默认 ziwei），不再无条件先载 bazi：
+        // 下面默认盘就是 run('ziwei')，先取 bazi 会让首屏白背一块 200KB+ 的引擎。
+        await ensureEngine(tab);
         const href = typeof location !== 'undefined' ? String(location.href) : '';
         if (href && href.indexOf('mp=') >= 0 && window.Engine && window.Engine.parseAskLink) {
           deep = window.Engine.parseAskLink(href);

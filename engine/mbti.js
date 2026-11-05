@@ -385,8 +385,11 @@ export function buildMbti(input = {}) {
       picked,
       strength: strengthOf(pct, answered),
       tie: sum === 0,
+      unanswered: answered === 0,
     };
   });
+  // 整维未答时 letter 只是 tie 占位；把它单独列出来，摘要与面板才不会当成「测出来了」
+  const unanswered = dims.filter((d) => d.unanswered).map((d) => d.key);
   const type = dims.map((d) => d.picked).join('');
   const profile = TYPES[type];
   if (!profile) throw fail('E_SYSTEM', `内部错误：类型 ${type} 没有对应文案`);
@@ -413,6 +416,8 @@ export function buildMbti(input = {}) {
     answered: answeredAll,
     skipped: QUESTIONS.length - answeredAll,
     total: QUESTIONS.length,
-    note: '四维各 6 题、李克特 1–5 计分，按维度净分取字母（平手时取 I / N / F / P 一侧并标「临界」）。这是 MBTI 风格的问卷测算，不是官方量表；类型只作自我参照，不是能力评价，也不用它给人下结论。',
+    unanswered,
+    note: '四维各 6 题、李克特 1–5 计分，按维度净分取字母（平手时取 I / N / F / P 一侧并标「临界」）。这是 MBTI 风格的问卷测算，不是官方量表；类型只作自我参照，不是能力评价，也不用它给人下结论。'
+      + (unanswered.length ? ` 本轮 ${unanswered.join('、')} 维度一题未答，该维按平手取字母，只作占位，参考价值有限。` : ''),
   };
 }

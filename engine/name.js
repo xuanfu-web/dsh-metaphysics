@@ -4,6 +4,7 @@
 //       五格按康熙字典繁体笔画计（见 name-data.js 的口径说明），81 数理取通行本；
 //       音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断。
 import { buildBazi } from './bazi.js';
+import { bool } from './bool.js';
 import { assertCivil, assertObject } from './validate.js';
 import { fail } from './fail.js';
 import {
@@ -267,19 +268,23 @@ const WX_REL = (a, b) => (a === b ? '同' : SHENG[a] === b ? '生' : KE[a] === b
 
 /** 数理超过 81 按传统「减 80 循环」取（如 104 → 24）。 */
 export function shuliOf(n) {
-  let x = n;
-  while (x > 81) x -= 80;
+  // 用取模代替 while 递减：strokeOverrides 允许用户给任意正整数，
+  // 以前给 1e12 会在这里空转一百多亿次，整次排盘卡死。
+  const x = n > 81 ? ((n - 1) % 80) + 1 : n;
   if (!(x >= 1)) return null;
   const row = SHULI_81[x];
   return row ? { num: x, level: row[0], name: row[1] } : null;
 }
 
-/** 合并两处笔画覆盖：surnameStrokes（按姓给的）+ strokeOverrides（逐字覆盖），后者优先。 */
+/** 合并两处笔画覆盖：surnameStrokes（按姓给的）+ strokeOverrides（逐字覆盖），后者优先。
+ *  笔画值允许数字串（`{"秋":"9"}`）：模型经 JSON 传参时常见，只在入口归一还不够——
+ *  这里再兜一层，免得「用户给了笔画却被静默按字库算」这种错法又冒出来。 */
 function overridesOf(input) {
   const out = {};
   for (const src of [input && input.surnameStrokes, input && input.strokeOverrides]) {
     if (!src || typeof src !== 'object') continue;
-    for (const [k, v] of Object.entries(src)) {
+    for (const [k, raw] of Object.entries(src)) {
+      const v = typeof raw === 'string' ? Number(raw.trim()) : raw;
       if (Number.isInteger(v) && v > 0) out[k] = v;
     }
   }
@@ -507,12 +512,14 @@ export function assessName(input) {
     assertCivil(input, 'birth');
     const r = buildBazi({
       year: input.year, month: input.month, day: input.day,
-      hour: Number.isInteger(input.hour) ? input.hour : 12,
+      // 只给日期时与 datetime:'YYYY-MM-DD' 同一口径（00:00 占位）；引擎摘要会标明缺时刻，
+      // 以前这里悄悄补 12:00，同一个生日走 datetime 和 year/month/day 会得到两档旺衰。
+      hour: Number.isInteger(input.hour) ? input.hour : 0,
       minute: Number.isInteger(input.minute) ? input.minute : 0,
       gender: input.gender || 'male',
-      lateZi: input.lateZi !== false,
-      trueSolar: input.trueSolar !== false,
-      dst: input.dst !== false,
+      lateZi: bool(input.lateZi, true),
+      trueSolar: bool(input.trueSolar, true),
+      dst: bool(input.dst, true),
       longitude: input.longitude, address: input.address, geo: input.geo,
     });
     strength = { level: r.strength.level, score: r.strength.score, dayElement: r.pillars.day.stemElement };
@@ -608,12 +615,13 @@ export function generateNames(input) {
   const limit = Math.max(1, Math.min(20, Number.isInteger(input.limit) ? input.limit : 10));
   const r = buildBazi({
     year: input.year, month: input.month, day: input.day,
-    hour: Number.isInteger(input.hour) ? input.hour : 12,
+    // 与 assessName 同一口径：缺时刻按 00:00 占位，由引擎摘要统一提示
+    hour: Number.isInteger(input.hour) ? input.hour : 0,
     minute: Number.isInteger(input.minute) ? input.minute : 0,
     gender,
-    lateZi: input.lateZi !== false,
-    trueSolar: input.trueSolar !== false,
-    dst: input.dst !== false,
+    lateZi: bool(input.lateZi, true),
+    trueSolar: bool(input.trueSolar, true),
+    dst: bool(input.dst, true),
     longitude: input.longitude, address: input.address, geo: input.geo,
   });
   const strength = { level: r.strength.level, score: r.strength.score, dayElement: r.pillars.day.stemElement };

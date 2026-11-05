@@ -5,6 +5,7 @@ import { ganzhiName, toJDN, fromJDN, dayGanzhiIndex } from './calendar.js';
 import { assertCivil, assertShifted } from './validate.js';
 import { hourToBranch } from './almanac.js';
 import { fail } from './fail.js';
+import { bool } from './bool.js';
 
 /** 六十甲子年骨重（单位：钱；索引 = (农历年 - 4) mod 60，0 = 甲子）。 */
 export const YEAR_WEIGHT = [
@@ -147,7 +148,7 @@ export function buildChenggu(input) {
   }
   // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 按次日取农历日与日柱，
   // 否则同一子时的前后两个钟点会差一天的日重
-  const lateZi = input.lateZi !== false;
+  const lateZi = bool(input.lateZi, true);
   let sy = year;
   let sm = month;
   let sd = day;

@@ -12,14 +12,14 @@ const unreleasedLine = () =>
   `    window.__MP_UNRELEASED = ${JSON.stringify(unreleasedFromChangelog(path.join(root, 'CHANGELOG.md')))};`;
 
 const root = path.resolve(import.meta.dirname, '..');
-const ORDER = ['fail', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
+const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
   'classics', 'geju', 'bazi', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
 // 拆包：入口只带界面与懒加载器，各 tab 的引擎按组落到 client.<name>.js。
 // 分块之间不共享代码（宿主的 chunk 协议只支持自包含分块），所以公共模块按需重复。
-const COMMON = ['fail', 'validate', 'datetime', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random', 'handle', 'bridge'];
+const COMMON = ['fail', 'bool', 'validate', 'datetime', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random', 'handle', 'bridge'];
 // limits 是能力边界清单，interpret 的结果里要带它，所以并进解释栈；漏了会静默变成 undefined
 // guide 放三层导读：interpret 的结果要带它，所以同样并进解释栈（漏了会静默 undefined）
 const INTERPRET = ['interpret-data', 'interpret-knowledge', 'limits', 'guide', 'interpret-plain', 'citations', 'interpret'];

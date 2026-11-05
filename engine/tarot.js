@@ -277,12 +277,17 @@ export function tarotDeck() {
 // 名称 → 牌面数据（解读时按名字回查，保证确定性、且不依赖调用方是否带全字段）
 const BY_NAME = new Map(tarotDeck().map((c) => [c.name, c]));
 
+// 外部手输/旧数据常见的另一种译名。只做显式别名，不做模糊匹配：
+// 拼错的牌名不能被猜成另一张，否则解读会披着别的牌义，错得看不出来。
+const CARD_ALIASES = { 愚人: '愚者' };
+const cardMeta = (name) => BY_NAME.get(CARD_ALIASES[name] || name) || null;
+
 const splitKeywords = (s) => String(s || '').split(/\s+/).filter(Boolean);
 
 /** 抽牌时刻（只做记录，不影响牌面） */
 function stamp(at) {
   if (typeof at === 'string' && at.trim()) return at.trim().replace('T', ' ').slice(0, 16);
-  const d = new Date();
+  const d = new Date(); // allow-clock: 未传 asOf 时记录抽牌时刻；牌面由 seed 固定
   const p = (x) => String(x).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
@@ -306,12 +311,17 @@ export function tarotReading(input = {}) {
   if (!n) return ['没有抽到牌面，无法解读。'];
 
   const names = list.map((c) => c.name).join(' / ');
+  // 牌库外的牌名不能悄悄读成「空牌义」：开场点名是哪几张，逐张处退回正/逆位泛义。
+  const unknown = list.map((c) => c.name).filter((name) => !cardMeta(name));
+  const unknownNote = unknown.length
+    ? `其中「${unknown.join('」「')}」不在韦特 78 张牌库里，这几张只按你给的位置与正逆位泛读，不补牌面、元素与占星对应。`
+    : '';
   const paras = [];
 
   // ① 开场：所问 + 象征系统声明
   paras.push(q
-    ? `你问的是「${q}」，抽到的是 ${n} 张牌阵（${names}）。塔罗是一套象征系统而不是判决：不同流派对牌义、编号与逆位的取舍略有差异，这里按 RWS（韦特）牌名与黄金黎明的元素对应来读，请把下面的话当作镜子，对照自己的处境取用。`
-    : `这次没有具体提问，那就先看牌面本身在说什么。牌阵 ${n} 张（${names}）。塔罗是象征系统，牌义随流派略有差异，这里按 RWS（韦特）与黄金黎明的常见对应来读，读到合用的部分就好。`);
+    ? `你问的是「${q}」，抽到的是 ${n} 张牌阵（${names}）。塔罗是一套象征系统而不是判决：不同流派对牌义、编号与逆位的取舍略有差异，这里按 RWS（韦特）牌名与黄金黎明的元素对应来读，请把下面的话当作镜子，对照自己的处境取用。${unknownNote}`
+    : `这次没有具体提问，那就先看牌面本身在说什么。牌阵 ${n} 张（${names}）。塔罗是象征系统，牌义随流派略有差异，这里按 RWS（韦特）与黄金黎明的常见对应来读，读到合用的部分就好。${unknownNote}`);
 
   // ② 逐张：位义 + 牌名/正逆 + 关键词 + 一句与位义结合的解读
   //    1-3 张时每张一段；4 张以上按前后两段分组（前段取 ceil(n/2) 张），
@@ -321,8 +331,10 @@ export function tarotReading(input = {}) {
   for (const group of groups) {
     const lines = group.map((i) => {
       const c = list[i];
-      const meta = BY_NAME.get(c.name) || {};
-      const kws = (c.keywords && c.keywords.length ? c.keywords : splitKeywords(c.upright ? meta.up : meta.down)).join('、');
+      const meta = cardMeta(c.name) || {};
+      // 牌库外又没有关键词时，退回正/逆位的泛义，别留下「正位：。」的空句
+      const kws = (c.keywords && c.keywords.length ? c.keywords : splitKeywords(c.upright ? meta.up : meta.down)).join('、')
+        || (c.upright === false ? '逆位泛义（阻滞、内转或用力过头）' : '正位泛义（推进、显化、顺势）');
       const ori = c.upright === false ? '逆位' : '正位';
       const oriNote = c.upright === false
         ? '逆位并不等于凶，更像这股力量还没顺过来，或用力过了头'
@@ -347,7 +359,7 @@ export function tarotReading(input = {}) {
   const upCount = n - revCount;
   const elementCount = {};
   for (const c of list) {
-    const e = (BY_NAME.get(c.name) || {}).element || c.element;
+    const e = (cardMeta(c.name) || {}).element || c.element;
     if (e) elementCount[e] = (elementCount[e] || 0) + 1;
   }
   const present = ELEMENT_ORDER.filter((e) => elementCount[e]);
@@ -376,7 +388,7 @@ export function tarotReading(input = {}) {
   const majorCard = list.find((c) => c.arcana === '大阿卡纳');
   const revCard = list.find((c) => c.upright === false);
   const key = majorCard || revCard || list[0];
-  const keyMeta = BY_NAME.get(key.name) || {};
+  const keyMeta = cardMeta(key.name) || {};
   const keyReason = majorCard
     ? '它出现的地方，往往就是这件事真正被牵动的层级'
     : revCard
@@ -449,7 +461,9 @@ export function drawTarot(input = {}) {
       keywords: splitKeywords(upright ? c.up : c.down),
     };
   });
-  const q = (question || '').trim();
+  // 直接调引擎时 question 可能是数字（工具层 schema 的 string 不做强转），
+  // 以前 (123 || '').trim() 会抛裸 TypeError，整张牌只剩一句内部错误。
+  const q = String(question == null ? '' : question).trim();
   return {
     system: 'tarot',
     question: q || null,

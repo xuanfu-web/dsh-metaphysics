@@ -6,6 +6,7 @@
 //   2. 只有时柱（以及跨 23:00 时的日柱）会变，年/月柱通常不变，所以候选之间的差异集中在晚运、子女、事业后半段；
 //   3. 打分规则是显式、固定的（见 matchEvent），不是拟合；换一套规则排序可能变。
 import { buildBazi } from './bazi.js';
+import { bool } from './bool.js';
 
 const KINDS = ['career', 'wealth', 'love', 'move', 'health', 'other'];
 const HOURS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23];
@@ -120,9 +121,9 @@ export function rectifyBirth(opts) {
       hour,
       minute: 0,
       gender,
-      lateZi: opts.lateZi !== false,
-      trueSolar: opts.trueSolar !== false,
-      dst: opts.dst !== false,
+      lateZi: bool(opts.lateZi, true),
+      trueSolar: bool(opts.trueSolar, true),
+      dst: bool(opts.dst, true),
       address: typeof opts.address === 'string' ? opts.address : undefined,
       longitude: typeof opts.longitude === 'number' ? opts.longitude : undefined,
       geo: opts.geo && typeof opts.geo === 'object' ? opts.geo : undefined,

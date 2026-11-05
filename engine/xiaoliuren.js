@@ -1,6 +1,7 @@
 // 小六壬（诸葛马前课）：月/日/时（或报三个数）掐指落宫，六宫循环。
 // 口径：通行掌诀；断语为白话提炼（非原文照录）。轻量快占，属民俗参考。
 import { solarToLunar } from './lunar.js';
+import { bool } from './bool.js';
 import { hourToBranch } from './almanac.js';
 import { BRANCHES, fromJDN, toJDN } from './calendar.js';
 import { parseYmd } from './datetime.js';
@@ -49,7 +50,7 @@ export function buildXiaoliuren(input) {
     let y = mt.year;
     let mo = mt.month;
     let dy = mt.day;
-    const lateZi = input.lateZi !== false;
+    const lateZi = bool(input.lateZi, true);
     if (lateZi && input.hour >= 23) {
       const next = assertShifted(fromJDN(toJDN(y, mo, dy) + 1), '小六壬时间起课');
       y = next.year;

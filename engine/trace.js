@@ -9,6 +9,7 @@ import { PATTERN_TONE } from './ziwei.js';
 import { yongshenOf, yongshenStrength, fushenAccess } from './liuyao.js';
 import { qimenYongshen } from './qimen-interpret.js';
 import { GAN_JI_GONG } from './daliuren.js';
+import { bool } from './bool.js';
 
 const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微', qimen: '奇门', daliuren: '大六壬' };
 
@@ -429,7 +430,7 @@ export function buildTrace(result, opts = {}) {
   if (result.system === 'liuyao') {
     let view = result;
     // 面板改了「询问方向」但不想重摇一卦：只按新方向重算用神相关三层
-    if (opts.refresh === true) {
+    if (bool(opts.refresh)) {
       try {
         const ug = yongshenOf(result, { direction: opts.direction, gender: opts.gender });
         const monthBranch = (result.hexStrength && result.hexStrength.month && result.hexStrength.month.branch)

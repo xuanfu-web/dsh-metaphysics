@@ -1,3 +1,43 @@
+## 0.62.2（2026-11-05）
+
+> 本段主题：复查 0.62.1 的静默错值——开关与数字的「盘面 / 句柄」口径不一致、brief 的 12KB 闸门量错了单位、以及闸门本身有早退与预留不足；随后按使用方要求把这道体积闸门整个移除，只保留表格行数限制。
+
+- **开关口径：字符串布尔与真布尔排同一张盘**（新增 `engine/bool.js` 的 `canonicalFlags()`、`engine/index.js` 入口、各引擎读值）：`trueSolar:"false"` 以前由 `!== false` 读到「开」，盘按真太阳时排，句柄却照着原文写 `false`——同一张盘两个身份，影子盘对拍、深链回放、跨版本 diff 全部错位；`lateZi` / `dst` / `isLeapMonth` / `leapAsNext` 同理，`withInterpret:"false"` 也照旧附解析。现入口一次归一成真布尔，18 个体系的开关读值统一走 `bool()`（`chenggu / daliuren / diff / fengshui / hepan / meihua / name / rectify / trend / xiaoliuren / ziwei` 一并改），合盘 `partner` / `partner2` 里的同名开关同样归一；空串 / 空白串按「没给」剔除，避免 `lateZi:""` 被折成全局缺省 true、把奇门（缺省 same-day）与紫微（缺省 current-day）排成另一张盘。
+- **brief 的 12KB 改按 UTF-8 字节计**（`engine/index.js`、`test/detail-tier.test.mjs`）：原闸门比的是 `String#length`，中文 1 字≈3 字节，等于把上限放宽到约 36KB。顺带修掉三处同源问题：没有能力边界/免责声明时早退、闸门被整个跳过（实测 18KB）；尾注预留写死 80 字节、压完仍超两三字节；超长单行按「最后一个换行」截断后只剩标题一行。（该上限随后被整体移除，见下方「去掉解析段的 12KB 上限」。）
+- **只给日期时不再静默按 00:00 排**（`engine/index.js`）：`datetime:'1990-05-12'` 会被 `parseDateTime` 补齐时分 0，于是照常排出完整四柱、起好局，盘面上看不出任何异常。现对 bazi / ziwei / hepan / trend / meihua（时间起卦）/ daliuren / qimen / name 在摘要首行明确标注「按 00:00 暂算」，并按体系给出该怎么补（紫微排不出三柱、奇门要给起局时辰、八字可传 `hourUnknown`），结果里另带 `timeMissing: true` 供面板与模型判断。六爻只取日辰与月建、不看钟点，梅花数字起卦只读 upper/lower，故不提示；合盘还逐一点名 `partner` / `partner2` 里缺时刻的一方；黄历/择日/公农历只以「日」为输入，不加提示；称骨与小六壬缺时辰本就报错。
+- **构建：`bool` 排到 `diff` 之前**（`tools/build-client.mjs`）：分块按 `ORDER` 执行，`diff` 现在依赖 `bool`，不前置会取到 `undefined`；`check-bundle` 已按新顺序自检通过，`client.*` 与离线页重建。
+- **数字口径：数字串与数字排同一张盘、同一个句柄**（`engine/bool.js` 的 `canonicalNumbers()`、`engine/index.js` 入口）：句柄编码的是参数原文，`count:"3"` 与 `count:3` 抽出同一副牌却换一个句柄，影子盘对拍与深链回放会认成两张盘。入口现按 schema 的 26 个数值键 + 3 个数值数组（`lines` / `rectifyHours` / `answers`）+ 2 个笔画映射（`strokeOverrides` / `surnameStrokes`）统一转数字，只转「整串就是一个数」的写法（与宿主 `normalizeArgs` 同一把尺：指数 `1e3`、尾点 `5.` 也算），`"9运"` / `"三十"` 仍原样交给范围校验报错；空串 / 空白串按「没给」剔除（否则梅花 `upper:""` 会被 `Number("")` 读成 0、风水 `period:""` 报「收到「」」）；否则 `seed:"1e3"` 与 `seed:1000` 会抽出同一副牌却拿到两个句柄。两处不只影响身份、是实打实算错的：风水 `period:"9"` 被 1–9 校验拒掉（报错里还写着「收到「9」」，看着像误报）；起名 `strokeOverrides:{"秋":"9"}` 被 `overridesOf` 静默丢弃，五格退回字库笔画，用户给的笔画根本没参与计算（现另在 `engine/name.js` 兜一层，`source` 正确标成 `user`）。
+- **去掉解析段的 12KB 上限**（`engine/index.js`、`index.js` 参数说明、`test/detail-tier.test.mjs`）：这道闸门从「按字符数」改到「按字节」之后仍然只是把断点往前挪——一超限就从正文中部腰斩，结论、依据、「本插件不回答什么」得靠额外预留位抢救，读到的是半句话；而它省下的体积本就不大。现整段移除：删掉 `BRIEF_CAP`、`utf8Bytes`、`cutByBytes` 与「已截到 12KB」尾注，`interpretText` 一律「算多少给多少」，输出只受结构约束——**brief 只保留表格行数限制**（每表最多 8 行，超出提示「共 N 行，仅列前 8 行；全表传 detail:"lean"`），另加「长论述 ≥300 字不展开、名词解释不附」这两项同属结构层的收敛。工具说明同步改为「解析段不设体积上限，超长就长」，不再出现 12KB 字样。
+- **回归锁（改向）**：`test/detail-tier.test.mjs` ②c 由「brief 必须压到 12KB 内」改为「超长解析一字不删」——构造 2000 字结论 + 1500 字人话 + 1000 字维度，断言 brief 与 full 逐字一致、无截断提示、无半截字；②e 改为源码级反查（引擎里不得再出现 `BRIEF_CAP` / `cutByBytes` / 「已截到 12KB」），防止闸门被改头换面地加回来。
+- **第二轮复查：边界条件、空值与分支遗漏**（`engine/*`、`index.js`、`src/app.js`）：
+  - **趋势时辰未知按正午算**（`engine/trend.js`）：`hourUnknown` 以前只挂在结果上、没传进 `buildBazi`，摘要写着「按正午暂算」，旺衰却按日期串缺省出的 00:00 算成另一档（实测同一生日 3 分 vs 6 分）。现与八字同一口径：内部按正午占位、时柱收回。
+  - **合盘第三方时辰未知也拦**（`engine/index.js`）：主方/对方 `hourUnknown` 会报 `HOUR_UNKNOWN`，`partner2` 却被漏掉，第三方仍按 00:00 排出三方合盘。现三方同一口径。
+  - **合盘十神方向文案**（`engine/hepan.js`）：`tenGod(a,b)` 是「对方在我盘里」，文案却写成「你在对方盘里」，两边说反。现按 `tenGodToB / tenGodToA` 的实际含义输出。
+  - **梅花数字起卦拒收 null / false / []**（`engine/meihua.js`）：`Number(null)` / `Number(false)` / `Number([])` 都是 0，缺参会静默起成「坤为地」。现只收真正的数字（`0` 仍是合法输入）。
+  - **seed 只认十进制**（`engine/random.js`）：`Number("0x10")` / `Number(false)` / `Number([])` 都能过旧 `isSeed`，工具层却按 number 拒绝——同一输入两条路。现与宿主同一把尺，十六进制、布尔、数组一律 `E_INPUT`，十进制数字串仍与数字同句柄。
+  - **塔罗 question 非字符串不再裸 TypeError**（`engine/tarot.js`）：`question:123` 以前在 `(question || '').trim()` 处抛 `E_INTERNAL`；现统一转字符串。
+  - **风水命卦世纪推进与日期守卫**（`engine/fengshui.js`）：世纪常数只在「>=2000」切一次，2100–2400 年仍沿用 2000 年代的 99/3，整档算错；现每世纪递减（男 100→99→98，女 4→3→2），1900s/2000s 结果不变。另补 `assertCivil`（2 月 30 日不再静默滚月）、`fortuneYear` 限 1600–2400（0/负数不再出飞星）。
+  - **起名数理大数取模**（`engine/name.js`）：`strokeOverrides` 允许任意正整数，`shuliOf(1e12)` 用 while 递减会空转一百多亿次；现改为取模，正常值结果不变。
+  - **schema 枚举真正生效**（`index.js`、`engine/index.js`）：枚举以前只写给模型看，`direction:"romance"` 静默按 general、`gender:"女"` 在六爻静默按 male。现工具层 `normalizeArgs` 校验字符串枚举，引擎入口也校 `gender / direction`，非法值直接 `E_INPUT`。
+  - **面板加载态竞态**（`src/app.js`）：旧一次 `ensureEngine` 晚于新一次落定时，`finally` 无条件关掉 loading，会让新一次还在加载时转圈先消失；现只有当前 token 才允许关闭。
+- **回归锁**：`test/bool-flags.test.mjs`（18 体系 × 10 开关 × 4 种写法做整盘比对，含句柄与影子盘 ID；另加数字串整盘比对、笔画覆盖来源、非法写法仍报错，以及「schema 里的数值参数是否都进了归一表」的同步断言，防止以后加参数漏一刀）；`test/args.test.mjs` 补引擎直调开关归一、「只给日期」两组（工具层归一过、引擎直调没有），以及本轮的趋势正午占位、第三方 hourUnknown、十神方向、梅花空值、seed 十六进制、塔罗数字所问、风水世纪命卦、数理大数、枚举校验共 26 条；`test/detail-tier.test.mjs` ②d 锁住「盘面、句柄、能力边界一个字都不裁」（②c/②e 的改向见上条）。
+- **第三轮复查：把上一轮的「仅建议」项补齐**（`engine/liuyao.js`、`engine/tarot.js`、`engine/mbti.js`、`engine/index.js`、`index.js`）：
+  - **六爻直调 seed 真正生效**：文档写着 `seed` 可复现，直接 `buildLiuyao({ seed })` 却仍走 `Math.random`；现与工具层共用 `randomOf()`，非法 seed 与非函数 `random` 当场 `E_INPUT`（显式注入的 random 仍优先）。
+  - **六爻辅助函数 opts=null 同口径**：`yongshenOf` 已把 null 当默认，但 `yongshenStrength / fushenAccess / hexagramStrength / jinTuiPower / yingqiWindow` 仍会在读 `opts.monthBranch` 时抛裸 TypeError；现统一走 `liuyaoOpts()`：省略或 null 按默认，显式给错类型仍 `E_INPUT`。
+  - **塔罗牌库外牌名不再读成空牌义**：未知牌名以前只得到「正位：。」式空句；现开场点名哪些牌不在韦特 78 张库内，逐张退回正/逆位泛义；另补「愚人 → 愚者」常见别名（只做显式别名、不做模糊匹配，避免拼错被猜成另一张）。
+  - **options:null 与不传等价**：MCP 客户端把「没有 options」写成 null 时，`flattenOptions` 以前报「options 必须是对象」；现与 undefined 同义。
+  - **MBTI 未答维度可见**：整维未答时 letter 只是平手占位，以前只在强度写「未作答」；现结果带 `unanswered: ["EI"]`，说明与摘要首行都点名，避免把占位当成测出来的结论。
+- **回归锁（第三轮）**：`test/args.test.mjs` 再补 16 条（六爻 seed 复现 / 非法值、random 类型、options:null、五个辅助函数 null opts、塔罗别名与未知牌名、MBTI 未答维度）。
+- **第四轮复查：把「读盘时才用」的口径在每一层都传到位**（`engine/bool.js`、`engine/index.js`、`engine/name.js`、`engine/meihua.js`）：
+  - **合盘对方 `hourUnknown` 归一**（`engine/bool.js`）：`PARTNER_FLAGS` 漏了 `hourUnknown`，`partner.hourUnknown:"false"` 会绕过归一按真值读，和 `false` 排出两套结果；现与 `lateZi / trueSolar / dst` 同一张表，缺省固定 `false`（合盘遇到 `true` 才拦 `HOUR_UNKNOWN`）。
+  - **紫微合盘晚子时 / 闰月口径透传**（`engine/index.js`）：`chart:'ziwei'` 的 `sideOf` 只把 `lateZi` 原样带下去，紫微读的却是 `lateZishi`，于是 `lateZi:false` 与 `true` 排出的合盘一字不差；闰月 `leapMonth / leapAsNext` 也没传，闰月出生时合盘与单盘差一个月。现按 `lateZi` → `lateZishi` 映射，并把两个闰月参数一并透传。
+  - **八字 × 紫微交叉验证同口径**（`engine/index.js`）：`cross:true` 时交叉的紫微盘没接八字的 `lateZi`，23:00 后一边按次日、一边按当日，等于拿两个生日互证。现八字显式给的 `lateZi` 映射进紫微交叉盘（显式 `lateZishi` 优先）；没给时仍按紫微自己的 `current-day` 缺省，不改既有交叉结果。
+  - **`asOf` 年份闸与补零**（`engine/index.js`）：此前只校验月日时，`1500 / 2500 / 9999` 会排进流月流日，农历表却只覆盖 1600–2400；现与 `parseDateTime / assertCivil` 同一把尺，越界报 `E_ASOF` 并点名范围。`normalizeAsOf` 把年份补到 4 位，`0000` 不再变成 `0-01-01T12:00` 报「无法解析」。
+  - **起名分开年月日缺时刻**（`engine/name.js`、`engine/index.js`）：`year/month/day` 分开给生辰、没给 `hour` 时，`buildName` 的缺省占位是 `12:00`，与 `datetime` 只给日期走的 `00:00` 不是同一张盘；现统一按 `00:00` 占位，并打 `timeMissing`、摘要首行提示补时刻。
+  - **梅花数字起卦的整数闸**（`engine/meihua.js`）：`upper:3.5` 会一路走到 `bitsOf` 才抛裸 TypeError；`changing:true / [3] / 2.5` 被 `Number()` 折成 1/3/2。现 `upper / lower` 只收整数，`changing` 只收 1–6 整数；十进制数字串 `"2"` 仍按第 2 爻。
+- **回归锁（第四轮）**：`test/bool-flags.test.mjs` 补合盘对方 `hourUnknown` 字符串/布尔同盘、合盘紫微 `lateZi` 开/关与单盘 `lateZishi` 同命宫；`test/args.test.mjs` 补 `asOf` 六个越界值 + 两端点 + `0000` 文案、`name` 分开年月日缺时刻同盘、梅花小数/布尔/数组动爻、交叉验证 `lateZi` 与单盘夫妻宫同星；`test/ziwei-hepan.test.mjs` 补 `lateZi` 与 `leapMonth / leapAsNext` 透传；`test/meihua.test.mjs` 的缺参文案断言跟到「两个整数」。
+- 基线：**155 文件 / 8184 条断言**（7894 → 8021 → 8049 → 8110 → 8136 → 8152 → 8184，全为新增）。
+
 ## 0.62.1（2026-11-04，已发布）
 
 > 已发布：npm `dsh-metaphysics@0.62.1`，shasum `d95c8cdae02d506c9dda58f181fb2e602f250244`，101 个文件。

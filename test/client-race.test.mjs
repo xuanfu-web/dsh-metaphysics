@@ -78,6 +78,12 @@ ok('换 tab 的报错不被过期的一次盖住', /if \(switchSeq === perfSeq\)
 ok('默认盘记下首屏代次', APP.includes('const bootSeq = perfSeq;'));
 ok('用户已经点过就不再补默认盘', /perfSeq !== bootSeq[\s\S]{0,220}run\('ziwei'\)/.test(APP));
 
+// 首屏预热必须按当前 tab：无条件先载 bazi 会让默认的紫微首屏白背一块 200KB+ 引擎
+const bootBody = stripComments(bodyOf(APP, 'const bootSeq = perfSeq;', '首屏 effect'));
+ok('首屏预热当前 tab', /await ensureEngine\(tab\)/.test(bootBody));
+ok('首屏不再写死预热 bazi', !/ensureEngine\(['"]bazi['"]\)/.test(bootBody));
+ok('默认盘仍是 ziwei', bootBody.includes("run('ziwei')"));
+
 // ── ④ 独立页 run()：唯一的 await 之后先判代次与 tab ──
 const uiRun = stripComments(bodyOf(UI, 'async function run() {', '独立页 run'));
 ok('抠到的独立页 run 是完整函数体', uiRun.trimEnd().endsWith('}') && countAwaits(uiRun) === 1,

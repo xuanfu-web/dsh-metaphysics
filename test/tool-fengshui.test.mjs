@@ -8,7 +8,7 @@ apply({ tools: { register: (d) => { def = d; return () => {}; } }, effect: (fn) 
 ok('工具定义已注册', !!def && typeof def.execute === 'function');
 
 // ── ① schema 自描述 ─────────────────────────────────────────
-const props = def.parameters.properties;
+const props = { ...def.parameters.properties, ...def.parameters.properties.options.properties };
 ok('action 枚举含 xuankong', props.action.enum.includes('xuankong'), props.action.enum.join(','));
 ok('action 枚举保留旧四值', ['natal', 'advise', 'assess', 'generate'].every((x) => props.action.enum.includes(x)));
 ok('schema 声明 period 为数字', !!props.period && props.period.type === 'number');
@@ -24,6 +24,11 @@ ok('九宫齐全且坎宫山9向9', xk.palaces.length === 9 && xk.palaces.find((
   && xk.palaces.find((p) => p.palace === '坎').xiang === 9);
 ok('显式 period 不加缺省提示', xk.meta.note === undefined, String(xk.meta.note));
 ok('显式 period 不注入 fortuneYear', xk.meta.year === undefined && xk.meta.periodStart === undefined);
+
+// 模型常把数字写成字符串：host 层按 schema 归一，'9' 应当与 9 走同一条路
+const xkStr = await def.execute({ system: 'fengshui', action: 'xuankong', period: '9', sitting: '子' });
+ok('字符串 period 归一为数字', xkStr.meta.period === 9, String(xkStr.meta.period));
+ok('字符串 period 不加缺省提示', xkStr.meta.note === undefined, String(xkStr.meta.note));
 
 // ── ③ 运势年份：fortuneYear 可定运 ──────────────────────────
 const xkf = await def.execute({ system: 'fengshui', action: 'xuankong', fortuneYear: 2026, sitting: '子' });
@@ -61,7 +66,7 @@ const cases = [
   ['缺坐向', { system: 'fengshui', action: 'xuankong' }, /缺少坐向/],
   ['非 24 山', { system: 'fengshui', action: 'xuankong', sitting: '北' }, /24 山/],
   ['运非整数', { system: 'fengshui', action: 'xuankong', sitting: '子', period: 2.5 }, /1–9/],
-  ['运为字符串', { system: 'fengshui', action: 'xuankong', sitting: '子', period: '9' }, /1–9/],
+  ['运不是数字', { system: 'fengshui', action: 'xuankong', sitting: '子', period: '九' }, /要是数字|1–9/],
   ['命卦缺性别', { system: 'fengshui', datetime: '1990-05-12T14:30' }, /gender|性别/],
   ['命卦缺生日', { system: 'fengshui', gender: 'female' }, /datetime/],
   ['门主灶缺坐向', { system: 'fengshui', action: 'advise' }, /缺少坐向/],

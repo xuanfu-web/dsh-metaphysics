@@ -6,6 +6,8 @@ import {
 } from './calendar.js';
 import { applyDst } from './dst.js';
 import { fail } from './fail.js';
+import { bool } from './bool.js';
+import { assertCivil, MIN_YEAR, MAX_YEAR } from './validate.js';
 
 /** 九星名称表：数 → {name, color, element, star(北斗名), lucky}。 */
 export const NINE_STARS = {
@@ -94,7 +96,10 @@ const GUA_BY_NUM = ['坎', '坤', '震', '巽', '中', '乾', '兑', '艮', '离
  */
 export function mingGua(birthYear, gender) {
   const tail = ((birthYear % 100) + 100) % 100;
-  const century = birthYear >= 2000 ? { male: 99, female: 3 } : { male: 100, female: 4 };
+  // 世纪常数每个世纪减 1：1900s 男 100 / 女 4，2000s 99 / 3，2100s 98 / 2……
+  // 以前只在「>=2000」时切一次 99/3，2100 年以后（引擎支持到 2400）会整档算错。
+  const shift = Math.floor(birthYear / 100) - 19;
+  const century = { male: 100 - shift, female: 4 - shift };
   const mod9 = (n) => { const r = ((n % 9) + 9) % 9; return r === 0 ? 9 : r; };
   let num = gender === 'male' ? mod9(century.male - tail) : mod9(tail - century.female);
   if (num === 5) num = gender === 'male' ? 2 : 8;
@@ -440,9 +445,10 @@ export function xuankongChart(period, sitting, facing, opts = {}) {
 
 /** DST 校正出生日期（1986–1991），返回校正后的年月日。 */
 function civilDate(input) {
-  const dst = input.dst === false
-    ? { year: input.year, month: input.month, day: input.day, hour: 0, minute: 0, applied: false, note: null }
-    : applyDst({ year: input.year, month: input.month, day: input.day, hour: 0, minute: 0 });
+  // 开启 DST 校正（默认开）才走 applyDst；显式关闭时不动日期
+  const dst = bool(input.dst, true)
+    ? applyDst({ year: input.year, month: input.month, day: input.day, hour: 0, minute: 0 })
+    : { year: input.year, month: input.month, day: input.day, hour: 0, minute: 0, applied: false, note: null };
   return { year: dst.year, month: dst.month, day: dst.day, dst };
 }
 
@@ -471,6 +477,10 @@ export function buildFengshui(input) {
   if (input.fortuneYear !== undefined && input.fortuneYear !== null && input.fortuneYear !== '') {
     const fy = Number(input.fortuneYear);
     if (!Number.isInteger(fy)) throw fail('E_INPUT', `fortuneYear 必须是整数年份，收到「${input.fortuneYear}」`);
+    // 只校验「是整数」会放过 0 / 负数：年紫白照样按公式给出一颗星，看着像算过。
+    if (fy < MIN_YEAR || fy > MAX_YEAR) {
+      throw fail('E_INPUT', `fortuneYear 超出支持范围 ${MIN_YEAR}–${MAX_YEAR}（收到 ${fy}）`);
+    }
     input = { ...input, fortuneYear: fy };
   }
   const action = input.action;
@@ -486,6 +496,9 @@ export function buildFengshui(input) {
   if (!Number.isInteger(input.year) || !Number.isInteger(input.month) || !Number.isInteger(input.day)) {
     throw fail('E_INPUT', '风水命卦需要完整出生年月日（公历）——只知道年份不够：命卦按立春界划分出生年');
   }
+  // 与其它体系同一把尺：2 月 30 日、13 月、越界年份必须在入口报错，
+  // 否则会被 Date 静默滚到下个月，命卦按另一天算出来却没人知道。
+  assertCivil(input, '风水命卦');
   const civil = civilDate(input);
   const guaYear = guaYearOf(civil.year, civil.month, civil.day);
   const { num, gua, direction } = mingGua(guaYear, gender);
@@ -648,7 +661,7 @@ function parseFortuneAt(input) {
   }
   const [hour, minute] = rawTime.split(':').map(Number);
   if (hour > 23 || minute > 59) throw fail('E_INPUT', `fortuneTime 超出范围（HH:MM）：「${rawTime}」`);
-  const dst = input.dst === false ? null : applyDst({ year, month, day, hour, minute });
+  const dst = bool(input.dst, true) ? applyDst({ year, month, day, hour, minute }) : null;
   const at = dst ? { year: dst.year, month: dst.month, day: dst.day, hour: dst.hour, minute: dst.minute } : { year, month, day, hour, minute };
   return { at, dst };
 }
@@ -706,7 +719,7 @@ function buildXuankong(input) {
       action: 'xuankong',
       period,
       periodLabel: yearInfo ? yearInfo.label : `${period}运`,
-      ...(yearInfo ? { year: input.fortuneYear || (fortune && fortune.at.year), periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
+      ...(yearInfo ? { year: input.fortuneYear ?? (fortune && fortune.at.year), periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
       sitting: `${sitting.m}山（罗盘 ${sitting.deg}°）`,
       facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
       sittingGua: sitting.gua,

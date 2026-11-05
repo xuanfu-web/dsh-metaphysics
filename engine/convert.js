@@ -10,6 +10,7 @@
 import { solarToLunar } from './lunar.js';
 import { fromJDN, toJDN } from './calendar.js';
 import { buildAlmanac } from './almanac.js';
+import { bool } from './bool.js';
 import { assertCivil, assertObject, daysInMonth } from './validate.js';
 import { fail } from './fail.js';
 
@@ -91,7 +92,7 @@ export function buildConvert(input) {
     if (m < 1 || m > 12) throw fail('E_INPUT', '农历月份须在 1–12');
     const months = lunarMonths(y);
     if (!months.length) throw fail('E_INPUT', `农历 ${y} 年无法定位正月，请核对年份（1600–2400）`);
-    const isLeap = input.isLeapMonth === true;
+    const isLeap = bool(input.isLeapMonth);
     const hit = months.find((x) => x.month === m && x.isLeap === isLeap);
     if (!hit) {
       const leapMonths = months.filter((x) => x.isLeap).map((x) => `闰${MONTH_TEXT[x.month - 1]}月`);

@@ -3,6 +3,7 @@ import { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xu
 import { jingText } from './yijing-text.js';
 import { fail } from './fail.js';
 import { assertObject } from './validate.js';
+import { randomOf, isSeed } from './random.js';
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -335,10 +336,8 @@ const sideOf = (position) => (position <= 3 ? 'inner' : 'outer');
  * @param {{direction?:string, gender?:string}} [opts]
  */
 export function yongshenOf(result, opts = {}) {
-  // opts 允许省略或传 null（都按默认口径），但显式给了别的东西就必须是对象：
+  opts = liuyaoOpts(opts, 'yongshenOf 的 opts', '{ direction?, gender? }');
   // 以前 yongshenOf(r, null) 会一路走到读 opts.direction，抛裸 TypeError
-  if (opts === null || opts === undefined) opts = {};
-  assertObject(opts, 'yongshenOf 的 opts', '{ direction?, gender? }；省略或 null 按默认口径');
   const r = result && typeof result === 'object' ? result : {};
   const ben = r.ben && typeof r.ben === 'object' ? r.ben : {};
   const lines = Array.isArray(ben.lines) ? ben.lines : [];
@@ -490,6 +489,14 @@ function isMoving(v) {
  */
 export function buildLiuyao(input = {}) {
   if (!input || typeof input !== 'object') throw fail('E_INPUT', '六爻起卦参数不能为空：至少给 lines 或 seed');
+  // seed 以前只写在文档里：直接 buildLiuyao({ seed }) 仍走 Math.random，
+  // 同一个 seed 摇不出同一卦，句柄却按 seed 算了身份。这里与工具层同一把尺。
+  if (input.seed !== undefined && input.seed !== null && input.seed !== '' && !isSeed(input.seed)) {
+    throw fail('E_INPUT', `seed 必须是数字，收到「${String(input.seed).slice(0, 24)}」`);
+  }
+  if (input.random !== undefined && input.random !== null && typeof input.random !== 'function') {
+    throw fail('E_INPUT', `random 必须是函数，收到 ${typeof input.random}`);
+  }
   // lines 给了但不是数组（"7,8,9,6,7,8" / 789678 / {…}）以前等同于「没给」：
   // 用户以为摇的是自己记下的那一卦，实际拿到一张随机盘，而且看不出来。
   if (input.lines !== undefined && input.lines !== null && !Array.isArray(input.lines)) {
@@ -501,7 +508,8 @@ export function buildLiuyao(input = {}) {
   if (given && given.length !== 6) {
     throw fail('E_LINES', `lines 必须是 6 个爻值（自下而上），收到 ${given.length} 个`);
   }
-  const rawLines = given ? given.slice() : tossLines(input.random);
+  const rand = typeof input.random === 'function' ? input.random : randomOf(input.seed);
+  const rawLines = given ? given.slice() : tossLines(rand);
 
   const invalid = rawLines.filter((v) => ![6, 7, 8, 9].includes(v));
   if (invalid.length) throw fail('E_LINES', `爻值只能是 6/7/8/9，收到 ${JSON.stringify(rawLines)}`);
@@ -513,7 +521,7 @@ export function buildLiuyao(input = {}) {
   const bian = bianBits ? hexagramFromBits(bianBits) : null;
 
   const dayGanZhi = input.dayGanZhi ?? (() => {
-    const now = new Date();
+    const now = new Date(); // allow-clock: 未传日辰时按起卦当天取日干起六神；asOf 可钉死
     const jdn = toJDN(now.getFullYear(), now.getMonth() + 1, now.getDate());
     const g = ganzhiName(dayGanzhiIndex(jdn));
     return { stem: g.stem, branch: g.branch, name: g.name };
@@ -662,6 +670,12 @@ export function dayRelationOf(element, dayElement) {
   return 'unknown';
 }
 
+/** opts 省略或传 null 都按默认口径；显式给了别的类型则当场报 E_INPUT。 */
+function liuyaoOpts(opts, who, shape) {
+  if (opts === null || opts === undefined) return {};
+  return assertObject(opts, who, `${shape}；省略或 null 按默认口径`);
+}
+
 /**
  * 用神旺衰：把月建、日辰两股外部力量落到用神那几爻上。
  * 月建按月支、日辰按日支，各出自己的五行，再与本爻五行论生克；
@@ -671,6 +685,7 @@ export function dayRelationOf(element, dayElement) {
  * @param {{monthBranch?: string, dayBranch?: string}} opts
  */
 export function yongshenStrength(result, useGod, opts = {}) {
+  opts = liuyaoOpts(opts, 'yongshenStrength 的 opts', '{ monthBranch?, dayBranch? }');
   if (!useGod || !Array.isArray(useGod.found) || !useGod.found.length) return null;
   const monthBranch = opts.monthBranch || null;
   const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
@@ -747,6 +762,7 @@ export const FUSHEN_VERDICTS = ['可出', '有助有压', '受压难出', '未�
  * @param {{monthBranch?: string, dayBranch?: string}} opts
  */
 export function fushenAccess(result, useGod, opts = {}) {
+  opts = liuyaoOpts(opts, 'fushenAccess 的 opts', '{ monthBranch?, dayBranch? }');
   if (!useGod || !Array.isArray(useGod.fushen) || !useGod.fushen.length) return null;
   const monthBranch = opts.monthBranch || null;
   const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
@@ -822,6 +838,7 @@ export function fushenAccess(result, useGod, opts = {}) {
 // 与用神旺衰同一套判定（月令五态、日辰五关系、三种冲法），区别只在不挑用神：
 // 六爻每一爻都给一次，世应、动爻、旬空另标，看得出整张卦的气压在哪一头。
 export function hexagramStrength(result, opts = {}) {
+  opts = liuyaoOpts(opts, 'hexagramStrength 的 opts', '{ monthBranch?, dayBranch? }');
   const rows = (result && result.ben && Array.isArray(result.ben.lines))
     ? result.ben.lines
     : (result && Array.isArray(result.lines) ? result.lines : []);
@@ -910,6 +927,7 @@ const TUI_VERDICT = { 旺: '退得缓', 相: '退得缓', 休: '退得实', 囚:
  * @param {{monthBranch?: string, dayBranch?: string}} opts
  */
 export function jinTuiPower(result, opts = {}) {
+  opts = liuyaoOpts(opts, 'jinTuiPower 的 opts', '{ monthBranch?, dayBranch? }');
   const items = result && result.body && Array.isArray(result.body.jinTui) ? result.body.jinTui : [];
   if (!items.length) return null;
   const rows = result && result.ben && Array.isArray(result.ben.lines) ? result.ben.lines : [];
@@ -983,6 +1001,7 @@ const TRIGGER_ORDER = ['逢值', '逢冲', '逢合', '出空填实', '冲空'];
  * @param {{monthBranch?: string}} opts
  */
 export function yingqiWindow(result, useGod, opts = {}) {
+  opts = liuyaoOpts(opts, 'yingqiWindow 的 opts', '{ monthBranch? }');
   if (!useGod || !useGod.liuqin) return null;
   const found = Array.isArray(useGod.found) ? useGod.found : [];
   const fushen = Array.isArray(useGod.fushen) ? useGod.fushen : [];

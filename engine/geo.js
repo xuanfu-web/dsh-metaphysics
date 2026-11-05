@@ -2,6 +2,7 @@
 // 坐标为近似值（±0.2°≈0.8 分钟时差），足够真太阳时使用。
 // 联网（Nominatim）是显式可选项：只有调用方传 online: true 才会把地址原文发出去，
 // 默认走内置表，不上传任何数据。
+import { bool } from './bool.js';
 const RAW = `
 北京 116.41 39.90;上海 121.47 31.23;天津 117.20 39.13;重庆 106.55 29.56
 广州 113.26 23.13;深圳 114.06 22.55;珠海 113.58 22.27;东莞 113.75 23.02;佛山 113.12 23.02
@@ -229,7 +230,7 @@ export async function geocodeAddress(input, opts = {}) {
   const text = String(input || '').trim();
   if (!text) return local;
   // 默认离线：联网必须显式开启（会把出生地原文发给第三方）
-  const wantOnline = opts.online === true;
+  const wantOnline = bool(opts.online);
   if (!wantOnline) return local;
   if (local && typeof local.lon === 'number' && !DETAIL.test(text)) return local;
   const remote = await onlineLookup(text, opts);

@@ -4,6 +4,7 @@
 import { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, jdToParts, xunKongOf } from './calendar.js';
 import { assertCivil, assertShifted } from './validate.js';
 import { SANHE_ELEMENT } from './sanhe.js';
+import { bool } from './bool.js';
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -308,7 +309,7 @@ function fanYin(ke, dayGan, dayZhi, stats, isFB) {
 export function buildDaliuren(input) {
   assertCivil(input);
   const { year, month, day, hour = 0, minute = 0 } = input;
-  const lateZi = input.lateZi !== false;
+  const lateZi = bool(input.lateZi, true);
   const jdnBase = toJDN(year, month, day);
   const jdn = lateZi && hour >= 23 ? jdnBase + 1 : jdnBase;
   const dayIdx = dayGanzhiIndex(jdn);

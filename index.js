@@ -33,13 +33,323 @@ const DESCRIPTION = [
   '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
   '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回。',
-  '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）；只要结论与时间表就再带 detail: "lean"（省约一半文本），用户追问「为什么/依据」时改回 full。',
+  '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）；缺省 detail: "brief" 只给结论、所问方向与三张表（解析段不设体积上限，超长就长），要其余维度用 lean，用户追问「为什么/依据」时改回 full。',
   '用户用一句话改参数（「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」）时，把原话放进 revise（可配合 handle），引擎翻译成参数补丁并在结果 revision 里回报改了哪些、没认哪些；不要自己把原话拆成猜测的参数。',
   '追问同一张盘：结果里有 handle，下次传 handle + 增量即可（例如 { handle, asOf: 2030 }、{ handle, withInterpret: true, question: "何时换工作" }、{ handle, system: "ziwei" } 看同一时间另一套盘），不必让用户重报出生信息；句柄带校验位，截断或改字会报 E_HANDLE。',
   '出生时刻未知时不要编一个钟点：传 hourUnknown: true——八字只排年/月/日三柱（时柱暂缺，摘要首行提示），趋势按日降级，紫微与合盘会直接以 HOUR_UNKNOWN 阻断并给出补时刻的引导。',
   '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。需要回放或对拍时传 shadow: true，结果带影子盘 ID（同参数同 ID；baseId 不含版本，可跨版本比对字段变化）。要看结论是怎么推出来的，传 trace: true：六爻给纳甲→六亲→世应→伏神→旺衰，八字给旺衰分值与格局取用，紫微给格局命中条件，奇门与大六壬给盘面层与取用层；同时回传 traceText（同一份层的 Markdown，可直接贴进对话或文档）。',
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
+
+/** 19 个体系的固定顺序：system 枚举与 help 索引共用 */
+const SYSTEM_ENUM = ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'];
+
+/**
+ * 顶层只留通用参数：出生信息、解读开关、句柄与多数体系共用的分析项。
+ * 体系专属参数收进 options，短说明留在 schema 里负责「知道有这个键」，
+ * 全文由 metaphysics_help 按需返回。工具定义每次调用都整份进上下文，
+ * 分层省下的是每一次调用的固定开销，不是文档本身。
+ */
+const CORE_KEYS = [
+  'handle', 'revise', 'system', 'datetime', 'date', 'hour', 'minute', 'dst',
+  'gender', 'address', 'geocode', 'longitude', 'lateZi', 'trueSolar',
+  'question', 'mode', 'direction', 'cross', 'hourUnknown', 'diff', 'shadow',
+  'trace', 'verifyPast', 'rectify', 'events', 'ask', 'withInterpret', 'detail',
+  'asOf', 'seed', 'partner',
+];
+
+const OPTION_KEYS = [
+  'lines', 'task', 'startDate', 'days', 'candidates', 'shengXiao',
+  'lunarYear', 'lunarMonth', 'lunarDay', 'isLeapMonth', 'num1', 'num2', 'num3',
+  'juMethod', 'lateZiHourMode', 'partner2', 'chart', 'rectifyHours',
+  'upper', 'lower', 'changing', 'count',
+  'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool',
+  'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang',
+  'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool',
+  'action', 'toAge', 'sitting', 'facing', 'fortuneYear', 'period',
+  'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
+  'fortuneDate', 'fortuneTime', 'surname', 'givenName', 'limit',
+  'charElements', 'strokeOverrides', 'surnameStrokes', 'year', 'month', 'day',
+  'answers',
+];
+
+/** options 每个键的短说明：点名体系 + 取值范围；完整口径（为什么/边界）在 help 里 */
+const OPTION_HINTS = {
+  lines: '仅 liuyao：自下而上 6 个爻值（6/7/8/9），省略则随机摇卦',
+  task: '仅 zeri：要挑的事项（嫁娶/开业/入宅/出行等）',
+  startDate: '仅 zeri：起算日 YYYY-MM-DD，省略由宿主补今天',
+  days: '仅 zeri：往后考察天数 1–60，默认 30',
+  candidates: '仅 zeri：2–12 个候选日并排比较（YYYY-MM-DD 数组）',
+  shengXiao: '仅 zeri：当事人属相，用于排除冲煞日',
+  lunarYear: '仅 convert 的 lunar2solar：农历年份',
+  lunarMonth: '仅 convert 的 lunar2solar：农历月份 1–12',
+  lunarDay: '仅 convert 的 lunar2solar：农历日 1–30',
+  isLeapMonth: '仅 convert 的 lunar2solar：该农历月是否闰月',
+  num1: '仅 xiaoliuren 报数起课：第一个数 1–99',
+  num2: '仅 xiaoliuren 报数起课：第二个数 1–99',
+  num3: '仅 xiaoliuren 报数起课：第三个数 1–99',
+  juMethod: '仅 qimen：取局流派 chaibu / chaoshen / zhirun',
+  lateZiHourMode: '仅 qimen：晚子时归 same-day 或 next-day',
+  partner2: '仅 hepan：第三方出生信息，给出即多回 triple 三对分数',
+  chart: '仅 hepan：底层用 bazi 还是 ziwei 盘，默认 bazi',
+  rectifyHours: '仅 bazi rectify：候选时辰列表 0–23，省略用十二时辰',
+  upper: '仅 meihua 数字起卦：定上卦的数，与 lower 成对',
+  lower: '仅 meihua 数字起卦：定下卦的数',
+  changing: '仅 meihua 数字起卦：手动指定动爻 1–6',
+  count: '仅 tarot：牌数 1 / 3 / 5，默认 3',
+  leapMonth: '仅 ziwei：闰月口径 split / next / prev',
+  leapAsNext: '仅 ziwei：旧写法，true 等同 leapMonth=next',
+  brightnessSchool: '仅 ziwei：十四主星亮度流派 default/QS/XD1/ZZ/XD2',
+  gengYearSihua: '仅 ziwei：庚干四化变体，默认 GYWYT',
+  tianmaSchool: '仅 ziwei：天马安法 year-branch / month-branch',
+  tiankongSchool: '仅 ziwei：天空安法 off / normal / shun-jia-shi',
+  jiekongSchool: '仅 ziwei：截空旬空安法 off / double / single / zhanyan',
+  kuiyueSchool: '仅 ziwei：天魁天钺安法 qs1 / qs2 / zhong-yiming',
+  tianshiTianshang: '仅 ziwei：天伤天使安法 normal / zhongzhou',
+  changshengSchool: '仅 ziwei：长生十二神起点流派',
+  lateZishi: '仅 ziwei：晚子时口径 current-day / next-day',
+  shenzhuSchool: '仅 ziwei：身主安法 common / verse',
+  zuoyaoSchool: '仅 ziwei：杂曜取盘 minimal / full',
+  action: 'fengshui：natal（默认）/ advise / xuankong 玄空；name：assess / generate',
+  toAge: '仅 trend：算到几岁 10–100，默认 100',
+  sitting: '仅 fengshui advise/xuankong 玄空：坐山（24 山之一）',
+  facing: '仅 fengshui advise/xuankong 玄空：向山（24 山之一）',
+  fortuneYear: '仅 fengshui：natal 定流年飞星年份；xuankong 定三元九运',
+  period: '仅 fengshui xuankong：三元九运 1–9，优先于 fortuneYear',
+  sittingOffset: '仅 fengshui xuankong：坐山偏离本山中心度数 −7.5–7.5',
+  sittingDegree: '仅 fengshui xuankong：坐山罗盘度数 0–360',
+  facingOffset: '仅 fengshui xuankong：向山偏离本山中心度数 −7.5–7.5',
+  facingDegree: '仅 fengshui xuankong：向山罗盘度数 0–360',
+  fortuneDate: '仅 fengshui xuankong：飞星日期 YYYY-MM-DD，才排月日时紫白',
+  fortuneTime: '仅 fengshui xuankong：飞星时刻 HH:MM，默认 12:00',
+  surname: '仅 name：姓氏，复姓整体写（如 欧阳）',
+  givenName: '仅 name assess：名 1–2 个汉字',
+  limit: '仅 name generate：候选个数 1–20，默认 10',
+  charElements: '仅 name：未收录字的五行，如 {"琰":"火"}',
+  strokeOverrides: '仅 name：逐字覆盖康熙笔画，如 {"沐":8}',
+  surnameStrokes: '仅 name：按姓氏逐字覆盖康熙笔画',
+  year: '仅 name：公历出生年，配合 month/day/hour',
+  month: '仅 name：公历出生月 1–12',
+  day: '仅 name：公历出生日 1–31',
+  answers: '仅 mbti：按题目顺序的 24 个 1–5 分，跳过传 null',
+};
+
+const BIRTH_KEYS = ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'lateZi', 'dst', 'asOf', 'shadow'];
+const READ_KEYS = ['withInterpret', 'detail', 'ask', 'question', 'direction', 'shadow', 'asOf'];
+
+/** 每个体系实际会读的参数：help 按这张表展开，避免「有这个键但该体系不看」 */
+const SYSTEM_PARAMS = {
+  bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
+  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'cross', 'diff', 'trace', ...READ_KEYS],
+  liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
+  tarot: ['count', 'seed', ...READ_KEYS],
+  meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
+  daliuren: ['datetime', 'trace', ...READ_KEYS],
+  hepan: [...BIRTH_KEYS, 'partner', 'partner2', 'chart', 'leapMonth', 'ask'],
+  qimen: ['datetime', 'juMethod', 'lateZiHourMode', 'trace', ...READ_KEYS],
+  almanac: ['datetime', 'shadow'],
+  zeri: ['task', 'startDate', 'days', 'candidates', 'shengXiao', 'datetime', 'shadow'],
+  chenggu: ['datetime', 'hour', 'lateZi', 'gender', 'shadow'],
+  xiaoliuren: ['datetime', 'date', 'hour', 'mode', 'num1', 'num2', 'num3', 'lateZi', 'question', 'shadow'],
+  star: ['datetime', 'shadow'],
+  numerology: ['datetime', 'shadow'],
+  mbti: ['answers', 'shadow'],
+  trend: ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'hourUnknown', 'toAge', 'asOf', 'shadow', 'ask'],
+  fengshui: ['action', 'datetime', 'gender', 'sitting', 'facing', 'fortuneYear', 'period', 'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree', 'fortuneDate', 'fortuneTime', 'dst', 'shadow'],
+  name: ['action', 'datetime', 'surname', 'givenName', 'limit', 'charElements', 'strokeOverrides', 'surnameStrokes', 'year', 'month', 'day', 'hour', 'minute', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'dst', 'shadow'],
+  convert: ['mode', 'datetime', 'lunarYear', 'lunarMonth', 'lunarDay', 'isLeapMonth', 'shadow'],
+};
+
+const SYSTEM_REQUIRED = {
+  bazi: 'datetime、gender',
+  ziwei: 'datetime、gender',
+  liuyao: '无（不传 lines 则随机摇卦）',
+  tarot: '无（问题可选）',
+  meihua: 'time 模式 datetime；number 模式 upper + lower',
+  daliuren: 'datetime',
+  hepan: 'datetime、gender，以及 partner{datetime, gender}',
+  qimen: 'datetime',
+  almanac: 'datetime（省略补今天）',
+  zeri: 'task',
+  chenggu: 'datetime（可只给日期 + hour）',
+  xiaoliuren: 'time 模式 datetime/date+hour；number 模式 num1–num3',
+  star: '无（省略补今天）',
+  numerology: '无（省略补今天）',
+  mbti: '无（先不带 answers 拿题）',
+  trend: 'datetime、gender',
+  fengshui: 'natal 要 datetime + gender；advise/xuankong 要 sitting 或 facing',
+  name: 'assess 要 surname + givenName；generate 要生辰（datetime 或 year/month/day）',
+  convert: 'solar2lunar 要 datetime；lunar2solar 要 lunarYear/Month/Day',
+};
+
+const PARAM_KEY_SET = new Set([...CORE_KEYS, ...OPTION_KEYS]);
+
+function pickParams(all, keys) {
+  const out = {};
+  for (const k of keys) if (all[k]) out[k] = all[k];
+  return out;
+}
+
+function buildProperties(all) {
+  const core = pickParams(all, CORE_KEYS);
+  const options = {};
+  for (const k of OPTION_KEYS) {
+    const spec = all[k];
+    if (!spec) continue;
+    options[k] = { ...spec, description: OPTION_HINTS[k] || spec.description };
+  }
+  core.options = {
+    type: 'object',
+    description: '体系专属参数：只放当前 system 用得到的键（如 ziwei 的 brightnessSchool、fengshui 的 sitting、name 的 surname）。键名与取值用 metaphysics_help 查；与顶层同名时以顶层为准。',
+    properties: options,
+  };
+  return core;
+}
+
+/** options 摊平到顶层：引擎与句柄只认扁平参数，旧调用（直接平铺）继续有效 */
+function flattenOptions(raw, all, bad) {
+  const { options, ...rest } = raw;
+  // MCP 客户端常把「没有 options」写成 null；null 与 undefined 同义，都是没给。
+  if (options === undefined || options === null) return rest;
+  if (!options || typeof options !== 'object' || Array.isArray(options)) {
+    throw bad('options 必须是对象，例如 options: { brightnessSchool: "QS" }');
+  }
+  // hasOwn 而不是 in：'constructor' / 'toString' / '__proto__' 都在原型链上，
+  // 用 in 判断会让这些键混过「未知参数」检查，静默落进参数里。
+  const unknown = Object.keys(options).filter((k) => !hasOwn(all, k));
+  if (unknown.length) {
+    throw bad(`options 里有未知参数：${unknown.join('、')}；可用键见 metaphysics_help`);
+  }
+  return { ...options, ...rest };
+}
+
+const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+/**
+ * 参数整形：模型常把 true 写成 "true"、把 9 写成 "9"。
+ * 按 schema 声明的类型统一归一，非法值当场报 E_INPUT：
+ * 以前字符串布尔被 bool() 当 false（以为开了其实没开），字符串数字在引擎里
+ * 报「运必须是 1–9 的整数，收到 9」——数字明明合法，错得让人无从下手。
+ */
+function normalizeArgs(raw, all, bad) {
+  const normalize = (spec, value, key) => {
+    if (value === undefined || value === null) return value;
+    const types = Array.isArray(spec.type) ? spec.type : [spec.type];
+    if (types.includes('boolean')) {
+      if (typeof value === 'boolean') return value;
+      if (value === 1 || value === 0) return value === 1;
+      if (typeof value === 'string') {
+        const s = value.trim().toLowerCase();
+        if (!s) return undefined;
+        if (s === 'true' || s === '1') return true;
+        if (s === 'false' || s === '0') return false;
+      }
+      throw bad(`${key} 要是布尔值 true / false，收到「${String(value).slice(0, 24)}」`);
+    }
+    // schema 里的 enum 以前只写给模型看、不做校验：direction:"love"（少了 s）会被引擎
+    // 静默当成 general，gender:"女" 在六爻里静默按 male 出用神。枚举是契约的一部分，
+    // 写错就该在入口报出来，而不是换一张「看着正常」的盘。
+    if (types.includes('string') && Array.isArray(spec.enum) && typeof value === 'string') {
+      const s = value.trim();
+      if (!s) return undefined;
+      if (!spec.enum.includes(s)) {
+        throw bad(`${key} 只能是 ${spec.enum.join(' / ')}，收到「${s.slice(0, 24)}」`);
+      }
+      return s;
+    }
+    if (types.includes('integer') || types.includes('number')) {
+      const integer = types.includes('integer');
+      if (typeof value === 'string') {
+        const s = value.trim();
+        if (!s) return undefined;
+        if (!/^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(s)) {
+          throw bad(`${key} 要是${integer ? '整数' : '数字'}，收到「${s.slice(0, 24)}」`);
+        }
+        value = Number(s);
+      }
+      if (typeof value !== 'number' || !Number.isFinite(value)) {
+        throw bad(`${key} 要是${integer ? '整数' : '有限数字'}，收到「${String(value).slice(0, 24)}」`);
+      }
+      if (integer && !Number.isInteger(value)) throw bad(`${key} 要是整数，收到「${value}」`);
+      return value;
+    }
+    if (types.includes('array') && Array.isArray(value) && spec.items) {
+      return value.map((item) => normalize(spec.items, item, `${key}[]`));
+    }
+    if (types.includes('object') && value && typeof value === 'object' && !Array.isArray(value) && spec.properties) {
+      const out = { ...value };
+      for (const [k, child] of Object.entries(spec.properties)) {
+        if (out[k] !== undefined) out[k] = normalize(child, out[k], `${key}.${k}`);
+      }
+      return out;
+    }
+    return value;
+  };
+  const out = { ...raw };
+  for (const [key, spec] of Object.entries(all)) {
+    // 经度有专门的尺（normalizeLongitudes）：十进制串它自己会转，非十进制报 E_RANGE。
+    // 这里先按「数字」拦下会把那条更准确的报错盖成泛泛的「要是数字」。
+    if (key === 'longitude') continue;
+    if (out[key] !== undefined) out[key] = normalize(spec, out[key], key);
+  }
+  return out;
+}
+
+function paramDoc(key, spec) {
+  const type = Array.isArray(spec.type) ? spec.type.join('|') : spec.type;
+  const values = spec.enum ? `，取值 ${spec.enum.join(' / ')}` : '';
+  return `- ${key}（${type}${values}）：${spec.description}`;
+}
+
+function helpText(all, args) {
+  const key = typeof args.key === 'string' ? args.key.trim() : '';
+  if (key) {
+    const spec = hasOwn(all, key) ? all[key] : null;
+    if (!spec) return `没有参数「${key}」。可用参数：${Object.keys(all).join('、')}`;
+    return paramDoc(key, spec);
+  }
+  const system = typeof args.system === 'string' ? args.system.trim() : '';
+  if (system) {
+    if (!SYSTEM_ENUM.includes(system)) return `未知体系「${system}」。可选：${SYSTEM_ENUM.join('、')}`;
+    const keys = [...new Set(SYSTEM_PARAMS[system])];
+    return [
+      `# ${system} 参数`,
+      `必填：${SYSTEM_REQUIRED[system]}`,
+      `可用键：${keys.join('、')}`,
+      '',
+      ...keys.map((k) => paramDoc(k, all[k])),
+    ].join('\n');
+  }
+  return [
+    '# metaphysics_chart 参数索引',
+    `顶层通用参数：${CORE_KEYS.join('、')}`,
+    '体系专属参数放进 options；各体系可用键：',
+    ...SYSTEM_ENUM.map((s) => `- ${s}：${[...new Set(SYSTEM_PARAMS[s])].join('、')}`),
+    '',
+    '查单个参数全文：metaphysics_help({ key: "参数名" })；查某体系：metaphysics_help({ system: "ziwei" })',
+  ].join('\n');
+}
+
+function helpDefinition(all) {
+  return {
+    name: 'metaphysics_help',
+    description: '查 metaphysics_chart 的参数说明：省略参数给体系索引；system 给该体系的必填项与参数全解；key 给单个参数全文。只在不确定键名或取值时调用，排盘本身不需要它。',
+    parameters: {
+      type: 'object',
+      properties: {
+        system: { type: 'string', enum: SYSTEM_ENUM, description: '要查的体系，如 ziwei / fengshui / name；省略则返回全部体系的键索引。' },
+        key: { type: 'string', description: '要查的参数名，如 brightnessSchool、sitting、action；给出时优先于 system。' },
+      },
+    },
+    output: {
+      schema: { type: 'object' },
+      render: (_args, value) => [{ type: 'text', text: String((value && value.text) || '') }],
+    },
+    async execute(args) {
+      return { text: helpText(all, args || {}) };
+    },
+  };
+}
 
 export function apply(ctx) {
   const bad = (message) => {
@@ -65,8 +375,10 @@ export function apply(ctx) {
   }
 
   /** 工具主体的实际流程：参数整形 → 地址解析（默认离线） → 排盘 */
-  async function run(args) {
-    if (!args || typeof args !== 'object' || Array.isArray(args)) throw bad('参数必须是对象');
+  async function run(rawArgs) {
+    if (!rawArgs || typeof rawArgs !== 'object' || Array.isArray(rawArgs)) throw bad('参数必须是对象');
+    // 渐进披露写法先摊平：后面的句柄合并、地址解析与体系校验都只认扁平参数
+    const args = flattenOptions(rawArgs, ALL_PARAMS, bad);
     if (args.geocode !== undefined && args.geocode !== 'offline' && args.geocode !== 'online') {
       throw bad(`geocode 只能是 offline / online，收到「${args.geocode}」`);
     }
@@ -99,6 +411,8 @@ export function apply(ctx) {
         ignored: rev.ignored,
       };
     }
+    // 句柄与一句话改参都可能带来 "true"/"9" 这类字符串写法：归一后再做体系校验与排盘
+    next = normalizeArgs(next, ALL_PARAMS, bad);
     if (next.shadow === true && !next.shadowVersion) next.shadowVersion = PKG_VERSION;
     // hour / date / minute 只有会读它们的体系放行：其它体系收了也不看，用户以为改的是时刻，
     // 实际仍按 datetime（或 00:00）排。宁可直接报错，也不静默排成另一张盘。
@@ -207,6 +521,11 @@ export function apply(ctx) {
       && next.fortuneYear === undefined) {
       next.fortuneYear = now.getFullYear();
     }
+    // 工具面默认给 brief：模型九成只要结论，全文里一半以上是长论述与「规则·出处」。
+    // 引擎/面板的缺省仍是 full（UI 要完整解析）；模型追问依据时显式传 detail:"full"。
+    if (next.withInterpret === true && (next.detail === undefined || next.detail === null || next.detail === '')) {
+      next.detail = 'brief';
+    }
     const out = compute(next);
     if (revision) out.revision = revision;
     // 显式要求时才做口径对照：每次要额外排 2–3 张盘，默认不付这笔开销
@@ -217,77 +536,74 @@ export function apply(ctx) {
     return out;
   }
 
-  const definition = {
-    name: TOOL_NAME,
-    description: DESCRIPTION,
-    parameters: {
-      type: 'object',
-      properties: {
+  // 88 个参数的单一来源：顶层/options 只是它的两种视图，help 也读这一份。
+  // 新增参数只改这里与 CORE_KEYS/OPTION_KEYS/OPTION_HINTS，别在两个地方各写一份。
+  const ALL_PARAMS = {
         handle: {
           type: 'string',
           description:
-            '排盘句柄：上一次结果里的 handle（形如 mc1.xxx.yyy）。带上它就不必重报出生时间、性别、出生地——只传这次要改的增量参数（如 asOf、direction、withInterpret、question，或换 system 看同一时间另一套盘）。句柄里带着输入本身（是编码不是加密），校验失败会报 E_HANDLE。',
+            '排盘句柄（mc1.xxx.yyy）：带到下一次调用即可只给增量参数，不必重报出生信息；截断或改字报 E_HANDLE。',
         },
         revise: {
           type: 'string',
           description:
-            '一句话改参：用户说「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」时，把原话放这里（可配合 handle），引擎把它翻成具体参数补丁再排盘。只认明确句式，识别不到就原样按旧参数排，并在结果 revision 里写明改了哪些、没认哪些——不要自己脑补参数。出生年份/时辰改不了（一句话给不出分秒），要改请直接传 datetime。',
+            '一句话改参：把用户原话放这里（如「女命」「换成紫微看 2030 年事业」），引擎翻译成参数补丁并在 revision 回报；识别不到不猜。',
         },
         system: {
           type: 'string',
-          enum: ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'],
+          enum: SYSTEM_ENUM,
           description: 'bazi = 四柱八字（含调候寒暖与《穷通宝鉴》120 格用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、卦体关系、用神落位与月建日辰旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间或候选日内逐日打分排序；宜忌依《协纪辨方书》卷十一「用事」逐条神煞，轻重依卷十「宜忌」六等与德神制化）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（MBTI 风格 24 题问卷：给 answers 出类型，不给则先返回题目）；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局/玄空下卦，action 三选一）；name = 起名（391 字库的用字五行评估与候选生成；未收录字可传 charElements 指定五行）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
         },
         datetime: {
           type: 'string',
           description:
-            '公历本地时间，如 1990-05-12T14:30。bazi / ziwei 必填；liuyao 可选，仅用于取日辰定六神。almanac / star / numerology 只需要日期；mbti 不用时间。chenggu 需要带时分，或用 hour 补时辰；xiaoliuren 时间起课用它的日期与时分。',
+            '公历本地时间，如 1990-05-12T14:30。bazi / ziwei 必填；almanac / star / numerology 只需日期；日期类体系省略时补今天。',
         },
         date: {
           type: 'string',
-          description: '仅 xiaoliuren 时间起课用：公历日期 YYYY-MM-DD（与 hour 成对）；省略则取 datetime 的日期。',
+          description: '仅 xiaoliuren 时间起课：日期 YYYY-MM-DD（与 hour 成对）。',
         },
         hour: {
           type: 'integer',
-          description: '时辰小时（0–23）。chenggu 用它补时辰（datetime 不带时分时必填）；xiaoliuren 时间起课用它代替 datetime 的时分；name 用 year/month/day 给生辰时用它带出生时（也可用 datetime）。',
+          description: '时辰小时 0–23：chenggu 补时辰、xiaoliuren 时间起课、name 生辰。',
         },
         minute: {
           type: 'integer',
-          description: '分钟（0–59），仅 name 使用：配合 year / month / day 给生辰，省略按整点。',
+          description: '分钟 0–59，仅 name 配合 year/month/day 用。',
         },
         dst: {
           type: 'boolean',
-          description: '是否自动校正 1986–1991 年中国夏令时（默认 true）。出生证时间是真实太阳口径、或想复现旧结果时传 false。',
+          description: '是否校正 1986–1991 夏令时，默认 true。',
         },
         gender: {
           type: 'string',
           enum: ['male', 'female'],
-          description: '性别，决定大运与大限顺逆。bazi / ziwei / hepan 必填，不能用默认值代替。',
+          description: '性别 male / female，bazi / ziwei / hepan 必填。',
         },
         address: {
           type: 'string',
           description:
-            '出生地地址，如「河北石家庄」「成都」「新疆喀什」。用于推算经度并按真太阳时排盘（bazi / ziwei / hepan 都适用，合盘的 partner.address 同理）；只写到省市即可，内置地级市坐标表。与 longitude 同时给出时以 longitude 为准。',
+            '出生地（省/市即可），用于真太阳时；与 longitude 同时给出时以后者为准。',
         },
         geocode: {
           type: 'string',
           enum: ['offline', 'online'],
           description:
-            '地址解析方式，默认 offline：只用内置坐标表（最细到地级市，够真太阳时用）。online 会向 OpenStreetMap Nominatim 发一次查询，可精确到区县/路名；出生地原文会发给第三方，仅在用户明确要求精确到区县时开启。',
+            '地址解析：offline（默认，内置表）/ online（发第三方 Nominatim，仅明确要求区县时）。',
         },
         longitude: {
           type: 'number',
           description:
-            '出生地经度（东经为正），可选。适用于已知精确经度的情况，例如乌鲁木齐 87.6、北京 116.4。',
+            '出生地经度（东经为正），如乌鲁木齐 87.6、北京 116.4。',
         },
         lateZi: {
           type: 'boolean',
           description:
-            '23:00 后是否算次日（晚子时换日）。八字/大六壬/称骨/小六壬/梅花/紫微默认 true（换日）；奇门默认 false（归当日），也可用 lateZiHourMode 指定。输出摘要会写明实际采用的口径。',
+            '23:00 后是否算次日；多数体系默认 true，qimen 默认 false。',
         },
         trueSolar: {
           type: 'boolean',
-          description: '是否启用真太阳时修正，默认 true（无经度时自动退回平太阳时）。',
+          description: '是否启用真太阳时，默认 true；无经度时退回平太阳时。',
         },
         lines: {
           type: 'array',
@@ -297,7 +613,7 @@ export function apply(ctx) {
         },
         question: {
           type: 'string',
-          description: '所问之事。六爻、塔罗、梅花会直接用于取象；配合 withInterpret 时也会写进解析的引语。',
+          description: '所问之事：liuyao / tarot / meihua 用于取象，withInterpret 时写进解析。',
         },
         task: {
           type: 'string',
@@ -326,7 +642,7 @@ export function apply(ctx) {
           type: 'string',
           enum: ['solar2lunar', 'lunar2solar', 'time', 'number'],
           description:
-            '方向/起法开关，取值按体系分三组，互不重叠。convert（公农历互转）：solar2lunar 公历转农历（默认）、lunar2solar 农历转公历（须同时给 lunarYear/lunarMonth/lunarDay）。meihua（梅花易数）：time 时间起卦（需 datetime，默认）、number 数字起卦（需 upper/lower）。xiaoliuren（小六壬）：time 时间起课（默认）、number 报数起课（需 num1–num3）。',
+            '取值按体系分三组。convert：solar2lunar / lunar2solar；meihua：time / number；xiaoliuren：time / number。',
         },
         lunarYear: { type: 'integer', description: '仅 convert 的 lunar2solar：农历年份，如 2026。' },
         lunarMonth: { type: 'integer', description: '仅 convert 的 lunar2solar：农历月份 1–12。' },
@@ -338,39 +654,39 @@ export function apply(ctx) {
         direction: {
           type: 'string',
           enum: ['general', 'wealth', 'career', 'love', 'health', 'study', 'travel'],
-          description: '询问方向（仅配合 withInterpret 生效）：general 综合、wealth 财运、career 事业、love 感情、health 健康、study 学业、travel 出行。默认 general。',
+          description: '询问方向（配合 withInterpret）：general / wealth / career / love / health / study / travel。',
         },
         cross: {
           type: 'boolean',
-          description: '八字 / 紫微专用：为同一份出生信息再排另一套盘，返回「八字 × 紫微 交叉验证」（同向 / 有张力 / 互补），不合并数值。',
+          description: 'bazi / ziwei：为同一出生信息再排另一套盘，返回交叉验证，不合并数值。',
         },
         hourUnknown: {
           type: 'boolean',
-          description: '出生时刻未知（仅 bazi / trend）：八字只排年/月/日三柱，时柱不排并标注「时柱暂缺」，摘要首行写「时柱按正午暂算，涉及时柱的结论仅供参考」，起运与交运按日估算；紫微与合盘会以 HOUR_UNKNOWN 阻断。默认 false。',
+          description: '出生时刻未知（bazi / trend）：只排三柱并标注；ziwei / hepan 直接阻断。',
         },
         diff: {
           type: 'boolean',
-          description: '口径对照（bazi / ziwei / qimen）：同一组输入分别按当前口径与另一档各排一次，列出根因字段（如日柱、命宫、局数）与连带变化数。只列差异，不判哪套口径更准，也不改盘面。',
+          description: '口径对照（bazi / ziwei / qimen）：按另一档口径再排一次，只列差异不改盘。',
         },
         shadow: {
           type: 'boolean',
-          description: '影子盘：为结果附一个短 ID。同一组归一化参数在任何参数顺序下得到同一 ID；baseId 不含版本，跨版本复用 baseId 即可自动 diff 字段变化。写回、对拍、回放时使用，默认 false。',
+          description: '影子盘：结果附短 ID，同参数同 ID，用于回放/对拍。',
         },
         trace: {
           type: 'boolean',
-          description: '推导链：六爻返回纳甲→六亲→世应→伏神→旺衰，八字返回旺衰分值与格局取用，紫微返回格局命中条件，奇门与大六壬返回盘面层与取用层。每层含 field / rule / inputs / result / source；另回传 traceText（同源 Markdown）。只读盘面，不重算、不改盘。默认 false。',
+          description: '推导链（liuyao / bazi / ziwei / qimen / daliuren）：返回每层规则与中间值，另给 traceText。',
         },
         verifyPast: {
           type: 'number',
-          description: '验前事（仅八字）：传年数（如 6），返回过去 N 年的流年信号行，供用户勾选「准/不准」并算贴合度；只读，不改盘。',
+          description: '验前事（bazi）：传年数，返回过去 N 年流年信号行。',
         },
         rectify: {
           type: 'boolean',
-          description: '生时校正（仅八字）：配合 events 使用，把候选时辰逐一排盘并按固定规则对过去事件打分，返回候选排序；用于缩小时辰范围，不替代出生记录。',
+          description: '生时校正（bazi）：配合 events 给候选时辰排序。',
         },
         events: {
           type: 'array',
-          description: '生时校正用的过去事件：年份 + 类别（career/wealth/love/move/health/other）。',
+          description: '生时校正用的过去事件：年份 + 类别。',
           items: {
             type: 'object',
             properties: {
@@ -382,24 +698,24 @@ export function apply(ctx) {
         },
         ask: {
           type: 'string',
-          description: '追问：围绕已算好的盘回答「某一年 / 某方面」的问题，如「2027 年事业怎么样」「感情如何」。只取盘面已有字段，不重排、不猜测。',
+          description: '追问：围绕已算好的盘回答某年/某方面，只取盘面字段。',
         },
         withInterpret: {
           type: 'boolean',
-          description: '是否附带「解析与详解」（五个维度 + 用神/格局等分节 + 免责声明）；默认 false，避免默认输出过长。',
+          description: '是否附带解析与详解，默认 false；追问依据时再开。',
         },
         detail: {
           type: 'string',
-          enum: ['full', 'lean'],
-          description: '解析文本的档位，仅配合 withInterpret。full（默认）给全部论述与规则出处；lean 只给结论、所问方向那一条与三张表，长论述和出处折成一行指针（省约一半文本）。先拿结论用 lean，用户追问「为什么 / 依据是什么」再换 full；盘面与句柄不受它影响。',
+          enum: ['brief', 'lean', 'full'],
+          description: '解析档位（仅 withInterpret）：缺省 brief（结论+所问方向+三张表，表最多 8 行，不按体积截断）/ lean 再给其余维度 / full 全论述与规则出处。',
         },
         asOf: {
           type: 'string',
-          description: '基准时刻，形如 2026-10-22T16:00。紫微用它定流月/流日/流时；八字用它钉死「流年从哪年起排」；塔罗用它记录 castAt（抽牌时刻）。省略则按调用时的本机当前时刻——要复现某一次结果就显式给出。',
+          description: '基准时刻（如 2026-10-22T16:00）：紫微定流月日时，八字定流年起点，塔罗记抽牌时刻。',
         },
         seed: {
           type: 'number',
-          description: '随机种子，仅 tarot / liuyao 使用。给了同一个 seed，抽牌或摇卦的结果可完整复现（便于回放与对拍）；不传则真随机。',
+          description: '随机种子（tarot / liuyao）：同 seed 可复现。',
         },
         juMethod: {
           type: 'string',
@@ -413,7 +729,7 @@ export function apply(ctx) {
         },
         partner: {
           type: 'object',
-          description: '合盘时的对方信息：datetime 与 gender 必填，address 可选（与主方一样按出生地修正真太阳时）。仅 hepan 使用。',
+          description: '合盘对方：datetime + gender 必填，address 可选。仅 hepan 使用。',
           properties: {
             datetime: { type: 'string', description: '对方公历本地时间，如 1998-05-20T10:30' },
             gender: { type: 'string', enum: ['male', 'female'], description: '对方性别（决定对方大运/大限顺逆）' },
@@ -584,9 +900,16 @@ export function apply(ctx) {
           items: { type: ['integer', 'null'] },
           description: '仅 mbti 使用：按题目顺序的 24 个分数，1（完全不像）–5（很像我）；跳过某题传 null。不给则返回问卷题目，答满 12 题即可出类型。',
         },
-      },
+  };
+
+  const definition = {
+    name: TOOL_NAME,
+    description: DESCRIPTION,
+    parameters: {
+      type: 'object',
       // 不写 required：只带 handle 的追问是文档主推用法，schema 层拦住会让宿主先拒绝。
       // 真正的必填校验放到 run()：system 或 handle 至少给一个。
+      properties: buildProperties(ALL_PARAMS),
     },
     output: {
       schema: { type: 'object' },
@@ -608,6 +931,8 @@ export function apply(ctx) {
     },
   };
 
+  // help 先注册、chart 后注册：工具列表里两者都在，而测试与宿主按最后一次注册取主工具。
+  ctx.effect(() => ctx.tools.register(helpDefinition(ALL_PARAMS)));
   ctx.effect(() => ctx.tools.register(definition));
 }
 

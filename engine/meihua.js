@@ -2,6 +2,7 @@
 import { BRANCHES, fromJDN, toJDN } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { fail } from './fail.js';
+import { bool } from './bool.js';
 import { parseDateTime } from './datetime.js';
 import { assertShifted } from './validate.js';
 import { hexagramFromBits } from './liuyao.js';
@@ -55,16 +56,29 @@ export function buildMeihua(input = {}) {
   let source;
 
   if (mode === 'number') {
-    const a = Number(input.upper);
-    const b = Number(input.lower);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) throw fail('E_INPUT', '数字起卦需要两个数字（upper / lower），例如 upper=3、lower=5');
+    // 只认真正的数字：Number(null) / Number(false) / Number([]) 都是 0，
+    // 以前缺参或传错类型会静默起成「坤为地」，盘面看着正常却完全不是用户给的字数。
+    const a = input.upper;
+    const b = input.lower;
+    // 小数以前只过 Number.isFinite，mod8(3.5) 得到 4.5，bitsOf 查不到卦再在深处抛
+    // 「bitsOf is not a function」——参数错却报成内部错误。数字起卦只认整数。
+    if (typeof a !== 'number' || typeof b !== 'number' || !Number.isInteger(a) || !Number.isInteger(b)) {
+      throw fail('E_INPUT', '数字起卦需要两个整数（upper / lower），例如 upper=3、lower=5');
+    }
     upperNum = mod8(a);
     lowerNum = mod8(b);
     if (input.changing !== undefined && input.changing !== null && input.changing !== '') {
-      // 以前 99 会被 mod 6 折成 3：用户指定动爻却得到另一爻，结果里看不出来
-      const ch = Number(input.changing);
+      // 以前 99 会被 mod 6 折成 3：用户指定动爻却得到另一爻，结果里看不出来。
+      // Number(true)=1、Number([3])=3 也会静默通过，故只收数字或十进制数字串。
+      const raw = input.changing;
+      const ch = typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string' && /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(raw.trim())
+          ? Number(raw.trim())
+          : NaN;
       if (!Number.isInteger(ch) || ch < 1 || ch > 6) {
-        throw fail('E_INPUT', `动爻 changing 必须是 1–6 的整数，收到「${input.changing}」`);
+        const shown = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        throw fail('E_INPUT', `动爻 changing 必须是 1–6 的整数，收到「${shown}」`);
       }
       moving = ch;
     } else {
@@ -74,7 +88,7 @@ export function buildMeihua(input = {}) {
   } else {
     const dt = parseDateTime(input.datetime);
     // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 归次日，年月日电数才落在同一子时
-    const lateZi = input.lateZi !== false;
+    const lateZi = bool(input.lateZi, true);
     let sy = dt.year;
     let sm = dt.month;
     let sd = dt.day;

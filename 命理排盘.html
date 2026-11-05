@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.2</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,7 +653,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：154 个测试文件 / 7894 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：155 个测试文件 / 8184 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -683,6 +683,206 @@ const fail = (code, message) => {
 return { fail };
 })();
 
+__mods.bool = (function () {
+/**
+ * 读参数里的布尔值只走这里。
+ *
+ * 本文件是引擎入口的「参数口径归一」：布尔（bool / canonicalFlags）与
+ * 数字（canonicalNumbers）各一道，盘面读的、句柄编码的、指纹比的是同一份值。
+ *
+ * 直接写 `args.cross === true` 会把字符串 "true" 与数字 1 都当成 false——
+ * 模型经 JSON 传参时这三种写法都出现过，界面层归一后仍可能有旧句柄或直接调用
+ * 引擎的路径。defaultValue 决定「没给值」时的口径（如 lateZi 默认 true）。
+ */
+function bool(value, defaultValue = false) {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  if (value === true || value === 1 || value === 'true' || value === '1') return true;
+  if (value === false || value === 0 || value === 'false' || value === '0') return false;
+  return defaultValue;
+}
+
+/**
+ * 引擎入口的开关归一表：键 → 未给值时的默认口径。
+ * 只收 schema 里声明为 boolean 的参数；盘面读值与句柄编码必须看到同一份值。
+ */
+const FLAG_DEFAULTS = {
+  lateZi: true, trueSolar: true, dst: true,
+  isLeapMonth: false, leapAsNext: false,
+  cross: false, hourUnknown: false, diff: false, shadow: false,
+  trace: false, rectify: false, withInterpret: false,
+};
+
+/** 合盘对方 / 第三方对象里的同名开关（见 hepan、shadowPerson）：键 → 未给值时的默认口径。
+ *  hourUnknown 的缺省是 false（合盘遇到 true 会拦），不能跟着 lateZi 等默认开。 */
+const PARTNER_FLAGS = {
+  lateZi: true,
+  trueSolar: true,
+  dst: true,
+  hourUnknown: false,
+};
+
+function canonicalInto(source, defaults) {
+  let out = source;
+  const put = (key, value) => {
+    if (Object.is(source[key], value)) return;
+    if (out === source) out = { ...source };
+    out[key] = value;
+  };
+  const drop = (key) => {
+    if (out === source) out = { ...source };
+    delete out[key];
+  };
+  for (const [key, fallback] of Object.entries(defaults)) {
+    // 没给这个键就一个键都不加：凭空补 true 会改掉所有旧句柄的身份
+    if (source[key] === undefined) continue;
+    // 空串 / 空白串按「没给」处理（宿主 normalizeArgs 也是这么收的）：
+    // 各体系的缺省并不相同——奇门 lateZi 缺省 same-day、紫微 lateZishi 缺省 current-day，
+    // 若把 "" 折成全局缺省 true，同一次输入走工具层和直调引擎会排出两张盘。
+    if (typeof source[key] === 'string' && source[key].trim() === '') { drop(key); continue; }
+    put(key, bool(source[key], fallback));
+  }
+  return out;
+}
+
+function canonicalPartner(person) {
+  if (!person || typeof person !== 'object' || Array.isArray(person)) return person;
+  let out = person;
+  for (const [key, fallback] of Object.entries(PARTNER_FLAGS)) {
+    if (person[key] === undefined) continue;
+    if (typeof person[key] === 'string' && person[key].trim() === '') {
+      if (out === person) out = { ...person };
+      delete out[key];
+      continue;
+    }
+    const v = bool(person[key], fallback);
+    if (Object.is(person[key], v)) continue;
+    if (out === person) out = { ...person };
+    out[key] = v;
+  }
+  return out;
+}
+
+/**
+ * 把 args 里的字符串布尔 / 数字布尔统一成真布尔，返回**新对象**（无改动时返回原对象）。
+ *
+ * 为什么要在入口做一次：0.62.x 的盘面读开关用 `!== false`（只认字面 false），
+ * 句柄却直接编码传进来的原文。于是 `trueSolar:"false"` 排出「开真太阳时」的盘，
+ * 句柄里却写着 false——同一张盘两个身份，影子盘对拍、深链回放、跨版本 diff 全跟着错。
+ * 现在读值已统一走 `bool()`，这道归一仍要在入口做：它保证句柄与指纹拿到的
+ * 也是同一份真布尔，而不只是「读的时候碰巧算出同一个结果」。
+ */
+function canonicalFlags(args) {
+  if (!args || typeof args !== 'object') return args;
+  let out = canonicalInto(args, FLAG_DEFAULTS);
+  for (const key of ['partner', 'partner2']) {
+    const person = out[key];
+    const fixed = canonicalPartner(person);
+    if (fixed !== person) {
+      if (out === args) out = { ...args };
+      out[key] = fixed;
+    }
+  }
+  return out;
+}
+
+// ── 数字归一 ────────────────────────────────────────────────
+// 只把「整串就是一个数」的字符串转成数字：count:"3" → 3、period:"9" → 9。
+// "9运" / "十" / 空串原样留着，让各体系原有的范围校验报 E_INPUT，
+// 而不是先变成 NaN 再以「没给」的身份混过去。
+
+/** schema 里 type 为 number / integer 的顶层键（options 由工具层摊平到顶层） */
+const NUMERIC_KEYS = [
+  'hour', 'minute', 'longitude', 'verifyPast', 'seed',
+  'days', 'lunarYear', 'lunarMonth', 'lunarDay',
+  'num1', 'num2', 'num3', 'upper', 'lower', 'changing',
+  'count', 'toAge', 'fortuneYear', 'period', 'limit',
+  'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
+  'year', 'month', 'day',
+];
+
+/** 数值数组：逐项转，任一项不是数字就整组不动，交给原有校验报错 */
+const NUMERIC_ARRAY_KEYS = ['lines', 'rectifyHours', 'answers'];
+
+/** 字形 → 笔画的映射：值也是数字（起名的 strokeOverrides / surnameStrokes） */
+const NUMERIC_MAP_KEYS = ['strokeOverrides', 'surnameStrokes'];
+
+// 与宿主 normalizeArgs 同一把尺：指数写法（1e3）与尾点（5.）都算「整串是一个数」。
+// 收窄成十进制会把 seed:"1e3" 留在字符串态——randomOf 照样按 1000 出牌，句柄却记着
+// "1e3"，同一张盘两个身份，正是这刀要消掉的东西。
+const NUMERIC_RE = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
+
+function numericOf(value) {
+  if (typeof value !== 'string') return value;
+  const s = value.trim();
+  if (!NUMERIC_RE.test(s)) return value;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : value;
+}
+
+function canonicalMap(obj) {
+  let changed = false;
+  const next = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const n = v === null ? null : numericOf(v);
+    if (!Object.is(n, v)) changed = true;
+    next[k] = n;
+  }
+  return changed ? next : obj;
+}
+
+/**
+ * 把数字串统一成数字，返回**新对象**（无改动时返回原对象）。
+ *
+ * 为什么也要在入口做一刀：句柄直接编码参数原文，`count:"3"` 与 `count:3`
+ * 抽出同一副牌、却拿到两个句柄——影子盘对拍、深链回放会认成两张盘。
+ * 另有两处不只影响身份，是实打实的算错：
+ *   * 风水 `period:"9"` 被 1–9 校验拒掉，报错里还写着「收到「9」」，看着像误报；
+ *   * 起名 `strokeOverrides:{"秋":"9"}` 被 overridesOf 静默丢掉，五格退回字库笔画，
+ *     用户给的笔画根本没参与计算。
+ */
+function canonicalNumbers(args) {
+  if (!args || typeof args !== 'object') return args;
+  let out = args;
+  const put = (key, value) => {
+    if (Object.is(args[key], value)) return;
+    if (out === args) out = { ...args };
+    out[key] = value;
+  };
+  for (const key of NUMERIC_KEYS) {
+    if (args[key] === undefined) continue;
+    // 空串 / 空白串按「没给」处理（与宿主 normalizeArgs 一致）。留着会变成另一条路：
+    // 梅花数字起卦 Number("") = 0、风水 period 直接报「收到「」」——同一份输入两种结果。
+    if (typeof args[key] === 'string' && args[key].trim() === '') {
+      if (out === args) out = { ...args };
+      delete out[key];
+      continue;
+    }
+    put(key, numericOf(args[key]));
+  }
+  for (const key of NUMERIC_ARRAY_KEYS) {
+    const v = args[key];
+    if (!Array.isArray(v)) continue;
+    let changed = false;
+    const next = v.map((x) => {
+      if (x === null) return null;
+      if (typeof x === 'string' && x.trim() === '') { changed = true; return undefined; }
+      const n = numericOf(x);
+      if (!Object.is(n, x)) changed = true;
+      return n;
+    });
+    if (changed) put(key, next);
+  }
+  for (const key of NUMERIC_MAP_KEYS) {
+    const v = args[key];
+    if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
+    put(key, canonicalMap(v));
+  }
+  return out;
+}
+
+return { bool, FLAG_DEFAULTS, canonicalFlags, NUMERIC_KEYS, NUMERIC_ARRAY_KEYS, NUMERIC_MAP_KEYS, canonicalNumbers };
+})();
+
 __mods.diff = (function () {
 // 口径差异：同一组参数在不同流派口径下排出的盘，逐字段比对
 //
@@ -691,6 +891,8 @@ __mods.diff = (function () {
 //   变化字段路径 + 旧值 → 新值 + 一句话总结。
 //
 // 只做结构化比对，不改动任何引擎的输出。
+
+const { bool } = (__mods.bool || {});
 
 /** 比对时忽略的字段：文案、时间戳、口径回显、内部儒略日数字 */
 const IGNORE_KEYS = new Set([
@@ -962,7 +1164,7 @@ const CALIBER_SWITCHES = {
       key: 'lateZi',
       title: '晚子时：23:00 后是否换日',
       short: '晚子时',
-      read: (a) => a.lateZi !== false,
+      read: (a) => bool(a.lateZi, true),
       alt: (v) => !v,
       label: (v) => (v ? '换日' : '不换日'),
     },
@@ -970,7 +1172,7 @@ const CALIBER_SWITCHES = {
       key: 'trueSolar',
       title: '真太阳时：是否按出生地经度修正',
       short: '真太阳时',
-      read: (a) => a.trueSolar !== false,
+      read: (a) => bool(a.trueSolar, true),
       alt: (v) => !v,
       label: (v) => (v ? '修正' : '不修正'),
     },
@@ -988,7 +1190,7 @@ const CALIBER_SWITCHES = {
       key: 'trueSolar',
       title: '真太阳时：是否按出生地经度修正',
       short: '真太阳时',
-      read: (a) => a.trueSolar !== false,
+      read: (a) => bool(a.trueSolar, true),
       alt: (v) => !v,
       label: (v) => (v ? '修正' : '不修正'),
     },
@@ -1536,6 +1738,7 @@ return { earthL };
 __mods.calendar = (function () {
 const { earthL } = (__mods['vsop-earth'] || {});
 const { createLru } = (__mods.lru || {});
+const { bool } = (__mods.bool || {});
 // 历法底座：儒略日、干支、二十四节气、真太阳时
 // 全部为纯函数，不依赖 DOM / Node API，Host 与 Client 可共用。
 
@@ -1825,7 +2028,7 @@ function termYearList(year, jieOnly) {
  * @param {{jieOnly?: boolean}} [opts] jieOnly=true 时只返回十二节（default：false，含气）
  */
 function termWindow(year, opts = {}) {
-  const jieOnly = opts.jieOnly === true;
+  const jieOnly = bool(opts.jieOnly);
   const cacheKey = jieOnly ? `${year}|jie` : year;
   const cached = TERM_WINDOW_CACHE.get(cacheKey);
   if (cached) return cached;
@@ -2059,6 +2262,7 @@ __mods.geo = (function () {
 // 坐标为近似值（±0.2°≈0.8 分钟时差），足够真太阳时使用。
 // 联网（Nominatim）是显式可选项：只有调用方传 online: true 才会把地址原文发出去，
 // 默认走内置表，不上传任何数据。
+const { bool } = (__mods.bool || {});
 const RAW = `
 北京 116.41 39.90;上海 121.47 31.23;天津 117.20 39.13;重庆 106.55 29.56
 广州 113.26 23.13;深圳 114.06 22.55;珠海 113.58 22.27;东莞 113.75 23.02;佛山 113.12 23.02
@@ -2286,7 +2490,7 @@ async function geocodeAddress(input, opts = {}) {
   const text = String(input || '').trim();
   if (!text) return local;
   // 默认离线：联网必须显式开启（会把出生地原文发给第三方）
-  const wantOnline = opts.online === true;
+  const wantOnline = bool(opts.online);
   if (!wantOnline) return local;
   if (local && typeof local.lon === 'number' && !DETAIL.test(text)) return local;
   const remote = await onlineLookup(text, opts);
@@ -2328,22 +2532,36 @@ function mulberry32(seed) {
   };
 }
 
+// 与宿主 / bool.js 同一把尺：只认十进制（可带指数、尾点）。Number() 会把
+// "0x10"、false、[] 也变成有效数字，于是直接调引擎能排出盘、走工具层却被拒——
+// 同一份输入两种命运，正是句柄与复现最容易分叉的地方。
+const NUMERIC_TEXT = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
+
+const seedNumber = (seed) => {
+  if (typeof seed === 'number') return Number.isFinite(seed) ? seed : NaN;
+  if (typeof seed === 'string') {
+    const s = seed.trim();
+    if (s !== '' && NUMERIC_TEXT.test(s)) return Number(s);
+  }
+  return NaN;
+};
+
 /**
  * 从参数里取随机源：
  * - 没给 seed：沿用 Math.random（保持"真随机"的手感）
- * - 给了数字或数字字符串：mulberry32(seed)，可复现
+ * - 给了数字或十进制数字串：mulberry32(seed)，可复现
  * - 给了别的东西：调用方应当先报错，这里兜底回 Math.random
  */
 function randomOf(seed) {
   if (seed === undefined || seed === null || seed === '') return Math.random;
-  const n = Number(seed);
+  const n = seedNumber(seed);
   return Number.isFinite(n) ? mulberry32(n) : Math.random;
 }
 
 /** 是否是一个可以接受的 seed */
 function isSeed(v) {
   if (v === undefined || v === null || v === '') return true;
-  return Number.isFinite(Number(v));
+  return Number.isFinite(seedNumber(v));
 }
 
 return { mulberry32, randomOf, isSeed };
@@ -5317,6 +5535,7 @@ const { resolveAddress } = (__mods.geo || {});
 const { computeBaziShensha } = (__mods.shensha || {});
 const { assertCivil, assertShifted, daysInMonth } = (__mods.validate || {});
 const { applyDst } = (__mods.dst || {});
+const { bool } = (__mods.bool || {});
 const { nayinOf } = (__mods.nayin || {});
 const { SANHE } = (__mods.sanhe || {});
 const { analyzeBaziFrame, scoreLuck } = (__mods.geju || {});
@@ -5642,13 +5861,13 @@ function buildBazi(input) {
   let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
   // 时辰未知：内部仍按「正午」跑完整条管线（大运、旺衰都要有个基准才能算），
   // 但对外一律不承认这个钟点——时柱置空、文本不出现具体时刻、精度降为按日。
-  const hourUnknown = input.hourUnknown === true;
+  const hourUnknown = bool(input.hourUnknown);
   if (hourUnknown) { hour = 12; minute = 0; }
-  const lateZi = input.lateZi !== false;
-  const useTrueSolar = input.trueSolar !== false;
+  const lateZi = bool(input.lateZi, true);
+  const useTrueSolar = bool(input.trueSolar, true);
   // 1986–1991 中国夏令时：出生证钟面时间普遍是「拨快 1 小时」的钟面时间，
   // 不校正会让时柱（乃至跨 23:00 的日柱）整档偏；显式传 dst:false 可关闭。
-  const dst = input.dst === false ? { applied: false, note: null } : applyDst({ year, month, day, hour, minute });
+  const dst = bool(input.dst, true) ? applyDst({ year, month, day, hour, minute }) : { applied: false, note: null };
   if (dst.applied) {
     year = dst.year; month = dst.month; day = dst.day; hour = dst.hour; minute = dst.minute;
   }
@@ -5752,7 +5971,7 @@ function buildBazi(input) {
 
   // 流年（默认从「今年」起排 10 年；传 input.nowYear 可钉死基准年，用于复现历史结论；
   // input.liunianTo 可把窗口延到指定年，生时校正要拿几十年前的事件逐年对账）
-  const thisYear = Number(input.nowYear) || new Date().getFullYear();
+  const thisYear = Number(input.nowYear) || new Date().getFullYear(); // allow-clock: 未传 nowYear 时取本机年份；工具层 asOf 可钉死
   const liunianTo = Math.max(thisYear, Number(input.liunianTo) || thisYear + 9);
   const liunian = [];
   for (let y = thisYear; y <= liunianTo; y++) {
@@ -6931,6 +7150,7 @@ const { STEMS, BRANCHES, toJDN, ganzhiName, dayGanzhiIndex, sexagenaryIndex, xun
 const { jingText } = (__mods['yijing-text'] || {});
 const { fail } = (__mods.fail || {});
 const { assertObject } = (__mods.validate || {});
+const { randomOf, isSeed } = (__mods.random || {});
 
 // 八卦三位（自下而上，1 = 阳）
 const TRIGRAM_BITS = {
@@ -7263,10 +7483,8 @@ const sideOf = (position) => (position <= 3 ? 'inner' : 'outer');
  * @param {{direction?:string, gender?:string}} [opts]
  */
 function yongshenOf(result, opts = {}) {
-  // opts 允许省略或传 null（都按默认口径），但显式给了别的东西就必须是对象：
+  opts = liuyaoOpts(opts, 'yongshenOf 的 opts', '{ direction?, gender? }');
   // 以前 yongshenOf(r, null) 会一路走到读 opts.direction，抛裸 TypeError
-  if (opts === null || opts === undefined) opts = {};
-  assertObject(opts, 'yongshenOf 的 opts', '{ direction?, gender? }；省略或 null 按默认口径');
   const r = result && typeof result === 'object' ? result : {};
   const ben = r.ben && typeof r.ben === 'object' ? r.ben : {};
   const lines = Array.isArray(ben.lines) ? ben.lines : [];
@@ -7418,6 +7636,14 @@ function isMoving(v) {
  */
 function buildLiuyao(input = {}) {
   if (!input || typeof input !== 'object') throw fail('E_INPUT', '六爻起卦参数不能为空：至少给 lines 或 seed');
+  // seed 以前只写在文档里：直接 buildLiuyao({ seed }) 仍走 Math.random，
+  // 同一个 seed 摇不出同一卦，句柄却按 seed 算了身份。这里与工具层同一把尺。
+  if (input.seed !== undefined && input.seed !== null && input.seed !== '' && !isSeed(input.seed)) {
+    throw fail('E_INPUT', `seed 必须是数字，收到「${String(input.seed).slice(0, 24)}」`);
+  }
+  if (input.random !== undefined && input.random !== null && typeof input.random !== 'function') {
+    throw fail('E_INPUT', `random 必须是函数，收到 ${typeof input.random}`);
+  }
   // lines 给了但不是数组（"7,8,9,6,7,8" / 789678 / {…}）以前等同于「没给」：
   // 用户以为摇的是自己记下的那一卦，实际拿到一张随机盘，而且看不出来。
   if (input.lines !== undefined && input.lines !== null && !Array.isArray(input.lines)) {
@@ -7429,7 +7655,8 @@ function buildLiuyao(input = {}) {
   if (given && given.length !== 6) {
     throw fail('E_LINES', `lines 必须是 6 个爻值（自下而上），收到 ${given.length} 个`);
   }
-  const rawLines = given ? given.slice() : tossLines(input.random);
+  const rand = typeof input.random === 'function' ? input.random : randomOf(input.seed);
+  const rawLines = given ? given.slice() : tossLines(rand);
 
   const invalid = rawLines.filter((v) => ![6, 7, 8, 9].includes(v));
   if (invalid.length) throw fail('E_LINES', `爻值只能是 6/7/8/9，收到 ${JSON.stringify(rawLines)}`);
@@ -7441,7 +7668,7 @@ function buildLiuyao(input = {}) {
   const bian = bianBits ? hexagramFromBits(bianBits) : null;
 
   const dayGanZhi = input.dayGanZhi ?? (() => {
-    const now = new Date();
+    const now = new Date(); // allow-clock: 未传日辰时按起卦当天取日干起六神；asOf 可钉死
     const jdn = toJDN(now.getFullYear(), now.getMonth() + 1, now.getDate());
     const g = ganzhiName(dayGanzhiIndex(jdn));
     return { stem: g.stem, branch: g.branch, name: g.name };
@@ -7590,6 +7817,12 @@ function dayRelationOf(element, dayElement) {
   return 'unknown';
 }
 
+/** opts 省略或传 null 都按默认口径；显式给了别的类型则当场报 E_INPUT。 */
+function liuyaoOpts(opts, who, shape) {
+  if (opts === null || opts === undefined) return {};
+  return assertObject(opts, who, `${shape}；省略或 null 按默认口径`);
+}
+
 /**
  * 用神旺衰：把月建、日辰两股外部力量落到用神那几爻上。
  * 月建按月支、日辰按日支，各出自己的五行，再与本爻五行论生克；
@@ -7599,6 +7832,7 @@ function dayRelationOf(element, dayElement) {
  * @param {{monthBranch?: string, dayBranch?: string}} opts
  */
 function yongshenStrength(result, useGod, opts = {}) {
+  opts = liuyaoOpts(opts, 'yongshenStrength 的 opts', '{ monthBranch?, dayBranch? }');
   if (!useGod || !Array.isArray(useGod.found) || !useGod.found.length) return null;
   const monthBranch = opts.monthBranch || null;
   const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
@@ -7675,6 +7909,7 @@ const FUSHEN_VERDICTS = ['可出', '有助有压', '受压难出', '未得助'];
  * @param {{monthBranch?: string, dayBranch?: string}} opts
  */
 function fushenAccess(result, useGod, opts = {}) {
+  opts = liuyaoOpts(opts, 'fushenAccess 的 opts', '{ monthBranch?, dayBranch? }');
   if (!useGod || !Array.isArray(useGod.fushen) || !useGod.fushen.length) return null;
   const monthBranch = opts.monthBranch || null;
   const dayBranch = opts.dayBranch || (result && result.dayGanZhi ? result.dayGanZhi.branch : null);
@@ -7750,6 +7985,7 @@ function fushenAccess(result, useGod, opts = {}) {
 // 与用神旺衰同一套判定（月令五态、日辰五关系、三种冲法），区别只在不挑用神：
 // 六爻每一爻都给一次，世应、动爻、旬空另标，看得出整张卦的气压在哪一头。
 function hexagramStrength(result, opts = {}) {
+  opts = liuyaoOpts(opts, 'hexagramStrength 的 opts', '{ monthBranch?, dayBranch? }');
   const rows = (result && result.ben && Array.isArray(result.ben.lines))
     ? result.ben.lines
     : (result && Array.isArray(result.lines) ? result.lines : []);
@@ -7838,6 +8074,7 @@ const TUI_VERDICT = { 旺: '退得缓', 相: '退得缓', 休: '退得实', 囚:
  * @param {{monthBranch?: string, dayBranch?: string}} opts
  */
 function jinTuiPower(result, opts = {}) {
+  opts = liuyaoOpts(opts, 'jinTuiPower 的 opts', '{ monthBranch?, dayBranch? }');
   const items = result && result.body && Array.isArray(result.body.jinTui) ? result.body.jinTui : [];
   if (!items.length) return null;
   const rows = result && result.ben && Array.isArray(result.ben.lines) ? result.ben.lines : [];
@@ -7911,6 +8148,7 @@ const TRIGGER_ORDER = ['逢值', '逢冲', '逢合', '出空填实', '冲空'];
  * @param {{monthBranch?: string}} opts
  */
 function yingqiWindow(result, useGod, opts = {}) {
+  opts = liuyaoOpts(opts, 'yingqiWindow 的 opts', '{ monthBranch? }');
   if (!useGod || !useGod.liuqin) return null;
   const found = Array.isArray(useGod.found) ? useGod.found : [];
   const fushen = Array.isArray(useGod.fushen) ? useGod.fushen : [];
@@ -8573,6 +8811,7 @@ const { nayinOf } = (__mods.nayin || {});
 const { resolveAddress } = (__mods.geo || {});
 const { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } = (__mods['ziwei-zuoyao'] || {});
 const { SHA_STAR } = (__mods['ziwei-words'] || {});
+const { bool } = (__mods.bool || {});
 
 const fix = (i) => ((i % 12) + 12) % 12;
 
@@ -8962,7 +9201,7 @@ function buildZiwei(input) {
   assertCivil(input);
   const schools = ziweiSchoolsOf(input);
   const { year: cy, month: cm, day: cd, hour: ch = 0, minute: cmin = 0, gender = 'male' } = input;
-  const useTrueSolar = input.trueSolar !== false;
+  const useTrueSolar = bool(input.trueSolar, true);
   const geo = input.geo || (input.address ? resolveAddress(input.address) : null);
   const longitude = typeof input.longitude === 'number'
     ? input.longitude
@@ -9236,7 +9475,7 @@ function buildZiwei(input) {
   // 直接读挂钟的话，同一组参数（同一个句柄）跨年会排出不同的流年表，
   // 「同参数同盘」的承诺就只在当年成立。
   const asOfForLiunian = asOfParts(input.asOf);
-  const thisYear = (asOfForLiunian && asOfForLiunian.year) || new Date().getFullYear();
+  const thisYear = (asOfForLiunian && asOfForLiunian.year) || new Date().getFullYear(); // allow-clock: 未传 asOf 时按本机年份起流年；工具层 asOf 可钉死
   const liunian = [];
   for (let y = thisYear; y < thisYear + 12; y++) {
     const gz = ganzhiName((((y - 4) % 60) + 60) % 60);
@@ -9888,7 +10127,7 @@ function asOfParts(v) {
 }
 
 function flowOf(chart, asOf) {
-  const now = new Date();
+  const now = new Date(); // allow-clock: 流日/流时按调用时刻；显式 asOf 会覆盖
   const a = asOfParts(asOf) || {};
   const Y = a.year || now.getFullYear();
   const M = a.month || now.getMonth() + 1;
@@ -10387,12 +10626,17 @@ function tarotDeck() {
 // 名称 → 牌面数据（解读时按名字回查，保证确定性、且不依赖调用方是否带全字段）
 const BY_NAME = new Map(tarotDeck().map((c) => [c.name, c]));
 
+// 外部手输/旧数据常见的另一种译名。只做显式别名，不做模糊匹配：
+// 拼错的牌名不能被猜成另一张，否则解读会披着别的牌义，错得看不出来。
+const CARD_ALIASES = { 愚人: '愚者' };
+const cardMeta = (name) => BY_NAME.get(CARD_ALIASES[name] || name) || null;
+
 const splitKeywords = (s) => String(s || '').split(/\s+/).filter(Boolean);
 
 /** 抽牌时刻（只做记录，不影响牌面） */
 function stamp(at) {
   if (typeof at === 'string' && at.trim()) return at.trim().replace('T', ' ').slice(0, 16);
-  const d = new Date();
+  const d = new Date(); // allow-clock: 未传 asOf 时记录抽牌时刻；牌面由 seed 固定
   const p = (x) => String(x).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
@@ -10416,12 +10660,17 @@ function tarotReading(input = {}) {
   if (!n) return ['没有抽到牌面，无法解读。'];
 
   const names = list.map((c) => c.name).join(' / ');
+  // 牌库外的牌名不能悄悄读成「空牌义」：开场点名是哪几张，逐张处退回正/逆位泛义。
+  const unknown = list.map((c) => c.name).filter((name) => !cardMeta(name));
+  const unknownNote = unknown.length
+    ? `其中「${unknown.join('」「')}」不在韦特 78 张牌库里，这几张只按你给的位置与正逆位泛读，不补牌面、元素与占星对应。`
+    : '';
   const paras = [];
 
   // ① 开场：所问 + 象征系统声明
   paras.push(q
-    ? `你问的是「${q}」，抽到的是 ${n} 张牌阵（${names}）。塔罗是一套象征系统而不是判决：不同流派对牌义、编号与逆位的取舍略有差异，这里按 RWS（韦特）牌名与黄金黎明的元素对应来读，请把下面的话当作镜子，对照自己的处境取用。`
-    : `这次没有具体提问，那就先看牌面本身在说什么。牌阵 ${n} 张（${names}）。塔罗是象征系统，牌义随流派略有差异，这里按 RWS（韦特）与黄金黎明的常见对应来读，读到合用的部分就好。`);
+    ? `你问的是「${q}」，抽到的是 ${n} 张牌阵（${names}）。塔罗是一套象征系统而不是判决：不同流派对牌义、编号与逆位的取舍略有差异，这里按 RWS（韦特）牌名与黄金黎明的元素对应来读，请把下面的话当作镜子，对照自己的处境取用。${unknownNote}`
+    : `这次没有具体提问，那就先看牌面本身在说什么。牌阵 ${n} 张（${names}）。塔罗是象征系统，牌义随流派略有差异，这里按 RWS（韦特）与黄金黎明的常见对应来读，读到合用的部分就好。${unknownNote}`);
 
   // ② 逐张：位义 + 牌名/正逆 + 关键词 + 一句与位义结合的解读
   //    1-3 张时每张一段；4 张以上按前后两段分组（前段取 ceil(n/2) 张），
@@ -10431,8 +10680,10 @@ function tarotReading(input = {}) {
   for (const group of groups) {
     const lines = group.map((i) => {
       const c = list[i];
-      const meta = BY_NAME.get(c.name) || {};
-      const kws = (c.keywords && c.keywords.length ? c.keywords : splitKeywords(c.upright ? meta.up : meta.down)).join('、');
+      const meta = cardMeta(c.name) || {};
+      // 牌库外又没有关键词时，退回正/逆位的泛义，别留下「正位：。」的空句
+      const kws = (c.keywords && c.keywords.length ? c.keywords : splitKeywords(c.upright ? meta.up : meta.down)).join('、')
+        || (c.upright === false ? '逆位泛义（阻滞、内转或用力过头）' : '正位泛义（推进、显化、顺势）');
       const ori = c.upright === false ? '逆位' : '正位';
       const oriNote = c.upright === false
         ? '逆位并不等于凶，更像这股力量还没顺过来，或用力过了头'
@@ -10457,7 +10708,7 @@ function tarotReading(input = {}) {
   const upCount = n - revCount;
   const elementCount = {};
   for (const c of list) {
-    const e = (BY_NAME.get(c.name) || {}).element || c.element;
+    const e = (cardMeta(c.name) || {}).element || c.element;
     if (e) elementCount[e] = (elementCount[e] || 0) + 1;
   }
   const present = ELEMENT_ORDER.filter((e) => elementCount[e]);
@@ -10486,7 +10737,7 @@ function tarotReading(input = {}) {
   const majorCard = list.find((c) => c.arcana === '大阿卡纳');
   const revCard = list.find((c) => c.upright === false);
   const key = majorCard || revCard || list[0];
-  const keyMeta = BY_NAME.get(key.name) || {};
+  const keyMeta = cardMeta(key.name) || {};
   const keyReason = majorCard
     ? '它出现的地方，往往就是这件事真正被牵动的层级'
     : revCard
@@ -10559,7 +10810,9 @@ function drawTarot(input = {}) {
       keywords: splitKeywords(upright ? c.up : c.down),
     };
   });
-  const q = (question || '').trim();
+  // 直接调引擎时 question 可能是数字（工具层 schema 的 string 不做强转），
+  // 以前 (123 || '').trim() 会抛裸 TypeError，整张牌只剩一句内部错误。
+  const q = String(question == null ? '' : question).trim();
   return {
     system: 'tarot',
     question: q || null,
@@ -10581,6 +10834,7 @@ __mods.meihua = (function () {
 const { BRANCHES, fromJDN, toJDN } = (__mods.calendar || {});
 const { solarToLunar } = (__mods.lunar || {});
 const { fail } = (__mods.fail || {});
+const { bool } = (__mods.bool || {});
 const { parseDateTime } = (__mods.datetime || {});
 const { assertShifted } = (__mods.validate || {});
 const { hexagramFromBits } = (__mods.liuyao || {});
@@ -10634,16 +10888,29 @@ function buildMeihua(input = {}) {
   let source;
 
   if (mode === 'number') {
-    const a = Number(input.upper);
-    const b = Number(input.lower);
-    if (!Number.isFinite(a) || !Number.isFinite(b)) throw fail('E_INPUT', '数字起卦需要两个数字（upper / lower），例如 upper=3、lower=5');
+    // 只认真正的数字：Number(null) / Number(false) / Number([]) 都是 0，
+    // 以前缺参或传错类型会静默起成「坤为地」，盘面看着正常却完全不是用户给的字数。
+    const a = input.upper;
+    const b = input.lower;
+    // 小数以前只过 Number.isFinite，mod8(3.5) 得到 4.5，bitsOf 查不到卦再在深处抛
+    // 「bitsOf is not a function」——参数错却报成内部错误。数字起卦只认整数。
+    if (typeof a !== 'number' || typeof b !== 'number' || !Number.isInteger(a) || !Number.isInteger(b)) {
+      throw fail('E_INPUT', '数字起卦需要两个整数（upper / lower），例如 upper=3、lower=5');
+    }
     upperNum = mod8(a);
     lowerNum = mod8(b);
     if (input.changing !== undefined && input.changing !== null && input.changing !== '') {
-      // 以前 99 会被 mod 6 折成 3：用户指定动爻却得到另一爻，结果里看不出来
-      const ch = Number(input.changing);
+      // 以前 99 会被 mod 6 折成 3：用户指定动爻却得到另一爻，结果里看不出来。
+      // Number(true)=1、Number([3])=3 也会静默通过，故只收数字或十进制数字串。
+      const raw = input.changing;
+      const ch = typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string' && /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(raw.trim())
+          ? Number(raw.trim())
+          : NaN;
       if (!Number.isInteger(ch) || ch < 1 || ch > 6) {
-        throw fail('E_INPUT', `动爻 changing 必须是 1–6 的整数，收到「${input.changing}」`);
+        const shown = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        throw fail('E_INPUT', `动爻 changing 必须是 1–6 的整数，收到「${shown}」`);
       }
       moving = ch;
     } else {
@@ -10653,7 +10920,7 @@ function buildMeihua(input = {}) {
   } else {
     const dt = parseDateTime(input.datetime);
     // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 归次日，年月日电数才落在同一子时
-    const lateZi = input.lateZi !== false;
+    const lateZi = bool(input.lateZi, true);
     let sy = dt.year;
     let sm = dt.month;
     let sd = dt.day;
@@ -10739,6 +11006,7 @@ __mods.daliuren = (function () {
 const { toJDN, dayGanzhiIndex, ganzhiName, termWindow, formatJd, jdToParts, xunKongOf } = (__mods.calendar || {});
 const { assertCivil, assertShifted } = (__mods.validate || {});
 const { SANHE_ELEMENT } = (__mods.sanhe || {});
+const { bool } = (__mods.bool || {});
 
 const GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -11043,7 +11311,7 @@ function fanYin(ke, dayGan, dayZhi, stats, isFB) {
 function buildDaliuren(input) {
   assertCivil(input);
   const { year, month, day, hour = 0, minute = 0 } = input;
-  const lateZi = input.lateZi !== false;
+  const lateZi = bool(input.lateZi, true);
   const jdnBase = toJDN(year, month, day);
   const jdn = lateZi && hour >= 23 ? jdnBase + 1 : jdnBase;
   const dayIdx = dayGanzhiIndex(jdn);
@@ -11153,6 +11421,7 @@ const { buildBazi, tenGod } = (__mods.bazi || {});
 const { STEMS, BRANCHES } = (__mods.calendar || {});
 const { assertCivil } = (__mods.validate || {});
 const { SANHE_GROUPS } = (__mods.sanhe || {});
+const { bool } = (__mods.bool || {});
 
 const WX_GAN = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
 const WX_ZHI = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
@@ -11365,7 +11634,7 @@ function buildHepan(input) {
       tenGodToA: godB,
       text: he5
         ? `日干五合（${aStem}${bStem}），传统称「天干五合」，主彼此吸引强，也容易黏在一起分不开。`
-        : `日干无五合：你在对方盘里是「${godA}」，对方在你盘里是「${godB}」。`,
+        : `日干无五合：对方在你盘里是「${godA}」，你在对方盘里是「${godB}」。`,
     },
     crossBranches: uniqCross.slice(0, 8),
     nayin: { a: nyA, b: nyB, label: nayinRel.name, text: nayinRel.text },
@@ -11387,7 +11656,7 @@ function buildHepan(input) {
       wuxing: wxA,
       // 真太阳时口径要能被看到：合盘与单盘用同一套修正，否则同一个人会出现两套四柱
       longitude: A.input.longitude ?? null,
-      trueSolar: A.input.trueSolar !== false,
+      trueSolar: bool(A.input.trueSolar, true),
       solarNote: A.solarTime ? A.solarTime.note : '',
       summary: A.summary,
     },
@@ -11400,7 +11669,7 @@ function buildHepan(input) {
       favor: favorB.join(''),
       wuxing: wxB,
       longitude: B.input.longitude ?? null,
-      trueSolar: B.input.trueSolar !== false,
+      trueSolar: bool(B.input.trueSolar, true),
       solarNote: B.solarTime ? B.solarTime.note : '',
       summary: B.summary,
     },
@@ -11428,6 +11697,7 @@ __mods.trend = (function () {
 // 口径：这是一套**简化启发式**——十神计分表固定、正负号随日主旺衰方向翻转，
 // 只用于看形态与相对起伏；分高不等于真实吉凶，旺衰落在换档边界时连排序都不给。
 const { buildBazi, HIDDEN_STEMS, tenGod } = (__mods.bazi || {});
+const { bool } = (__mods.bool || {});
 const { ganzhiName, sexagenaryIndex, STEMS, BRANCHES } = (__mods.calendar || {});
 const { fail } = (__mods.fail || {});
 
@@ -11531,10 +11801,13 @@ function buildTrend(input) {
     day: input.day,
     hour: Number.isInteger(input.hour) ? input.hour : 12,
     minute: Number.isInteger(input.minute) ? input.minute : 0,
+    // 时辰未知必须一路传到 buildBazi：它在内部统一按正午占位并收回时柱。
+    // 少了这一个键，摘要写着「按正午暂算」，旺衰却按 00:00 算成了另一档。
+    hourUnknown: bool(input.hourUnknown),
     gender,
-    lateZi: input.lateZi !== false,
-    trueSolar: input.trueSolar !== false,
-    dst: input.dst !== false,
+    lateZi: bool(input.lateZi, true),
+    trueSolar: bool(input.trueSolar, true),
+    dst: bool(input.dst, true),
     address: typeof input.address === 'string' ? input.address : undefined,
     longitude: typeof input.longitude === 'number' ? input.longitude : undefined,
     geo: input.geo && typeof input.geo === 'object' ? input.geo : undefined,
@@ -11650,6 +11923,8 @@ __mods.fengshui = (function () {
 const { partsToJd, termInstantJd, toJDN, dayGanzhiIndex, ganzhiName, termWindow, previousJie, BRANCHES } = (__mods.calendar || {});
 const { applyDst } = (__mods.dst || {});
 const { fail } = (__mods.fail || {});
+const { bool } = (__mods.bool || {});
+const { assertCivil, MIN_YEAR, MAX_YEAR } = (__mods.validate || {});
 
 /** 九星名称表：数 → {name, color, element, star(北斗名), lucky}。 */
 const NINE_STARS = {
@@ -11738,7 +12013,10 @@ const GUA_BY_NUM = ['坎', '坤', '震', '巽', '中', '乾', '兑', '艮', '离
  */
 function mingGua(birthYear, gender) {
   const tail = ((birthYear % 100) + 100) % 100;
-  const century = birthYear >= 2000 ? { male: 99, female: 3 } : { male: 100, female: 4 };
+  // 世纪常数每个世纪减 1：1900s 男 100 / 女 4，2000s 99 / 3，2100s 98 / 2……
+  // 以前只在「>=2000」时切一次 99/3，2100 年以后（引擎支持到 2400）会整档算错。
+  const shift = Math.floor(birthYear / 100) - 19;
+  const century = { male: 100 - shift, female: 4 - shift };
   const mod9 = (n) => { const r = ((n % 9) + 9) % 9; return r === 0 ? 9 : r; };
   let num = gender === 'male' ? mod9(century.male - tail) : mod9(tail - century.female);
   if (num === 5) num = gender === 'male' ? 2 : 8;
@@ -12084,9 +12362,10 @@ function xuankongChart(period, sitting, facing, opts = {}) {
 
 /** DST 校正出生日期（1986–1991），返回校正后的年月日。 */
 function civilDate(input) {
-  const dst = input.dst === false
-    ? { year: input.year, month: input.month, day: input.day, hour: 0, minute: 0, applied: false, note: null }
-    : applyDst({ year: input.year, month: input.month, day: input.day, hour: 0, minute: 0 });
+  // 开启 DST 校正（默认开）才走 applyDst；显式关闭时不动日期
+  const dst = bool(input.dst, true)
+    ? applyDst({ year: input.year, month: input.month, day: input.day, hour: 0, minute: 0 })
+    : { year: input.year, month: input.month, day: input.day, hour: 0, minute: 0, applied: false, note: null };
   return { year: dst.year, month: dst.month, day: dst.day, dst };
 }
 
@@ -12115,6 +12394,10 @@ function buildFengshui(input) {
   if (input.fortuneYear !== undefined && input.fortuneYear !== null && input.fortuneYear !== '') {
     const fy = Number(input.fortuneYear);
     if (!Number.isInteger(fy)) throw fail('E_INPUT', `fortuneYear 必须是整数年份，收到「${input.fortuneYear}」`);
+    // 只校验「是整数」会放过 0 / 负数：年紫白照样按公式给出一颗星，看着像算过。
+    if (fy < MIN_YEAR || fy > MAX_YEAR) {
+      throw fail('E_INPUT', `fortuneYear 超出支持范围 ${MIN_YEAR}–${MAX_YEAR}（收到 ${fy}）`);
+    }
     input = { ...input, fortuneYear: fy };
   }
   const action = input.action;
@@ -12130,6 +12413,9 @@ function buildFengshui(input) {
   if (!Number.isInteger(input.year) || !Number.isInteger(input.month) || !Number.isInteger(input.day)) {
     throw fail('E_INPUT', '风水命卦需要完整出生年月日（公历）——只知道年份不够：命卦按立春界划分出生年');
   }
+  // 与其它体系同一把尺：2 月 30 日、13 月、越界年份必须在入口报错，
+  // 否则会被 Date 静默滚到下个月，命卦按另一天算出来却没人知道。
+  assertCivil(input, '风水命卦');
   const civil = civilDate(input);
   const guaYear = guaYearOf(civil.year, civil.month, civil.day);
   const { num, gua, direction } = mingGua(guaYear, gender);
@@ -12292,7 +12578,7 @@ function parseFortuneAt(input) {
   }
   const [hour, minute] = rawTime.split(':').map(Number);
   if (hour > 23 || minute > 59) throw fail('E_INPUT', `fortuneTime 超出范围（HH:MM）：「${rawTime}」`);
-  const dst = input.dst === false ? null : applyDst({ year, month, day, hour, minute });
+  const dst = bool(input.dst, true) ? applyDst({ year, month, day, hour, minute }) : null;
   const at = dst ? { year: dst.year, month: dst.month, day: dst.day, hour: dst.hour, minute: dst.minute } : { year, month, day, hour, minute };
   return { at, dst };
 }
@@ -12350,7 +12636,7 @@ function buildXuankong(input) {
       action: 'xuankong',
       period,
       periodLabel: yearInfo ? yearInfo.label : `${period}运`,
-      ...(yearInfo ? { year: input.fortuneYear || (fortune && fortune.at.year), periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
+      ...(yearInfo ? { year: input.fortuneYear ?? (fortune && fortune.at.year), periodStart: yearInfo.start, periodEnd: yearInfo.end } : {}),
       sitting: `${sitting.m}山（罗盘 ${sitting.deg}°）`,
       facing: `${facing.m}山（罗盘 ${facing.deg}°）`,
       sittingGua: sitting.gua,
@@ -13241,6 +13527,7 @@ __mods.name = (function () {
 //       五格按康熙字典繁体笔画计（见 name-data.js 的口径说明），81 数理取通行本；
 //       音韵只做机械检查（同调、相邻同声母/同韵母、叠字），不做语义谐音判断。
 const { buildBazi } = (__mods.bazi || {});
+const { bool } = (__mods.bool || {});
 const { assertCivil, assertObject } = (__mods.validate || {});
 const { fail } = (__mods.fail || {});
 const { READING, SURNAME_STROKES, SURNAME_READING, SURNAME_ALT_READING, DOUBLE_SURNAMES, SHULI_81 } = (__mods['name-data'] || {});
@@ -13502,19 +13789,23 @@ const WX_REL = (a, b) => (a === b ? '同' : SHENG[a] === b ? '生' : KE[a] === b
 
 /** 数理超过 81 按传统「减 80 循环」取（如 104 → 24）。 */
 function shuliOf(n) {
-  let x = n;
-  while (x > 81) x -= 80;
+  // 用取模代替 while 递减：strokeOverrides 允许用户给任意正整数，
+  // 以前给 1e12 会在这里空转一百多亿次，整次排盘卡死。
+  const x = n > 81 ? ((n - 1) % 80) + 1 : n;
   if (!(x >= 1)) return null;
   const row = SHULI_81[x];
   return row ? { num: x, level: row[0], name: row[1] } : null;
 }
 
-/** 合并两处笔画覆盖：surnameStrokes（按姓给的）+ strokeOverrides（逐字覆盖），后者优先。 */
+/** 合并两处笔画覆盖：surnameStrokes（按姓给的）+ strokeOverrides（逐字覆盖），后者优先。
+ *  笔画值允许数字串（`{"秋":"9"}`）：模型经 JSON 传参时常见，只在入口归一还不够——
+ *  这里再兜一层，免得「用户给了笔画却被静默按字库算」这种错法又冒出来。 */
 function overridesOf(input) {
   const out = {};
   for (const src of [input && input.surnameStrokes, input && input.strokeOverrides]) {
     if (!src || typeof src !== 'object') continue;
-    for (const [k, v] of Object.entries(src)) {
+    for (const [k, raw] of Object.entries(src)) {
+      const v = typeof raw === 'string' ? Number(raw.trim()) : raw;
       if (Number.isInteger(v) && v > 0) out[k] = v;
     }
   }
@@ -13742,12 +14033,14 @@ function assessName(input) {
     assertCivil(input, 'birth');
     const r = buildBazi({
       year: input.year, month: input.month, day: input.day,
-      hour: Number.isInteger(input.hour) ? input.hour : 12,
+      // 只给日期时与 datetime:'YYYY-MM-DD' 同一口径（00:00 占位）；引擎摘要会标明缺时刻，
+      // 以前这里悄悄补 12:00，同一个生日走 datetime 和 year/month/day 会得到两档旺衰。
+      hour: Number.isInteger(input.hour) ? input.hour : 0,
       minute: Number.isInteger(input.minute) ? input.minute : 0,
       gender: input.gender || 'male',
-      lateZi: input.lateZi !== false,
-      trueSolar: input.trueSolar !== false,
-      dst: input.dst !== false,
+      lateZi: bool(input.lateZi, true),
+      trueSolar: bool(input.trueSolar, true),
+      dst: bool(input.dst, true),
       longitude: input.longitude, address: input.address, geo: input.geo,
     });
     strength = { level: r.strength.level, score: r.strength.score, dayElement: r.pillars.day.stemElement };
@@ -13843,12 +14136,13 @@ function generateNames(input) {
   const limit = Math.max(1, Math.min(20, Number.isInteger(input.limit) ? input.limit : 10));
   const r = buildBazi({
     year: input.year, month: input.month, day: input.day,
-    hour: Number.isInteger(input.hour) ? input.hour : 12,
+    // 与 assessName 同一口径：缺时刻按 00:00 占位，由引擎摘要统一提示
+    hour: Number.isInteger(input.hour) ? input.hour : 0,
     minute: Number.isInteger(input.minute) ? input.minute : 0,
     gender,
-    lateZi: input.lateZi !== false,
-    trueSolar: input.trueSolar !== false,
-    dst: input.dst !== false,
+    lateZi: bool(input.lateZi, true),
+    trueSolar: bool(input.trueSolar, true),
+    dst: bool(input.dst, true),
     longitude: input.longitude, address: input.address, geo: input.geo,
   });
   const strength = { level: r.strength.level, score: r.strength.score, dayElement: r.pillars.day.stemElement };
@@ -16269,8 +16563,11 @@ function buildMbti(input = {}) {
       picked,
       strength: strengthOf(pct, answered),
       tie: sum === 0,
+      unanswered: answered === 0,
     };
   });
+  // 整维未答时 letter 只是 tie 占位；把它单独列出来，摘要与面板才不会当成「测出来了」
+  const unanswered = dims.filter((d) => d.unanswered).map((d) => d.key);
   const type = dims.map((d) => d.picked).join('');
   const profile = TYPES[type];
   if (!profile) throw fail('E_SYSTEM', `内部错误：类型 ${type} 没有对应文案`);
@@ -16297,7 +16594,9 @@ function buildMbti(input = {}) {
     answered: answeredAll,
     skipped: QUESTIONS.length - answeredAll,
     total: QUESTIONS.length,
-    note: '四维各 6 题、李克特 1–5 计分，按维度净分取字母（平手时取 I / N / F / P 一侧并标「临界」）。这是 MBTI 风格的问卷测算，不是官方量表；类型只作自我参照，不是能力评价，也不用它给人下结论。',
+    unanswered,
+    note: '四维各 6 题、李克特 1–5 计分，按维度净分取字母（平手时取 I / N / F / P 一侧并标「临界」）。这是 MBTI 风格的问卷测算，不是官方量表；类型只作自我参照，不是能力评价，也不用它给人下结论。'
+      + (unanswered.length ? ` 本轮 ${unanswered.join('、')} 维度一题未答，该维按平手取字母，只作占位，参考价值有限。` : ''),
   };
 }
 
@@ -16312,6 +16611,7 @@ const { ganzhiName, toJDN, fromJDN, dayGanzhiIndex } = (__mods.calendar || {});
 const { assertCivil, assertShifted } = (__mods.validate || {});
 const { hourToBranch } = (__mods.almanac || {});
 const { fail } = (__mods.fail || {});
+const { bool } = (__mods.bool || {});
 
 /** 六十甲子年骨重（单位：钱；索引 = (农历年 - 4) mod 60，0 = 甲子）。 */
 const YEAR_WEIGHT = [
@@ -16454,7 +16754,7 @@ function buildChenggu(input) {
   }
   // 晚子时换日与八字/六壬/奇门同口径：23:00–23:59 按次日取农历日与日柱，
   // 否则同一子时的前后两个钟点会差一天的日重
-  const lateZi = input.lateZi !== false;
+  const lateZi = bool(input.lateZi, true);
   let sy = year;
   let sm = month;
   let sd = day;
@@ -16523,6 +16823,7 @@ __mods.xiaoliuren = (function () {
 // 小六壬（诸葛马前课）：月/日/时（或报三个数）掐指落宫，六宫循环。
 // 口径：通行掌诀；断语为白话提炼（非原文照录）。轻量快占，属民俗参考。
 const { solarToLunar } = (__mods.lunar || {});
+const { bool } = (__mods.bool || {});
 const { hourToBranch } = (__mods.almanac || {});
 const { BRANCHES, fromJDN, toJDN } = (__mods.calendar || {});
 const { parseYmd } = (__mods.datetime || {});
@@ -16571,7 +16872,7 @@ function buildXiaoliuren(input) {
     let y = mt.year;
     let mo = mt.month;
     let dy = mt.day;
-    const lateZi = input.lateZi !== false;
+    const lateZi = bool(input.lateZi, true);
     if (lateZi && input.hour >= 23) {
       const next = assertShifted(fromJDN(toJDN(y, mo, dy) + 1), '小六壬时间起课');
       y = next.year;
@@ -17929,6 +18230,7 @@ __mods.convert = (function () {
 const { solarToLunar } = (__mods.lunar || {});
 const { fromJDN, toJDN } = (__mods.calendar || {});
 const { buildAlmanac } = (__mods.almanac || {});
+const { bool } = (__mods.bool || {});
 const { assertCivil, assertObject, daysInMonth } = (__mods.validate || {});
 const { fail } = (__mods.fail || {});
 
@@ -18010,7 +18312,7 @@ function buildConvert(input) {
     if (m < 1 || m > 12) throw fail('E_INPUT', '农历月份须在 1–12');
     const months = lunarMonths(y);
     if (!months.length) throw fail('E_INPUT', `农历 ${y} 年无法定位正月，请核对年份（1600–2400）`);
-    const isLeap = input.isLeapMonth === true;
+    const isLeap = bool(input.isLeapMonth);
     const hit = months.find((x) => x.month === m && x.isLeap === isLeap);
     if (!hit) {
       const leapMonths = months.filter((x) => x.isLeap).map((x) => `闰${MONTH_TEXT[x.month - 1]}月`);
@@ -22505,6 +22807,7 @@ __mods.rectify = (function () {
 //   2. 只有时柱（以及跨 23:00 时的日柱）会变，年/月柱通常不变，所以候选之间的差异集中在晚运、子女、事业后半段；
 //   3. 打分规则是显式、固定的（见 matchEvent），不是拟合；换一套规则排序可能变。
 const { buildBazi } = (__mods.bazi || {});
+const { bool } = (__mods.bool || {});
 
 const KINDS = ['career', 'wealth', 'love', 'move', 'health', 'other'];
 const HOURS = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23];
@@ -22619,9 +22922,9 @@ function rectifyBirth(opts) {
       hour,
       minute: 0,
       gender,
-      lateZi: opts.lateZi !== false,
-      trueSolar: opts.trueSolar !== false,
-      dst: opts.dst !== false,
+      lateZi: bool(opts.lateZi, true),
+      trueSolar: bool(opts.trueSolar, true),
+      dst: bool(opts.dst, true),
       address: typeof opts.address === 'string' ? opts.address : undefined,
       longitude: typeof opts.longitude === 'number' ? opts.longitude : undefined,
       geo: opts.geo && typeof opts.geo === 'object' ? opts.geo : undefined,
@@ -22706,6 +23009,7 @@ const { PATTERN_TONE } = (__mods.ziwei || {});
 const { yongshenOf, yongshenStrength, fushenAccess } = (__mods.liuyao || {});
 const { qimenYongshen } = (__mods['qimen-interpret'] || {});
 const { GAN_JI_GONG } = (__mods.daliuren || {});
+const { bool } = (__mods.bool || {});
 
 const SYSTEM_LABEL = { liuyao: '六爻', bazi: '八字', ziwei: '紫微', qimen: '奇门', daliuren: '大六壬' };
 
@@ -23126,7 +23430,7 @@ function buildTrace(result, opts = {}) {
   if (result.system === 'liuyao') {
     let view = result;
     // 面板改了「询问方向」但不想重摇一卦：只按新方向重算用神相关三层
-    if (opts.refresh === true) {
+    if (bool(opts.refresh)) {
       try {
         const ug = yongshenOf(result, { direction: opts.direction, gender: opts.gender });
         const monthBranch = (result.hexStrength && result.hexStrength.month && result.hexStrength.month.branch)
@@ -25016,6 +25320,7 @@ const { buildZiweiHepan } = (__mods['ziwei-hepan'] || {});
 const { buildQimen, buildSnapshot } = (__mods.qimen || {});
 const { geocodeAddress, resolveAddress } = (__mods.geo || {});
 const { toJDN, ganzhiName, dayGanzhiIndex } = (__mods.calendar || {});
+const { bool, canonicalFlags, canonicalNumbers } = (__mods.bool || {});
 const { randomOf, isSeed } = (__mods.random || {});
 const { encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys } = (__mods.handle || {});
 const { askLink, parseAskLink, formOf, restNote, askPackages } = (__mods.bridge || {});
@@ -25041,7 +25346,7 @@ const { buildFengshui } = (__mods.fengshui || {});
 const { buildName } = (__mods.name || {});
 const { buildTrace, traceMarkdown, SYSTEM_LABEL } = (__mods.trace || {});
 const { fail } = (__mods.fail || {});
-const { assertCivil } = (__mods.validate || {});
+const { assertCivil, MIN_YEAR, MAX_YEAR } = (__mods.validate || {});
 const { parseDateTime, daysInMonth } = (__mods.datetime || {});
 
 
@@ -25050,6 +25355,25 @@ const { parseDateTime, daysInMonth } = (__mods.datetime || {});
 const pad = (n) => String(n).padStart(2, '0');
 
 const GENDERS = ['male', 'female'];
+
+/**
+ * 时刻会改变盘面、且允许只给日期的体系：那时按 00:00 排，必须当场说清。
+ * 黄历 / 择日 / 公农历转换只以「日」为输入，缺时刻是正常用法；
+ * 六爻取日辰与月建定六神、旬空，不看钟点；梅花数字起卦也不看时间——都在名单外。
+ * 称骨与小六壬缺时辰直接报错（时辰不可代填），同样不需要这句提示。
+ */
+const HOUR_MATTERS = new Set(['bazi', 'ziwei', 'hepan', 'trend', 'meihua', 'daliuren', 'qimen', 'name']);
+/** 缺时刻时那句提示里要说清的「按什么排」，以及该怎么补（hourUnknown 只对八字/趋势有定义） */
+const NO_TIME_NOTE = {
+  bazi: { what: '时柱', advice: '知道大概几点就补上，不知道就传 hourUnknown:true（只排三柱）' },
+  ziwei: { what: '命宫与生时星曜', advice: '紫微排不出三柱，必须补上出生时刻' },
+  hepan: { what: '两侧时柱', advice: '两侧都要出生时刻，合盘才有意义' },
+  trend: { what: '时柱与起运', advice: '知道大概几点就补上，不知道就传 hourUnknown:true（按日估算）' },
+  meihua: { what: '起卦时刻', advice: '时间起卦要用真实起念时刻，请补 HH:mm' },
+  daliuren: { what: '起课时辰（月将与贵人）', advice: '请补起课时刻 HH:mm' },
+  qimen: { what: '起局时辰（旬首与局数）', advice: '请补起局时刻 HH:mm' },
+  name: { what: '时柱', advice: '请补出生时刻 HH:mm' },
+};
 
 /**
  * 性别是必填项：它决定大运/大限的顺逆，缺省按某一方排等于给出一张错盘。
@@ -25518,14 +25842,14 @@ function shadowPerson(person = {}) {
   if (person.gender) out.gender = String(person.gender).toLowerCase();
   if (person.longitude !== undefined) out.longitude = num6(person.longitude);
   else if (person.address) out.address = String(person.address).trim();
-  if (person.lateZi !== undefined) out.lateZi = person.lateZi !== false;
-  if (person.trueSolar !== undefined) out.trueSolar = person.trueSolar !== false;
-  if (person.dst !== undefined) out.dst = person.dst !== false;
+  if (person.lateZi !== undefined) out.lateZi = bool(person.lateZi, true);
+  if (person.trueSolar !== undefined) out.trueSolar = bool(person.trueSolar, true);
+  if (person.dst !== undefined) out.dst = bool(person.dst, true);
   return out;
 }
 
 function qimenLateMode(args) {
-  if (args.lateZiHourMode === 'next-day' || args.lateZi === true) return 'next-day';
+  if (args.lateZiHourMode === 'next-day' || bool(args.lateZi)) return 'next-day';
   return 'same-day';
 }
 
@@ -25537,8 +25861,8 @@ function shadowParams(args, result) {
       civil: input.civil,
       gender: input.gender,
       longitude: num6(input.longitude),
-      lateZi: input.lateZi !== false,
-      trueSolar: input.trueSolar !== false,
+      lateZi: bool(input.lateZi, true),
+      trueSolar: bool(input.trueSolar, true),
       dst: !!(input.dst && input.dst.applied),
     };
   }
@@ -25548,9 +25872,9 @@ function shadowParams(args, result) {
       gender: input.gender,
       longitude: num6(input.longitude),
       leapMonth: input.leapMonth || 'split',
-      leapAsNext: input.leapAsNext === true,
+      leapAsNext: bool(input.leapAsNext),
       schools: input.schools || ZIWEI_SCHOOL_DEFAULTS,
-      trueSolar: input.trueSolar !== false,
+      trueSolar: bool(input.trueSolar, true),
       dst: !!(input.dst && input.dst.applied),
     };
   }
@@ -25636,7 +25960,10 @@ function normalizeAsOf(value) {
   const parts = asOfParts(s);
   if (!parts) return s; // 非法值留给 checkAsOf 报错，指纹不抢答
   const p2 = (n) => String(n).padStart(2, '0');
-  return `${parts.year}-${p2(parts.month)}-${p2(parts.day)}T${p2(parts.hour)}:${p2(parts.minute)}`;
+  // 年份也要补到 4 位：asOfParts 的正则只认四位年份，0000 原样拼成 '0-01-01T12:00'
+  // 会在 checkAsOf 里被当成格式错误，报出「无法解析 asOf：「0-01-01T12:00」」这种看不懂的话。
+  const y4 = String(parts.year).padStart(4, '0');
+  return `${y4}-${p2(parts.month)}-${p2(parts.day)}T${p2(parts.hour)}:${p2(parts.minute)}`;
 }
 
 /**
@@ -25753,6 +26080,14 @@ function compute(input = {}) {
     // 称骨句柄里的 hour 会跟到八字盘上，被工具层当成误传报错。
     args = pruneForeignKeys(args, ownedKeys(input, rev.patch));
   }
+  // 开关归一：排盘读的、句柄记的、指纹比的是同一份真布尔。
+  // 少了这一刀，`trueSolar:"false"` 会排出「开真太阳时」的盘而句柄写 false——
+  // 同一张盘两个身份，影子盘对拍与深链回放都会错过。
+  args = canonicalFlags(args);
+  // 数字归一：`count:"3"` 与 `count:3` 是同一张盘，句柄与指纹也只能有一个身份。
+  // 放在开关之后、asOf / 经度 / verifyPast 整形之前：后面几处校验读到的是真数字，
+  // 「收到「9」」这种字面看着没错的报错也就不会再出现。
+  args = canonicalNumbers(args);
   // asOf 在入口就归一成 canonical 串（去首尾空格、只给日期补 12:00）：
   // 排盘、句柄、影子盘指纹读同一份。以前只有指纹 trim，句柄照抄原文，
   // '2030-01-01' 与 '2030-01-01T12:00' 出的明明是同一张盘，却各得一个 handle、一个 baseId。
@@ -25827,6 +26162,36 @@ ${r.summary}`;
     r.summary = `时柱暂缺：起运与大运按日估算，仅供参考
 ${r.summary}`;
   }
+  // 只给日期、没给时刻：parseDateTime 会把时分补成 00:00，于是照常排出完整四柱/起好局，
+  // 而调用方以为「日期就够了」。这类静默默认正是最该说出来的一种：盘面上看不出任何异常。
+  // 梅花数字起卦只读 upper/lower，datetime 不参与取卦，不该被这句提示打扰。
+  const ignoresClock = r && r.system === 'meihua' && args.mode === 'number';
+  const datetimeDateOnly = typeof args.datetime === 'string' && args.datetime.trim() !== ''
+    && !/[T\s]\d{1,2}:\d{1,2}/.test(args.datetime.trim());
+  // name 还支持 year/month/day(+hour/minute) 分开给生辰：只给年月日时，
+  // buildName 内部同样按 00:00 占位，不能因为没走 datetime 就绕过这句提示。
+  const nameDateOnly = r && r.system === 'name' && !(typeof args.datetime === 'string' && args.datetime.trim())
+    && Number.isInteger(args.year) && Number.isInteger(args.month) && Number.isInteger(args.day)
+    && !Number.isInteger(args.hour);
+  if (r && !ignoresClock && !r.hourUnknown && !r.timeMissing && HOUR_MATTERS.has(r.system)
+    && (datetimeDateOnly || nameDateOnly) && r.summary) {
+    r.timeMissing = true;
+    const note = NO_TIME_NOTE[r.system] || { what: '时刻', advice: '请补上时刻 HH:mm' };
+    r.summary = `⚠ 只给了日期、没有时刻：${note.what}按 00:00 暂算，与真实结果可能整档不同；${note.advice}\n${r.summary}`;
+  }
+  // 合盘的另一方同样是「只给日期」的静默 00:00，主方有提示、对方没有就等于只报了一半
+  if (r && r.system === 'hepan' && r.summary) {
+    const missing = [];
+    for (const [who, label] of [['partner', '对方'], ['partner2', '第三方']]) {
+      const person = args[who];
+      const when = person && typeof person === 'object' ? person.datetime : undefined;
+      if (typeof when === 'string' && !/[T\s]\d{1,2}:\d{1,2}/.test(when.trim())) missing.push(label);
+    }
+    if (missing.length) {
+      r.timeMissing = true;
+      r.summary = `⚠ 只给了日期、没有时刻：${missing.join('、')}的时柱按 00:00 暂算，与真实结果可能整档不同；请补出生时刻 HH:mm\n${r.summary}`;
+    }
+  }
   // 显式要求时才附加解析模块，避免默认输出过长；「所问之事」与「询问方向」一并传进去
   const tier = detailOf(args.detail);
   if (args.withInterpret) {
@@ -25836,13 +26201,14 @@ ${r.summary}`;
     });
     // 档位只改「回给模型的文本」，不改解析对象：面板拿到的仍是完整的 interpret。
     // 键名不用 detail / tier：合盘结果里 r.detail 是详批对象、流年行里 r.tier 是档位，都会撞。
-    if (tier === 'lean') r.interpretTier = 'lean';
+    // 有些体系没有解析模块（interpret 为 null），此时不该留下一个没有正文的档位键。
+    if (r.interpret && tier !== 'full') r.interpretTier = tier;
   }
   // 八字 × 紫微交叉验证：同一份出生信息再排另一套盘，并列两边对同一件事的说法
   // 交叉验证要再排另一套盘：时辰未知时紫微排不出来，这条支路直接跳过，
   // 不能拿正午排一张紫微盘来「交叉」，那是两张都不可信的盘互证。
-  if (args.cross === true && args.hourUnknown === true) r.crossSkipped = 'HOUR_UNKNOWN';
-  if (args.cross === true && args.hourUnknown !== true && (r.system === 'bazi' || r.system === 'ziwei')) {
+  if (bool(args.cross) && bool(args.hourUnknown)) r.crossSkipped = 'HOUR_UNKNOWN';
+  if (bool(args.cross) && !bool(args.hourUnknown) && (r.system === 'bazi' || r.system === 'ziwei')) {
     const cdt = parseDateTime(args.datetime);
     const common = {
       ...cdt,
@@ -25850,13 +26216,28 @@ ${r.summary}`;
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
-      trueSolar: args.trueSolar !== false,
-      dst: args.dst !== false,
+      trueSolar: bool(args.trueSolar, true),
+      dst: bool(args.dst, true),
     };
     const asOf = checkAsOf(args.asOf);
+    // 八字显式写了 lateZi 时，交叉的紫微盘必须同口径：23:00 后一边按次日、一边按当日，
+    // 等于拿两个生日互证。没写时仍按紫微自己的 current-day 缺省，不改既有交叉结果；
+    // 显式 lateZishi（紫微历史参数名）优先。
+    const crossLateZishi = args.lateZishi !== undefined
+      ? args.lateZishi
+      : args.lateZi === undefined || args.lateZi === null || args.lateZi === ''
+        ? undefined
+        : bool(args.lateZi, true) ? 'next-day' : 'current-day';
     const other = r.system === 'bazi'
-      ? buildZiwei({ ...common, leapMonth: args.leapMonth, leapAsNext: args.leapAsNext === true, ...ziweiSchoolArgs(args), asOf })
-      : buildBazi({ ...common, lateZi: args.lateZi !== false, nowYear: asOf ? asOf.year : undefined });
+      ? buildZiwei({
+        ...common,
+        leapMonth: args.leapMonth,
+        leapAsNext: bool(args.leapAsNext),
+        ...ziweiSchoolArgs(args),
+        ...(crossLateZishi !== undefined ? { lateZishi: crossLateZishi } : {}),
+        asOf,
+      })
+      : buildBazi({ ...common, lateZi: bool(args.lateZi, true), nowYear: asOf ? asOf.year : undefined });
     r.cross = crossCheck(r.system === 'bazi' ? r : other, r.system === 'ziwei' ? r : other);
     if (r.interpret) {
       r.interpret.sections.push(crossSection(r.cross));
@@ -25870,14 +26251,14 @@ ${r.summary}`;
       ...parseDateTime(args.datetime),
       // 与主盘同口径：主盘 hourUnknown 时内部按正午占位，过去盘若还用 00:00，
       // 流年信号就来自子夜的盘，与用户看到的不是同一张
-      hourUnknown: args.hourUnknown === true,
+      hourUnknown: bool(args.hourUnknown),
       gender: requireGender(args.gender),
-      lateZi: args.lateZi !== false,
-      trueSolar: args.trueSolar !== false,
+      lateZi: bool(args.lateZi, true),
+      trueSolar: bool(args.trueSolar, true),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
-      dst: args.dst !== false,
+      dst: bool(args.dst, true),
       nowYear: from,
     });
     r.past = {
@@ -25887,16 +26268,16 @@ ${r.summary}`;
     };
   }
   // 生时校正：候选时辰 × 过去事件，按固定规则打分（仅八字）
-  if (args.rectify === true && r.system === 'bazi') {
+  if (bool(args.rectify) && r.system === 'bazi') {
     const base = parseDateTime(args.datetime);
     r.rectify = rectifyBirth({
       base: { year: base.year, month: base.month, day: base.day, minute: base.minute },
       gender: requireGender(args.gender),
       events: Array.isArray(args.events) ? args.events : [],
       hours: Array.isArray(args.rectifyHours) ? args.rectifyHours : undefined,
-      lateZi: args.lateZi !== false,
-      trueSolar: args.trueSolar !== false,
-      dst: args.dst !== false,
+      lateZi: bool(args.lateZi, true),
+      trueSolar: bool(args.trueSolar, true),
+      dst: bool(args.dst, true),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
@@ -25905,7 +26286,7 @@ ${r.summary}`;
   // 追问：围绕已算好的盘回答「某一年 / 某方面」的具体问题
   if (typeof args.ask === 'string' && args.ask.trim()) r.followup = followup(r, args.ask);
   // 推导链：只读结果、不重算；生成失败不影响盘面，单独留一条错误信息
-  if (args.trace === true) {
+  if (bool(args.trace)) {
     try {
       const layers = buildTrace(r, { direction: args.direction, gender: args.gender });
       if (layers) {
@@ -25918,7 +26299,7 @@ ${r.summary}`;
     }
   }
   // 影子盘 ID：同一组归一化参数 + 同一版本 → 同一个短 ID；显式要时才挂，避免默认输出变长
-  if (args.shadow === true) {
+  if (bool(args.shadow)) {
     try {
       r.shadow = chartFingerprint(args, { result: r, version: args.shadowVersion });
     } catch (e) {
@@ -25936,11 +26317,17 @@ ${r.summary}`;
 }
 
 /** 解析与详解的紧凑文本（给模型看，不塞整块 JSON）
- *  detail：'full'（默认，与历史输出逐字一致）或 'lean'（只给结论、你问的那条与三张表，
- *  长论述与「规则·出处」折成一行指针）。省的是回给模型的文本，不改盘面、不改解析对象本身。 */
+ *  detail：'full'（默认全文）/ 'lean'（只给结论、所问方向与三张表，长论述与规则出处折成指针）/
+ *  'brief'（在 lean 上再限表行；工具层在 withInterpret 且未指定档位时用这一档）。
+ *  省的是回给模型的文本，不改盘面、不改解析对象本身。
+ *  **不设体积上限**：brief 只做「少给哪些维度、表最多几行」这类结构性收敛，
+ *  超长就让它超长——按字节截断会把结论、依据、边界一起腰斩，省下的体积不值这个代价。 */
 function interpretText(i, detail) {
   if (!i) return '';
+  const brief = detail === 'brief';
   const lean = detail === 'lean';
+  const compact = brief || lean;
+  const BRIEF_TABLE_ROWS = 8;
   const LONG_SECTION = 300;
   const out = [`【${i.title || '解析与详解'}】${i.ask && i.ask.echo ? i.ask.echo : ''}`];
   // 直答放在最前：先回答「你问的事」，再说依据，避免读者读到最后才知道结论；
@@ -25956,12 +26343,12 @@ function interpretText(i, detail) {
   if (i.error) out.push(`⚠ 解析生成失败：${i.error}（上方盘面数据本身可用）`);
   const allDims = i.dimensions || [];
   // 问了方向就只给那一条：其余四条在 full 档里，模型要展开随时可以再排一次
-  const dims = lean && allDims.some((d) => d && d.focused) ? allDims.filter((d) => d && d.focused) : allDims;
+  const dims = compact && allDims.some((d) => d && d.focused) ? allDims.filter((d) => d && d.focused) : allDims;
   for (const d of dims) {
     const evidence = Array.isArray(d.evidence) && d.evidence.length ? `\n　依据：${d.evidence.join('；')}${d.confidence ? `　置信度：${d.confidence}` : ''}` : '';
     const plain = d.plain ? `（${d.plain}）` : '';
     // 知识条目：「为什么这样断」＋出处＋可信度标注，是结论与依据之外的第三层
-    const know = lean
+    const know = compact
       ? ((d.knowledge || []).length ? `\n　规则 ${d.knowledge.length} 条未展开（detail:"full" 给出原文与出处）` : '')
       : (d.knowledge || [])
         .map((k) => `\n　规则·${k.gist}〔${k.statusLabel}〕${k.detail}　出处：${k.source}${k.note ? `　注：${k.note}` : ''}`)
@@ -25969,31 +26356,41 @@ function interpretText(i, detail) {
     out.push(`${d.label}：${plain}${d.text}${d.advice ? `　建议：${d.advice}` : ''}${evidence}${know}`);
   }
   const secs = i.sections || [];
-  const longSecs = lean ? secs.filter((s) => String(s.text || '').length > LONG_SECTION) : [];
+  const longSecs = compact ? secs.filter((s) => String(s.text || '').length > LONG_SECTION) : [];
   for (const s of secs) {
-    if (lean && String(s.text || '').length > LONG_SECTION) continue;
+    if (compact && String(s.text || '').length > LONG_SECTION) continue;
     out.push(`${s.label}：${s.text}`);
   }
   if (longSecs.length) out.push(`（另有 ${longSecs.length} 节长论述未展开：${longSecs.map((s) => s.label).join('、')}。需要原文与出处时传 detail:"full"）`);
   // 三张表：大运 / 流年 / 触发事件（纯文本对齐，工具输出也能直接读）
   for (const t of i.tables || []) {
     if (!Array.isArray(t.rows) || !t.rows.length) continue;
+    let rows = t.rows;
     out.push(`【${t.title}】`);
-    out.push([t.columns.join(' | '), ...t.rows.map((r) => r.join(' | '))].join('\n'));
+    if (brief && rows.length > BRIEF_TABLE_ROWS) {
+      rows = rows.slice(0, BRIEF_TABLE_ROWS);
+      out.push(`（共 ${t.rows.length} 行，仅列前 ${BRIEF_TABLE_ROWS} 行；全表传 detail:"lean"）`);
+    }
+    out.push([t.columns.join(' | '), ...rows.map((r) => r.join(' | '))].join('\n'));
   }
   if (Array.isArray(i.followups) && i.followups.length) {
     out.push('还可以这样追问：' + i.followups.map((q) => `「${q}」`).join('　'));
   }
-  if (Array.isArray(i.glossary) && i.glossary.length) {
+  if (!brief && Array.isArray(i.glossary) && i.glossary.length) {
     out.push('名词解释：' + i.glossary.map((g) => `${g.term}＝${g.plain}`).join('　'));
   }
   // 能力边界：这段是给调用方（模型）看的上下文，不是给用户直接念的。
   // 写全比只写标题有用——模型知道「为什么不答」，才不会自己补一个答案出来。
+  let text = '';
   if (Array.isArray(i.limits) && i.limits.length) {
-    out.push('【本插件不回答什么】' + i.limits.map((l) => `${l.title}——${l.text}`).join('\n'));
+    text += `【本插件不回答什么】${i.limits.map((l) => `${l.title}——${l.text}`).join('\n')}\n`;
   }
-  if (i.disclaimer) out.push(i.disclaimer);
-  return out.join('\n');
+  if (i.disclaimer) text += i.disclaimer;
+  // 不按体积截断：这里只把「边界与免责声明」放在末尾，
+  // 正文一个字都不砍——brief 已经用「少给维度、表限行数」控过长度了，
+  // 再按字节腰斩只会把结论、依据和必要交代一起截掉，反而让模型读到半句话。
+  const head = out.join('\n');
+  return text ? `${head}\n${text}` : head;
 }
 
 /** 对照时不参与计算的参数：它们只影响解析/附加模块，不影响盘面 */
@@ -26113,12 +26510,12 @@ function normalizeLongitudes(args) {
   return out;
 }
 
-/** 输出档位：缺省与 'full' 都是历史全文；'lean' 只回结论与你问的那一条，省模型上下文。
- *  其它值以前会被当成「缺省」静默放过，写了 detail:'brief' 的人以为自己省了钱，其实没有。 */
+/** 输出档位：缺省 'full'（面板与直接调用保持历史全文）；'lean' 去掉长论述与规则出处，
+ *  'brief' 在 lean 上再限表行（不设体积上限）。工具层在 withInterpret 且未指定时传 brief。 */
 function detailOf(value) {
-  if (value === undefined || value === null || value === '' || value === 'full') return 'full';
-  if (value === 'lean') return 'lean';
-  throw fail('E_INPUT', `detail 只能是 'full' 或 'lean'：收到「${String(value).slice(0, 24)}」`);
+  if (value === undefined || value === null || value === '') return 'full';
+  if (value === 'full' || value === 'lean' || value === 'brief') return value;
+  throw fail('E_INPUT', `detail 只能是 'full' / 'lean' / 'brief'：收到「${String(value).slice(0, 24)}」`);
 }
 
 /** asOf 只接受能解析成真实日期的字符串；非法值以前会静默回退到「此刻」 */
@@ -26129,6 +26526,11 @@ function checkAsOf(asOf) {
   const parts = asOfParts(asOf);
   if (!parts) throw fail('E_ASOF', `无法解析 asOf：「${asOf}」，请用 2026-10-22T16:00 这种格式`);
   const { year, month, day, hour, minute } = parts;
+  // 与 parseDateTime / assertCivil 同一把年份尺：asOf 只校验月日时，1500 / 2500 / 9999
+  // 会一路排进紫微流月流日，农历表却只覆盖 1600–2400，出来的是一张外推盘。
+  if (year < MIN_YEAR || year > MAX_YEAR) {
+    throw fail('E_ASOF', `asOf 的年份超出可计算范围（${MIN_YEAR}–${MAX_YEAR}）：${asOf}`);
+  }
   if (!(month >= 1 && month <= 12) || !(day >= 1 && day <= daysInMonth(year, month))) {
     throw fail('E_ASOF', `asOf 指向的日期不存在：${asOf}`);
   }
@@ -26158,6 +26560,17 @@ function computeRaw(args = {}) {
       throw fail('E_INPUT', `${system} 的 mode 只能是 ${allowed.join(' / ')}，收到「${String(args.mode).slice(0, 24)}」`);
     }
   }
+  // gender / direction 的枚举写在 schema 里，引擎直调也得守同一份契约：
+  // 六爻曾把「女」静默当 male 出用神，direction 拼错则静默按 general——
+  // 换一个用神、换一套断法，盘面却看不出任何异常。
+  if (args.gender !== undefined && args.gender !== null && args.gender !== ''
+    && args.gender !== 'male' && args.gender !== 'female') {
+    throw fail('E_INPUT', `gender 只能是 male / female，收到「${String(args.gender).slice(0, 24)}」`);
+  }
+  if (args.direction !== undefined && args.direction !== null && args.direction !== ''
+    && !['general', 'wealth', 'career', 'love', 'health', 'study', 'travel'].includes(args.direction)) {
+    throw fail('E_INPUT', `direction 只能是 general / wealth / career / love / health / study / travel，收到「${String(args.direction).slice(0, 24)}」`);
+  }
   // 风水 fortuneYear 以前只认整数：2026.5 被静默当成「没给」，整块年飞星消失。
   if (args.fortuneYear !== undefined && args.fortuneYear !== null && args.fortuneYear !== '') {
     const n = Number(args.fortuneYear);
@@ -26175,25 +26588,25 @@ function computeRaw(args = {}) {
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
-      lateZi: args.lateZi !== false,
-      trueSolar: args.trueSolar !== false,
-      dst: args.dst !== false,
+      lateZi: bool(args.lateZi, true),
+      trueSolar: bool(args.trueSolar, true),
+      dst: bool(args.dst, true),
       // 流年表默认从「今年」起排；要复现历史结论就把基准年钉死
       nowYear: asOf ? asOf.year : undefined,
       // 时辰未知：三柱模式（时柱不排、精度降到日、摘要首行固定提示）
-      hourUnknown: args.hourUnknown === true,
+      hourUnknown: bool(args.hourUnknown),
     });
     return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: baziText(result) };
   }
   if (system === 'ziwei') {
     // 命宫由「生月 + 生时支」定：时支未知则整盘无处落脚，没有「大概的紫微盘」这种东西
-    if (args.hourUnknown === true) {
+    if (bool(args.hourUnknown)) {
       throw fail('HOUR_UNKNOWN', '紫微必须有出生时刻：命宫由生月与生时支定，时支未知则整盘不成立。请补上出生时刻，或改用八字三柱模式只看年/月/日。');
     }
     // 与奇门同一个别名口径：lateZi 是八字/六壬的参数名，紫微的历史参数名是 lateZishi。
     // 不归一的话 revise「晚子时算次日」会照常回执已应用，盘却按默认 current-day 排。
     if (args.lateZi !== undefined && args.lateZishi === undefined) {
-      args = { ...args, lateZishi: args.lateZi === false ? 'current-day' : 'next-day' };
+      args = { ...args, lateZishi: bool(args.lateZi, true) ? 'next-day' : 'current-day' };
     }
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
@@ -26201,13 +26614,13 @@ function computeRaw(args = {}) {
       ...dt,
       gender: requireGender(args.gender),
       leapMonth: args.leapMonth,
-      leapAsNext: args.leapAsNext === true,
+      leapAsNext: bool(args.leapAsNext),
       ...ziweiSchoolArgs(args),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
-      trueSolar: args.trueSolar,
-      dst: args.dst !== false,
+      trueSolar: bool(args.trueSolar, true),
+      dst: bool(args.dst, true),
       // 流月/流日/流时的基准时刻：默认本机此刻，可用 asOf 指定以便复现
       asOf,
     });
@@ -26227,7 +26640,7 @@ function computeRaw(args = {}) {
   }
   if (system === 'daliuren') {
     const dt = parseDateTime(args.datetime);
-    const lateZi = args.lateZi !== false;
+    const lateZi = bool(args.lateZi, true);
     const result = buildDaliuren({ ...dt, lateZi });
     result.lateZi = lateZi;
     return { ...result, precision: dt.precision, summary: daliurenText(result) };
@@ -26241,7 +26654,7 @@ function computeRaw(args = {}) {
     // lateZiHourMode 是奇门的历史参数名，lateZi 是八字/六壬的；两者互为别名。
     const mode = args.lateZiHourMode !== undefined
       ? args.lateZiHourMode
-      : args.lateZi === true ? 'next-day' : args.lateZi === false ? 'same-day' : undefined;
+      : args.lateZi === undefined || args.lateZi === null ? undefined : bool(args.lateZi) ? 'next-day' : 'same-day';
     if (mode !== undefined && !LATE_ZI_MODES.includes(mode)) {
       throw fail('E_INPUT', `lateZiHourMode 只能是 same-day / next-day，收到「${mode}」`);
     }
@@ -26251,9 +26664,14 @@ function computeRaw(args = {}) {
     return { ...result, summary: qimenText(result) };
   }
   if (system === 'hepan') {
-    // 双方夫妻宫、大运都依赖时支：任一方时辰未知就不出盘，免得「差不多」的合盘误导决定
-    if (args.hourUnknown === true || (args.partner && args.partner.hourUnknown === true)) {
-      throw fail('HOUR_UNKNOWN', '合盘需要双方都有出生时刻：夫妻宫与大运都依赖时支。请补齐时刻后再看，或用八字三柱模式各自看年/月/日。');
+    // 双方（以及可选的第三方）夫妻宫、大运都依赖时支：任一方时辰未知就不出盘，
+    // 免得「差不多」的合盘误导决定。第三方只在给了 partner2 时才参与校验，
+    // 但一旦参与，口径必须和主方、对方一致——不能主方缺时柱就拦、第三方缺时柱却照排。
+    const unknownSide = bool(args.hourUnknown)
+      || (args.partner && bool(args.partner.hourUnknown))
+      || (args.partner2 && bool(args.partner2.hourUnknown));
+    if (unknownSide) {
+      throw fail('HOUR_UNKNOWN', '合盘需要每一方都有出生时刻：夫妻宫与大运都依赖时支。请补齐时刻后再看，或用八字三柱模式各自看年/月/日。');
     }
     const partner = args.partner;
     if (!partner || typeof partner !== 'object') {
@@ -26275,12 +26693,23 @@ function computeRaw(args = {}) {
     // 性别决定双方大运/大限顺逆，两边都不能用默认值
     const sideOf = (src, who) => {
       const dt = parseDateTime(src.datetime);
+      // 紫微读的是历史参数名 lateZishi，合盘这一层若不转写，`chart:'ziwei', lateZi:false`
+      // 会排出与 true 完全相同的盘（八字合盘同一开关却生效）。
+      const lateZishi = src.lateZishi !== undefined
+        ? src.lateZishi
+        : src.lateZi === undefined || src.lateZi === null || src.lateZi === ''
+          ? undefined
+          : bool(src.lateZi, true) ? 'next-day' : 'current-day';
       return {
         ...dt,
         gender: requireGender(src.gender, who),
         trueSolar: src.trueSolar,
         lateZi: src.lateZi,
-        dst: src.dst !== false,
+        ...(lateZishi !== undefined ? { lateZishi } : {}),
+        // 紫微的闰月口径同属「读盘时才算」的参数，漏传会让合盘与单盘在闰月出生时差一个月
+        ...(src.leapMonth !== undefined ? { leapMonth: src.leapMonth } : {}),
+        ...(src.leapAsNext !== undefined ? { leapAsNext: bool(src.leapAsNext) } : {}),
+        dst: bool(src.dst, true),
         address: typeof src.address === 'string' ? src.address : undefined,
         longitude: typeof src.longitude === 'number' ? src.longitude : undefined,
         geo: src.geo && typeof src.geo === 'object' ? src.geo : undefined,
@@ -26434,7 +26863,7 @@ function computeRaw(args = {}) {
         lunarYear: Number(args.lunarYear),
         lunarMonth: Number(args.lunarMonth),
         lunarDay: Number(args.lunarDay),
-        isLeapMonth: args.isLeapMonth === true,
+        isLeapMonth: bool(args.isLeapMonth),
       });
     } else {
       const dt = parseDateTime(args.datetime);
@@ -26485,18 +26914,18 @@ function computeRaw(args = {}) {
       nowYear: nowParts ? nowParts.year : undefined,
       gender: requireGender(args.gender),
       toAge: args.toAge,
-      lateZi: args.lateZi !== false,
-      trueSolar: args.trueSolar !== false,
-      dst: args.dst !== false,
+      lateZi: bool(args.lateZi, true),
+      trueSolar: bool(args.trueSolar, true),
+      dst: bool(args.dst, true),
       longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
       address: typeof args.address === 'string' ? args.address : undefined,
       geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
-      hourUnknown: args.hourUnknown === true,
+      hourUnknown: bool(args.hourUnknown),
     });
     // 趋势没有独立的 dayun 字段（大运在 buildTrend 内部用），所以精度标记挂在结果顶层
     return {
       ...result,
-      ...(args.hourUnknown === true ? { hourUnknown: true, hourPrecision: 'day' } : {}),
+      ...(bool(args.hourUnknown) ? { hourUnknown: true, hourPrecision: 'day' } : {}),
       precision: dt.precision,
       summary: trendText(result),
     };
@@ -26519,7 +26948,7 @@ function computeRaw(args = {}) {
         ...(typeof args.facingDegree === 'number' ? { facingDegree: args.facingDegree } : {}),
         ...(typeof args.fortuneDate === 'string' ? { fortuneDate: args.fortuneDate } : {}),
         ...(typeof args.fortuneTime === 'string' ? { fortuneTime: args.fortuneTime } : {}),
-        dst: args.dst !== false,
+        dst: bool(args.dst, true),
       });
       return { ...result, summary: fengshuiText(result) };
     }
@@ -26530,7 +26959,7 @@ function computeRaw(args = {}) {
         facing: args.facing,
         ...(args.datetime ? parseDateTime(args.datetime) : {}),
         ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
-        dst: args.dst !== false,
+        dst: bool(args.dst, true),
       });
       return { ...result, summary: fengshuiText(result) };
     }
@@ -26540,7 +26969,7 @@ function computeRaw(args = {}) {
       year: dt.year, month: dt.month, day: dt.day,
       gender: requireGender(args.gender),
       fortuneYear: args.fortuneYear,
-      dst: args.dst !== false,
+      dst: bool(args.dst, true),
     });
     return { ...result, summary: fengshuiText(result) };
   }
@@ -26569,9 +26998,9 @@ function computeRaw(args = {}) {
       ...birth,
       ...(args.gender === 'male' || args.gender === 'female' ? { gender: args.gender } : {}),
       ...(args.datetime ? {
-        lateZi: args.lateZi !== false,
-        trueSolar: args.trueSolar !== false,
-        dst: args.dst !== false,
+      lateZi: bool(args.lateZi, true),
+      trueSolar: bool(args.trueSolar, true),
+      dst: bool(args.dst, true),
         longitude: typeof args.longitude === 'number' ? args.longitude : undefined,
         address: typeof args.address === 'string' ? args.address : undefined,
         geo: args.geo && typeof args.geo === 'object' ? args.geo : undefined,
@@ -26717,8 +27146,11 @@ function mbtiText(r) {
   const stack = Array.isArray(p.stack) && p.stack.length
     ? p.stack.map((f, i) => `${i === 0 ? '主导 ' : ''}${f.code}`).join(' → ') + `\n　${p.stack.map((f) => `${f.code}：${f.say}`).join('\n　')}`
     : '';
+  const missing = Array.isArray(r.unanswered) && r.unanswered.length
+    ? `　未答维度：${r.unanswered.join('、')}（该维按平手占位）`
+    : '';
   return [
-    `【十六型人格】${r.type}（${p.title}）· ${p.keywords}　已答 ${r.answered}/${r.total} 题`,
+    `【十六型人格】${r.type}（${p.title}）· ${p.keywords}　已答 ${r.answered}/${r.total} 题${missing}`,
     `一句：${p.oneLine}`,
     '【四维】',
     ...dims,
@@ -26892,6 +27324,8 @@ function renderText(result) {
     parts.push(`【推导链】${SYSTEM_LABEL[result.system] || result.system} · ${result.trace.length} 层\n`
       + result.trace.map((t, i) => `${i + 1}. ${t.field}｜${t.result}\n　规则：${t.rule}　出处：${t.source}`).join('\n'));
   }
+  // 解析段按档位渲染。brief 只做结构性收敛（少给维度、表限行数），不压体积：
+  // 盘面、句柄、解析全都不裁，这段有多长就多长。
   if (result.interpret) {
     const extra = interpretText(result.interpret, result.interpretTier);
     if (extra) parts.push(extra);
@@ -26962,7 +27396,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.62.1";
+window.__MP_VER = "0.62.2";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。

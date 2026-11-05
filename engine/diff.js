@@ -6,6 +6,8 @@
 //
 // 只做结构化比对，不改动任何引擎的输出。
 
+import { bool } from './bool.js';
+
 /** 比对时忽略的字段：文案、时间戳、口径回显、内部儒略日数字 */
 const IGNORE_KEYS = new Set([
   'summary', 'interpret', 'castAt', 'asOf', 'precision', 'disclaimer', 'note',
@@ -276,7 +278,7 @@ export const CALIBER_SWITCHES = {
       key: 'lateZi',
       title: '晚子时：23:00 后是否换日',
       short: '晚子时',
-      read: (a) => a.lateZi !== false,
+      read: (a) => bool(a.lateZi, true),
       alt: (v) => !v,
       label: (v) => (v ? '换日' : '不换日'),
     },
@@ -284,7 +286,7 @@ export const CALIBER_SWITCHES = {
       key: 'trueSolar',
       title: '真太阳时：是否按出生地经度修正',
       short: '真太阳时',
-      read: (a) => a.trueSolar !== false,
+      read: (a) => bool(a.trueSolar, true),
       alt: (v) => !v,
       label: (v) => (v ? '修正' : '不修正'),
     },
@@ -302,7 +304,7 @@ export const CALIBER_SWITCHES = {
       key: 'trueSolar',
       title: '真太阳时：是否按出生地经度修正',
       short: '真太阳时',
-      read: (a) => a.trueSolar !== false,
+      read: (a) => bool(a.trueSolar, true),
       alt: (v) => !v,
       label: (v) => (v ? '修正' : '不修正'),
     },

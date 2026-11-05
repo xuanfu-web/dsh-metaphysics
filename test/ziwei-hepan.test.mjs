@@ -75,5 +75,57 @@ ok('面板渲染两栏与四化列表', html.includes('命宫互落') && html.in
 const bz = compute({ system: 'hepan', datetime: A.datetime, gender: A.gender, partner: B });
 ok('八字合盘与紫微合盘可区分', bz.chart !== 'ziwei' && r.chart === 'ziwei' && bz.summary.includes('合盘') && r.summary.includes('紫微合盘'));
 
+// 11 晚子时口径随合盘透传：lateZi 要映射成紫微的 lateZishi
+{
+  const pair = (lateZi) => compute({
+    system: 'hepan', chart: 'ziwei',
+    datetime: '2026-02-16T23:30', gender: 'male',
+    partner: { datetime: '1995-02-10T09:00', gender: 'female' },
+    trueSolar: false, lateZi,
+  });
+  const off = pair(false);
+  const on = pair(true);
+  const zOff = buildZiwei({
+    year: 2026, month: 2, day: 16, hour: 23, minute: 30,
+    gender: 'male', trueSolar: false, lateZishi: 'current-day',
+  });
+  const zOn = buildZiwei({
+    year: 2026, month: 2, day: 16, hour: 23, minute: 30,
+    gender: 'male', trueSolar: false, lateZishi: 'next-day',
+  });
+  ok('合盘转发 lateZi:false（current-day 同命宫）',
+    off.a.soul.branch === zOff.soul.branch && off.a.soul.branch !== on.a.soul.branch,
+    `${off.a.soul.branch} / ${on.a.soul.branch}`);
+  ok('合盘转发 lateZi:true（next-day 同命宫）',
+    on.a.soul.branch === zOn.soul.branch, `${on.a.soul.branch} vs ${zOn.soul.branch}`);
+}
+
+// 12 闰月口径随合盘透传：split 与 next 的命宫不同，漏传就会与单盘差一个月
+{
+  const pair = (extra) => compute({
+    system: 'hepan', chart: 'ziwei',
+    datetime: '2023-03-25T10:00', gender: 'male', partner: B,
+    trueSolar: false, ...extra,
+  });
+  const split = pair({ leapMonth: 'split' });
+  const next = pair({ leapMonth: 'next' });
+  const asNext = pair({ leapAsNext: true });
+  const zSplit = buildZiwei({
+    year: 2023, month: 3, day: 25, hour: 10, minute: 0,
+    gender: 'male', trueSolar: false, leapMonth: 'split',
+  });
+  const zNext = buildZiwei({
+    year: 2023, month: 3, day: 25, hour: 10, minute: 0,
+    gender: 'male', trueSolar: false, leapMonth: 'next',
+  });
+  ok('合盘转发 leapMonth:split',
+    split.a.soul.branch === zSplit.soul.branch && split.a.soul.branch !== next.a.soul.branch,
+    `${split.a.soul.branch} / ${next.a.soul.branch}`);
+  ok('合盘转发 leapMonth:next', next.a.soul.branch === zNext.soul.branch,
+    `${next.a.soul.branch} vs ${zNext.soul.branch}`);
+  ok('合盘转发 leapAsNext:true 等同 leapMonth:next',
+    asNext.a.soul.branch === next.a.soul.branch, `${asNext.a.soul.branch} / ${next.a.soul.branch}`);
+}
+
 if (fail > 0) { console.log(`FAIL ${fail} 项`); process.exit(1); }
 console.log(`\n紫微合盘 ${pass} 项全部通过`);

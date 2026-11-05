@@ -1,5 +1,6 @@
 import { earthL } from './vsop-earth.js';
 import { createLru } from './lru.js';
+import { bool } from './bool.js';
 // 历法底座：儒略日、干支、二十四节气、真太阳时
 // 全部为纯函数，不依赖 DOM / Node API，Host 与 Client 可共用。
 
@@ -289,7 +290,7 @@ function termYearList(year, jieOnly) {
  * @param {{jieOnly?: boolean}} [opts] jieOnly=true 时只返回十二节（default：false，含气）
  */
 export function termWindow(year, opts = {}) {
-  const jieOnly = opts.jieOnly === true;
+  const jieOnly = bool(opts.jieOnly);
   const cacheKey = jieOnly ? `${year}|jie` : year;
   const cached = TERM_WINDOW_CACHE.get(cacheKey);
   if (cached) return cached;

@@ -22,20 +22,34 @@ export function mulberry32(seed) {
   };
 }
 
+// 与宿主 / bool.js 同一把尺：只认十进制（可带指数、尾点）。Number() 会把
+// "0x10"、false、[] 也变成有效数字，于是直接调引擎能排出盘、走工具层却被拒——
+// 同一份输入两种命运，正是句柄与复现最容易分叉的地方。
+const NUMERIC_TEXT = /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/;
+
+const seedNumber = (seed) => {
+  if (typeof seed === 'number') return Number.isFinite(seed) ? seed : NaN;
+  if (typeof seed === 'string') {
+    const s = seed.trim();
+    if (s !== '' && NUMERIC_TEXT.test(s)) return Number(s);
+  }
+  return NaN;
+};
+
 /**
  * 从参数里取随机源：
  * - 没给 seed：沿用 Math.random（保持"真随机"的手感）
- * - 给了数字或数字字符串：mulberry32(seed)，可复现
+ * - 给了数字或十进制数字串：mulberry32(seed)，可复现
  * - 给了别的东西：调用方应当先报错，这里兜底回 Math.random
  */
 export function randomOf(seed) {
   if (seed === undefined || seed === null || seed === '') return Math.random;
-  const n = Number(seed);
+  const n = seedNumber(seed);
   return Number.isFinite(n) ? mulberry32(n) : Math.random;
 }
 
 /** 是否是一个可以接受的 seed */
 export function isSeed(v) {
   if (v === undefined || v === null || v === '') return true;
-  return Number.isFinite(Number(v));
+  return Number.isFinite(seedNumber(v));
 }

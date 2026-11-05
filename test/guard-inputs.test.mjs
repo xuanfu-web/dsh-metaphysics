@@ -130,14 +130,16 @@ eq('句柄里的其余参数沿用', okMerge.datetime, '1990-05-12T14:30');
 
 // ── ⑦ 工具 schema：不许有重名键 ─────────────────────────────
 const props = def.parameters.properties;
+// 分层后「schema 里声明」= 顶层 ∪ options；下面的引擎读键对拍按并集算
+const allProps = { ...props, ...props.options.properties };
 ok('mode 同时给出三组取值', ['solar2lunar', 'lunar2solar', 'time', 'number'].every((v) => props.mode.enum.includes(v)), JSON.stringify(props.mode.enum));
 ok('mode 描述点名三套体系', /convert/.test(props.mode.description) && /meihua/.test(props.mode.description) && /xiaoliuren/.test(props.mode.description));
 const srcText = fs.readFileSync(path.resolve(import.meta.dirname, '../index.js'), 'utf8');
-const block = srcText.slice(srcText.indexOf('properties: {', srcText.indexOf('parameters')), srcText.indexOf('// 不写 required'));
+const block = srcText.slice(srcText.indexOf('const ALL_PARAMS = {'), srcText.indexOf('const definition = {', srcText.indexOf('const ALL_PARAMS')));
 const staticKeys = [...block.matchAll(/^ {8}([A-Za-z_][A-Za-z0-9_]*)\s*:\s*\{/gm)].map((m) => m[1]);
 const dup = staticKeys.filter((k, i) => staticKeys.indexOf(k) !== i);
-eq('properties 里没有重复键（两个 mode 曾互相覆盖）', dup.length, 0);
-eq('静态键数与运行时属性数一致', staticKeys.length, Object.keys(props).length);
+eq('参数表里没有重复键（两个 mode 曾互相覆盖）', dup.length, 0);
+eq('静态键数与运行时属性数一致', staticKeys.length, Object.keys(props).filter((k) => k !== 'options').length + Object.keys(props.options.properties).length);
 ok('schema 不再把 system 写成 required（只传 handle 的追问不该被宿主先拦）',
   !Array.isArray(def.parameters.required) || !def.parameters.required.includes('system'), JSON.stringify(def.parameters.required));
 // hour / date 只有称骨与小六壬读：其它体系收到就报错，不能静默忽略
@@ -247,12 +249,12 @@ const engSrcText = fs.readFileSync(path.resolve(import.meta.dirname, '../engine/
 const HOST_INTERNAL = new Set(['geo', 'shadowVersion', 'schools']);
 const engineRead = [...new Set([...engSrcText.matchAll(/\bargs\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]))]
   .filter((k) => !HOST_INTERNAL.has(k));
-const schemaMissing = engineRead.filter((k) => !props[k]);
+const schemaMissing = engineRead.filter((k) => !allProps[k]);
 ok('引擎读的用户键全部在 schema 里声明', schemaMissing.length === 0, `缺 ${schemaMissing.join('/')}`);
 // 扫不到键时上面这条会空过，所以给清单本身设个下限：改动 args 的写法（解构、改名）要 here 就转红
 ok('读键清单非空', engineRead.length >= 60, `${engineRead.length} 个`);
-ok('梅花数字起卦三键齐备', ['upper', 'lower', 'changing'].every((k) => !!props[k]), JSON.stringify(['upper', 'lower', 'changing'].filter((k) => !props[k])));
-ok('name 的分段生辰键齐备（year/month/day/hour/minute）', ['year', 'month', 'day', 'hour', 'minute'].every((k) => !!props[k]));
+ok('梅花数字起卦三键齐备', ['upper', 'lower', 'changing'].every((k) => !!allProps[k]), JSON.stringify(['upper', 'lower', 'changing'].filter((k) => !allProps[k])));
+ok('name 的分段生辰键齐备（year/month/day/hour/minute）', ['year', 'month', 'day', 'hour', 'minute'].every((k) => !!allProps[k]));
 const meihuaNum = await def.execute({ system: 'meihua', mode: 'number', upper: 3, lower: 5 });
 ok('按 schema 组参能起出数字卦', meihuaNum.ben && meihuaNum.ben.upper && meihuaNum.ben.lower, JSON.stringify(meihuaNum.ben || null));
 
