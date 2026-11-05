@@ -1,5 +1,7 @@
 ## 0.62.2（2026-11-05）
 
+> 已发布：npm `dsh-metaphysics@0.62.2`，shasum `13ca04fb9ad703addf3bc40ea01a7e26ff9a9bdb`，102 个文件；tag `v0.62.2` 已推，GitHub release 已建，tarball 已下载核对。
+
 > 本段主题：复查 0.62.1 的静默错值——开关与数字的「盘面 / 句柄」口径不一致、brief 的 12KB 闸门量错了单位、以及闸门本身有早退与预留不足；随后按使用方要求把这道体积闸门整个移除，只保留表格行数限制。
 
 - **开关口径：字符串布尔与真布尔排同一张盘**（新增 `engine/bool.js` 的 `canonicalFlags()`、`engine/index.js` 入口、各引擎读值）：`trueSolar:"false"` 以前由 `!== false` 读到「开」，盘按真太阳时排，句柄却照着原文写 `false`——同一张盘两个身份，影子盘对拍、深链回放、跨版本 diff 全部错位；`lateZi` / `dst` / `isLeapMonth` / `leapAsNext` 同理，`withInterpret:"false"` 也照旧附解析。现入口一次归一成真布尔，18 个体系的开关读值统一走 `bool()`（`chenggu / daliuren / diff / fengshui / hepan / meihua / name / rectify / trend / xiaoliuren / ziwei` 一并改），合盘 `partner` / `partner2` 里的同名开关同样归一；空串 / 空白串按「没给」剔除，避免 `lateZi:""` 被折成全局缺省 true、把奇门（缺省 same-day）与紫微（缺省 current-day）排成另一张盘。
