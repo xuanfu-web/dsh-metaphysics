@@ -67,6 +67,14 @@ export function verifyClassicCase(ex, kind) {
   const parts = String(ex.name || '').split('之');
   const A = resolveHex(parts[0]);
   const B = isPair ? resolveHex(parts.slice(1).join('之')) : null;
+  // 旬空由「起卦日」决定：原表没记日期的卦例（126/128 条）根本无从核对。
+  // 以前这里把 dayOf 的 undefined 直接传给引擎，引擎就按「今天」补日干支，
+  // 页面于是显示当天的旬空、还标成「一致」——期望空辰巳、实际空午未也对得上「一致」，
+  // 而且每换一旬页面内容就变一次，仓库里的 verification.html 注定与源码不一致。
+  // 现在：无起卦日 → 旬空不核对、不给值；给引擎一个固定占位日，保证页面与「今天」无关。
+  const day = dayOf(ex.date) || null;
+  const PLACEHOLDER_DAY = { stem: '甲', branch: '子', name: '甲子' };
+  const kongChecked = Boolean(ex.kong && day);
   let r = null;
   let moving = [];
   if (!A || (isPair && !B)) {
@@ -74,7 +82,10 @@ export function verifyClassicCase(ex, kind) {
   } else {
     moving = isPair ? moveCount(A, B) : [];
     if (isPair && moving.length !== ex.moving) fail('动爻数', ex.moving, moving.length);
-    r = buildLiuyao({ lines: isPair ? linesFrom(A, moving) : A.bits.map((bit) => (bit ? 7 : 8)), dayGanZhi: dayOf(ex.date) });
+    r = buildLiuyao({
+      lines: isPair ? linesFrom(A, moving) : A.bits.map((bit) => (bit ? 7 : 8)),
+      dayGanZhi: day || PLACEHOLDER_DAY,
+    });
     if (r.ben.name !== A.name) fail('本卦', A.name, r.ben.name);
     if (isPair && (!r.bian || r.bian.name !== B.name)) fail('变卦', B.name, r.bian && r.bian.name);
     if (r.ben.palace !== `${ex.gong[0]}宫` || r.ben.palaceElement !== EL[ex.gong[0]]) {
@@ -83,34 +94,43 @@ export function verifyClassicCase(ex, kind) {
     if ((ex.que || []).length && missingOf(r).slice().sort().join() !== ex.que.slice().sort().join()) {
       fail('缺爻', ex.que.join('、'), missingOf(r).join('、') || '无');
     }
-    if (ex.kong && dayOf(ex.date)) {
+    if (kongChecked) {
       const got = (r.xunKong || []).slice().sort().join('');
       if (got !== ex.kong.split('').sort().join('')) fail('旬空', ex.kong, got);
     }
   }
 
+  // 旬空这一项：核过就给值；没核就明说没核，不能拿引擎按「今天」算出来的值充数
+  const kongActual = !r ? '空—' : (kongChecked ? `空${(r.xunKong || []).join('') || '—'}` : '空—（未核）');
+  const kongExpected = kongChecked ? `空${ex.kong}` : `空${ex.kong || '—'}（未核）`;
+  const kongItem = kongChecked ? '旬空' : '旬空（未核：原表无起卦日）';
   const actual = r
     ? [
       `${r.ben.name}${r.bian ? `之${r.bian.name}` : ''}`,
       `${r.ben.palace}${r.ben.palaceElement}`,
       `动${moving.length}`,
       `缺${missingOf(r).join('、') || '—'}`,
-      `空${(r.xunKong || []).join('') || '—'}`,
+      kongActual,
     ].join('｜')
     : '装卦失败';
   const expected = isPair
-    ? `${ex.name}｜${ex.gong}｜动${ex.moving}｜缺${(ex.que || []).join('、') || '—'}｜空${ex.kong || '—'}`
-    : `${ex.name}｜${ex.gong}｜缺${(ex.que || []).join('、') || '—'}｜空${ex.kong || '—'}`;
+    ? `${ex.name}｜${ex.gong}｜动${ex.moving}｜缺${(ex.que || []).join('、') || '—'}｜${kongExpected}`
+    : `${ex.name}｜${ex.gong}｜缺${(ex.que || []).join('、') || '—'}｜${kongExpected}`;
 
   return {
     key: `ly-${kind}-${ex.zhan}-${ex.name}`,
     system: '六爻',
     case: `${ex.zhan}｜${ex.printed || ex.name}`,
-    item: isPair ? '本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空' : '卦名 / 卦宫 / 缺爻 / 旬空',
+    item: isPair
+      ? `本变卦 / 动爻数 / 卦宫 / 缺爻 / ${kongItem}`
+      : `卦名 / 卦宫 / 缺爻 / ${kongItem}`,
     expected,
     actual,
     status: fails.length ? '不一致' : '一致',
-    reason: fails.length ? fails.join('；') : `《卜筮正宗》${isPair ? '成对卦例' : '静卦'}原表`,
+    reason: fails.length
+      ? fails.join('；')
+      : `《卜筮正宗》${isPair ? '成对卦例' : '静卦'}原表${kongChecked ? '' : '；旬空未核（该例原表未记起卦日）'}`,
+    unchecked: !kongChecked,
     search: `${ex.zhan} ${ex.name} ${ex.printed || ''} ${ex.gong}`,
   };
 }
@@ -378,6 +398,8 @@ export function buildVerification() {
   const rows = [...classicRows, ...ziweiRows, ...jiaoyunRows, ...qimenRows];
   const mismatch = rows.filter((r) => r.status === '不一致').length;
   const excluded = rows.filter((r) => r.status === '剔除').length;
+  // 「未核」不是「一致」：原表没记起卦日的卦例，旬空无从核对，单独计数
+  const unchecked = rows.filter((r) => r.unchecked).length;
   const patternMismatch = patternStats.reduce((n, s) => n + s.mismatch, 0);
   return {
     version: PKG.version,
@@ -396,6 +418,7 @@ export function buildVerification() {
       rows: rows.length,
       mismatch,
       excluded,
+      unchecked,
     },
     rows,
     patternStats,
@@ -504,7 +527,7 @@ tr[hidden]{display:none}
     <div class="card"><span>紫微盘</span><b>${t.ziweiCharts}</b><small>${t.ziweiPatterns} 条格局 · ${t.ziweiJudgments.toLocaleString('zh-CN')} 条判定</small></div>
     <div class="card"><span>奇门时辰</span><b>${t.qimen}</b><small>${t.qimen} × 9 宫 = ${t.qimenPalaces} 个宫位</small></div>
     <div class="card"><span>交运案例</span><b>${t.jiaoyun}</b><small>取节 · 比例 · 闰日 · 真太阳时</small></div>
-    <div class="card"><span>不一致</span><b>${t.mismatch}</b><small>剔除 ${t.excluded} 条（理由见下表）</small></div>
+    <div class="card"><span>不一致</span><b>${t.mismatch}</b><small>剔除 ${t.excluded} 条（理由见下表）${t.unchecked ? ` · 未核 ${t.unchecked} 项（原表无起卦日，旬空不比对）` : ''}</small></div>
   </div>
 
   <div class="controls" role="group" aria-label="筛选对拍结果">
@@ -596,23 +619,46 @@ ${chips}
 `;
 }
 
+/** 徽章文字宽度（Verdana 11px 下的粗估）：徽章是定宽 SVG，字多了会顶出彩色面板，
+ *  所以宽度得跟着内容算，不能写死一个数字。中文/全角标点按 1em，数字与字母 0.62em，
+ *  空格 0.32em，其余符号 0.4em——宁可估宽一点，也别让字压到边缘。 */
+export function badgeTextWidth(text, fontSize = 11) {
+  let w = 0;
+  for (const ch of String(text == null ? '' : text)) {
+    const cp = ch.codePointAt(0);
+    if (cp >= 0x2e80) w += fontSize;
+    else if (ch === ' ') w += fontSize * 0.32;
+    else if (/[0-9A-Za-z]/.test(ch)) w += fontSize * 0.65;
+    else w += fontSize * 0.45;
+  }
+  return w;
+}
+
 export function renderBadgeSVG(data) {
   const t = data.totals;
   const ok = t.mismatch === 0;
   const color = ok ? '#1f6f3f' : '#a72c23';
   const label = ok ? '0 处不符' : `${t.mismatch} 处不符`;
-  const right = `${label}｜${t.liuyao} 例 · ${t.excluded} 剔除 · ${t.ziweiCharts} 紫微 · ${t.qimen} 奇门 · ${t.jiaoyun} 交运`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="470" height="28" role="img" aria-label="公开对拍：${esc(right)}">
+  // 「未核」必须写进徽章：127 条古例没记起卦日，旬空这一项事实上没核过。
+  // 只挂「0 处不符」会让人以为 128 条全核了，那是拿没说出口的口径充数。
+  const unchecked = t.unchecked ? ` · ${t.unchecked} 未核` : '';
+  const right = `${label}｜${t.liuyao} 例 · ${t.excluded} 剔除${unchecked} · ${t.ziweiCharts} 紫微 · ${t.qimen} 奇门 · ${t.jiaoyun} 交运`;
+  const LEFT = 66;        // 左侧「对拍」标签宽
+  const OVERLAP = 4;      // 左右两栏重叠 4px，藏住接缝
+  const PAD = 18;         // 右栏左右留白
+  const rightW = Math.max(150, Math.ceil(badgeTextWidth(right)) + PAD * 2);
+  const width = LEFT - OVERLAP + rightW;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="28" role="img" aria-label="公开对拍：${esc(right)}">
   <title>公开对拍：${esc(right)}</title>
   <linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
-  <rect width="470" height="28" rx="4" fill="#555"/>
-  <rect x="62" width="408" height="28" rx="4" fill="${color}"/>
-  <rect x="62" width="408" height="28" fill="url(#s)"/>
-  <rect width="66" height="28" rx="4" fill="#555"/>
-  <rect x="62" width="4" height="28" fill="#555"/>
+  <rect width="${width}" height="28" rx="4" fill="#555"/>
+  <rect x="${LEFT - OVERLAP}" width="${rightW}" height="28" rx="4" fill="${color}"/>
+  <rect x="${LEFT - OVERLAP}" width="${rightW}" height="28" fill="url(#s)"/>
+  <rect width="${LEFT}" height="28" rx="4" fill="#555"/>
+  <rect x="${LEFT - OVERLAP}" width="${OVERLAP}" height="28" fill="#555"/>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11">
-    <text x="33" y="18">对拍</text>
-    <text x="266" y="18">${esc(right)}</text>
+    <text x="${LEFT / 2}" y="18">对拍</text>
+    <text x="${LEFT - OVERLAP + rightW / 2}" y="18">${esc(right)}</text>
   </g>
 </svg>
 `;
@@ -625,7 +671,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   fs.writeFileSync(path.join(ROOT, 'docs', 'verification.html'), html, 'utf8');
   fs.mkdirSync(path.join(ROOT, 'docs', 'assets'), { recursive: true });
   fs.writeFileSync(path.join(ROOT, 'docs', 'assets', 'verification-badge.svg'), badge, 'utf8');
-  console.log(`verification written: ${data.totals.rows} rows / ${data.totals.mismatch} mismatch / ${data.totals.excluded} excluded`);
+  console.log(`verification written: ${data.totals.rows} rows / ${data.totals.mismatch} mismatch / ${data.totals.excluded} excluded / ${data.totals.unchecked} unchecked`);
   console.log(`  docs/verification.html ${Buffer.byteLength(html, 'utf8')} bytes`);
   console.log(`  docs/assets/verification-badge.svg ${Buffer.byteLength(badge, 'utf8')} bytes`);
 }

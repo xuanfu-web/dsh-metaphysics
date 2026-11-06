@@ -1,8 +1,17 @@
 import {
-  toJDN, dayGanzhiIndex, ganzhiName, termInstantJd, formatJd, TERM_NAMES, partsToJd, jdToParts,
+  toJDN, dayGanzhiIndex, ganzhiName, termInstantJd, formatJd, TERM_NAMES, partsToJd, jdToParts, deltaTSeconds,
 } from '../engine/calendar.js';
 
 import { ok } from './_harness.mjs';
+
+// ΔT 远年外推：括号里是「世纪」不是年。写成 32×(y−1820)² 会让 2400 年 ΔT 达 1076 万秒（约 124 天），
+// 节气与朔望整体推后几个月——2026-11-06 复查时抓到的单位错误，必须锁住量级与连续性。
+ok('ΔT 2100 仍取端点 110s', Math.abs(deltaTSeconds(2100) - 110) < 0.5, String(deltaTSeconds(2100)));
+ok('ΔT 2101 与 2100 连续（< 2s）', deltaTSeconds(2101) - deltaTSeconds(2100) < 2, String(deltaTSeconds(2101)));
+ok('ΔT 2200 ≈ 321s', Math.abs(deltaTSeconds(2200) - 321) < 3, String(deltaTSeconds(2200)));
+ok('ΔT 2400 ≈ 936s', Math.abs(deltaTSeconds(2400) - 936) < 5, String(deltaTSeconds(2400)));
+ok('ΔT 远年不会大到「天」级（< 3600s）', deltaTSeconds(2400) < 3600, String(deltaTSeconds(2400)));
+ok('ΔT 2100→2400 单调递增', deltaTSeconds(2400) > deltaTSeconds(2200) && deltaTSeconds(2200) > deltaTSeconds(2100));
 
 ok('JDN(2000-01-01) = 2451545', toJDN(2000, 1, 1) === 2451545, String(toJDN(2000, 1, 1)));
 ok('JDN(1949-10-01) = 2433191', toJDN(1949, 10, 1) === 2433191, String(toJDN(1949, 10, 1)));

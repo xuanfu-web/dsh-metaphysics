@@ -1,6 +1,6 @@
 // 格局 / 用神 / 行运 与 紫微 大限·流年四化 的结构测试
 // 只验证算法内部一致性与结构，不验证某派命理断语。
-import { buildBazi } from '../engine/bazi.js';
+import { buildBazi, HIDDEN_STEMS } from '../engine/bazi.js';
 import { analyzeBaziFrame, scoreLuck, elementRoles, tenGod } from '../engine/geju.js';
 import { buildZiwei, detectPatterns, daxianList } from '../engine/ziwei.js';
 
@@ -128,6 +128,48 @@ console.log('\n[紫微：其它命盘不崩]');
     const z = buildZiwei({ year: y, month: m, day: d, hour: h, minute: 0, gender: g, trueSolar: false });
     ok(`${y}-${m}-${d} 格局/大限/流年齐备`, z.patterns.length > 0 && z.daxianList.length === 12 && z.liunian.length === 12, `${z.patterns.length}`);
   }
+}
+
+console.log('\n[月令取格：按藏干位阶，不按柱位]');
+{
+  // 戊戌 甲寅 丙子 癸巳：寅藏甲（本气·偏印）、丙（中气·比肩）、戊（余气·食神）。
+  // 旧实现按「年→月→时」找第一个透干者，年干戊（余气食神）先被遇到，于是判成食神格，
+  // 而真正贴着月令的月干甲（本气偏印）被跳过。子平取格是「本气透则取本气」。
+  const r = B(2018, 2, 13, 10, 0, 'male');
+  ok('2018-02-13 四柱', four(r) === '戊戌 甲寅 丙子 癸巳', four(r));
+  ok('本气甲透月干 → 偏印格（不是年干余气戊的食神格）', r.frame.primary.name === '偏印格', r.frame.primary.name);
+  ok('取格依据点名本气与月干',
+    r.frame.primary.evidence.includes('本气甲') && r.frame.primary.evidence.includes('月干'),
+    r.frame.primary.evidence);
+
+  // 结构不变量：本气透出时，月令格必须取本气（比肩/劫财另立建禄、月刃、月劫，不在此列）
+  const bad = [];
+  let checked = 0;
+  for (let i = 0; i < 80; i++) {
+    const y = 1970 + (i % 45);
+    const m = 1 + (i % 12);
+    const d = 1 + ((i * 7) % 28);
+    const h = (i * 5) % 24;
+    const rr = B(y, m, d, h);
+    if (!rr.frame.primary || rr.frame.primary.kind !== '月令格') continue;
+    const P = rr.pillars;
+    const hid = HIDDEN_STEMS[P.month.branch];
+    const dayStem = rr.dayMaster.stem;
+    const baseGod = tenGod(dayStem, hid[0]);
+    if (baseGod === '比肩' || baseGod === '劫财') continue;
+    const exposed = hid
+      .map((s) => ({ s, g: tenGod(dayStem, s) }))
+      .filter((x) => ['year', 'month', 'hour'].some((k) => P[k].stem === x.s));
+    if (!exposed.length) continue;
+    checked += 1;
+    // 劫财不叫「劫财格」：子平另立月劫（透干取到劫财时仍作月劫论）
+    const want = exposed[0].g === '劫财' ? '月劫格' : `${exposed[0].g}格`;
+    if (rr.frame.primary.name !== want) {
+      bad.push(`${y}-${m}-${d} ${four(rr)} 藏${hid.join('')} 透${exposed.map((x) => x.s).join('')} 得${rr.frame.primary.name} 期${want}`);
+    }
+  }
+  ok('本气透干即取本气（抽样 80 盘，月令格）', bad.length === 0, bad.slice(0, 3).join('；'));
+  ok('该不变量确有样本可检', checked >= 30, `仅 ${checked} 盘`);
 }
 
 console.log(`\n===== 格局/用神/行运 =====\nPASS ${pass}　FAIL ${fail}`);

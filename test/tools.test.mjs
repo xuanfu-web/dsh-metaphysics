@@ -22,10 +22,21 @@ const read = (p) => fs.readFileSync(new URL(p, ROOT), 'utf8');
   ok('黄历：同日同卦（确定性）', again.dailyHexagram.name === a.dailyHexagram.name, a.dailyHexagram.name);
   const lichun = compute({ system: 'almanac', datetime: '2024-02-10' }); // 春节，已过立春
   ok('黄历：春节当天年柱甲辰', lichun.ganzhi.year === '甲辰', lichun.ganzhi.year);
-  const before = compute({ system: 'almanac', datetime: '2024-02-04' }); // 立春当日
-  ok('黄历：立春当日按正午判「尚未交节」（已知日界口径）', before.ganzhi.year === '癸卯', before.ganzhi.year);
+  // 立春当日 16:27 交节：通书本子按「日」记，当天即作甲辰年丙寅月，不因未到 16:27 而留在癸卯年。
+  const before = compute({ system: 'almanac', datetime: '2024-02-04' });
+  ok('黄历：立春当日即换年柱甲辰、月柱丙寅（按日口径）',
+    before.ganzhi.year === '甲辰' && before.ganzhi.month === '丙寅', `${before.ganzhi.year}年${before.ganzhi.month}月`);
+  ok('黄历：立春当日建除/值神已按寅月（成日·司命）',
+    before.zhiXing === '成' && before.dayGod.name === '司命', `${before.zhiXing}/${before.dayGod.name}`);
+  // 交节落在午后的另一例：2020 立春 17:03。旧实现拿当日正午比时刻，这天整日仍算丁丑月、建日、朱雀。
+  const noonEdge = compute({ system: 'almanac', datetime: '2020-02-04' });
+  ok('黄历：交节在午后的日子也算新节（2020 立春 17:03 → 戊寅月·闭日·明堂）',
+    noonEdge.ganzhi.month === '戊寅' && noonEdge.zhiXing === '闭' && noonEdge.dayGod.name === '明堂',
+    `${noonEdge.ganzhi.month}/${noonEdge.zhiXing}/${noonEdge.dayGod.name}`);
+  ok('黄历：交节当日的「下一个节气」不再是自己',
+    noonEdge.jieQi.next && noonEdge.jieQi.next.name !== '立春', noonEdge.jieQi.next && noonEdge.jieQi.next.name);
   const after = compute({ system: 'almanac', datetime: '2024-02-05' });
-  ok('黄历：立春次日换年柱甲辰', after.ganzhi.year === '甲辰', after.ganzhi.year);
+  ok('黄历：立春次日年柱仍是甲辰', after.ganzhi.year === '甲辰', after.ganzhi.year);
 }
 
 // ── ② 择日：事项适配 + 冲属相排除 ────────────────────────────

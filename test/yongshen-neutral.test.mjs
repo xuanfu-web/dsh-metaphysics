@@ -15,8 +15,10 @@ const sandbox = { window: {}, console };
 vm.runInNewContext(fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8'), sandbox, { filename: 'panel-kit.js' });
 const PP = sandbox.window.__PP;
 
-// 该型盘：偏弱、喜火土、忌金水木，金只有 0.3 分（与反馈同构，日期为合成样本）
-const BASE = { system: 'bazi', datetime: '1978-03-08T22:10', gender: 'male', address: '广东广州' };
+// 该型盘：偏弱、喜火土、忌金水木，金只有 0.3 分（与反馈同构，日期为合成样本）。
+// 原样本 1978-03-08 的 0.3 分金来自「巳藏庚作余气」；巳改为丙庚戊后那份金按中气计 0.5，
+// 已不属于「近零」，故换成同样结构、金由丑中辛（余气 0.3）而来的样本。
+const BASE = { system: 'bazi', datetime: '1983-12-06T02:10', gender: 'male', address: '广东广州' };
 const r = compute({ ...BASE, withInterpret: true, trace: true });
 const ys = r.frame.yongshen;
 

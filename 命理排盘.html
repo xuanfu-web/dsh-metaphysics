@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.2</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.3</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,7 +653,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：155 个测试文件 / 8184 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：155 个测试文件 / 8218 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -1885,7 +1885,14 @@ function deltaTSeconds(year) {
       return v0 + ((v1 - v0) * (year - y0)) / (y1 - y0);
     }
   }
-  return knots[knots.length - 1][1];
+  // 2100 年后用 Morrison & Stephenson (2004) 抛物线外推：ΔT ≈ 32 × ((y − 1820)/100)² 秒。
+  // 注意单位：括号里是「世纪」，不是年——写成 32×(y−1820)² 会在 2400 年给出 1076 万秒（约 124 天），
+  // 把节气、朔望整体推后好几个月。这里以 2100 端点（110s）接续抛物线增长率，保证 2100→2101 连续：
+  // 2101 约 111.8s、2200 约 321s、2400 约 936s。
+  const [yLast, vLast] = knots[knots.length - 1];
+  const uLast = (yLast - 1820) / 100;
+  const u = (year - 1820) / 100;
+  return vLast + 32 * (u * u - uLast * uLast);
 }
 
 // 1929 年元旦之前，中国历书按「北京地方平时」（116.4°E，UTC+7.7611）推算朔与中气；
@@ -5004,7 +5011,7 @@ const GENERATES = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' }
 const OVERCOMES = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
 const HIDDEN = {
   子: ['癸'], 丑: ['己', '癸', '辛'], 寅: ['甲', '丙', '戊'], 卯: ['乙'],
-  辰: ['戊', '乙', '癸'], 巳: ['丙', '戊', '庚'], 午: ['丁', '己'], 未: ['己', '丁', '乙'],
+  辰: ['戊', '乙', '癸'], 巳: ['丙', '庚', '戊'], 午: ['丁', '己'], 未: ['己', '丁', '乙'],
   申: ['庚', '壬', '戊'], 酉: ['辛'], 戌: ['戊', '辛', '丁'], 亥: ['壬', '甲'],
 };
 const HIDDEN_W = [1, 0.5, 0.3];
@@ -5095,10 +5102,23 @@ function monthPattern(pillars, dayStem, monthBranch) {
     w: HIDDEN_W[i] ?? 0.1,
   }));
   const others = ['year', 'month', 'hour'];
-  const exposedKey = others.find((k) => cands.some((c) => c.stem === pillars[k].stem));
   const base = cands[0];
+  // 取格按「藏干位阶」定先后：本气透则取本气，本气不透再取中气、余气（子平通例）。
+  // 不能按柱位「先遇上谁就用谁」——那样月干透出的中气会输给年干透出的余气，
+  // 实测约 13% 的盘有两处以上不同藏干并透，其中七成以上会因此取错格局名。
+  // 同一藏干多柱并透时，「月」优先报出（离月令最近）。
+  let exposedKey = null;
+  let use = null;
+  for (const c of cands) {
+    const hits = others.filter((k) => pillars[k].stem === c.stem);
+    if (hits.length) {
+      use = c;
+      exposedKey = hits.includes('month') ? 'month' : hits[0];
+      break;
+    }
+  }
   const hui = exposedKey ? null : huiCandidate(pillars, monthBranch, cands);
-  const use = exposedKey ? cands.find((c) => c.stem === pillars[exposedKey].stem) : (hui || base);
+  if (!use) use = hui || base;
   const usedBy = exposedKey ? '透干' : (hui ? '会支' : '本气');
   const exposedPos = exposedKey ? { year: '年', month: '月', hour: '时' }[exposedKey] : null;
 
@@ -5541,13 +5561,16 @@ const { SANHE } = (__mods.sanhe || {});
 const { analyzeBaziFrame, scoreLuck } = (__mods.geju || {});
 
 // 地支藏干（本气 / 中气 / 余气）
+// 巳的顺序是「丙庚戊」而不是「丙戊庚」：庚长生于巳，是中气；戊是辰月余气，排末位。
+// 本表与下面 RENYUAN_TABLE（巳月：戊 5 日 → 庚 9 日 → 丙 16 日）互为倒序，
+// 也与寅（甲丙戊）、申（庚壬戊）、亥（壬甲）的「长生=中气」写法一致。
 const HIDDEN_STEMS = {
   子: ['癸'],
   丑: ['己', '癸', '辛'],
   寅: ['甲', '丙', '戊'],
   卯: ['乙'],
   辰: ['戊', '乙', '癸'],
-  巳: ['丙', '戊', '庚'],
+  巳: ['丙', '庚', '戊'],
   午: ['丁', '己'],
   未: ['己', '丁', '乙'],
   申: ['庚', '壬', '戊'],
@@ -12036,10 +12059,11 @@ function eightStars(gua) {
   return result;
 }
 
-/** 立春界节气年：生日在当年立春前 → 上一年（按正午判，与黄历一致）。 */
+/** 立春界节气年：生日在当年立春前 → 上一年。
+ *  按「日」判（立春当日即算新年），与黄历同一口径；本函数只收年月日，不看当天交节时刻——
+ *  命卦本来就只按出生年取，同一天出生的人不因生在 16:27 前后换卦。 */
 function guaYearOf(year, month, day) {
-  const birthJd = partsToJd({ year, month, day, hour: 12, minute: 0 });
-  return birthJd < termInstantJd(year, 2) ? year - 1 : year;
+  return Math.floor(termInstantJd(year, 2) + 0.5) <= toJDN(year, month, day) ? year : year - 1;
 }
 
 /**
@@ -12136,13 +12160,20 @@ function timeFlyingOf(at) {
   const hour = Number.isInteger(at.hour) ? at.hour : 12;
   const minute = Number.isInteger(at.minute) ? at.minute : 0;
   const jd = partsToJd({ year, month, day, hour, minute });
+  // 交节的判定基准：给了时刻就按精确时刻（14:30 出生、当天 17:03 才立春，仍在上一月）；
+  // 只给日期则按「日」——当天交节即算新节。旧实现一律用正午，交节在午后的那半天会算成上个月，
+  // 与同一页黄历的月柱（已按日判）自相矛盾。
+  const hasHour = Number.isInteger(at.hour);
+  const jdTerm = hasHour ? jd : toJDN(year, month, day) + 0.5 - 1e-6;
   const terms = termWindow(year);
-  const guaYear = guaYearOf(year, month, day);
+  // 年紫白同样以立春为界，且与上面月/日/时用同一个基准：给时刻按时刻，只给日期按日。
+  // 若这里改回只看日期的 guaYearOf，立春当天的「年」会是新年、「月」还是上一月，同盘自相矛盾。
+  const guaYear = jdTerm >= termInstantJd(year, 2) ? year : year - 1;
   const yearBranch = yearBranchOf(guaYear);
   const yearGroup = branchGroupOf(yearBranch);
-  const prevJie = previousJie(terms, jd);
+  const prevJie = previousJie(terms, jdTerm);
   const monthNum = JIE_MONTH_NUM[prevJie ? prevJie.name : '立春'] || 1;
-  const half = zibaiHalfAt(terms, jd);
+  const half = zibaiHalfAt(terms, jdTerm);
   const jdn = toJDN(year, month, day) + (hour >= 23 ? 1 : 0);
   const dayIdx = dayGanzhiIndex(jdn);
   const dayName = ganzhiName(dayIdx).name;
@@ -15680,7 +15711,7 @@ __mods.almanac = (function () {
 // 不是逐日全量黄历。
 const { solarToLunar } = (__mods.lunar || {});
 const { nayinOf } = (__mods.nayin || {});
-const { toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES } = (__mods.calendar || {});
+const { toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, STEMS, BRANCHES, TERM_NAMES } = (__mods.calendar || {});
 const { HEX64 } = (__mods['interpret-data'] || {});
 const { sanheGroupOf } = (__mods.sanhe || {});
 const { assertCivil, daysInMonth } = (__mods.validate || {});
@@ -15865,13 +15896,18 @@ function buildAlmanac(input) {
   if (day > daysInMonth(year, month)) {
     throw new Error(`非法日期：${year} 年 ${month} 月没有 ${day} 日`);
   }
-  const jdNoon = partsToJd({ year, month, day, hour: 12, minute: 0 });
   const lunar = solarToLunar(year, month, day);
   const jdn = toJDN(year, month, day);
 
+  // 黄历是「按日」出版的：交节当天即算新节（通书本子口径），所以节气一律比「日序」，
+  // 不比当天正午的时刻。用正午比时刻时，交节落在午后的那半年，整天还挂在上个月——
+  // 每年 12 个「节」约一半在午后，等于每年约 6 天的月柱、建除、值日神全错。
+  // 八字侧仍按精确到分的交节时刻判月柱（见 bazi.js），两者不共用这一层。
+  const termDayIndex = (jd) => Math.floor(jd + 0.5);
+
   // 年柱：立春界；同时给出春节界口径
   const lichunJd = termInstantJd(year, 2);
-  const ganzhiYear = jdNoon < lichunJd ? year - 1 : year;
+  const ganzhiYear = termDayIndex(lichunJd) <= jdn ? year : year - 1;
   const yearIdx = (((ganzhiYear - 4) % 60) + 60) % 60;
   const yearGz = ganzhiName(yearIdx);
   const springYear = lunar.lunarYear;
@@ -15880,9 +15916,8 @@ function buildAlmanac(input) {
   // 月柱：以「节」为界
   const jieTerms = termWindow(year, { jieOnly: true });
   let prevJie = null;
-  let nextJie = null;
   for (const t of jieTerms) {
-    if (t.jd <= jdNoon) prevJie = t; else { if (!nextJie) nextJie = t; }
+    if (termDayIndex(t.jd) <= jdn) prevJie = t;
   }
   const monthBranchIdx = ((2 + (prevJie.index - 2) / 2) % 12 + 12) % 12;
   const yinMonthStem = ((STEMS.indexOf(yearGz.stem) % 5) * 2 + 2) % 10;
@@ -15900,7 +15935,7 @@ function buildAlmanac(input) {
   let prevTerm = null;
   let nextTerm = null;
   for (const t of allTerms) {
-    if (t.jd <= jdNoon) prevTerm = t; else { if (!nextTerm) nextTerm = t; }
+    if (termDayIndex(t.jd) <= jdn) prevTerm = t; else { if (!nextTerm) nextTerm = t; }
   }
   const fmtJdDate = (jd) => {
     const p = fromJDN(Math.floor(jd + 0.5));
@@ -27396,7 +27431,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.62.2";
+window.__MP_VER = "0.62.3";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。

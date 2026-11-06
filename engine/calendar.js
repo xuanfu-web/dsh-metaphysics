@@ -147,7 +147,14 @@ export function deltaTSeconds(year) {
       return v0 + ((v1 - v0) * (year - y0)) / (y1 - y0);
     }
   }
-  return knots[knots.length - 1][1];
+  // 2100 年后用 Morrison & Stephenson (2004) 抛物线外推：ΔT ≈ 32 × ((y − 1820)/100)² 秒。
+  // 注意单位：括号里是「世纪」，不是年——写成 32×(y−1820)² 会在 2400 年给出 1076 万秒（约 124 天），
+  // 把节气、朔望整体推后好几个月。这里以 2100 端点（110s）接续抛物线增长率，保证 2100→2101 连续：
+  // 2101 约 111.8s、2200 约 321s、2400 约 936s。
+  const [yLast, vLast] = knots[knots.length - 1];
+  const uLast = (yLast - 1820) / 100;
+  const u = (year - 1820) / 100;
+  return vLast + 32 * (u * u - uLast * uLast);
 }
 
 // 1929 年元旦之前，中国历书按「北京地方平时」（116.4°E，UTC+7.7611）推算朔与中气；

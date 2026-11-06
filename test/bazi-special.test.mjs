@@ -13,9 +13,15 @@ eq('从革格数量', cheng.length, 1);
 eq('从革格成格（月令申金助旺）', cheng[0] && cheng[0].status, '成格');
 ok('成格无破格理由', Array.isArray(cheng[0].breaks) && cheng[0].breaks.length === 0);
 
-const dai = special(B('1962-11-05T09:30'), '专旺格');
-eq('炎上格待定（月令戌土不助旺）', dai[0] && dai[0].status, '待定');
+const dai = special(B('1951-07-25T09:30'), '专旺格');
+eq('炎上格待定（月令未土不助旺）', dai[0] && dai[0].status, '待定');
 ok('待定写明月令不助旺', dai[0].evidence.includes('不助旺'), dai[0].evidence);
+
+// 巳藏干改「丙庚戊」后，巳中庚按中气计 0.5 分：本盘财由 1.8 升到 2.0，越过「财 >1.8 耗旺气」的破格线，
+// 于是炎上格从「待定」转为「破格」。这是该修正带来的唯一一处状态翻转，单独钉住，免得当成回归改回去。
+const caiPo = special(B('1962-11-05T09:30'), '专旺格');
+eq('炎上格财过线即破格（巳藏庚按中气计）', caiPo[0] && caiPo[0].status, '破格');
+ok('破格理由写明财星耗旺', caiPo[0].breaks.some((x) => x.startsWith('财')), caiPo[0].breaks.join('；'));
 
 const po = special(B('1950-01-03T01:30'), '专旺格');
 eq('稼穑格破格（财星耗旺）', po[0] && po[0].status, '破格');

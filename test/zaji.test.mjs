@@ -73,7 +73,13 @@ ok('白话不写绝对化断语', !/一定|必然|注定|百分百/.test(e.plain
   const yj1 = B('1985-04-05T10:00');
   ok('辰月透乙作月劫', yj1.frame.primary.name === '月劫格' && yj1.frame.primary.evidence.includes('透于年干'), yj1.frame.primary.evidence);
   const yj2 = B('1996-08-05T10:00');
-  ok('未月透乙作月劫', yj2.frame.primary.name === '月劫格' && yj2.frame.primary.evidence.includes('透于月干'), yj2.frame.primary.evidence);
+  // 未月甲木：己（本气·正财）透时干、乙（余气·劫财）透月干，两处并透。
+  // 按藏干位阶取本气，作正财格；「透乙则用月劫」说的是本气不透、由透干取到劫财的情形（见上一条辰月）。
+  ok('未月己（本气）与乙（余气）并透 → 取本气正财，不作月劫',
+    yj2.frame.primary.name === '正财格'
+      && yj2.frame.primary.evidence.includes('本气己')
+      && yj2.frame.primary.evidence.includes('透于时干'),
+    `${yj2.frame.primary.name}｜${yj2.frame.primary.evidence}`);
   const yj3 = B('1990-10-28T02:00');
   ok('戌月午寅会火局、丁劫财为用作月劫', yj3.frame.primary.name === '月劫格' && yj3.frame.primary.evidence.includes('会成火局') && yj3.frame.primary.evidence.includes('作月劫论'), yj3.frame.primary.evidence);
 }

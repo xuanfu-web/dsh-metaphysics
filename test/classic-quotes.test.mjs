@@ -79,9 +79,11 @@ ok('无输入返回空数组', classicsFor(null).length === 0);
 ok('classicsText 带书名与章名', classicsText(rows).includes('《子平真诠·') && classicsText(rows).includes('》「'));
 
 // —— 特殊结构（专旺五格 / 弃命从财从煞）：命中的单章原文排在最前，且不被 5 条上限挤掉
+// 炎上格原用 1962-11-05，该盘在「巳藏干改正为丙庚戊」后财由 1.8 升到 2.0 转破格；
+// 破格不配专章（classics 会跳过 status==='破格'），故换成仍是「待定」的 1951-07-25。
 const SPECIAL = [
   ['1960-07-05T21:30', '曲直格', 'smt-quzhi'],
-  ['1962-11-05T09:30', '炎上格', 'smt-yanshang'],
+  ['1951-07-25T09:30', '炎上格', 'smt-yanshang'],
   ['1961-08-15T15:30', '从革格', 'smt-congge'],
   ['1960-03-25T21:30', '润下格', 'smt-runxia'],
   ['1961-01-25T09:30', '稼穑格', 'smt-jiasi'],

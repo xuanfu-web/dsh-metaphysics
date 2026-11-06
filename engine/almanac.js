@@ -10,7 +10,7 @@
 import { solarToLunar } from './lunar.js';
 import { nayinOf } from './nayin.js';
 import {
-  toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, partsToJd, STEMS, BRANCHES, TERM_NAMES,
+  toJDN, fromJDN, dayGanzhiIndex, ganzhiName, termWindow, termInstantJd, STEMS, BRANCHES, TERM_NAMES,
 } from './calendar.js';
 import { HEX64 } from './interpret-data.js';
 import { sanheGroupOf } from './sanhe.js';
@@ -196,13 +196,18 @@ export function buildAlmanac(input) {
   if (day > daysInMonth(year, month)) {
     throw new Error(`非法日期：${year} 年 ${month} 月没有 ${day} 日`);
   }
-  const jdNoon = partsToJd({ year, month, day, hour: 12, minute: 0 });
   const lunar = solarToLunar(year, month, day);
   const jdn = toJDN(year, month, day);
 
+  // 黄历是「按日」出版的：交节当天即算新节（通书本子口径），所以节气一律比「日序」，
+  // 不比当天正午的时刻。用正午比时刻时，交节落在午后的那半年，整天还挂在上个月——
+  // 每年 12 个「节」约一半在午后，等于每年约 6 天的月柱、建除、值日神全错。
+  // 八字侧仍按精确到分的交节时刻判月柱（见 bazi.js），两者不共用这一层。
+  const termDayIndex = (jd) => Math.floor(jd + 0.5);
+
   // 年柱：立春界；同时给出春节界口径
   const lichunJd = termInstantJd(year, 2);
-  const ganzhiYear = jdNoon < lichunJd ? year - 1 : year;
+  const ganzhiYear = termDayIndex(lichunJd) <= jdn ? year : year - 1;
   const yearIdx = (((ganzhiYear - 4) % 60) + 60) % 60;
   const yearGz = ganzhiName(yearIdx);
   const springYear = lunar.lunarYear;
@@ -211,9 +216,8 @@ export function buildAlmanac(input) {
   // 月柱：以「节」为界
   const jieTerms = termWindow(year, { jieOnly: true });
   let prevJie = null;
-  let nextJie = null;
   for (const t of jieTerms) {
-    if (t.jd <= jdNoon) prevJie = t; else { if (!nextJie) nextJie = t; }
+    if (termDayIndex(t.jd) <= jdn) prevJie = t;
   }
   const monthBranchIdx = ((2 + (prevJie.index - 2) / 2) % 12 + 12) % 12;
   const yinMonthStem = ((STEMS.indexOf(yearGz.stem) % 5) * 2 + 2) % 10;
@@ -231,7 +235,7 @@ export function buildAlmanac(input) {
   let prevTerm = null;
   let nextTerm = null;
   for (const t of allTerms) {
-    if (t.jd <= jdNoon) prevTerm = t; else { if (!nextTerm) nextTerm = t; }
+    if (termDayIndex(t.jd) <= jdn) prevTerm = t; else { if (!nextTerm) nextTerm = t; }
   }
   const fmtJdDate = (jd) => {
     const p = fromJDN(Math.floor(jd + 0.5));

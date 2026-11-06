@@ -1,6 +1,6 @@
 # dsh-metaphysics · 命理排盘
 
-[![公开对拍：0 处不符](docs/assets/verification-badge.svg)](docs/verification.html)
+[![公开对拍：0 处不符（127 项未核）](docs/assets/verification-badge.svg)](docs/verification.html)
 
 Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness): BaZi (Four Pillars), Zi Wei Dou Shu, LiuYao, MeiHua YiShu, Da Liu Ren, Qi Men Dun Jia, relationship compatibility, Tarot, plus quick-reference tools — almanac, date selection, bone-weight fortune, Xiao Liu Ren, horoscope, numerology, an MBTI-style 16-type questionnaire, life-curve, feng shui and name analysis.
 
@@ -141,7 +141,7 @@ Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com
 - **起名 `name`**：1062 字自建字库（常用名用字，按五行分段，每字带**拼音/声调/康熙笔画**），另有**姓氏库 998 姓 + 82 复姓**（`engine/surname-data.js`，逐姓康熙笔画 + 读音；笔画由三份资料互证 + Unihan 部首结构值复算，25 个分歧字逐个裁定并把理由写在模块头）；评估时**逐字**给五行、释义、来源与是否合喜用，未收录的字不猜五行但给**同喜用五行的可换字**（也可用 `charElements` 自行指定）；**五格剖象**按康熙字典繁体笔画算天格/人格/地格/外格/总格，配通行本 81 数理（超 81 按 −80 回绕）与三才五行，任一字缺笔画就整体返回「算不了」并点名缺哪个字，可用 `strokeOverrides`（逐字）/`surnameStrokes`（按姓）补；多音姓（覃/查/尉…）**主读照算、又读并列显示**，只考证得出笔画的 71 个姓不猜读法、音韵直接落空；**音韵**只做机械检查——全名同调、相邻同声母/同韵母、叠字撞音，判「顺口/略拗/拗口」，**不做语义谐音**；生成候选名按「合喜用 → 两字异行 → 常用字优先 → 五格格数 → 性别倾向 → 字库序」排序，只是排序不是「吉名」判定
 
 ### 解析与详解（interpret）
-每个体系的排盘结果下方都会跟一个「解析与详解」模块，帮你把盘面翻译成能看懂、能照着做的事。对话工具里加 `withInterpret: true` 即可一并返回。
+「解析与详解」把盘面翻译成能看懂、能照着做的事，覆盖**八字、紫微、六爻、梅花、大六壬、奇门、塔罗**这 7 个体系：结果下方跟一个解析模块，对话工具里加 `withInterpret: true` 即可一并返回。合盘有自己的逐项对照详批、人生 K 线有自己的阶段报告、起名有自己的五格与音韵评估，都不再套一层解析；黄历、择日、称骨、小六壬、星座、生命数字、十六型人格、公农历互转属速查类，也不附解析——对这些体系传 `withInterpret` 不会多出这一段（结果里也不会有 `interpretTier`）。
 
 - **结构化输出**：`{ moduleType, system, title, lead, dimensions[], sections[], disclaimer }`；`moduleType` 为 `natal`（命盘）/ `divination`（卦象）/ `card`（牌阵），`dimensions` 固定五个维度；`sections` 可带 `tone`（`good`/`watch`/`bad`），面板据此上色
 - **分层结构与逐宫（0.43 新增）**：紫微多出**命身底色**（命宫主星 + 亮度 + 双星组合 + 身宫落点）、**逐宫分析**（十二宫各一条：宫位取象 + 主星亮度 + 吉星/煞星 + 四化，下接一句读法）与**三层格局**（有利格局 / 结构提示 / 忌格提醒，每条写名称、人话、依据与做法）；八字多出**命局框架**（日主/用神/格局 + 一句命局基调）、**正面画像**（外在取象 / 性格底色 / 事业与家庭）、**流年时间轴**（近三年逐条给档位与理由）与**专业建议**（喜用落地 / 忌神自觉 / 地支关系 / 调候）。措辞取自两份独立词库 `engine/ziwei-words.js`、`engine/bazi-words.js`——引擎只出事实，词库只出说法，词库里没有任何判断条件

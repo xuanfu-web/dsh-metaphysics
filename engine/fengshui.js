@@ -119,10 +119,11 @@ export function eightStars(gua) {
   return result;
 }
 
-/** 立春界节气年：生日在当年立春前 → 上一年（按正午判，与黄历一致）。 */
+/** 立春界节气年：生日在当年立春前 → 上一年。
+ *  按「日」判（立春当日即算新年），与黄历同一口径；本函数只收年月日，不看当天交节时刻——
+ *  命卦本来就只按出生年取，同一天出生的人不因生在 16:27 前后换卦。 */
 export function guaYearOf(year, month, day) {
-  const birthJd = partsToJd({ year, month, day, hour: 12, minute: 0 });
-  return birthJd < termInstantJd(year, 2) ? year - 1 : year;
+  return Math.floor(termInstantJd(year, 2) + 0.5) <= toJDN(year, month, day) ? year : year - 1;
 }
 
 /**
@@ -219,13 +220,20 @@ export function timeFlyingOf(at) {
   const hour = Number.isInteger(at.hour) ? at.hour : 12;
   const minute = Number.isInteger(at.minute) ? at.minute : 0;
   const jd = partsToJd({ year, month, day, hour, minute });
+  // 交节的判定基准：给了时刻就按精确时刻（14:30 出生、当天 17:03 才立春，仍在上一月）；
+  // 只给日期则按「日」——当天交节即算新节。旧实现一律用正午，交节在午后的那半天会算成上个月，
+  // 与同一页黄历的月柱（已按日判）自相矛盾。
+  const hasHour = Number.isInteger(at.hour);
+  const jdTerm = hasHour ? jd : toJDN(year, month, day) + 0.5 - 1e-6;
   const terms = termWindow(year);
-  const guaYear = guaYearOf(year, month, day);
+  // 年紫白同样以立春为界，且与上面月/日/时用同一个基准：给时刻按时刻，只给日期按日。
+  // 若这里改回只看日期的 guaYearOf，立春当天的「年」会是新年、「月」还是上一月，同盘自相矛盾。
+  const guaYear = jdTerm >= termInstantJd(year, 2) ? year : year - 1;
   const yearBranch = yearBranchOf(guaYear);
   const yearGroup = branchGroupOf(yearBranch);
-  const prevJie = previousJie(terms, jd);
+  const prevJie = previousJie(terms, jdTerm);
   const monthNum = JIE_MONTH_NUM[prevJie ? prevJie.name : '立春'] || 1;
-  const half = zibaiHalfAt(terms, jd);
+  const half = zibaiHalfAt(terms, jdTerm);
   const jdn = toJDN(year, month, day) + (hour >= 23 ? 1 : 0);
   const dayIdx = dayGanzhiIndex(jdn);
   const dayName = ganzhiName(dayIdx).name;

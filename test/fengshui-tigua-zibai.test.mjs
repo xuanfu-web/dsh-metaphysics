@@ -126,6 +126,20 @@ const build = (args) => buildFengshui({ action: 'xuankong', sitting: '子', faci
   eq('节气月名寒露', y(2026, 10, 31).meta.monthJie, '寒露');
   eq('年支取立春界', y(2026, 1, 10).meta.guaYear, 2025);
   eq('年支立春前归上一年', y(2026, 1, 10).meta.yearBranch, '巳');
+
+  // 立春当日（2024-02-04 16:27）：年与月必须用同一个基准，不能一年新月旧。
+  // 给到时刻按精确时刻；只给日期按「日」（当天交节即算新节，与黄历一致）。
+  const noon = y(2024, 2, 4);
+  eq('立春当日 12:00 年仍是癸卯', noon.meta.guaYear, 2023);
+  eq('立春当日 12:00 月仍是丑月（小寒）', noon.meta.monthJie, '小寒');
+  const late = timeFlyingOf({ year: 2024, month: 2, day: 4, hour: 20, minute: 0 });
+  eq('立春当日 20:00 年转甲辰', late.meta.guaYear, 2024);
+  eq('立春当日 20:00 月转立春', late.meta.monthJie, '立春');
+  const dateOnly = timeFlyingOf({ year: 2024, month: 2, day: 4 });
+  eq('只给日期：立春当日即算新年新月',
+    `${dateOnly.meta.guaYear}/${dateOnly.meta.monthJie}`, '2024/立春');
+  eq('只给日期与给 20:00 同盘（同一基准）',
+    `${dateOnly.meta.monthNum}/${dateOnly.month.center}`, `${late.meta.monthNum}/${late.month.center}`);
 }
 
 // ── ⑦ 日紫白：六个分段锚点（甲子日） ────────────────────────────

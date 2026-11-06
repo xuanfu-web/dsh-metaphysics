@@ -2,7 +2,7 @@
 // 报告页、README 徽章与这里都调用同一个 buildVerification()；
 // 任何一条判定变了、报告忘记重建，或剔除项丢了理由，都会让这个文件变红。
 import fs from 'node:fs';
-import { buildVerification, renderVerificationHTML, renderBadgeSVG, verifyClassicCase, verifyQimenCase } from '../tools/verification.mjs';
+import { buildVerification, renderVerificationHTML, renderBadgeSVG, badgeTextWidth, verifyClassicCase, verifyQimenCase } from '../tools/verification.mjs';
 import { ok, eq } from './_harness.mjs';
 
 const data = buildVerification();
@@ -44,6 +44,25 @@ ok('报告无未替换占位或 NaN', !/undefined|NaN/.test(html));
 ok('报告自包含（无外链脚本/样式）', !/<script[^>]+src=/.test(html) && !/<link[^>]+stylesheet/.test(html));
 ok('徽章为 0 处不符的绿色', badge.includes('0 处不符') && badge.includes('#1f6f3f'));
 ok('徽章披露 5 条剔除与 20 奇门', badge.includes('5 剔除') && badge.includes('20 奇门'), badge.match(/aria-label="[^"]+"/)?.[0]);
+// 「0 处不符」不能替「127 条其实没核」兜着：旬空那一项没有起卦日就无从比对，
+// 徽章必须把这个口径写在脸上，否则等于拿没核过的项冒充核过了。
+ok('徽章标注 127 项未核', badge.includes('127 未核'), badge.match(/aria-label="[^"]+"/)?.[0]);
+ok('未核数与 totals 同源', badge.includes(`${t.unchecked} 未核`) && t.unchecked === 127);
+// 徽章是定宽 SVG：宽度要跟着文字长度走，写死就会把新增的「未核」顶出彩色面板。
+{
+  const width = Number(badge.match(/^<svg[^>]*width="(\d+)"/)?.[1]);
+  const panel = Number(badge.match(/<rect x="62" width="(\d+)" height="28" rx="4" fill="#1f6f3f"\/>/)?.[1]);
+  const text = (badge.match(/<text x="\d+" y="18">([^<]*)<\/text>/g) || []).pop().replace(/<[^>]+>/g, '');
+  eq('徽章总宽 = 左栏 62 + 右栏', width, 62 + panel);
+  ok('徽章文字装得进右栏（每侧留白 ≥16px）', badgeTextWidth(text) + 16 * 2 <= panel,
+    `${Math.round(badgeTextWidth(text))}px 文字 / ${panel}px 面板`);
+  // 数字变长（未核 127 → 1270）时徽章要跟着变宽，而不是把字挤出面板
+  const wider = renderBadgeSVG({ totals: { ...t, unchecked: 1270, ziweiCharts: 3120 } });
+  const widerWidth = Number(wider.match(/^<svg[^>]*width="(\d+)"/)?.[1]);
+  ok('数字变长时徽章跟着变宽', widerWidth > width, `${widerWidth} vs ${width}`);
+  // 未核为 0 时不该挂一个「0 未核」的废话
+  ok('无未核项时不写「0 未核」', !renderBadgeSVG({ totals: { ...t, unchecked: 0 } }).includes('0 未核'));
+}
 
 // 故意改坏一条卦例判定：报告校验器必须立刻把它标成不一致
 const FIX = JSON.parse(fs.readFileSync(new URL('./fixtures/classics.json', import.meta.url), 'utf8'));
@@ -60,3 +79,43 @@ const qbad = verifyQimenCase({
   chart: { ...qsource.chart, core: { ...qsource.chart.core, fuGong: Number(qsource.chart.core.fuGong) === 1 ? 2 : 1 } },
 });
 ok('改坏奇门值符会被抓到', qbad.status === '不一致' && qbad.reason.includes('值符'), qbad.reason);
+
+// ── 旬空：只能按起卦日核，没有起卦日就必须说「未核」 ────────────
+// 《卜筮正宗》原表 128 条里只有 1 条记了起卦日；以前其余 127 条的旬空是拿
+// 「今天」的日干支算出来的，页面上写「空辰巳 → 空午未」却仍标「一致」，
+// 而且每换一旬页面内容就变，仓库里的报告注定与源码对不上。
+{
+  const ly = data.rows.filter((r) => r.system === '六爻');
+  const unchecked = ly.filter((r) => r.unchecked);
+  ok('无起卦日的卦例被标为未核', unchecked.length === t.unchecked && t.unchecked > 0, `${t.unchecked} / ${ly.length}`);
+  ok('未核行的引擎结果不给旬空值', unchecked.every((r) => r.actual.includes('空—（未核）')), unchecked[0] && unchecked[0].actual);
+  ok('未核行的期望值与对拍项都写明未核',
+    unchecked.every((r) => /（未核）/.test(r.expected) && r.item.includes('未核')), unchecked[0] && unchecked[0].item);
+  ok('未核行仍按其余四项判一致', unchecked.every((r) => r.status === '一致'));
+
+  const dated = ly.filter((r) => !r.unchecked && r.status !== '剔除');
+  ok('有起卦日的卦例照旧核旬空', dated.length >= 1 && dated.every((r) => /空[子丑寅卯辰巳午未申酉戌亥]{2}/.test(r.actual)),
+    `${dated.length} 条`);
+  const datedSrc = FIX.boshizhengzong.find((x) => x.kong && /月[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]日/.test(String(x.date || '')));
+  ok('找到带日期的原表用例', Boolean(datedSrc), 'fixture 里应有申月甲午日之类');
+  const badKong = verifyClassicCase({ ...datedSrc, kong: datedSrc.kong === '子丑' ? '寅卯' : '子丑' }, 'pair');
+  ok('改坏旬空会被抓到', badKong.status === '不一致' && badKong.reason.includes('旬空'), badKong.reason);
+}
+
+// 报告不能依赖「今天」：冻结成两个不同日期，渲染结果必须逐字节相同。
+// 这条锁住的是「跨旬重建 → 报告与源码不一致 → CI 红」那类回归。
+{
+  const RealDate = Date;
+  const at = (iso) => {
+    globalThis.Date = class extends RealDate {
+      constructor(...a) { if (a.length) super(...a); else super(iso); }
+      static now() { return RealDate.parse(iso); }
+    };
+  };
+  at('2026-11-06T10:00:00+08:00');
+  const a = renderVerificationHTML(buildVerification());
+  at('2027-03-19T10:00:00+08:00');
+  const b = renderVerificationHTML(buildVerification());
+  globalThis.Date = RealDate;
+  ok('报告与系统日期无关（跨日期渲染一致）', a === b, `${a.length} vs ${b.length}`);
+}

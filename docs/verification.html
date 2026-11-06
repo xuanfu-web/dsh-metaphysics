@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>公开对拍报告 · 0.62.2</title>
+<title>公开对拍报告 · 0.62.3</title>
 <style>
 :root{--bg:#f5f1e9;--panel:#fffdf8;--panel2:#f9f5ec;--ink:#1a1916;--dim:#6f6a60;--line:#d8cfbf;--accent:#a72c23;--ok:#1f6f3f;--bad:#a72c23;--skip:#8a5a00}
 @media (prefers-color-scheme:dark){:root{--bg:#12110d;--panel:#1b1913;--panel2:#221f18;--ink:#e7e2d6;--dim:#9b9488;--line:#3c372e;--accent:#e2755f;--ok:#67b98a;--bad:#e2755f;--skip:#d9a052}}
@@ -72,14 +72,14 @@ tr[hidden]{display:none}
 <body>
 <div class="wrap">
   <h1>公开对拍报告</h1>
-  <p class="sub">v0.62.2 · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
+  <p class="sub">v0.62.3 · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
 
   <div class="cards">
     <div class="card"><span>六爻卦例</span><b>128</b><small>成对 93 · 静卦 35 · 剔除 5</small></div>
     <div class="card"><span>紫微盘</span><b>312</b><small>34 条格局 · 10,608 条判定</small></div>
     <div class="card"><span>奇门时辰</span><b>20</b><small>20 × 9 宫 = 180 个宫位</small></div>
     <div class="card"><span>交运案例</span><b>12</b><small>取节 · 比例 · 闰日 · 真太阳时</small></div>
-    <div class="card"><span>不一致</span><b>0</b><small>剔除 5 条（理由见下表）</small></div>
+    <div class="card"><span>不一致</span><b>0</b><small>剔除 5 条（理由见下表） · 未核 127 项（原表无起卦日，旬空不比对）</small></div>
   </div>
 
   <div class="controls" role="group" aria-label="筛选对拍结果">
@@ -109,11 +109,11 @@ tr[hidden]{display:none}
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">自己终身成败｜火山旅之山风蛊</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火山旅之山风蛊｜离火｜动2｜缺—｜空—</td>
-      <td data-label="引擎结果" class="mono">火山旅之山风蛊｜离宫火｜动2｜缺父母、官鬼｜空子丑</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火山旅之山风蛊｜离火｜动2｜缺—｜空—（未核）</td>
+      <td data-label="引擎结果" class="mono">火山旅之山风蛊｜离宫火｜动2｜缺父母、官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
@@ -127,1136 +127,1136 @@ tr[hidden]{display:none}
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占弟病业已临危?｜水火既济之泽火革</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水火既济之泽火革｜坎水｜动1｜缺妻财｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">水火既济之泽火革｜坎宫水｜动1｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水火既济之泽火革｜坎水｜动1｜缺妻财｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">水火既济之泽火革｜坎宫水｜动1｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占弟被讼吉凶何如?｜泽水困之雷风恒</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽水困之雷风恒｜兑金｜动2｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">泽水困之雷风恒｜兑宫金｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽水困之雷风恒｜兑金｜动2｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">泽水困之雷风恒｜兑宫金｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占自病?｜泽风大过之火风鼎</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽风大过之火风鼎｜震木｜动2｜缺子孙、兄弟｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">泽风大过之火风鼎｜震宫木｜动2｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽风大过之火风鼎｜震木｜动2｜缺子孙、兄弟｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">泽风大过之火风鼎｜震宫木｜动2｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占家宅人口平安否?｜水天需之干为天</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水天需之乾为天｜坤土｜动2｜缺父母｜空子丑</td>
-      <td data-label="引擎结果" class="mono">水天需之乾为天｜坤宫土｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水天需之乾为天｜坤土｜动2｜缺父母｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">水天需之乾为天｜坤宫土｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占开店?｜艮为山之地火明夷</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">艮为山之地火明夷｜艮土｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">艮为山之地火明夷｜艮宫土｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">艮为山之地火明夷｜艮土｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">艮为山之地火明夷｜艮宫土｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占自久病问过得今年否?｜天山遁之天风姤</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天山遁之天风姤｜乾金｜动1｜缺子孙、妻财｜空子丑</td>
-      <td data-label="引擎结果" class="mono">天山遁之天风姤｜乾宫金｜动1｜缺子孙、妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天山遁之天风姤｜乾金｜动1｜缺子孙、妻财｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">天山遁之天风姤｜乾宫金｜动1｜缺子孙、妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占卖货?｜风火家人之风天小畜</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风火家人之风天小畜｜巽木｜动1｜缺官鬼｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风火家人之风天小畜｜巽宫木｜动1｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风火家人之风天小畜｜巽木｜动1｜缺官鬼｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风火家人之风天小畜｜巽宫木｜动1｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占何日雨?｜地风升之地水师</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地风升之地水师｜震木｜动1｜缺子孙、兄弟｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">地风升之地水师｜震宫木｜动1｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地风升之地水师｜震木｜动1｜缺子孙、兄弟｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">地风升之地水师｜震宫木｜动1｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父官事｜泽地萃之天火同人</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽地萃之天火同人｜兑金｜动3｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">泽地萃之天火同人｜兑宫金｜动3｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽地萃之天火同人｜兑金｜动3｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">泽地萃之天火同人｜兑宫金｜动3｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占仆何日回?｜泽天夬之天泽履</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽天夬之天泽履｜坤土｜动2｜缺父母｜空午未</td>
-      <td data-label="引擎结果" class="mono">泽天夬之天泽履｜坤宫土｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽天夬之天泽履｜坤土｜动2｜缺父母｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">泽天夬之天泽履｜坤宫土｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占索房价｜坎为水之坤为地</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">坎为水之坤为地｜坎水｜动2｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">坎为水之坤为地｜坎宫水｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">坎为水之坤为地｜坎水｜动2｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">坎为水之坤为地｜坎宫水｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占具题｜风泽中孚之山泽损</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风泽中孚之山泽损｜艮土｜动1｜缺子孙、妻财｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">风泽中孚之山泽损｜艮宫土｜动1｜缺子孙、妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风泽中孚之山泽损｜艮土｜动1｜缺子孙、妻财｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">风泽中孚之山泽损｜艮宫土｜动1｜缺子孙、妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占虑大计｜火山旅之地火明夷</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火山旅之地火明夷｜离火｜动3｜缺父母、官鬼｜空子丑</td>
-      <td data-label="引擎结果" class="mono">火山旅之地火明夷｜离宫火｜动3｜缺父母、官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火山旅之地火明夷｜离火｜动3｜缺父母、官鬼｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">火山旅之地火明夷｜离宫火｜动3｜缺父母、官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">妻占夫近病?｜天火同人之离为火</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天火同人之离为火｜离火｜动1｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">天火同人之离为火｜离宫火｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天火同人之离为火｜离火｜动1｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">天火同人之离为火｜离宫火｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人自占近病?｜天火同火之火山旅</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天火同人之火山旅｜离火｜动2｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">天火同人之火山旅｜离宫火｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天火同人之火山旅｜离火｜动2｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">天火同人之火山旅｜离宫火｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">子占父病?｜地风升之地水师</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地风升之地水师｜震木｜动1｜缺子孙、兄弟｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">地风升之地水师｜震宫木｜动1｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地风升之地水师｜震木｜动1｜缺子孙、兄弟｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">地风升之地水师｜震宫木｜动1｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">两村争戽水闹殴｜离为火之坤为地</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">离为火之坤为地｜离火｜动4｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">离为火之坤为地｜离宫火｜动4｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">离为火之坤为地｜离火｜动4｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">离为火之坤为地｜离宫火｜动4｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占递呈图谋补缺｜干为天之水天需</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">乾为天之水天需｜乾金｜动2｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">乾为天之水天需｜乾宫金｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">乾为天之水天需｜乾金｜动2｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">乾为天之水天需｜乾宫金｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占选期｜干为天之风天小畜</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">乾为天之风天小畜｜乾金｜动1｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">乾为天之风天小畜｜乾宫金｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">乾为天之风天小畜｜乾金｜动1｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">乾为天之风天小畜｜乾宫金｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占辨复｜泽地萃之泽火革</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽地萃之泽火革｜兑金｜动2｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">泽地萃之泽火革｜兑宫金｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽地萃之泽火革｜兑金｜动2｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">泽地萃之泽火革｜兑宫金｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父急病｜干为天之山火贲</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">乾为天之山火贲｜乾金｜动3｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">乾为天之山火贲｜乾宫金｜动3｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">乾为天之山火贲｜乾金｜动3｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">乾为天之山火贲｜乾宫金｜动3｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占婶病｜离为火之地火明夷</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">离为火之地火明夷｜离火｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">离为火之地火明夷｜离宫火｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">离为火之地火明夷｜离火｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">离为火之地火明夷｜离宫火｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子何日归｜火泽睽之火风鼎</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火泽睽之火风鼎｜艮土｜动2｜缺妻财｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">火泽睽之火风鼎｜艮宫土｜动2｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火泽睽之火风鼎｜艮土｜动2｜缺妻财｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">火泽睽之火风鼎｜艮宫土｜动2｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父何日归｜艮天大畜之干为天</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山天大畜之乾为天｜艮土｜动2｜缺子孙、父母｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">山天大畜之乾为天｜艮宫土｜动2｜缺父母、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山天大畜之乾为天｜艮土｜动2｜缺子孙、父母｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">山天大畜之乾为天｜艮宫土｜动2｜缺父母、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占地造葬可否｜山雷颐之天雷无妄</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山雷颐之天雷无妄｜巽木｜动2｜缺子孙、官鬼｜空子丑</td>
-      <td data-label="引擎结果" class="mono">山雷颐之天雷无妄｜巽宫木｜动2｜缺子孙、官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山雷颐之天雷无妄｜巽木｜动2｜缺子孙、官鬼｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">山雷颐之天雷无妄｜巽宫木｜动2｜缺子孙、官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占何日雨止｜火风鼎之火泽暌</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火风鼎之火泽睽｜离火｜动2｜缺父母｜空—</td>
-      <td data-label="引擎结果" class="mono">火风鼎之火泽睽｜离宫火｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火风鼎之火泽睽｜离火｜动2｜缺父母｜空—（未核）</td>
+      <td data-label="引擎结果" class="mono">火风鼎之火泽睽｜离宫火｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占妻去摇会可得否｜雷风恒之山风蛊</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷风恒之山风蛊｜震木｜动2｜缺兄弟｜空—</td>
-      <td data-label="引擎结果" class="mono">雷风恒之山风蛊｜震宫木｜动2｜缺兄弟｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷风恒之山风蛊｜震木｜动2｜缺兄弟｜空—（未核）</td>
+      <td data-label="引擎结果" class="mono">雷风恒之山风蛊｜震宫木｜动2｜缺兄弟｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占随官上任如何｜水地比之水风井</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水地比之水风井｜坤土｜动2｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">水地比之水风井｜坤宫土｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水地比之水风井｜坤土｜动2｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">水地比之水风井｜坤宫土｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占嫂复病吉凶何如?｜山地剥之坤为地</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山地剥之坤为地｜乾金｜动1｜缺兄弟｜空子丑</td>
-      <td data-label="引擎结果" class="mono">山地剥之坤为地｜乾宫金｜动1｜缺兄弟｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山地剥之坤为地｜乾金｜动1｜缺兄弟｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">山地剥之坤为地｜乾宫金｜动1｜缺兄弟｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占升选｜地泽临之风泽中孚</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地泽临之风泽中孚｜坤土｜动2｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">地泽临之风泽中孚｜坤宫土｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地泽临之风泽中孚｜坤土｜动2｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">地泽临之风泽中孚｜坤宫土｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占往前处脱货有利否?｜风天小畜之干为天</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风天小畜之乾为天｜巽木｜动1｜缺官鬼｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">风天小畜之乾为天｜巽宫木｜动1｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风天小畜之乾为天｜巽木｜动1｜缺官鬼｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">风天小畜之乾为天｜巽宫木｜动1｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占坟地｜巽为风之地风升</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">巽为风之地风升｜巽木｜动2｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">巽为风之地风升｜巽宫木｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">巽为风之地风升｜巽木｜动2｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">巽为风之地风升｜巽宫木｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占兵到，一家当避何处?｜天雷无妄之雷天大壮</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天雷无妄之雷天大壮｜巽木｜动4｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">天雷无妄之雷天大壮｜巽宫木｜动4｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天雷无妄之雷天大壮｜巽木｜动4｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">天雷无妄之雷天大壮｜巽宫木｜动4｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">客外占众中安否?｜天雷无妄之干为天卦</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天雷无妄之乾为天｜巽木｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">天雷无妄之乾为天｜巽宫木｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天雷无妄之乾为天｜巽木｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">天雷无妄之乾为天｜巽宫木｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父在任平安否?｜天风姤之雷风恒</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天风姤之雷风恒｜乾金｜动2｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">天风姤之雷风恒｜乾宫金｜动2｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天风姤之雷风恒｜乾金｜动2｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">天风姤之雷风恒｜乾宫金｜动2｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占妻在家安否?｜雷地豫之天地否</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷地豫之天地否｜震木｜动2｜缺—｜空—</td>
-      <td data-label="引擎结果" class="mono">雷地豫之天地否｜震宫木｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷地豫之天地否｜震木｜动2｜缺—｜空—（未核）</td>
+      <td data-label="引擎结果" class="mono">雷地豫之天地否｜震宫木｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子病何日愈｜天风姤之天雷无妄</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天风姤之天雷无妄｜乾金｜动3｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">天风姤之天雷无妄｜乾宫金｜动3｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天风姤之天雷无妄｜乾金｜动3｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">天风姤之天雷无妄｜乾宫金｜动3｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占妻病何日愈?｜泽地萃之天地比</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽地萃之水地比｜兑金｜动1｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">泽地萃之水地比｜兑宫金｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽地萃之水地比｜兑金｜动1｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">泽地萃之水地比｜兑宫金｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占岳母近病｜地水师之地风升</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地水师之地风升｜坎水｜动1｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">地水师之地风升｜坎宫水｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地水师之地风升｜坎水｜动1｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">地水师之地风升｜坎宫水｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占父近病｜地雷复之火雷噬嗑</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地雷复之火雷噬嗑｜坤土｜动2｜缺父母｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">地雷复之火雷噬嗑｜坤宫土｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地雷复之火雷噬嗑｜坤土｜动2｜缺父母｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">地雷复之火雷噬嗑｜坤宫土｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占将来有官否?｜兑为金之天水讼。</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">兑为泽之天水讼｜兑金｜动2｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">兑为泽之天水讼｜兑宫金｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">兑为泽之天水讼｜兑金｜动2｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">兑为泽之天水讼｜兑宫金｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父近出何日回?｜干为天之泽天夬。</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">乾为天之泽天夬｜乾金｜动1｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">乾为天之泽天夬｜乾宫金｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">乾为天之泽天夬｜乾金｜动1｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">乾为天之泽天夬｜乾宫金｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占后运功名｜艮为山之山地观。</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">艮为山之风地观｜艮土｜动2｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">艮为山之风地观｜艮宫土｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">艮为山之风地观｜艮土｜动2｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">艮为山之风地观｜艮宫土｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子病吉凶｜艮为山之山水蒙</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">艮为山之山水蒙｜艮土｜动2｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">艮为山之山水蒙｜艮宫土｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">艮为山之山水蒙｜艮土｜动2｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">艮为山之山水蒙｜艮宫土｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占买宅吉否?｜泽火革之泽天夬。</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽火革之泽天夬｜坎水｜动1｜缺妻财｜空午未</td>
-      <td data-label="引擎结果" class="mono">泽火革之泽天夬｜坎宫水｜动1｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽火革之泽天夬｜坎水｜动1｜缺妻财｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">泽火革之泽天夬｜坎宫水｜动1｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占乡试?｜雷风恒之泽风大过。</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷风恒之泽风大过｜震木｜动1｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">雷风恒之泽风大过｜震宫木｜动1｜缺兄弟｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷风恒之泽风大过｜震木｜动1｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">雷风恒之泽风大过｜震宫木｜动1｜缺兄弟｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">自占求婚｜火雷噬嗑之水地比</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火雷噬嗑之水地比｜巽木｜动4｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">火雷噬嗑之水地比｜巽宫木｜动4｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火雷噬嗑之水地比｜巽木｜动4｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">火雷噬嗑之水地比｜巽宫木｜动4｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占何年生子?｜水雷屯之水泽节</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水雷屯之水泽节｜坎水｜动1｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">水雷屯之水泽节｜坎宫水｜动1｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水雷屯之水泽节｜坎水｜动1｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">水雷屯之水泽节｜坎宫水｜动1｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">被论因占自陈如何｜地水师之地火明夷</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地水师之地火明夷｜坎水｜动3｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">地水师之地火明夷｜坎宫水｜动3｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地水师之地火明夷｜坎水｜动3｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">地水师之地火明夷｜坎宫水｜动3｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占功名终得出任否?｜天火同人之泽火革</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天火同人之泽火革｜离火｜动1｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">天火同人之泽火革｜离宫火｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天火同人之泽火革｜离火｜动1｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">天火同人之泽火革｜离宫火｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占出外贸易如何?｜雷风恒之雷地豫</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷风恒之雷地豫｜震木｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">雷风恒之雷地豫｜震宫木｜动2｜缺兄弟｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷风恒之雷地豫｜震木｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">雷风恒之雷地豫｜震宫木｜动2｜缺兄弟｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占失银物可得复否?｜巽为风之天水讼</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">巽为风之天水讼｜巽木｜动2｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">巽为风之天水讼｜巽宫木｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">巽为风之天水讼｜巽木｜动2｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">巽为风之天水讼｜巽宫木｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占己悔婚可复成否｜离为火之火山旅</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">离为火之火山旅｜离火｜动1｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">离为火之火山旅｜离宫火｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">离为火之火山旅｜离火｜动1｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">离为火之火山旅｜离宫火｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占妻病｜震为木之雷火丰</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">震为雷之雷火丰｜震木｜动1｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">震为雷之雷火丰｜震宫木｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">震为雷之雷火丰｜震木｜动1｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">震为雷之雷火丰｜震宫木｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占何日得财｜离为火之雷火丰</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">离为火之雷火丰｜离火｜动1｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">离为火之雷火丰｜离宫火｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">离为火之雷火丰｜离火｜动1｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">离为火之雷火丰｜离宫火｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子病吉凶｜风山渐之风泽中乎孚</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风山渐之风泽中孚｜艮土｜动3｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">风山渐之风泽中孚｜艮宫土｜动3｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风山渐之风泽中孚｜艮土｜动3｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">风山渐之风泽中孚｜艮宫土｜动3｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占生产?｜山地剥之风地观</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山地剥之风地观｜乾金｜动1｜缺兄弟｜空午未</td>
-      <td data-label="引擎结果" class="mono">山地剥之风地观｜乾宫金｜动1｜缺兄弟｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山地剥之风地观｜乾金｜动1｜缺兄弟｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">山地剥之风地观｜乾宫金｜动1｜缺兄弟｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占友父病｜水雷屯之震为木</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水雷屯之震为雷｜坎水｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">水雷屯之震为雷｜坎宫水｜动2｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水雷屯之震为雷｜坎水｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">水雷屯之震为雷｜坎宫水｜动2｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占弟病?｜水火既济之雷火丰</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水火既济之雷火丰｜坎水｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">水火既济之雷火丰｜坎宫水｜动2｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水火既济之雷火丰｜坎水｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">水火既济之雷火丰｜坎宫水｜动2｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占侄在外平安否?｜天雷无妄之风雷颐</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天雷无妄之山雷颐｜巽木｜动2｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">天雷无妄之山雷颐｜巽宫木｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天雷无妄之山雷颐｜巽木｜动2｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">天雷无妄之山雷颐｜巽宫木｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占姑病｜泽山咸之水山蹇</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽山咸之水山蹇｜兑金｜动1｜缺妻财｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">泽山咸之水山蹇｜兑宫金｜动1｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽山咸之水山蹇｜兑金｜动1｜缺妻财｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">泽山咸之水山蹇｜兑宫金｜动1｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">姑占弟妇怀孕足月因有病生产平安否?｜泽水困之坎为水</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽水困之坎为水｜兑金｜动1｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">泽水困之坎为水｜兑宫金｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽水困之坎为水｜兑金｜动1｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">泽水困之坎为水｜兑宫金｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占因误军粮被参｜雷火丰之火山旅</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷火丰之火山旅｜坎水｜动2｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">雷火丰之火山旅｜坎宫水｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷火丰之火山旅｜坎水｜动2｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">雷火丰之火山旅｜坎宫水｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占寻穴地｜泽火革之水火既济</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽火革之水火既济｜坎水｜动1｜缺妻财｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">泽火革之水火既济｜坎宫水｜动1｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽火革之水火既济｜坎水｜动1｜缺妻财｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">泽火革之水火既济｜坎宫水｜动1｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占开店?｜雷天大壮之巽为风</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷天大壮之巽为风｜坤土｜动4｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">雷天大壮之巽为风｜坤宫土｜动4｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷天大壮之巽为风｜坤土｜动4｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">雷天大壮之巽为风｜坤宫土｜动4｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占侄有事被害否?｜雷天大壮之地天泰</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷天大壮之地天泰｜坤土｜动1｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">雷天大壮之地天泰｜坤宫土｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷天大壮之地天泰｜坤土｜动1｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">雷天大壮之地天泰｜坤宫土｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人因自及子俱被拿问?｜巽为风之坤为地</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">巽为风之坤为地｜巽木｜动4｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">巽为风之坤为地｜巽宫木｜动4｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">巽为风之坤为地｜巽木｜动4｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">巽为风之坤为地｜巽宫木｜动4｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占往买卖求得?｜兑为泽之震为雷</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">兑为泽之震为雷｜兑金｜动2｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">兑为泽之震为雷｜兑宫金｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">兑为泽之震为雷｜兑金｜动2｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">兑为泽之震为雷｜兑宫金｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占会试｜风地观之天地否</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风地观之天地否｜乾金｜动1｜缺子孙、兄弟｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">风地观之天地否｜乾宫金｜动1｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风地观之天地否｜乾金｜动1｜缺子孙、兄弟｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">风地观之天地否｜乾宫金｜动1｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">有同乡人占借贷?｜地雷复之雷地豫</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地雷复之雷地豫｜坤土｜动2｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">地雷复之雷地豫｜坤宫土｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地雷复之雷地豫｜坤土｜动2｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">地雷复之雷地豫｜坤宫土｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占廷师训子?｜天地否之干为天</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天地否之乾为天｜乾金｜动3｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">天地否之乾为天｜乾宫金｜动3｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天地否之乾为天｜乾金｜动3｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">天地否之乾为天｜乾宫金｜动3｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占侄孙病?｜风火家人之离为火</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风火家人之离为火｜巽木｜动2｜缺官鬼｜空子丑</td>
-      <td data-label="引擎结果" class="mono">风火家人之离为火｜巽宫木｜动2｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风火家人之离为火｜巽木｜动2｜缺官鬼｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">风火家人之离为火｜巽宫木｜动2｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占妾近病?｜巽为风之火天大有</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">巽为风之火天大有｜巽木｜动3｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">巽为风之火天大有｜巽宫木｜动3｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">巽为风之火天大有｜巽木｜动3｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">巽为风之火天大有｜巽宫木｜动3｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占夫病?｜离为火之山雷颐</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">离为火之山雷颐｜离火｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">离为火之山雷颐｜离宫火｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">离为火之山雷颐｜离火｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">离为火之山雷颐｜离宫火｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占一冬生意?｜山火贲之风火家人</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山火贲之风火家人｜艮土｜动1｜缺子孙、父母｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">山火贲之风火家人｜艮宫土｜动1｜缺父母、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山火贲之风火家人｜艮土｜动1｜缺子孙、父母｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">山火贲之风火家人｜艮宫土｜动1｜缺父母、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占雨久伤麦可否?｜天火同人之泽火革</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天火同人之泽火革｜离火｜动1｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">天火同人之泽火革｜离宫火｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天火同人之泽火革｜离火｜动1｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">天火同人之泽火革｜离宫火｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占自去寻父回?｜泽火革之水火既济</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽火革之水火既济｜坎水｜动1｜缺妻财｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">泽火革之水火既济｜坎宫水｜动1｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽火革之水火既济｜坎水｜动1｜缺妻财｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">泽火革之水火既济｜坎宫水｜动1｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占自去寻父回?｜火天大有之离为火</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火天大有之离为火｜乾金｜动1｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">火天大有之离为火｜乾宫金｜动1｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火天大有之离为火｜乾金｜动1｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">火天大有之离为火｜乾宫金｜动1｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占开煤窟何时见煤?｜风火家人之风雷益。</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风火家人之风雷益｜巽木｜动1｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风火家人之风雷益｜巽宫木｜动1｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风火家人之风雷益｜巽木｜动1｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风火家人之风雷益｜巽宫木｜动1｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占女病?｜火水未济之水山蹇</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火水未济之水山蹇｜离火｜动5｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">火水未济之水山蹇｜离宫火｜动5｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火水未济之水山蹇｜离火｜动5｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">火水未济之水山蹇｜离宫火｜动5｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父远出何日回?｜天山遁之雷泽归妹</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天山遁之雷泽归妹｜乾金｜动5｜缺子孙、妻财｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">天山遁之雷泽归妹｜乾宫金｜动5｜缺子孙、妻财｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天山遁之雷泽归妹｜乾金｜动5｜缺子孙、妻财｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">天山遁之雷泽归妹｜乾宫金｜动5｜缺子孙、妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父在乱军中吉凶?｜山天大畜之泽地萃</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山天大畜之泽地萃｜艮土｜动6｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">山天大畜之泽地萃｜艮宫土｜动6｜缺父母、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山天大畜之泽地萃｜艮土｜动6｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">山天大畜之泽地萃｜艮宫土｜动6｜缺父母、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占造坟葬｜干为天之坤为地</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">乾为天之坤为地｜乾金｜动6｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">乾为天之坤为地｜乾宫金｜动6｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">乾为天之坤为地｜乾金｜动6｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">乾为天之坤为地｜乾宫金｜动6｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子久出何日冲｜火风鼎之水天需</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火风鼎之水天需｜离火｜动4｜缺父母｜空申酉</td>
-      <td data-label="引擎结果" class="mono">火风鼎之水天需｜离宫火｜动4｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火风鼎之水天需｜离火｜动4｜缺父母｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">火风鼎之水天需｜离宫火｜动4｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占升迁｜地水师之风水涣</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地水师之风水涣｜坎水｜动2｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">地水师之风水涣｜坎宫水｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地水师之风水涣｜坎水｜动2｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">地水师之风水涣｜坎宫水｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子何日脱难?｜雷地豫之雷泽归妹</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷地豫之雷泽归妹｜震木｜动2｜缺父母｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">雷地豫之雷泽归妹｜震宫木｜动2｜缺父母｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷地豫之雷泽归妹｜震木｜动2｜缺父母｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">雷地豫之雷泽归妹｜震宫木｜动2｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子嗣多否?｜坤为地之艮为山</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">坤为地之艮为山｜坤土｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">坤为地之艮为山｜坤宫土｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">坤为地之艮为山｜坤土｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">坤为地之艮为山｜坤宫土｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占伯父何日回?｜火山旅之艮为山</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火山旅之艮为山｜离火｜动1｜缺官鬼、父母｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">火山旅之艮为山｜离宫火｜动1｜缺父母、官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火山旅之艮为山｜离火｜动1｜缺官鬼、父母｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">火山旅之艮为山｜离宫火｜动1｜缺父母、官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占家宅｜水风井之水泽节</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水风井之水泽节｜震木｜动2｜缺子孙、兄弟｜空申酉</td>
-      <td data-label="引擎结果" class="mono">水风井之水泽节｜震宫木｜动2｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水风井之水泽节｜震木｜动2｜缺子孙、兄弟｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">水风井之水泽节｜震宫木｜动2｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">因母病占问流年｜风雷益之天雷无妄</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风雷益之天雷无妄｜巽木｜动1｜缺官鬼｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风雷益之天雷无妄｜巽宫木｜动1｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风雷益之天雷无妄｜巽木｜动1｜缺官鬼｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风雷益之天雷无妄｜巽宫木｜动1｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占功名｜泽地萃之天山遁</td>
-      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽地萃之天山遁｜兑金｜动2｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">泽地萃之天山遁｜兑宫金｜动2｜缺—｜空申酉</td>
+      <td data-label="对拍项">本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽地萃之天山遁｜兑金｜动2｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">泽地萃之天山遁｜兑宫金｜动2｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》成对卦例原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">父为女择婿｜天地否</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天地否｜乾金｜缺子孙｜空子丑</td>
-      <td data-label="引擎结果" class="mono">天地否｜乾宫金｜动0｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天地否｜乾金｜缺子孙｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">天地否｜乾宫金｜动0｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占妹临产吉凶?｜火地晋</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火地晋｜乾金｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">火地晋｜乾宫金｜动0｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火地晋｜乾金｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">火地晋｜乾宫金｜动0｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占坟地｜山地剥</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山地剥｜乾金｜缺兄弟｜空午未</td>
-      <td data-label="引擎结果" class="mono">山地剥｜乾宫金｜动0｜缺兄弟｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山地剥｜乾金｜缺兄弟｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">山地剥｜乾宫金｜动0｜缺兄弟｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占求财｜风雷益</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风雷益｜巽木｜缺官鬼｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风雷益｜巽宫木｜动0｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风雷益｜巽木｜缺官鬼｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风雷益｜巽宫木｜动0｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占见贵求财｜天火同人</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天火同人｜离火｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">天火同人｜离宫火｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天火同人｜离火｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">天火同人｜离宫火｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占仆何日回?｜泽火革</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽火革｜坎水｜缺妻财｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">泽火革｜坎宫水｜动0｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽火革｜坎水｜缺妻财｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">泽火革｜坎宫水｜动0｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占求财何日到手｜风天小畜</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风天小畜｜巽木｜缺官鬼｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风天小畜｜巽宫木｜动0｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风天小畜｜巽木｜缺官鬼｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风天小畜｜巽宫木｜动0｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子病｜泽风大过</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">泽风大过｜震木｜缺子孙、兄弟｜空午未</td>
-      <td data-label="引擎结果" class="mono">泽风大过｜震宫木｜动0｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">泽风大过｜震木｜缺子孙、兄弟｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">泽风大过｜震宫木｜动0｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">一人占弟死太湖尸首可见否｜地雷复</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地雷复｜坤土｜缺父母｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">地雷复｜坤宫土｜动0｜缺父母｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地雷复｜坤土｜缺父母｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">地雷复｜坤宫土｜动0｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">因大旱占何日有雨｜风地观</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风地观｜乾金｜缺子孙、兄弟｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风地观｜乾宫金｜动0｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风地观｜乾金｜缺子孙、兄弟｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风地观｜乾宫金｜动0｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占何日有大雨｜雷山小过</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷山小过｜兑金｜缺子孙、妻财｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">雷山小过｜兑宫金｜动0｜缺子孙、妻财｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷山小过｜兑金｜缺子孙、妻财｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">雷山小过｜兑宫金｜动0｜缺子孙、妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占讼事｜地天泰</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地天泰｜坤土｜缺父母｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">地天泰｜坤宫土｜动0｜缺父母｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地天泰｜坤土｜缺父母｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">地天泰｜坤宫土｜动0｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占侯文书何日领?｜山火贲</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山火贲｜艮土｜缺子孙、父母｜空午未</td>
-      <td data-label="引擎结果" class="mono">山火贲｜艮宫土｜动0｜缺父母、子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山火贲｜艮土｜缺子孙、父母｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">山火贲｜艮宫土｜动0｜缺父母、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占逃仆｜水山蹇</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水山蹇｜兑金｜缺妻财｜空子丑</td>
-      <td data-label="引擎结果" class="mono">水山蹇｜兑宫金｜动0｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水山蹇｜兑金｜缺妻财｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">水山蹇｜兑宫金｜动0｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占父病｜地雷复</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地雷复｜坤土｜缺父母｜空子丑</td>
-      <td data-label="引擎结果" class="mono">地雷复｜坤宫土｜动0｜缺父母｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地雷复｜坤土｜缺父母｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">地雷复｜坤宫土｜动0｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子病｜地风升</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地风升｜震木｜缺子孙、兄弟｜空子丑</td>
-      <td data-label="引擎结果" class="mono">地风升｜震宫木｜动0｜缺兄弟、子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地风升｜震木｜缺子孙、兄弟｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">地风升｜震宫木｜动0｜缺兄弟、子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占大例桑叶贵贱｜水火既济</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水火既济｜坎水｜缺妻财｜空子丑</td>
-      <td data-label="引擎结果" class="mono">水火既济｜坎宫水｜动0｜缺妻财｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水火既济｜坎水｜缺妻财｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">水火既济｜坎宫水｜动0｜缺妻财｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占病有何鬼神为祸?｜风天小畜</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风天小畜｜巽木｜缺官鬼｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">风天小畜｜巽宫木｜动0｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风天小畜｜巽木｜缺官鬼｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">风天小畜｜巽宫木｜动0｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占借银有否?｜坤为地</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">坤为地｜坤土｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">坤为地｜坤宫土｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">坤为地｜坤土｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">坤为地｜坤宫土｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">自占婚姻成否｜天地否</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天地否｜乾金｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">天地否｜乾宫金｜动0｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天地否｜乾金｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">天地否｜乾宫金｜动0｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占谋望求财｜火山旅</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火山旅｜离火｜缺官鬼、父母｜空子丑</td>
-      <td data-label="引擎结果" class="mono">火山旅｜离宫火｜动0｜缺父母、官鬼｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火山旅｜离火｜缺官鬼、父母｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">火山旅｜离宫火｜动0｜缺父母、官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占师近病?｜水泽节</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水泽节｜坎水｜缺—｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">水泽节｜坎宫水｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水泽节｜坎水｜缺—｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">水泽节｜坎宫水｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占兄近病吉凶?｜火地晋</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火地晋｜乾金｜缺子孙｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">火地晋｜乾宫金｜动0｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火地晋｜乾金｜缺子孙｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">火地晋｜乾宫金｜动0｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子在楚生理何日回?｜山泽损</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">山泽损｜艮土｜缺子孙｜空寅卯</td>
-      <td data-label="引擎结果" class="mono">山泽损｜艮宫土｜动0｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">山泽损｜艮土｜缺子孙｜空寅卯（未核）</td>
+      <td data-label="引擎结果" class="mono">山泽损｜艮宫土｜动0｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占劾奏他人｜火山旅</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">火山旅｜离火｜缺父母、官鬼｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">火山旅｜离宫火｜动0｜缺父母、官鬼｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">火山旅｜离火｜缺父母、官鬼｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">火山旅｜离宫火｜动0｜缺父母、官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占文书何日到?｜干为天</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">乾为天｜乾金｜缺—｜空午未</td>
-      <td data-label="引擎结果" class="mono">乾为天｜乾宫金｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">乾为天｜乾金｜缺—｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">乾为天｜乾宫金｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占赌钱｜坤为地</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">坤为地｜坤土｜缺—｜空戌亥</td>
-      <td data-label="引擎结果" class="mono">坤为地｜坤宫土｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">坤为地｜坤土｜缺—｜空戌亥（未核）</td>
+      <td data-label="引擎结果" class="mono">坤为地｜坤宫土｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子久病?｜雷天大壮</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">雷天大壮｜坤土｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">雷天大壮｜坤宫土｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">雷天大壮｜坤土｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">雷天大壮｜坤宫土｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占赶去寄信可遇否?｜天地否</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">天地否｜乾金｜缺子孙｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">天地否｜乾宫金｜动0｜缺子孙｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">天地否｜乾金｜缺子孙｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">天地否｜乾宫金｜动0｜缺子孙｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占子嗣｜地雷复</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">地雷复｜坤土｜缺父母｜空午未</td>
-      <td data-label="引擎结果" class="mono">地雷复｜坤宫土｜动0｜缺父母｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">地雷复｜坤土｜缺父母｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">地雷复｜坤宫土｜动0｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占今日有人还银否｜坤为地</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">坤为地｜坤土｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">坤为地｜坤宫土｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">坤为地｜坤土｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">坤为地｜坤宫土｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占仆近出何日回?｜离为火</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">离为火｜离火｜缺—｜空申酉</td>
-      <td data-label="引擎结果" class="mono">离为火｜离宫火｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">离为火｜离火｜缺—｜空申酉（未核）</td>
+      <td data-label="引擎结果" class="mono">离为火｜离宫火｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占求财｜风天小畜</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">风天小畜｜巽木｜缺—｜空辰巳</td>
-      <td data-label="引擎结果" class="mono">风天小畜｜巽宫木｜动0｜缺官鬼｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">风天小畜｜巽木｜缺—｜空辰巳（未核）</td>
+      <td data-label="引擎结果" class="mono">风天小畜｜巽宫木｜动0｜缺官鬼｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占流年｜艮为山</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">艮为山｜艮土｜缺—｜空子丑</td>
-      <td data-label="引擎结果" class="mono">艮为山｜艮宫土｜动0｜缺—｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">艮为山｜艮土｜缺—｜空子丑（未核）</td>
+      <td data-label="引擎结果" class="mono">艮为山｜艮宫土｜动0｜缺—｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="一致" data-system="六爻">
       <td data-label="体系">六爻</td>
       <td data-label="案例" class="case">占现任吉凶｜水天需</td>
-      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空</td>
-      <td data-label="期望 / 来源" class="mono">水天需｜坤土｜缺父母｜空午未</td>
-      <td data-label="引擎结果" class="mono">水天需｜坤宫土｜动0｜缺父母｜空申酉</td>
+      <td data-label="对拍项">卦名 / 卦宫 / 缺爻 / 旬空（未核：原表无起卦日）</td>
+      <td data-label="期望 / 来源" class="mono">水天需｜坤土｜缺父母｜空午未（未核）</td>
+      <td data-label="引擎结果" class="mono">水天需｜坤宫土｜动0｜缺父母｜空—（未核）</td>
       <td data-label="状态" class="status ok">一致</td>
-      <td data-label="说明" class="reason">《卜筮正宗》静卦原表</td>
+      <td data-label="说明" class="reason">《卜筮正宗》静卦原表；旬空未核（该例原表未记起卦日）</td>
     </tr>
 <tr data-status="剔除" data-system="六爻">
       <td data-label="体系">六爻</td>

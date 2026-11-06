@@ -33,7 +33,7 @@ const DESCRIPTION = [
   '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
   '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回。',
-  '要给「结合所问之事的解读」时，把 withInterpret 设为 true，并尽量带上 question（所问之事）与 direction（询问方向）；缺省 detail: "brief" 只给结论、所问方向与三张表（解析段不设体积上限，超长就长），要其余维度用 lean，用户追问「为什么/依据」时改回 full。',
+  '要给「结合所问之事的解读」时，把 withInterpret 设为 true（仅八字/紫微/六爻/梅花/大六壬/奇门/塔罗 7 个体系产出解析；合盘、人生 K 线、起名与速查类不产这一段），并尽量带上 question（所问之事）与 direction（询问方向）；缺省 detail: "brief" 只给结论、所问方向与三张表（解析段不设体积上限，超长就长），要其余维度用 lean，用户追问「为什么/依据」时改回 full。',
   '用户用一句话改参数（「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」）时，把原话放进 revise（可配合 handle），引擎翻译成参数补丁并在结果 revision 里回报改了哪些、没认哪些；不要自己把原话拆成猜测的参数。',
   '追问同一张盘：结果里有 handle，下次传 handle + 增量即可（例如 { handle, asOf: 2030 }、{ handle, withInterpret: true, question: "何时换工作" }、{ handle, system: "ziwei" } 看同一时间另一套盘），不必让用户重报出生信息；句柄带校验位，截断或改字会报 E_HANDLE。',
   '出生时刻未知时不要编一个钟点：传 hourUnknown: true——八字只排年/月/日三柱（时柱暂缺，摘要首行提示），趋势按日降级，紫微与合盘会直接以 HOUR_UNKNOWN 阻断并给出补时刻的引导。',
@@ -702,7 +702,7 @@ export function apply(ctx) {
         },
         withInterpret: {
           type: 'boolean',
-          description: '是否附带解析与详解，默认 false；追问依据时再开。',
+          description: '是否附带解析与详解，默认 false；追问依据时再开。仅八字/紫微/六爻/梅花/大六壬/奇门/塔罗产出解析；合盘、人生 K 线、起名与速查类不产这一段。',
         },
         detail: {
           type: 'string',
