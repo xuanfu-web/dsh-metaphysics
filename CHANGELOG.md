@@ -18,6 +18,8 @@
 - **解析范围：README 与工具说明改成准确的 7 个体系**（`README.md`、`engine/index.js`）：原文「每个体系的排盘结果下方都会跟一个『解析与详解』模块」与实际不符——实测只有 bazi / ziwei / liuyao / meihua / daliuren / qimen / tarot 产出 `interpret`；hepan 有自己的逐项对照详批、trend 有自己的阶段报告、name 有自己的五格与音韵评估，其余速查类（黄历 / 择日 / 称骨 / 小六壬 / 星座 / 生命数字 / 人格 / 公农历互转）不附解析。`withInterpret` 的 schema 说明与工具长描述同步点名范围，免得模型对速查类白传。
 - **ΔT 远年外推：2100 年后改用抛物线公式**（`engine/calendar.js` 的 `deltaTSeconds`）：原实现 2100 年后返回常数 110 秒，未考虑地球自转长期减慢的二次效应。Morrison & Stephenson (2004) 抛物线为 **ΔT ≈ 32 × ((year − 1820)/100)² 秒**（括号里是世纪）；本实现以 2100 端点 110s 接续增长率，保证 2100→2101 连续：2101 约 112s、2200 约 321s、2400 约 936s。**发版前复查抓到的单位错误**：初版写成 `32 × (year − 1820)²`，2400 年得到 1076 万秒（约 124 天），节气与朔望会整体推后几个月（CI 里 2400 年农历、朔望全部错位）；现按世纪平方修正，并加「量级 < 3600s、2100 连续、2100→2400 单调」回归锁。影响范围：`termInstantJd` 求节气时刻、`newMoonJd` 求合朔时刻均经此函数修正 TT→UT，远年农历置闰与节气定位随之纠正。
 
+- **文档**：讨论群二维码换新图（`docs/assets/dsh-metaphysics-group.jpg`，11 月 13 日前有效，2026-11-06 更新）。上一批 11 月 6 日到期，README 图片改指 `v0.62.3` release 附件的新文件名 `dsh-metaphysics-group-2026-11-06.jpg`，避免旧图缓存继续命中。不涉及运行时与断言数。
+
 ## 0.62.2（2026-11-05）
 
 > 已发布：npm `dsh-metaphysics@0.62.2`，shasum `13ca04fb9ad703addf3bc40ea01a7e26ff9a9bdb`，102 个文件；tag `v0.62.2` 已推，GitHub release 已建，tarball 已下载核对。

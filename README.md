@@ -412,11 +412,11 @@ NPM_TOKEN=... node tools/release-rollback.mjs --version 0.57.1 --previous 0.57.0
 
 微信群：**dsh-metaphysics**
 
-<img src="https://github.com/xuanfu-web/dsh-metaphysics/releases/download/v0.50.1/dsh-metaphysics-group-2026-10-30.jpg" alt="dsh-metaphysics 讨论群二维码" width="480">
+<img src="https://github.com/xuanfu-web/dsh-metaphysics/releases/download/v0.62.3/dsh-metaphysics-group-2026-11-06.jpg" alt="dsh-metaphysics 讨论群二维码" width="480">
 
 图片用 GitHub Release 附件（不经过 camo / raw，部分网络下更稳）。
 
-这批二维码 7 天内有效（11 月 6 日前，2026-10-30 更新）；过期了在 [issues](https://github.com/xuanfu-web/dsh-metaphysics/issues) 说一声，我换新图。只想提问题、不想进群的，开 issue 一样算数。
+这批二维码 7 天内有效（11 月 13 日前，2026-11-06 更新）；过期了在 [issues](https://github.com/xuanfu-web/dsh-metaphysics/issues) 说一声，我换新图。只想提问题、不想进群的，开 issue 一样算数。
 
 ## 致谢
 
