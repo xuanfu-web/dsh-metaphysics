@@ -2715,7 +2715,7 @@
       const qtCard = qt ? `<div class="mp-qt">
           <div class="mp-qt-h"><b>穷通宝鉴</b><span>${esc(qt.label)}</span></div>
           <div class="mp-qt-y"><em>用神</em>${qt.yong.map((y, i) => `<b class="${i === 0 ? 'first' : ''}">${esc(y)}</b>`).join('')}<em>首取 ${esc(qt.primary)}</em></div>
-          <div class="mp-qt-q" title="${esc(qt.quote)}">「${esc(qt.quote)}」<span>第 ${qt.chapter} 章${qt.note ? ' · ' + esc(qt.note) : ''}</span></div>
+          <div class="mp-qt-q" title="${esc(qt.quote)}">「${esc(qt.quote)}」<span>第 ${qt.chapter} 章${qt.truncated ? ' · 首段更长，摘句下略' : ''}${qt.note ? ' · ' + esc(qt.note) : ''}</span></div>
         </div>` : '';
       return `<section class="mp-cli" aria-label="寒暖燥湿">
         <div class="mp-cli-h"><b>寒暖燥湿</b><span class="mp-cli-k">${esc(cli.label || '')}</span>${pri}</div>

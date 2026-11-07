@@ -488,6 +488,7 @@ function baziInterpret(r) {
     ...(ys.qt ? [{
       key: 'qiongtong', label: '穷通宝鉴',
       text: `${ys.qt.label}：用神 ${ys.qt.yong.join('、')}（首取 ${ys.qt.primary}）。原文：「${ys.qt.quote}」` +
+        `${ys.qt.truncated ? '（首段更长，此处摘句下略）' : ''}` +
         `（《穷通宝鉴》第 ${ys.qt.chapter} 章${ys.qt.note ? '；' + ys.qt.note : ''}）`,
     }] : []),
     ...(r.palaces ? [{

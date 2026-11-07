@@ -84,9 +84,13 @@ if (entryReg) {
 
 // ---- 3. 分块 ----
 // 分块体积预算：每块自带整套引擎导出，往引擎里加一张大表会同时抬高 18 块。
-// 单块上限按现有最大块（bazi ≈221KB gzip）留两成余量，总量按 18 块合计留余量。
-const CHUNK_GZIP_CAP = 260 * 1024;
-const CHUNKS_TOTAL_GZIP_CAP = 2.75 * 1024 * 1024;
+// 2026-11-07：引文库还要继续补，逐批新增的卡片文案／CHANGELOG 条目会把 bazi 慢慢顶到 232KB 旧线。
+// 原文与白话都在不打包的 citations-fuwen.js 侧，进分块的只是定位字段与文案，所以这里统一放宽，
+// 并把 test/chunks.test.mjs 的硬编码 232KB 改成读本文件的 CAP——体积只留这一套事实源。
+// 单块 288KB（约为当时最大块 231.2KB 的 1.25 倍，仍在 bundle-budget 的 1.3 倍上限内），
+// 总量 3.2MB；两道墙都由 test/bundle-budget.test.mjs 盯着，不许继续抬成空闸。
+const CHUNK_GZIP_CAP = 288 * 1024;
+const CHUNKS_TOTAL_GZIP_CAP = 3.2 * 1024 * 1024;
 let chunksGzip = 0;
 const chunkFiles = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
 const expected = Object.keys(CHUNKS).map((n) => `client.${n}.js`).sort();

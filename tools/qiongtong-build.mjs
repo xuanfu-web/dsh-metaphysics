@@ -1,5 +1,7 @@
 // 生成 engine/qiongtong.js：把《穷通宝鉴》120 格（10 天干 × 12 月令）整理成数据表。
-// 输入：tools/_qt2.json（tools/qiongtong-scrape.mjs 抓取的 113 章原文）
+// 输入：test/fixtures/citation-sources.json 里的 luckclub 章节页（已入库底本，可复现）
+//   原先读 tools/_qt2.json，那份抓取产物没进版本库，等于生成器的输入不在仓库里；
+//   现改读 fixture，同一份底本既供 CI 逐格核验原文，也供本脚本重建。
 // 输出：engine/qiongtong.js
 // 用神顺序来源：https://knowyourbazi.com/zh-hans/qiongtong/ 的整理表（每格首选在前）
 // 原文摘句来源：https://www.luckclub.cn/bazi/004/（《穷通宝鉴》原文，public domain）
@@ -37,8 +39,18 @@ const CH = {
   癸: { 102: [0], 103: [1], 104: [2], 105: [3], 106: [4], 107: [5], 108: [6], 109: [7], 110: [8], 111: [9], 112: [10], 113: [11] },
 };
 
-const chapters = JSON.parse(fs.readFileSync('./tools/_qt2.json', 'utf8'));
-const byN = Object.fromEntries(chapters.map((c) => [String(c.n).padStart(3, '0'), c]));
+const BASE = 'https://www.luckclub.cn/bazi/004/';
+const fx = JSON.parse(fs.readFileSync('./test/fixtures/citation-sources.json', 'utf8'));
+const byN = {};
+for (const [url, text] of Object.entries(fx.chapters)) {
+  if (!url.startsWith(BASE)) continue;
+  const n = url.slice(BASE.length).replace(/\D/g, '');
+  // fixture 保留了首行 h1 章名；章名与正文分开，与旧抓取产物的形状一致
+  const lines = text.split('\n').map((s) => s.trim()).filter(Boolean);
+  byN[n] = { n, url, title: lines[0] || '', lines: lines.slice(1) };
+}
+const missing = Object.values(CH).flatMap((m) => Object.keys(m)).filter((n) => !byN[String(n).padStart(3, '0')]);
+if (missing.length) throw new Error(`fixture 缺章节页：${missing.join(',')}（先跑 node tools/merge-citation-sources.mjs）`);
 const isYuanWen = (s) => !/^徐乐吾/.test(s) && !/^白话/.test(s) && s.length > 8 && !/^[（(]/.test(s);
 
 const data = {};
@@ -50,7 +62,10 @@ for (const stem of STEMS) {
     const ch = byN[String(nStr).padStart(3, '0')];
     const text = (ch.lines || []).join('\n');
     const yuan = (ch.lines || []).filter(isYuanWen);
-    const quote = (yuan[0] || ch.title).replace(/\s+/g, '').slice(0, 96);
+    const flat = (yuan[0] || ch.title).replace(/\s+/g, '');
+    // 摘句上限 96 字：截断必须留痕，否则用户看到的「原文」会在半句处停住却像是完整一句
+    const cut = flat.length > 96;
+    const quote = cut ? flat.slice(0, 96) : flat;
     const seen = [];
     for (const c of quote) if (STEMS.includes(c) && c !== stem && !seen.includes(c)) seen.push(c);
     for (const i of idxs) {
@@ -64,6 +79,7 @@ for (const stem of STEMS) {
         ch: Number(ch.n),
         qs: seen.join(''),
       };
+      if (cut) entry.cut = true;
       if (unsupported.length) {
         entry.note = `原文全章未见「${unsupported.join('、')}」，此格按整理表录入，待以善本核对`;
         notes.push(`${stem}${BRANCH[i]} 缺 ${unsupported.join('')}`);
@@ -77,9 +93,11 @@ for (const stem of STEMS) {
 const header = `// 《穷通宝鉴》120 格（十天干 × 十二月令）——用神顺序 + 原文摘句
 // 数据来源：
 //   · 用神顺序：knowyourbazi.com 整理表（每格首选在前；甲木巳午未酉、辛金亥子丑依原文核对）
-//   · 原文摘句：luckclub.cn《穷通宝鉴》（public domain），取每章首段原文，去掉「徐乐吾曰」评注
+//   · 原文摘句：luckclub.cn《穷通宝鉴》（public domain），取每章首段原文，去掉「徐乐吾曰」评注；
+//     底本已入库为 test/fixtures/citation-sources.json，test/citations.test.mjs 逐格核验为页面子串
 // 口径说明：各版本原文有异文；用神顺序是整理表口径，原文摘句照录供核对；
-//   qs 是「原文首段依次提到的天干」（去掉日主本身），与表首不同处可对照阅读。
+//   qs 是「原文首段依次提到的天干」（去掉日主本身），与表首不同处可对照阅读；
+//   cut 标记摘句在 96 字处截断（首段更长），展示时必须写明「下略」，不能让用户当成完整一句。
 // 本文件由 tools/qiongtong-build.mjs 生成，请勿手改。
 
 export const QT_BRANCHES = ${JSON.stringify(BRANCH)};
@@ -104,6 +122,7 @@ export function qtOf(dayStem, monthBranch) {
     yong,
     primary: yong[0] || null,
     quote: e.q,
+    truncated: !!e.cut,
     quoteStems: [...e.qs],
     chapter: e.ch,
     url: QT_BASE_URL + String(e.ch).padStart(3, '0') + '/',

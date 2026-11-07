@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { KNOWLEDGE } from '../engine/interpret-knowledge.js';
-import { CARD_CITATIONS, allCitations, citationOf, patternCitations } from '../engine/citations.js';
+import { CARD_CITATIONS, patternCitations } from '../engine/citations.js';
+// 原文与白话只在 citations-fuwen.js（不进分块），索引页要的正是这一份全库视图
+import { allLibraryCitations as allCitations, citationOfAny as citationOf, patternChengCitations, qiongtongCitations, PATTERN_CHENG_CITATIONS, PATTERN_CHENG_UNMATCHED } from '../engine/citations-fuwen.js';
 
 const root = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(root, 'docs', 'citations.html');
@@ -30,7 +32,13 @@ export function buildCitationsHTML() {
   for (const p of patternCitations()) {
     for (const id of p.citationIds) {
       if (!usage.has(id)) usage.set(id, []);
-      usage.get(id).push(`格局·${p.name}`);
+      usage.get(id).push(`格局·破·${p.name}`);
+    }
+  }
+  for (const p of patternChengCitations()) {
+    for (const id of p.citationIds) {
+      if (!usage.has(id)) usage.set(id, []);
+      usage.get(id).push(`格局·成·${p.name}`);
     }
   }
   const cards = KNOWLEDGE.map((k) => {
@@ -42,6 +50,20 @@ export function buildCitationsHTML() {
   const verified = cards.filter((c) => c.status === 'verified').length;
   const general = cards.filter((c) => c.status === 'general').length;
   const todo = cards.filter((c) => c.status === 'todo' || c.status === 'missing').length;
+
+  const cheng = patternChengCitations();
+  const chengRows = [
+    ...cheng.map((p) => `<tr>
+    <td class="id">${esc(p.name)}</td>
+    <td>${p.citations.map((c) => `<div><a href="${esc(c.url)}" target="_blank" rel="noreferrer noopener">《${esc(c.bookName)}·${esc(c.chapter)}》</a><span class="quote"> ${esc(c.quote)}</span></div>`).join('')}</td>
+    <td class="plain">${esc(p.note || '')}</td>
+  </tr>`),
+    ...Object.entries(PATTERN_CHENG_UNMATCHED).map(([name, reason]) => `<tr>
+    <td class="id">${esc(name)}</td>
+    <td><span class="st general">未配对原文</span></td>
+    <td class="plain">${esc(reason)}</td>
+  </tr>`),
+  ].join('');
 
   const libRows = citations.map((c) => `<tr>
     <td class="id">${esc(c.id)}</td>
@@ -59,6 +81,18 @@ export function buildCitationsHTML() {
     <td>${refs.length
       ? refs.map((c) => `<a href="${esc(c.url)}" target="_blank" rel="noreferrer noopener">《${esc(c.bookName)}·${esc(c.chapter)}》</a>`).join('<br>')
       : `${esc(e.book || '—')}${e.chapter ? `·${esc(e.chapter)}` : ''}${e.reason ? `<div class="muted">${esc(e.reason)}</div>` : ''}`}${e.note ? `<div class="muted">${esc(e.note)}</div>` : ''}</td>
+  </tr>`).join('');
+
+  // 穷通宝鉴 120 格：原文已经在浏览器里展示给用户，索引页必须能逐格核到同一份底本。
+  // 行数据由 engine/qiongtong.js 现推，不另存一份原文，免得两处漂移。
+  const qt = qiongtongCitations();
+  const qtRows = qt.map((r) => `<tr>
+    <td class="id">${esc(r.id)}</td>
+    <td>${esc(r.chapter)}</td>
+    <td>${r.yong.map((y, i) => `<span class="chip">${i === 0 ? '首取 ' : ''}${esc(y)}</span>`).join('')}</td>
+    <td class="quote">${esc(r.quote)}${r.truncated ? '<span class="muted">（首段更长，摘句下略）</span>' : ''}</td>
+    <td class="plain">${esc(r.plain)}${r.note ? `<div class="muted">${esc(r.note)}</div>` : ''}</td>
+    <td><a href="${esc(r.url)}" rel="noreferrer noopener" target="_blank">原文</a></td>
   </tr>`).join('');
 
   return `<!DOCTYPE html>
@@ -106,13 +140,30 @@ a{color:var(--ok)}
   <div><b>${general}</b>通行说</div>
   <div><b>${todo}</b>待补</div>
   <div><b>${citations.length}</b>引文条目</div>
+  <div><b>${qt.length}</b>穷通格摘句</div>
+  <div><b>${cheng.length}/${cheng.length + Object.keys(PATTERN_CHENG_UNMATCHED).length}</b>格局有成格原文</div>
 </div>
-<p>原文核验数据：<code>test/fixtures/citation-sources.json</code>（公共领域古籍，由 <code>tools/sync-citation-sources.mjs</code> 抓取）；测试：<code>test/citations.test.mjs</code>。</p>
+<p>原文核验数据：<code>test/fixtures/citation-sources.json</code>（公共领域古籍；补页走只增不改的 <code>tools/merge-citation-sources.mjs</code>，<code>tools/sync-citation-sources.mjs</code> 会整份重写，慎用）；测试：<code>test/citations.test.mjs</code>。</p>
 
 <h2>引文库</h2>
 <div class="wrap"><table>
 <thead><tr><th>ID</th><th>出处</th><th>原文</th><th>白话</th><th>用于</th><th>链接</th></tr></thead>
 <tbody>${libRows}</tbody>
+</table></div>
+
+<h2>穷通宝鉴 120 格 → 原文摘句</h2>
+<p>这 120 句摘句已经随 <code>engine/qiongtong.js</code> 打进浏览器，解析页「穷通宝鉴」节直接照录给用户，所以底本必须入库、逐格可核：每格对 <code>test/fixtures/citation-sources.json</code> 里的同一章页面校验为子串，章名与底本首行比对，一章管几个月令的标「合章」。用神顺序据通行整理表，与摘句依次提到的天干（末列）不同处可对照阅读；摘句在 96 字处截断的标明「下略」，不当成完整一句。</p>
+<p class="muted">底本有两份，不要混着读：上面「引文库」里 <code>qiongtong</code> 那 1 条取自殆知阁藏本（<code>diancang.xyz</code>），本节 120 格取自 luckclub《穷通宝鉴》（<code>www.luckclub.cn/bazi/004/</code>，全书 114 章，入库的是 120 格用到的 109 章；徐乐吾评注本，摘句已剔掉「徐乐吾曰」段）。两本有异文，各按各的页面核验，不互相补字。</p>
+<div class="wrap"><table>
+<thead><tr><th>格</th><th>章节</th><th>用神顺序</th><th>原文摘句</th><th>说明</th><th>链接</th></tr></thead>
+<tbody>${qtRows}</tbody>
+</table></div>
+
+<h2>格局 → 成格原文</h2>
+<p>紫微 34 条格局逐条对《紫微斗数全书》：能对上句子的给书名、卷章与原句，并在末列写明原文条件与本插件判定条件的出入；对不上的单列「未配对原文」并说清缺什么，不拿相近的句子硬配。</p>
+<div class="wrap"><table>
+<thead><tr><th>格局</th><th>成格原文</th><th>与本插件判定的出入</th></tr></thead>
+<tbody>${chengRows}</tbody>
 </table></div>
 
 <h2>知识卡 → 出处</h2>

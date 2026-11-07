@@ -2,7 +2,11 @@
 //
 // 两类来源：
 //   ① CLASSICS（engine/classics.js）：八字三书，已有原文、卷章与典藏网链接；
-//   ② CITATIONS（本文件）：紫微斗数全书，原文取自维基文库，链接到卷页。
+//      这一批的 quote / plain 会被解读正文引用（岁运、调候、六亲那几处），所以整条都在引擎里。
+//   ② CITATIONS（本文件）：紫微、三命通会、穷通宝鉴、增删卜易、奇门、梅花、滴天髓等，
+//      运行时只用到「出处行」——《书名·卷章》+链接，所以这里只留 id / book / chapter / url 四个定位字段；
+//      原文与白话挪到 engine/citations-fuwen.js 的 CITATION_TEXT，索引页与 CI 在那里逐字核验。
+//      这三块（client.bazi / hepan / ziwei）的 gzip 上限钉在 232KB，塞原文就是塞预算，见那文件的说明。
 //
 // CARD_CITATIONS 给每张知识卡一个去处：
 //   refs    已定位到可核验原文，测试会核验 quote 是否是来源正文的子串；
@@ -50,483 +54,1174 @@ export const CITATION_BOOKS = {
     author: '清·野鹤老人',
     base: 'https://zh.wikisource.org/wiki/增刪卜易',
   },
+  // ── B8 新增书目（六爻源头三本 + 地相五本）
+  huangjince: {
+    name: '黄金策',
+    author: '明·刘基（题）',
+    base: 'https://zh.wikisource.org/wiki/黄金策', // 维基文库本按《卜筮正宗》所载全文录，分「1、總斷千金賦」以下三十余节，无卷次
+  },
+  jingshi: {
+    name: '京氏易传',
+    author: '汉·京房',
+    base: 'https://zh.wikisource.org/wiki/京氏易傳', // 卷上逐宫逐卦标世应、飞伏与爻辰
+  },
+  huozhulin: {
+    name: '火珠林',
+    author: '宋·麻衣道者（题）',
+    base: 'https://zh.wikisource.org/wiki/火珠林', // 京房纳甲卜法之祖本，黄金策即其集大成
+  },
+  zangshu: {
+    name: '葬书',
+    author: '晋·郭璞（题）',
+    base: 'https://zh.wikisource.org/wiki/葬書/內篇', // 正文取内篇，外篇与卷不录
+  },
+  qingnang: {
+    name: '青囊经',
+    author: '佚名',
+    base: 'https://zh.wikisource.org/wiki/青囊經', // 上中下三卷（化始／化机／化成），本页未署名
+  },
+  aoyu: {
+    name: '青囊奥语',
+    author: '旧题唐·杨筠松',
+    base: 'https://zh.wikisource.org/wiki/青囊奧語', // 本页不署名；坤壬乙诀即替星表之祖本
+  },
+  hanlong: {
+    name: '撼龙经',
+    author: '唐·杨筠松（旧题）',
+    base: 'https://zh.wikisource.org/wiki/撼龍經', // 专言山龙形势，本页不分卷
+  },
+  rudidian: {
+    name: '入地眼全书',
+    author: '宋·静道',
+    base: 'https://zh.wikisource.org/wiki/入地眼全書', // 以「水说」「水法」等小题分篇，无卷次
+  },
+  shenfeng: {
+    name: '神峰通考',
+    author: '明·张楠',
+    base: 'https://www.luckclub.cn/bazi/008/', // 卷一诸说（动静／盖头／病药／四病四药）、卷二格局、卷三专旺五格与魁罡
+  },
+  luoluzi: {
+    name: '珞琭子消息赋',
+    author: '旧题珞琭子撰，本页注解未署名',
+    base: 'https://www.luckclub.cn/bazi/024/', // 赋文与注解同页；四柱宫位、藏干见不见之形、三日折年皆出注解
+  },
+  lantai: {
+    name: '兰台妙选',
+    author: '佚名', // 本页未署名；旧题唐·袁天罡撰、明·万民英注，底本无从核对，故不写
+    base: 'https://www.luckclub.cn/bazi/026/', // 上中下三篇；本站取原文本，注解同页照录
+  },
+  yuanhai: {
+    name: '渊海子平',
+    author: '宋·徐升编',
+    base: 'https://www.luckclub.cn/bazi/001/',
+  },
+  dtchanwei: {
+    name: '滴天髓阐微',
+    author: '清·任铁樵阐微本（页内「原注」「任氏曰」分列）',
+    base: 'https://www.luckclub.cn/bazi/007/',
+  },
+  wuxingdayi: {
+    name: '五行大义',
+    author: '隋·萧吉',
+    base: 'https://www.luckclub.cn/bazi/011/',
+  },
+  yudingziping: {
+    name: '御定子平',
+    author: '清·官修，不著撰人',
+    base: 'https://www.luckclub.cn/bazi/021/',
+  },
+  mingliyueyan: {
+    name: '命理约言',
+    author: '清·陈素庵',
+    base: 'https://www.luckclub.cn/bazi/018/',
+  },
+  yuetanfu: {
+    name: '月谈赋',
+    author: '佚名',
+    base: 'https://www.luckclub.cn/bazi/023/',
+  },
+  qianliminggao: {
+    name: '千里命稿',
+    author: '民国·韦千里',
+    base: 'https://www.luckclub.cn/bazi/003/',
+  },
+  minglitanyuan: {
+    name: '命理探原',
+    author: '民国·袁树珊',
+    base: 'https://www.luckclub.cn/bazi/009/',
+  },
+  lixuzhong: {
+    name: '李虚中命书',
+    author: '旧题唐·李虚中注，今多疑为宋人依托',
+    base: 'https://www.luckclub.cn/bazi/010/',
+  },
+  yuzhao: {
+    name: '玉照定真经',
+    author: '旧题晋·郭璞撰，页内注者未署',
+    base: 'https://www.luckclub.cn/bazi/012/',
+  },
+  wuxingjingji: {
+    name: '五行精纪',
+    author: '宋·廖中',
+    base: 'https://www.luckclub.cn/bazi/013/',
+  },
+  bazitiyao: {
+    name: '八字提要',
+    author: '不著撰人（民国排印本）',
+    base: 'https://www.luckclub.cn/bazi/015/',
+  },
+  guiguyiwen: {
+    name: '鬼谷遗文',
+    author: '旧题鬼谷子撰，与《李虚中命书》同源',
+    base: 'https://www.luckclub.cn/bazi/016/',
+  },
+  guagua: {
+    name: '呱呱集',
+    author: '民国·韦千里',
+    base: 'https://www.luckclub.cn/bazi/017/',
+  },
+  zaohuayuanyue: {
+    name: '造化元钥评注',
+    author: '近人评注，页内未署撰人',
+    base: 'https://www.luckclub.cn/bazi/019/',
+  },
+  zipingguanjian: {
+    name: '子平管见',
+    author: '明·雷鸣夏（八公山人秀泉子）',
+    base: 'https://www.luckclub.cn/bazi/020/',
+  },
+  xingmingzongkuo: {
+    name: '星命总括',
+    author: '旧题辽·耶律纯，四库提要已疑依托',
+    base: 'https://www.luckclub.cn/bazi/022/',
+  },
+  xingmingjuegu: {
+    name: '星命抉古录',
+    author: '不著撰人（民国排印本）',
+    base: 'https://www.luckclub.cn/bazi/025/',
+  },
+  renan: {
+    name: '大六壬断案',
+    author: '宋·邵彦和（本页课例集，含邵氏断语与后验）',
+    base: 'https://www.luckclub.cn/daliuren/002/',
+  },
+  rentanyuan: {
+    name: '大六壬探原',
+    author: '民国·袁树珊（润德堂丛书之三）',
+    base: 'https://www.luckclub.cn/daliuren/003/',
+  },
+  renxinjing: {
+    name: '大六壬心镜',
+    author: '唐·徐道符撰，本页有郑氏按语与据《神枢经》补字',
+    base: 'https://www.luckclub.cn/daliuren/004/',
+  },
+  renzhinan: {
+    name: '注解大六壬指南',
+    author: '旧题明·陈公献，本页注解未署名',
+    base: 'https://www.luckclub.cn/daliuren/005/',
+  },
+  rencuiyan: {
+    name: '六壬粹言',
+    author: '清·刘赤江（蛟门刘赤江慕甫编）',
+    base: 'https://www.luckclub.cn/daliuren/006/',
+  },
+  renxuesuoji: {
+    name: '壬学琐记',
+    author: '清·佚名（本页有光绪七年侄夔跋）',
+    base: 'https://www.luckclub.cn/daliuren/008/',
+  },
+  bifafu: {
+    name: '毕法赋',
+    author: '不著撰人（本页前段为百法歌诀，后段附今人课例）',
+    base: 'https://www.luckclub.cn/daliuren/009/',
+  },
+  rengui: {
+    name: '壬归',
+    author: '不著撰人',
+    base: 'https://www.luckclub.cn/daliuren/010/',
+  },
+  bushizhengzong: {
+    name: '卜筮正宗',
+    author: '清·王维德',
+    base: 'https://www.luckclub.cn/liuyao/001/',
+  },
+  donglin: {
+    name: '洞林秘诀',
+    author: '不著撰人（歌诀体来意／何知章）',
+    base: 'https://www.luckclub.cn/liuyao/004/',
+  },
+  duanyi: {
+    name: '断易天机',
+    author: '旧题鬼谷子，本页为今人整理本',
+    base: 'https://www.luckclub.cn/liuyao/006/',
+  },
+  bushiquanshu: {
+    name: '卜筮全书',
+    author: '明·姚际隆辑（谈易斋重订本）',
+    base: 'https://www.luckclub.cn/liuyao/007/',
+  },
+  yilinbuwei: {
+    name: '易林补遗',
+    author: '明·张星元',
+    base: 'https://www.luckclub.cn/liuyao/008/',
+  },
+  yiyin: {
+    name: '易隐',
+    author: '明·曹九锡辑，曹璿演',
+    base: 'https://www.luckclub.cn/liuyao/009/',
+  },
+  yimao: {
+    name: '易冒',
+    author: '清·程元如',
+    base: 'https://www.luckclub.cn/liuyao/010/',
+  },
+  shixuezhiyao: {
+    name: '筮学指要',
+    author: '不著撰人',
+    base: 'https://www.luckclub.cn/liuyao/011/',
+  },
 };
 
-// 紫微原文条目：quote 按维基文库通行本照录，plain 是本站自撰白话。
+// 引文定位表：id / 书名 / 卷章 / 链接。原文照录与本站自撰白话在 citations-fuwen.js。
 export const CITATIONS = [
   {
     id: 'zw-poge-sanfang',
     book: 'ziwei',
     chapter: '卷三·谈星要论',
-    quote: '及命宫星辰庙旺，三方有恶星守照破格。',
-    plain: '命宫主星虽庙旺，三方四正见恶星也会破格。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-poge-ruge',
     book: 'ziwei',
     chapter: '卷三·论人命入格',
-    quote: '若居陷地又加杀化忌，为下格之命，不以入格而论也。',
-    plain: '星落陷地又见煞星、化忌，就不按入格来论。',
-    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
-  },
-  {
-    id: 'zw-poge-huaxiong',
-    book: 'ziwei',
-    chapter: '卷三·论人命入格',
-    quote: '又入格不化吉而化凶，只以本命吉凶多寡而断之。',
-    plain: '入了格却化吉少、化凶多，只能按原局吉凶的多寡来断。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-shiyin',
     book: 'ziwei',
     chapter: '卷一·增补太微赋',
-    quote: '巨门子午二宫逢，身命逢之必贵荣，更得三方科禄照，石中隐玉是丰隆。',
-    plain: '巨门在子午守命，要三方有化科、化禄照会，石中隐玉才成格。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
   },
   {
     id: 'zw-jiju-poge',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '因甲禄到寅卯宫有擎羊破格耳。',
-    plain: '巨机本可取贵，但擎羊落宫会把格局破掉。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-riyue-jia',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '加羊陀冲守，宜僧。',
-    plain: '日月夹命再加羊陀冲守，吉意大减。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-changqu',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '昌曲陷宫凶杀破虚誉之隆  凶杀即羊陀空劫。',
-    plain: '昌曲落陷再逢凶杀，名声易成虚誉；这里的凶杀指羊陀空劫。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-kuiyue',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '魁钺重逢杀凑痼疾尤多  杀乃羊铃空劫。',
-    plain: '魁钺夹命再凑煞星，贵气减等；煞指羊铃空劫。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-jiyue',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '机月同梁作吏人  命在寅申方论，加吉不论，无吉无杀亦是平常人，凶杀空劫化忌为下格。',
-    plain: '机月同梁要在寅申论；无吉无杀只是平常，逢凶杀空劫化忌则降为下格。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-tanwu',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '贪武申宫为下格  化忌方论。',
-    plain: '武贪在申本可论格，但带化忌才作下格论。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-huotan',
     book: 'ziwei',
     chapter: '卷一·增补太微赋',
-    quote: '火遇贪狼照命宫，封侯食禄是英雄，三方倘若无凶杀，到老应知福寿隆。',
-    plain: '火贪照命本是贵格，前提是三方没有凶杀；见煞则破。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
   },
   {
     id: 'zw-luma',
     book: 'ziwei',
     chapter: '卷一·诸星问答论·问天马星所主若何',
-    quote: '如与禄存同宫，谓之禄马交驰，又曰折鞭马',
-    plain: '禄存与天马同宫才叫禄马交驰。',
-    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
-  },
-  {
-    id: 'zw-luma-kong',
-    book: 'ziwei',
-    chapter: '卷一·诸星问答论·问天马星所主若何',
-    quote: '逢空亡谓之死马、亡马',
-    plain: '禄马逢空亡，称死马、亡马，奔走之力被劫。',
-    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
-  },
-  {
-    id: 'zw-luma-tuo',
-    book: 'ziwei',
-    chapter: '卷一·诸星问答论·问天马星所主若何',
-    quote: '遇陀罗谓之折足马',
-    plain: '禄马遇陀罗，称折足马，动而受阻。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
   },
   {
     id: 'zw-sihua-ji',
     book: 'ziwei',
     chapter: '卷一·诸星问答论·问化忌星所主若何',
-    quote: '如会紫府、昌曲、左右、科权禄，与忌同宫又兼四杀共处，即发财亦不佳，功名亦不成就。',
-    plain: '吉星与化忌、四杀同处，即使发财也不好，功名难成。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
   },
   {
     id: 'zw-sihua-lu',
     book: 'ziwei',
     chapter: '卷一·诸星问答论·问化禄星所主若何',
-    quote: '禄为福德之神。守身命官禄之位，科权相逢必作大臣之职。',
-    plain: '化禄主福，与科权相会可论官职。',
-    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
-  },
-  {
-    id: 'zw-sihua-quan',
-    book: 'ziwei',
-    chapter: '卷一·诸星问答论·问化权星所主若何',
-    quote: '权星掌判生杀之神。守身命科禄相逢出将入相。',
-    plain: '化权主掌判，与科禄相会主权位。',
-    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
-  },
-  {
-    id: 'zw-sihua-ke',
-    book: 'ziwei',
-    chapter: '卷一·诸星问答论·问化科星所主若何',
-    quote: '科星上界应试，主掌文墨之星。守身命权禄相逢宰臣之贵。',
-    plain: '化科主文墨名声，与权禄相会主贵。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
   },
   {
     id: 'zw-sanfang',
     book: 'ziwei',
     chapter: '卷三·谈星要论',
-    quote: '三看迁移财帛官禄三方星辰刑冲克破。',
-    plain: '第三步就看迁移、财帛、官禄这组三方有没有刑冲克破。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-shenming',
     book: 'ziwei',
     chapter: '卷三·谈星要论',
-    quote: '看身安命禄马不落空亡天空截空最紧，旬空次之。',
-    plain: '看身命先看禄马有没有落空亡、天空、截空。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-daxian',
     book: 'ziwei',
     chapter: '卷三·论大限十年祸福何如',
-    quote: '如宫分星缠全吉庙旺得地，无擎羊陀罗火铃空劫者，主十年安静，人财全美。',
-    plain: '大限宫吉星庙旺且不见羊陀火铃空劫，十年较安稳。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-miaowang',
     book: 'ziwei',
     chapter: '卷三·论诸星同垣各司所宜分别富贵贫贱夭寿',
-    quote: '天机 庙子午 旺辰酉 陷丑未',
-    plain: '天机的庙旺陷地：子午庙、辰酉旺、丑未陷。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   {
     id: 'zw-kongjie',
     book: 'ziwei',
     chapter: '卷一·诸星问答论·问天空地劫所主若何',
-    quote: '二星守身命，遇吉则吉，遇凶则凶。如四杀冲照，轻者下贱，重者六畜之命。',
-    plain: '空劫守身命，吉凶随会照而定；再逢四杀冲照则加重。',
     url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-taiwei-ji-xiong',
+    book: 'ziwei',
+    chapter: '卷一·太微赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-taiwei-jueshu',
+    book: 'ziwei',
+    chapter: '卷一·太微赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-fawei-sizheng',
+    book: 'ziwei',
+    chapter: '卷一·斗数发微论',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-fawei-ruxian',
+    book: 'ziwei',
+    chapter: '卷一·斗数发微论',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-fawei-xinglian',
+    book: 'ziwei',
+    chapter: '卷一·斗数发微论',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-fawei-kequ',
+    book: 'ziwei',
+    chapter: '卷一·斗数发微论',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gaolv-jiongji',
+    book: 'ziwei',
+    chapter: '卷一·重补斗数彀率',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gaolv-dexian',
+    book: 'ziwei',
+    chapter: '卷一·重补斗数彀率',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gaolv-shenming',
+    book: 'ziwei',
+    chapter: '卷一·重补斗数彀率',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-zengbu-nannv',
+    book: 'ziwei',
+    chapter: '卷一·增补太微赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gusu-yili',
+    book: 'ziwei',
+    chapter: '卷一·斗数骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gusu-mingshen',
+    book: 'ziwei',
+    chapter: '卷一·斗数骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gusu-duigong',
+    book: 'ziwei',
+    chapter: '卷一·斗数骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gusu-kong-jian',
+    book: 'ziwei',
+    chapter: '卷一·斗数骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gusu-jieyao',
+    book: 'ziwei',
+    chapter: '卷一·斗数骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-gusu-fanwei',
+    book: 'ziwei',
+    chapter: '卷一·斗数骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-shideng-qianguan',
+    book: 'ziwei',
+    chapter: '卷一·定富贵贫贱十等论',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-dedi-wu',
+    book: 'ziwei',
+    chapter: '卷一·十二宫诸星得地合格诀',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-dedi-hai',
+    book: 'ziwei',
+    chapter: '卷一·十二宫诸星得地合格诀',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-shixian-zi',
+    book: 'ziwei',
+    chapter: '卷一·十二宫诸星失陷破格诀',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-shixian-shen',
+    book: 'ziwei',
+    chapter: '卷一·十二宫诸星失陷破格诀',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-nvming-fuxiang',
+    book: 'ziwei',
+    chapter: '卷一·女命骨髓赋',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zw-nannv-nan',
+    book: 'ziwei',
+    chapter: '卷三·论男女命同异',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-nannv-nv',
+    book: 'ziwei',
+    chapter: '卷三·论男女命同异',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
+  },
+  {
+    id: 'zw-shenshi-shen',
+    book: 'ziwei',
+    chapter: '卷三·论人生时要审的确',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷三',
   },
   // ── B6 补录：三命通会 / 穷通宝鉴（原文取自中华典藏网页，逐字核验）
   {
     id: 'smt-wangxiang',
     book: 'sanming',
     chapter: '卷二·论五行旺相休囚死并寄',
-    quote: '盛德乘时曰旺。如春木旺，旺则生火，火乃木之子，子乘父业，故火相；木用水生，生我者父母，今子嗣得时，登高明显赫之地，而生我者当知退矣，故水休。',
-    plain: '当令得时叫旺；旺者所生为相，生旺者退为休。旺相休囚死是按四季轮转的相对状态，不是固定标签。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7531.html',
   },
   {
     id: 'smt-shensha',
     book: 'sanming',
     chapter: '卷三·总论诸神煞',
-    quote: '神煞，古有百二十名，其说穿凿支离，造化恐不如是。',
-    plain: '神煞名目古有百余种，说法穿凿支离；作者自己也说造化未必如此，神煞只能作旁证。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7572.html',
   },
   {
     id: 'smt-kongwang',
     book: 'sanming',
     chapter: '卷三·论空亡',
-    quote: '故以甲旬尽处曰空亡，盖有是位而无禄，曰空；有支而无干，曰亡。',
-    plain: '旬中十干配完还剩两支无干可配，有支无干叫亡；这一位没有禄叫空。空亡是按旬推出的虚位，不直接等于凶。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7563.html',
   },
   {
     id: 'smt-dayun-qiyun',
     book: 'sanming',
     chapter: '卷二·论大运',
-    quote: '总十年之运气，凡三日有三十六时，乃见三百六十日为一岁之数；在一月之中有三百六十时，折除节气，算计三千六百日为一辰之十岁也。',
-    plain: '起运的折算：三日折一年、一月折十年，按出生到节气的时间折出起运岁数；这是通行「三日折一年」的出处之一。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7536.html',
   },
   {
     id: 'smt-liuqin',
     book: 'sanming',
     chapter: '卷七·论六亲',
-    quote: '有夫妇然后有父子，有父子然后有兄弟。六亲者，父母兄弟妻子也。',
-    plain: '六亲指父母、兄弟、妻子；先有夫妇才有父子兄弟，取六亲以十干生克配出，再落到四柱宫位上看旺衰。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7693.html',
   },
   {
     id: 'smt-xingchong',
     book: 'sanming',
     chapter: '卷二·论三刑',
-    quote: '《阴符经》曰：恩生于害，害生于恩；三刑生于二合，亦如六害生于六合之义。',
-    plain: '三刑由三合与三会相叠而生，六害由六合而生：合里藏着刑害，所以见合不能只看合。',
     url: 'https://www.diancang.xyz/xuanxuewushu/sanmingtonghui/7548.html',
   },
   {
     id: 'qt-tiaohou',
     book: 'qiongtong',
     chapter: '五行总论',
-    quote: '北方阴极而生寒，寒生水。南方阳极而生热，热生火。',
-    plain: '五行由方位寒热燥湿而生：北寒生水、南热生火。调候就是先看命局寒暖燥湿，再取能调和的字。',
     url: 'https://www.diancang.xyz/xuanxuewushu/qiongtongbaojian/41024.html',
   },
   {
     id: 'qm-yinyang',
     book: 'qimen',
     chapter: '卷一·奇门秘诀总赋',
-    quote: '阴阳二遁分顺逆，一气三元人莫测。五日都来换一元，接气超神为准的。',
-    plain: '一年分阴阳两遁：冬至后顺布、夏至后逆布；一气分上中下三元、五日换一元，超神接气用来对齐节气与符头。取局法不同，同一时刻可能排出不同局数。',
     url: 'https://www.diancang.xyz/xuanxuewushu/qimendunjiatongzong/41068.html',
   },
   {
     id: 'qm-jixing',
     book: 'qimen',
     chapter: '卷十一·玄机赋（中）',
-    quote: '六仪击刑真是凶，值符天乙遇亦穷。六仪非值终无吉，吉凶轻重义相同。此际切宜遁取吉，勿于此地想成功。子三戌二寅刑四，申八辰四午离中。戌刑在未寅在巽，巽有巳兮申缓从。',
-    plain: '六仪落到与自身相刑的宫位叫击刑：甲子戊落三宫、甲戌己落二宫、甲申庚落八宫、甲辰壬落四宫、甲午辛落九宫；甲寅癸的寅刑巳、戌刑未也各有所指。击刑是宫位条件，说明这个符号使不上力，不直接等于事情必败。',
     url: 'https://www.diancang.xyz/xuanxuewushu/qimendunjiatongzong/41073.html',
   },
   {
     id: 'qm-rumu',
     book: 'qimen',
     chapter: '卷十一·玄机赋（中）',
-    quote: '三奇入墓，闭塞不通，暗昧不振，诸事皆凶。乙阴木长生在午墓于戌，丙火长生在寅墓于戌，故乙丙到乾为墓。丁阴火长生在酉墓于丑，故丁到艮为墓。',
-    plain: '按五行墓库判：乙木、丙火墓在戌（乾六宫），丁火墓在丑（艮八宫）。天盘三奇落到自己的墓宫即入墓，取象是收住、藏起来、事情压着不动；问收藏与了结时未必是坏事。',
     url: 'https://www.diancang.xyz/xuanxuewushu/qimendunjiatongzong/41073.html',
   },
   {
     id: 'qm-wangshuai',
     book: 'qimen',
     chapter: '卷三',
-    quote: '旺相休囚：春木相火旺水废金囚土休，夏火相土旺木废水囚金休，秋金相水旺土废火囚木休，冬水相木旺金废土囚火休。',
-    plain: '旺相休囚按季节五行轮转：当令者旺、被当令所生者相、生当令者休、克当令者囚、被当令所克者废（死）。门、星、天盘干各按自身五行对月令，得出当下力量强弱。',
     url: 'https://www.diancang.xyz/xuanxuewushu/qimendunjiatongzong/41070.html',
   },
   {
     id: 'qm-men-gong',
     book: 'qimen',
     chapter: '卷二',
-    quote: '右八门最怕迫制，吉门有气益吉，无气减吉；凶门有气益凶，无气减凶。',
-    plain: '八门怕被宫位迫制；吉门有气更吉、无气则减吉，凶门有气更凶、无气则减凶。旺衰只是加权，门与宫的生克要另算，两层并列、不互相替代。',
     url: 'https://www.diancang.xyz/xuanxuewushu/qimendunjiatongzong/41069.html',
   },
   {
     id: 'mh-tiyong',
     book: 'meihua',
     chapter: '卷二·体用生克',
-    quote: '体用即动静之说。体为主，用为事。应用事体及比和，则吉；体生用及克体，则不吉。',
-    plain: '体卦代表自己、主静；用卦代表所问之事、主动。用生体或体用比和为顺，体生用（泄气）与用克体为不顺；再看互卦、变卦与旺衰定轻重。',
     url: 'https://www.diancang.xyz/xuanxuewushu/meihuayishu/37734.html',
   },
   {
     id: 'zs-yongshen',
     book: 'liuyao',
     chapter: '卷一·用神章第八',
-    quote: '父母爻：占父母卽以卦中之父母爻爲神。',
-    plain: '六亲各有用神：问父母就以父母爻为用神，兄弟、妻财、子孙、官鬼也各按所问的人与事取爻。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/8',
   },
   {
     id: 'zs-fushen',
     book: 'liuyao',
     chapter: '卷二·飛伏神章第二十八',
-    quote: '此卦寅木妻財在二爻﹐卽以此寅木伏於姤卦亥水之下﹐姤卦二爻之亥水卽爲飛神﹐寅木妻財卽爲伏神﹐亥水而生寅木﹐謂之飛來生伏得長生﹐此用神不現﹐尋得伏神而遇生扶有用﹐亦爲用神﹐便作吉斷﹐餘仿此。',
-    plain: '用神不上卦时，到本宫首卦里找伏神：伏在下面的叫伏神，压在它上面的叫飞神。伏神得日月或飞神生扶，才算有用。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易',
   },
   {
     id: 'zs-yuejian',
     book: 'liuyao',
     chapter: '卷一·月將章第十六',
-    quote: '月將卽是月建又爲月令。掌一月之權，司三旬之令。',
-    plain: '月建就是月令，掌一月的时令、管三旬的旺衰；它能扶起衰弱的爻，也能制住动爻与变爻。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/16',
   },
   {
     id: 'zs-yuejian-zhuli',
     book: 'liuyao',
     chapter: '卷一·月將章第十六',
-    quote: '爻之衰弱者能生之合之、比之、拱之、扶之，衰而亦旺。',
-    plain: '月建对衰弱的爻能生、合、比、拱、扶，衰的也可以转旺；反过来对强旺的爻能冲、克、刑、破，旺的也会转衰。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/16',
   },
   {
     id: 'zs-richen',
     book: 'liuyao',
     chapter: '卷一·日辰章第十七',
-    quote: '日辰爲六爻之主宰，司四時之旺相。',
-    plain: '日辰是六爻之主宰，四时都能当令，与月建同功；日冲旺相静爻为暗动，冲衰弱静爻为日破。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/17',
   },
   {
     id: 'zs-dongbian',
     book: 'liuyao',
     chapter: '卷一·動變生克沖合章第十五',
-    quote: '卦有動爻，動而必變，夫變出之爻能生克沖合本位之動爻，不能生克他爻，而他爻與本位之動爻，亦不能生克變爻。',
-    plain: '动爻变出的爻，只与本位动爻发生生克冲合，不直接作用于其他爻；其他爻也不直接生克这个变爻。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/15',
   },
   {
     id: 'zs-liushen',
     book: 'liuyao',
     chapter: '卷一·六神章第十八',
-    quote: '諸書無不以靑龍爲吉，白虎爲凶。',
-    plain: '旧籍多以青龙为吉、白虎为凶；本章随即用卦例说明六神只是取象的一层，不能只看它断吉凶。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/18',
   },
   {
     id: 'zs-liuhe',
     book: 'liuyao',
     chapter: '卷一·六合章第十九',
-    quote: '子與丑合、寅與亥合、卯與戌合、辰與酉合、巳與申合，午與未合。',
-    plain: '六合固定六对：子丑、寅亥、卯戌、辰酉、巳申、午未；静爻逢合叫合起，动爻逢合叫合绊。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/19',
   },
   {
     id: 'zs-liuchong',
     book: 'liuyao',
     chapter: '卷一·六沖章第二十',
-    quote: '相沖之法有六。日月沖爻者一也，卦逢六沖二也，六合卦變六沖三也，沖變六沖四也。動爻變沖五也、爻與爻沖六也。',
-    plain: '相冲分六种：日月冲爻、卦逢六冲、六合卦变六冲、冲变六冲、动爻变冲、爻与爻冲。冲主散，吉事不宜，凶事反而宜散。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/20',
   },
   {
     id: 'zs-fanyin',
     book: 'liuyao',
     chapter: '卷一·反伏章第二十五',
-    quote: '內卦反伏，內則不安。外卦反伏，外則不寧。內外反伏者，內外不寧之象也。',
-    plain: '内卦反伏主内不安，外卦反伏主外不宁，内外都反伏则内外不宁；取象是事情反复，成而败、败而成。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/25',
   },
   {
     id: 'zs-fuyin',
     book: 'liuyao',
     chapter: '卷一·反伏章第二十五',
-    quote: '內卦動變伏吟，內則呻吟，外卦動變伏吟，外則憂鬱。',
-    plain: '内卦动变伏吟主内呻吟，外卦动变伏吟主外忧郁；伏吟取停滞难伸，不像反吟那样带冲克。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/25',
   },
   {
     id: 'zs-jintui',
     book: 'liuyao',
     chapter: '卷二·進神退神章第二十九',
-    quote: '進神退神者﹐爻之動而化也﹐化進化退﹐吉凶禍福有喜忌之分﹐所喜者宜於化進﹐所忌者宜化退神。',
-    plain: '进神退神是动爻化出同五行的顺次之支：化进主向前，化退主退气；喜用的宜化进，所忌的宜化退。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易',
   },
   {
     id: 'zs-yingqi',
     book: 'liuyao',
     chapter: '卷一·各門類應期總注章第又二十六',
-    quote: '靜而逢值逢沖：如主事爻臨子水不動，後逢子日午日而應之，餘仿此。',
-    plain: '应期先分动静：静爻在逢值或逢冲之日应，动爻在逢合或逢值之日应；其余按入墓、旬空、月破等逐条推。',
     url: 'https://zh.wikisource.org/wiki/增刪卜易/26又3',
   },
   {
     id: 'dl-jigong',
     book: 'daliuren',
     chapter: '卷一·起例（十干寄宫）',
-    quote: '甲课寅兮乙课辰，丙戊课巳不须论。丁己课未庚申上，辛戌壬亥是其真。癸课原来丑宫坐，分明不用四正神。',
-    plain: '十干寄宫是四课起手：甲寄寅、乙寄辰、丙戊寄巳、丁己寄未、庚寄申、辛寄戌、壬寄亥、癸寄丑；丙戊、丁己各同宫，子午卯酉四个正位不寄。',
     url: 'https://zh.wikisource.org/wiki/六壬大全/1',
   },
   {
     id: 'dl-zeike',
     book: 'daliuren',
     chapter: '卷一·起例（贼克法）',
-    quote: '取课先从下贼呼，如无下贼上克初。初传之上名中次，中上加临是末居。三传既定天盘将，此是入式法第一。',
-    plain: '九宗门取初传先看下贼上，没有下贼再看上克下；初传定后，中传取初传所乘之神，末传再顺取一位，三传齐了才布天盘天将。',
     url: 'https://zh.wikisource.org/wiki/六壬大全/1',
-  },
-  {
-    id: 'dl-yuejiang',
-    book: 'daliuren',
-    chapter: '卷二·神将释（月将）',
-    quote: '逆布者谓之月将，其实即十二神也。',
-    plain: '月将就是十二支神，按太阳过宫排：以登明为首逆布十二宫；起课时把月将加在占时上，顺布成天盘。',
-    url: 'https://zh.wikisource.org/wiki/六壬大全/2',
   },
   {
     id: 'dt-yiqi-tonggen',
     book: 'ditian',
     chapter: '干支总论',
-    quote: '天全一气，不可使地德莫之载。地全三物，不可使天道莫之容。',
-    plain: '四柱天干同属一气，还得地支能承载它；地支所藏三干若不透到天干，也显不出用处——通根与透出是一件事的两面。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153091.html',
-    // 2026-11-01 复核：这一句是《子平真诠》论十干十二支注文里明确引作《滴天髓》的话，
-    // 在滴天髓底本（干支总论）里能逐字对上，所以才是「通根透干」可核的原文。
-    note: '《子平真诠》卷一论十干十二支注文引作《滴天髓》语，底本干支总论原文可核。',
   },
   // ── 滴天髓·下篇六亲论（2026-11-01 从底本逐字录入，同一页：153092.html）
   {
     id: 'dt-liuqin-fuqi',
     book: 'ditian',
     chapter: '六亲论·夫妻',
-    quote: '夫妻因缘宿世来，喜神有意傍天财。',
-    plain: '看夫妻，落点在「喜神」与「财星」的相对位置：财是妻星，喜神是能护住用神的那一位。配偶这件事，看的是财星有没有被喜神照到，不是看盘里有没有财。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
-    // 底本此篇为韵语提纲，各家注解分歧很大；这里只录原文，不把某家注解当原文引用。
-    note: '本句是六亲论的提纲韵语，正文各家用注解发挥，取义不一，故只作「有这一说」的原文凭据。',
   },
   {
     id: 'dt-liuqin-zinv',
     book: 'ditian',
     chapter: '六亲论·子女',
-    quote: '子女根枝一世传，喜神看与杀相连。',
-    plain: '子女星取官杀，但成不成器要看喜神与杀的关系：有杀无喜，是压力；有喜有杀，才谈得上传承。单见官杀不作吉断。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
   },
   {
     id: 'dt-liuqin-fumu',
     book: 'ditian',
     chapter: '六亲论·父母',
-    quote: '父母或降与或替，岁月所关果非细。',
-    plain: '父母看年月两柱：位置定了，还要看这两柱是「降」（受制）还是「替」（得代），差别不小。这是把六亲落到宫位上，而不是只看印星。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
   },
   {
     id: 'dt-nvming-shensha',
     book: 'ditian',
     chapter: '六亲论·女命章',
-    quote: '论夫论子要安详，气静平和妇道章，三奇二德虚好语，咸池驿马半推详。',
-    plain: '这句是古籍自己在批神煞：三奇、二德这类吉神被叫作「虚好语」（空口说好话），咸池（桃花）、驿马只能「半推详」（顶多参考一半）。反对滥用神煞不是今人的意见，原文里就有。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
-    // 2026-11-01 录入：这句是本插件「神煞显示但不参与判断」最直接的原文依据，
-    // 而且是《滴天髓》自己说的，比后人转述有力。注意「三奇二德」指三奇、天德月德一类吉神。
-    note: '「三奇二德虚好语，咸池驿马半推详」是滴天髓原文对神煞的贬语，可直接支撑「神煞不主吉凶」。',
   },
   {
     id: 'dt-hezhi-fugui',
     book: 'ditian',
     chapter: '六亲论·何知章',
-    quote: '何知其人富，财气通门户。何知其人贵，官星有理会。何知其人贫，财神反不真。何知其人贱，官星还不见。',
-    plain: '富看财有没有「通门户」（财能流通到日主），贵看官星有没有「理会」（有制有化、有人承接）。反过来，贫是财星不真（有财而无用），贱是官星不见或不理。判词是四个可查的条件，不是形容词。',
     url: 'https://www.diancang.xyz/xuanxuewushu/ditiansui/153092.html',
+  },
+  // ── B8 补录：六爻源头三本（2026-11-06 逐字核验）
+  // 黄金策是火珠林卦法的集大成，京氏易传是八宫世应与飞伏的祖本：
+  // 这两本接进来之后，六爻的「取用—世应—飞伏—应期」四层第一次各有出处，
+  // 不再全部挂在《增删卜易》一本清人书上。地相五本没有解读层，走 citations-fuwen。
+  {
+    id: 'lj-yuejian-richen',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-shiying-bibi',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-yongshen-youqi',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-taiguo-buji',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-fushen-tiba',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-yingqi-chongpo',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-jintui-jiaochong',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-shensha-shengke',
+    book: 'huangjince',
+    chapter: '一·总断千金赋',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'lj-hunyin-liuchong',
+    book: 'huangjince',
+    chapter: '七·婚姻',
+    url: 'https://zh.wikisource.org/wiki/黄金策',
+  },
+  {
+    id: 'js-ganfei-fufeifu',
+    book: 'jingshi',
+    chapter: '卷上·乾上乾下·乾',
+    url: 'https://zh.wikisource.org/wiki/京氏易傳',
+  },
+  {
+    id: 'js-bagong-zongang',
+    book: 'jingshi',
+    chapter: '卷上·坤下離上·晋（注文）',
+    url: 'https://zh.wikisource.org/wiki/京氏易傳',
+  },
+  {
+    id: 'hzl-liuqin-genyuan',
+    book: 'huozhulin',
+    chapter: '六亲根源',
+    url: 'https://zh.wikisource.org/wiki/火珠林',
+  },
+  {
+    id: 'hzl-duifa-luandong',
+    book: 'huozhulin',
+    chapter: '独发乱动',
+    url: 'https://zh.wikisource.org/wiki/火珠林',
+  },
+  {
+    id: 'hzl-shiying-women',
+    book: 'huozhulin',
+    chapter: '世应相克',
+    url: 'https://zh.wikisource.org/wiki/火珠林',
+  },
+  {
+    id: 'zm-zhunsheng-shenming',
+    book: 'ziwei',
+    chapter: '卷一·斗数准绳',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'zm-xingyuan-yinmao',
+    book: 'ziwei',
+    chapter: '卷一·星垣论',
+    url: 'https://zh.wikisource.org/wiki/紫微斗數全書/卷一',
+  },
+  {
+    id: 'js-shiying-guihun',
+    book: 'jingshi',
+    chapter: '卷上·乾下離上·大有',
+    url: 'https://zh.wikisource.org/wiki/京氏易傳',
+  },
+  // ── B9 第二批：八字四本里的三本（2026-11-07 逐字核验，luckclub 本）
+  // 《神峰通考》把专旺五格、阳刃、杂气、魁罡各写一篇，张楠自己的按语常与通行格论相左
+  // （「此二格吾见多矣，未尝有富贵者」「此亦子平书之大谬也」）——并引而不替用户选边。
+  // 《珞琭子消息赋》该页赋文与注解混排、不分卷，卷章按页内实际小节标，不编卷次。
+  // 《兰台妙选》上中下三篇，本批只取上、中两篇成句。
+  // 《星平会海》各卷页面只有篇名目录（卷九仅 32 字），正文取不到，照实记「未接触」，一条不录。
+  {
+    id: 'sf-quzhi',
+    book: 'shenfeng',
+    chapter: '卷三·曲直仁寿格',
+    url: 'https://www.luckclub.cn/bazi/008/031/',
+  },
+  {
+    id: 'sf-yanshang',
+    book: 'shenfeng',
+    chapter: '卷三·炎上格',
+    url: 'https://www.luckclub.cn/bazi/008/033/',
+  },
+  {
+    id: 'sf-jiase',
+    book: 'shenfeng',
+    chapter: '卷三·稼穑格',
+    url: 'https://www.luckclub.cn/bazi/008/032/',
+  },
+  {
+    id: 'sf-congge',
+    book: 'shenfeng',
+    chapter: '卷三·从革格',
+    url: 'https://www.luckclub.cn/bazi/008/035/',
+  },
+  {
+    id: 'sf-runxia',
+    book: 'shenfeng',
+    chapter: '卷三·润下格',
+    url: 'https://www.luckclub.cn/bazi/008/034/',
+  },
+  {
+    id: 'sf-yangren',
+    book: 'shenfeng',
+    chapter: '卷二·阳刃格',
+    url: 'https://www.luckclub.cn/bazi/008/019/',
+  },
+  {
+    id: 'sf-rensha',
+    book: 'shenfeng',
+    chapter: '卷二·阳刃格',
+    url: 'https://www.luckclub.cn/bazi/008/019/',
+  },
+  {
+    id: 'sf-kuigang',
+    book: 'shenfeng',
+    chapter: '卷三·魁罡格',
+    url: 'https://www.luckclub.cn/bazi/008/043/',
+  },
+  {
+    id: 'sf-zaji',
+    book: 'shenfeng',
+    chapter: '卷二·杂气财官印绶格',
+    url: 'https://www.luckclub.cn/bazi/008/020/',
+  },
+  {
+    id: 'll-jianbujian',
+    book: 'luoluzi',
+    chapter: '注解·或见或闻',
+    url: 'https://www.luckclub.cn/bazi/024/001/',
+  },
+  {
+    id: 'll-sizhugong',
+    book: 'luoluzi',
+    chapter: '注解·四柱三元',
+    url: 'https://www.luckclub.cn/bazi/024/001/',
+  },
+  {
+    id: 'll-zheri',
+    book: 'luoluzi',
+    chapter: '赋文·运行折除',
+    url: 'https://www.luckclub.cn/bazi/024/001/',
+  },
+  {
+    id: 'lt-geju',
+    book: 'lantai',
+    chapter: '上篇',
+    url: 'https://www.luckclub.cn/bazi/026/001/',
+  },
+  {
+    id: 'lt-xiongsha',
+    book: 'lantai',
+    chapter: '上篇',
+    url: 'https://www.luckclub.cn/bazi/026/001/',
+  },
+  // ── B10 第一批：luckclub 八字六本（2026-11-07，逐句过底本子串）
+  {
+    id: 'yh-cangdun',
+    book: 'yuanhai',
+    chapter: '卷一·地支藏遁歌',
+    url: 'https://www.luckclub.cn/bazi/001/061/',
+  },
+  {
+    id: 'yh-dayun',
+    book: 'yuanhai',
+    chapter: '卷一·论起大运法',
+    url: 'https://www.luckclub.cn/bazi/001/055/',
+  },
+  {
+    id: 'yh-liuqin',
+    book: 'yuanhai',
+    chapter: '卷一·论五行相生相克',
+    url: 'https://www.luckclub.cn/bazi/001/057/',
+  },
+  {
+    id: 'yh-tianyi',
+    book: 'yuanhai',
+    chapter: '卷一·论起玉堂天乙贵人',
+    url: 'https://www.luckclub.cn/bazi/001/024/',
+  },
+  {
+    id: 'dtcw-yueling',
+    book: 'dtchanwei',
+    chapter: '上篇第15章·月令·原注',
+    url: 'https://www.luckclub.cn/bazi/007/017/',
+  },
+  {
+    id: 'dtcw-tongguan',
+    book: 'dtchanwei',
+    chapter: '上篇第20章·通关·原注',
+    url: 'https://www.luckclub.cn/bazi/007/022/',
+  },
+  {
+    id: 'ydzp-zhengguan',
+    book: 'yudingziping',
+    chapter: '正官论',
+    url: 'https://www.luckclub.cn/bazi/021/002/',
+  },
+  {
+    id: 'ydzp-chengbai',
+    book: 'yudingziping',
+    chapter: '正官论',
+    url: 'https://www.luckclub.cn/bazi/021/002/',
+  },
+  {
+    id: 'mlyy-geju',
+    book: 'mingliyueyan',
+    chapter: '看格局法',
+    url: 'https://www.luckclub.cn/bazi/018/007/',
+  },
+  {
+    id: 'mlyy-wangshuai',
+    book: 'mingliyueyan',
+    chapter: '看月令法一',
+    url: 'https://www.luckclub.cn/bazi/018/011/',
+  },
+  {
+    id: 'mlyy-zaji',
+    book: 'mingliyueyan',
+    chapter: '看月令法一',
+    url: 'https://www.luckclub.cn/bazi/018/011/',
+  },
+  {
+    id: 'mlyy-congju',
+    book: 'mingliyueyan',
+    chapter: '看从局法',
+    url: 'https://www.luckclub.cn/bazi/018/033/',
+  },
+  // ── B10 第二批：luckclub 八字余下 12 本（2026-11-07，逐句过底本子串）
+  {
+    id: 'qlmg-bage',
+    book: 'qianliminggao',
+    chapter: '格局篇',
+    url: 'https://www.luckclub.cn/bazi/003/011/',
+  },
+  {
+    id: 'qlmg-quge',
+    book: 'qianliminggao',
+    chapter: '格局篇',
+    url: 'https://www.luckclub.cn/bazi/003/011/',
+  },
+  {
+    id: 'qlmg-pingduan',
+    book: 'qianliminggao',
+    chapter: '评断篇',
+    url: 'https://www.luckclub.cn/bazi/003/021/',
+  },
+  {
+    id: 'qlmg-qiangruo',
+    book: 'qianliminggao',
+    chapter: '强弱篇',
+    url: 'https://www.luckclub.cn/bazi/003/008/',
+  },
+  {
+    id: 'qlmg-renyuan',
+    book: 'qianliminggao',
+    chapter: '人元篇',
+    url: 'https://www.luckclub.cn/bazi/003/006/',
+  },
+  {
+    id: 'qlmg-liuqin',
+    book: 'qianliminggao',
+    chapter: '六亲篇',
+    url: 'https://www.luckclub.cn/bazi/003/016/',
+  },
+  {
+    id: 'mlty-shunni',
+    book: 'minglitanyuan',
+    chapter: '卷三 强弱',
+    url: 'https://www.luckclub.cn/bazi/009/004/',
+  },
+  {
+    id: 'mlty-yongshi',
+    book: 'minglitanyuan',
+    chapter: '卷三 强弱',
+    url: 'https://www.luckclub.cn/bazi/009/004/',
+  },
+  {
+    id: 'mlty-shensha',
+    book: 'minglitanyuan',
+    chapter: '卷八 星家十要',
+    url: 'https://www.luckclub.cn/bazi/009/009/',
+  },
+  {
+    id: 'wxjj-yinshou',
+    book: 'wuxingjingji',
+    chapter: '五行精纪：第十八卷论印绶',
+    url: 'https://www.luckclub.cn/bazi/013/026/',
+  },
+  {
+    id: 'wxjj-tiancai',
+    book: 'wuxingjingji',
+    chapter: '五行精纪：论财',
+    url: 'https://www.luckclub.cn/bazi/013/032/',
+  },
+  {
+    id: 'wxjj-tianyi',
+    book: 'wuxingjingji',
+    chapter: '五行精纪：第十四卷【论天乙贵神】',
+    url: 'https://www.luckclub.cn/bazi/013/021/',
+  },
+  {
+    id: 'zhyy-tiaohou',
+    book: 'zaohuayuanyue',
+    chapter: '立论特色',
+    url: 'https://www.luckclub.cn/bazi/019/007/',
+  },
+  {
+    id: 'zpgj-zhengguan',
+    book: 'zipingguanjian',
+    chapter: '正官格',
+    url: 'https://www.luckclub.cn/bazi/020/002/',
+  },
+  {
+    id: 'zpgj-pianguan',
+    book: 'zipingguanjian',
+    chapter: '偏官格',
+    url: 'https://www.luckclub.cn/bazi/020/003/',
+  },
+  {
+    id: 'zpgj-zaqi',
+    book: 'zipingguanjian',
+    chapter: '杂气有三',
+    url: 'https://www.luckclub.cn/bazi/020/029/',
+  },
+  {
+    id: 'xmjg-tianyi',
+    book: 'xingmingjuegu',
+    chapter: '贵人论',
+    url: 'https://www.luckclub.cn/bazi/025/001/',
+  },
+  {
+    id: 'xmjg-yangsheng',
+    book: 'xingmingjuegu',
+    chapter: '五行生旺论',
+    url: 'https://www.luckclub.cn/bazi/025/002/',
+  },
+  {
+    id: 'xmjg-kongwang',
+    book: 'xingmingjuegu',
+    chapter: '古法论',
+    url: 'https://www.luckclub.cn/bazi/025/008/',
+  },
+  // ── B11：luckclub 大六壬 / 六爻两栏（2026-11-07，逐句过底本子串）
+  {
+    id: 'rty-sike',
+    book: 'rentanyuan',
+    chapter: '卷上 推演篇',
+    url: 'https://www.luckclub.cn/daliuren/003/002/',
+  },
+  {
+    id: 'rzn-rushi',
+    book: 'renzhinan',
+    chapter: '卷一 注释大六壬心印赋',
+    url: 'https://www.luckclub.cn/daliuren/005/003/',
+  },
+  {
+    id: 'rzn-richen',
+    book: 'renzhinan',
+    chapter: '卷二 大六壬九天玄女指掌赋',
+    url: 'https://www.luckclub.cn/daliuren/005/004/',
+  },
+  {
+    id: 'rg-tigang',
+    book: 'rengui',
+    chapter: '卷之一 提纲例约',
+    url: 'https://www.luckclub.cn/daliuren/010/001/',
+  },
+  {
+    id: 'bszz-liuqin',
+    book: 'bushizhengzong',
+    chapter: '第一篇 启蒙节要',
+    url: 'https://www.luckclub.cn/liuyao/001/005/',
+  },
+  {
+    id: 'bszz-yongshen',
+    book: 'bushizhengzong',
+    chapter: '第三篇 十八论',
+    url: 'https://www.luckclub.cn/liuyao/001/007/',
+  },
+  {
+    id: 'bszz-shiying',
+    book: 'bushizhengzong',
+    chapter: '第三篇 十八论',
+    url: 'https://www.luckclub.cn/liuyao/001/007/',
+  },
+  {
+    id: 'bszz-yuanshen',
+    book: 'bushizhengzong',
+    chapter: '第三篇 十八论',
+    url: 'https://www.luckclub.cn/liuyao/001/007/',
+  },
+  {
+    id: 'bszz-hechu',
+    book: 'bushizhengzong',
+    chapter: '第三篇 十八论',
+    url: 'https://www.luckclub.cn/liuyao/001/007/',
+  },
+  {
+    id: 'bszz-pi-zs',
+    book: 'bushizhengzong',
+    chapter: '第四篇 辟诸书之谬',
+    url: 'https://www.luckclub.cn/liuyao/001/008/',
+  },
+  {
+    id: 'bszz-fushen',
+    book: 'bushizhengzong',
+    chapter: '第四篇 辟诸书之谬',
+    url: 'https://www.luckclub.cn/liuyao/001/008/',
+  },
+  {
+    id: 'bszz-sanchuan',
+    book: 'bushizhengzong',
+    chapter: '第七篇 十八问答附占验',
+    url: 'https://www.luckclub.cn/liuyao/001/011/',
+  },
+  {
+    id: 'ylby-feifu',
+    book: 'yilinbuwei',
+    chapter: '卷一',
+    url: 'https://www.luckclub.cn/liuyao/008/005/',
+  },
+  {
+    id: 'ylby-yongshen',
+    book: 'yilinbuwei',
+    chapter: '卷一',
+    url: 'https://www.luckclub.cn/liuyao/008/005/',
+  },
+  {
+    id: 'sxzy-shiying',
+    book: 'shixuezhiyao',
+    chapter: '筮学指要',
+    url: 'https://www.luckclub.cn/liuyao/011/001/',
   },
 ];
 
@@ -549,43 +1244,56 @@ export function citationOf(id) {
 // 每张知识卡的去处。refs 为已定位原文；general / todo 必须写 reason，不冒充引文。
 export const CARD_CITATIONS = {
   // ── 八字：已定位（子平真诠 / 滴天髓 / 三命通会）
-  'bazi-yueling-siquan': { refs: ['smt-renyuan'] },
-  'bazi-geju': { refs: ['zp-yongshen'] },
+  'bazi-yueling-siquan': { refs: ['smt-renyuan', 'yh-cangdun', 'dtcw-yueling', 'qlmg-renyuan', 'mlty-yongshi'] },
+  // B9 第二批：格局卡并引三书——子平真诠定「专求月令」，张楠给阳刃与刃杀相配的异说，
+  // 兰台妙选则把「格」明定为取用于生月、「局」明定为地支三合，三者分法不同，只并引不合并。
+  'bazi-geju': { refs: ['zp-yongshen', 'sf-yangren', 'sf-rensha', 'lt-geju', 'mlyy-geju', 'qlmg-bage', 'qlmg-quge', 'qlmg-pingduan'] },
   'bazi-suiyun': { refs: ['smt-suiyun'] },
-  'bazi-sanming-duizhao': { refs: ['zp-zhenguan', 'smt-guansha-liu'] },
-  'bazi-geju-chengbai': { refs: ['zp-chengbai', 'dt-hezhi-fugui'] },
+  'bazi-sanming-duizhao': { refs: ['zp-zhenguan', 'smt-guansha-liu', 'ydzp-zhengguan', 'wxjj-yinshou', 'wxjj-tiancai', 'zpgj-pianguan'] },
+  'bazi-geju-chengbai': { refs: ['zp-chengbai', 'dt-hezhi-fugui', 'ydzp-chengbai', 'zpgj-zhengguan'] },
   'bazi-huagi-bianhua': { refs: ['zp-bianhua'] },
-  'bazi-zaji-quyong': { refs: ['zp-zaji'] },
-  'bazi-zhuanwang-yuanwen': { refs: ['smt-quzhi', 'smt-yanshang', 'smt-congge', 'smt-runxia', 'smt-jiasi'] },
-  'bazi-congge-yuanwen': { refs: ['smt-congsha', 'smt-congcai'] },
-  'bazi-tongguan': { refs: ['dt-tongguan'] },
+  'bazi-zaji-quyong': { refs: ['zp-zaji', 'sf-zaji', 'mlyy-zaji', 'zpgj-zaqi'] },
+  // 专旺五格：三命通会立格，神峰通考逐格给条件与破格字，张楠又亲口驳从革、润下二格，一并留着。
+  'bazi-zhuanwang-yuanwen': { refs: ['smt-quzhi', 'smt-yanshang', 'smt-congge', 'smt-runxia', 'smt-jiasi',
+    'sf-quzhi', 'sf-yanshang', 'sf-jiase', 'sf-congge', 'sf-runxia'] },
+  'bazi-congge-yuanwen': { refs: ['smt-congsha', 'smt-congcai', 'mlyy-congju'] },
+  'bazi-tongguan': { refs: ['dt-tongguan', 'dtcw-tongguan'] },
   // ── 八字：通行说，暂未定位单一条文
   'bazi-tonggen-tougan': {
-    refs: ['dt-yiqi-tonggen'],
+    refs: ['dt-yiqi-tonggen', 'll-jianbujian'],
     // 通行说法（「地支所藏之干，本静以待用…干以通根为美，支以透出为贵」）常被署成《滴天髓》，
     // 2026-11-01 核过：滴天髓底本与《子平真诠》沈孝瞻原文（论十干十二支）里都查不到这句，
     // 它出现在《子平真诠》评注本该章的注文（附支藏人元图、人元司令表之后的按语）。
     // 注文自身引的《滴天髓》「天全一气…」才是原本，故本卡只引可核的那句，注文只作说明不冒充原文。
-    note: '通行说两句出自《子平真诠》卷一注文，非《滴天髓》正文；注文所引的滴天髓句见本条。',
+    // 2026-11-07 补：《珞琭子消息赋》注解把「见」解为天元、「闻」解为支内人元，是天元/人元分层的祖本，
+    // 但原文没有「通根」二字，只作分层出处，不拿它冒充通根透干的成句。
+    note: '通行说两句出自《子平真诠》卷一注文，非《滴天髓》正文；注文所引的滴天髓句见本条。珞琭子注只证天元/人元分层，不证「通根」。',
   },
-  'bazi-wangxiang': { refs: ['smt-wangxiang'] },
+  'bazi-wangxiang': { refs: ['smt-wangxiang', 'mlyy-wangshuai', 'qlmg-qiangruo', 'mlty-shunni', 'xmjg-yangsheng'] },
   // 神煞：三命通会条列名目，滴天髓女命章直接贬为「虚好语」「半推详」——两书合看才是全貌：
   // 神煞是有的，只是不主吉凶。只引三命通会会让人以为本插件在给神煞背书。
-  'bazi-shensha': { refs: ['smt-shensha', 'dt-nvming-shensha'] },
-  'bazi-tiaohou': { refs: ['qt-tiaohou'] },
-  // 六亲：星宫同参，落点分别是夫妻（财与喜神）、子女（杀与喜神）、父母（年月宫位）
-  'bazi-liuqin': { refs: ['smt-liuqin', 'dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu'] },
-  'bazi-kongwang': { refs: ['smt-kongwang'] },
+  // B9 第二批再加两处互抵的口径：张楠质疑魁罡凭临比墓掌威权，兰台妙选却说凶煞有制反主荣贵。
+  'bazi-shensha': { refs: ['smt-shensha', 'dt-nvming-shensha', 'sf-kuigang', 'lt-xiongsha', 'yh-tianyi', 'mlty-shensha', 'wxjj-tianyi', 'xmjg-tianyi'] },
+  'bazi-tiaohou': { refs: ['qt-tiaohou', 'zhyy-tiaohou'] },
+  // 六亲：星宫同参，落点分别是夫妻（财与喜神）、子女（杀与喜神）、父母（年月宫位）；
+  // 珞琭子赋注的四柱定名与三元分层是宫位说的早期出处。
+  'bazi-liuqin': { refs: ['smt-liuqin', 'dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu', 'll-sizhugong', 'yh-liuqin', 'qlmg-liuqin'] },
+  'bazi-kongwang': { refs: ['smt-kongwang', 'xmjg-kongwang'] },
   'bazi-xingchong': { refs: ['smt-xingchong'] },
-  'bazi-dayun-jiaoqi': { refs: ['smt-dayun-qiyun'] },
+  // 起运：三命通会论大运 + 珞琭子赋文「三日为年」的折算口径。
+  'bazi-dayun-jiaoqi': { refs: ['smt-dayun-qiyun', 'll-zheri', 'yh-dayun'] },
   // ── 紫微：已定位（紫微斗数全书）
-  'ziwei-sanfang': { refs: ['zw-sanfang'] },
-  'ziwei-sihua': { refs: ['zw-sihua-lu', 'zw-sihua-ji'] },
-  'ziwei-miaowang': { refs: ['zw-miaowang'] },
-  'ziwei-daxian': { refs: ['zw-daxian'] },
-  'ziwei-shengong': { refs: ['zw-shenming'] },
-  'ziwei-kongjie': { refs: ['zw-kongjie'] },
-  'ziwei-poge': { refs: ['zw-poge-ruge', 'zw-poge-sanfang'] },
+  // B7 起把卷一赋文补进来：三方四正、庙旺、破格、大限、命身、空劫每条都能指到具体句子。
+  'ziwei-sanfang': { refs: ['zw-sanfang', 'zw-gusu-duigong', 'zw-fawei-sizheng'] },
+  'ziwei-sihua': { refs: ['zw-sihua-lu', 'zw-sihua-ji', 'zw-fawei-kequ'] },
+  'ziwei-miaowang': { refs: ['zw-miaowang', 'zw-fawei-ruxian', 'zw-gaolv-dexian', 'zw-taiwei-jueshu', 'zm-xingyuan-yinmao', 'zm-zhunsheng-shenming'], note: '卷一「星垣论」按五行之垣定庙乐（寅卯为木垣，故贪狼天机庙乐），与卷三逐星庙旺表不是同一套口径；两处并引，本插件仍按卷三表判。' },
+  'ziwei-daxian': { refs: ['zw-daxian', 'zw-fawei-xinglian', 'zw-gusu-fanwei'] },
+  'ziwei-shengong': { refs: ['zw-shenming', 'zw-gusu-mingshen', 'zw-gaolv-shenming', 'zw-shenshi-shen', 'zm-zhunsheng-shenming'] },
+  'ziwei-kongjie': { refs: ['zw-kongjie', 'zw-gusu-jieyao', 'zw-gusu-kong-jian'] },
+  'ziwei-poge': { refs: ['zw-poge-ruge', 'zw-poge-sanfang', 'zw-gusu-yili', 'zw-gaolv-jiongji', 'zw-shideng-qianguan'] },
+  'ziwei-ji-duo': { refs: ['zw-taiwei-ji-xiong', 'zw-gaolv-jiongji'] },
+  'ziwei-shixian-jue': { refs: ['zw-dedi-wu', 'zw-dedi-hai', 'zw-shixian-zi', 'zw-shixian-shen'] },
+  'ziwei-nanv-ming': { refs: ['zw-nannv-nan', 'zw-nannv-nv', 'zw-nvming-fuxiang', 'zw-zengbu-nannv'] },
   // ── 紫微：飞星派读法不在《全书》原文内
   'ziwei-feixing': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '宫干飞化属飞星派传法，非《全书》单条原文' },
   'ziwei-sanfang-fei': { status: 'general', book: '紫微斗数全书 / 飞星派', chapter: '四化篇', reason: '三方四正同飞属飞星派读法，未定位到单条原文' },
@@ -593,27 +1301,32 @@ export const CARD_CITATIONS = {
   // 2026-11-02 复核：维基文库本《紫微斗数全书》卷一是赋文与格局、卷二是安身命例，均无杂曜安星诀；
   // 十二颗杂曜的诀文来自近代通行安星诀的多处并核，按口径只作通行说，不冒充《全书》原文。
   'ziwei-zaoyao': { status: 'general', book: '通行安星诀（中州派讲义 / 安星口诀本）', chapter: '杂曜安星诀', reason: '诀文见多处近代通行辑本且逐颗互核一致，但未定位到古籍单条原文，故不署《全书》' },
-  // ── 六爻：增删卜易（维基文库本，繁体照录）
-  'liuyao-yongshen': { refs: ['zs-yongshen'] },
-  'liuyao-fushen': { refs: ['zs-fushen'] },
-  'liuyao-wangshuai': { refs: ['zs-yuejian'] },
-  'liuyao-yongshen-shuai': { refs: ['zs-richen'] },
+  // ── 六爻：增删卜易（维基文库本，繁体照录），B8 起再加三本更早的源头
+  // B8 之前六爻十三张卡全挂在一本清人书上。《京氏易传》（汉）定八宫世应与飞伏配对，
+  // 《火珠林》（宋）定六亲根源与独发乱动，《黄金策》（明）把这一套收成赋文——
+  // 现在取用、世应、飞伏、应期四层各有一本比《增删卜易》早的书可对。
+  'liuyao-yongshen': { refs: ['zs-yongshen', 'lj-yongshen-youqi', 'hzl-liuqin-genyuan', 'bszz-liuqin', 'bszz-yongshen', 'bszz-pi-zs'] },
+  'liuyao-fushen': { refs: ['zs-fushen', 'lj-fushen-tiba', 'js-ganfei-fufeifu', 'bszz-fushen', 'ylby-feifu', 'ylby-yongshen'] },
+  'liuyao-wangshuai': { refs: ['zs-yuejian', 'lj-yuejian-richen', 'bszz-sanchuan'] },
+  // 世应新单列一卡（B8）：位序是京房八宫的硬结构，不再寄在「用神」卡里
+  'liuyao-shiying': { refs: ['lj-shiying-bibi', 'hzl-shiying-women', 'js-shiying-guihun', 'js-bagong-zongang', 'hzl-duifa-luandong', 'bszz-shiying', 'sxzy-shiying'] },
+  'liuyao-yongshen-shuai': { refs: ['zs-richen', 'lj-taiguo-buji', 'bszz-yuanshen'] },
   'liuyao-quanggu-shuai': { refs: ['zs-yuejian-zhuli'] },
-  'liuyao-dongbian': { refs: ['zs-dongbian'] },
-  'liuyao-liushen': { refs: ['zs-liushen'] },
-  'liuyao-liuhe': { refs: ['zs-liuhe'] },
-  'liuyao-liuchong': { refs: ['zs-liuchong'] },
+  'liuyao-dongbian': { refs: ['zs-dongbian', 'hzl-duifa-luandong'] },
+  'liuyao-liushen': { refs: ['zs-liushen', 'lj-shensha-shengke'] },
+  'liuyao-liuhe': { refs: ['zs-liuhe', 'lj-hunyin-liuchong', 'bszz-hechu'] },
+  'liuyao-liuchong': { refs: ['zs-liuchong', 'lj-hunyin-liuchong', 'bszz-hechu'] },
   'liuyao-fanyin': { refs: ['zs-fanyin'] },
   'liuyao-fuyin': { refs: ['zs-fuyin'] },
-  'liuyao-jintui': { refs: ['zs-jintui'] },
-  'liuyao-yingqi': { refs: ['zs-yingqi'] },
+  'liuyao-jintui': { refs: ['zs-jintui', 'lj-jintui-jiaochong'] },
+  'liuyao-yingqi': { refs: ['zs-yingqi', 'lj-yingqi-chongpo'] },
   // 2026-11-01 复核：底本卷二·進神退神章第二十九原文「所喜者宜於化進，所忌者宜化退神」
   // 已经把喜忌落在进退上，可作本条依据；把「喜／忌」具体落到用神／忌神两档仍是本插件的引申（见知识卡 note）
   'liuyao-jintui-yong': { refs: ['zs-jintui'] },
   'liuyao-yingqi-exact': { status: 'todo', book: '增删卜易', chapter: '各門類應期總注章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
   // ── 其他体系
   'meihua-tiyong': { refs: ['mh-tiyong'] },
-  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike'] },
+  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang'] },
   'qimen-yinyang': { refs: ['qm-yinyang'] },
   'qimen-jixing': { refs: ['qm-jixing'] },
   'qimen-rumu': { refs: ['qm-rumu'] },

@@ -57,7 +57,7 @@ function liuyaoTrace(r, opts = {}) {
       ['变卦', bian ? `${text(bian.name)}（上${text(bian.upper)}·下${text(bian.lower)}）` : '无'],
     ],
     lines.map((l) => `${l.position}爻 ${text(l.ganzhi)}${text(l.element)}`).join('｜'),
-    '京房纳甲（八宫纳甲表）；实现：engine/liuyao.js · NAJIA（规则表，本仓未录入古籍章页）',
+    '京房纳甲逐爻配干支五行；爻辰可对读《京氏易传》卷上各宫首卦注文；实现：engine/liuyao.js · NAJIA（八宫纳甲表）',
   );
 
   const liuqin = step(
@@ -70,7 +70,7 @@ function liuyaoTrace(r, opts = {}) {
       ['日干起六神', `${text(r.dayGanZhi && r.dayGanZhi.stem)}日`],
     ],
     lines.map((l) => `${l.position}爻 ${text(l.liuqin)}（${text(l.element)}）`).join('｜'),
-    '五行生克定六亲；取用可对读《增删卜易》卷一·用神章第八；实现：engine/liuyao.js · liuqin()',
+    '以卦宫为「我」定六亲，六亲从宫主出（《火珠林》六亲根源）；取用可对读《增删卜易》卷一·用神章第八；实现：engine/liuyao.js · liuqin()',
   );
 
   const shiying = step(
@@ -84,7 +84,7 @@ function liuyaoTrace(r, opts = {}) {
     ],
     `${text(ben.shi)}爻${shi ? ` ${text(shi.liuqin)}·${text(shi.ganzhi)}${text(shi.element)}` : ''}为世，`
       + `${text(ben.ying)}爻${ying ? ` ${text(ying.liuqin)}·${text(ying.ganzhi)}${text(ying.element)}` : ''}为应`,
-    '八宫世应诀（世爻序与应爻隔三位）；实现：engine/liuyao.js · SHI_POSITION（通行动诀，本仓未录入古籍章页）',
+    '世位依八宫（首卦上爻、一至五世、游魂四、归魂三），逐卦标世应见《京氏易传》卷上；应爻隔三位属通行推步；实现：engine/liuyao.js · SHI_POSITION',
   );
 
   let fushen;

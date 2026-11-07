@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 8218,
+  "total": 8347,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -87,11 +87,11 @@
       "fail": 0
     },
     "chunks.test.mjs": {
-      "pass": 121,
+      "pass": 122,
       "fail": 0
     },
     "citations.test.mjs": {
-      "pass": 65,
+      "pass": 181,
       "fail": 0
     },
     "classic-quotes.test.mjs": {
@@ -391,7 +391,7 @@
       "fail": 0
     },
     "qiongtong.test.mjs": {
-      "pass": 31,
+      "pass": 37,
       "fail": 0
     },
     "relations.test.mjs": {
@@ -467,7 +467,7 @@
       "fail": 0
     },
     "tables.test.mjs": {
-      "pass": 19,
+      "pass": 20,
       "fail": 0
     },
     "tarot-cards.test.mjs": {
@@ -515,7 +515,7 @@
       "fail": 0
     },
     "trace-sources.test.mjs": {
-      "pass": 32,
+      "pass": 37,
       "fail": 0
     },
     "trace.test.mjs": {

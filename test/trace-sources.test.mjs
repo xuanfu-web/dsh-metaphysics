@@ -1,7 +1,9 @@
 // A1+ 推导链出处：能指向古籍篇名的才写《书·篇》，没底的明确写「未录入 / 未标卷次」
 import { compute } from '../engine/index.js';
 import { CLASSIC_BOOKS } from '../engine/classics.js';
-import { CITATION_BOOKS, CITATIONS } from '../engine/citations.js';
+import { CITATION_BOOKS } from '../engine/citations.js';
+// 卷次登记表要看全库：引擎侧只留定位字段，还有一半原文条目放在不打包的 citations-fuwen
+import { LIBRARY_CITATIONS as CITATIONS } from '../engine/citations-fuwen.js';
 import { traceMarkdown } from '../engine/trace.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -37,10 +39,17 @@ ok('奇门统宗·卷三已登记', hasChapter('奇门遁甲统宗', '卷三'));
 ok('奇门统宗·卷二已登记', hasChapter('奇门遁甲统宗', '卷二'));
 ok('紫微斗数全书·论人命入格已登记', hasChapter('紫微斗数全书', '卷三·论人命入格'));
 ok('紫微斗数全书·谈星要论已登记', hasChapter('紫微斗数全书', '卷三·谈星要论'));
+// B8 六爻源头三本：卷次照页面自身的标法（黄金策分「1、總斷千金賦」以下诸节，无卷次）
+ok('京氏易传·乾宫大有已登记', hasChapter('京氏易传', '卷上·乾下離上·大有'));
+ok('京氏易传·晋卦注文已登记', hasChapter('京氏易传', '卷上·坤下離上·晋（注文）'));
+ok('火珠林·六亲根源已登记', hasChapter('火珠林', '六亲根源'));
+ok('黄金策·总断千金赋已登记', hasChapter('黄金策', '一·总断千金赋'));
 
-// ── 六爻：能对上的引原文，对不上的写「未录入」──
-ok('纳甲写明规则表', north(LIU, 'najia').source.includes('未录入古籍章页'), north(LIU, 'najia').source);
-ok('世应写明通行动诀', north(LIU, 'shiying').source.includes('通行动诀') && north(LIU, 'shiying').source.includes('未录入'), north(LIU, 'shiying').source);
+// ── 六爻：B8 起纳甲与世应能指到《京氏易传》，通则仍写「属通行推步」──
+ok('纳甲引京氏易传卷上', north(LIU, 'najia').source.includes('《京氏易传》卷上'), north(LIU, 'najia').source);
+ok('世应引京氏易传并标通行推步', north(LIU, 'shiying').source.includes('《京氏易传》')
+  && north(LIU, 'shiying').source.includes('通行推步'), north(LIU, 'shiying').source);
+ok('六亲引火珠林六亲根源', north(LIU, 'liuqin').source.includes('《火珠林》六亲根源'), north(LIU, 'liuqin').source);
 ok('六亲对读用神章', north(LIU, 'liuqin').source.includes('《增删卜易》卷一·用神章第八'), north(LIU, 'liuqin').source);
 ok('伏神引飛伏神章', LIU.trace.filter((t) => t.key === 'fushen').every((t) => t.source.includes('卷二·飛伏神章第二十八')),
   LIU.trace.filter((t) => t.key === 'fushen').map((t) => t.source).join(' | '));
@@ -73,4 +82,6 @@ ok('加时布盘仍标通行口诀', north(DL, 'tiandipan').source.includes('加
 // ── 导出：Markdown 原文照搬这些出处，不改写 ──
 const md = traceMarkdown(LIU.trace, { system: 'liuyao' });
 ok('Markdown 含新增出处', md.includes('《增删卜易》卷一·月將章第十六') && md.includes('**出处**：'));
-ok('Markdown 含未录入说明', md.includes('未录入古籍章页'));
+// B8 之前这句断言的是「md 里有未录入古籍章页」；纳甲与世应接上《京氏易传》后，
+// 六爻这一路已经没有「未录入」了，改成盯住新书目真的进了导出文本。
+ok('Markdown 照搬六爻源头书目', md.includes('《京氏易传》卷上') && md.includes('《火珠林》六亲根源'), md.slice(0, 120));

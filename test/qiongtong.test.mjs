@@ -71,3 +71,25 @@ const COLD = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'ma
     ok('面板引原文与章号', /mp-qt-q/.test(html) && html.includes('第 ' + COLD.frame.yongshen.qt.chapter + ' 章'), (html.match(/第 d+ 章/) || [''])[0]);
   ok('面板文本做过转义（无裸引号注入）', !/mp-qt-q[^>]*>「[^」]*<script/.test(html));
 }
+
+// ── 摘句截断必须留痕（B9）──
+// 摘句上限 96 字，首段更长的会在半句处停住（如二月辛金停在「得申中之」）。
+// 改前解析页与面板都把它当完整原文照录，用户无从知道后面还有话；现 cut 标记入库，
+// 两处展示都要写明「下略」。这条断言用实盘钉住，去掉标记立刻红。
+{
+  const CUT = compute({ system: 'bazi', datetime: '1996-03-15T10:00', gender: 'male', withInterpret: true });
+  const qt = CUT.frame.yongshen.qt;
+  ok('二月辛金是截断格', qt.truncated === true && qt.quote.length === 96 && qt.chapter === 78, `${qt.stem}${qt.branch} ch${qt.chapter} ${qt.quote.length} 字`);
+  const sec = (CUT.interpret.sections || []).find((s) => s.key === 'qiongtong');
+  ok('解析层写明摘句下略', /下略/.test(sec.text), sec.text.slice(-60));
+  const box = { window: {}, console };
+  vm.runInNewContext(read('src/panel-kit.js'), box, { filename: 'panel-kit.js' });
+  const html = box.window.__PP.baziHTML(CUT);
+  ok('面板写明摘句下略', /mp-qt-q/.test(html) && /摘句下略/.test(html), (html.match(/第 \d+ 章[^<]*/) || [''])[0]);
+  const whole = interpret(COLD).sections.find((s) => s.key === 'qiongtong');
+  ok('完整格不喊下略（解析）', COLD.frame.yongshen.qt.truncated === false && !/下略/.test(whole.text), whole.text.slice(-50));
+  const box2 = { window: {}, console };
+  vm.runInNewContext(read('src/panel-kit.js'), box2, { filename: 'panel-kit.js' });
+  ok('完整格不喊下略（面板）', !/摘句下略/.test(box2.window.__PP.baziHTML(COLD)));
+  ok('120 格里 11 格截断', cells.filter((c) => c.truncated).length === 11, String(cells.filter((c) => c.truncated).length));
+}

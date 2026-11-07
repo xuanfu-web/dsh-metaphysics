@@ -28,9 +28,12 @@ const ENGINE = fs.readdirSync(new URL('engine/', root)).filter((f) => f.endsWith
   const diff = [];
   for (let i = 0; i < 60; i++) if (nayin(i) !== nayinOf(i).name) diff.push(i);
   ok('八字纳音与共享表逐项一致', diff.length === 0, diff.slice(0, 5).join(','));
-  // 静态：只有 engine/nayin.js 拥有这张表
-  const owners = ENGINE.filter((f) => read(`engine/${f}`).includes('海中金'));
-  ok('纳音表只有一份', owners.join(',') === 'nayin.js', owners.join(','));
+  // 静态：只有 engine/nayin.js 拥有这张表。B11 起引文库会照录古籍里的纳音歌诀
+  // （「甲子乙丑海中金…」），那是原文不是实现：citations-fuwen.js 不进 MODULE_ORDER、
+  // 不被运行时 import，故从「表只有一份」的扫描里排除，并另锁它不许导出查表函数。
+  const owners = ENGINE.filter((f) => f !== 'citations-fuwen.js' && read(`engine/${f}`).includes('海中金'));
+  ok('纳音表只有一份（引文库原文照录不算实现）', owners.join(',') === 'nayin.js', owners.join(','));
+  ok('引文库不另实现纳音查表', !/nayinOf|NAYIN_|export\s+(const|function)\s+NAYIN/.test(read('engine/citations-fuwen.js')));
 }
 
 // ── ② 三合：四局 / 十二支归属 ─────────────────────────────
