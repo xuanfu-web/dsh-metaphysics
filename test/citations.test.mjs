@@ -60,7 +60,7 @@ ok('第四批条目不写省略号', refilled3.every((id) => !/[….](\.\.\.)?/.
 // B6 第五批：大六壬四课/三传承落到《大六壬大全》（维基文库四库全书本）
 ok('大六壬大全已登记', CITATION_BOOKS.daliuren && CITATION_BOOKS.daliuren.name === '大六壬大全'
   && CITATION_BOOKS.daliuren.base.includes('zh.wikisource.org'));
-ok('大六壬四课三传卡已带 refs（B11 后 2+4）', Array.isArray(CARD_CITATIONS['daliuren-sike'].refs) && CARD_CITATIONS['daliuren-sike'].refs.length === 6);
+ok('大六壬四课三传卡已带 refs（B13 后 2+4+2）', Array.isArray(CARD_CITATIONS['daliuren-sike'].refs) && CARD_CITATIONS['daliuren-sike'].refs.length === 8);
 ok('十干寄宫取卷一', citationOf('dl-jigong').chapter === '卷一·起例（十干寄宫）' && /甲课寅兮乙课辰/.test(citationOf('dl-jigong').quote));
 ok('贼克法取卷一', citationOf('dl-zeike').chapter === '卷一·起例（贼克法）' && /取课先从下贼呼/.test(citationOf('dl-zeike').quote));
 ok('月将取卷二神将释', citationOf('dl-yuejiang').chapter === '卷二·神将释（月将）' && /月将/.test(citationOf('dl-yuejiang').quote));
@@ -200,8 +200,8 @@ ok('英星入庙仍不硬配金灿光辉', !PATTERN_CHENG_CITATIONS['英星入�
 ok('庙旺卡并引星垣论并写口径差', (CARD_CITATIONS['ziwei-miaowang'].refs || []).includes('zm-xingyuan-yinmao')
   && /星垣论/.test(CARD_CITATIONS['ziwei-miaowang'].note || ''));
 // 计数是有意的锁：动两侧条目必须显式改这里，与 ④ 段「通行说计数」同一条思路
-ok('B11 后两侧计数 154+159=313', CITATIONS.length === 154 && FUWEN_CITATIONS.length === 159
-  && LIBRARY_CITATIONS.length === 313, `${CITATIONS.length}+${FUWEN_CITATIONS.length}=${LIBRARY_CITATIONS.length}`);
+ok('B13 后两侧计数 166+257=423', CITATIONS.length === 166 && FUWEN_CITATIONS.length === 257
+  && LIBRARY_CITATIONS.length === 423, `${CITATIONS.length}+${FUWEN_CITATIONS.length}=${LIBRARY_CITATIONS.length}`);
 ok('B8 批次条目不写省略号', b8ids.every((id) => !/[….](\.\.\.)?/.test(citationOf(id).quote)));
 
 // ── ③‴ B9：穷通宝鉴 120 格——已经打包给用户的原文必须可核验（2026-11-07）
@@ -589,6 +589,129 @@ ok('六爻本批接线落在已有卡上，没有新增六爻知识卡',
   11 === b11Engine.filter((id) => citationOf(id).url.includes('/liuyao/')).length
   && Object.keys(CARD_CITATIONS).filter((k) => k.startsWith('liuyao-')).every((k) => !/bszz|ylby|sxzy|donglin|dytj|bsqs|yy-|ym-/.test(k))
   && b11Engine.filter((id) => citationOf(id).url.includes('/liuyao/')).every((id) => wiredTo(id)));
+
+// ── ③′ B12：地相 12 本 / 紫微卷一 3 篇 / 梅花 / 奇门（2026-11-07） ──────
+// 跨栏目复核后最后一批「体系已在、原文为零」的补库。选句全部逐句过底本子串，
+// 取不到正文或本站没有判定层的一律 docs-only；今人按语、民国附篇、四库提要都照实分层。
+const b12Ids = ["bs-xianshui", "bs-nishui", "cg-tianhuang", "cg-haishan", "dlz-xu", "fw-gangrou", "fw-dongjing", "jsy-kai", "jsy-gaodi", "slj-zhigan", "slj-qishui", "xxf-shengqi", "xxf-shuikou", "yzs-waixing", "yzs-fuyuan", "yzs-menhu", "ycj-zaowei", "ycj-tianji", "zfd-shun", "zfd-ni", "zfd-tiyao", "zjy-yuanshi", "zjy-chaxing", "zjy-xuebing", "zj-tiyao", "zj-ben", "zj-anwei", "zw-xuanwei-jixiong", "zw-xuanwei-miaowang", "zw-xuanwei-zong", "zw-shiyu-benlin", "zw-shiyu-linbang", "zw-guanyin-pan", "zw-guanyin-daxian", "mh-guashu", "mh-bachu", "mh-tiyong-shengke", "mh-biantong", "mh-lilun", "mh-dongjing", "qmf-liyan", "qmf-fugong", "qmf-xiumen", "qmf-yinyang", "ydq-yuanliu", "ydq-dunjia", "ydq-sanyuan", "ydq-shenji", "ydq-liuyi"];
+const b12 = all.filter((c) => b12Ids.includes(c.id));
+const b12Engine = b12.filter((c) => CITATIONS.some((x) => x.id === c.id));
+const b12Docs = b12.filter((c) => FUWEN_CITATIONS.some((x) => x.id === c.id));
+const pageFirst = (u) => FX.chapters[u].split('\n')[0].trim().replace(/^[\uFEFF\u200B]+/, '').trim();
+const b12Of = (id) => citationOf(id);
+
+ok('B12 共 49 条：7 条接卡、42 条只进索引页',
+  b12.length === 49 && b12Engine.length === 7 && b12Docs.length === 42,
+  `${b12.length} 条 = ${b12Engine.length} + ${b12Docs.length}`);
+ok('B12 49 句逐条是底本页的子串',
+  b12.every((c) => FX.chapters[c.url] && norm(FX.chapters[c.url]).includes(norm(c.quote))),
+  b12.filter((c) => !norm(FX.chapters[c.url] || '').includes(norm(c.quote))).map((c) => c.id).join(','));
+ok('B12 卷章取底本页首行；紫微三篇沿用「卷一·篇名」',
+  b12.filter((c) => !c.id.startsWith('zw-')).every((c) => c.chapter === pageFirst(c.url))
+  && ['zw-xuanwei-jixiong', 'zw-shiyu-benlin', 'zw-guanyin-pan'].every((id) => /^卷一·/.test(b12Of(id).chapter)),
+  b12.filter((c) => !c.id.startsWith('zw-') && c.chapter !== pageFirst(c.url)).map((c) => c.id).join(','));
+ok('14 本新书目登记，base 指向对应 luckclub 目录',
+  ['boshan', 'cuiguan', 'dilizhengzong', 'faweilun', 'jinsuoyuguan', 'shuilongjing', 'xuexinfu',
+    'yangzhaishishu', 'yuchijing', 'zangfadaozhang', 'zangjingyi', 'zhaijing',
+    'qimenfaqiao', 'yudingqimen'].every((k) => CITATION_BOOKS[k] && /luckclub\.cn\/(dixiang|qimen)\/\d+\//.test(CITATION_BOOKS[k].base)));
+ok('地相 12 本 27 条全在 docs-only，引擎侧零条 /dixiang/ 链接',
+  b12.filter((c) => c.url.includes('/dixiang/')).length === 27
+  && b12.filter((c) => c.url.includes('/dixiang/')).every((c) => b12Docs.includes(c))
+  && CITATIONS.every((c) => !c.url.includes('/dixiang/')));
+ok('地相每条白话都写明「无解读层、不挂知识卡」',
+  b12.filter((c) => c.url.includes('/dixiang/')).every((c) => c.plain.includes('不挂知识卡')));
+ok('今人文字不冒充古籍：发微论作者按与十喻歌注文一条未入库',
+  all.every((c) => !c.quote.includes('斗争—统一') && !c.quote.includes('动即斗争') && !c.quote.includes('注：说明'))
+  && /作者按/.test(b12Of('fw-dongjing').plain) && /今人白话注/.test(b12Of('zw-shiyu-benlin').plain));
+ok('观音经验谈照实记为民国附篇，且只入索引页',
+  ['zw-guanyin-pan', 'zw-guanyin-daxian'].every((id) => ['zw-guanyin-pan', 'zw-guanyin-daxian'].includes(id)
+    && FUWEN_CITATIONS.some((c) => c.id === id))
+  && /民国南北山人撰/.test(b12Of('zw-guanyin-pan').plain)
+  && !CITATIONS.some((c) => c.id.startsWith('zw-guanyin-')));
+ok('四库提要与原书分层：两条书史材料只在 docs-only',
+  ['zfd-tiyao', 'zj-tiyao'].every((id) => FUWEN_CITATIONS.some((c) => c.id === id)
+    && !CITATIONS.some((c) => c.id === id) && /四库/.test(b12Of(id).plain)));
+ok('地理正宗只录序句，白话明写正文未收录',
+  /正文未收录/.test(b12Of('dlz-xu').plain) && b12Of('dlz-xu').url.endsWith('/dixiang/003/001/'));
+ok('底本讹字照录不代改：阴遁自九自一 / 赏考寻龙',
+  b12Of('qmf-yinyang').quote.includes('阴遁自九自一')
+  && b12Of('ycj-tianji').quote.startsWith('赏考寻龙之法'));
+ok('紫微三篇的 3 条接线落在已有卡上，卷章与全书一致',
+  CARD_CITATIONS['ziwei-ji-duo'].refs.includes('zw-xuanwei-jixiong')
+  && CARD_CITATIONS['ziwei-miaowang'].refs.includes('zw-xuanwei-miaowang')
+  && CARD_CITATIONS['ziwei-sanfang'].refs.includes('zw-shiyu-benlin'));
+ok('梅花体用卡同时挂卷二生克与卷三动静',
+  CARD_CITATIONS['meihua-tiyong'].refs.includes('mh-tiyong-shengke')
+  && CARD_CITATIONS['meihua-tiyong'].refs.includes('mh-dongjing'));
+ok('奇门阴阳遁卡同时挂卷五九宫顺逆与隐公歌三奇六仪',
+  CARD_CITATIONS['qimen-yinyang'].refs.includes('qmf-yinyang')
+  && CARD_CITATIONS['qimen-yinyang'].refs.includes('ydq-liuyi'));
+ok('B12 的 7 条接线没有新建知识卡',
+  ['ziwei-ji-duo', 'ziwei-miaowang', 'ziwei-sanfang', 'meihua-tiyong', 'qimen-yinyang']
+    .every((id) => KNOWLEDGE.some((k) => k.id === id)));
+
+// ── ③″′ B13：加深已收录书目（2026-11-07） ────────────────────────────
+// 补库收官后转向「同一本书多录几章」：不探新书、不新建知识卡，只把已登记书目
+// 里原本只录 1~3 条的书加深。选句逐句过底本子串，章名取页首行；
+// 地相仍全 docs-only，今人按语、眉批、四库提要、查表断语一律分层注明。
+const b13Ids = ["b13-bs-renxue", "b13-bs-bulong", "b13-bs-shaguan", "b13-bs-shuikou", "b13-bs-yangzhai", "b13-cg-sha", "b13-cg-yangzeng", "b13-cg-shui", "b13-fw-jusan", "b13-fw-xiangbei", "b13-fw-gangrou", "b13-fw-qiangruo", "b13-fw-shengsi", "b13-fw-qushi", "b13-jsy-nidi", "b13-jsy-shanwang", "b13-slj-shanlong", "b13-slj-lunshi", "b13-slj-ziran", "b13-slj-jiuxing", "b13-xxf-kai", "b13-xxf-dongjing", "b13-xxf-zhenxue", "b13-xxf-renmai", "b13-yzs-cengshu", "b13-yzs-damen", "b13-yzs-yinyang", "b13-yzs-siyu", "b13-yzs-tiyong", "b13-yzs-wuhudun", "b13-ycj-zhuji", "b13-ycj-malu", "b13-zfd-taiji", "b13-zfd-ershisi", "b13-zjy-xia", "b13-zjy-sishou", "b13-zjy-fuyin", "b13-zjy-zangzhi", "b13-zj-tuqi", "b13-zj-mingtang", "b13-yh-sanhe", "b13-yh-meipi", "b13-yh-nayin", "b13-yh-lupang", "b13-sf-hehun", "b13-sf-xinggong", "b13-sf-diao", "b13-sf-ruoyun", "b13-bszz-gangling", "b13-bszz-feifu", "b13-bszz-zhushu", "b13-bszz-hezhi", "b13-bszz-fannang", "b13-bff-yincong", "b13-bff-wuke", "b13-bff-sanchuan", "b13-rty-sike", "b13-rty-jiuke", "b13-rty-keti", "b13-rty-shehai", "b13-rty-chisu"];
+const b13Eng = ["b13-yh-sanhe", "b13-bszz-gangling", "b13-bszz-feifu", "b13-rty-sike", "b13-rty-jiuke"];
+const b13Docs = ["b13-bs-renxue", "b13-bs-bulong", "b13-bs-shaguan", "b13-bs-shuikou", "b13-bs-yangzhai", "b13-cg-sha", "b13-cg-yangzeng", "b13-cg-shui", "b13-fw-jusan", "b13-fw-xiangbei", "b13-fw-gangrou", "b13-fw-qiangruo", "b13-fw-shengsi", "b13-fw-qushi", "b13-jsy-nidi", "b13-jsy-shanwang", "b13-slj-shanlong", "b13-slj-lunshi", "b13-slj-ziran", "b13-slj-jiuxing", "b13-xxf-kai", "b13-xxf-dongjing", "b13-xxf-zhenxue", "b13-xxf-renmai", "b13-yzs-cengshu", "b13-yzs-damen", "b13-yzs-yinyang", "b13-yzs-siyu", "b13-yzs-tiyong", "b13-yzs-wuhudun", "b13-ycj-zhuji", "b13-ycj-malu", "b13-zfd-taiji", "b13-zfd-ershisi", "b13-zjy-xia", "b13-zjy-sishou", "b13-zjy-fuyin", "b13-zjy-zangzhi", "b13-zj-tuqi", "b13-zj-mingtang", "b13-yh-meipi", "b13-yh-nayin", "b13-yh-lupang", "b13-sf-hehun", "b13-sf-xinggong", "b13-sf-diao", "b13-sf-ruoyun", "b13-bszz-zhushu", "b13-bszz-hezhi", "b13-bszz-fannang", "b13-bff-yincong", "b13-bff-wuke", "b13-bff-sanchuan", "b13-rty-keti", "b13-rty-shehai", "b13-rty-chisu"];
+const b13 = all.filter((c) => b13Ids.includes(c.id));
+const b13Of = (id) => citationOf(id);
+const b13First = (u) => FX.chapters[u].split('\n')[0].trim().replace(/^[\uFEFF\u200B]+/, '').trim();
+
+ok('B13 共 61 条：5 条接已有卡、56 条只进索引页',
+  b13.length === 61 && b13Eng.length === 5 && b13Docs.length === 56
+  && b13Eng.every((id) => CITATIONS.some((c) => c.id === id))
+  && b13Docs.every((id) => FUWEN_CITATIONS.some((c) => c.id === id)),
+  `${b13.length} 条 = ${b13Eng.length} + ${b13Docs.length}`);
+ok('B13 61 句逐条是底本页的子串、章名取页首行',
+  b13.every((c) => FX.chapters[c.url] && norm(FX.chapters[c.url]).includes(norm(c.quote))
+    && c.chapter === b13First(c.url)),
+  b13.filter((c) => !norm(FX.chapters[c.url] || '').includes(norm(c.quote)) || c.chapter !== b13First(c.url)).map((c) => c.id).join(','));
+ok('B13 不登记新书目：所有 book 都在 B12 已登记表里',
+  b13.every((c) => CITATION_BOOKS[c.book])
+  && Object.keys(CITATION_BOOKS).length === 66);
+ok('B13 的 5 条接线全落在已有卡上，没有新建知识卡',
+  b13Eng.every((id) => Object.values(CARD_CITATIONS).some((e) => (e.refs || []).includes(id)))
+  && KNOWLEDGE.length === 59);
+ok('三合局补上 bazi-xingchong 的第二出处',
+  CARD_CITATIONS['bazi-xingchong'].refs.includes('b13-yh-sanhe')
+  && /申子辰水局/.test(b13Of('b13-yh-sanhe').quote));
+ok('卜筮正宗凡例同时接用神卡与伏神卡',
+  CARD_CITATIONS['liuyao-yongshen'].refs.includes('b13-bszz-gangling')
+  && CARD_CITATIONS['liuyao-fushen'].refs.includes('b13-bszz-feifu')
+  && /易林补遗/.test(b13Of('b13-bszz-feifu').quote));
+ok('探原金科玉律诀给四课三传卡补两句',
+  ['b13-rty-sike', 'b13-rty-jiuke'].every((id) => CARD_CITATIONS['daliuren-sike'].refs.includes(id))
+  && /九课宗首/.test(b13Of('b13-rty-jiuke').quote));
+ok('地相 40 条全在 docs-only，引擎侧仍零条 /dixiang/ 链接',
+  b13.filter((c) => c.url.includes('/dixiang/')).length === 40
+  && b13.filter((c) => c.url.includes('/dixiang/')).every((c) => b13Docs.includes(c.id))
+  && CITATIONS.every((c) => !c.url.includes('/dixiang/')));
+ok('B13 地相每条白话都写明「无解读层、不挂知识卡」',
+  b13.filter((c) => c.url.includes('/dixiang/')).every((c) => c.plain.includes('不挂知识卡')));
+ok('今人按语与眉批分层：发微论作者按一条未录，眉批只入索引页',
+  b13.every((c) => !c.quote.includes('作者按') && !c.quote.includes('聚，即统一') && !c.quote.includes('斗争'))
+  && /作者按/.test(b13Of('b13-fw-jusan').plain)
+  && FUWEN_CITATIONS.some((c) => c.id === 'b13-yh-meipi' && /眉批/.test(c.plain)));
+ok('《地理正宗》复核后不加深：本批没有 /dixiang/003/ 条目',
+  b13.every((c) => !c.url.includes('/dixiang/003/'))
+  && LIBRARY_CITATIONS.filter((c) => c.url.includes('/dixiang/003/')).length === 1);
+ok('毕法赋仍只录歌诀：本批 3 条都在同一页且不含今人课例',
+  ['b13-bff-yincong', 'b13-bff-wuke', 'b13-bff-sanchuan'].every((id) =>
+    b13Of(id).url.endsWith('/daliuren/009/001/') && /第.+法/.test(b13Of(id).quote))
+  && b13.every((c) => !c.quote.includes('笔者') && !c.quote.includes('张先生')));
+ok('底本讹字与内部异说照录不代改：赏闻 / 赏谓 / 心择 / 第五十三法',
+  b13Of('b13-ycj-zhuji').quote.startsWith('赏闻')
+  && /赏谓/.test(b13Of('b13-fw-xiangbei').quote)
+  && /心择/.test(b13Of('b13-sf-xinggong').quote)
+  && /第五十三法/.test(b13Of('b13-bff-wuke').quote));
+ok('B13 56 条 docs-only 不被任何卡片、破格规则或成格索引引用',
+  b13Docs.every((id) => !Object.values(CARD_CITATIONS).some((e) => (e.refs || []).includes(id))
+    && !Object.values(PATTERN_BREAK_RULES).some((r) => (r.citationIds || []).includes(id))
+    && !Object.values(PATTERN_CHENG_CITATIONS).some((r) => (r.ids || []).includes(id))));
 
 // ── ④ source 富化 ──────────────────────────────────────────
 const vs = citationSourceOf('bazi-geju', '《子平真诠》「论用神」');

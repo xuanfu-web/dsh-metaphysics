@@ -280,6 +280,76 @@ export const CITATION_BOOKS = {
     author: '不著撰人',
     base: 'https://www.luckclub.cn/liuyao/011/',
   },
+  boshan: {
+    name: '博山篇',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/001/',
+  },
+  cuiguan: {
+    name: '催官篇',
+    author: '宋·赖太素（页首署「赖布衣」）',
+    base: 'https://www.luckclub.cn/dixiang/002/',
+  },
+  dilizhengzong: {
+    name: '地理正宗',
+    author: '清·蒋国宗（页首署）',
+    base: 'https://www.luckclub.cn/dixiang/003/',
+  },
+  faweilun: {
+    name: '发微论',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/004/',
+  },
+  jinsuoyuguan: {
+    name: '金锁玉关经',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/006/',
+  },
+  shuilongjing: {
+    name: '水龙经',
+    author: '页首未署撰人（序称「大鸿氏所传」）',
+    base: 'https://www.luckclub.cn/dixiang/009/',
+  },
+  xuexinfu: {
+    name: '雪心赋',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/010/',
+  },
+  yangzhaishishu: {
+    name: '阳宅十书',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/011/',
+  },
+  yuchijing: {
+    name: '玉尺经',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/012/',
+  },
+  zangfadaozhang: {
+    name: '葬法倒杖',
+    author: '旧题唐·杨筠松（四库提要）',
+    base: 'https://www.luckclub.cn/dixiang/013/',
+  },
+  zangjingyi: {
+    name: '葬经翼',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/015/',
+  },
+  zhaijing: {
+    name: '宅经',
+    author: '旧题黄帝撰（四库提要判为依托）',
+    base: 'https://www.luckclub.cn/dixiang/016/',
+  },
+  qimenfaqiao: {
+    name: '奇门法窍',
+    author: '清·孟樨氏增注（卷一例言署）',
+    base: 'https://www.luckclub.cn/qimen/006/',
+  },
+  yudingqimen: {
+    name: '御定奇门宝鉴',
+    author: '清·官修（页首未署撰人）',
+    base: 'https://www.luckclub.cn/qimen/007/',
+  },
 };
 
 // 引文定位表：id / 书名 / 卷章 / 链接。原文照录与本站自撰白话在 citations-fuwen.js。
@@ -1223,6 +1293,80 @@ export const CITATIONS = [
     chapter: '筮学指要',
     url: 'https://www.luckclub.cn/liuyao/011/001/',
   },
+  // ── B12：luckclub 地相 / 紫微卷一 / 梅花 / 奇门（2026-11-07，逐句过底本子串）
+  {
+    id: 'zw-xuanwei-jixiong',
+    book: 'ziwei',
+    chapter: '卷一·玄微论',
+    url: 'https://www.luckclub.cn/ziwei/006/001/',
+  },
+  {
+    id: 'zw-xuanwei-miaowang',
+    book: 'ziwei',
+    chapter: '卷一·玄微论',
+    url: 'https://www.luckclub.cn/ziwei/006/001/',
+  },
+  {
+    id: 'zw-shiyu-benlin',
+    book: 'ziwei',
+    chapter: '卷一·十喻歌',
+    url: 'https://www.luckclub.cn/ziwei/005/001/',
+  },
+  {
+    id: 'mh-tiyong-shengke',
+    book: 'meihua',
+    chapter: '卷二',
+    url: 'https://www.luckclub.cn/meihua/002/004/',
+  },
+  {
+    id: 'mh-dongjing',
+    book: 'meihua',
+    chapter: '卷三',
+    url: 'https://www.luckclub.cn/meihua/002/005/',
+  },
+  {
+    id: 'qmf-yinyang',
+    book: 'qimenfaqiao',
+    chapter: '卷五',
+    url: 'https://www.luckclub.cn/qimen/006/005/',
+  },
+  {
+    id: 'ydq-liuyi',
+    book: 'yudingqimen',
+    chapter: '遁甲隐公歌',
+    url: 'https://www.luckclub.cn/qimen/007/006/',
+  },
+  // ── B13：加深已收录书目（2026-11-07，逐句过底本子串；只接已有卡）
+  {
+    id: 'b13-yh-sanhe',
+    book: 'yuanhai',
+    chapter: '论十二支三合',
+    url: 'https://www.luckclub.cn/bazi/001/008/',
+  },
+  {
+    id: 'b13-bszz-gangling',
+    book: 'bushizhengzong',
+    chapter: '卜筮正宗凡例',
+    url: 'https://www.luckclub.cn/liuyao/001/003/',
+  },
+  {
+    id: 'b13-bszz-feifu',
+    book: 'bushizhengzong',
+    chapter: '卜筮正宗凡例',
+    url: 'https://www.luckclub.cn/liuyao/001/003/',
+  },
+  {
+    id: 'b13-rty-sike',
+    book: 'rentanyuan',
+    chapter: '卷下 集说篇',
+    url: 'https://www.luckclub.cn/daliuren/003/004/',
+  },
+  {
+    id: 'b13-rty-jiuke',
+    book: 'rentanyuan',
+    chapter: '卷下 集说篇',
+    url: 'https://www.luckclub.cn/daliuren/003/004/',
+  },
 ];
 
 const BOOK_OF = {
@@ -1279,19 +1423,19 @@ export const CARD_CITATIONS = {
   // 珞琭子赋注的四柱定名与三元分层是宫位说的早期出处。
   'bazi-liuqin': { refs: ['smt-liuqin', 'dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu', 'll-sizhugong', 'yh-liuqin', 'qlmg-liuqin'] },
   'bazi-kongwang': { refs: ['smt-kongwang', 'xmjg-kongwang'] },
-  'bazi-xingchong': { refs: ['smt-xingchong'] },
+  'bazi-xingchong': { refs: ['smt-xingchong', 'b13-yh-sanhe'] },
   // 起运：三命通会论大运 + 珞琭子赋文「三日为年」的折算口径。
   'bazi-dayun-jiaoqi': { refs: ['smt-dayun-qiyun', 'll-zheri', 'yh-dayun'] },
   // ── 紫微：已定位（紫微斗数全书）
   // B7 起把卷一赋文补进来：三方四正、庙旺、破格、大限、命身、空劫每条都能指到具体句子。
-  'ziwei-sanfang': { refs: ['zw-sanfang', 'zw-gusu-duigong', 'zw-fawei-sizheng'] },
+  'ziwei-sanfang': { refs: ['zw-sanfang', 'zw-gusu-duigong', 'zw-fawei-sizheng', 'zw-shiyu-benlin'] },
   'ziwei-sihua': { refs: ['zw-sihua-lu', 'zw-sihua-ji', 'zw-fawei-kequ'] },
-  'ziwei-miaowang': { refs: ['zw-miaowang', 'zw-fawei-ruxian', 'zw-gaolv-dexian', 'zw-taiwei-jueshu', 'zm-xingyuan-yinmao', 'zm-zhunsheng-shenming'], note: '卷一「星垣论」按五行之垣定庙乐（寅卯为木垣，故贪狼天机庙乐），与卷三逐星庙旺表不是同一套口径；两处并引，本插件仍按卷三表判。' },
+  'ziwei-miaowang': { refs: ['zw-miaowang', 'zw-fawei-ruxian', 'zw-gaolv-dexian', 'zw-taiwei-jueshu', 'zm-xingyuan-yinmao', 'zm-zhunsheng-shenming', 'zw-xuanwei-miaowang'], note: '卷一「星垣论」按五行之垣定庙乐（寅卯为木垣，故贪狼天机庙乐），与卷三逐星庙旺表不是同一套口径；两处并引，本插件仍按卷三表判。' },
   'ziwei-daxian': { refs: ['zw-daxian', 'zw-fawei-xinglian', 'zw-gusu-fanwei'] },
   'ziwei-shengong': { refs: ['zw-shenming', 'zw-gusu-mingshen', 'zw-gaolv-shenming', 'zw-shenshi-shen', 'zm-zhunsheng-shenming'] },
   'ziwei-kongjie': { refs: ['zw-kongjie', 'zw-gusu-jieyao', 'zw-gusu-kong-jian'] },
   'ziwei-poge': { refs: ['zw-poge-ruge', 'zw-poge-sanfang', 'zw-gusu-yili', 'zw-gaolv-jiongji', 'zw-shideng-qianguan'] },
-  'ziwei-ji-duo': { refs: ['zw-taiwei-ji-xiong', 'zw-gaolv-jiongji'] },
+  'ziwei-ji-duo': { refs: ['zw-taiwei-ji-xiong', 'zw-gaolv-jiongji', 'zw-xuanwei-jixiong'] },
   'ziwei-shixian-jue': { refs: ['zw-dedi-wu', 'zw-dedi-hai', 'zw-shixian-zi', 'zw-shixian-shen'] },
   'ziwei-nanv-ming': { refs: ['zw-nannv-nan', 'zw-nannv-nv', 'zw-nvming-fuxiang', 'zw-zengbu-nannv'] },
   // ── 紫微：飞星派读法不在《全书》原文内
@@ -1305,8 +1449,8 @@ export const CARD_CITATIONS = {
   // B8 之前六爻十三张卡全挂在一本清人书上。《京氏易传》（汉）定八宫世应与飞伏配对，
   // 《火珠林》（宋）定六亲根源与独发乱动，《黄金策》（明）把这一套收成赋文——
   // 现在取用、世应、飞伏、应期四层各有一本比《增删卜易》早的书可对。
-  'liuyao-yongshen': { refs: ['zs-yongshen', 'lj-yongshen-youqi', 'hzl-liuqin-genyuan', 'bszz-liuqin', 'bszz-yongshen', 'bszz-pi-zs'] },
-  'liuyao-fushen': { refs: ['zs-fushen', 'lj-fushen-tiba', 'js-ganfei-fufeifu', 'bszz-fushen', 'ylby-feifu', 'ylby-yongshen'] },
+  'liuyao-yongshen': { refs: ['zs-yongshen', 'lj-yongshen-youqi', 'hzl-liuqin-genyuan', 'bszz-liuqin', 'bszz-yongshen', 'bszz-pi-zs', 'b13-bszz-gangling'] },
+  'liuyao-fushen': { refs: ['zs-fushen', 'lj-fushen-tiba', 'js-ganfei-fufeifu', 'bszz-fushen', 'ylby-feifu', 'ylby-yongshen', 'b13-bszz-feifu'] },
   'liuyao-wangshuai': { refs: ['zs-yuejian', 'lj-yuejian-richen', 'bszz-sanchuan'] },
   // 世应新单列一卡（B8）：位序是京房八宫的硬结构，不再寄在「用神」卡里
   'liuyao-shiying': { refs: ['lj-shiying-bibi', 'hzl-shiying-women', 'js-shiying-guihun', 'js-bagong-zongang', 'hzl-duifa-luandong', 'bszz-shiying', 'sxzy-shiying'] },
@@ -1325,9 +1469,9 @@ export const CARD_CITATIONS = {
   'liuyao-jintui-yong': { refs: ['zs-jintui'] },
   'liuyao-yingqi-exact': { status: 'todo', book: '增删卜易', chapter: '各門類應期總注章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
   // ── 其他体系
-  'meihua-tiyong': { refs: ['mh-tiyong'] },
-  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang'] },
-  'qimen-yinyang': { refs: ['qm-yinyang'] },
+  'meihua-tiyong': { refs: ['mh-tiyong', 'mh-tiyong-shengke', 'mh-dongjing'] },
+  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang', 'b13-rty-sike', 'b13-rty-jiuke'] },
+  'qimen-yinyang': { refs: ['qm-yinyang', 'qmf-yinyang', 'ydq-liuyi'] },
   'qimen-jixing': { refs: ['qm-jixing'] },
   'qimen-rumu': { refs: ['qm-rumu'] },
   'qimen-wangshuai': { refs: ['qm-wangshuai'] },

@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.3</span><span class="ver-note" title="本版之后又改了 42 项（版本号未变）：紫微卷一赋文入引文库：引擎侧引文 58 → 77 条，《紫微斗数全书》累计 100 条；成格原文对照：31 格配对、3 格明标未配对；引文库拆两侧：原文与白话不再进浏览器；反向证伪锁：原文不许回流运行时；知识卡 55 → 58；书目覆盖缺口表；六爻源头三书入库：引擎侧引文 77 → 94 条，全库 135 → 176 条；新增知识卡 `liuyao-shiying`：KNOWLEDGE 58 → 59；地相五本 13 条：只入引文库，一条也不挂卡；紫微卷一再补 6 篇 12 条，7 个格局拿到「定局」层第二出处；fixture 只增不改：新增 `tools/merge-citation-sources.mjs`；卷章标错七处逐条改回；取不到正文的照实记「未接触」；穷通宝鉴 120 格底本入库：fixture 67 → 176 页，生成器从此可复现；11 格摘句被静默截断，现在两处显示都留痕；索引页新增「穷通宝鉴 120 格 → 原文摘句」段，原文只存一份；反向证伪锁：120 句逐句核底本；抓取工具共用一份口径，sync 抓失败不再写半份 fixture；验证；八字四本逐一探底本，三本录 20 条；《星平会海》正文取不到，照实一条不录；原书内部的反对意见一律留着，不替用户「统一口径」；录了不等于挂了：6 条只进索引页；卷章不只核句子，还要核页面标题；fixture 只增不改 176 → 191 页；验证；八字 26 本全量探底本：除《星平会海》外 25 本都有成篇正文；B10 第一批录 6 本 24 条，覆盖表 23 / 7 / 116 → 29 / 4 / 113；两处异文、两处异说，一律并列不调和；录了不等于挂了：12 条只进索引页；fixture 只增不改 191 → 212 页，卷章断言按书分三种取法；验证；八字余下 12 本一次收完：录 43 条，覆盖表八字栏 25 / 0 / 1；三处边界照实处理，不硬凑；异说一律并列；38 页底本只增不改、卷章改取页首行；验证；跨栏目底本复核：六个目录、33 本抽样，旧「取不到正文」结论改写；大六壬 8 本 + 六爻 8 本共 50 条，逐句过底本；大六壬只挂一张卡，六爻不新建卡；今人文字与古籍原文分层，四处边界照实记；验证；分块体积预算统一并放宽">另含 42 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.4</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,10 +653,8 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：155 个测试文件 / 8347 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    <h3>本版之后又改了什么（版本号未变）</h3>
-    <ul><li>紫微卷一赋文入引文库：引擎侧引文 58 → 77 条，《紫微斗数全书》累计 100 条</li><li>成格原文对照：31 格配对、3 格明标未配对</li><li>引文库拆两侧：原文与白话不再进浏览器</li><li>反向证伪锁：原文不许回流运行时</li><li>知识卡 55 → 58</li><li>书目覆盖缺口表</li><li>六爻源头三书入库：引擎侧引文 77 → 94 条，全库 135 → 176 条</li><li>新增知识卡 `liuyao-shiying`：KNOWLEDGE 58 → 59</li><li>地相五本 13 条：只入引文库，一条也不挂卡</li><li>紫微卷一再补 6 篇 12 条，7 个格局拿到「定局」层第二出处</li><li>fixture 只增不改：新增 `tools/merge-citation-sources.mjs`</li><li>卷章标错七处逐条改回</li><li>取不到正文的照实记「未接触」</li><li>穷通宝鉴 120 格底本入库：fixture 67 → 176 页，生成器从此可复现</li><li>11 格摘句被静默截断，现在两处显示都留痕</li><li>索引页新增「穷通宝鉴 120 格 → 原文摘句」段，原文只存一份</li><li>反向证伪锁：120 句逐句核底本</li><li>抓取工具共用一份口径，sync 抓失败不再写半份 fixture</li><li>验证</li><li>八字四本逐一探底本，三本录 20 条</li><li>《星平会海》正文取不到，照实一条不录</li><li>原书内部的反对意见一律留着，不替用户「统一口径」</li><li>录了不等于挂了：6 条只进索引页</li><li>卷章不只核句子，还要核页面标题；fixture 只增不改 176 → 191 页</li><li>验证</li><li>八字 26 本全量探底本：除《星平会海》外 25 本都有成篇正文</li><li>B10 第一批录 6 本 24 条，覆盖表 23 / 7 / 116 → 29 / 4 / 113</li><li>两处异文、两处异说，一律并列不调和</li><li>录了不等于挂了：12 条只进索引页</li><li>fixture 只增不改 191 → 212 页，卷章断言按书分三种取法</li><li>验证</li><li>八字余下 12 本一次收完：录 43 条，覆盖表八字栏 25 / 0 / 1</li><li>三处边界照实处理，不硬凑</li><li>异说一律并列</li><li>38 页底本只增不改、卷章改取页首行</li><li>验证</li><li>跨栏目底本复核：六个目录、33 本抽样，旧「取不到正文」结论改写</li><li>大六壬 8 本 + 六爻 8 本共 50 条，逐句过底本</li><li>大六壬只挂一张卡，六爻不新建卡</li><li>今人文字与古籍原文分层，四处边界照实记</li><li>验证</li><li>分块体积预算统一并放宽</li></ul>
-    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
+    <ul><li>测试：155 个测试文件 / 8376 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -19856,6 +19854,76 @@ const CITATION_BOOKS = {
     author: '不著撰人',
     base: 'https://www.luckclub.cn/liuyao/011/',
   },
+  boshan: {
+    name: '博山篇',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/001/',
+  },
+  cuiguan: {
+    name: '催官篇',
+    author: '宋·赖太素（页首署「赖布衣」）',
+    base: 'https://www.luckclub.cn/dixiang/002/',
+  },
+  dilizhengzong: {
+    name: '地理正宗',
+    author: '清·蒋国宗（页首署）',
+    base: 'https://www.luckclub.cn/dixiang/003/',
+  },
+  faweilun: {
+    name: '发微论',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/004/',
+  },
+  jinsuoyuguan: {
+    name: '金锁玉关经',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/006/',
+  },
+  shuilongjing: {
+    name: '水龙经',
+    author: '页首未署撰人（序称「大鸿氏所传」）',
+    base: 'https://www.luckclub.cn/dixiang/009/',
+  },
+  xuexinfu: {
+    name: '雪心赋',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/010/',
+  },
+  yangzhaishishu: {
+    name: '阳宅十书',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/011/',
+  },
+  yuchijing: {
+    name: '玉尺经',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/012/',
+  },
+  zangfadaozhang: {
+    name: '葬法倒杖',
+    author: '旧题唐·杨筠松（四库提要）',
+    base: 'https://www.luckclub.cn/dixiang/013/',
+  },
+  zangjingyi: {
+    name: '葬经翼',
+    author: '页首未署撰人',
+    base: 'https://www.luckclub.cn/dixiang/015/',
+  },
+  zhaijing: {
+    name: '宅经',
+    author: '旧题黄帝撰（四库提要判为依托）',
+    base: 'https://www.luckclub.cn/dixiang/016/',
+  },
+  qimenfaqiao: {
+    name: '奇门法窍',
+    author: '清·孟樨氏增注（卷一例言署）',
+    base: 'https://www.luckclub.cn/qimen/006/',
+  },
+  yudingqimen: {
+    name: '御定奇门宝鉴',
+    author: '清·官修（页首未署撰人）',
+    base: 'https://www.luckclub.cn/qimen/007/',
+  },
 };
 
 // 引文定位表：id / 书名 / 卷章 / 链接。原文照录与本站自撰白话在 citations-fuwen.js。
@@ -20799,6 +20867,80 @@ const CITATIONS = [
     chapter: '筮学指要',
     url: 'https://www.luckclub.cn/liuyao/011/001/',
   },
+  // ── B12：luckclub 地相 / 紫微卷一 / 梅花 / 奇门（2026-11-07，逐句过底本子串）
+  {
+    id: 'zw-xuanwei-jixiong',
+    book: 'ziwei',
+    chapter: '卷一·玄微论',
+    url: 'https://www.luckclub.cn/ziwei/006/001/',
+  },
+  {
+    id: 'zw-xuanwei-miaowang',
+    book: 'ziwei',
+    chapter: '卷一·玄微论',
+    url: 'https://www.luckclub.cn/ziwei/006/001/',
+  },
+  {
+    id: 'zw-shiyu-benlin',
+    book: 'ziwei',
+    chapter: '卷一·十喻歌',
+    url: 'https://www.luckclub.cn/ziwei/005/001/',
+  },
+  {
+    id: 'mh-tiyong-shengke',
+    book: 'meihua',
+    chapter: '卷二',
+    url: 'https://www.luckclub.cn/meihua/002/004/',
+  },
+  {
+    id: 'mh-dongjing',
+    book: 'meihua',
+    chapter: '卷三',
+    url: 'https://www.luckclub.cn/meihua/002/005/',
+  },
+  {
+    id: 'qmf-yinyang',
+    book: 'qimenfaqiao',
+    chapter: '卷五',
+    url: 'https://www.luckclub.cn/qimen/006/005/',
+  },
+  {
+    id: 'ydq-liuyi',
+    book: 'yudingqimen',
+    chapter: '遁甲隐公歌',
+    url: 'https://www.luckclub.cn/qimen/007/006/',
+  },
+  // ── B13：加深已收录书目（2026-11-07，逐句过底本子串；只接已有卡）
+  {
+    id: 'b13-yh-sanhe',
+    book: 'yuanhai',
+    chapter: '论十二支三合',
+    url: 'https://www.luckclub.cn/bazi/001/008/',
+  },
+  {
+    id: 'b13-bszz-gangling',
+    book: 'bushizhengzong',
+    chapter: '卜筮正宗凡例',
+    url: 'https://www.luckclub.cn/liuyao/001/003/',
+  },
+  {
+    id: 'b13-bszz-feifu',
+    book: 'bushizhengzong',
+    chapter: '卜筮正宗凡例',
+    url: 'https://www.luckclub.cn/liuyao/001/003/',
+  },
+  {
+    id: 'b13-rty-sike',
+    book: 'rentanyuan',
+    chapter: '卷下 集说篇',
+    url: 'https://www.luckclub.cn/daliuren/003/004/',
+  },
+  {
+    id: 'b13-rty-jiuke',
+    book: 'rentanyuan',
+    chapter: '卷下 集说篇',
+    url: 'https://www.luckclub.cn/daliuren/003/004/',
+  },
 ];
 
 const BOOK_OF = {
@@ -20855,19 +20997,19 @@ const CARD_CITATIONS = {
   // 珞琭子赋注的四柱定名与三元分层是宫位说的早期出处。
   'bazi-liuqin': { refs: ['smt-liuqin', 'dt-liuqin-fuqi', 'dt-liuqin-zinv', 'dt-liuqin-fumu', 'll-sizhugong', 'yh-liuqin', 'qlmg-liuqin'] },
   'bazi-kongwang': { refs: ['smt-kongwang', 'xmjg-kongwang'] },
-  'bazi-xingchong': { refs: ['smt-xingchong'] },
+  'bazi-xingchong': { refs: ['smt-xingchong', 'b13-yh-sanhe'] },
   // 起运：三命通会论大运 + 珞琭子赋文「三日为年」的折算口径。
   'bazi-dayun-jiaoqi': { refs: ['smt-dayun-qiyun', 'll-zheri', 'yh-dayun'] },
   // ── 紫微：已定位（紫微斗数全书）
   // B7 起把卷一赋文补进来：三方四正、庙旺、破格、大限、命身、空劫每条都能指到具体句子。
-  'ziwei-sanfang': { refs: ['zw-sanfang', 'zw-gusu-duigong', 'zw-fawei-sizheng'] },
+  'ziwei-sanfang': { refs: ['zw-sanfang', 'zw-gusu-duigong', 'zw-fawei-sizheng', 'zw-shiyu-benlin'] },
   'ziwei-sihua': { refs: ['zw-sihua-lu', 'zw-sihua-ji', 'zw-fawei-kequ'] },
-  'ziwei-miaowang': { refs: ['zw-miaowang', 'zw-fawei-ruxian', 'zw-gaolv-dexian', 'zw-taiwei-jueshu', 'zm-xingyuan-yinmao', 'zm-zhunsheng-shenming'], note: '卷一「星垣论」按五行之垣定庙乐（寅卯为木垣，故贪狼天机庙乐），与卷三逐星庙旺表不是同一套口径；两处并引，本插件仍按卷三表判。' },
+  'ziwei-miaowang': { refs: ['zw-miaowang', 'zw-fawei-ruxian', 'zw-gaolv-dexian', 'zw-taiwei-jueshu', 'zm-xingyuan-yinmao', 'zm-zhunsheng-shenming', 'zw-xuanwei-miaowang'], note: '卷一「星垣论」按五行之垣定庙乐（寅卯为木垣，故贪狼天机庙乐），与卷三逐星庙旺表不是同一套口径；两处并引，本插件仍按卷三表判。' },
   'ziwei-daxian': { refs: ['zw-daxian', 'zw-fawei-xinglian', 'zw-gusu-fanwei'] },
   'ziwei-shengong': { refs: ['zw-shenming', 'zw-gusu-mingshen', 'zw-gaolv-shenming', 'zw-shenshi-shen', 'zm-zhunsheng-shenming'] },
   'ziwei-kongjie': { refs: ['zw-kongjie', 'zw-gusu-jieyao', 'zw-gusu-kong-jian'] },
   'ziwei-poge': { refs: ['zw-poge-ruge', 'zw-poge-sanfang', 'zw-gusu-yili', 'zw-gaolv-jiongji', 'zw-shideng-qianguan'] },
-  'ziwei-ji-duo': { refs: ['zw-taiwei-ji-xiong', 'zw-gaolv-jiongji'] },
+  'ziwei-ji-duo': { refs: ['zw-taiwei-ji-xiong', 'zw-gaolv-jiongji', 'zw-xuanwei-jixiong'] },
   'ziwei-shixian-jue': { refs: ['zw-dedi-wu', 'zw-dedi-hai', 'zw-shixian-zi', 'zw-shixian-shen'] },
   'ziwei-nanv-ming': { refs: ['zw-nannv-nan', 'zw-nannv-nv', 'zw-nvming-fuxiang', 'zw-zengbu-nannv'] },
   // ── 紫微：飞星派读法不在《全书》原文内
@@ -20881,8 +21023,8 @@ const CARD_CITATIONS = {
   // B8 之前六爻十三张卡全挂在一本清人书上。《京氏易传》（汉）定八宫世应与飞伏配对，
   // 《火珠林》（宋）定六亲根源与独发乱动，《黄金策》（明）把这一套收成赋文——
   // 现在取用、世应、飞伏、应期四层各有一本比《增删卜易》早的书可对。
-  'liuyao-yongshen': { refs: ['zs-yongshen', 'lj-yongshen-youqi', 'hzl-liuqin-genyuan', 'bszz-liuqin', 'bszz-yongshen', 'bszz-pi-zs'] },
-  'liuyao-fushen': { refs: ['zs-fushen', 'lj-fushen-tiba', 'js-ganfei-fufeifu', 'bszz-fushen', 'ylby-feifu', 'ylby-yongshen'] },
+  'liuyao-yongshen': { refs: ['zs-yongshen', 'lj-yongshen-youqi', 'hzl-liuqin-genyuan', 'bszz-liuqin', 'bszz-yongshen', 'bszz-pi-zs', 'b13-bszz-gangling'] },
+  'liuyao-fushen': { refs: ['zs-fushen', 'lj-fushen-tiba', 'js-ganfei-fufeifu', 'bszz-fushen', 'ylby-feifu', 'ylby-yongshen', 'b13-bszz-feifu'] },
   'liuyao-wangshuai': { refs: ['zs-yuejian', 'lj-yuejian-richen', 'bszz-sanchuan'] },
   // 世应新单列一卡（B8）：位序是京房八宫的硬结构，不再寄在「用神」卡里
   'liuyao-shiying': { refs: ['lj-shiying-bibi', 'hzl-shiying-women', 'js-shiying-guihun', 'js-bagong-zongang', 'hzl-duifa-luandong', 'bszz-shiying', 'sxzy-shiying'] },
@@ -20901,9 +21043,9 @@ const CARD_CITATIONS = {
   'liuyao-jintui-yong': { refs: ['zs-jintui'] },
   'liuyao-yingqi-exact': { status: 'todo', book: '增删卜易', chapter: '各門類應期總注章', reason: '逐条应期尚未实现，等 20+ 条有应验日期的卦例' },
   // ── 其他体系
-  'meihua-tiyong': { refs: ['mh-tiyong'] },
-  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang'] },
-  'qimen-yinyang': { refs: ['qm-yinyang'] },
+  'meihua-tiyong': { refs: ['mh-tiyong', 'mh-tiyong-shengke', 'mh-dongjing'] },
+  'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang', 'b13-rty-sike', 'b13-rty-jiuke'] },
+  'qimen-yinyang': { refs: ['qm-yinyang', 'qmf-yinyang', 'ydq-liuyi'] },
   'qimen-jixing': { refs: ['qm-jixing'] },
   'qimen-rumu': { refs: ['qm-rumu'] },
   'qimen-wangshuai': { refs: ['qm-wangshuai'] },
@@ -28197,7 +28339,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.62.3";
+window.__MP_VER = "0.62.4";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
