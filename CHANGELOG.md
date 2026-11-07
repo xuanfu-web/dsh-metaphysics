@@ -1,4 +1,6 @@
-## 0.62.4（2026-11-07，待发布）
+## 0.62.4（2026-11-07，已发布）
+
+> 已发布：npm `dsh-metaphysics@0.62.4`，shasum `e081b9a3fa7d16aacd912dcc27ca793216b4a5ef`，103 个文件；tag `v0.62.4` → `a16994e`，[GitHub release](https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.62.4) 已建，`main` 已推送。
 
 > 本段主题：把手机「书库」13 个分类、146 项书名与仓库引文库逐类对名，补上《紫微斗数全书》卷一的赋文，并把「原文照录 + 本站白话」从浏览器分块里彻底拆出去——引文库从此不再受 232 KB 分块线约束。
 
