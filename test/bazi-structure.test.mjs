@@ -1,5 +1,5 @@
 // 八大地支结构：只读标注的静态口径。
-// 依据 docs/炳祥八字-课程知识内化.md 第 2.4 / 2.5 节：
+// 依据炳祥课程笔记（内部资料）第 2.4 / 2.5 节：
 // 年支定 A 档，四支分两营；异类支的宫位权重（年 11 / 月 36 / 日 27 / 时 16）决定静态从格概率。
 import { compute } from '../engine/index.js';
 import { branchStructureOf, supportOf, HIDDEN_PCT, PILLAR_WEIGHT } from '../engine/structure.js';

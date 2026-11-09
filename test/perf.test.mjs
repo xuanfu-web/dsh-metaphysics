@@ -61,5 +61,5 @@ ok('自动发布也跑性能门槛', /'check-perf', \['tools\/check-perf\.mjs'\]
 
 const readme = read('README.md');
 ok('README 说明性能门槛', /性能门槛/.test(readme) && /DSH_PERF_SCALE/.test(readme));
-const plan = read('docs/项目进度与强化方案.md');
-ok('方案标记 D3 完成', /### D3 bench 报告与性能门槛/.test(plan) && /- \[x\] \*\*门槛\*\*/.test(plan));
+const checker = read('tools/check-perf.mjs');
+ok('阈值来源在代码里写明', /阈值依据内部性能方案的目标/.test(checker));
