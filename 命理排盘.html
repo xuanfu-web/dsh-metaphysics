@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.5</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.5</span><span class="ver-note" title="本版之后又改了 7 项（版本号未变）：八大地支结构接进四处，并说清与旺衰分的关系；三柱模式不把占位时支冒充实有；暗合接进三处，并明确「另列不并」；起运岁精确值接进三处；旧结果兼容；验证；一处已知的取舍">另含 7 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,8 +653,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：163 个测试文件 / 8729 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    
+    <ul><li>测试：163 个测试文件 / 8772 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <h3>本版之后又改了什么（版本号未变）</h3>
+    <ul><li>八大地支结构接进四处，并说清与旺衰分的关系</li><li>三柱模式不把占位时支冒充实有</li><li>暗合接进三处，并明确「另列不并」</li><li>起运岁精确值接进三处</li><li>旧结果兼容</li><li>验证</li><li>一处已知的取舍</li></ul>
+    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -22451,7 +22453,12 @@ function baziInterpret(r) {
         const jiaoLine = r.dayun && r.dayun.jiao && r.dayun.jiao.at
           ? `起运交运时刻 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}；三日折一年，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天）。每步大运在同月同日同时刻换，逐年日期见下方大运表「交运」列。\n`
           : '';
-        return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
+        // 精确起运岁：与「几岁几个月」的口语写法并列。对上第三方排盘时差的就是日、时这两位。
+        const sae = r.dayun && r.dayun.startAgeExact;
+        const exactLine = sae && Number.isInteger(sae.years)
+          ? `起运岁精确值：${sae.years} 年 ${sae.months} 个月 ${sae.days} 天 ${sae.hours} 小时（${sae.caliber}）。与摘要「${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月」同源：后者四舍五入到月，差一个月的边界常出在这里——第三方给到日/时的，按这一行核对。\n`
+          : '';
+        return `${jiaoLine}${exactLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
     { key: 'years', label: '流年时间轴', text: yearsText },
@@ -22537,6 +22544,33 @@ function baziInterpret(r) {
     ...(frame.xianshen ? [{
       key: 'xianshen', label: '闲神',
       text: `【${frame.xianshen.level}】${frame.xianshen.detail}\n口径：${frame.xianshen.method}`,
+    }] : []),
+    // 八大地支结构：与旺衰分并列的第二套静态视图。算出来却没人看得见的字段等于没做，
+    // 所以这里单独给一节，写清「它是什么、跟上面旺衰分的区别、能不能据此断从格」。
+    ...(r.strength && r.strength.branchStructure ? [{
+      key: 'structure', label: '地支结构',
+      text: (() => {
+        const b = r.strength.branchStructure;
+        const cols = b.branches.map((x) => `${x.label}支${x.branch}（${x.support}·${x.camp} 档 ${x.weight} 分${b.placeholderHour && x.key === 'hour' ? '·占位' : ''}）`).join('；');
+        const odd = b.odd && b.odd.length ? `异类：${b.odd.map((x) => `${x.label}支${x.branch}（${x.weight} 分）`).join('、')}。` : '四支二对二或同党，无异类。';
+        const bal = b.balance || {};
+        return `【${b.code}】${b.detail}\n`
+          + `逐支：${cols}\n`
+          + `${odd}${b.halfSupported && b.halfSupported.length ? `半得地：${b.halfSupported.join('、')}（按 0.2–0.5 折算，不计入身强阵营）。` : ''}\n`
+          + `地支 身强 ${bal.branch ? bal.branch.A : '—'} : 身弱 ${bal.branch ? bal.branch.B : '—'}，加天干后 ${bal.total ? `${bal.total.A}:${bal.total.B}` : '—'}（宫位权重年 11 / 月 36 / 日 27 / 时 16）。\n`
+          + `${b.word}${b.congProb != null ? `——静态从格概率 ${b.congRange}。` : '。'}\n`
+          + `口径：${b.method}\n`
+          + `与「日主强弱」的关系：这是并列的第二套静态视图，不改上面的旺衰评分，也不参与取格与喜忌——两者是同一组四支的两种读法，不是先后两步。\n`
+          + `边界：${b.note}`;
+      })(),
+    }] : []),
+    // 暗合：另列不并。这一条最容易被人当成「合」读进旺衰，所以把边界写在节里。
+    ...(r.relations && Array.isArray(r.relations.anhe) && r.relations.anhe.length ? [{
+      key: 'anhe', label: '暗合',
+      text: `${r.relations.anhe.join('\n')}\n`
+        + `口径：${r.relations.anheNote || '暗合只作取象，不参与旺衰与格局。'}\n`
+        + `边界：暗合与上面的「地支关系」（三合、三会、六合、六冲、刑、害）是两条线，本插件不把它们合并计分；`
+        + `${r.relations.anhe.length === 1 ? '本盘只出现一对，按课里口径可以直接忽略。' : `本盘共 ${r.relations.anhe.length} 对，可作取象参考，但仍不折旺衰。`}`,
     }] : []),
     (() => {
       const ss = r.shensha;
@@ -27159,6 +27193,13 @@ function baziText(r) {
   const jiao = r.dayun.jiao && r.dayun.jiao.at
     ? `；交运 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天，三日折一年）`
     : '';
+  // 起运岁精确值（截断到年月日时）：上面 startAge 是四舍五入到月的口语写法，两者同源、并列给出。
+  // 第三方对拍里截断到月 23/23 全中、四舍五入只有 15/23——差别就在这串日时上，所以必须看得见。
+  const sae = r.dayun.startAgeExact;
+  const startAgeExactLine = sae && Number.isInteger(sae.years)
+    ? `起运岁（精确）：${sae.years} 年 ${sae.months} 个月 ${sae.days} 天 ${sae.hours} 小时`
+      + `（${sae.caliber}；上面「${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月」是四舍五入到月，两者同源）`
+    : '';
   // 阈值 20 分钟：与 NAOJ 历要项对拍实测，本引擎节气最多偏早 13.5 分钟（Meeus 低精度上限约 14 分钟）
   const near = r.jieqi.nearBoundaryMinutes < 20
     ? `\n⚠ 出生时刻距「节」仅 ${r.jieqi.nearBoundaryMinutes} 分钟，而节气时刻本身有最多约 14 分钟的偏差，月柱与年柱建议人工复核。`
@@ -27191,6 +27232,22 @@ function baziText(r) {
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
+  // 八大地支结构（炳祥课静态口径）：算得出但没有输出通道的字段等于没做，这里补一行摘要。
+  // 只报「哪几支成党、异类是哪支、静态从格概率」，与上面旺衰分是两套并列口径，不互相覆盖。
+  // 三柱模式第四支是正午占位：照实标「占位」，不把它说成实有的时支。
+  const bs = r.strength && r.strength.branchStructure;
+  const bsCols = bs ? bs.branches.map((b) => `${b.label}${b.branch}${b.camp}${bs.placeholderHour && b.key === 'hour' ? '·占位' : ''}`).join('、') : '';
+  // 注意 bs.word 本身已含三柱说明（bazi.js 的 hourUnknown 分支会改写它），这里不重复追加
+  const bsTail = bs && !bs.placeholderHour && !bs.complete ? '　时柱暂缺，只列三支' : '';
+  const branchStructureLine = bs
+    ? `地支结构：${bs.placeholderHour ? '三支＋占位' : '四支'} ${bs.code}（${bsCols}）　`
+      + `${bs.word}${bs.congProb != null ? `（静态从格 ${bs.congRange}）` : ''}${bsTail}`
+    : '';
+  // 暗合：另列不并入合冲刑害。只出现一对时按课里口径「可忽略」，所以照实写出来但不升级为断语。
+  const anhe = (r.relations && Array.isArray(r.relations.anhe)) ? r.relations.anhe : [];
+  const anheLine = anhe.length
+    ? `暗合：${anhe.join('　')}（另列，不并入上面的合冲刑害；${anhe.length === 1 ? '只一对，按口径可忽略' : `共 ${anhe.length} 对`}）`
+    : '';
   const hourMissing = r.hourUnknown === true || !P.hour;
   return [
     `【四柱】${P.year.ganzhi} ${P.month.ganzhi} ${P.day.ganzhi}${P.hour ? ` ${P.hour.ganzhi}` : '（时柱暂缺）'}`,
@@ -27200,14 +27257,17 @@ function baziText(r) {
     `五行：${wuxing}`,
     ...(palaces ? [palaces] : []),
     `日主强弱：${r.strength.level}（${r.strength.score}）　${r.strength.detail}`,
+    ...(branchStructureLine ? [branchStructureLine] : []),
     ...gejuLine,
     `天干关系：${(r.relations && r.relations.stems.length) ? r.relations.stems.join('　') : '—'}`,
     `地支关系：${(r.relations && r.relations.branches.length) ? r.relations.branches.join('　') : '—'}`,
+    ...(anheLine ? [anheLine] : []),
     shenshaLine,
     `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）　晚子时：${r.input.lateZi ? '23:00 后算次日' : '23:00 后仍算当日'}`,
     `节气：上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`,
     ...(renyuanLine ? [renyuanLine] : []),
     `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运${jiao}`,
+    ...(startAgeExactLine ? [startAgeExactLine] : []),
     `　${dayun}`,
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
     (() => {
@@ -29369,6 +29429,12 @@ window.__MP_VER = "0.62.5";
 .pp-str{margin-top:10px;font-size:13px;line-height:1.8}
 .pp-str b{color:var(--red);font-size:15px;margin:0 4px}
 .pp-drel{font-style:normal;color:var(--red);font-size:12px}
+/* 八大地支结构：与日主强弱并列的第二套口径，用中性色，不与主结论抢色 */
+.pp-struct{margin-top:6px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.pp-struct .pp-st-code{font-weight:700;letter-spacing:.06em;color:var(--ink);margin-right:6px}
+.pp-struct .pp-st-odd{color:var(--quan)}
+.pp-anhe{margin-top:6px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.pp-anhe b{color:var(--muted);font-weight:400;margin-right:8px}
 .pp-dim{color:var(--muted)}
 /* 岁运提示下的原文：比正文再轻一档，只做出处，不抢结论 */
 .pp-sy-src{margin-top:6px;font-size:11.5px;line-height:1.55}
@@ -31991,6 +32057,25 @@ window.__MP_VER = "0.62.5";
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
       `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${(x.type.startsWith('流年') || x.type.startsWith('大运')) && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
     const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
+    // 八大地支结构：只读标注，与上面旺衰分并列。算出来却没人看得见等于没做，所以面板必须给这一行。
+    const bs = r.strength && r.strength.branchStructure;
+    const structHTML = bs ? (() => {
+      const cols = bs.branches.map((b) => `${esc(b.label)}${esc(b.branch)}<i class="pp-drel">·${esc(b.camp)}</i>${bs.placeholderHour && b.key === 'hour' ? '<span class="pp-dim">占位</span>' : ''}`).join(' ');
+      const odd = bs.odd && bs.odd.length ? `<span class="pp-st-odd">异类 ${bs.odd.map((x) => `${esc(x.label)}${esc(x.branch)}（${x.weight}分）`).join('、')}</span>` : '<span class="pp-st-odd">无异类</span>';
+      const prob = bs.congProb != null ? `　从格 ${esc(bs.congRange)}` : '　不套从格概率';
+      const bal = bs.balance || {};
+      const balText = bal.branch ? `　支 ${bal.branch.A}:${bal.branch.B}　合干 ${bal.total ? `${bal.total.A}:${bal.total.B}` : '—'}` : '';
+      return `<div class="pp-struct" title="${esc(`${bs.method}；${bs.note}`)}">`
+        + `<span class="pp-st-code">${esc(bs.code)}</span>${cols}　${odd}${prob}${balText}`
+        + `<span class="pp-dim">　静态结构，只作标注，不改上面的旺衰评分</span>`
+        + `</div>`;
+    })() : '';
+    // 暗合：另列不并。一对时照课里口径标「可忽略」，不让它看起来像有效合局。
+    const anheList = (r.relations && Array.isArray(r.relations.anhe)) ? r.relations.anhe : [];
+    const anheHTML = anheList.length
+      ? `<div class="pp-anhe" title="${esc(r.relations.anheNote || '')}"><b>暗合</b>${anheList.map((x) => esc(x)).join('　')}`
+        + `<span class="pp-dim">　另列，不并入上面的合冲刑害；${anheList.length === 1 ? '只一对，按口径可忽略' : `共 ${anheList.length} 对`}</span></div>`
+      : '';
     const ssGroups = (r.shensha && r.shensha.groups) || [];
     const ssx = ssGroups.length ? `
       <div class="pp-ssx">
@@ -32004,6 +32089,8 @@ window.__MP_VER = "0.62.5";
       <div class="pp-rel"><div><b>天干</b>${(r.relations && r.relations.stems.length) ? r.relations.stems.join(' · ') : '—'}</div>
       <div><b>地支</b>${(r.relations && r.relations.branches.length) ? r.relations.branches.join(' · ') : '—'}</div></div>
       ${str}
+      ${structHTML}
+      ${anheHTML}
       ${sect('格局', gj)}
       ${sect('用神', ys)}
       ${cliCard}
@@ -32026,7 +32113,8 @@ window.__MP_VER = "0.62.5";
         ${(!r.palaces.minggong || !r.palaces.shengong) ? '<span class="pp-chip" title="命宫与身宫由生月与生时支合数定宫；时柱暂缺，这两宫不排">命宫·身宫 时柱暂缺不排</span>' : ''}
       </div>`) : ''}
       ${ssx}
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}${(r.dayun.startAgeExact && Number.isInteger(r.dayun.startAgeExact.years))
+        ? `　精确 ${r.dayun.startAgeExact.years}年${r.dayun.startAgeExact.months}月${r.dayun.startAgeExact.days}天${r.dayun.startAgeExact.hours}时（截断到日时；上面是四舍五入到月）` : ''}</div>
     </div>`;
   };
 

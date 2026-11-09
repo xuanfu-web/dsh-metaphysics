@@ -123,6 +123,12 @@
 .pp-str{margin-top:10px;font-size:13px;line-height:1.8}
 .pp-str b{color:var(--red);font-size:15px;margin:0 4px}
 .pp-drel{font-style:normal;color:var(--red);font-size:12px}
+/* 八大地支结构：与日主强弱并列的第二套口径，用中性色，不与主结论抢色 */
+.pp-struct{margin-top:6px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.pp-struct .pp-st-code{font-weight:700;letter-spacing:.06em;color:var(--ink);margin-right:6px}
+.pp-struct .pp-st-odd{color:var(--quan)}
+.pp-anhe{margin-top:6px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.pp-anhe b{color:var(--muted);font-weight:400;margin-right:8px}
 .pp-dim{color:var(--muted)}
 /* 岁运提示下的原文：比正文再轻一档，只做出处，不抢结论 */
 .pp-sy-src{margin-top:6px;font-size:11.5px;line-height:1.55}
@@ -2745,6 +2751,25 @@
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
       `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${(x.type.startsWith('流年') || x.type.startsWith('大运')) && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
     const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
+    // 八大地支结构：只读标注，与上面旺衰分并列。算出来却没人看得见等于没做，所以面板必须给这一行。
+    const bs = r.strength && r.strength.branchStructure;
+    const structHTML = bs ? (() => {
+      const cols = bs.branches.map((b) => `${esc(b.label)}${esc(b.branch)}<i class="pp-drel">·${esc(b.camp)}</i>${bs.placeholderHour && b.key === 'hour' ? '<span class="pp-dim">占位</span>' : ''}`).join(' ');
+      const odd = bs.odd && bs.odd.length ? `<span class="pp-st-odd">异类 ${bs.odd.map((x) => `${esc(x.label)}${esc(x.branch)}（${x.weight}分）`).join('、')}</span>` : '<span class="pp-st-odd">无异类</span>';
+      const prob = bs.congProb != null ? `　从格 ${esc(bs.congRange)}` : '　不套从格概率';
+      const bal = bs.balance || {};
+      const balText = bal.branch ? `　支 ${bal.branch.A}:${bal.branch.B}　合干 ${bal.total ? `${bal.total.A}:${bal.total.B}` : '—'}` : '';
+      return `<div class="pp-struct" title="${esc(`${bs.method}；${bs.note}`)}">`
+        + `<span class="pp-st-code">${esc(bs.code)}</span>${cols}　${odd}${prob}${balText}`
+        + `<span class="pp-dim">　静态结构，只作标注，不改上面的旺衰评分</span>`
+        + `</div>`;
+    })() : '';
+    // 暗合：另列不并。一对时照课里口径标「可忽略」，不让它看起来像有效合局。
+    const anheList = (r.relations && Array.isArray(r.relations.anhe)) ? r.relations.anhe : [];
+    const anheHTML = anheList.length
+      ? `<div class="pp-anhe" title="${esc(r.relations.anheNote || '')}"><b>暗合</b>${anheList.map((x) => esc(x)).join('　')}`
+        + `<span class="pp-dim">　另列，不并入上面的合冲刑害；${anheList.length === 1 ? '只一对，按口径可忽略' : `共 ${anheList.length} 对`}</span></div>`
+      : '';
     const ssGroups = (r.shensha && r.shensha.groups) || [];
     const ssx = ssGroups.length ? `
       <div class="pp-ssx">
@@ -2758,6 +2783,8 @@
       <div class="pp-rel"><div><b>天干</b>${(r.relations && r.relations.stems.length) ? r.relations.stems.join(' · ') : '—'}</div>
       <div><b>地支</b>${(r.relations && r.relations.branches.length) ? r.relations.branches.join(' · ') : '—'}</div></div>
       ${str}
+      ${structHTML}
+      ${anheHTML}
       ${sect('格局', gj)}
       ${sect('用神', ys)}
       ${cliCard}
@@ -2780,7 +2807,8 @@
         ${(!r.palaces.minggong || !r.palaces.shengong) ? '<span class="pp-chip" title="命宫与身宫由生月与生时支合数定宫；时柱暂缺，这两宫不排">命宫·身宫 时柱暂缺不排</span>' : ''}
       </div>`) : ''}
       ${ssx}
-      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}</div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}${(r.dayun.startAgeExact && Number.isInteger(r.dayun.startAgeExact.years))
+        ? `　精确 ${r.dayun.startAgeExact.years}年${r.dayun.startAgeExact.months}月${r.dayun.startAgeExact.days}天${r.dayun.startAgeExact.hours}时（截断到日时；上面是四舍五入到月）` : ''}</div>
     </div>`;
   };
 

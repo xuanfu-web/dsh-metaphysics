@@ -428,7 +428,12 @@ function baziInterpret(r) {
         const jiaoLine = r.dayun && r.dayun.jiao && r.dayun.jiao.at
           ? `起运交运时刻 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}；三日折一年，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天）。每步大运在同月同日同时刻换，逐年日期见下方大运表「交运」列。\n`
           : '';
-        return `${jiaoLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
+        // 精确起运岁：与「几岁几个月」的口语写法并列。对上第三方排盘时差的就是日、时这两位。
+        const sae = r.dayun && r.dayun.startAgeExact;
+        const exactLine = sae && Number.isInteger(sae.years)
+          ? `起运岁精确值：${sae.years} 年 ${sae.months} 个月 ${sae.days} 天 ${sae.hours} 小时（${sae.caliber}）。与摘要「${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月」同源：后者四舍五入到月，差一个月的边界常出在这里——第三方给到日/时的，按这一行核对。\n`
+          : '';
+        return `${jiaoLine}${exactLine}当前大运：${pick(cur, 'ganzhi', '—')}（${curSpan}）。后续两步：${nextTwo}。\n近五年流年：${years || '—'}。\n读法：大运管"这十年的大环境"，流年管"今年的具体天气"；两者打架时，以能否动到用神为准。`;
       })(),
     },
     { key: 'years', label: '流年时间轴', text: yearsText },
@@ -514,6 +519,33 @@ function baziInterpret(r) {
     ...(frame.xianshen ? [{
       key: 'xianshen', label: '闲神',
       text: `【${frame.xianshen.level}】${frame.xianshen.detail}\n口径：${frame.xianshen.method}`,
+    }] : []),
+    // 八大地支结构：与旺衰分并列的第二套静态视图。算出来却没人看得见的字段等于没做，
+    // 所以这里单独给一节，写清「它是什么、跟上面旺衰分的区别、能不能据此断从格」。
+    ...(r.strength && r.strength.branchStructure ? [{
+      key: 'structure', label: '地支结构',
+      text: (() => {
+        const b = r.strength.branchStructure;
+        const cols = b.branches.map((x) => `${x.label}支${x.branch}（${x.support}·${x.camp} 档 ${x.weight} 分${b.placeholderHour && x.key === 'hour' ? '·占位' : ''}）`).join('；');
+        const odd = b.odd && b.odd.length ? `异类：${b.odd.map((x) => `${x.label}支${x.branch}（${x.weight} 分）`).join('、')}。` : '四支二对二或同党，无异类。';
+        const bal = b.balance || {};
+        return `【${b.code}】${b.detail}\n`
+          + `逐支：${cols}\n`
+          + `${odd}${b.halfSupported && b.halfSupported.length ? `半得地：${b.halfSupported.join('、')}（按 0.2–0.5 折算，不计入身强阵营）。` : ''}\n`
+          + `地支 身强 ${bal.branch ? bal.branch.A : '—'} : 身弱 ${bal.branch ? bal.branch.B : '—'}，加天干后 ${bal.total ? `${bal.total.A}:${bal.total.B}` : '—'}（宫位权重年 11 / 月 36 / 日 27 / 时 16）。\n`
+          + `${b.word}${b.congProb != null ? `——静态从格概率 ${b.congRange}。` : '。'}\n`
+          + `口径：${b.method}\n`
+          + `与「日主强弱」的关系：这是并列的第二套静态视图，不改上面的旺衰评分，也不参与取格与喜忌——两者是同一组四支的两种读法，不是先后两步。\n`
+          + `边界：${b.note}`;
+      })(),
+    }] : []),
+    // 暗合：另列不并。这一条最容易被人当成「合」读进旺衰，所以把边界写在节里。
+    ...(r.relations && Array.isArray(r.relations.anhe) && r.relations.anhe.length ? [{
+      key: 'anhe', label: '暗合',
+      text: `${r.relations.anhe.join('\n')}\n`
+        + `口径：${r.relations.anheNote || '暗合只作取象，不参与旺衰与格局。'}\n`
+        + `边界：暗合与上面的「地支关系」（三合、三会、六合、六冲、刑、害）是两条线，本插件不把它们合并计分；`
+        + `${r.relations.anhe.length === 1 ? '本盘只出现一对，按课里口径可以直接忽略。' : `本盘共 ${r.relations.anhe.length} 对，可作取象参考，但仍不折旺衰。`}`,
     }] : []),
     (() => {
       const ss = r.shensha;

@@ -79,3 +79,66 @@ eq('三柱不套从格概率', s3.congProb, null);
 ok('三柱写明不判结构概率', s3.congRange.includes('三柱'), s3.congRange);
 ok('三柱 detail 点明占位值', s3.detail.includes('占位值'), s3.detail);
 ok('frame 里的同一份结构也被标占位', three.frame.structure && three.frame.structure.placeholderHour === true);
+
+// ── 七、输出通道：算出来的字段必须看得见（摘要 → 解析 → 面板 → 独立页） ──
+// 这一批补的是「引擎算了、但没有任何地方显示」的死字段：字段存在只是必要条件，
+// 用户与模型能读到才算做完。四条通道逐一钉住，撤掉任一处即红。
+import fs from 'node:fs';
+import vm from 'node:vm';
+const { interpret } = await import('../engine/interpret.js');
+
+{
+  const sum = r.summary;
+  ok('摘要出「地支结构」行', sum.includes('地支结构：四支 ' + st.code), sum.split('\n').find((l) => l.startsWith('地支结构')) || '无');
+  ok('摘要写明异类或同党', /异类|同党/.test(sum), sum.split('\n').find((l) => l.startsWith('地支结构')) || '');
+  ok('摘要给出静态从格概率', sum.includes('静态从格 99') || sum.includes(st.congRange), '');
+  ok('摘要的暗合行另列不并', sum.includes('暗合：') ? sum.includes('不并入上面的合冲刑害') : true, sum.split('\n').find((l) => l.startsWith('暗合')) || '');
+
+  const iv = interpret(r, { question: '事业' });
+  const stSec = (iv.sections || []).find((s) => s.key === 'structure');
+  ok('解析新增「地支结构」节', !!stSec && stSec.label === '地支结构', stSec ? stSec.label : '缺节');
+  ok('结构节写清与旺衰分的关系', !!stSec && /不改上面的旺衰评分|不改.*旺衰/.test(stSec.text), stSec ? stSec.text.slice(-80) : '');
+  ok('结构节写清能不能据此断从格', !!stSec && /不直接断从格|只作提示/.test(stSec.text), '');
+  ok('结构节逐支列出阵营与分值', !!stSec && stSec.text.includes('逐支：'), '');
+
+  const sandbox = { window: {}, console };
+  vm.runInNewContext(fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8'), sandbox, { filename: 'panel-kit.js' });
+  const html = sandbox.window.__PP.baziHTML(r);
+  ok('面板渲染结构行', html.includes('class="pp-struct"'), '');
+  ok('面板结构行带 code 与异类', html.includes(st.code) && html.includes('异类'), '');
+  ok('面板声明结构不改旺衰', html.includes('静态结构，只作标注，不改上面的旺衰评分'), '');
+  ok('面板不出 undefined/NaN', !/undefined|NaN/.test(html), '');
+}
+
+// ── 八、三柱模式：占位支必须标出来，不冒充实有时支 ─────────────────
+{
+  const t3 = bazi('2008-12-04T01:30', { hourUnknown: true });
+  ok('三柱摘要标「三支＋占位」', /地支结构：三支＋占位/.test(t3.summary), t3.summary.split('\n').find((l) => l.startsWith('地支结构')) || '');
+  ok('三柱摘要逐支标占位', /时\S+·占位/.test(t3.summary), '');
+  ok('三柱摘要不套从格概率（且不重复说两遍）', (t3.summary.match(/第四支为正午占位，不套从格概率/g) || []).length === 1, t3.summary.split('\n').find((l) => l.startsWith('地支结构')) || '');
+  const h3 = (() => {
+    const sb = { window: {}, console };
+    vm.runInNewContext(fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8'), sb, { filename: 'panel-kit.js' });
+    return sb.window.__PP.baziHTML(t3);
+  })();
+  ok('三柱面板标占位', h3.includes('占位'), '');
+  ok('三柱面板不显示从格概率', !/从格 ≈|从格 \d/.test(h3) || h3.includes('不套从格概率'), '');
+}
+
+// ── 九、暗合节：只有真的有时才出现，且明确不并入合冲 ───────────────
+{
+  const withAnhe = bazi('1976-12-25T11:45');
+  ok('样本盘有暗合', withAnhe.relations.anhe.length >= 2, JSON.stringify(withAnhe.relations.anhe));
+  ok('摘要写「共 N 对」', withAnhe.summary.includes(`共 ${withAnhe.relations.anhe.length} 对`), withAnhe.summary.split('\n').find((l) => l.startsWith('暗合')) || '');
+  const iv = interpret(withAnhe, {});
+  const anheSec = (iv.sections || []).find((s) => s.key === 'anhe');
+  ok('解析有「暗合」节', !!anheSec && anheSec.label === '暗合', anheSec ? anheSec.label : '缺节');
+  ok('暗合节写两条线不合并计分', !!anheSec && /两条线/.test(anheSec.text), '');
+  ok('暗合节明写不折旺衰', !!anheSec && /不折旺衰|不参与旺衰/.test(anheSec.text), '');
+  const plain = bazi('1985-03-08T06:20');
+  if (plain.relations.anhe.length === 0) {
+    ok('无暗合盘不出暗合行', !plain.summary.includes('暗合：'), plain.summary.split('\n').filter((l) => l.startsWith('暗合')).join('|'));
+    const iv2 = interpret(plain, {});
+    ok('无暗合盘不出暗合节', !(iv2.sections || []).some((s) => s.key === 'anhe'), '');
+  }
+}

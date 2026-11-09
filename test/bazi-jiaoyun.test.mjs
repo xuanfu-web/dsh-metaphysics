@@ -183,3 +183,52 @@ const parseDate = (s) => {
   eq('交运 jd 与 nowYear 无关', a.dayun.jiao.jd, b.dayun.jiao.jd);
   eq('每步日期与 nowYear 无关', a.dayun.list.map((d) => d.fromDate).join(','), b.dayun.list.map((d) => d.fromDate).join(','));
 }
+
+// ── 十二、startAgeExact：算得出还要看得见（摘要 / 解析 / 面板三处） ──────
+// 这个字段是 0.62.5 加的第三方对拍口径（截断到年月日时 23/23 全中；四舍五入到月只有 15/23）。
+// 之前它只存在于结果对象里、没有任何输出通道——用户与模型都读不到，等于没做。
+{
+  const sae = male.dayun.startAgeExact;
+  ok('startAgeExact 结构齐全', !!sae && Number.isInteger(sae.years) && Number.isInteger(sae.months)
+    && Number.isInteger(sae.days) && Number.isInteger(sae.hours), JSON.stringify(sae));
+  ok('startAgeExact 写明口径是截断', sae.caliber.includes('截断'), sae.caliber);
+  ok('精确值的月不会超过 12', sae.months >= 0 && sae.months < 12, String(sae.months));
+  ok('精确值的日不会超过 31', sae.days >= 0 && sae.days <= 31, String(sae.days));
+  ok('精确值的小时不会超过 24', sae.hours >= 0 && sae.hours < 24, String(sae.hours));
+  // 截断 ⇒ 精确值永远不晚于四舍五入到月的写法
+  const truncMonths = sae.years * 12 + sae.months;
+  const roundMonths = male.dayun.startAge.years * 12 + male.dayun.startAge.months;
+  ok('截断值不快于四舍五入值（同源方向正确）', truncMonths <= roundMonths, `${truncMonths} vs ${roundMonths}`);
+  ok('两者相差不超过 1 个月（只是进位差）', roundMonths - truncMonths <= 1, `${roundMonths - truncMonths}`);
+
+  const r = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', trueSolar: false, dst: false, nowYear: 2026, withInterpret: true, detail: 'lean' });
+  ok('摘要出「起运岁（精确）」行', r.summary.includes('起运岁（精确）：'), r.summary.split('\n').find((l) => l.startsWith('起运岁')) || '');
+  ok('摘要精确行带年月日时四段', new RegExp(`起运岁（精确）：${sae.years} 年 ${sae.months} 个月 ${sae.days} 天 ${sae.hours} 小时`).test(r.summary), r.summary.split('\n').find((l) => l.startsWith('起运岁')) || '');
+  ok('摘要写明与「几岁几个月」同源', r.summary.includes('四舍五入到月'), '');
+
+  const tl = (r.interpret.sections || []).find((s) => s.key === 'timeline');
+  ok('解析「时间窗」也写精确值', !!tl && tl.text.includes('起运岁精确值：'), tl ? tl.text.split('\n')[0] : '缺节');
+  ok('解析写明差一个月的边界出在哪', !!tl && /差一个月的边界/.test(tl.text), '');
+
+  const sandbox = { window: {}, console };
+  vm.runInNewContext(fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8'), sandbox, { filename: 'panel-kit.js' });
+  const html = sandbox.window.__PP.baziHTML(compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', trueSolar: false, dst: false, nowYear: 2026 }));
+  ok('面板页脚写精确起运', html.includes(`${sae.years}年${sae.months}月${sae.days}天${sae.hours}时`), '');
+  ok('面板写明上面是四舍五入到月', html.includes('上面是四舍五入到月'), '');
+}
+
+// ── 十三、旧结果兼容：没有 startAgeExact 时不炸、也不补半截文案 ──────────
+{
+  const copy = { ...male, dayun: { ...male.dayun } };
+  delete copy.dayun.startAgeExact;
+  const iv = interpret(copy, {});
+  const tl = (iv.sections || []).find((s) => s.key === 'timeline');
+  ok('旧结果：时间窗不写精确值', !!tl && !tl.text.includes('起运岁精确值'), tl ? tl.text.slice(0, 40) : '缺节');
+  ok('旧结果：时间窗其余内容照旧', !!tl && tl.text.includes('当前大运：'), '');
+  const sandbox = { window: {}, console };
+  vm.runInNewContext(fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8'), sandbox, { filename: 'panel-kit.js' });
+  const html = sandbox.window.__PP.baziHTML(copy);
+  ok('旧结果：面板照常渲染', html.length > 1000 && html.includes('人生运势曲线'), String(html.length));
+  ok('旧结果：面板不写精确起运', !html.includes('截断到日时'), '');
+  ok('旧结果：面板不出 undefined', !/undefined/.test(html), '');
+}

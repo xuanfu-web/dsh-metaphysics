@@ -1,3 +1,15 @@
+## 未发布
+
+> 本段主题（2026-11-09，B15）：把 0.62.5 加的三项量化字段接上输出通道。上一版它们只存在于结果对象里——算得出、没人看得见，按本仓自己的「每步验收」（引擎字段 → 摘要/解析 → 面板 → 独立页 → 测试 → CHANGELOG）算没做完。**不改任何排盘口径、不改旺衰分与喜忌、不新建知识卡**。
+
+- **八大地支结构接进四处，并说清与旺衰分的关系**（`engine/index.js`、`engine/interpret.js`、`src/panel-kit.js`、`test/bazi-structure.test.mjs`）：`strength.branchStructure` 自 0.62.5 起就在结果里，但摘要、解析、面板、独立页一处都没显示。现补：摘要新增「地支结构：四支 AABA（年午A、月巳A、日丑B、时未A）　日支独异，不易从（静态从格 ≈20%）」一行；解析新增「地支结构」一节，逐支列阵营与宫位分值、异类支、地支与干支两段平衡，并明写**「这是并列的第二套静态视图，不改上面的旺衰评分，也不参与取格与喜忌」**；面板在「日主强弱」下方加 `.pp-struct` 行（code + 逐支阵营 + 异类 + 从格概率 + 平衡比），悬停给方法与边界。
+- **三柱模式不把占位时支冒充实有**（同上）：`hourUnknown` 时第四支是正午占位，摘要写「三支＋占位 …… 时午A·占位」，面板同款；从格概率一律不套。这里有一处措辞要留意——`bs.word` 本身已被 `bazi.js` 的 `hourUnknown` 分支改写成「时柱暂缺，第四支为正午占位，不套从格概率」，所以摘要**不能再追加同句**，初版重复说了两遍，已由断言 `(match(/…/g)||[]).length === 1` 钉死。
+- **暗合接进三处，并明确「另列不并」**（同上）：`relations.anhe` 同样只算不显。摘要按对数写「暗合：…（另列，不并入上面的合冲刑害；只一对，按口径可忽略 / 共 N 对）」；解析新增「暗合」一节，明写与三合三会六合六冲刑害是**两条线、不合并计分、不折旺衰**；面板在关系行下加 `.pp-anhe` 行。无暗合的盘这三处都不出现（不用空行占位）。
+- **起运岁精确值接进三处**（`engine/index.js`、`engine/interpret.js`、`src/panel-kit.js`、`test/bazi-jiaoyun.test.mjs`）：`dayun.startAgeExact` 是 0.62.5 为对齐第三方排盘加的（截断到日/时 23/23 全中，四舍五入到月只有 15/23），但同样没有输出通道——恰恰是它最能解释「为什么和别家差一个月」。摘要新增「起运岁（精确）：8 年 2 个月 26 天 8 小时（截断到年月日时；上面「8岁3个月」是四舍五入到月，两者同源）」；解析「时间窗」写明差一个月的边界常出在日/时这两位、第三方给到日时按这行核对；面板页脚在「N岁起运（交运…）」后加「精确 N年N月N天N时（截断到日时；上面是四舍五入到月）」。
+- **旧结果兼容**：三处都是新增可选行，缺字段时整块不渲染（`startAgeExact` / `branchStructure` / `anhe` 任一缺席都不出空行、不出 `undefined`），`test/bazi-jiaoyun.test.mjs` 第十二、十三节与 `test/bazi-structure.test.mjs` 第七至九节各有一组「删字段后照常渲染」的对照断言。
+- **验证**：`build-client` → 改文档 → 再 `build-client` + `build-html` → 全量 `test:ci` 九步全绿（**163/163** 测试文件、46.7s；check-bundle `client.js` 290KB / gzip 89KB、18 块 gzip 合计 2.56MB、单块上限 288KB、逐模块 71 个、宿主形态可执行且与源码逐字节一致；check-verification 两产物新鲜；凭据扫描 345 文件干净；check-patterns 81 文件；HTML 注入面 5 文件；check-perf 29 项，1000 盘 401ms / RSS 76MB；`verify-tests-can-fail` 15 PASS / 1 FAIL → exit 1 符合预期）。断言基线 **8729 → 8772**（+43，全在结构/交运两档），`test/bazi-structure.test.mjs` 81 条、`test/bazi-jiaoyun.test.mjs` 77 条。`e2e-dom` 152 项、`e2e-panel` 110 项通过。分块 gzip：**bazi 247.5KB**（逼近 288KB 上限，因 `interpret` 新增两节），其余不变。
+- **一处已知的取舍**：`client.bazi.js` 从 243.7 涨到 **247.5KB**，离 288KB 上限还剩 40KB。结构节与暗合节都进了解析栈（`interpret.js`），而解析栈被 bazi/ziwei/hepan/trend 四块各存一份——再加同类文案就该考虑拆共享块，本轮不动。
+
 ## 0.62.5（2026-11-09，已发布）
 
 > 已发布：npm `dsh-metaphysics@0.62.5`，shasum `2be34a0c3be03b1285ae72f10f42bc73c9ce7627`，104 个文件；tag `v0.62.5` → `985b3c4`，[GitHub release](https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.62.5) 已建，`main` 已推送。

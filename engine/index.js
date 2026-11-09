@@ -110,6 +110,13 @@ function baziText(r) {
   const jiao = r.dayun.jiao && r.dayun.jiao.at
     ? `；交运 ${r.dayun.jiao.at}（${r.dayun.jiao.frame}，距${r.dayun.jiao.from.name} ${r.dayun.jiao.spanDays} 天，三日折一年）`
     : '';
+  // 起运岁精确值（截断到年月日时）：上面 startAge 是四舍五入到月的口语写法，两者同源、并列给出。
+  // 第三方对拍里截断到月 23/23 全中、四舍五入只有 15/23——差别就在这串日时上，所以必须看得见。
+  const sae = r.dayun.startAgeExact;
+  const startAgeExactLine = sae && Number.isInteger(sae.years)
+    ? `起运岁（精确）：${sae.years} 年 ${sae.months} 个月 ${sae.days} 天 ${sae.hours} 小时`
+      + `（${sae.caliber}；上面「${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月」是四舍五入到月，两者同源）`
+    : '';
   // 阈值 20 分钟：与 NAOJ 历要项对拍实测，本引擎节气最多偏早 13.5 分钟（Meeus 低精度上限约 14 分钟）
   const near = r.jieqi.nearBoundaryMinutes < 20
     ? `\n⚠ 出生时刻距「节」仅 ${r.jieqi.nearBoundaryMinutes} 分钟，而节气时刻本身有最多约 14 分钟的偏差，月柱与年柱建议人工复核。`
@@ -142,6 +149,22 @@ function baziText(r) {
     (r.frame.yongshen.qt ? `　穷通：${r.frame.yongshen.qt.month}${r.frame.yongshen.qt.stem}取${r.frame.yongshen.qt.yong.join('、')}（首取${r.frame.yongshen.qt.primary}）` : ''),
     `十神权重：${Object.entries(r.frame.godStats.groups).map(([k, v]) => `${k}${v}`).join(' ')}`,
   ] : [];
+  // 八大地支结构（炳祥课静态口径）：算得出但没有输出通道的字段等于没做，这里补一行摘要。
+  // 只报「哪几支成党、异类是哪支、静态从格概率」，与上面旺衰分是两套并列口径，不互相覆盖。
+  // 三柱模式第四支是正午占位：照实标「占位」，不把它说成实有的时支。
+  const bs = r.strength && r.strength.branchStructure;
+  const bsCols = bs ? bs.branches.map((b) => `${b.label}${b.branch}${b.camp}${bs.placeholderHour && b.key === 'hour' ? '·占位' : ''}`).join('、') : '';
+  // 注意 bs.word 本身已含三柱说明（bazi.js 的 hourUnknown 分支会改写它），这里不重复追加
+  const bsTail = bs && !bs.placeholderHour && !bs.complete ? '　时柱暂缺，只列三支' : '';
+  const branchStructureLine = bs
+    ? `地支结构：${bs.placeholderHour ? '三支＋占位' : '四支'} ${bs.code}（${bsCols}）　`
+      + `${bs.word}${bs.congProb != null ? `（静态从格 ${bs.congRange}）` : ''}${bsTail}`
+    : '';
+  // 暗合：另列不并入合冲刑害。只出现一对时按课里口径「可忽略」，所以照实写出来但不升级为断语。
+  const anhe = (r.relations && Array.isArray(r.relations.anhe)) ? r.relations.anhe : [];
+  const anheLine = anhe.length
+    ? `暗合：${anhe.join('　')}（另列，不并入上面的合冲刑害；${anhe.length === 1 ? '只一对，按口径可忽略' : `共 ${anhe.length} 对`}）`
+    : '';
   const hourMissing = r.hourUnknown === true || !P.hour;
   return [
     `【四柱】${P.year.ganzhi} ${P.month.ganzhi} ${P.day.ganzhi}${P.hour ? ` ${P.hour.ganzhi}` : '（时柱暂缺）'}`,
@@ -151,14 +174,17 @@ function baziText(r) {
     `五行：${wuxing}`,
     ...(palaces ? [palaces] : []),
     `日主强弱：${r.strength.level}（${r.strength.score}）　${r.strength.detail}`,
+    ...(branchStructureLine ? [branchStructureLine] : []),
     ...gejuLine,
     `天干关系：${(r.relations && r.relations.stems.length) ? r.relations.stems.join('　') : '—'}`,
     `地支关系：${(r.relations && r.relations.branches.length) ? r.relations.branches.join('　') : '—'}`,
+    ...(anheLine ? [anheLine] : []),
     shenshaLine,
     `真太阳时：${r.solarTime.trueSolarText}（${r.input.geo ? r.input.geo.note + '；' : ''}${r.solarTime.note}）　晚子时：${r.input.lateZi ? '23:00 后算次日' : '23:00 后仍算当日'}`,
     `节气：上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}`,
     ...(renyuanLine ? [renyuanLine] : []),
     `大运：${r.dayun.rule}（${r.dayun.direction}），${r.dayun.startAge.years}岁${r.dayun.startAge.months}个月起运${jiao}`,
+    ...(startAgeExactLine ? [startAgeExactLine] : []),
     `　${dayun}`,
     `流年：${r.liunian.slice(0, 10).map((l) => `${l.year}${l.ganzhi}(${l.stemTenGod})${l.luck ? `·${l.luck.tier}` : ''}`).join('　')}`,
     (() => {
