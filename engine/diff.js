@@ -97,7 +97,7 @@ const LABELS = [
   [/^dayun\.jiao\./, '起运'],
   [/^dayun\.toNextJieDays$/, '起运时间'],
   [/^dayun\.list\.(\d+)\.ganzhi$/, '大运干支'],
-  [/^dayun\.startAge\./, '起运时间'],
+  [/^dayun\.startAge(Exact)?\./, '起运时间'],
   [/^dayun\./, '大运评分'],
   [/^liunian\./, '流年'],
   [/^jieqi\./, '节气边界'],

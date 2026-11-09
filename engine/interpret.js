@@ -345,7 +345,7 @@ function baziInterpret(r) {
     `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${neutral.length ? `（${join(neutral.map((n) => n.element))} 近零，按中性偏忌看）` : ''}${frameToneOf(level, favorRolesByWeight)}`,
     `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
       ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
-      : ''}。`,
+      : ''}${frame.patternScore && frame.patternScore.applicable ? `。成格评分 ${frame.patternScore.score}/100（${frame.patternScore.grade}）` : ''}。`,
   ].join('\n');
 
   const portraitText = [
@@ -503,20 +503,60 @@ function baziInterpret(r) {
     }] : []),
     {
       key: 'geju', label: '格局依据',
-      text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
-        `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局',
+      text: ((Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
+        `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局')
+        + (frame.patternScore ? `\n成格评分：${frame.patternScore.detail}` : ''),
     },
+    ...(frame.bingyao ? [{
+      key: 'bingyao', label: '病药',
+      text: `【${frame.bingyao.level}】${frame.bingyao.detail}\n口径：${frame.bingyao.method}`,
+    }] : []),
+    ...(frame.xianshen ? [{
+      key: 'xianshen', label: '闲神',
+      text: `【${frame.xianshen.level}】${frame.xianshen.detail}\n口径：${frame.xianshen.method}`,
+    }] : []),
+    (() => {
+      const ss = r.shensha;
+      const cols = { year: '年', month: '月', day: '日', hour: '时' };
+      if (!ss || !Array.isArray(ss.groups) || !ss.groups.length) {
+        return {
+          key: 'shensha', label: '神煞',
+          text: '本盘未见常用神煞。按炳祥课里的口径，神煞是枝叶，只作锦上添花，不单独定吉凶；真正的吉凶仍看格局、旺衰与行运。',
+        };
+      }
+      const names = Array.isArray(ss.names) ? ss.names : [];
+      const rows = ss.groups.map((g) => `${g.cat}：${(g.items || []).map((it) => {
+        const where = (it.pillars || []).map((k) => cols[k] || k).join('、');
+        return `${it.name}${where ? `（${where}）` : ''}`;
+      }).join('、')}`).join('；');
+      const core = ['驿马', '羊刃', '桃花', '华盖'].filter((n) => names.includes(n));
+      const hasTianyi = names.includes('天乙贵人');
+      return {
+        key: 'shensha', label: '神煞',
+        text: `命中神煞：${rows}。\n`
+          + '按炳祥课里的口径，真正拿来取象的只有驿马、羊刃、桃花、华盖四颗'
+          + `${core.length ? `，本盘见 ${core.join('、')}` : '，本盘这四颗都未见'}`
+          + '；其余一律只作锦上添花。'
+          + (hasTianyi
+            ? '天乙贵人尤其是添头：课里给的口径是「无贵人概率 5/6⁴ < 50%，单独断贵人准确率 <30%」，不能拿来定吉凶。'
+            : '天乙贵人即使出现也只是添头：课里统计其单独断贵人准确率 <30%，不能拿来定吉凶。')
+          + '\n神煞永远是枝叶：它只提示「像不像」，不决定「成不成」。吉凶仍以格局、旺衰、喜忌与行运为主，神煞不参与本盘的旺衰与格局判定。',
+      };
+    })(),
     ...(Array.isArray(r.classics) && r.classics.length ? [{
       key: 'classics', label: '古籍原文',
       text: r.classics.map((e) => `《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》「${e.quote}」——${e.plain}`).join('\n'),
     }] : []),
     {
       key: 'quant', label: '量化口径',
-      text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`,
+      text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`
+        + (r.strength?.weightPct
+          ? `\n宫位权重（炳祥课里干 2/5/0/3、支 11/36/27/16 的百分比视图）：${r.strength.weightPct.detail}。这组数只说明四柱各占多少，不改上面的旺衰评分。`
+          : ''),
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，并按《穷通宝鉴》120 格给出用神顺序（整理表口径，原文摘句照录，异文处已标 note）；各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
+      text: '本盘没有计算：流月与流日、神煞的分值折算（解读侧只按课里口径作降权提示，不折成分值）、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，并按《穷通宝鉴》120 格给出用神顺序（整理表口径，原文摘句照录，异文处已标 note）；各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 

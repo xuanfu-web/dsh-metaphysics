@@ -32,6 +32,15 @@ const JU_NUMBERS_MAP = {
   寒露: '693', 立冬: '693', 处暑: '147', 霜降: '582', 小雪: '582', 大雪: '471',
 };
 
+/** 供测试与文档引用：二十四节气三元局数的只读视图（B14 与《奇门遁甲元灵经》卷一逐格对拍） */
+export const QIMEN_JU_TABLE = Object.freeze({ ...JU_NUMBERS_MAP });
+
+/** 供测试与文档引用：九星八门定宫的只读视图（B14 与元灵经卷一、秘笈总序逐宫对拍） */
+export const QIMEN_BASE_TABLES = Object.freeze({
+  stars: Object.freeze({ ...BASIC_STARS }),
+  gates: Object.freeze({ ...BASIC_GATES }),
+});
+
 // ── 历法适配：把本插件的时间轴转成奇门引擎要的 snapshot ──
 const xunOf = (gz) => {
   const idx = indexOfGz(gz);

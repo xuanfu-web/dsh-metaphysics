@@ -12,7 +12,9 @@ import { ok } from './_harness.mjs';
 
 const BASE = {
   bazi: { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', address: '安徽池州' },
-  ziwei: { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', address: '安徽池州' },
+  // asOf 钉死：紫微的 flow 默认读本机当前时刻，两次调用跨分钟就会差 1 分钟，
+  // 这不是开关归一的问题，而是测试自己引入了时钟噪声。
+  ziwei: { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', address: '安徽池州', asOf: '2026-03-01T10:00' },
   liuyao: { system: 'liuyao', datetime: '2026-03-01T10:00', seed: 7 },
   meihua: { system: 'meihua', datetime: '2026-03-01T10:00' },
   daliuren: { system: 'daliuren', datetime: '2026-03-01T10:00' },

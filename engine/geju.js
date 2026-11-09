@@ -136,6 +136,15 @@ function monthPattern(pillars, dayStem, monthBranch) {
   if (!use) use = hui || base;
   const usedBy = exposedKey ? '透干' : (hui ? '会支' : '本气');
   const exposedPos = exposedKey ? { year: '年', month: '月', hour: '时' }[exposedKey] : null;
+  // 评分元数据：只给下面 patternScoreOf 用，不参与取格本身
+  const metaOf = (c, by, key) => ({
+    stem: c.stem,
+    god: c.god,
+    pos: c.pos,
+    usedBy: by,
+    exposedKey: key || null,
+    exposedPos: key ? { year: '年', month: '月', hour: '时' }[key] : null,
+  });
 
   // 建禄只认日干的禄位；戊土辰月、己土未月这类「本气比肩但不在禄位」的杂气月不再冒称建禄
   if (base.god === '比肩' && LUSHEN_BRANCH[dayStem] === monthBranch) {
@@ -143,6 +152,7 @@ function monthPattern(pillars, dayStem, monthBranch) {
       name: '建禄格',
       kind: '月令格',
       evidence: `月令${monthBranch}为日干${dayStem}之禄（本气${base.stem}比肩），身坐禄地`,
+      ...metaOf(base, '本气', null),
     };
   }
   if (base.god === '劫财') {
@@ -151,15 +161,17 @@ function monthPattern(pillars, dayStem, monthBranch) {
         name: isYangStem(dayStem) ? '阳刃格' : '月刃格',
         kind: '月令格',
         evidence: `月令${monthBranch}为日干${dayStem}之刃（本气${base.stem}劫财）${isYangStem(dayStem) ? '' : '，阴干统称月刃'}`,
+        ...metaOf(base, '本气', null),
       };
     }
-    return { name: '月劫格', kind: '月令格', evidence: `月令${monthBranch}本气${base.stem}为劫财` };
+    return { name: '月劫格', kind: '月令格', evidence: `月令${monthBranch}本气${base.stem}为劫财`, ...metaOf(base, '本气', null) };
   }
   if (usedBy === '本气' && base.god === '比肩') {
     return {
       name: '比肩格',
       kind: '月令格',
       evidence: `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}为比肩，但${dayStem}禄在${LUSHEN_BRANCH[dayStem]}、不在${monthBranch}，属杂气月比肩当权`,
+      ...metaOf(base, '本气', null),
     };
   }
   // 子平十六：「透乙则用月劫」——杂气月由透干或会支取到劫财时，仍作月劫论
@@ -169,6 +181,7 @@ function monthPattern(pillars, dayStem, monthBranch) {
       name: '月劫格',
       kind: '月令格',
       evidence: `月令${monthBranch}藏${hidden.join('')}，${use.pos}${use.stem}（劫财）${via}，劫财为用，作月劫论`,
+      ...metaOf(use, usedBy, exposedKey),
     };
   }
   const name = `${use.god}格`;
@@ -180,7 +193,146 @@ function monthPattern(pillars, dayStem, monthBranch) {
   } else {
     ex = `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}（${base.god}）未透干，以月令本气取格`;
   }
-  return { name, kind: '月令格', evidence: ex };
+  return { name, kind: '月令格', evidence: ex, ...metaOf(use, usedBy, exposedKey) };
+}
+
+// ── 成格评分（炳祥高级第 16 课口径）───────────────────────────
+// 只读评分：基础分按取格档位，再减「透干被合 30」「用神太弱 20」，60 分为及格线。
+// 不改 name / evidence / geju 三态，也不参与旺衰与喜忌。
+const ZHUANQI_BRANCHES = ['子', '午', '卯', '酉'];
+const BASE_BY_TIER = {
+  专气透: 90,
+  本气透: 70,
+  中气透: 50,
+  余气透: 20,
+  同五行透: 5,
+  会支取用: 60,
+  月令不透: 40,
+};
+const HE_PENALTY = 30;
+const WEAK_PENALTY = 20;
+const PATTERN_PASS = 60;
+const OUTER_PATTERNS = ['建禄格', '阳刃格', '月刃格', '月劫格'];
+
+/** 天干五合：找与 stem 相合的另一干（合而不化也算） */
+function stemHeWith(stem, pillars) {
+  for (const key of ['year', 'month', 'day', 'hour']) {
+    const p = pillars[key];
+    if (!p || !p.stem || p.stem === stem) continue;
+    if (STEM_HE[stem + p.stem] || STEM_HE[p.stem + stem]) {
+      return { pillar: POS_LABEL[key], key, stem: p.stem };
+    }
+  }
+  return null;
+}
+
+/** 用神太弱：无本气通根，且（被天干克 或 全局占比 <18%） */
+function patternWeakWith(pattern, pillars, wuxing = {}) {
+  const stem = pattern.stem;
+  const el = STEM_ELEMENT[stem];
+  const hasBaseRoot = ['year', 'month', 'day', 'hour'].some((key) => {
+    const p = pillars[key];
+    if (!p) return false;
+    return (HIDDEN[p.branch] || [])[0] === stem;
+  });
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pct = total > 0 ? Math.round(((Number(wuxing[el]) || 0) / total) * 1000) / 10 : 0;
+  const overcome = ['year', 'month', 'day', 'hour'].some((key) => {
+    const p = pillars[key];
+    if (!p || !p.stem || p.stem === stem) return false;
+    const otherEl = STEM_ELEMENT[p.stem];
+    return otherEl && OVERCOMES[otherEl] === el;
+  });
+  const weak = !hasBaseRoot && (pct < 18 || overcome);
+  const reasons = [
+    hasBaseRoot ? `有本气通根（${stem}）` : '四支无本气通根',
+    `全局 ${pct}%`,
+    overcome ? '且被天干克' : '',
+  ].filter(Boolean);
+  return {
+    weak,
+    pct,
+    hasBaseRoot,
+    overcome,
+    detail: reasons.join('，'),
+  };
+}
+
+/**
+ * 月令格成格评分。
+ * @param {object} pattern monthPattern() 的返回（需 stamp / pos / usedBy）
+ * @param {object} pillars 四柱
+ * @param {string} dayStem 日干
+ * @param {string} monthBranch 月支
+ * @param {object} wuxing 五行分值
+ */
+export function patternScoreOf(pattern, pillars, dayStem, monthBranch, wuxing = {}) {
+  if (!pattern) return null;
+  if (pattern.kind !== '月令格' || OUTER_PATTERNS.includes(pattern.name)) {
+    return {
+      applicable: false,
+      base: null,
+      baseLabel: null,
+      deductions: [],
+      score: null,
+      pass: null,
+      grade: null,
+      threshold: PATTERN_PASS,
+      detail: `${pattern.name}属外格（建禄/羊刃/月劫），课程不按正八格的透干档位计成格分，故不套 −30 / −20。`,
+      method: '只评正八格月令格；建禄/羊刃/月劫属外格，不评分',
+    };
+  }
+
+  const zhi = pattern.monthBranch || monthBranch;
+  let baseLabel;
+  if (pattern.usedBy === '透干') {
+    if (ZHUANQI_BRANCHES.includes(zhi) && pattern.pos === '本气') baseLabel = '专气透';
+    else baseLabel = `${pattern.pos}透`;
+  } else if (pattern.usedBy === '会支') {
+    baseLabel = '会支取用';
+  } else {
+    // 月令本气未透：若同五行异阴阳之干透出，按课里「同五行透」档（<10%）计
+    const baseEl = STEM_ELEMENT[pattern.stem];
+    const sameEl = ['year', 'month', 'hour']
+      .map((k) => pillars[k] && pillars[k].stem)
+      .find((s) => s && s !== pattern.stem && STEM_ELEMENT[s] === baseEl);
+    baseLabel = sameEl ? '同五行透' : '月令不透';
+  }
+  const base = BASE_BY_TIER[baseLabel] ?? 40;
+
+  const deductions = [];
+  const he = pattern.usedBy === '透干' ? stemHeWith(pattern.stem, pillars) : null;
+  if (he) {
+    deductions.push({
+      reason: '透干被合',
+      points: HE_PENALTY,
+      detail: `${pattern.stem}与${he.pillar}干${he.stem}五合（合而不化也按被合论）`,
+    });
+  }
+  const weak = patternWeakWith(pattern, pillars, wuxing);
+  if (weak.weak) {
+    deductions.push({ reason: '用神太弱', points: WEAK_PENALTY, detail: weak.detail });
+  }
+
+  const deducted = deductions.reduce((n, d) => n + d.points, 0);
+  const score = Math.max(0, base - deducted);
+  const pass = score >= PATTERN_PASS;
+  const detail = `基础分 ${base}（${baseLabel}）`
+    + `${deductions.length ? `，${deductions.map((d) => `${d.reason} −${d.points}（${d.detail}）`).join('，')}` : '，无减项'}`
+    + `，成格分 ${score}/100，${pass ? `过 ${PATTERN_PASS} 分线，按课里作成格论` : `不及 ${PATTERN_PASS} 分线，按课里作不成格论`}。`;
+
+  return {
+    applicable: true,
+    base,
+    baseLabel,
+    deductions,
+    score,
+    pass,
+    grade: pass ? '成格' : '不成格',
+    threshold: PATTERN_PASS,
+    detail,
+    method: '基础分按取格档位（专气透 90 / 本气透 70 / 中气透 50 / 余气透 20 / 同五行透 5 / 会支取用 60 / 月令不透 40）；透干被合 −30、用神太弱 −20；60 分及格。只读标注，不改取格与既有三态。',
+  };
 }
 
 // ── 特殊格 / 组合 ────────────────────────────────────────────
@@ -342,6 +494,170 @@ export function tongguanOf(favor = [], avoid = [], wuxing = {}) {
     }
   }
   return null;
+}
+
+// ── 病药（炳祥高级第 6 课口径）───────────────────────────────
+// 只做只读标注：病＝最强忌神，药＝能克忌神的喜神（其次取泄），不改喜忌结论。
+// 门槛按课里：正格忌神 >35%、从格 >15%；从格能量放大，10% ≈ 正格 30-40%。
+const BING_THRESHOLD = { 正格: 35, 从格: 15 };
+
+export function bingyaoOf({ dayStem, strength, wuxing = {}, yongshen = {}, geju = [] }) {
+  const roles = elementRoles(dayStem);
+  const roleName = (el) => (el === roles.me ? '比劫' : el === roles.inMe ? '印'
+    : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+  const desc = (x) => `${x.element}（${x.role}·${x.pct}%）`;
+
+  const cong = (geju || []).find((g) => g.kind === '从格');
+  const threshold = cong ? BING_THRESHOLD.从格 : BING_THRESHOLD.正格;
+
+  // 从格的喜忌与扶抑相反。现有 yongshenOf 只按旺衰给扶抑喜忌，没有吃 geju，
+  // 这里在病药层单列一份反转后的喜忌，避免把从格的喜神当忌神；不改 yongshen 本身。
+  let favorEls = yongshen.favor || [];
+  let avoidEls = yongshen.avoid || [];
+  let source = '扶抑喜忌';
+  if (cong) {
+    // 按从格类型分：从财/从杀忌印比；从儿忌印与官杀（比劫生食伤不忌）；从强忌财官食伤。
+    if (cong.name === '从强格') {
+      favorEls = [roles.inMe, roles.me];
+      avoidEls = [roles.cai, roles.guan, roles.shi];
+    } else if (cong.name === '从儿格') {
+      favorEls = [roles.shi, roles.cai];
+      avoidEls = [roles.inMe, roles.guan];
+    } else if (cong.name === '从杀格') {
+      favorEls = [roles.guan, roles.cai];
+      avoidEls = [roles.me, roles.inMe];
+    } else {
+      favorEls = [roles.cai, roles.guan, roles.shi];
+      avoidEls = [roles.me, roles.inMe];
+    }
+    source = '从格反转';
+  }
+
+  const sick = avoidEls
+    .map((el) => ({ element: el, role: roleName(el), pct: pctOf(el) }))
+    .sort((a, b) => b.pct - a.pct)[0] || null;
+
+  const base = {
+    threshold,
+    isCong: !!cong,
+    congName: cong ? cong.name : null,
+    favorSource: source,
+    sick: sick || null,
+    remedy: null,
+    level: '无病',
+    method: '病＝最强忌神；正格 >35%、从格 >15% 才算病；从格先按喜忌反转取忌；药优先取克忌神的喜神，其次取泄；只作标注，不改喜忌',
+  };
+
+  if (!sick || sick.pct <= threshold) {
+    return {
+      ...base,
+      detail: sick
+        ? `忌神最重为${desc(sick)}，未过${cong ? '从格' : '正格'} ${threshold}% 门槛，按炳祥口径作无病论。`
+        : `本盘无忌神可论，按炳祥口径作无病论。`,
+    };
+  }
+
+  const favor = favorEls
+    .map((el) => ({ element: el, role: roleName(el), pct: pctOf(el) }))
+    .filter((x) => x.pct > 0)
+    .sort((a, b) => b.pct - a.pct);
+  const over = (a, b) => OVERCOMES[a] === b; // a 克 b
+
+  let remedy = null;
+  let mode = null;
+  let note = '';
+
+  if (sick.role === '印') {
+    // 印为忌：财克印最优，但财力须 ≥ 食伤的 50%；不足则只能用食伤硬抗（安慰剂）。
+    const cai = favor.find((f) => f.role === '财');
+    const shi = favor.find((f) => f.role === '食伤');
+    if (cai && pctOf(roles.cai) >= pctOf(roles.shi) * 0.5) {
+      remedy = cai;
+      mode = '财克印';
+    } else if (shi && pctOf(roles.shi) >= 1) {
+      remedy = shi;
+      mode = '食伤硬抗（安慰剂）';
+      note = `财力${pctOf(roles.cai)}% 不足食伤的 50%（食伤${pctOf(roles.shi)}%），按课里只能以食伤硬抗。`;
+    } else {
+      note = `财、食伤都不足以制印（财${pctOf(roles.cai)}%、食伤${pctOf(roles.shi)}%），按课里属有病无药。`;
+    }
+  } else {
+    // 克 > 泄：先找克忌神的喜神，再退而取「忌神所生」的喜神（泄其势）。
+    const ke = favor.find((f) => over(f.element, sick.element));
+    if (ke) {
+      remedy = ke;
+      mode = '克';
+    } else {
+      const xie = favor.find((f) => GENERATES[sick.element] === f.element);
+      if (xie) {
+        remedy = xie;
+        mode = '泄';
+        note = `喜神中无克${sick.element}者，退取${xie.element}泄其势（课里「克 > 泄」，泄力次之）。`;
+      }
+    }
+  }
+
+  const level = remedy ? '有病有药' : '有病无药';
+  const detail = [
+    `病为${desc(sick)}，已过${cong ? `从格（${cong.name}）` : '正格'} ${threshold}% 门槛。`,
+    remedy
+      ? `药取${desc(remedy)}，以「${mode}」制病${remedy.pct < sick.pct ? `；药力弱于病（${remedy.pct}% < ${sick.pct}%）` : ''}。`
+      : `喜神中无可制之药，按炳祥口径属有病无药。`,
+    note,
+  ].filter(Boolean).join('');
+
+  return { ...base, level, remedy, mode, detail };
+}
+
+// ── 闲神（炳祥高级第 9 课口径）───────────────────────────────
+// 狭义闲神＝食伤与官杀中较弱的那一个；4% 最佳、<10% 合格、>=10% 显忌。
+// 显性（该五行透干）×3 只用于文案排序，不改分值，也不参与旺衰/喜忌。
+export function xianshenOf({ dayStem, wuxing = {}, pillars = {}, yongshen = {} }) {
+  const roles = elementRoles(dayStem);
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+
+  const candidates = [
+    { role: '食伤', element: roles.shi },
+    { role: '官杀', element: roles.guan },
+  ].map((x) => ({ ...x, pct: pctOf(x.element) }));
+  const idle = candidates.sort((a, b) => a.pct - b.pct)[0];
+  const band = idle.pct <= 4 ? '最佳' : idle.pct < 10 ? '合格' : '显忌';
+
+  const stems = ['year', 'month', 'day', 'hour']
+    .map((k) => pillars[k] && pillars[k].stem)
+    .filter(Boolean);
+  const visible = stems.some((s) => STEM_ELEMENT[s] === idle.element);
+  const favorRoles = yongshen.favorRoles || [];
+  const avoidRoles = yongshen.avoidRoles || [];
+  const stance = favorRoles.includes(idle.role) ? '喜' : avoidRoles.includes(idle.role) ? '忌' : '中性';
+
+  const level = band === '显忌' ? '闲神显忌' : band === '最佳' ? '闲神得位' : '闲神合格';
+  const detail = [
+    `狭义闲神取${idle.element}（${idle.role}，全局 ${idle.pct}%），是食伤与官杀中较弱的一个。`,
+    band === '最佳'
+      ? '4% 上下，正是课里说的最佳区间。'
+      : band === '合格'
+        ? '不足 10%，按课里算合格，不作显忌。'
+        : '超过 10%，课里按忌神论：不是大凶，是别扭、乱使劲、干了很多事没结果。',
+    visible ? `此神透干（显性），按课里「显性 ×3」在文案里优先提示；分值不改。` : '此神未透干，属暗闲神，影响更轻。',
+    `在现有喜忌里为${stance}。`,
+  ].join('');
+
+  return {
+    idle,
+    band,
+    level,
+    visible,
+    stance,
+    displayWeight: Math.round(idle.pct * (visible ? 3 : 1) * 10) / 10,
+    detail,
+    method: '闲神＝食伤与官杀中较弱者；4% 最佳 / <10% 合格 / >=10% 显忌；显性 ×3 只作文案排序，不改分值与喜忌',
+  };
 }
 
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
@@ -546,16 +862,31 @@ export function scoreLuck(ganzhi, frame) {
 export function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   const gods = godStats(pillars, dayStem);
   const month = monthPattern(pillars, dayStem, monthBranch);
+  // 成格评分：只给月令格挂分，外格返回 applicable:false；随后续 specialPatterns 一起回传
+  const patternScore = patternScoreOf(month, pillars, dayStem, monthBranch, wuxing);
+  if (patternScore && patternScore.applicable) {
+    month.score = patternScore.score;
+    month.scoreDetail = patternScore;
+  }
   const special = specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods);
   const geju = [month, ...special];
   const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing, Object.values(pillars).map((p) => p.branch));
+  // 病药：只读标注，复用上面的喜忌，不改结论
+  const bingyao = bingyaoOf({ dayStem, strength, wuxing, yongshen, geju });
+  // 闲神：只读标注
+  const xianshen = xianshenOf({ dayStem, wuxing, pillars, yongshen });
   return {
     geju,
     primary: month,
     primaryName: month.name,
     godStats: gods,
     yongshen,
+    bingyao,
+    xianshen,
+    patternScore,
     dayStem,
     monthBranch,
+    // 八大地支结构：静态结构 + 宫位权重，仅作标注，不参与取格与喜忌
+    structure: strength.branchStructure || null,
   };
 }

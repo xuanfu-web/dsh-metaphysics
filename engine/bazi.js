@@ -12,6 +12,7 @@ import { bool } from './bool.js';
 import { nayinOf } from './nayin.js';
 import { SANHE } from './sanhe.js';
 import { analyzeBaziFrame, scoreLuck } from './geju.js';
+import { branchStructureOf, weightPctOf } from './structure.js';
 
 // 地支藏干（本气 / 中气 / 余气）
 // 巳的顺序是「丙庚戊」而不是「丙戊庚」：庚长生于巳，是中气；戊是辰月余气，排末位。
@@ -147,7 +148,38 @@ function rootedWeightOf(pillars, el, factor) {
   return w;
 }
 
-/** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑 */
+// ── 暗合（盲派/现代命理的补充定义）───────────────────────────
+// 子平正法只有天干五合；暗合只作取象与风水参考，不参与旺衰与格局。
+// 通合：亥午、寅丑（藏干双合）；禄合：卯申、午亥、巳子；午亥与通合重叠时只报通合。
+// 干支暗合取课里明列的六组；自合只取辰（戊癸）。
+const ANHE_TONG = [['亥', '午'], ['寅', '丑']];
+const ANHE_LU = [['卯', '申'], ['午', '亥'], ['巳', '子']];
+const ANHE_GANZHI = new Set(['甲午', '丁亥', '戊子', '辛巳', '壬午', '癸巳']);
+const ANHE_ZIHE = new Set(['辰']);
+
+function anheOf(pillars, keys) {
+  const out = [];
+  const branches = keys.map((k) => pillars[k].branch);
+  const has = (a, b) => branches.includes(a) && branches.includes(b);
+  const seen = new Set();
+  const push = (text) => { if (!seen.has(text)) { seen.add(text); out.push(text); } };
+
+  for (const [a, b] of ANHE_TONG) if (has(a, b)) push(`${a}${b}通合（藏干双合）`);
+  for (const [a, b] of ANHE_LU) {
+    if (!has(a, b)) continue;
+    if (seen.has(`${a}${b}通合（藏干双合）`) || seen.has(`${b}${a}通合（藏干双合）`)) continue;
+    push(`${a}${b}禄合`);
+  }
+  for (const k of keys) {
+    const pl = pillars[k];
+    const gz = pl.ganzhi || `${pl.stem}${pl.branch}`;
+    if (ANHE_GANZHI.has(gz)) push(`${gz}干支暗合`);
+    if (ANHE_ZIHE.has(pl.branch)) push(`${gz}自合`);
+  }
+  return out;
+}
+
+/** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑；暗合另列 */
 export function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour']) {
   const stems = keys.map((k) => pillars[k].stem);
   const branches = keys.map((k) => pillars[k].branch);
@@ -228,7 +260,12 @@ export function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour'])
     }
     return out;
   };
-  return { stems: uniq(stemOut), branches: uniq(branchOut) };
+  return {
+    stems: uniq(stemOut),
+    branches: uniq(branchOut),
+    anhe: anheOf(pillars, keys),
+    anheNote: '暗合只作取象与风水参考，不参与旺衰与格局；只出现一对时按课里可忽略',
+  };
 }
 
 /** 十神：以日干为我 */
@@ -407,6 +444,15 @@ export function buildBazi(input) {
   // 四舍五入到 12 个月时必须进位，否则显示「X 岁 12 个月起运」
   if (startAgeMonths >= 12) { startAgeMonths -= 12; startAgeYears += 1; }
 
+  // 并列的截断口径：年/月取整后，余数继续往下拆。1 月 = 0.25 日 = 6 时，
+  // 所以月内余数 ×30 得「日」、日余 ×24 得「时」——与 startAge 的四舍五入同源、不互相覆盖。
+  const exactYears = Math.floor(totalMonths / 12);
+  const exactRemMonths = totalMonths - exactYears * 12;
+  const exactMonths = Math.floor(exactRemMonths);
+  const exactRemDays = (exactRemMonths - exactMonths) * 30;
+  const exactDays = Math.floor(exactRemDays);
+  const exactHours = Math.floor((exactRemDays - exactDays) * 24);
+
   // 交运：三日折一年。
   // 古法三条换算是同一比例的三种说法——3 日折 1 年、1 日折 4 个月、1 时辰折 10 日：
   // 把「出生 → 起运那一侧的节令」的真实间隔按 365.2422/3（≈121.7474）倍放大，
@@ -573,6 +619,11 @@ export function buildBazi(input) {
     },
   };
 
+  // 八大地支结构（炳祥课堂口径）：只读标注，不参与上面的旺衰打分
+  strength.branchStructure = branchStructureOf(pillars, dayStem);
+  // 宫位权重百分比视图：纯展示换算，与上面的评分口径并列，不改分值
+  strength.weightPct = weightPctOf(pillars, { hourUnknown });
+
   // ── 格局 / 用神 / 行运 ─────────────────────────────────────
   const frame = analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing });
 
@@ -731,6 +782,10 @@ export function buildBazi(input) {
       direction: forward ? '顺行' : '逆行',
       rule: `${isYangYear ? '阳' : '阴'}年${gender === 'male' ? '男' : '女'}${forward ? '顺排' : '逆排'}`,
       startAge: { years: startAgeYears, months: startAgeMonths },
+      startAgeExact: {
+        years: exactYears, months: exactMonths, days: exactDays, hours: exactHours,
+        caliber: '截断到年月日时',
+      },
       toNextJieDays: Math.round(spanDays * 100) / 100,
       // 交运时刻（日/时辰级）：上方 startAge 是四舍五入到月的旧字段，两者同源、不互相覆盖
       jiao: {
@@ -812,6 +867,20 @@ export function buildBazi(input) {
     // 旺衰与格局：内部仍按正午时柱跑（否则没有可比的基准），但必须说清这是占位值，
     // 不能写成「时柱不参与任何判定」——那与 strength/frame 实际用了时柱相矛盾
     out.strength.precision = 'three-pillars';
+    // 结构同此：第四支是正午占位，不套从格概率，免得把编出来的时支说成实有
+    if (out.strength.branchStructure) {
+      const bs = out.strength.branchStructure;
+      bs.placeholderHour = true;
+      bs.congProb = null;
+      bs.congRange = '三柱不判结构概率';
+      bs.word = '时柱暂缺，第四支为正午占位，不套从格概率';
+      bs.note = '时柱暂缺：第四支为占位值，只列结构形态，不据此断从格；补上出生时刻后可能改变';
+      bs.detail = `${bs.detail}（时支为占位值）`;
+    }
+    if (out.strength.weightPct) {
+      out.strength.weightPct.placeholderHour = true;
+      out.strength.weightPct.note = '时柱暂缺：时柱权重不计入合计（本盘 81%），不重新归一化；补上出生时刻后再按 100% 看';
+    }
     out.notes = [
       '时柱暂缺：未提供出生时刻，时柱不对外给出，也不计入神煞与干支关系',
       '旺衰、格局、用神、调候暂以正午时柱估算，补上出生时刻后可能改变',

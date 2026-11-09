@@ -1,0 +1,1615 @@
+{
+  "meta": {
+    "source": "https://github.com/ChenJiangxi/BaziQA",
+    "upstreamPath": "charts/bazi/",
+    "commit": "3bad3deaa5aa3a191c9c68b4d8b17f46decff45e",
+    "commitUrl": "https://github.com/ChenJiangxi/BaziQA/commit/3bad3deaa5aa3a191c9c68b4d8b17f46decff45e",
+    "engine": "lunar-python 1.4.8（八字）／iztro 2.5.8（紫微，本对拍不用）",
+    "timeConvention": "stated（上游 default_time_convention；chart.datetime 取 time.stated.datetime）",
+    "capturedAt": "2026-11-09T03:19:50.544Z",
+    "capture": "tools/capture-baziqa-jiaoyun.mjs（api.github.com contents?ref=commit，base64 解码后逐文件 sha256）",
+    "generator": "tools/gen-jiaoyun-data.mjs",
+    "files": [
+      {
+        "name": "contest8_2021.json",
+        "bytes": 46728,
+        "sha256": "e9fecb4c90c2592aa30927246d90529ecebdc151bb389b40847cb25a2fbecbec",
+        "blobSha": "620ece83932c0d6d8f435005d0910844d1d9030c",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "contest8_2022.json",
+        "bytes": 40172,
+        "sha256": "c7e13430c3ccb30734391362e370decf0d83528ac80b7e6083ed7cf2faa7d623",
+        "blobSha": "c92c318fb5e1db42b58c5a4abe8b8c4576cb29b0",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "contest8_2023.json",
+        "bytes": 41873,
+        "sha256": "36f70d2dd447ec0cb2bd28404dfa36bc2b7d329ee227408cdb02872a7dce6918",
+        "blobSha": "2b09339711a5cb54299a8fdd0631e1cb9359ff3d",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "contest8_2024.json",
+        "bytes": 41028,
+        "sha256": "826e7627a934e9cad1ea118773bd1584fd9b423eaa4ec9fdd712de7a6a2b6e5f",
+        "blobSha": "1ab03e6cfa9031c847ad0dd05650cdb8b7398fb1",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "contest8_2025.json",
+        "bytes": 41135,
+        "sha256": "e6e058f547ef8c83e891b86e64e4caf41a85fbb20fcff614c9674c360678df59",
+        "blobSha": "6f8d0502242bff3488e4d7d720de43f286273454",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "contest8_2026.json",
+        "bytes": 41936,
+        "sha256": "4fc007c7ea0c8a4aad4c69fb927837553cc087952f68504b9aa841b07ac9f889",
+        "blobSha": "da94f378e1865dd40a1cc06ad9b01f2eb433e2de",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2010.json",
+        "bytes": 14453,
+        "sha256": "79e49cbd6133ed377e35a50be36f6eef63ca8bd8e29030a5e4dc627f395d121d",
+        "blobSha": "0d3dd23ea45db8daaf230de42155ae5d230b7ea7",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2011.json",
+        "bytes": 13612,
+        "sha256": "a7e61a7502d862e9e8e9c6e1bd40a6d47bb3fa7731207ea47ecd32198cf07756",
+        "blobSha": "0f9dcfe542e3cd1c1add8fbc42964a97c1dd2f7e",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2012.json",
+        "bytes": 14237,
+        "sha256": "e7da69d2253a31c2063b0b2225a087c0ed134a41338349c77719c75c8af5be6d",
+        "blobSha": "6d86cc28c1cb3571f08f1f6590c74f66e2eba51b",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2013.json",
+        "bytes": 20307,
+        "sha256": "9c480cf3012ff148bd4b2a2075e594843d72806c409f43db804fe99df58441fa",
+        "blobSha": "0b0319843a94a7e62fde6774ea7da9f43dc8f6ae",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2014.json",
+        "bytes": 35504,
+        "sha256": "e5af9691123801937f256ae5a60ee46a1869a710152839323f8975891e88ece6",
+        "blobSha": "fa04b1b72609dc082e328116e5d4c32fdf0a6e23",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2015.json",
+        "bytes": 34616,
+        "sha256": "283e40582a36c242903fa7ce17cf06132d9742738986effbfd727840fb974a6a",
+        "blobSha": "32597cf624e8bb06b8d774577658ff0e8a1eeff2",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2016.json",
+        "bytes": 35730,
+        "sha256": "109eb09c9d34f62982a7e24b32bb91014aa4d3b4e4f155bddcc46763f3012afc",
+        "blobSha": "1e1ad6559f17af882544e7cba17cc3860aa4ca43",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2017.json",
+        "bytes": 43285,
+        "sha256": "e40406d4b95c67054c0d0260b2543412e839ff27ba654567e45d7db1de2a882c",
+        "blobSha": "92a8ffe816f04c9fd0f02120eade8cb786ba3f34",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2018.json",
+        "bytes": 46060,
+        "sha256": "84e80d193c3ccc242421f7096659b22c3073d3f25c9d79b1678cf5fffe64890b",
+        "blobSha": "50e0b489c009bbe084c1124768319572019674ab",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2019.json",
+        "bytes": 39367,
+        "sha256": "f1e140566076cfd6a237baab720fa1ae8d60e2a29205bed7a394b22f53bf4aae",
+        "blobSha": "828ae76a4c14e1bb1265d659d4abe8f243a0704f",
+        "cacheBefore": "identical"
+      },
+      {
+        "name": "hkjfma_2020.json",
+        "bytes": 44612,
+        "sha256": "b391e84ee515d5bc725cd94821eb98fe9e647313db018bd2b3c17a1e84816434",
+        "blobSha": "a98b7f9d45510c2c4a24dd64191937fc2cbd05d5",
+        "cacheBefore": "identical"
+      }
+    ],
+    "stats": {
+      "upstreamFiles": 17,
+      "charts": 117,
+      "afterDaysDistribution": {
+        "0": 38,
+        "10": 45,
+        "20": 34
+      },
+      "afterDaysAllMultiplesOf10": true,
+      "timezoneDistribution": {
+        "Asia/Shanghai": 20,
+        "Asia/Singapore": 3,
+        "Asia/Hong_Kong": 54,
+        "Asia/Taipei": 14,
+        "Asia/Kuala_Lumpur": 16,
+        "null": 8,
+        "Asia/Tokyo": 1,
+        "Asia/Macau": 1
+      },
+      "dstMinutesDistribution": {
+        "0": 96,
+        "60": 21
+      },
+      "filter": {
+        "preciseStated": 116,
+        "preciseUtc8": 88,
+        "preciseUtc8NoDst": 67,
+        "chartDatetimeEqualsStated": 88
+      },
+      "selected": 20
+    },
+    "policy": "只取 charts/bazi 下带 qiyun.start_date 的命例；选例键显式列出（上游 C7a/C7b 同生日，按 id 尾段反推会撞）。每例照抄上游 time / chart.datetime / pillars.ganzhi / qiyun 原值，不归母、不补算、不改字。",
+    "caution": "厂家 after_days 全库只出现 0/10/20 三档（117/117 为 10 的倍数），是「一时辰折十日」的量化值，不是逐日精算；因此交运日与本插件逐日精算天然有日级差，对拍只锁四柱、顺逆与偏差量级，不把厂家日当唯一真理。夏令时例的 time.stated 已扣夏令时、time.clock 才是原文钟表时间，喂引擎时必须用 clock 并让引擎自己扣，否则扣两次。"
+  },
+  "cases": [
+    {
+      "file": "contest8_2021.json",
+      "chartKey": "male_19700723_P029",
+      "caseNo": "5",
+      "gender": "male",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "台湾",
+        "lon": 121.56,
+        "lat": 25.04,
+        "location_precision": "region",
+        "timezone": "Asia/Taipei",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1970-07-23 08:20",
+          "shichen": "辰",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1970-07-23 08:20",
+          "shichen": "辰",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1970-07-23 08:19",
+          "shichen": "辰",
+          "basis": "standard time +6 min longitude -6.5 min equation of time",
+          "correction_minutes": -0.2
+        }
+      },
+      "chartDatetime": "1970-07-23 08:20",
+      "pillars": [
+        "庚戌",
+        "癸未",
+        "甲辰",
+        "戊辰"
+      ],
+      "qiyun": {
+        "after_years": 5,
+        "after_months": 3,
+        "after_days": 20,
+        "start_date": "1975-11-12",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1970-07-23 08:20",
+          "pillars": [
+            "庚戌",
+            "癸未",
+            "甲辰",
+            "戊辰"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1970-07-23 08:19",
+          "pillars": [
+            "庚戌",
+            "癸未",
+            "甲辰",
+            "戊辰"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2022.json",
+      "chartKey": "female_19810526_P018",
+      "caseNo": "2",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1981-05-26 02:17",
+          "shichen": "丑",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1981-05-26 02:17",
+          "shichen": "丑",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1981-05-26 01:57",
+          "shichen": "丑",
+          "basis": "standard time -23 min longitude +3.4 min equation of time",
+          "correction_minutes": -20
+        }
+      },
+      "chartDatetime": "1981-05-26 02:17",
+      "pillars": [
+        "辛酉",
+        "癸巳",
+        "甲辰",
+        "乙丑"
+      ],
+      "qiyun": {
+        "after_years": 3,
+        "after_months": 8,
+        "after_days": 0,
+        "start_date": "1985-01-26",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1981-05-26 02:17",
+          "pillars": [
+            "辛酉",
+            "癸巳",
+            "甲辰",
+            "乙丑"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1981-05-26 01:57",
+          "pillars": [
+            "辛酉",
+            "癸巳",
+            "甲辰",
+            "乙丑"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2022.json",
+      "chartKey": "female_19900523_P019",
+      "caseNo": "3",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "中国大陆",
+        "lon": null,
+        "lat": null,
+        "location_precision": "country",
+        "timezone": "Asia/Shanghai",
+        "dst_minutes": 60,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1990-05-23 16:30",
+          "shichen": "申",
+          "basis": "clock time with summer time removed"
+        },
+        "clock": {
+          "datetime": "1990-05-23 17:30",
+          "shichen": "酉",
+          "basis": "as written"
+        },
+        "true_solar": null
+      },
+      "chartDatetime": "1990-05-23 16:30",
+      "pillars": [
+        "庚午",
+        "辛巳",
+        "戊子",
+        "庚申"
+      ],
+      "qiyun": {
+        "after_years": 5,
+        "after_months": 10,
+        "after_days": 10,
+        "start_date": "1996-04-02",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1990-05-23 17:30",
+          "pillars": [
+            "庚午",
+            "辛巳",
+            "戊子",
+            "辛酉"
+          ]
+        }
+      },
+      "hourPillarVaries": true,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2023.json",
+      "chartKey": "female_19661018_P009",
+      "caseNo": "1",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1966-10-18 23:15",
+          "shichen": "子",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1966-10-18 23:15",
+          "shichen": "子",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1966-10-18 23:06",
+          "shichen": "子",
+          "basis": "standard time -23 min longitude +15.1 min equation of time",
+          "correction_minutes": -8.2
+        }
+      },
+      "chartDatetime": "1966-10-18 23:15",
+      "pillars": [
+        "丙午",
+        "戊戌",
+        "辛亥",
+        "戊子"
+      ],
+      "qiyun": {
+        "after_years": 3,
+        "after_months": 3,
+        "after_days": 10,
+        "start_date": "1970-01-28",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1966-10-18 23:15",
+          "pillars": [
+            "丙午",
+            "戊戌",
+            "辛亥",
+            "戊子"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1966-10-18 23:06",
+          "pillars": [
+            "丙午",
+            "戊戌",
+            "辛亥",
+            "戊子"
+          ]
+        },
+        "day_kept_at_23h": {
+          "datetime": "1966-10-18 23:15",
+          "day_pillar": "庚戌",
+          "note": "晚子时：若按「晚子时日柱算当天」，日柱取当天（本仓库默认 23:00 换日）"
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2023.json",
+      "chartKey": "female_20020601_P015",
+      "caseNo": "7",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "2002-06-01 08:30",
+          "shichen": "辰",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "2002-06-01 08:30",
+          "shichen": "辰",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "2002-06-01 08:09",
+          "shichen": "辰",
+          "basis": "standard time -23 min longitude +2.6 min equation of time",
+          "correction_minutes": -20.7
+        }
+      },
+      "chartDatetime": "2002-06-01 08:30",
+      "pillars": [
+        "壬午",
+        "乙巳",
+        "庚子",
+        "庚辰"
+      ],
+      "qiyun": {
+        "after_years": 8,
+        "after_months": 9,
+        "after_days": 10,
+        "start_date": "2011-03-11",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "2002-06-01 08:30",
+          "pillars": [
+            "壬午",
+            "乙巳",
+            "庚子",
+            "庚辰"
+          ]
+        },
+        "true_solar": {
+          "datetime": "2002-06-01 08:09",
+          "pillars": [
+            "壬午",
+            "乙巳",
+            "庚子",
+            "庚辰"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2024.json",
+      "chartKey": "guangdong_female_19800824_P001",
+      "caseNo": "1",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "广东",
+        "lon": 113.26,
+        "lat": 23.13,
+        "location_precision": "region",
+        "timezone": "Asia/Shanghai",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1980-08-24 16:30",
+          "shichen": "申",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1980-08-24 16:30",
+          "shichen": "申",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1980-08-24 16:00",
+          "shichen": "申",
+          "basis": "standard time -27 min longitude -2.5 min equation of time",
+          "correction_minutes": -29.4
+        }
+      },
+      "chartDatetime": "1980-08-24 16:30",
+      "pillars": [
+        "庚申",
+        "甲申",
+        "己巳",
+        "壬申"
+      ],
+      "qiyun": {
+        "after_years": 5,
+        "after_months": 7,
+        "after_days": 20,
+        "start_date": "1986-04-13",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1980-08-24 16:30",
+          "pillars": [
+            "庚申",
+            "甲申",
+            "己巳",
+            "壬申"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1980-08-24 16:00",
+          "pillars": [
+            "庚申",
+            "甲申",
+            "己巳",
+            "壬申"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2025.json",
+      "chartKey": "taiwan_female_19880215_P007",
+      "caseNo": "7",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "台湾",
+        "lon": 121.56,
+        "lat": 25.04,
+        "location_precision": "region",
+        "timezone": "Asia/Taipei",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1988-02-15 16:50",
+          "shichen": "申",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1988-02-15 16:50",
+          "shichen": "申",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1988-02-15 16:41",
+          "shichen": "申",
+          "basis": "standard time +6 min longitude -14.2 min equation of time",
+          "correction_minutes": -8
+        }
+      },
+      "chartDatetime": "1988-02-15 16:50",
+      "pillars": [
+        "戊辰",
+        "甲寅",
+        "庚子",
+        "甲申"
+      ],
+      "qiyun": {
+        "after_years": 3,
+        "after_months": 7,
+        "after_days": 0,
+        "start_date": "1991-09-15",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1988-02-15 16:50",
+          "pillars": [
+            "戊辰",
+            "甲寅",
+            "庚子",
+            "甲申"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1988-02-15 16:41",
+          "pillars": [
+            "戊辰",
+            "甲寅",
+            "庚子",
+            "甲申"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2026.json",
+      "chartKey": "2026_C1_male_19820612",
+      "caseNo": "1",
+      "gender": "male",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1982-06-12 06:50",
+          "shichen": "卯",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1982-06-12 06:50",
+          "shichen": "卯",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1982-06-12 06:27",
+          "shichen": "卯",
+          "basis": "standard time -23 min longitude +0.6 min equation of time",
+          "correction_minutes": -22.7
+        }
+      },
+      "chartDatetime": "1982-06-12 06:50",
+      "pillars": [
+        "壬戌",
+        "丙午",
+        "丙寅",
+        "辛卯"
+      ],
+      "qiyun": {
+        "after_years": 8,
+        "after_months": 6,
+        "after_days": 0,
+        "start_date": "1990-12-12",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1982-06-12 06:50",
+          "pillars": [
+            "壬戌",
+            "丙午",
+            "丙寅",
+            "辛卯"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1982-06-12 06:27",
+          "pillars": [
+            "壬戌",
+            "丙午",
+            "丙寅",
+            "辛卯"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2026.json",
+      "chartKey": "2026_C2_female_19810120",
+      "caseNo": "2",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1981-01-20 20:05",
+          "shichen": "戌",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1981-01-20 20:05",
+          "shichen": "戌",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1981-01-20 19:31",
+          "shichen": "戌",
+          "basis": "standard time -23 min longitude -10.4 min equation of time",
+          "correction_minutes": -33.7
+        }
+      },
+      "chartDatetime": "1981-01-20 20:05",
+      "pillars": [
+        "庚申",
+        "己丑",
+        "戊戌",
+        "壬戌"
+      ],
+      "qiyun": {
+        "after_years": 5,
+        "after_months": 0,
+        "after_days": 10,
+        "start_date": "1986-01-30",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1981-01-20 20:05",
+          "pillars": [
+            "庚申",
+            "己丑",
+            "戊戌",
+            "壬戌"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1981-01-20 19:31",
+          "pillars": [
+            "庚申",
+            "己丑",
+            "戊戌",
+            "壬戌"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "contest8_2026.json",
+      "chartKey": "2026_C7_female_19990814",
+      "caseNo": "7",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "台湾高雄",
+        "lon": 120.3,
+        "lat": 22.63,
+        "location_precision": "city",
+        "timezone": "Asia/Taipei",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1999-08-14 15:30",
+          "shichen": "申",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1999-08-14 15:30",
+          "shichen": "申",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1999-08-14 15:26",
+          "shichen": "申",
+          "basis": "standard time +1 min longitude -5.0 min equation of time",
+          "correction_minutes": -3.8
+        }
+      },
+      "chartDatetime": "1999-08-14 15:30",
+      "pillars": [
+        "己卯",
+        "壬申",
+        "戊戌",
+        "庚申"
+      ],
+      "qiyun": {
+        "after_years": 8,
+        "after_months": 3,
+        "after_days": 0,
+        "start_date": "2007-11-14",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1999-08-14 15:30",
+          "pillars": [
+            "己卯",
+            "壬申",
+            "戊戌",
+            "庚申"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1999-08-14 15:26",
+          "pillars": [
+            "己卯",
+            "壬申",
+            "戊戌",
+            "庚申"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2013.json",
+      "chartKey": "2013_C2_female_19721106",
+      "caseNo": "2",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1972-11-06 19:15",
+          "shichen": "戌",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1972-11-06 19:15",
+          "shichen": "戌",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1972-11-06 19:07",
+          "shichen": "戌",
+          "basis": "standard time -23 min longitude +16.2 min equation of time",
+          "correction_minutes": -7.2
+        }
+      },
+      "chartDatetime": "1972-11-06 19:15",
+      "pillars": [
+        "壬子",
+        "庚戌",
+        "辛丑",
+        "戊戌"
+      ],
+      "qiyun": {
+        "after_years": 9,
+        "after_months": 9,
+        "after_days": 10,
+        "start_date": "1982-08-16",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1972-11-06 19:15",
+          "pillars": [
+            "壬子",
+            "庚戌",
+            "辛丑",
+            "戊戌"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1972-11-06 19:07",
+          "pillars": [
+            "壬子",
+            "庚戌",
+            "辛丑",
+            "戊戌"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2013.json",
+      "chartKey": "2013_C3_male_19720115",
+      "caseNo": "3",
+      "gender": "male",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1972-01-15 00:30",
+          "shichen": "子",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1972-01-15 00:30",
+          "shichen": "子",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1972-01-14 23:58",
+          "shichen": "子",
+          "basis": "standard time -23 min longitude -8.4 min equation of time",
+          "correction_minutes": -31.8
+        }
+      },
+      "chartDatetime": "1972-01-15 00:30",
+      "pillars": [
+        "辛亥",
+        "辛丑",
+        "乙巳",
+        "丙子"
+      ],
+      "qiyun": {
+        "after_years": 2,
+        "after_months": 9,
+        "after_days": 20,
+        "start_date": "1974-11-04",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1972-01-15 00:30",
+          "pillars": [
+            "辛亥",
+            "辛丑",
+            "乙巳",
+            "丙子"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1972-01-14 23:58",
+          "pillars": [
+            "辛亥",
+            "辛丑",
+            "乙巳",
+            "丙子"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2015.json",
+      "chartKey": "2015_C6_female_19960310",
+      "caseNo": "6",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1996-03-10 08:00",
+          "shichen": "辰",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1996-03-10 08:00",
+          "shichen": "辰",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1996-03-10 07:25",
+          "shichen": "辰",
+          "basis": "standard time -23 min longitude -10.8 min equation of time",
+          "correction_minutes": -34.1
+        }
+      },
+      "chartDatetime": "1996-03-10 08:00",
+      "pillars": [
+        "丙子",
+        "辛卯",
+        "丙午",
+        "壬辰"
+      ],
+      "qiyun": {
+        "after_years": 1,
+        "after_months": 6,
+        "after_days": 20,
+        "start_date": "1997-09-30",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1996-03-10 08:00",
+          "pillars": [
+            "丙子",
+            "辛卯",
+            "丙午",
+            "壬辰"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1996-03-10 07:25",
+          "pillars": [
+            "丙子",
+            "辛卯",
+            "丙午",
+            "壬辰"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2017.json",
+      "chartKey": "2017_C2_male_19800625",
+      "caseNo": "2",
+      "gender": "male",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "中国江苏",
+        "lon": 118.8,
+        "lat": 32.06,
+        "location_precision": "region",
+        "timezone": "Asia/Shanghai",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1980-06-25 23:20",
+          "shichen": "子",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1980-06-25 23:20",
+          "shichen": "子",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1980-06-25 23:12",
+          "shichen": "子",
+          "basis": "standard time -5 min longitude -2.5 min equation of time",
+          "correction_minutes": -7.3
+        }
+      },
+      "chartDatetime": "1980-06-25 23:20",
+      "pillars": [
+        "庚申",
+        "壬午",
+        "庚午",
+        "丙子"
+      ],
+      "qiyun": {
+        "after_years": 3,
+        "after_months": 9,
+        "after_days": 20,
+        "start_date": "1984-04-14",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1980-06-25 23:20",
+          "pillars": [
+            "庚申",
+            "壬午",
+            "庚午",
+            "丙子"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1980-06-25 23:12",
+          "pillars": [
+            "庚申",
+            "壬午",
+            "庚午",
+            "丙子"
+          ]
+        },
+        "day_kept_at_23h": {
+          "datetime": "1980-06-25 23:20",
+          "day_pillar": "己巳",
+          "note": "晚子时：若按「晚子时日柱算当天」，日柱取当天（本仓库默认 23:00 换日）"
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2017.json",
+      "chartKey": "2017_C5_female_19800202",
+      "caseNo": "5",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1980-02-02 16:00",
+          "shichen": "申",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1980-02-02 16:00",
+          "shichen": "申",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1980-02-02 15:23",
+          "shichen": "申",
+          "basis": "standard time -23 min longitude -13.4 min equation of time",
+          "correction_minutes": -36.7
+        }
+      },
+      "chartDatetime": "1980-02-02 16:00",
+      "pillars": [
+        "己未",
+        "丁丑",
+        "乙巳",
+        "甲申"
+      ],
+      "qiyun": {
+        "after_years": 0,
+        "after_months": 9,
+        "after_days": 10,
+        "start_date": "1980-11-12",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1980-02-02 16:00",
+          "pillars": [
+            "己未",
+            "丁丑",
+            "乙巳",
+            "甲申"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1980-02-02 15:23",
+          "pillars": [
+            "己未",
+            "丁丑",
+            "乙巳",
+            "甲申"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2017.json",
+      "chartKey": "2017_C7a_female_19510124",
+      "caseNo": "7a",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1951-01-24 00:30",
+          "shichen": "子",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1951-01-24 00:30",
+          "shichen": "子",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1951-01-23 23:55",
+          "shichen": "子",
+          "basis": "standard time -23 min longitude -11.3 min equation of time",
+          "correction_minutes": -34.6
+        }
+      },
+      "chartDatetime": "1951-01-24 00:30",
+      "pillars": [
+        "庚寅",
+        "己丑",
+        "甲子",
+        "甲子"
+      ],
+      "qiyun": {
+        "after_years": 5,
+        "after_months": 10,
+        "after_days": 0,
+        "start_date": "1956-11-24",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1951-01-24 00:30",
+          "pillars": [
+            "庚寅",
+            "己丑",
+            "甲子",
+            "甲子"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1951-01-23 23:55",
+          "pillars": [
+            "庚寅",
+            "己丑",
+            "甲子",
+            "甲子"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2017.json",
+      "chartKey": "2017_C7b_female_19510124",
+      "caseNo": "7b",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1951-01-24 23:30",
+          "shichen": "子",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1951-01-24 23:30",
+          "shichen": "子",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1951-01-24 22:55",
+          "shichen": "亥",
+          "basis": "standard time -23 min longitude -11.6 min equation of time",
+          "correction_minutes": -34.9
+        }
+      },
+      "chartDatetime": "1951-01-24 23:30",
+      "pillars": [
+        "庚寅",
+        "己丑",
+        "乙丑",
+        "丙子"
+      ],
+      "qiyun": {
+        "after_years": 6,
+        "after_months": 1,
+        "after_days": 20,
+        "start_date": "1957-03-16",
+        "direction": "backward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1951-01-24 23:30",
+          "pillars": [
+            "庚寅",
+            "己丑",
+            "乙丑",
+            "丙子"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1951-01-24 22:55",
+          "pillars": [
+            "庚寅",
+            "己丑",
+            "甲子",
+            "乙亥"
+          ]
+        },
+        "day_kept_at_23h": {
+          "datetime": "1951-01-24 23:30",
+          "day_pillar": "甲子",
+          "note": "晚子时：若按「晚子时日柱算当天」，日柱取当天（本仓库默认 23:00 换日）"
+        }
+      },
+      "hourPillarVaries": true,
+      "dayPillarVaries": true
+    },
+    {
+      "file": "hkjfma_2018.json",
+      "chartKey": "2018_C6_female_19930817",
+      "caseNo": "6",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "香港",
+        "lon": 114.17,
+        "lat": 22.32,
+        "location_precision": "city",
+        "timezone": "Asia/Hong_Kong",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1993-08-17 16:00",
+          "shichen": "申",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1993-08-17 16:00",
+          "shichen": "申",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1993-08-17 15:32",
+          "shichen": "申",
+          "basis": "standard time -23 min longitude -4.4 min equation of time",
+          "correction_minutes": -27.8
+        }
+      },
+      "chartDatetime": "1993-08-17 16:00",
+      "pillars": [
+        "癸酉",
+        "庚申",
+        "庚午",
+        "甲申"
+      ],
+      "qiyun": {
+        "after_years": 7,
+        "after_months": 1,
+        "after_days": 0,
+        "start_date": "2000-09-17",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1993-08-17 16:00",
+          "pillars": [
+            "癸酉",
+            "庚申",
+            "庚午",
+            "甲申"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1993-08-17 15:32",
+          "pillars": [
+            "癸酉",
+            "庚申",
+            "庚午",
+            "甲申"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2019.json",
+      "chartKey": "2019_C4_female_19710528",
+      "caseNo": "4",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "天津",
+        "lon": 117.2,
+        "lat": 39.08,
+        "location_precision": "city",
+        "timezone": "Asia/Shanghai",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1971-05-28 02:30",
+          "shichen": "丑",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1971-05-28 02:30",
+          "shichen": "丑",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1971-05-28 02:21",
+          "shichen": "丑",
+          "basis": "standard time -11 min longitude +3.2 min equation of time",
+          "correction_minutes": -8
+        }
+      },
+      "chartDatetime": "1971-05-28 02:30",
+      "pillars": [
+        "辛亥",
+        "癸巳",
+        "癸丑",
+        "癸丑"
+      ],
+      "qiyun": {
+        "after_years": 3,
+        "after_months": 2,
+        "after_days": 10,
+        "start_date": "1974-08-07",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1971-05-28 02:30",
+          "pillars": [
+            "辛亥",
+            "癸巳",
+            "癸丑",
+            "癸丑"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1971-05-28 02:21",
+          "pillars": [
+            "辛亥",
+            "癸巳",
+            "癸丑",
+            "癸丑"
+          ]
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    },
+    {
+      "file": "hkjfma_2020.json",
+      "chartKey": "2020_C2_female_19790301",
+      "caseNo": "2",
+      "gender": "female",
+      "timeConvention": "stated",
+      "engine": {
+        "bazi": "lunar-python 1.4.8",
+        "ziwei": "iztro 2.5.8"
+      },
+      "time": {
+        "place": "广州",
+        "lon": 113.26,
+        "lat": 23.13,
+        "location_precision": "city",
+        "timezone": "Asia/Shanghai",
+        "dst_minutes": 0,
+        "standard_utc_offset_minutes": 480,
+        "stated": {
+          "datetime": "1979-03-01 23:50",
+          "shichen": "子",
+          "basis": "clock time (no summer time in force)"
+        },
+        "clock": {
+          "datetime": "1979-03-01 23:50",
+          "shichen": "子",
+          "basis": "as written"
+        },
+        "true_solar": {
+          "datetime": "1979-03-01 23:10",
+          "shichen": "子",
+          "basis": "standard time -27 min longitude -12.8 min equation of time",
+          "correction_minutes": -39.8
+        }
+      },
+      "chartDatetime": "1979-03-01 23:50",
+      "pillars": [
+        "己未",
+        "丙寅",
+        "戊辰",
+        "壬子"
+      ],
+      "qiyun": {
+        "after_years": 1,
+        "after_months": 6,
+        "after_days": 10,
+        "start_date": "1980-09-11",
+        "direction": "forward"
+      },
+      "alternatives": {
+        "clock": {
+          "datetime": "1979-03-01 23:50",
+          "pillars": [
+            "己未",
+            "丙寅",
+            "戊辰",
+            "壬子"
+          ]
+        },
+        "true_solar": {
+          "datetime": "1979-03-01 23:10",
+          "pillars": [
+            "己未",
+            "丙寅",
+            "戊辰",
+            "壬子"
+          ]
+        },
+        "day_kept_at_23h": {
+          "datetime": "1979-03-01 23:50",
+          "day_pillar": "丁卯",
+          "note": "晚子时：若按「晚子时日柱算当天」，日柱取当天（本仓库默认 23:00 换日）"
+        }
+      },
+      "hourPillarVaries": false,
+      "dayPillarVaries": false
+    }
+  ]
+}

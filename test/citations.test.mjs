@@ -10,6 +10,9 @@ import {
 } from '../engine/citations-fuwen.js';
 import { KNOWLEDGE } from '../engine/interpret-knowledge.js';
 import { PATTERN_BREAK_RULES, PATTERN_TONE } from '../engine/ziwei.js';
+import { gatePalaceRelation, xunShouLiuYi, QIMEN_CONDITION_TABLES, QIMEN_JU_TABLE, QIMEN_BASE_TABLES } from '../engine/qimen.js';
+import { PALACE_DIRECTION } from '../engine/fengshui.js';
+import { TRI_NAME } from '../engine/meihua.js';
 import { compute } from '../engine/index.js';
 import { buildCitationsHTML } from '../tools/citations.mjs';
 import { MODULE_ORDER } from '../tools/build-client.mjs';
@@ -200,8 +203,8 @@ ok('英星入庙仍不硬配金灿光辉', !PATTERN_CHENG_CITATIONS['英星入�
 ok('庙旺卡并引星垣论并写口径差', (CARD_CITATIONS['ziwei-miaowang'].refs || []).includes('zm-xingyuan-yinmao')
   && /星垣论/.test(CARD_CITATIONS['ziwei-miaowang'].note || ''));
 // 计数是有意的锁：动两侧条目必须显式改这里，与 ④ 段「通行说计数」同一条思路
-ok('B13 后两侧计数 166+257=423', CITATIONS.length === 166 && FUWEN_CITATIONS.length === 257
-  && LIBRARY_CITATIONS.length === 423, `${CITATIONS.length}+${FUWEN_CITATIONS.length}=${LIBRARY_CITATIONS.length}`);
+ok('B14 后两侧计数 182+274=456', CITATIONS.length === 182 && FUWEN_CITATIONS.length === 274
+  && LIBRARY_CITATIONS.length === 456, `${CITATIONS.length}+${FUWEN_CITATIONS.length}=${LIBRARY_CITATIONS.length}`);
 ok('B8 批次条目不写省略号', b8ids.every((id) => !/[….](\.\.\.)?/.test(citationOf(id).quote)));
 
 // ── ③‴ B9：穷通宝鉴 120 格——已经打包给用户的原文必须可核验（2026-11-07）
@@ -671,8 +674,7 @@ ok('B13 61 句逐条是底本页的子串、章名取页首行',
     && c.chapter === b13First(c.url)),
   b13.filter((c) => !norm(FX.chapters[c.url] || '').includes(norm(c.quote)) || c.chapter !== b13First(c.url)).map((c) => c.id).join(','));
 ok('B13 不登记新书目：所有 book 都在 B12 已登记表里',
-  b13.every((c) => CITATION_BOOKS[c.book])
-  && Object.keys(CITATION_BOOKS).length === 66);
+  b13.every((c) => CITATION_BOOKS[c.book] && !['yichuan', 'yuanling', 'miji'].includes(c.book)));
 ok('B13 的 5 条接线全落在已有卡上，没有新建知识卡',
   b13Eng.every((id) => Object.values(CARD_CITATIONS).some((e) => (e.refs || []).includes(id)))
   && KNOWLEDGE.length === 59);
@@ -713,6 +715,190 @@ ok('B13 56 条 docs-only 不被任何卡片、破格规则或成格索引引用'
     && !Object.values(PATTERN_BREAK_RULES).some((r) => (r.citationIds || []).includes(id))
     && !Object.values(PATTERN_CHENG_CITATIONS).some((r) => (r.ids || []).includes(id))));
 
+// ── ③″″ B14：把「只有书名」三项升级成有原文（2026-11-08）──────────────
+// 易传（十翼）、奇门遁甲元灵经、奇门遁甲秘笈大全。三处正文早已探到，这批只选句与接线。
+// 口径：能对上引擎已有判定层的才接卡，且逐格对拍；对不上的只进索引页，不硬挂、不新造断语。
+// 易传十篇全部只入库——后天方位表虽与 fengshui.js 相符，但地相一栏本站没有知识卡。
+const b14Yc = ['yc-fangwei', 'yc-xingqing', 'yc-leixiang', 'yc-xiantian', 'yc-liuhua', 'yc-jixiong', 'yc-dayan', 'yc-taiji', 'yc-chonggua', 'yc-yaoxiao'];
+const b14YlEng = ['yl-yinyang', 'yl-jushu', 'yl-futou', 'yl-liuyi', 'yl-ganying-jia', 'yl-ganying-bing', 'yl-ganying-yixin', 'yl-bamen'];
+const b14YlDocs = ['yl-jiuxing', 'yl-xu'];
+const b14MjEng = ['mj-jiuxing', 'mj-menpo', 'mj-pozhi', 'mj-rumu', 'mj-shimu', 'mj-ganying', 'mj-futou', 'mj-yinyang'];
+const b14MjDocs = ['mj-qimu', 'mj-qinji', 'mj-bamen', 'mj-jiugong', 'mj-jiudun'];
+const b14Eng = [...b14YlEng, ...b14MjEng];
+const b14Docs = [...b14Yc, ...b14YlDocs, ...b14MjDocs];
+const b14Ids = [...b14Eng, ...b14Docs];
+const b14 = all.filter((c) => b14Ids.includes(c.id));
+const b14Of = (id) => citationOf(id);
+
+ok('B14 共 33 条：16 条接已有奇门卡、17 条只进索引页',
+  b14.length === 33 && b14Eng.length === 16 && b14Docs.length === 17
+  && b14Eng.every((id) => CITATIONS.some((c) => c.id === id))
+  && b14Docs.every((id) => FUWEN_CITATIONS.some((c) => c.id === id)),
+  `${b14.length} 条 = ${b14Eng.length} + ${b14Docs.length}`);
+ok('B14 三本新书目已登记，登记表升到 69 本',
+  CITATION_BOOKS.yichuan.name === '易传' && CITATION_BOOKS.yuanling.name === '奇门遁甲元灵经'
+  && CITATION_BOOKS.miji.name === '奇门遁甲秘笈大全' && Object.keys(CITATION_BOOKS).length === 69,
+  Object.keys(CITATION_BOOKS).length + ' 本');
+ok('B14 33 句逐条是底本页的子串、不写省略号、只出自这三本',
+  b14.every((c) => FX.chapters[c.url] && norm(FX.chapters[c.url]).includes(norm(c.quote))
+    && !/[…]|\.\.\./.test(c.quote) && ['yichuan', 'yuanling', 'miji'].includes(c.book)),
+  b14.filter((c) => !norm(FX.chapters[c.url] || '').includes(norm(c.quote)) || /[…]|\.\.\./.test(c.quote)).map((c) => c.id).join(','));
+ok('B14 只新增 8 页底本，且全在 luckclub 的 yijing/002 与 qimen/003、005 三书下',
+  new Set(b14.map((c) => c.url)).size === 8
+  && b14.every((c) => /^https:\/\/www\.luckclub\.cn\/(yijing\/002|qimen\/00[35])\/\d{3}\/$/.test(c.url)),
+  [...new Set(b14.map((c) => c.url))].join(' '));
+
+// 易传：十条全在附文库，一条也不接卡（地相无知识卡，其余各篇本站无判定层）
+ok('易传 10 条全在 docs-only，引擎侧零条 /yijing/ 链接',
+  b14Yc.every((id) => FUWEN_CITATIONS.some((c) => c.id === id))
+  && CITATIONS.every((c) => !c.url.includes('/yijing/')));
+ok('易传 10 条不被任何卡片、破格规则或成格索引引用',
+  b14Yc.every((id) => !Object.values(CARD_CITATIONS).some((e) => (e.refs || []).includes(id))
+    && !Object.values(PATTERN_BREAK_RULES).some((r) => (r.citationIds || []).includes(id))
+    && !Object.values(PATTERN_CHENG_CITATIONS).some((r) => (r.ids || []).includes(id))));
+ok('易传每条白话都写明为什么不接卡',
+  b14Yc.every((id) => /只入库|不接卡/.test(b14Of(id).plain)),
+  b14Yc.filter((id) => !/只入库|不接卡/.test(b14Of(id).plain)).join(','));
+ok('大衍蓍法引到缺字前为止，不拿「归奇於□」充数',
+  b14Of('yc-dayan').quote.endsWith('揲之以四以象四时') && !b14Of('yc-dayan').quote.includes('归奇')
+  && /没有实现蓍草/.test(b14Of('yc-dayan').plain));
+ok('说卦传误题「老子」与缺字照实记在白话里，不代改底本',
+  /老子/.test(b14Of('yc-xiantian').plain) && /缺字/.test(b14Of('yc-leixiang').plain));
+ok('「变化者进退之象」不混引到化进神退神那一层',
+  /不是六爻/.test(b14Of('yc-jixiong').plain) && /增删卜易/.test(b14Of('yc-jixiong').plain));
+ok('「爻效天下之动」讲的是全体爻，不动动爻卡',
+  /不接 liuyao-dongbian/.test(b14Of('yc-yaoxiao').plain)
+  && !CARD_CITATIONS['liuyao-dongbian'].refs.includes('yc-yaoxiao'));
+
+// 元灵经卷一：局数表与符头口径必须与引擎逐格相符，不是「看着像」
+const CN_NUM = { 一: '1', 二: '2', 三: '3', 四: '4', 五: '5', 六: '6', 七: '7', 八: '8', 九: '9' };
+const juFromBook = {};
+for (const m of b14Of('yl-jushu').quote.matchAll(/([^\s一二三四五六七八九]{2})([一二三四五六七八九]{3})/g)) {
+  juFromBook[m[1] === '惊蜇' ? '惊蛰' : m[1]] = [...m[2]].map((c) => CN_NUM[c]).join('');
+}
+ok('元灵经卷一局数表解析出 24 格（底本「惊蜇」归一到惊蛰）', Object.keys(juFromBook).length === 24, String(Object.keys(juFromBook).length));
+ok('24 节气三元局数与引擎表逐格相符',
+  Object.keys(QIMEN_JU_TABLE).length === 24
+  && Object.keys(QIMEN_JU_TABLE).every((k) => QIMEN_JU_TABLE[k] === juFromBook[k]),
+  Object.keys(QIMEN_JU_TABLE).filter((k) => QIMEN_JU_TABLE[k] !== juFromBook[k]).map((k) => `${k}:${QIMEN_JU_TABLE[k]}≠${juFromBook[k]}`).join(' ') || '24/24');
+const qmSample = compute({ system: 'qimen', datetime: '2026-05-01T10:00', direction: 'career' });
+const qmRules = (qmSample.rules || []).join(' | ');
+ok('三元符头与引擎定局说明同口径（子午卯酉上元／寅申巳亥中元／辰戌丑未下元）',
+  /子午卯酉为上元/.test(b14Of('yl-futou').quote) && /寅申巳亥为中元/.test(b14Of('yl-futou').quote)
+  && /辰戌丑未为下元/.test(b14Of('yl-futou').quote)
+  && /子午卯酉上元、寅申巳亥中元、辰戌丑未下元/.test(qmRules), qmRules.slice(0, 60));
+ok('阴阳遁分界与引擎规则同口径',
+  b14Of('yl-yinyang').quote === '冬至后用阳遁，夏至后用阴遁。'
+  && /冬至至夏至前用阳遁，夏至至冬至前用阴遁/.test(qmRules));
+ok('六仪配旬首与引擎 xunShouLiuYi 逐一相符',
+  [['甲子', '戊'], ['甲戌', '己'], ['甲申', '庚'], ['甲午', '辛'], ['甲辰', '壬'], ['甲寅', '癸']]
+    .every(([gz, yi]) => b14Of('yl-liuyi').quote.includes(gz + yi) && xunShouLiuYi(gz) === yi));
+
+// 秘笈卷十五：击刑、门迫、迫制和义、入墓四层都要与引擎对得上
+const jxFromBook = {};
+for (const m of b14Of('mj-jiuxing').quote.matchAll(/甲[子戌申午辰寅]([戊己庚辛壬癸])(?:直符|值符)?加([一二三四五六七八九])宫/g)) jxFromBook[m[1]] = CN_NUM[m[2]];
+ok('六仪刑击格解析出 6 仪且与引擎击刑表逐格相符',
+  Object.keys(jxFromBook).length === 6
+  && Object.entries(QIMEN_CONDITION_TABLES.jiXing).every(([k, v]) => v.palace === jxFromBook[k]),
+  JSON.stringify(jxFromBook));
+const PO_PALACES = { 惊门: ['3', '4'], 开门: ['3', '4'], 休门: ['9'], 伤门: ['2', '8'], 杜门: ['2', '8'], 生门: ['1'], 死门: ['1'], 景门: ['6', '7'] };
+ok('门迫歌八门迫宫在引擎里全是「门克宫＝门迫」',
+  /惊开三四休临九/.test(b14Of('mj-menpo').quote)
+  && Object.entries(PO_PALACES).every(([g, ps]) => ps.every((p) => gatePalaceRelation(g, p).type === '门迫')),
+  Object.entries(PO_PALACES).flatMap(([g, ps]) => ps.map((p) => `${g}${p}=${gatePalaceRelation(g, p).type}`)).filter((s) => !s.endsWith('门迫')).join(' '));
+ok('迫制和义格四类与引擎门宫关系一一对应（底本「尅」字照录）',
+  /门尅宫为迫，宫尅门为制，门生宫为和，宫生门为义/.test(b14Of('mj-pozhi').quote)
+  && gatePalaceRelation('休门', '9').type === '门迫' && gatePalaceRelation('休门', '2').type === '宫制门'
+  && gatePalaceRelation('休门', '3').type === '门生宫' && gatePalaceRelation('休门', '6').type === '宫生门',
+  ['9', '2', '3', '6'].map((p) => gatePalaceRelation('休门', p).type).join('/'));
+ok('三奇入墓歌乙丙临乾丁临艮，与引擎三奇入墓表同',
+  /乙丙临干请避之/.test(b14Of('mj-rumu').quote) && /丁奇乙未临艮土/.test(b14Of('mj-rumu').quote)
+  && QIMEN_CONDITION_TABLES.ruMu['乙'].palace === '6' && QIMEN_CONDITION_TABLES.ruMu['丙'].palace === '6'
+  && QIMEN_CONDITION_TABLES.ruMu['丁'].palace === '8');
+ok('三奇入墓歌底本「干」即乾、「乙未」未详，白话照实说不代改',
+  /「干」即乾/.test(b14Of('mj-rumu').plain) && /未详/.test(b14Of('mj-rumu').plain));
+// 反向证伪：时墓格不是全同，辛乙两句必须与引擎不同，否则这条引文就是在冒充一致
+const SHIMU = { 丙: '6', 壬: '4', 辛: '8', 乙: '2', 戊: '6' };
+const muOf = (k) => (['乙', '丙', '丁'].includes(k) ? QIMEN_CONDITION_TABLES.ruMu[k] : QIMEN_CONDITION_TABLES.liuYiRuMu[k]).palace;
+ok('时墓格只戊壬丙三句与引擎相符', ['戊', '壬', '丙'].every((k) => muOf(k) === SHIMU[k]),
+  ['戊', '壬', '丙'].map((k) => `${k}${muOf(k)}/${SHIMU[k]}`).join(' '));
+ok('时墓格辛乙两句与引擎相异，且白话写明异在哪一宫',
+  muOf('辛') !== SHIMU['辛'] && muOf('乙') !== SHIMU['乙']
+  && /辛丑墓艮/.test(b14Of('mj-shimu').plain) && /辛墓辰巽/.test(b14Of('mj-shimu').plain)
+  && /乙未墓坤/.test(b14Of('mj-shimu').plain) && /乙墓戌乾/.test(b14Of('mj-shimu').plain),
+  `辛 引擎${muOf('辛')}/书${SHIMU['辛']}，乙 引擎${muOf('乙')}/书${SHIMU['乙']}`);
+ok('奇墓格乙临坤与引擎乙墓戌不同，只入索引页不接卡',
+  /乙到临坤/.test(b14Of('mj-qimu').quote) && QIMEN_CONDITION_TABLES.ruMu['乙'].palace === '6'
+  && FUWEN_CITATIONS.some((c) => c.id === 'mj-qimu')
+  && !Object.values(CARD_CITATIONS).some((e) => (e.refs || []).includes('mj-qimu')));
+ok('入墓卡 source 不再泛称「六仪入墓见卷十五」，改为写明只三句相符',
+  !/六仪入墓见《奇门遁甲秘笈大全》卷十五/.test(KNOWLEDGE.find((k) => k.id === 'qimen-rumu').source)
+  && /时墓格只戊、壬、丙三句与本盘相符/.test(KNOWLEDGE.find((k) => k.id === 'qimen-rumu').source));
+
+// 十干克应：从 general 升 verified，但 refs 只证三组异文与「惟看门如何」的口径，不证 100 组全表
+ok('十干克应卡已落到原文，且 note 写明只证三组不证全表',
+  citationSourceOf('qimen-ganying').status === 'verified'
+  && CARD_CITATIONS['qimen-ganying'].refs.length === 4
+  && /不证通行 100 组表全文/.test(CARD_CITATIONS['qimen-ganying'].note || ''),
+  citationSourceOf('qimen-ganying').status);
+ok('元灵经甲加甲「惟看门如何」正是克应卡不单独断吉凶的依据',
+  /惟看门如何/.test(b14Of('yl-ganying-jia').quote) && /门吉则吉，门凶则凶/.test(b14Of('yl-ganying-jia').quote)
+  && /不单独回答/.test(KNOWLEDGE.find((k) => k.id === 'qimen-ganying').detail));
+ok('青龙返首／反首与青龙逃走三处断语各别，白话并列不合并',
+  /青龙返首/.test(b14Of('yl-ganying-bing').quote) && /青龙反首/.test(b14Of('mj-ganying').quote)
+  && /主财失逃亡/.test(b14Of('yl-ganying-yixin').quote) && /财物废坠/.test(b14Of('mj-ganying').quote)
+  && /奴仆拐带/.test(b14Of('yl-ganying-yixin').plain));
+ok('元灵经卷二只存甲乙丙三组：本批不声称录到 100 组',
+  /只存天盘甲、乙、丙三组/.test(CARD_CITATIONS['qimen-ganying'].note || '')
+  && b14YlEng.filter((id) => id.startsWith('yl-ganying')).length === 3);
+
+// 接线范围与只入库条目的边界
+ok('B14 的 16 条接线全落在五张已有奇门卡上，没有新建知识卡',
+  b14Eng.every((id) => ['qimen-yinyang', 'qimen-jixing', 'qimen-rumu', 'qimen-wangshuai-yong', 'qimen-ganying']
+    .some((card) => (CARD_CITATIONS[card].refs || []).includes(id)))
+  && KNOWLEDGE.length === 59);
+ok('B14 17 条 docs-only 不被任何卡片、破格规则或成格索引引用',
+  b14Docs.every((id) => !Object.values(CARD_CITATIONS).some((e) => (e.refs || []).includes(id))
+    && !Object.values(PATTERN_BREAK_RULES).some((r) => (r.citationIds || []).includes(id))
+    && !Object.values(PATTERN_CHENG_CITATIONS).some((r) => (r.ids || []).includes(id))));
+ok('九遁属兵占查表断语，本站无判定层故只入库',
+  /没有九遁判定层/.test(b14Of('mj-jiudun').plain) && FUWEN_CITATIONS.some((c) => c.id === 'mj-jiudun'));
+ok('天禽寄西南与引擎「中五宫寄坤二」同口径',
+  /寄西南而属中宫/.test(b14Of('mj-qinji').quote) && /中五宫寄坤二宫/.test(qmRules));
+
+// 排盘事实表：九星、八门、九宫方位只入库，但结构必须完整且与引擎方位表相容
+const starsFromBook = {};
+for (const m of b14Of('yl-jiuxing').quote.matchAll(/([一二三四五六七八九])(天[蓬芮冲辅禽心柱任英])/g)) starsFromBook[CN_NUM[m[1]]] = m[2];
+ok('元灵经九星定宫九宫齐备不重，且与引擎 BASIC_STARS 逐宫相符',
+  Object.keys(starsFromBook).length === 9 && new Set(Object.values(starsFromBook)).size === 9
+  && starsFromBook['5'] === '天禽' && starsFromBook['1'] === '天蓬' && starsFromBook['9'] === '天英'
+  && Object.entries(QIMEN_BASE_TABLES.stars).every(([p, s]) => starsFromBook[p] === s),
+  Object.entries(QIMEN_BASE_TABLES.stars).filter(([p, s]) => starsFromBook[p] !== s).map(([p, s]) => `${p}宫${s}≠${starsFromBook[p]}`).join(' ') || '9/9');
+const GONG_GUA = { 坎: '1', 坤: '2', 震: '3', 巽: '4', 干: '6', 兑: '7', 艮: '8', 离: '9' };
+const gatesFromBook = { 6: '开门' };
+for (const m of b14Of('mj-bamen').quote.matchAll(/(休|生|伤|杜|景|死|惊)门(坎|艮|震|巽|离|坤|兑)/g)) gatesFromBook[GONG_GUA[m[2]]] = m[1] + '门';
+ok('秘笈总序八门定宫八宫齐备不重，且与引擎 BASIC_GATES 逐宫相符',
+  Object.keys(gatesFromBook).length === 8 && new Set(Object.values(gatesFromBook)).size === 8
+  && gatesFromBook['6'] === '开门' && gatesFromBook['1'] === '休门' && gatesFromBook['9'] === '景门'
+  && Object.entries(QIMEN_BASE_TABLES.gates).filter(([p]) => p !== '5').every(([p, g]) => gatesFromBook[p] === g),
+  Object.entries(QIMEN_BASE_TABLES.gates).filter(([p, g]) => p !== '5' && gatesFromBook[p] !== g).map(([p, g]) => `${p}宫${g}≠${gatesFromBook[p]}`).join(' ') || '8/8');
+ok('秘笈总序九宫数与后天方位齐备，八方与引擎 PALACE_DIRECTION 同',
+  /坎居一、坤居二、震居三、巽居四、中央五、干六、兑七、艮八、离九/.test(b14Of('mj-jiugong').quote)
+  && /离位于南，坎位于北，震东，兑西，巽东南，坤西南，艮东北，干西北/.test(b14Of('mj-jiugong').quote)
+  && PALACE_DIRECTION['坎'] === '正北' && PALACE_DIRECTION['离'] === '正南' && PALACE_DIRECTION['震'] === '正东'
+  && PALACE_DIRECTION['兑'] === '正西' && PALACE_DIRECTION['巽'] === '东南' && PALACE_DIRECTION['坤'] === '西南'
+  && PALACE_DIRECTION['艮'] === '东北' && PALACE_DIRECTION['乾'] === '西北');
+ok('说卦传只明写六方，坤西南兑正西由秘笈总序补证（不拿说卦传冒充八方俱全）',
+  !/坤西南|兑正西/.test(b14Of('yc-fangwei').quote) && /兑正秋也/.test(b14Of('yc-fangwei').quote)
+  && /本页没有明写/.test(b14Of('yc-fangwei').plain) && /补上说卦传未明写的那两格/.test(b14Of('mj-jiugong').plain));
+ok('先天对待四对与梅花先天卦数互补相加皆九',
+  /天地定位，山泽通气，雷风相薄，水火不相射/.test(b14Of('yc-xiantian').quote)
+  && [['乾', '坤'], ['兑', '艮'], ['离', '坎'], ['震', '巽']].every(([a, b]) => TRI_NAME.indexOf(a) + TRI_NAME.indexOf(b) === 9)
+  && /出自邵雍，不在本页/.test(b14Of('yc-xiantian').plain));
+ok('元灵经序自述并存异说、略去符咒，与本站口径同',
+  /有两说三说者，均亦存之/.test(b14Of('yl-xu').quote) && /书符诵咒/.test(b14Of('yl-xu').quote)
+  && /光绪九年/.test(b14Of('yl-xu').chapter) && /隐溪居士/.test(CITATION_BOOKS.yuanling.author));
+
 // ── ④ source 富化 ──────────────────────────────────────────
 const vs = citationSourceOf('bazi-geju', '《子平真诠》「论用神」');
 ok('已定位卡片的 source 带卷章与链接', vs.status === 'verified' && vs.source.includes('原文索引') && vs.source.includes('https://') && vs.citations.length > 0, vs.source);
@@ -730,8 +916,9 @@ ok('用神化进退已落到進神退神章', Array.isArray(CARD_CITATIONS['liuy
   && CARD_CITATIONS['liuyao-jintui-yong'].refs[0] === 'zs-jintui');
 ok('用神化进退的 source 带原文索引', citationSourceOf('liuyao-jintui-yong').status === 'verified');
 // 塔罗牌义对应入表后通行说升到七张；H4 杂曜安星诀再升一张（诀文只作通行说，不署《全书》）。
+// B14 把十干克应卡从 general 改 refs（元灵经卷二与秘笈总序已录到原文），通行说降回七张。
 // 这条计数是有意的锁，新增卡片必须显式改这里，免得「通行说」在没人注意时悄悄变多。
-ok('通行说剩八张（另有 1 张待补）', generalCards.length === 8 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
+ok('通行说剩七张（另有 1 张待补）', generalCards.length === 7 && todoCards.length === 1, `general ${generalCards.length} / todo ${todoCards.length}`);
 const ts = citationSourceOf('liuyao-yingqi-exact', '待补');
 ok('待补卡片标明 todo', ts.status === 'todo' && ts.source.includes('待补原文'), ts.source);
 const z = compute({ system: 'ziwei', datetime: '1955-01-02T00:00', gender: 'male', withInterpret: true });

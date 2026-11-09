@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.4</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.4</span><span class="ver-note" title="本版之后又改了 13 项（版本号未变）：三本新书 33 条入库：16 条接五张已有奇门卡、17 条只进索引页；易传 10 条全部只入库，一条不接卡；接卡的 16 条逐格与引擎表对拍，不是「看着像」；对不上的照实记异，其中一处改掉了卡片里的过度声称；十干克应卡由「通行说」升「已定位」，但 note 写明只证三组不证全表；底本缺陷照录不代改；验证；交运第三方对拍入仓：23 例，四柱 22/22、顺逆 23/23、时间基准 20/20、首运 3/3；起运岁新增只读并列口径 `dayun.startAgeExact`；炳祥课堂的力量量化层接入为只读标注，不动既有旺衰、喜忌与取格；撤掉三处过度声称，命中率从虚高改回可核；《命理口径总纲》入仓：23 条裁决，冲突处直接选定主口径并写清理由与置信边界；验证">另含 13 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,8 +653,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：155 个测试文件 / 8376 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    
+    <ul><li>测试：163 个测试文件 / 8729 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <h3>本版之后又改了什么（版本号未变）</h3>
+    <ul><li>三本新书 33 条入库：16 条接五张已有奇门卡、17 条只进索引页</li><li>易传 10 条全部只入库，一条不接卡</li><li>接卡的 16 条逐格与引擎表对拍，不是「看着像」</li><li>对不上的照实记异，其中一处改掉了卡片里的过度声称</li><li>十干克应卡由「通行说」升「已定位」，但 note 写明只证三组不证全表</li><li>底本缺陷照录不代改</li><li>验证</li><li>交运第三方对拍入仓：23 例，四柱 22/22、顺逆 23/23、时间基准 20/20、首运 3/3</li><li>起运岁新增只读并列口径 `dayun.startAgeExact`</li><li>炳祥课堂的力量量化层接入为只读标注，不动既有旺衰、喜忌与取格</li><li>撤掉三处过度声称，命中率从虚高改回可核</li><li>《命理口径总纲》入仓：23 条裁决，冲突处直接选定主口径并写清理由与置信边界</li><li>验证</li></ul>
+    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -983,7 +985,7 @@ const LABELS = [
   [/^dayun\.jiao\./, '起运'],
   [/^dayun\.toNextJieDays$/, '起运时间'],
   [/^dayun\.list\.(\d+)\.ganzhi$/, '大运干支'],
-  [/^dayun\.startAge\./, '起运时间'],
+  [/^dayun\.startAge(Exact)?\./, '起运时间'],
   [/^dayun\./, '大运评分'],
   [/^liunian\./, '流年'],
   [/^jieqi\./, '节气边界'],
@@ -4996,6 +4998,229 @@ function classicsText(rows) {
 return { CLASSIC_BOOKS, CLASSICS, classicOf, suiyunClassicOf, classicsFor, classicsText };
 })();
 
+__mods.structure = (function () {
+// 八大地支结构（炳祥课堂口径）
+//
+// 定位：只做「静态结构 + 宫位权重」的只读标注，不改旺衰、不改喜忌。
+// 课堂口径来源见 docs/炳祥八字-课程知识内化.md 第 2 节；
+// 这里把「四个地支落在身强阵营还是身弱阵营」按年支定 A 档（年支那一档记 A，另一档记 B），
+// 于是八种排布可以写成 AAAA / ABBB / AAAB / AABA / ABAA / AABB / ABAB / ABBA，
+// 再从「异类那一支的宫位权重」读出静态从格概率：
+//   年支独异 11 分 → 80% 从；时支独异 16 分 → 50-60% 从；
+//   日支独异 27 分 → 20% 从；月支独异 36 分 → 99% 不从。
+//
+// 注意：这是**静态**概率。三合、三会、六合把某一支「合走」之后，阵营可能整体改写，
+// 那时要以合化后的阵营重新排结构；课堂原话也是「静态条件之外，生克合化的演化会更多」。
+
+const STEM_ELEMENT = {
+  甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
+  己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水',
+};
+const GENERATES = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+
+/** 干支宫位权重：天干合计 10、地支合计 90（日干为参照点，计 0） */
+const PILLAR_WEIGHT = {
+  stem: { year: 2, month: 5, day: 0, hour: 3 },
+  branch: { year: 11, month: 36, day: 27, hour: 16 },
+};
+
+/** 藏干固定百分比（课堂口径，同一支内合计 100） */
+const HIDDEN_PCT = {
+  子: { 癸: 100 },
+  丑: { 己: 20, 辛: 40, 癸: 40 },
+  寅: { 甲: 65, 丙: 30, 戊: 5 },
+  卯: { 乙: 100 },
+  辰: { 戊: 45, 乙: 30, 癸: 25 },
+  巳: { 丙: 65, 戊: 20, 庚: 15 },
+  午: { 丁: 90, 己: 10 },
+  未: { 己: 55, 丁: 40, 乙: 5 },
+  申: { 庚: 65, 壬: 30, 戊: 5 },
+  酉: { 辛: 100 },
+  戌: { 戊: 55, 辛: 25, 丁: 20 },
+  亥: { 壬: 70, 甲: 30 },
+};
+
+// 得地 / 半得地 / 不得地。数值只作标签与说明，不参与旺衰打分。
+// 半得地一律不计入身强阵营（课堂：土日主见辰「不能当得地看」；戌对火日主须午戌合/寅午戌才得地）。
+const SUPPORT = {
+  木: { 得地: '亥子寅卯', 半: { 辰: 0.5, 未: 0.2 } },
+  火: { 得地: '寅卯巳午未', 半: { 戌: 0 } },
+  土: { 得地: '巳午未戌', 半: { 寅: 0.2, 辰: 0.5 } },
+  金: { 得地: '丑酉申戌辰', 半: { 未: 0.1, 巳: 0.1 } },
+  水: { 得地: '申亥子丑', 半: { 辰: 0.5 } },
+};
+
+const PILLARS = ['year', 'month', 'day', 'hour'];
+const LABEL = { year: '年', month: '月', day: '日', hour: '时' };
+
+/** 静态从格概率（%）。null 表示课堂只说「有可能」，未给数字。 */
+const CONG_PROB = {
+  AAAA: { prob: 99, range: '≈99%', word: '四支同党，基本为真从' },
+  ABBB: { prob: 80, range: '≈80%', word: '年支独异，极易从' },
+  AAAB: { prob: 55, range: '50-60%', word: '时支独异，从与不从各半' },
+  AABA: { prob: 20, range: '≈20%', word: '日支独异，不易从' },
+  ABAA: { prob: 1, range: '≈1%', word: '月支独异，几乎不从' },
+  AABB: { prob: 0, range: '0%', word: '二对二最平衡，无从格' },
+  ABAB: { prob: 0, range: '0%', word: '二对二，无从格' },
+  ABBA: { prob: null, range: '原文未给', word: '二对二，原文只说「有可能从格」' },
+};
+
+/** 日主在某一支的得地程度 */
+function supportOf(dayStem, branch) {
+  const el = STEM_ELEMENT[dayStem];
+  const table = SUPPORT[el];
+  if (!table) return { level: '不得地', weight: 0 };
+  if (table.得地.includes(branch)) return { level: '得地', weight: 1 };
+  const half = table.半[branch];
+  if (half !== undefined) return { level: '半得地', weight: half };
+  return { level: '不得地', weight: 0 };
+}
+
+/** 天干属于身强阵营（印比）还是身弱阵营（食伤财官杀） */
+function stemCamp(dayStem, stem) {
+  const me = STEM_ELEMENT[dayStem];
+  const el = STEM_ELEMENT[stem];
+  if (!me || !el) return 'B';
+  return el === me || GENERATES[el] === me ? 'A' : 'B';
+}
+
+/**
+ * 八大地支结构。
+ * @param {object} pillars 四柱（时柱可为 null）
+ * @param {string} dayStem 日干
+ */
+function branchStructureOf(pillars, dayStem) {
+  const keys = PILLARS.filter((k) => pillars[k] && pillars[k].branch);
+  if (!keys.length) return null;
+
+  const yearCamp = branchCamp(pillars.year.branch, dayStem);
+  const branches = keys.map((k) => {
+    const branch = pillars[k].branch;
+    const sup = supportOf(dayStem, branch);
+    const camp = sup.weight >= 1 ? 'A' : 'B';
+    return {
+      key: k,
+      label: LABEL[k],
+      branch,
+      camp: camp === yearCamp ? 'A' : 'B',
+      support: sup.level,
+      supportWeight: sup.weight,
+      weight: PILLAR_WEIGHT.branch[k],
+    };
+  });
+
+  // 年支那一档记 A；四支不足时（无时辰）只报实际存在的三支，code 相应变短
+  const code = branches.map((b) => b.camp).join('');
+  const prob = CONG_PROB[code] || null;
+
+  const aCamp = supportOf(dayStem, pillars.year.branch).weight >= 1 ? '身强阵营' : '身弱阵营';
+  const bCamp = aCamp === '身强阵营' ? '身弱阵营' : '身强阵营';
+
+  const sum = (camp, field) => branches.filter((b) => b.camp === camp).reduce((n, b) => n + b[field], 0);
+  const branchBal = { A: sum('A', 'weight'), B: sum('B', 'weight') };
+  const branchStrong = aCamp === '身强阵营' ? branchBal.A : branchBal.B;
+  const branchWeak = aCamp === '身强阵营' ? branchBal.B : branchBal.A;
+
+  const stemKeys = ['year', 'month', 'hour'].filter((k) => pillars[k] && pillars[k].stem);
+  const stemBal = { A: 0, B: 0 };
+  for (const k of stemKeys) stemBal[stemCamp(dayStem, pillars[k].stem)] += PILLAR_WEIGHT.stem[k];
+
+  const weakDays = branches.filter((b) => b.support !== '得地');
+  const aCount = branches.filter((b) => b.camp === 'A').length;
+  const bCount = branches.length - aCount;
+  // 异类＝人数少的那一档；二对二没有异类
+  const minority = aCount === 0 || bCount === 0 ? null : aCount < bCount ? 'A' : bCount < aCount ? 'B' : null;
+  const odd = minority ? branches.filter((b) => b.camp === minority) : [];
+
+  const balance = {
+    aCamp,
+    branch: branchBal,
+    stem: stemBal,
+    total: { A: branchBal.A + stemBal.A, B: branchBal.B + stemBal.B },
+  };
+
+  const shapeText = !minority
+    ? (aCount === branches.length || bCount === branches.length
+      ? `四支同党（均属${aCamp}）`
+      : `二对二：${branches.filter((b) => b.camp === 'A').map((b) => b.label).join('、')}支属${aCamp}，`
+        + `${branches.filter((b) => b.camp === 'B').map((b) => b.label).join('、')}支属${bCamp}`)
+    : `异类为${odd.map((b) => `${b.label}支（${b.weight} 分）`).join('、')}`;
+
+  const detail = [
+    `四支${code}（${branches.map((b) => `${b.label}支${b.branch}${b.support}`).join('、')}）`,
+    shapeText,
+    `地支 身强${branchStrong} : 身弱${branchWeak}，加天干 ${balance.total[aCamp === '身强阵营' ? 'A' : 'B']}:${balance.total[aCamp === '身强阵营' ? 'B' : 'A']}`,
+  ];
+
+  // 没有时柱时概率表不适用：AAAA 之类需要四支齐全才成立
+  const complete = branches.length === 4;
+
+  return {
+    code,
+    complete,
+    aCamp,
+    congProb: complete && prob ? prob.prob : null,
+    congRange: complete && prob ? prob.range : '三柱不判结构概率',
+    word: complete && prob ? prob.word : '时柱暂缺，只列三支结构，不套从格概率',
+    branches,
+    balance,
+    odd: odd.map((b) => ({ key: b.key, label: b.label, branch: b.branch, weight: b.weight })),
+    halfSupported: weakDays.filter((b) => b.support === '半得地').map((b) => `${b.label}支${b.branch}`),
+    detail: detail.join('；'),
+    method: '按年支定 A 档，四支分两营；异类支的宫位权重决定静态从格概率（炳祥课堂口径，非唯一流派）',
+    note: '静态结构。三合/三会/六合把某一支合走时，应以合化后的阵营重排；概率只作提示，不直接断从格。',
+  };
+}
+
+function branchCamp(branch, dayStem) {
+  return supportOf(dayStem, branch).weight >= 1 ? 'A' : 'B';
+}
+
+/**
+ * 宫位权重的百分比视图（炳祥课程第 2.1 节）。
+ *
+ * 天干合计 10（年 2 / 月 5 / 日 0 / 时 3），地支合计 90（年 11 / 月 36 / 日 27 / 时 16），
+ * 两表相加正好 100，所以「按柱合计」本身就是百分比：年 13%、月 41%、日 27%、时 19%。
+ * 这里只做展示层换算，不改 bazi.js 的旺衰评分，也不参与取格与喜忌。
+ *
+ * 三柱模式（未给出生时刻）时，时柱是正午占位：权重照表列出，但合计只有 81，
+ * 不重新归一化——权重是固定口径，归一化会把占位时柱洗成实有。
+ */
+function weightPctOf(pillars = {}, { hourUnknown = false } = {}) {
+  const present = PILLARS.filter((k) => pillars[k] && pillars[k].branch);
+  const complete = !hourUnknown && present.length === 4;
+  // 三柱模式：时柱是正午占位，不计入合计；其余缺柱同理
+  const counted = complete ? PILLARS.slice() : present.filter((k) => !(k === 'hour' && hourUnknown));
+  const stem = {};
+  const branch = {};
+  const pct = {};
+  for (const k of PILLARS) {
+    stem[k] = PILLAR_WEIGHT.stem[k];
+    branch[k] = PILLAR_WEIGHT.branch[k];
+    pct[k] = counted.includes(k) ? stem[k] + branch[k] : 0;
+  }
+  const totalStem = counted.reduce((n, k) => n + stem[k], 0);
+  const totalBranch = counted.reduce((n, k) => n + branch[k], 0);
+  const all = totalStem + totalBranch;
+  const rows = counted.map((k) => `${LABEL[k]} ${pct[k]}%（干${stem[k]}+支${branch[k]}）`).join('、');
+  const missing = counted.length < 4 ? `；${PILLARS.filter((k) => !counted.includes(k)).map((k) => LABEL[k]).join('、')}柱未计` : '';
+  return {
+    complete,
+    stem,
+    branch,
+    pct,
+    total: { stem: totalStem, branch: totalBranch, all },
+    detail: `宫位权重合计 ${all}：${rows}${missing}`,
+    method: '炳祥课程宫位权重：天干 2/5/0/3、地支 11/36/27/16，合计 100；日干为参照点计 0。只作展示换算，不改旺衰评分',
+    note: complete
+      ? '月令 41% 为四柱之首（课堂称事业宫）；日 27%、时 19%、年 13%'
+      : '时柱暂缺，权重表照列，但本盘合计不足 100；不重新归一化',
+  };
+}
+
+return { PILLAR_WEIGHT, HIDDEN_PCT, supportOf, branchStructureOf, weightPctOf };
+})();
+
 __mods.geju = (function () {
 // 八字格局、用神与行运评分
 //
@@ -5135,6 +5360,15 @@ function monthPattern(pillars, dayStem, monthBranch) {
   if (!use) use = hui || base;
   const usedBy = exposedKey ? '透干' : (hui ? '会支' : '本气');
   const exposedPos = exposedKey ? { year: '年', month: '月', hour: '时' }[exposedKey] : null;
+  // 评分元数据：只给下面 patternScoreOf 用，不参与取格本身
+  const metaOf = (c, by, key) => ({
+    stem: c.stem,
+    god: c.god,
+    pos: c.pos,
+    usedBy: by,
+    exposedKey: key || null,
+    exposedPos: key ? { year: '年', month: '月', hour: '时' }[key] : null,
+  });
 
   // 建禄只认日干的禄位；戊土辰月、己土未月这类「本气比肩但不在禄位」的杂气月不再冒称建禄
   if (base.god === '比肩' && LUSHEN_BRANCH[dayStem] === monthBranch) {
@@ -5142,6 +5376,7 @@ function monthPattern(pillars, dayStem, monthBranch) {
       name: '建禄格',
       kind: '月令格',
       evidence: `月令${monthBranch}为日干${dayStem}之禄（本气${base.stem}比肩），身坐禄地`,
+      ...metaOf(base, '本气', null),
     };
   }
   if (base.god === '劫财') {
@@ -5150,15 +5385,17 @@ function monthPattern(pillars, dayStem, monthBranch) {
         name: isYangStem(dayStem) ? '阳刃格' : '月刃格',
         kind: '月令格',
         evidence: `月令${monthBranch}为日干${dayStem}之刃（本气${base.stem}劫财）${isYangStem(dayStem) ? '' : '，阴干统称月刃'}`,
+        ...metaOf(base, '本气', null),
       };
     }
-    return { name: '月劫格', kind: '月令格', evidence: `月令${monthBranch}本气${base.stem}为劫财` };
+    return { name: '月劫格', kind: '月令格', evidence: `月令${monthBranch}本气${base.stem}为劫财`, ...metaOf(base, '本气', null) };
   }
   if (usedBy === '本气' && base.god === '比肩') {
     return {
       name: '比肩格',
       kind: '月令格',
       evidence: `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}为比肩，但${dayStem}禄在${LUSHEN_BRANCH[dayStem]}、不在${monthBranch}，属杂气月比肩当权`,
+      ...metaOf(base, '本气', null),
     };
   }
   // 子平十六：「透乙则用月劫」——杂气月由透干或会支取到劫财时，仍作月劫论
@@ -5168,6 +5405,7 @@ function monthPattern(pillars, dayStem, monthBranch) {
       name: '月劫格',
       kind: '月令格',
       evidence: `月令${monthBranch}藏${hidden.join('')}，${use.pos}${use.stem}（劫财）${via}，劫财为用，作月劫论`,
+      ...metaOf(use, usedBy, exposedKey),
     };
   }
   const name = `${use.god}格`;
@@ -5179,7 +5417,146 @@ function monthPattern(pillars, dayStem, monthBranch) {
   } else {
     ex = `月令${monthBranch}藏${hidden.join('')}，本气${base.stem}（${base.god}）未透干，以月令本气取格`;
   }
-  return { name, kind: '月令格', evidence: ex };
+  return { name, kind: '月令格', evidence: ex, ...metaOf(use, usedBy, exposedKey) };
+}
+
+// ── 成格评分（炳祥高级第 16 课口径）───────────────────────────
+// 只读评分：基础分按取格档位，再减「透干被合 30」「用神太弱 20」，60 分为及格线。
+// 不改 name / evidence / geju 三态，也不参与旺衰与喜忌。
+const ZHUANQI_BRANCHES = ['子', '午', '卯', '酉'];
+const BASE_BY_TIER = {
+  专气透: 90,
+  本气透: 70,
+  中气透: 50,
+  余气透: 20,
+  同五行透: 5,
+  会支取用: 60,
+  月令不透: 40,
+};
+const HE_PENALTY = 30;
+const WEAK_PENALTY = 20;
+const PATTERN_PASS = 60;
+const OUTER_PATTERNS = ['建禄格', '阳刃格', '月刃格', '月劫格'];
+
+/** 天干五合：找与 stem 相合的另一干（合而不化也算） */
+function stemHeWith(stem, pillars) {
+  for (const key of ['year', 'month', 'day', 'hour']) {
+    const p = pillars[key];
+    if (!p || !p.stem || p.stem === stem) continue;
+    if (STEM_HE[stem + p.stem] || STEM_HE[p.stem + stem]) {
+      return { pillar: POS_LABEL[key], key, stem: p.stem };
+    }
+  }
+  return null;
+}
+
+/** 用神太弱：无本气通根，且（被天干克 或 全局占比 <18%） */
+function patternWeakWith(pattern, pillars, wuxing = {}) {
+  const stem = pattern.stem;
+  const el = STEM_ELEMENT[stem];
+  const hasBaseRoot = ['year', 'month', 'day', 'hour'].some((key) => {
+    const p = pillars[key];
+    if (!p) return false;
+    return (HIDDEN[p.branch] || [])[0] === stem;
+  });
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pct = total > 0 ? Math.round(((Number(wuxing[el]) || 0) / total) * 1000) / 10 : 0;
+  const overcome = ['year', 'month', 'day', 'hour'].some((key) => {
+    const p = pillars[key];
+    if (!p || !p.stem || p.stem === stem) return false;
+    const otherEl = STEM_ELEMENT[p.stem];
+    return otherEl && OVERCOMES[otherEl] === el;
+  });
+  const weak = !hasBaseRoot && (pct < 18 || overcome);
+  const reasons = [
+    hasBaseRoot ? `有本气通根（${stem}）` : '四支无本气通根',
+    `全局 ${pct}%`,
+    overcome ? '且被天干克' : '',
+  ].filter(Boolean);
+  return {
+    weak,
+    pct,
+    hasBaseRoot,
+    overcome,
+    detail: reasons.join('，'),
+  };
+}
+
+/**
+ * 月令格成格评分。
+ * @param {object} pattern monthPattern() 的返回（需 stamp / pos / usedBy）
+ * @param {object} pillars 四柱
+ * @param {string} dayStem 日干
+ * @param {string} monthBranch 月支
+ * @param {object} wuxing 五行分值
+ */
+function patternScoreOf(pattern, pillars, dayStem, monthBranch, wuxing = {}) {
+  if (!pattern) return null;
+  if (pattern.kind !== '月令格' || OUTER_PATTERNS.includes(pattern.name)) {
+    return {
+      applicable: false,
+      base: null,
+      baseLabel: null,
+      deductions: [],
+      score: null,
+      pass: null,
+      grade: null,
+      threshold: PATTERN_PASS,
+      detail: `${pattern.name}属外格（建禄/羊刃/月劫），课程不按正八格的透干档位计成格分，故不套 −30 / −20。`,
+      method: '只评正八格月令格；建禄/羊刃/月劫属外格，不评分',
+    };
+  }
+
+  const zhi = pattern.monthBranch || monthBranch;
+  let baseLabel;
+  if (pattern.usedBy === '透干') {
+    if (ZHUANQI_BRANCHES.includes(zhi) && pattern.pos === '本气') baseLabel = '专气透';
+    else baseLabel = `${pattern.pos}透`;
+  } else if (pattern.usedBy === '会支') {
+    baseLabel = '会支取用';
+  } else {
+    // 月令本气未透：若同五行异阴阳之干透出，按课里「同五行透」档（<10%）计
+    const baseEl = STEM_ELEMENT[pattern.stem];
+    const sameEl = ['year', 'month', 'hour']
+      .map((k) => pillars[k] && pillars[k].stem)
+      .find((s) => s && s !== pattern.stem && STEM_ELEMENT[s] === baseEl);
+    baseLabel = sameEl ? '同五行透' : '月令不透';
+  }
+  const base = BASE_BY_TIER[baseLabel] ?? 40;
+
+  const deductions = [];
+  const he = pattern.usedBy === '透干' ? stemHeWith(pattern.stem, pillars) : null;
+  if (he) {
+    deductions.push({
+      reason: '透干被合',
+      points: HE_PENALTY,
+      detail: `${pattern.stem}与${he.pillar}干${he.stem}五合（合而不化也按被合论）`,
+    });
+  }
+  const weak = patternWeakWith(pattern, pillars, wuxing);
+  if (weak.weak) {
+    deductions.push({ reason: '用神太弱', points: WEAK_PENALTY, detail: weak.detail });
+  }
+
+  const deducted = deductions.reduce((n, d) => n + d.points, 0);
+  const score = Math.max(0, base - deducted);
+  const pass = score >= PATTERN_PASS;
+  const detail = `基础分 ${base}（${baseLabel}）`
+    + `${deductions.length ? `，${deductions.map((d) => `${d.reason} −${d.points}（${d.detail}）`).join('，')}` : '，无减项'}`
+    + `，成格分 ${score}/100，${pass ? `过 ${PATTERN_PASS} 分线，按课里作成格论` : `不及 ${PATTERN_PASS} 分线，按课里作不成格论`}。`;
+
+  return {
+    applicable: true,
+    base,
+    baseLabel,
+    deductions,
+    score,
+    pass,
+    grade: pass ? '成格' : '不成格',
+    threshold: PATTERN_PASS,
+    detail,
+    method: '基础分按取格档位（专气透 90 / 本气透 70 / 中气透 50 / 余气透 20 / 同五行透 5 / 会支取用 60 / 月令不透 40）；透干被合 −30、用神太弱 −20；60 分及格。只读标注，不改取格与既有三态。',
+  };
 }
 
 // ── 特殊格 / 组合 ────────────────────────────────────────────
@@ -5341,6 +5718,170 @@ function tongguanOf(favor = [], avoid = [], wuxing = {}) {
     }
   }
   return null;
+}
+
+// ── 病药（炳祥高级第 6 课口径）───────────────────────────────
+// 只做只读标注：病＝最强忌神，药＝能克忌神的喜神（其次取泄），不改喜忌结论。
+// 门槛按课里：正格忌神 >35%、从格 >15%；从格能量放大，10% ≈ 正格 30-40%。
+const BING_THRESHOLD = { 正格: 35, 从格: 15 };
+
+function bingyaoOf({ dayStem, strength, wuxing = {}, yongshen = {}, geju = [] }) {
+  const roles = elementRoles(dayStem);
+  const roleName = (el) => (el === roles.me ? '比劫' : el === roles.inMe ? '印'
+    : el === roles.shi ? '食伤' : el === roles.cai ? '财' : '官杀');
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+  const desc = (x) => `${x.element}（${x.role}·${x.pct}%）`;
+
+  const cong = (geju || []).find((g) => g.kind === '从格');
+  const threshold = cong ? BING_THRESHOLD.从格 : BING_THRESHOLD.正格;
+
+  // 从格的喜忌与扶抑相反。现有 yongshenOf 只按旺衰给扶抑喜忌，没有吃 geju，
+  // 这里在病药层单列一份反转后的喜忌，避免把从格的喜神当忌神；不改 yongshen 本身。
+  let favorEls = yongshen.favor || [];
+  let avoidEls = yongshen.avoid || [];
+  let source = '扶抑喜忌';
+  if (cong) {
+    // 按从格类型分：从财/从杀忌印比；从儿忌印与官杀（比劫生食伤不忌）；从强忌财官食伤。
+    if (cong.name === '从强格') {
+      favorEls = [roles.inMe, roles.me];
+      avoidEls = [roles.cai, roles.guan, roles.shi];
+    } else if (cong.name === '从儿格') {
+      favorEls = [roles.shi, roles.cai];
+      avoidEls = [roles.inMe, roles.guan];
+    } else if (cong.name === '从杀格') {
+      favorEls = [roles.guan, roles.cai];
+      avoidEls = [roles.me, roles.inMe];
+    } else {
+      favorEls = [roles.cai, roles.guan, roles.shi];
+      avoidEls = [roles.me, roles.inMe];
+    }
+    source = '从格反转';
+  }
+
+  const sick = avoidEls
+    .map((el) => ({ element: el, role: roleName(el), pct: pctOf(el) }))
+    .sort((a, b) => b.pct - a.pct)[0] || null;
+
+  const base = {
+    threshold,
+    isCong: !!cong,
+    congName: cong ? cong.name : null,
+    favorSource: source,
+    sick: sick || null,
+    remedy: null,
+    level: '无病',
+    method: '病＝最强忌神；正格 >35%、从格 >15% 才算病；从格先按喜忌反转取忌；药优先取克忌神的喜神，其次取泄；只作标注，不改喜忌',
+  };
+
+  if (!sick || sick.pct <= threshold) {
+    return {
+      ...base,
+      detail: sick
+        ? `忌神最重为${desc(sick)}，未过${cong ? '从格' : '正格'} ${threshold}% 门槛，按炳祥口径作无病论。`
+        : `本盘无忌神可论，按炳祥口径作无病论。`,
+    };
+  }
+
+  const favor = favorEls
+    .map((el) => ({ element: el, role: roleName(el), pct: pctOf(el) }))
+    .filter((x) => x.pct > 0)
+    .sort((a, b) => b.pct - a.pct);
+  const over = (a, b) => OVERCOMES[a] === b; // a 克 b
+
+  let remedy = null;
+  let mode = null;
+  let note = '';
+
+  if (sick.role === '印') {
+    // 印为忌：财克印最优，但财力须 ≥ 食伤的 50%；不足则只能用食伤硬抗（安慰剂）。
+    const cai = favor.find((f) => f.role === '财');
+    const shi = favor.find((f) => f.role === '食伤');
+    if (cai && pctOf(roles.cai) >= pctOf(roles.shi) * 0.5) {
+      remedy = cai;
+      mode = '财克印';
+    } else if (shi && pctOf(roles.shi) >= 1) {
+      remedy = shi;
+      mode = '食伤硬抗（安慰剂）';
+      note = `财力${pctOf(roles.cai)}% 不足食伤的 50%（食伤${pctOf(roles.shi)}%），按课里只能以食伤硬抗。`;
+    } else {
+      note = `财、食伤都不足以制印（财${pctOf(roles.cai)}%、食伤${pctOf(roles.shi)}%），按课里属有病无药。`;
+    }
+  } else {
+    // 克 > 泄：先找克忌神的喜神，再退而取「忌神所生」的喜神（泄其势）。
+    const ke = favor.find((f) => over(f.element, sick.element));
+    if (ke) {
+      remedy = ke;
+      mode = '克';
+    } else {
+      const xie = favor.find((f) => GENERATES[sick.element] === f.element);
+      if (xie) {
+        remedy = xie;
+        mode = '泄';
+        note = `喜神中无克${sick.element}者，退取${xie.element}泄其势（课里「克 > 泄」，泄力次之）。`;
+      }
+    }
+  }
+
+  const level = remedy ? '有病有药' : '有病无药';
+  const detail = [
+    `病为${desc(sick)}，已过${cong ? `从格（${cong.name}）` : '正格'} ${threshold}% 门槛。`,
+    remedy
+      ? `药取${desc(remedy)}，以「${mode}」制病${remedy.pct < sick.pct ? `；药力弱于病（${remedy.pct}% < ${sick.pct}%）` : ''}。`
+      : `喜神中无可制之药，按炳祥口径属有病无药。`,
+    note,
+  ].filter(Boolean).join('');
+
+  return { ...base, level, remedy, mode, detail };
+}
+
+// ── 闲神（炳祥高级第 9 课口径）───────────────────────────────
+// 狭义闲神＝食伤与官杀中较弱的那一个；4% 最佳、<10% 合格、>=10% 显忌。
+// 显性（该五行透干）×3 只用于文案排序，不改分值，也不参与旺衰/喜忌。
+function xianshenOf({ dayStem, wuxing = {}, pillars = {}, yongshen = {} }) {
+  const roles = elementRoles(dayStem);
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+
+  const candidates = [
+    { role: '食伤', element: roles.shi },
+    { role: '官杀', element: roles.guan },
+  ].map((x) => ({ ...x, pct: pctOf(x.element) }));
+  const idle = candidates.sort((a, b) => a.pct - b.pct)[0];
+  const band = idle.pct <= 4 ? '最佳' : idle.pct < 10 ? '合格' : '显忌';
+
+  const stems = ['year', 'month', 'day', 'hour']
+    .map((k) => pillars[k] && pillars[k].stem)
+    .filter(Boolean);
+  const visible = stems.some((s) => STEM_ELEMENT[s] === idle.element);
+  const favorRoles = yongshen.favorRoles || [];
+  const avoidRoles = yongshen.avoidRoles || [];
+  const stance = favorRoles.includes(idle.role) ? '喜' : avoidRoles.includes(idle.role) ? '忌' : '中性';
+
+  const level = band === '显忌' ? '闲神显忌' : band === '最佳' ? '闲神得位' : '闲神合格';
+  const detail = [
+    `狭义闲神取${idle.element}（${idle.role}，全局 ${idle.pct}%），是食伤与官杀中较弱的一个。`,
+    band === '最佳'
+      ? '4% 上下，正是课里说的最佳区间。'
+      : band === '合格'
+        ? '不足 10%，按课里算合格，不作显忌。'
+        : '超过 10%，课里按忌神论：不是大凶，是别扭、乱使劲、干了很多事没结果。',
+    visible ? `此神透干（显性），按课里「显性 ×3」在文案里优先提示；分值不改。` : '此神未透干，属暗闲神，影响更轻。',
+    `在现有喜忌里为${stance}。`,
+  ].join('');
+
+  return {
+    idle,
+    band,
+    level,
+    visible,
+    stance,
+    displayWeight: Math.round(idle.pct * (visible ? 3 : 1) * 10) / 10,
+    detail,
+    method: '闲神＝食伤与官杀中较弱者；4% 最佳 / <10% 合格 / >=10% 显忌；显性 ×3 只作文案排序，不改分值与喜忌',
+  };
 }
 
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
@@ -5545,21 +6086,36 @@ function scoreLuck(ganzhi, frame) {
 function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   const gods = godStats(pillars, dayStem);
   const month = monthPattern(pillars, dayStem, monthBranch);
+  // 成格评分：只给月令格挂分，外格返回 applicable:false；随后续 specialPatterns 一起回传
+  const patternScore = patternScoreOf(month, pillars, dayStem, monthBranch, wuxing);
+  if (patternScore && patternScore.applicable) {
+    month.score = patternScore.score;
+    month.scoreDetail = patternScore;
+  }
   const special = specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods);
   const geju = [month, ...special];
   const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing, Object.values(pillars).map((p) => p.branch));
+  // 病药：只读标注，复用上面的喜忌，不改结论
+  const bingyao = bingyaoOf({ dayStem, strength, wuxing, yongshen, geju });
+  // 闲神：只读标注
+  const xianshen = xianshenOf({ dayStem, wuxing, pillars, yongshen });
   return {
     geju,
     primary: month,
     primaryName: month.name,
     godStats: gods,
     yongshen,
+    bingyao,
+    xianshen,
+    patternScore,
     dayStem,
     monthBranch,
+    // 八大地支结构：静态结构 + 宫位权重，仅作标注，不参与取格与喜忌
+    structure: strength.branchStructure || null,
   };
 }
 
-return { tenGod, elementRoles, tongguanOf, scoreLuck, analyzeBaziFrame };
+return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, scoreLuck, analyzeBaziFrame };
 })();
 
 __mods.bazi = (function () {
@@ -5573,6 +6129,7 @@ const { bool } = (__mods.bool || {});
 const { nayinOf } = (__mods.nayin || {});
 const { SANHE } = (__mods.sanhe || {});
 const { analyzeBaziFrame, scoreLuck } = (__mods.geju || {});
+const { branchStructureOf, weightPctOf } = (__mods.structure || {});
 
 // 地支藏干（本气 / 中气 / 余气）
 // 巳的顺序是「丙庚戊」而不是「丙戊庚」：庚长生于巳，是中气；戊是辰月余气，排末位。
@@ -5708,7 +6265,38 @@ function rootedWeightOf(pillars, el, factor) {
   return w;
 }
 
-/** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑 */
+// ── 暗合（盲派/现代命理的补充定义）───────────────────────────
+// 子平正法只有天干五合；暗合只作取象与风水参考，不参与旺衰与格局。
+// 通合：亥午、寅丑（藏干双合）；禄合：卯申、午亥、巳子；午亥与通合重叠时只报通合。
+// 干支暗合取课里明列的六组；自合只取辰（戊癸）。
+const ANHE_TONG = [['亥', '午'], ['寅', '丑']];
+const ANHE_LU = [['卯', '申'], ['午', '亥'], ['巳', '子']];
+const ANHE_GANZHI = new Set(['甲午', '丁亥', '戊子', '辛巳', '壬午', '癸巳']);
+const ANHE_ZIHE = new Set(['辰']);
+
+function anheOf(pillars, keys) {
+  const out = [];
+  const branches = keys.map((k) => pillars[k].branch);
+  const has = (a, b) => branches.includes(a) && branches.includes(b);
+  const seen = new Set();
+  const push = (text) => { if (!seen.has(text)) { seen.add(text); out.push(text); } };
+
+  for (const [a, b] of ANHE_TONG) if (has(a, b)) push(`${a}${b}通合（藏干双合）`);
+  for (const [a, b] of ANHE_LU) {
+    if (!has(a, b)) continue;
+    if (seen.has(`${a}${b}通合（藏干双合）`) || seen.has(`${b}${a}通合（藏干双合）`)) continue;
+    push(`${a}${b}禄合`);
+  }
+  for (const k of keys) {
+    const pl = pillars[k];
+    const gz = pl.ganzhi || `${pl.stem}${pl.branch}`;
+    if (ANHE_GANZHI.has(gz)) push(`${gz}干支暗合`);
+    if (ANHE_ZIHE.has(pl.branch)) push(`${gz}自合`);
+  }
+  return out;
+}
+
+/** 干支关系：五合、相冲、相克；六合、三合半合、三会半会拱会、冲、害、破、刑；暗合另列 */
 function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour']) {
   const stems = keys.map((k) => pillars[k].stem);
   const branches = keys.map((k) => pillars[k].branch);
@@ -5789,7 +6377,12 @@ function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour']) {
     }
     return out;
   };
-  return { stems: uniq(stemOut), branches: uniq(branchOut) };
+  return {
+    stems: uniq(stemOut),
+    branches: uniq(branchOut),
+    anhe: anheOf(pillars, keys),
+    anheNote: '暗合只作取象与风水参考，不参与旺衰与格局；只出现一对时按课里可忽略',
+  };
 }
 
 /** 十神：以日干为我 */
@@ -5968,6 +6561,15 @@ function buildBazi(input) {
   // 四舍五入到 12 个月时必须进位，否则显示「X 岁 12 个月起运」
   if (startAgeMonths >= 12) { startAgeMonths -= 12; startAgeYears += 1; }
 
+  // 并列的截断口径：年/月取整后，余数继续往下拆。1 月 = 0.25 日 = 6 时，
+  // 所以月内余数 ×30 得「日」、日余 ×24 得「时」——与 startAge 的四舍五入同源、不互相覆盖。
+  const exactYears = Math.floor(totalMonths / 12);
+  const exactRemMonths = totalMonths - exactYears * 12;
+  const exactMonths = Math.floor(exactRemMonths);
+  const exactRemDays = (exactRemMonths - exactMonths) * 30;
+  const exactDays = Math.floor(exactRemDays);
+  const exactHours = Math.floor((exactRemDays - exactDays) * 24);
+
   // 交运：三日折一年。
   // 古法三条换算是同一比例的三种说法——3 日折 1 年、1 日折 4 个月、1 时辰折 10 日：
   // 把「出生 → 起运那一侧的节令」的真实间隔按 365.2422/3（≈121.7474）倍放大，
@@ -6134,6 +6736,11 @@ function buildBazi(input) {
     },
   };
 
+  // 八大地支结构（炳祥课堂口径）：只读标注，不参与上面的旺衰打分
+  strength.branchStructure = branchStructureOf(pillars, dayStem);
+  // 宫位权重百分比视图：纯展示换算，与上面的评分口径并列，不改分值
+  strength.weightPct = weightPctOf(pillars, { hourUnknown });
+
   // ── 格局 / 用神 / 行运 ─────────────────────────────────────
   const frame = analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing });
 
@@ -6292,6 +6899,10 @@ function buildBazi(input) {
       direction: forward ? '顺行' : '逆行',
       rule: `${isYangYear ? '阳' : '阴'}年${gender === 'male' ? '男' : '女'}${forward ? '顺排' : '逆排'}`,
       startAge: { years: startAgeYears, months: startAgeMonths },
+      startAgeExact: {
+        years: exactYears, months: exactMonths, days: exactDays, hours: exactHours,
+        caliber: '截断到年月日时',
+      },
       toNextJieDays: Math.round(spanDays * 100) / 100,
       // 交运时刻（日/时辰级）：上方 startAge 是四舍五入到月的旧字段，两者同源、不互相覆盖
       jiao: {
@@ -6373,6 +6984,20 @@ function buildBazi(input) {
     // 旺衰与格局：内部仍按正午时柱跑（否则没有可比的基准），但必须说清这是占位值，
     // 不能写成「时柱不参与任何判定」——那与 strength/frame 实际用了时柱相矛盾
     out.strength.precision = 'three-pillars';
+    // 结构同此：第四支是正午占位，不套从格概率，免得把编出来的时支说成实有
+    if (out.strength.branchStructure) {
+      const bs = out.strength.branchStructure;
+      bs.placeholderHour = true;
+      bs.congProb = null;
+      bs.congRange = '三柱不判结构概率';
+      bs.word = '时柱暂缺，第四支为正午占位，不套从格概率';
+      bs.note = '时柱暂缺：第四支为占位值，只列结构形态，不据此断从格；补上出生时刻后可能改变';
+      bs.detail = `${bs.detail}（时支为占位值）`;
+    }
+    if (out.strength.weightPct) {
+      out.strength.weightPct.placeholderHour = true;
+      out.strength.weightPct.note = '时柱暂缺：时柱权重不计入合计（本盘 81%），不重新归一化；补上出生时刻后再按 100% 看';
+    }
     out.notes = [
       '时柱暂缺：未提供出生时刻，时柱不对外给出，也不计入神煞与干支关系',
       '旺衰、格局、用神、调候暂以正午时柱估算，补上出生时刻后可能改变',
@@ -14614,6 +15239,15 @@ const JU_NUMBERS_MAP = {
   寒露: '693', 立冬: '693', 处暑: '147', 霜降: '582', 小雪: '582', 大雪: '471',
 };
 
+/** 供测试与文档引用：二十四节气三元局数的只读视图（B14 与《奇门遁甲元灵经》卷一逐格对拍） */
+const QIMEN_JU_TABLE = Object.freeze({ ...JU_NUMBERS_MAP });
+
+/** 供测试与文档引用：九星八门定宫的只读视图（B14 与元灵经卷一、秘笈总序逐宫对拍） */
+const QIMEN_BASE_TABLES = Object.freeze({
+  stars: Object.freeze({ ...BASIC_STARS }),
+  gates: Object.freeze({ ...BASIC_GATES }),
+});
+
 // ── 历法适配：把本插件的时间轴转成奇门引擎要的 snapshot ──
 const xunOf = (gz) => {
   const idx = indexOfGz(gz);
@@ -15186,7 +15820,7 @@ function buildQimen(input) {
 
 
 
-return { buildSnapshot, wuxingRelation, gatePalaceRelation, stemPalaceRelation, jiXingOf, ruMuOf, liuYiRuMuOf, QIMEN_CONDITION_TABLES, monthState, monthElementOf, groupByState, QIMEN_STATE_TABLES, xunShouLiuYi, buildQimen };
+return { QIMEN_JU_TABLE, QIMEN_BASE_TABLES, buildSnapshot, wuxingRelation, gatePalaceRelation, stemPalaceRelation, jiXingOf, ruMuOf, liuYiRuMuOf, QIMEN_CONDITION_TABLES, monthState, monthElementOf, groupByState, QIMEN_STATE_TABLES, xunShouLiuYi, buildQimen };
 })();
 
 __mods['qimen-interpret'] = (function () {
@@ -19258,36 +19892,36 @@ const KNOWLEDGE = [
     system: 'qimen', dims: ['overall'],
     gist: '冬至后阳遁、夏至后阴遁，局数由节气与三元定。',
     detail: '一年分阴阳两遁，各九局；局数取决于当前节气与上中下三元（符头定元）。取局流派有拆补、超神接气、置闰三种，同一时刻可能排出不同局数——这不是算错，是流派差异。',
-    source: '《烟波钓叟歌》；拆补与置闰见《奇门遁甲统宗》',
+    source: '《烟波钓叟歌》；拆补与置闰见《奇门遁甲统宗》；符头定三元与二十四节气局数见《奇门遁甲元灵经》卷一；超神接气与阳遁仪顺奇逆见《奇门遁甲秘笈大全》总序',
     status: 'variant',
-    note: '三种取局法在节气交接前后差异最明显，本插件同时实现三种，可在参数里指定。',
+    note: '三种取局法在节气交接前后差异最明显，本插件同时实现三种，可在参数里指定。元灵经卷一「阴阳各局」的二十四节气三元局数与引擎表逐格相符（24/24），三元符头「甲己干加子午卯酉为上元」亦与引擎定局口径同；秘笈总序「符速节迟…用超神之法，节先符后…行节气之方」正是超神与接气两名的由来。',
   },
   {
     id: 'qimen-jixing',
     system: 'qimen', dims: ['overall', 'work'],
     gist: '六仪落刑宫叫击刑，是宫位条件不是判决。',
     detail: '六仪按所配地支相刑：甲子戊落震三（子刑卯）、甲戌己落坤二（戌刑未）、甲申庚落艮八（申刑寅）、甲午辛落离九（午自刑）、甲辰壬落巽四（辰自刑）、甲寅癸落巽四（寅刑巳）。天盘六仪落到自己那一宫即击刑，取象是受制、掣肘、旧账翻出来，多用来量这个符号本身使不使得上力。',
-    source: '《烟波钓叟歌》刑格注；《奇门遁甲统宗》',
+    source: '《烟波钓叟歌》刑格注；《奇门遁甲统宗》；六仪配旬首见《奇门遁甲元灵经》卷一，落宫表见《奇门遁甲秘笈大全》卷十五·六仪刑击格',
     status: 'variant',
-    note: '有流派只论天盘六仪击刑，也有把地盘一并算的；本插件只判天盘，且只作宫位条件，不自动断用神受制。',
+    note: '有流派只论天盘六仪击刑，也有把地盘一并算的；本插件只判天盘，且只作宫位条件，不自动断用神受制。秘笈卷十五「甲子戊直符加三宫，甲戌己值符加二宫，甲申庚加八宫，甲午辛加九宫，甲辰壬加四宫，甲寅癸值符加四宫」与引擎六格逐一相符。',
   },
   {
     id: 'qimen-rumu',
     system: 'qimen', dims: ['overall'],
     gist: '天盘干落墓宫叫入墓：三奇与六仪各按五行墓库判。',
     detail: '按五行墓库推，乙、丁两个阴干从《玄机赋》逆行取墓说：乙墓戌（乾六）、丙墓戌（乾六）、丁墓丑（艮八）；六仪中戊墓戌（乾六）、己庚墓丑（艮八）、辛壬墓辰（巽四）、癸墓未（坤二）。天盘干落到自己的墓宫即入墓。取象是收束、藏起来、事情压住不动；好坏要看所问之事——问收藏、问了结，入墓未必是坏事。',
-    source: '《奇门遁甲统宗》三奇入墓条；阴干逆行取墓见其中「玄机赋」；六仪入墓见《奇门遁甲秘笈大全》卷十五；五行墓库见《五行大义》',
+    source: '《奇门遁甲统宗》三奇入墓条；阴干逆行取墓见其中「玄机赋」；三奇入墓歌见《奇门遁甲秘笈大全》卷十五（同卷时墓格只戊、壬、丙三句与本盘相符，辛、乙两句相异）；五行墓库见《五行大义》',
     status: 'variant',
-    note: '各家对入墓范围说法不一：有只论三奇，也有把六仪、八门、九星一并论墓的；本插件判天盘三奇与六仪，八门、九星暂不入墓。墓宫取法同样有异说——通行另有一说按五行墓库直取（乙 木墓未、丁 火墓戌），本盘依《玄机赋》阴干逆行说（乙墓戌、丁墓丑），与引擎 qimen.js 的 RU_MU 表同源。',
+    note: '各家对入墓范围说法不一：有只论三奇，也有把六仪、八门、九星一并论墓的；本插件判天盘三奇与六仪，八门、九星暂不入墓。墓宫取法同样有异说——通行另有一说按五行墓库直取（乙 木墓未、丁 火墓戌），本盘依《玄机赋》阴干逆行说（乙墓戌、丁墓丑），与引擎 qimen.js 的 RU_MU 表同源。秘笈卷十五「三奇入墓歌」作乙丙临乾、丁临艮，与本盘三奇同；但同卷「时墓格」作辛丑墓艮、乙未墓坤，与本盘辛墓辰巽、乙墓戌乾不同，「奇墓格」又作乙到临坤——一书之内三说并存，照录并列，不拿它改引擎表。',
   },
   {
     id: 'qimen-ganying',
     system: 'qimen', dims: ['overall', 'work'],
     gist: '十干克应看天盘干加地盘干：同宫两干相遇，先取成象，再与门星神合看。',
     detail: '十干克应把天盘干与地盘干的组合收成 100 组，每组一个格名与一段取象。例如甲加丙「青龙返首」主大吉大利，甲加庚「值符飞宫」主吉事不成，乙加辛「青龙逃走」主失财逃亡。它回答的是「这两股气碰在一起像什么」，不单独回答「事情成不成」；同一组落在不同门、星、神与旺衰下，轻重会变。',
-    source: '《奇门十干应克》通行 100 组表；《奇门遁甲元灵经》卷二「天盘加地盘吉凶」存甲、乙、丙三组异文',
+    source: '《奇门十干应克》通行 100 组表；《奇门遁甲元灵经》卷二「天盘加地盘吉凶」存甲、乙、丙三组异文；格名与取象另见《奇门遁甲秘笈大全》总序',
     status: 'variant',
-    note: '100 组表各家措辞不一，本插件取通行表；元灵经只存三组且文字不同，两本并列、不合并。十干克应只作取象，不自动折吉凶。',
+    note: '100 组表各家措辞不一，本插件取通行表；元灵经只存三组（各 9 条，三组都缺「加戊」，页面到丙加癸为止）且文字不同，两本并列、不合并。元灵经甲加甲「吉凶不定，惟看门如何。门吉则吉，门凶则凶」正是本卡「先取成象、再与门星神合看」的原文依据；同格异文如青龙返首（总序作「反首」）、乙加辛青龙逃走三处断语各别（财物废坠／主财失逃亡／奴仆拐带六畜皆伤）。已录原文只证这几组与这一层口径，不证 100 组表全文。十干克应只作取象，不自动折吉凶。',
   },
   {
     id: 'qimen-wangshuai',
@@ -19302,9 +19936,9 @@ const KNOWLEDGE = [
     system: 'qimen', dims: ['overall', 'work'],
     gist: '旺衰是助力，不单独定吉凶：门旺而宫克门仍受制。',
     detail: '月令旺衰只回答「这个符号自身有多少气」，不回答「事情成不成」。取象时要和宫位关系叠起来看：门旺但同宫门克宫（门迫），力量被宫位掣肘；门囚但宫生门，仍得宫助。星同理，旺星落宫若被克，也难全其用。',
-    source: '《奇门遁甲统宗》；《烟波钓叟歌》门宫生克注',
+    source: '《奇门遁甲统宗》；《烟波钓叟歌》门宫生克注；「门尅宫为迫，宫尅门为制，门生宫为和，宫生门为义」见《奇门遁甲秘笈大全》卷十五·迫制和义格，八门迫宫见同卷门迫歌；休门到离为迫见《奇门遁甲元灵经》卷二·八门值事',
     status: 'variant',
-    note: '有流派按时令而非月令论门星旺衰，也有以落宫五行当令者；本插件统一按月支五行判，并在解读里明确只作强度参考。',
+    note: '有流派按时令而非月令论门星旺衰，也有以落宫五行当令者；本插件统一按月支五行判，并在解读里明确只作强度参考。门宫四类关系（迫／制／和／义）与引擎 gatePalaceRelation 一一对应，门迫歌八格全是门克宫、逐格对拍相符；古籍在迫制之后直接下吉凶（「吉门被迫吉不就，凶门被迫祸重重」），本插件只取落宫条件，不自动折吉凶。',
   },
   {
     id: 'qimen-gan-shengke',
@@ -19923,6 +20557,22 @@ const CITATION_BOOKS = {
     name: '御定奇门宝鉴',
     author: '清·官修（页首未署撰人）',
     base: 'https://www.luckclub.cn/qimen/007/',
+  },
+  // ── B14 新增书目（2026-11-08）：把覆盖表里「只有书名」的三项升级成有原文
+  yichuan: {
+    name: '易传',
+    author: '佚名（战国至秦汉解易论文集，本页未署撰人）',
+    base: 'https://www.luckclub.cn/yijing/002/', // 本站只存系辞上下、说卦、序卦、杂卦五篇，彖象文言未收
+  },
+  yuanling: {
+    name: '奇门遁甲元灵经',
+    author: '清·隐溪居士（序末自署光绪九年癸未）',
+    base: 'https://www.luckclub.cn/qimen/005/',
+  },
+  miji: {
+    name: '奇门遁甲秘笈大全',
+    author: '旧题汉·诸葛亮撰、明·刘伯温辑（分类页所载，正文未署）',
+    base: 'https://www.luckclub.cn/qimen/003/', // 又名《金函奇门遁甲秘笈全书》《奇门大全》；页内「干」即乾、「直符」即值符
   },
 };
 
@@ -20941,6 +21591,109 @@ const CITATIONS = [
     chapter: '卷下 集说篇',
     url: 'https://www.luckclub.cn/daliuren/003/004/',
   },
+  // ── B14：奇门两本「只有书名」升级为有原文（2026-11-08，逐句过底本子串）
+  // 这 16 条不是泛泛补书史：每一条都对得上引擎已有的一张表或一层判定，且逐格对拍过——
+  //   元灵经卷一 24 节气三元局数 == JU_NUMBERS_MAP（24/24）；三元符头 == 引擎定局说明；
+  //   卷一六仪配旬首 == XUN_SHOU_TO_FULL_MAP；卷二「惟看门如何」正是克应卡「不单独断吉凶」的原文依据；
+  //   秘笈卷十五六仪刑击格 == JI_XING（6/6）；门迫歌八格全是门克宫；迫制和义格 == gatePalaceRelation 前四类；
+  //   三奇入墓歌乙丙临乾丁临艮 == RU_MU；时墓格只戊壬丙三句相符、辛乙两句相异，照实并列不代改。
+  // 易传十篇与本站判定层对不上（方位表只在 fengshui.js，而地相无知识卡），全部走附文库只入索引页。
+  {
+    id: 'yl-yinyang',
+    book: 'yuanling',
+    chapter: '卷一·阴阳遁',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-jushu',
+    book: 'yuanling',
+    chapter: '卷一·阴阳各局（附一卦管三节）',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-futou',
+    book: 'yuanling',
+    chapter: '卷一·三元符头',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-liuyi',
+    book: 'yuanling',
+    chapter: '卷一·六仪',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-ganying-jia',
+    book: 'yuanling',
+    chapter: '卷二·天盘加地盘吉凶',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'yl-ganying-bing',
+    book: 'yuanling',
+    chapter: '卷二·天盘加地盘吉凶',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'yl-ganying-yixin',
+    book: 'yuanling',
+    chapter: '卷二·天盘加地盘吉凶',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'yl-bamen',
+    book: 'yuanling',
+    chapter: '卷二·八门值事',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'mj-jiuxing',
+    book: 'miji',
+    chapter: '卷十五·六仪刑击格',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-menpo',
+    book: 'miji',
+    chapter: '卷十五·门迫歌',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-pozhi',
+    book: 'miji',
+    chapter: '卷十五·迫制和义格',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-rumu',
+    book: 'miji',
+    chapter: '卷十五·三奇入墓歌',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-shimu',
+    book: 'miji',
+    chapter: '卷十五·时墓格',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-ganying',
+    book: 'miji',
+    chapter: '总序',
+    url: 'https://www.luckclub.cn/qimen/003/001/',
+  },
+  {
+    id: 'mj-futou',
+    book: 'miji',
+    chapter: '总序',
+    url: 'https://www.luckclub.cn/qimen/003/001/',
+  },
+  {
+    id: 'mj-yinyang',
+    book: 'miji',
+    chapter: '总序',
+    url: 'https://www.luckclub.cn/qimen/003/001/',
+  },
 ];
 
 const BOOK_OF = {
@@ -21045,13 +21798,18 @@ const CARD_CITATIONS = {
   // ── 其他体系
   'meihua-tiyong': { refs: ['mh-tiyong', 'mh-tiyong-shengke', 'mh-dongjing'] },
   'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang', 'b13-rty-sike', 'b13-rty-jiuke'] },
-  'qimen-yinyang': { refs: ['qm-yinyang', 'qmf-yinyang', 'ydq-liuyi'] },
-  'qimen-jixing': { refs: ['qm-jixing'] },
-  'qimen-rumu': { refs: ['qm-rumu'] },
+  'qimen-yinyang': { refs: ['qm-yinyang', 'qmf-yinyang', 'ydq-liuyi', 'yl-yinyang', 'yl-jushu', 'yl-futou', 'mj-futou', 'mj-yinyang'] },
+  'qimen-jixing': { refs: ['qm-jixing', 'yl-liuyi', 'mj-jiuxing'] },
+  'qimen-rumu': { refs: ['qm-rumu', 'mj-rumu', 'mj-shimu'] },
   'qimen-wangshuai': { refs: ['qm-wangshuai'] },
-  'qimen-wangshuai-yong': { refs: ['qm-men-gong'] },
+  'qimen-wangshuai-yong': { refs: ['qm-men-gong', 'yl-bamen', 'mj-menpo', 'mj-pozhi'] },
   'qimen-gan-shengke': { status: 'general', book: '奇门遁甲统宗', chapter: '卷十二·玄机赋（下）', reason: '底本有「奇仪与日干」生克条，未见单列「干与落宫」生克条；干宫取象为通行读法，不拿十神条文冒充' },
-  'qimen-ganying': { status: 'general', book: '奇门十干应克 / 奇门遁甲元灵经', chapter: '通行 100 组表 / 卷二·天盘加地盘吉凶', reason: '100 组为通行表汇编，元灵经只存甲、乙、丙三组，非单条原文' },
+  // B14：原为 general（「100 组表非单条原文」）。元灵经卷二「天盘加地盘吉凶」与秘笈总序录到原文后改 refs，
+  // 但 refs 只证「先取成象、再与门星神合看」这一层口径与甲丙／乙辛等组的格名异文，不证通行 100 组表全文。
+  'qimen-ganying': {
+    refs: ['yl-ganying-jia', 'yl-ganying-bing', 'yl-ganying-yixin', 'mj-ganying'],
+    note: '元灵经卷二「天盘加地盘吉凶」只存天盘甲、乙、丙三组（各 9 条，三组都缺「加戊」，页面到「丙加地盘癸」为止，丁以下七组未收），秘笈总序另举六组格名；已录原文只证「先取成象、再与门星神合看」这一层口径与这几组的格名异文，不证通行 100 组表全文，其余七十馀组仍取通行表汇编、无单条原文。三处同格异文（青龙返首／反首、青龙逃走的三种断语）并列，不合并。',
+  },
   'tarot-orientation': { status: 'general', book: '韦特塔罗', chapter: '逆位读法', reason: '韦特体系无中文古籍原文，逆位读法属近代流派' },
   'tarot-correspondence': { status: 'general', book: 'Liber 777 一脉的公开对应表', chapter: '小阿卡纳 2-10 的旬位与十源质', reason: '属近代西方神秘学对应表，无中文古籍原文；本插件按三处独立公开资料互核后取数字牌旬位，宫廷牌两派映射冲突故不配星座' },
 };
@@ -21612,7 +22370,7 @@ function baziInterpret(r) {
     `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${neutral.length ? `（${join(neutral.map((n) => n.element))} 近零，按中性偏忌看）` : ''}${frameToneOf(level, favorRolesByWeight)}`,
     `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
       ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
-      : ''}。`,
+      : ''}${frame.patternScore && frame.patternScore.applicable ? `。成格评分 ${frame.patternScore.score}/100（${frame.patternScore.grade}）` : ''}。`,
   ].join('\n');
 
   const portraitText = [
@@ -21770,20 +22528,60 @@ function baziInterpret(r) {
     }] : []),
     {
       key: 'geju', label: '格局依据',
-      text: (Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
-        `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局',
+      text: ((Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
+        `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局')
+        + (frame.patternScore ? `\n成格评分：${frame.patternScore.detail}` : ''),
     },
+    ...(frame.bingyao ? [{
+      key: 'bingyao', label: '病药',
+      text: `【${frame.bingyao.level}】${frame.bingyao.detail}\n口径：${frame.bingyao.method}`,
+    }] : []),
+    ...(frame.xianshen ? [{
+      key: 'xianshen', label: '闲神',
+      text: `【${frame.xianshen.level}】${frame.xianshen.detail}\n口径：${frame.xianshen.method}`,
+    }] : []),
+    (() => {
+      const ss = r.shensha;
+      const cols = { year: '年', month: '月', day: '日', hour: '时' };
+      if (!ss || !Array.isArray(ss.groups) || !ss.groups.length) {
+        return {
+          key: 'shensha', label: '神煞',
+          text: '本盘未见常用神煞。按炳祥课里的口径，神煞是枝叶，只作锦上添花，不单独定吉凶；真正的吉凶仍看格局、旺衰与行运。',
+        };
+      }
+      const names = Array.isArray(ss.names) ? ss.names : [];
+      const rows = ss.groups.map((g) => `${g.cat}：${(g.items || []).map((it) => {
+        const where = (it.pillars || []).map((k) => cols[k] || k).join('、');
+        return `${it.name}${where ? `（${where}）` : ''}`;
+      }).join('、')}`).join('；');
+      const core = ['驿马', '羊刃', '桃花', '华盖'].filter((n) => names.includes(n));
+      const hasTianyi = names.includes('天乙贵人');
+      return {
+        key: 'shensha', label: '神煞',
+        text: `命中神煞：${rows}。\n`
+          + '按炳祥课里的口径，真正拿来取象的只有驿马、羊刃、桃花、华盖四颗'
+          + `${core.length ? `，本盘见 ${core.join('、')}` : '，本盘这四颗都未见'}`
+          + '；其余一律只作锦上添花。'
+          + (hasTianyi
+            ? '天乙贵人尤其是添头：课里给的口径是「无贵人概率 5/6⁴ < 50%，单独断贵人准确率 <30%」，不能拿来定吉凶。'
+            : '天乙贵人即使出现也只是添头：课里统计其单独断贵人准确率 <30%，不能拿来定吉凶。')
+          + '\n神煞永远是枝叶：它只提示「像不像」，不决定「成不成」。吉凶仍以格局、旺衰、喜忌与行运为主，神煞不参与本盘的旺衰与格局判定。',
+      };
+    })(),
     ...(Array.isArray(r.classics) && r.classics.length ? [{
       key: 'classics', label: '古籍原文',
       text: r.classics.map((e) => `《${CLASSIC_BOOKS[e.book].name}·${e.chapter}》「${e.quote}」——${e.plain}`).join('\n'),
     }] : []),
     {
       key: 'quant', label: '量化口径',
-      text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`,
+      text: `本报告的量化只到「档位」：事业看十神权重（${topName} ${top[0]?.[1] ?? '—'}）、财富看财星权重（${groups['财'] ?? 0}）、感情看配偶星权重（${spouseKey} ${groups[spouseKey] ?? 0}）；大运/流年用「大吉 / 吉 / 平 / 忌」四档。不换算金额、不给健康诊断——那需要地域、家庭、行业与体检数据，命盘本身推不出来。`
+        + (r.strength?.weightPct
+          ? `\n宫位权重（炳祥课里干 2/5/0/3、支 11/36/27/16 的百分比视图）：${r.strength.weightPct.detail}。这组数只说明四柱各占多少，不改上面的旺衰评分。`
+          : ''),
     },
     {
       key: 'limits', label: '未纳入',
-      text: '本盘没有计算：流月与流日、神煞的加权轻重、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，并按《穷通宝鉴》120 格给出用神顺序（整理表口径，原文摘句照录，异文处已标 note）；各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
+      text: '本盘没有计算：流月与流日、神煞的分值折算（解读侧只按课里口径作降权提示，不折成分值）、地支藏干的动态引化（合冲后再论）。取用按「调候优先、扶抑校验」；调候由月令与全局寒暖燥湿判定，并按《穷通宝鉴》120 格给出用神顺序（整理表口径，原文摘句照录，异文处已标 note）；各派取法仍有分歧；真太阳时未含历史时区与夏令时。把这些补上会改变"强弱"的边际判断，所以这里只给方向，不下断语。',
     },
   ];
 

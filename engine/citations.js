@@ -350,6 +350,22 @@ export const CITATION_BOOKS = {
     author: '清·官修（页首未署撰人）',
     base: 'https://www.luckclub.cn/qimen/007/',
   },
+  // ── B14 新增书目（2026-11-08）：把覆盖表里「只有书名」的三项升级成有原文
+  yichuan: {
+    name: '易传',
+    author: '佚名（战国至秦汉解易论文集，本页未署撰人）',
+    base: 'https://www.luckclub.cn/yijing/002/', // 本站只存系辞上下、说卦、序卦、杂卦五篇，彖象文言未收
+  },
+  yuanling: {
+    name: '奇门遁甲元灵经',
+    author: '清·隐溪居士（序末自署光绪九年癸未）',
+    base: 'https://www.luckclub.cn/qimen/005/',
+  },
+  miji: {
+    name: '奇门遁甲秘笈大全',
+    author: '旧题汉·诸葛亮撰、明·刘伯温辑（分类页所载，正文未署）',
+    base: 'https://www.luckclub.cn/qimen/003/', // 又名《金函奇门遁甲秘笈全书》《奇门大全》；页内「干」即乾、「直符」即值符
+  },
 };
 
 // 引文定位表：id / 书名 / 卷章 / 链接。原文照录与本站自撰白话在 citations-fuwen.js。
@@ -1367,6 +1383,109 @@ export const CITATIONS = [
     chapter: '卷下 集说篇',
     url: 'https://www.luckclub.cn/daliuren/003/004/',
   },
+  // ── B14：奇门两本「只有书名」升级为有原文（2026-11-08，逐句过底本子串）
+  // 这 16 条不是泛泛补书史：每一条都对得上引擎已有的一张表或一层判定，且逐格对拍过——
+  //   元灵经卷一 24 节气三元局数 == JU_NUMBERS_MAP（24/24）；三元符头 == 引擎定局说明；
+  //   卷一六仪配旬首 == XUN_SHOU_TO_FULL_MAP；卷二「惟看门如何」正是克应卡「不单独断吉凶」的原文依据；
+  //   秘笈卷十五六仪刑击格 == JI_XING（6/6）；门迫歌八格全是门克宫；迫制和义格 == gatePalaceRelation 前四类；
+  //   三奇入墓歌乙丙临乾丁临艮 == RU_MU；时墓格只戊壬丙三句相符、辛乙两句相异，照实并列不代改。
+  // 易传十篇与本站判定层对不上（方位表只在 fengshui.js，而地相无知识卡），全部走附文库只入索引页。
+  {
+    id: 'yl-yinyang',
+    book: 'yuanling',
+    chapter: '卷一·阴阳遁',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-jushu',
+    book: 'yuanling',
+    chapter: '卷一·阴阳各局（附一卦管三节）',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-futou',
+    book: 'yuanling',
+    chapter: '卷一·三元符头',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-liuyi',
+    book: 'yuanling',
+    chapter: '卷一·六仪',
+    url: 'https://www.luckclub.cn/qimen/005/004/',
+  },
+  {
+    id: 'yl-ganying-jia',
+    book: 'yuanling',
+    chapter: '卷二·天盘加地盘吉凶',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'yl-ganying-bing',
+    book: 'yuanling',
+    chapter: '卷二·天盘加地盘吉凶',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'yl-ganying-yixin',
+    book: 'yuanling',
+    chapter: '卷二·天盘加地盘吉凶',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'yl-bamen',
+    book: 'yuanling',
+    chapter: '卷二·八门值事',
+    url: 'https://www.luckclub.cn/qimen/005/005/',
+  },
+  {
+    id: 'mj-jiuxing',
+    book: 'miji',
+    chapter: '卷十五·六仪刑击格',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-menpo',
+    book: 'miji',
+    chapter: '卷十五·门迫歌',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-pozhi',
+    book: 'miji',
+    chapter: '卷十五·迫制和义格',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-rumu',
+    book: 'miji',
+    chapter: '卷十五·三奇入墓歌',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-shimu',
+    book: 'miji',
+    chapter: '卷十五·时墓格',
+    url: 'https://www.luckclub.cn/qimen/003/015/',
+  },
+  {
+    id: 'mj-ganying',
+    book: 'miji',
+    chapter: '总序',
+    url: 'https://www.luckclub.cn/qimen/003/001/',
+  },
+  {
+    id: 'mj-futou',
+    book: 'miji',
+    chapter: '总序',
+    url: 'https://www.luckclub.cn/qimen/003/001/',
+  },
+  {
+    id: 'mj-yinyang',
+    book: 'miji',
+    chapter: '总序',
+    url: 'https://www.luckclub.cn/qimen/003/001/',
+  },
 ];
 
 const BOOK_OF = {
@@ -1471,13 +1590,18 @@ export const CARD_CITATIONS = {
   // ── 其他体系
   'meihua-tiyong': { refs: ['mh-tiyong', 'mh-tiyong-shengke', 'mh-dongjing'] },
   'daliuren-sike': { refs: ['dl-jigong', 'dl-zeike', 'rty-sike', 'rzn-rushi', 'rzn-richen', 'rg-tigang', 'b13-rty-sike', 'b13-rty-jiuke'] },
-  'qimen-yinyang': { refs: ['qm-yinyang', 'qmf-yinyang', 'ydq-liuyi'] },
-  'qimen-jixing': { refs: ['qm-jixing'] },
-  'qimen-rumu': { refs: ['qm-rumu'] },
+  'qimen-yinyang': { refs: ['qm-yinyang', 'qmf-yinyang', 'ydq-liuyi', 'yl-yinyang', 'yl-jushu', 'yl-futou', 'mj-futou', 'mj-yinyang'] },
+  'qimen-jixing': { refs: ['qm-jixing', 'yl-liuyi', 'mj-jiuxing'] },
+  'qimen-rumu': { refs: ['qm-rumu', 'mj-rumu', 'mj-shimu'] },
   'qimen-wangshuai': { refs: ['qm-wangshuai'] },
-  'qimen-wangshuai-yong': { refs: ['qm-men-gong'] },
+  'qimen-wangshuai-yong': { refs: ['qm-men-gong', 'yl-bamen', 'mj-menpo', 'mj-pozhi'] },
   'qimen-gan-shengke': { status: 'general', book: '奇门遁甲统宗', chapter: '卷十二·玄机赋（下）', reason: '底本有「奇仪与日干」生克条，未见单列「干与落宫」生克条；干宫取象为通行读法，不拿十神条文冒充' },
-  'qimen-ganying': { status: 'general', book: '奇门十干应克 / 奇门遁甲元灵经', chapter: '通行 100 组表 / 卷二·天盘加地盘吉凶', reason: '100 组为通行表汇编，元灵经只存甲、乙、丙三组，非单条原文' },
+  // B14：原为 general（「100 组表非单条原文」）。元灵经卷二「天盘加地盘吉凶」与秘笈总序录到原文后改 refs，
+  // 但 refs 只证「先取成象、再与门星神合看」这一层口径与甲丙／乙辛等组的格名异文，不证通行 100 组表全文。
+  'qimen-ganying': {
+    refs: ['yl-ganying-jia', 'yl-ganying-bing', 'yl-ganying-yixin', 'mj-ganying'],
+    note: '元灵经卷二「天盘加地盘吉凶」只存天盘甲、乙、丙三组（各 9 条，三组都缺「加戊」，页面到「丙加地盘癸」为止，丁以下七组未收），秘笈总序另举六组格名；已录原文只证「先取成象、再与门星神合看」这一层口径与这几组的格名异文，不证通行 100 组表全文，其余七十馀组仍取通行表汇编、无单条原文。三处同格异文（青龙返首／反首、青龙逃走的三种断语）并列，不合并。',
+  },
   'tarot-orientation': { status: 'general', book: '韦特塔罗', chapter: '逆位读法', reason: '韦特体系无中文古籍原文，逆位读法属近代流派' },
   'tarot-correspondence': { status: 'general', book: 'Liber 777 一脉的公开对应表', chapter: '小阿卡纳 2-10 的旬位与十源质', reason: '属近代西方神秘学对应表，无中文古籍原文；本插件按三处独立公开资料互核后取数字牌旬位，宫廷牌两派映射冲突故不配星座' },
 };
