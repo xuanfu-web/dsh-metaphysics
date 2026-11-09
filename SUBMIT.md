@@ -62,14 +62,14 @@ PR 合并后站点与 dsh-market 会自动重建，通常一天内可见。
 npm publish --access public
 ```
 
-## 四、提交状态（2026-11-08 更新）
+## 四、提交状态（2026-11-09 更新）
 
-- **当前版本**：`0.62.4`（已推送并发布；B12 引文库补库收官 + B13 加深已收录书目 16 本 61 条，不改排盘口径、不新建知识卡）。
+- **当前版本**：`0.62.5`（已推送并发布；B14 引文库补三书 + 炳祥课堂只读量化层 + 交运 23 例第三方对拍与《命理口径总纲》，不改排盘口径、不改旺衰与取格结论）。
 - **PR**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/10409 已合并；#10557 也已合并（条目同步到 0.46 能力）。
 - **PR（2026-11-08）**：https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13335 已提交，补齐 0.47–0.62.4 的条目描述（分支 `update-dsh-metaphysics-0.62.4` → upstream `main`，单文件 +2/−2，待维护者合并）。本批写入古籍引文库（66 本 / 464 条索引 / 584 条可核验原文，逐句对 341 页底本快照核子串）、影子盘与推导链、《周易》经文 / 1062 字库 / 78 张牌义三大资料库，以及 0.59–0.62 的交互层；首屏 gzip 由 86KB 订正为 90KB。`submit/xuanfu-web__dsh-metaphysics.yml` 是真身，本文件「一、条目文件」是镜像，两者 en/zh 逐字一致。
 - **CI**：`Submission gate` 首轮失败，原因只有一条 `repository is 0.0 days old (needs 1)`；仓库创建已满一天，该检查重跑后应转绿
-- **已发布**：npm `dsh-metaphysics@0.62.4`（2026-11-07，`dist-tags.latest = 0.62.4`，shasum `e081b9a3fa7d16aacd912dcc27ca793216b4a5ef`，103 个文件）。上一版是 `0.62.3`。
-- **仓库同步**：`main` 推到 `a16994e`（0.62.4 交付提交；其后为文档回写），tag `v0.62.4`，GitHub release：https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.62.4
+- **已发布**：npm `dsh-metaphysics@0.62.5`（2026-11-09，`dist-tags.latest = 0.62.5`，shasum `2be34a0c3be03b1285ae72f10f42bc73c9ce7627`，104 个文件）。上一版 `0.62.4`（shasum `e081b9a3…`，103 文件）。
+- **仓库同步**：`main` 推到 `985b3c4`（0.62.5 交付提交；其后为文档回写），tag `v0.62.5`，GitHub release：https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.62.5
 - **仓库修复（2026-10-30）**：`.git` 的 `HEAD` / `config` / `index` 丢失（只剩 `objects`、`refs`、`ORIG_HEAD`），git 报 "not a git repository"；按 `refs/heads/main`（6e4966f）补回 `HEAD` 与 `config` 后 `git reset` 重建索引，工作区内容未被改动。
 - **CDN 小坑**：发布后本机通过 `registry.npmjs.org` 查到的 packument 与 tarball 可能还是旧的（边缘缓存），表现为新版本查不到、tarball 404；加一个随机查询串（`?cb=<随机>`）或带 token 访问即能拿到新内容，等几分钟自然过期。
 - **工具链小记**：`node` 不在 PATH 时用 `.workbuddy/binaries/node/versions/22.22.2-6/node.exe`；发布走 `node tools/release.mjs`（须设 `NPM_CLI=<node>/node_modules/npm/bin/npm-cli.js`，否则 Windows 上 `spawnSync npm` 报 ENOENT），token 走临时 `.npmrc`（0600），发布后立即删除；`npm run` 在 PowerShell 下会撞执行策略，用 `cmd /c "npm run ..."` 或直接 `node tools/*.mjs`；2026-11-07 发版时 npm CLI 的 `whoami` 曾无限重试挂住，发版命令显式设 `NPM_CONFIG_FETCH_TIMEOUT=30000 NPM_CONFIG_FETCH_RETRIES=1` 后即通过。
