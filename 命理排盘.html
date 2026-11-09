@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.4</span><span class="ver-note" title="本版之后又改了 13 项（版本号未变）：三本新书 33 条入库：16 条接五张已有奇门卡、17 条只进索引页；易传 10 条全部只入库，一条不接卡；接卡的 16 条逐格与引擎表对拍，不是「看着像」；对不上的照实记异，其中一处改掉了卡片里的过度声称；十干克应卡由「通行说」升「已定位」，但 note 写明只证三组不证全表；底本缺陷照录不代改；验证；交运第三方对拍入仓：23 例，四柱 22/22、顺逆 23/23、时间基准 20/20、首运 3/3；起运岁新增只读并列口径 `dayun.startAgeExact`；炳祥课堂的力量量化层接入为只读标注，不动既有旺衰、喜忌与取格；撤掉三处过度声称，命中率从虚高改回可核；《命理口径总纲》入仓：23 条裁决，冲突处直接选定主口径并写清理由与置信边界；验证">另含 13 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.62.5</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -654,9 +654,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
     <ul><li>测试：163 个测试文件 / 8729 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    <h3>本版之后又改了什么（版本号未变）</h3>
-    <ul><li>三本新书 33 条入库：16 条接五张已有奇门卡、17 条只进索引页</li><li>易传 10 条全部只入库，一条不接卡</li><li>接卡的 16 条逐格与引擎表对拍，不是「看着像」</li><li>对不上的照实记异，其中一处改掉了卡片里的过度声称</li><li>十干克应卡由「通行说」升「已定位」，但 note 写明只证三组不证全表</li><li>底本缺陷照录不代改</li><li>验证</li><li>交运第三方对拍入仓：23 例，四柱 22/22、顺逆 23/23、时间基准 20/20、首运 3/3</li><li>起运岁新增只读并列口径 `dayun.startAgeExact`</li><li>炳祥课堂的力量量化层接入为只读标注，不动既有旺衰、喜忌与取格</li><li>撤掉三处过度声称，命中率从虚高改回可核</li><li>《命理口径总纲》入仓：23 条裁决，冲突处直接选定主口径并写清理由与置信边界</li><li>验证</li></ul>
-    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
+    
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -29137,7 +29135,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.62.4";
+window.__MP_VER = "0.62.5";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
