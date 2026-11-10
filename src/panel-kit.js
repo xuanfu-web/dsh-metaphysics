@@ -1428,12 +1428,63 @@
 .pp table tbody tr:hover{background:var(--hover)}
 /* 结果卡阴影分层：默认最轻，hover 时浮起一档（只对可交互的卡，避免整页抖动） */
 .pp{transition:box-shadow var(--dur) var(--ease)}
+
+/* —— 文墨式「显示设置」12 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
+   纯 CSS 显隐：勾了盘面立刻变，不重排盘、不进引擎、不进工具 schema。
+   复选框必须是 .pp 的直接子元素，才能用 ~ 命中后面的 .pp-body / .pp-zhlegend。
+   组1/组2 默认勾（:not(:checked) 才隐藏），组3 默认不勾（:checked 才增强，默认盘观感不变）。 */
+.pp-disp{font-family:var(--sans);border-bottom:1px solid var(--line);background:var(--band);font-size:12px}
+.pp-disp>summary{cursor:pointer;padding:5px 12px;color:var(--muted);user-select:none;list-style:none;min-height:32px;display:flex;align-items:center}
+.pp-disp>summary::-webkit-details-marker{display:none}
+.pp-disp>summary::before{content:"▸";margin-right:6px;font-size:10px;color:var(--label)}
+.pp-disp[open]>summary::before{content:"▾"}
+.pp-disp-g{display:flex;flex-wrap:wrap;gap:2px 14px;padding:3px 12px 8px;border-top:1px dashed var(--hair)}
+.pp-disp-g>span{width:100%;font-size:11px;color:var(--label);letter-spacing:.06em;margin-bottom:1px}
+.pp-disp label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink2);user-select:none;padding:2px 0;min-height:26px}
+.pp-disp-box{width:13px;height:13px;border:1px solid var(--line);border-radius:3px;background:var(--card);display:inline-block;flex:none}
+.pp-disp label:hover .pp-disp-box{border-color:var(--lu)}
+/* 勾选态：12 条 :checked 各自点亮自己 label 的方框（复选框与 .pp-disp 同为 .pp 直接子元素） */
+#ppm-d-ss:checked~.pp-disp label[for="ppm-d-ss"] .pp-disp-box,
+#ppm-d-sbg:checked~.pp-disp label[for="ppm-d-sbg"] .pp-disp-box,
+#ppm-d-zha:checked~.pp-disp label[for="ppm-d-zha"] .pp-disp-box,
+#ppm-d-ages:checked~.pp-disp label[for="ppm-d-ages"] .pp-disp-box,
+#ppm-d-sizhu:checked~.pp-disp label[for="ppm-d-sizhu"] .pp-disp-box,
+#ppm-d-small:checked~.pp-disp label[for="ppm-d-small"] .pp-disp-box,
+#ppm-d-shen:checked~.pp-disp label[for="ppm-d-shen"] .pp-disp-box,
+#ppm-d-hua:checked~.pp-disp label[for="ppm-d-hua"] .pp-disp-box,
+#ppm-d-sf:checked~.pp-disp label[for="ppm-d-sf"] .pp-disp-box,
+#ppm-d-zha-bold:checked~.pp-disp label[for="ppm-d-zha-bold"] .pp-disp-box,
+#ppm-d-bad-ink:checked~.pp-disp label[for="ppm-d-bad-ink"] .pp-disp-box,
+#ppm-d-bold:checked~.pp-disp label[for="ppm-d-bold"] .pp-disp-box{background:var(--lu);border-color:var(--lu);box-shadow:inset 0 0 0 2px var(--card)}
+/* 组1 飞星派显示（默认全勾，取消才隐藏） */
+#ppm-d-ss:not(:checked)~.pp-body .pp-ss-txt{display:none}
+#ppm-d-sbg:not(:checked)~.pp-body .pp-st.st-sbg{display:none}
+#ppm-d-zha:not(:checked)~.pp-body .pp-zha{display:none}
+#ppm-d-zha:not(:checked)~.pp-zhlegend{display:none}
+#ppm-d-ages:not(:checked)~.pp-body .pp-ages{display:none}
+#ppm-d-sizhu:not(:checked)~.pp-body .ct-t3{display:none}
+/* 组2 四化派显示（默认全勾，取消才隐藏） */
+#ppm-d-small:not(:checked)~.pp-body .pp-st.aux{display:none}
+#ppm-d-shen:not(:checked)~.pp-body .pp-shen::after{display:none}
+#ppm-d-hua:not(:checked)~.pp-body .pp-m{display:none}
+#ppm-d-sf:not(:checked)~.pp-body .pp-cell.pp-tri{background:var(--bg)}
+#ppm-d-sf:not(:checked)~.pp-body .pp-cell.pp-link{background:var(--bg);box-shadow:none}
+#ppm-d-sf:not(:checked)~.pp-body svg.pp-sf{display:none}
+/* 组3 限流盘增强（默认不勾，勾了才生效；不改默认盘观感） */
+#ppm-d-zha-bold:checked~.pp-body .pp-zha .z-shaft{stroke-width:2.8}
+#ppm-d-bad-ink:checked~.pp-body .pp-st.bad{color:var(--ink)}
+#ppm-d-bad-ink:checked~.pp-body .pp-st.bad::before{content:none}
+#ppm-d-bold:checked~.pp-body .pp-st.main,#ppm-d-bold:checked~.pp-body .pp-st.good{font-weight:700}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
 
   const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'aux' };
   const MUT = { 禄: 'lu', 权: 'quan', 科: 'ke', 忌: 'ji' };
+  // 「显示三台八座恩光天贵」专用：这四颗是日系吉星，引擎给它们 type='吉星'，
+  // 与其它吉星共用 .pp-st.good。只给这四颗追加 st-sbg 供 CSS 单独显隐；
+  // 其余星（尤其十四主星）的 class 串保持字面不变，别动 upgrade.test.mjs 的顺序断言。
+  const SBG = new Set(['三台', '八座', '恩光', '天贵']);
   // 庙旺得利平不陷 → 三档视觉权重：吉（庙旺）/ 中（得利平）/ 忌（不陷）
   const BR_CLASS = { 庙: 'good', 旺: 'good', 得: 'mid', 利: 'mid', 平: 'mid', 不: 'bad', 陷: 'bad' };
   const POS = {
@@ -1516,9 +1567,11 @@
       // 所以读作「←这笔化飞回本宫」而不是「从这颗星飞出去」。放星名前是关键：
       // 放星名后箭头朝右，视觉上就成了「飞出本宫」，意思正好反了
       const zh = (selfHuaMap && selfHuaMap[s.name]) ? zhaMark(selfHuaMap[s.name], s.name) : '';
+      // 日系四吉星单独可寻址（文墨「显示三台八座恩光天贵」）；其余星 class 串一字不改
+      const extra = SBG.has(s.name) ? ' st-sbg' : '';
       // 顺序：自化箭头 → 星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
-      return `<span class="pp-st ${cls}">${zh}${s.name}${b}${tm}${m}${vm}</span>`;
+      return `<span class="pp-st ${cls}${extra}">${zh}${s.name}${b}${tm}${m}${vm}</span>`;
     }).join('');
   }
 
@@ -1563,12 +1616,12 @@
       ${fxLineHTML(p, flyByBranch)}
       <div class="pp-foot">
         <div class="ft-l">
-          <span class="ft-dx">${ss.boshi} ${p.daxian.start}-${p.daxian.end}</span>
-          <span>${ss.jiangqian}</span>
-          <span>${ss.suiqi}</span>
+          <span class="ft-dx"><span class="pp-ss-txt">${ss.boshi}</span> ${p.daxian.start}-${p.daxian.end}</span>
+          <span class="pp-ss-txt">${ss.jiangqian}</span>
+          <span class="pp-ss-txt">${ss.suiqi}</span>
         </div>
         <div class="ft-r">
-          <span>${ss.changsheng}</span>
+          <span class="pp-ss-txt">${ss.changsheng}</span>
           <span>${p.ganzhi}</span>
           <span class="ft-pn">${pname}</span>
         </div>
@@ -1743,6 +1796,41 @@
       <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
       <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
       <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
+      <!-- 文墨式显示设置：12 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
+           组1/组2 默认勾（观感与旧版一致），组3 默认不勾（纯增强）。不重排盘、不进引擎。 -->
+      <input type="checkbox" id="ppm-d-ss" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-sbg" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-zha" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-ages" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-sizhu" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-small" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-shen" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-hua" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-sf" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-zha-bold" class="pp-r">
+      <input type="checkbox" id="ppm-d-bad-ink" class="pp-r">
+      <input type="checkbox" id="ppm-d-bold" class="pp-r">
+      <details class="pp-disp">
+        <summary>显示设置 · 12 项（学文墨天机）</summary>
+        <div class="pp-disp-g"><span>飞星派显示</span>
+          <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
+          <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
+          <label for="ppm-d-zha"><i class="pp-disp-box"></i>彩色箭头标识自化</label>
+          <label for="ppm-d-ages"><i class="pp-disp-box"></i>流年虚岁年龄</label>
+          <label for="ppm-d-sizhu"><i class="pp-disp-box"></i>中宫八字</label>
+        </div>
+        <div class="pp-disp-g"><span>四化派显示</span>
+          <label for="ppm-d-small"><i class="pp-disp-box"></i>显示小星</label>
+          <label for="ppm-d-shen"><i class="pp-disp-box"></i>显示身宫</label>
+          <label for="ppm-d-hua"><i class="pp-disp-box"></i>显示命宫四化</label>
+          <label for="ppm-d-sf"><i class="pp-disp-box"></i>显示三方四正</label>
+        </div>
+        <div class="pp-disp-g"><span>限流盘显示</span>
+          <label for="ppm-d-zha-bold"><i class="pp-disp-box"></i>自化箭头加粗</label>
+          <label for="ppm-d-bad-ink"><i class="pp-disp-box"></i>六煞星黑字</label>
+          <label for="ppm-d-bold"><i class="pp-disp-box"></i>主辅星加粗</label>
+        </div>
+      </details>
       <div class="pp-modes">
         <label for="ppm-ben">本命</label><label for="ppm-da">大限</label><label for="ppm-ln">流年</label>
         <span class="pp-soon">点任一宫位看详情</span>
