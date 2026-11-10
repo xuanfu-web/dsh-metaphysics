@@ -10,7 +10,9 @@ const MP_ENGINE_CACHE = Object.create(null);
 const MP_ENGINE_FETCH = Object.create(null);
 
 function mpChunkOf(tab) {
-  return __MP_CHUNKS__[tab] || __MP_CHUNKS__.bazi || 'client.bazi.js';
+  // 兜底用 chart：它是命盘类四 tab（八字/紫微/合盘/趋势）共用的那块，
+  // 未知 tab 落到它至少能排命盘，不会取到一个不存在的文件名。
+  return __MP_CHUNKS__[tab] || __MP_CHUNKS__.bazi || 'client.chart.js';
 }
 
 const mpLazyNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());

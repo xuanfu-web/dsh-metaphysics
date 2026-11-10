@@ -1,9 +1,10 @@
-// 引擎分块体积预算：18 块每块自带整套引擎导出，往引擎里塞一张大表会同时抬高所有块。
+// 引擎分块体积预算：每块自带整套引擎导出，往引擎里塞一张大表会同时抬高所有块。
 // check-bundle 里有闸，这里把「闸本身不许松」也钉住：只测真实产物，不许改数就放行。
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
 import { ok } from './_harness.mjs';
+import { CHUNKS } from '../tools/build-client.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const tool = fs.readFileSync(path.join(root, 'tools', 'check-bundle.mjs'), 'utf8');
@@ -19,7 +20,12 @@ ok('闸按合计预算判超', tool.includes('chunksGzip > CHUNKS_TOTAL_GZIP_CAP
 ok('成功行回报分块体积（漂移看得见）', tool.includes('chunksGzip / 1024 / 1024'));
 
 const files = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
-ok('分块非空', files.length >= 18, String(files.length));
+// 分块数只认 CHUNKS 一处事实源：曾经写死「>= 18」，合并命盘四块成一块后就变成假失败。
+// 这里改成本意——磁盘上的分块必须与声明的一一对应，多一个少一个都算漂移。
+const declared = Object.keys(CHUNKS).map((n) => `client.${n}.js`).sort();
+ok('分块文件与 CHUNKS 声明一一对应', files.join(',') === declared.join(','),
+  `磁盘 ${files.length} 个 / 声明 ${declared.length} 个：${files.filter((f) => !declared.includes(f)).join(',') || '无多余'}`);
+ok('分块非空', files.length > 0, String(files.length));
 let max = 0;
 let maxFile = '';
 let total = 0;

@@ -97,7 +97,7 @@ const api = new Function('git', `${stageRegion}\nreturn { stageable, changedPath
 
 // 路径判定：目录白名单 + 根文件扩展名/显式清单
 const YES = ['src/app.js', 'test/autopublish.test.mjs', 'engine/index.js', 'tools/check-bundle.mjs',
-  'docs/参考资料与对拍来源.md', 'client.ziwei.js', '命理排盘.html', 'index.js', 'package.json',
+  'docs/参考资料与对拍来源.md', 'client.chart.js', '命理排盘.html', 'index.js', 'package.json',
   'README.md', 'LICENSE', '.gitignore', 'locale/zh.json', '.github/workflows/ci.yml'];
 const NO = ['node_modules/dsh-metaphysics/index.js', '.env', '.npmrc', 'tools/.autopublish.log',
   '不记录反馈者的出生资料、邮箱与账号；需要样例时只写盘型，测试一律用合成日期。', '这份清单对应',

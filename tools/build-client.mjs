@@ -29,31 +29,36 @@ const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
 // 顶部人话总结：凡是要调 compute 的块都得带。漏了的块不报错，只会在结果里
 // 静默留一个 briefError（分块里 plainSummary 是 undefined）——第一屏直接消失。
 const BRIEF = ['plain-summary'];
-// 八字/紫微的公共栈：交叉验证让两边都要能排另一套盘，所以各自带上对方的引擎
-// 顶部人话总结：只有八字与紫微有，所以挂在各自栈上，不塞进 INTERPRET
+// 八字栈：命盘类四 tab 的公共底子（紫微与合盘也是在它之上补模块，见 CHART_STACK）
+// 顶部人话总结：只有八字与紫微有，所以挂在这条栈上，不塞进 INTERPRET
 const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'geju', 'bazi', 'bazi-words', 'classics', ...BRIEF, ...INTERPRET];
-const ZIWEI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'geju', 'bazi', 'bazi-words', 'ziwei-zuoyao', 'ziwei', 'ziwei-words', 'classics', ...BRIEF, ...INTERPRET];
+
+// 命盘类四 tab（八字 / 紫微 / 合盘 / 趋势）合并成一个 chart 块。
+//
+// 为什么合并：这四块原先各自背一套完整的公共栈（index 42KB + interpret 49KB +
+// interpret-knowledge 22KB + plain-summary 15KB + classics 12KB ≈ 140KB gzip）。
+// 用户在四个 tab 之间切换时，每切一次就重复下载一遍这 140KB——「八字 → 紫微 → 合盘」
+// 一条最普通的路径累计 809KB，其中约 405KB 是重复的公共栈。
+//
+// 合并后实测 gzip 247KB，与原来单块 bazi 的 247KB 几乎相同：说明公共栈真的只存了一份。
+// 这不是「抽共享块」——DSH 的模块系统要求分块自包含（dsh.client.external 只解析到冻结
+// 静态表或独立动态包 row，而本插件只注册一个 entry id），分块之间无法互相引用。
+// 在一个自包含分块内让四个 tab 共用一套栈，是唯一能真正去掉重复的路径。
+const CHART_STACK = [...new Set([
+  ...BAZI_STACK,
+  // 八字：内嵌人生 K 线 + 可开紫微交叉验证
+  'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words',
+  // 紫微：可开八字交叉验证（八字已在 BAZI_STACK 里）
+  // 合盘：双方可能是八字或紫微，两套引擎 + 合盘模板
+  'ziwei-hepan', 'hepan',
+  'crosscheck', 'verify', 'rectify', 'trace', ...ASK,
+])];
 
 export const CHUNKS = {
-  bazi: {
-    tabs: ['bazi'],
-    // 八字页内嵌人生 K 线、可开紫微交叉验证；两项都在本块内完成
-    modules: [...BAZI_STACK, 'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words', 'crosscheck', 'verify', 'rectify', 'trace', ...ASK],
-  },
-  ziwei: {
-    tabs: ['ziwei'],
-    // 紫微页可开八字交叉验证；不带人生 K 线与验证/校正
-    modules: [...ZIWEI_STACK, 'crosscheck', 'trace', ...ASK],
-  },
-  hepan: {
-    tabs: ['hepan'],
-    // 合盘双方可能是八字或紫微，两套引擎 + 合盘模板都在本块内
-    modules: [...ZIWEI_STACK, 'ziwei-hepan', 'hepan', 'trace', ...ASK],
-  },
-  trend: {
-    tabs: ['trend'],
-    // 人生 K 线只需要八字与流年，不背紫微
-    modules: [...BAZI_STACK, 'trend', 'trace', ...ASK],
+  chart: {
+    // 四个 tab 同块：一次下载后切换不再取块（engine-lazy 按 tab 缓存分块文件）
+    tabs: ['bazi', 'ziwei', 'hepan', 'trend'],
+    modules: CHART_STACK,
   },
   name: {
     tabs: ['name'],

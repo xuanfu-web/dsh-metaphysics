@@ -181,10 +181,11 @@ const idx = read('engine/index.js');
 ok('引擎导出深链相关函数', /askLink, parseAskLink, formOf, restNote, askPackages/.test(idx));
 
 // 拆分块里也能用（否则面板在分块模式下拿不到 parseAskLink）
-const chunkFile = path.join(root, 'client.bazi.js');
+// 命盘类四 tab 已合并成 chart 块，八字走的就是它
+const chunkFile = path.join(root, 'client.chart.js');
 if (fs.existsSync(chunkFile)) {
   const chunk = fs.readFileSync(chunkFile, 'utf8');
-  ok('八字分块里带着深链实现', /parseAskLink/.test(chunk) && /mc1\./.test(chunk));
+  ok('命盘分块里带着深链实现', /parseAskLink/.test(chunk) && /mc1\./.test(chunk));
 } else {
-  ok('八字分块存在（先跑 build-client）', false, chunkFile);
+  ok('命盘分块存在（先跑 build-client）', false, chunkFile);
 }

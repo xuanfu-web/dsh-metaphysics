@@ -1,6 +1,31 @@
 ## 未发布
 
-> 本段主题（2026-11-09，B15）：把 0.62.5 加的三项量化字段接上输出通道。上一版它们只存在于结果对象里——算得出、没人看得见，按本仓自己的「每步验收」（引擎字段 → 摘要/解析 → 面板 → 独立页 → 测试 → CHANGELOG）算没做完。**不改任何排盘口径、不改旺衰分与喜忌、不新建知识卡**。
+> 本段主题（2026-11-10，D1+）：把命盘类四个 tab 合并成一个 `client.chart.js`，去掉四个分块各存一份的公共栈。**不改任何排盘口径、不改界面、不加功能**。
+
+- **命盘四 tab 合并：18 块 → 15 块，分块合计 gzip 2.56MB → 1.89MB**（`tools/build-client.mjs`）：八字 / 紫微 / 合盘 / 趋势原先各自背一套完整公共栈（`index` 42KB + `interpret` 49KB + `interpret-knowledge` 22KB + `plain-summary` 15KB + `classics` 12KB ≈ 140KB gzip）。用户在四个 tab 间切换时每切一次就重复下载一遍——「八字 → 紫微 → 合盘」这条最普通的路径累计 **809KB**，其中约 405KB 是重复字节。合并后单块 gzip **247KB**（几乎等于原来 bazi 单块），四 tab 全逛一遍从 809KB 降到 **336KB**，**省 58%**。
+- **这不是「抽共享块」**：先按常规思路量过，抽共享块在 DSH 上不成立——模块系统要求分块自包含（`dsh.client.external` 只解析到冻结的静态表或独立动态包 row，而本插件只注册一个 entry id），分块 factory 拿到的 `require` 是裸的，只有入口层的 `require.async` 由宿主注入。而且就算抽得出来也**不省**：实测「只看八字」在两种方案下都是 462KB，只是把同样的字节从 A 文件搬到 B 文件。真正能去掉重复的路径是「在一个自包含分块内让多个 tab 共用一套栈」。
+- **单块预算不用动**：合并后最大块 247KB，离 288KB 上限仍有 41KB 余量，`CHUNK_GZIP_CAP` 与 `CHUNKS_TOTAL_GZIP_CAP` 一个数字都没改。`bundle-budget.test.mjs` 的「单块预算没有被抬成空闸」（`max * 1.3 >= CAP`）继续成立。
+- **尺寸底线改成与声明同源**（`test/bundle-budget.test.mjs`）：原先写死 `files.length >= 18`，合并后变成假失败。改为「磁盘分块与 `CHUNKS` 声明一一对应」——多一个少一个都算漂移，比一个魔数更能拦住真实问题。
+- **懒加载器的兜底改指 chart**（`src/engine-lazy.js`）：未知 tab 原先回落到 `client.bazi.js`，该文件已不存在；改指 `client.chart.js`（命盘类四 tab 共用块），至少能排出命盘而不是取到 404。
+- **测试补了「只下载一次」这条真断言**（`test/chunks.test.mjs`、`test/perf-instrumentation.test.mjs`）：原先只断言「缓存不重复拉取」用的是单 tab 重复调用，测不出跨 tab 的重复；现在四个命盘 tab 依次切换后断言 `client.chart.js` 只被取 1 次，跨块切换（命盘 → 六爻）才取第 2 块。这一条正是本次合并的目的，撤掉合并即红。
+- **验证**：九道闸全绿（163/163 文件、47.3s；check-bundle `client.js` 290KB / gzip 90KB、**15 块** gzip 合计 **1.89MB**、单块上限 288KB、逐模块 71 个、宿主形态可执行且与源码逐字节一致；check-verification 新鲜；check-patterns / check-html-sinks / check-perf / check-secrets 均过）。`e2e-dom` 152 项通过。断言基线 **8772 → 8758**——**减少的 14 条全部来自分块数变少**（每块 6 条 × 少 3 块 = 18 条，另新增 4 条缓存断言），没有一条真实检查被删。
+- **顺带修的引用**：`tools/release.mjs` 的发布产物核对清单、`test/autopublish.test.mjs` 的白名单、`test/bridge.test.mjs` 与 `test/ziwei-zuoyao.test.mjs` 读取的分块文件，全部从 `client.bazi.js` / `client.ziwei.js` 改到 `client.chart.js`。这类硬编码文件名在合并时会静默失配（测试读不到文件就跳过），已逐个改到并跑绿。
+
+### B15：0.62.5 三项量化字段接上输出通道
+
+> 上一版它们只存在于结果对象里——算得出、没人看得见，按本仓「引擎字段 → 摘要/解析 → 面板 → 独立页 → 测试 → CHANGELOG」的每步验收算没做完。**不改任何排盘口径、不改旺衰分与喜忌、不新建知识卡**。
+
+- **八大地支结构接进四处，并说清与旺衰分的关系**（`engine/index.js`、`engine/interpret.js`、`src/panel-kit.js`、`test/bazi-structure.test.mjs`）：`strength.branchStructure` 自 0.62.5 起就在结果里，但摘要、解析、面板、独立页一处都没显示。现补：摘要新增「地支结构：四支 AABA（年午A、月巳A、日丑B、时未A）　日支独异，不易从（静态从格 ≈20%）」一行；解析新增「地支结构」一节，逐支列阵营与宫位分值、异类支、地支与干支两段平衡，并明写**「这是并列的第二套静态视图，不改上面的旺衰评分，也不参与取格与喜忌」**；面板在「日主强弱」下方加 `.pp-struct` 行（code + 逐支阵营 + 异类 + 从格概率 + 平衡比），悬停给方法与边界。
+- **三柱模式不把占位时支冒充实有**（同上）：`hourUnknown` 时第四支是正午占位，摘要写「三支＋占位 …… 时午A·占位」，面板同款；从格概率一律不套。这里有一处措辞要留意——`bs.word` 本身已被 `bazi.js` 的 `hourUnknown` 分支改写成「时柱暂缺，第四支为正午占位，不套从格概率」，所以摘要**不能再追加同句**，初版重复说了两遍，已由断言 `(match(/…/g)||[]).length === 1` 钉死。
+- **暗合接进三处，并明确「另列不并」**（同上）：`relations.anhe` 同样只算不显。摘要按对数写「暗合：…（另列，不并入上面的合冲刑害；只一对，按口径可忽略 / 共 N 对）」；解析新增「暗合」一节，明写与三合三会六合六冲刑害是**两条线、不合并计分、不折旺衰**；面板在关系行下加 `.pp-anhe` 行。无暗合的盘这三处都不出现（不用空行占位）。
+- **起运岁精确值接进三处**（`engine/index.js`、`engine/interpret.js`、`src/panel-kit.js`、`test/bazi-jiaoyun.test.mjs`）：`dayun.startAgeExact` 是 0.62.5 为对齐第三方排盘加的（截断到日/时 23/23 全中，四舍五入到月只有 15/23），但同样没有输出通道——恰恰是它最能解释「为什么和别家差一个月」。摘要新增「起运岁（精确）：8 年 2 个月 26 天 8 小时（截断到年月日时；上面「8岁3个月」是四舍五入到月，两者同源）」；解析「时间窗」写明差一个月的边界常出在日/时这两位、第三方给到日时按这行核对；面板页脚在「N岁起运（交运…）」后加「精确 N年N月N天N时（截断到日时；上面是四舍五入到月）」。
+- **旧结果兼容**：三处都是新增可选行，缺字段时整块不渲染（`startAgeExact` / `branchStructure` / `anhe` 任一缺席都不出空行、不出 `undefined`），`test/bazi-jiaoyun.test.mjs` 第十二、十三节与 `test/bazi-structure.test.mjs` 第七至九节各有一组「删字段后照常渲染」的对照断言。
+- **验证**：`build-client` → 改文档 → 再 `build-client` + `build-html` → 全量 `test:ci` 九步全绿（**163/163** 测试文件、46.7s；check-bundle `client.js` 290KB / gzip 89KB、18 块 gzip 合计 2.56MB、单块上限 288KB、逐模块 71 个、宿主形态可执行且与源码逐字节一致；check-verification 两产物新鲜；凭据扫描 345 文件干净；check-patterns 81 文件；HTML 注入面 5 文件；check-perf 29 项，1000 盘 401ms / RSS 76MB；`verify-tests-can-fail` 15 PASS / 1 FAIL → exit 1 符合预期）。断言基线 **8729 → 8772**（+43，全在结构/交运两档），`test/bazi-structure.test.mjs` 81 条、`test/bazi-jiaoyun.test.mjs` 77 条。`e2e-dom` 152 项、`e2e-panel` 110 项通过。分块 gzip：**bazi 247.5KB**（逼近 288KB 上限，因 `interpret` 新增两节），其余不变。
+- **一处已知的取舍（已随 D1+ 解决）**：B15 落地后 `client.bazi.js` 涨到 **247.5KB**，当时解析栈被 bazi/ziwei/hepan/trend 四块各存一份，写着「再加同类文案就该拆共享块」。D1+ 把四块并成 `client.chart.js` 之后，解析栈只存一份，四 tab 共用同一块 247KB——这笔账已结，见上面 D1+ 第一条。
+
+## 0.62.5（2026-11-09，已发布）
+
+## 0.62.5（2026-11-09，已发布）
 
 - **八大地支结构接进四处，并说清与旺衰分的关系**（`engine/index.js`、`engine/interpret.js`、`src/panel-kit.js`、`test/bazi-structure.test.mjs`）：`strength.branchStructure` 自 0.62.5 起就在结果里，但摘要、解析、面板、独立页一处都没显示。现补：摘要新增「地支结构：四支 AABA（年午A、月巳A、日丑B、时未A）　日支独异，不易从（静态从格 ≈20%）」一行；解析新增「地支结构」一节，逐支列阵营与宫位分值、异类支、地支与干支两段平衡，并明写**「这是并列的第二套静态视图，不改上面的旺衰评分，也不参与取格与喜忌」**；面板在「日主强弱」下方加 `.pp-struct` 行（code + 逐支阵营 + 异类 + 从格概率 + 平衡比），悬停给方法与边界。
 - **三柱模式不把占位时支冒充实有**（同上）：`hourUnknown` 时第四支是正午占位，摘要写「三支＋占位 …… 时午A·占位」，面板同款；从格概率一律不套。这里有一处措辞要留意——`bs.word` 本身已被 `bazi.js` 的 `hourUnknown` 分支改写成「时柱暂缺，第四支为正午占位，不套从格概率」，所以摘要**不能再追加同句**，初版重复说了两遍，已由断言 `(match(/…/g)||[]).length === 1` 钉死。

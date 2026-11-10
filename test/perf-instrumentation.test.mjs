@@ -31,7 +31,7 @@ const makeEnv = () => {
   const env = {
     window: {},
     __MP_DIRECTIONS__: ['事业', '感情'],
-    __MP_CHUNKS__: { bazi: 'client.bazi.js', ziwei: 'client.ziwei.js' },
+    __MP_CHUNKS__: { bazi: 'client.chart.js', ziwei: 'client.chart.js', liuyao: 'client.liuyao.js' },
     console,
     __mpCalls: 0,
     require: {
@@ -48,17 +48,24 @@ const makeEnv = () => {
 const env = makeEnv();
 await env.window.__mpEnsureEngine('bazi');
 const first = env.window.__MP_LAST_LOAD;
-eq('第一次记录 tab', first.tab, 'bazi');
-eq('第一次记录分块', first.chunk, 'client.bazi.js');
-eq('第一次是未命中缓存', first.cached, false);
+eq('第一次记录 tab', 'bazi', first.tab);
+eq('第一次记录分块', 'client.chart.js', first.chunk);
+eq('第一次是未命中缓存', false, first.cached);
 ok('第一次耗时为非负数', typeof first.ms === 'number' && first.ms >= 0, String(first.ms));
 ok('引擎可用', typeof env.window.Engine.compute === 'function' && env.__mpCalls === 1);
 await env.window.__mpEnsureEngine('bazi');
-eq('第二次命中缓存', env.window.__MP_LAST_LOAD.cached, true);
-eq('缓存命中不再取块', env.__mpCalls, 1);
+eq('第二次命中缓存', true, env.window.__MP_LAST_LOAD.cached);
+eq('缓存命中不再取块', 1, env.__mpCalls);
+// 八字与紫微同块：换 tab 不再取块（合并前这里会再下载一份完整公共栈）
 await env.window.__mpEnsureEngine('ziwei');
-eq('换 tab 记录新分块', env.window.__MP_LAST_LOAD.chunk, 'client.ziwei.js');
-eq('换 tab 是未命中缓存', env.window.__MP_LAST_LOAD.cached, false);
+eq('同块换 tab 仍记同一分块', 'client.chart.js', env.window.__MP_LAST_LOAD.chunk);
+eq('同块换 tab 命中缓存', true, env.window.__MP_LAST_LOAD.cached);
+eq('同块换 tab 不重复取块', 1, env.__mpCalls);
+// 真正的跨块切换（命盘 → 六爻）才取新文件
+await env.window.__mpEnsureEngine('liuyao');
+eq('跨块切换记录新分块', 'client.liuyao.js', env.window.__MP_LAST_LOAD.chunk);
+eq('跨块切换是未命中缓存', false, env.window.__MP_LAST_LOAD.cached);
+eq('跨块切换才取第二块', 2, env.__mpCalls);
 
 // ── 并发取块：同一块的多个调用只下载一次 ──
 const slow = makeEnv();

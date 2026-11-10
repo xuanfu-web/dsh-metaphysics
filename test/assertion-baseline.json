@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 8772,
+  "total": 8758,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -95,7 +95,7 @@
       "fail": 0
     },
     "bundle-budget.test.mjs": {
-      "pass": 24,
+      "pass": 22,
       "fail": 0
     },
     "bzform.test.mjs": {
@@ -119,7 +119,7 @@
       "fail": 0
     },
     "chunks.test.mjs": {
-      "pass": 122,
+      "pass": 106,
       "fail": 0
     },
     "citations.test.mjs": {
@@ -375,7 +375,7 @@
       "fail": 0
     },
     "perf-instrumentation.test.mjs": {
-      "pass": 50,
+      "pass": 54,
       "fail": 0
     },
     "perf.test.mjs": {

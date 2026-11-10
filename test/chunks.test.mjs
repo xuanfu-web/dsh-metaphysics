@@ -122,12 +122,22 @@ ok('19 个体系的分块引擎与源码逐字节一致', same === 19, `一致 $
 await sandbox.window.__mpEnsureEngine('hepan');
 const hpZiwei = { system: 'hepan', chart: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', partner: { datetime: '1992-08-15T10:00', gender: 'female', trueSolar: true } };
 ok('紫微合盘在 hepan 分块内可复算', JSON.stringify(srcEngine.compute(hpZiwei)) === JSON.stringify(sandbox.window.Engine.compute(hpZiwei)));
-ok('按需拉取对应分块', requested.includes('./client.bazi.js') && requested.includes('./client.mbti.js'), requested.join(','));
+ok('按需拉取对应分块', requested.includes('./client.chart.js') && requested.includes('./client.mbti.js'), requested.join(','));
 ok('无 interpret 的分块不会抹掉 DIRECTIONS', Array.isArray(sandbox.window.Engine.DIRECTIONS) && sandbox.window.Engine.DIRECTIONS.length === 7,
   String(sandbox.window.Engine.DIRECTIONS && sandbox.window.Engine.DIRECTIONS.length));
+
+// 命盘类四 tab 合并成一个 chart 块：四个 tab 必须都映射到同一个文件，
+// 且真正只下载一次——这正是合并的目的（原来每切一个 tab 要重复下载 140KB 公共栈）。
+const chartTabs = ['bazi', 'ziwei', 'hepan', 'trend'];
+ok('命盘四 tab 共用一个 chart 块', chartTabs.every((t) => CHUNK_OF_TAB[t] === 'client.chart.js'),
+  chartTabs.map((t) => `${t}→${CHUNK_OF_TAB[t]}`).join(' '));
+for (const t of chartTabs) await sandbox.window.__mpEnsureEngine(t);
+ok('四个命盘 tab 只拉取一次 chart 块', requested.filter((x) => x === './client.chart.js').length === 1,
+  `实际 ${requested.filter((x) => x === './client.chart.js').length} 次：${requested.join(',')}`);
 
 // 切回紫微分块：上一次加载的是 mbti，入口必须把紫微分块的 Engine 重新合并回来
 await sandbox.window.__mpEnsureEngine('ziwei');
 const z = sandbox.window.Engine.compute(cases.ziwei);
 ok('切换分块后仍能排紫微', z && z.system === 'ziwei' && z.palaces && z.palaces.length === 12);
-ok('分块缓存不重复拉取', requested.filter((x) => x === './client.ziwei.js').length === 1, requested.join(','));
+// 紫微与八字同块：切回来后不应再取块（缓存命中）
+ok('切换 tab 不重复取块', requested.filter((x) => x === './client.chart.js').length === 1, requested.join(','));
