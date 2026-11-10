@@ -79,6 +79,7 @@ const ZIWEI_SCHOOL_KEYS = [
   'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
   'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool',
   'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant',
+  'jieluSchool', 'suipoSchool',
 ];
 
 /** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
@@ -213,6 +214,7 @@ function ziweiText(r) {
       jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
       changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主', mingzhuSchool: '命主取法',
       zuoyaoSchool: '杂曜全表', liunianSihua: '流年四化取干', sihuaVariant: '十干四化变体',
+      jieluSchool: '截路空亡', suipoSchool: '岁前十二神',
     };
     const diff = Object.entries(labels)
       .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])

@@ -355,6 +355,12 @@ export const CALIBER_SWITCHES = {
       阳武府相: '庚干 阳武府相', 阳武同相: '庚干 阳武同相', 巨阳武昌: '辛干 巨阳武昌',
       梁紫府武: '壬干 梁紫府武', 梁紫相武: '壬干 梁紫相武', 破巨阳贪: '癸干 破巨阳贪',
     }),
+    ziweiSchoolSwitch('jieluSchool', '截路空亡：照常 / 不排（中州派）', '截路空亡', 'off', 'zhongzhou', {
+      off: '照常（截空/副截/旬空/副旬）', zhongzhou: '不排（中州派）',
+    }),
+    ziweiSchoolSwitch('suipoSchool', '岁前十二神：照常 / 大耗改岁破（中州派）', '岁前十二神', 'off', 'zhongzhou', {
+      off: '照常（大耗）', zhongzhou: '大耗改岁破',
+    }),
   ],
   qimen: [
     {

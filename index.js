@@ -66,7 +66,7 @@ const OPTION_KEYS = [
   'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool',
   'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang',
   'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua',
-  'sihuaVariant',
+  'sihuaVariant', 'jieluSchool', 'suipoSchool',
   'action', 'toAge', 'sitting', 'facing', 'fortuneYear', 'period',
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
   'fortuneDate', 'fortuneTime', 'surname', 'givenName', 'limit',
@@ -114,6 +114,8 @@ const OPTION_HINTS = {
   zuoyaoSchool: '仅 ziwei：杂曜取盘 minimal / full',
   liunianSihua: '仅 ziwei：流年四化取干 year-stem 按流年天干（默认）/ life-palace-stem 按流年命宫宫干',
   sihuaVariant: '仅 ziwei：十干四化变体 default 或 廉破曲阳/贪阴阳机/阳武同阴…（整表替换）',
+  jieluSchool: '仅 ziwei：截路空亡 off 照常排（默认）/ zhongzhou 整组不排（截空、副截、旬空、副旬都不出）',
+  suipoSchool: '仅 ziwei：岁前十二神 off 照常（默认）/ zhongzhou 大耗改岁破（宫位不变只换名字）',
   action: 'fengshui：natal（默认）/ advise / xuankong 玄空；name：assess / generate',
   toAge: '仅 trend：算到几岁 10–100，默认 100',
   sitting: '仅 fengshui advise/xuankong 玄空：坐山（24 山之一）',
@@ -144,7 +146,7 @@ const READ_KEYS = ['withInterpret', 'detail', 'ask', 'question', 'direction', 's
 /** 每个体系实际会读的参数：help 按这张表展开，避免「有这个键但该体系不看」 */
 const SYSTEM_PARAMS = {
   bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
-  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'cross', 'diff', 'trace', ...READ_KEYS],
+  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'jieluSchool', 'suipoSchool', 'cross', 'diff', 'trace', ...READ_KEYS],
   liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
   tarot: ['count', 'seed', ...READ_KEYS],
   meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
@@ -850,6 +852,16 @@ export function apply(ctx) {
           enum: ['default', '廉破曲阳', '贪阴阳机', '阳武同阴', '阳武府同', '阳武府相',
             '阳武同相', '巨阳武昌', '梁紫府武', '梁紫相武', '破巨阳贪'],
           description: '紫微斗数：十干四化变体，整表替换生年、宫干自化、大限宫干、飞星与流年所查的那张表。default（默认）各干取通行表；其余取值按文墨天机「十干四化」原文四字命名，依禄权科忌顺序念，如 廉破曲阳 = 廉贞禄破军权文曲科太阳忌。可选：廉破曲阳（甲）、贪阴阳机（戊）、阳武同阴/阳武府同/阳武府相/阳武同相（庚）、巨阳武昌（辛）、梁紫府武/梁紫相武（壬）、破巨阳贪（癸）；乙丙丁己四干无变体。变体天干与所查该干不符时不生效，不会串表。与庚干那一项重叠时以本参数为准。',
+        },
+        jieluSchool: {
+          type: 'string',
+          enum: ['off', 'zhongzhou'],
+          description: '紫微斗数：截路空亡（截空、副截、旬空、副旬这一组杂曜）取舍。off（默认，通行本）照常排；zhongzhou（中州派）整组不排——《中州派紫微斗数》体系不收截路空亡。只影响杂曜清单，不动宫盘与主星。需 jiekongSchool 非 off 才能看到差别。',
+        },
+        suipoSchool: {
+          type: 'string',
+          enum: ['off', 'zhongzhou'],
+          description: '紫微斗数：岁前十二神的记名口径。off（默认，通行本）照常；zhongzhou（中州派）把「大耗」改记作「岁破」，宫位不变、只换名字。依据《中州派紫微斗数》岁前十二神以岁破代大耗。',
         },
         action: {
           type: 'string',

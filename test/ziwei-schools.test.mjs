@@ -1,4 +1,4 @@
-// 紫微 · 十四类流派开关：默认盘必须一字不变，显式切换才改盘。
+// 紫微 · 十六类流派开关：默认盘必须一字不变，显式切换才改盘。
 // 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时 / 身主 / 命主取法 / 杂曜全表 / 流年四化取干 / 十干四化变体。
 // 身主两派另见 ziwei-shenzhu.test.mjs；命主取法见本文件第十三节。
 import fs from 'node:fs';
@@ -24,9 +24,9 @@ const mutagens = (r) => r.palaces.flatMap((p) => p.stars)
 
 // ── 一、开关表与默认值 ─────────────────────────────────────
 // 键名一起钉住：加一类要写理由，删一类会动到旧盘与存档，谁都不能顺手改
-eq('十四类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
-  ['brightnessSchool', 'changshengSchool', 'gengYearSihua', 'jiekongSchool', 'kuiyueSchool',
-    'lateZishi', 'liunianSihua', 'mingzhuSchool', 'shenzhuSchool', 'sihuaVariant',
+eq('十六类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
+  ['brightnessSchool', 'changshengSchool', 'gengYearSihua', 'jiekongSchool', 'jieluSchool', 'kuiyueSchool',
+    'lateZishi', 'liunianSihua', 'mingzhuSchool', 'shenzhuSchool', 'sihuaVariant', 'suipoSchool',
     'tiankongSchool', 'tianmaSchool', 'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
 ok('默认值都在可选范围内', Object.entries(ZIWEI_SCHOOL_DEFAULTS)
   .every(([k, v]) => ZIWEI_SCHOOL_OPTIONS[k].includes(v)));
@@ -262,10 +262,10 @@ const C = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male
 eq('compute 回显开关', [C.schools.brightnessSchool, C.schools.jiekongSchool], ['QS', 'double']);
 ok('compute 摘要写流派行', /【流派】.*亮度 QS.*截空 double/.test(C.summary),
   C.summary.split('\n').find((l) => /流派/.test(l)));
-ok('规则里把十四类口径逐条列全（漏一类就是旧盘对不上账）',
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '命主', '杂曜', '流年四化取干', '十干四化']
+ok('规则里把十六类口径逐条列全（漏一类就是旧盘对不上账）',
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '命主', '杂曜', '流年四化取干', '十干四化', '截路空亡', '岁前十二神']
     .every((label) => C.rules.schools.includes(label)),
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '命主', '杂曜', '流年四化取干', '十干四化']
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '命主', '杂曜', '流年四化取干', '十干四化', '截路空亡', '岁前十二神']
     .filter((label) => !C.rules.schools.includes(label)).join(','));
 const NEST = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', schools: { tianmaSchool: 'month-branch' } });
 eq('compute 接受嵌套 schools', NEST.schools.tianmaSchool, 'month-branch');

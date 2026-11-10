@@ -653,7 +653,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：164 个测试文件 / 8891 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：164 个测试文件 / 8911 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -1240,6 +1240,12 @@ const CALIBER_SWITCHES = {
       贪阴阳机: '戊干 贪阴阳机', 阳武同阴: '庚干 阳武同阴', 阳武府同: '庚干 阳武府同',
       阳武府相: '庚干 阳武府相', 阳武同相: '庚干 阳武同相', 巨阳武昌: '辛干 巨阳武昌',
       梁紫府武: '壬干 梁紫府武', 梁紫相武: '壬干 梁紫相武', 破巨阳贪: '癸干 破巨阳贪',
+    }),
+    ziweiSchoolSwitch('jieluSchool', '截路空亡：照常 / 不排（中州派）', '截路空亡', 'off', 'zhongzhou', {
+      off: '照常（截空/副截/旬空/副旬）', zhongzhou: '不排（中州派）',
+    }),
+    ziweiSchoolSwitch('suipoSchool', '岁前十二神：照常 / 大耗改岁破（中州派）', '岁前十二神', 'off', 'zhongzhou', {
+      off: '照常（大耗）', zhongzhou: '大耗改岁破',
     }),
   ],
   qimen: [
@@ -9576,6 +9582,13 @@ const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   zuoyaoSchool: 'minimal',
   liunianSihua: 'year-stem',
   sihuaVariant: 'default',
+  // 中州派成组差异：off 全部用通行本（默认，默认盘逐字节不变）；zhongzhou 表示
+  // 「跟随 tianshiTianshang 的 zhongzhou 档」—— 那把开关切到中州派时，这一组跟着生效；
+  // 单独选 off/zhongzhou 而不动 tianshiTianshang 也可。
+  //   jieluSchool  截路空亡：zhongzhou 不排（截空、副截、旬空、副旬整组不出）
+  //   suipoSchool  岁前十二神：zhongzhou 把「大耗」改记作「岁破」（宫位不变，只换名字）
+  jieluSchool: 'off',
+  suipoSchool: 'off',
 });
 
 const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
@@ -9601,6 +9614,11 @@ const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   // 只列与 default 不同的那一档（default 之外全是「换掉某一干」的显式选择）。
   sihuaVariant: ['default', '廉破曲阳', '贪阴阳机', '阳武同阴', '阳武府同', '阳武府相',
     '阳武同相', '巨阳武昌', '梁紫府武', '梁紫相武', '破巨阳贪'],
+  // 中州派成组差异（两档各自独立，可单独开）：
+  //   jieluSchool  off 截路空亡照常 / zhongzhou 整组不排（截空、副截、旬空、副旬都不出）
+  //   suipoSchool  off 岁前十二神照常 / zhongzhou 把「大耗」改记作「岁破」
+  jieluSchool: ['off', 'zhongzhou'],
+  suipoSchool: ['off', 'zhongzhou'],
 });
 
 function ziweiSchoolsOf(input = {}) {
@@ -10063,7 +10081,11 @@ function buildZiwei(input) {
   if (schools.tiankongSchool !== 'off') {
     put(schools.tiankongSchool === 'shun-jia-shi' ? yb + hb : yb + 1, '天空', '杂曜');
   }
-  if (schools.jiekongSchool !== 'off') {
+  // 截路空亡：zhongzhou（中州派）整组不排——截空、副截、旬空、副旬都不出。
+  // 依据《中州派紫微斗数》：截路空亡不入中州派体系；通行本才排。
+  // 这一组只影响杂曜清单，不动宫盘、主星、十二宫位置。
+  const skipJielu = schools.jieluSchool === 'zhongzhou';
+  if (schools.jiekongSchool !== 'off' && !skipJielu) {
     const jk = JIEKONG[schools.jiekongSchool][yearStem];
     if (Array.isArray(jk)) {
       put(jk[0], '截空', '杂曜');
@@ -10130,13 +10152,17 @@ function buildZiwei(input) {
   const csStart = schools.changshengSchool === 'huo-tu' && bureau.number === 5
     ? 2
     : CHANGSHENG_START[bureau.number];
+  // 岁前十二神：中州派把「大耗」改记作「岁破」（宫位不变，只换名字）。
+  const renameDahao = schools.suipoSchool === 'zhongzhou';
   const shenshaAt = (branch) => {
     const d = forward ? 1 : -1;
+    let suiqi = SUIQI_NAMES[fix(branch - yb)];
+    if (renameDahao && suiqi === '大耗') suiqi = '岁破';
     return {
       changsheng: CHANGSHENG_NAMES[fix(d * (branch - csStart))],
       boshi: BOSHI_NAMES[fix(d * (branch - lucun))],
       jiangqian: JIANGQIAN_NAMES[fix(branch - JIANGXING[triad])],
-      suiqi: SUIQI_NAMES[fix(branch - yb)],
+      suiqi,
     };
   };
 
@@ -10365,7 +10391,7 @@ function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、命主 ${schools.mingzhuSchool}（soul-branch 按命宫地支 / year-branch 按生年年支）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为文墨变体整表替换）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、命主 ${schools.mingzhuSchool}（soul-branch 按命宫地支 / year-branch 按生年年支）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为文墨变体整表替换）、截路空亡 ${schools.jieluSchool}（off 照常排 / zhongzhou 整组不排）、岁前十二神 ${schools.suipoSchool}（off 照常 / zhongzhou 大耗改岁破）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
       zuoyao: schools.zuoyaoSchool === 'full'
         ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
         : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
@@ -27274,6 +27300,7 @@ const ZIWEI_SCHOOL_KEYS = [
   'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
   'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool',
   'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant',
+  'jieluSchool', 'suipoSchool',
 ];
 
 /** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
@@ -27408,6 +27435,7 @@ function ziweiText(r) {
       jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
       changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主', mingzhuSchool: '命主取法',
       zuoyaoSchool: '杂曜全表', liunianSihua: '流年四化取干', sihuaVariant: '十干四化变体',
+      jieluSchool: '截路空亡', suipoSchool: '岁前十二神',
     };
     const diff = Object.entries(labels)
       .filter(([key]) => r.schools[key] && r.schools[key] !== ZIWEI_SCHOOL_DEFAULTS[key])
