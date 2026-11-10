@@ -1,6 +1,12 @@
 ## 未发布
 
-> 本段主题（2026-11-10）：文墨未渲染数据补渲染——运曜/流曜、来因宫落地；「显示设置」扩到 14 项。
+> 本段主题（2026-11-10）：文墨未渲染数据补渲染——运曜/流曜、来因宫、限流十二神落地；「显示设置」扩到 14 项。
+
+### 限流十二神随限流变化（iztro 口径）
+- 口径（iztro `FunctionalAstrolabe._getHoroscopeBySolarDate` 实读钉死）：随流年/大限**重安的只有岁前与将前两组**（`yearlyDecStar: getYearly12(solarDate)`）；长生十二神、博士十二神只在本命排一次，horoscope scope 不重算。
+- 引擎：`engine/ziwei.js` 新增 `suiqiByBranch(branch, suipoSchool)`（流支起岁建顺数，中州派大耗改岁破）与 `jiangqianByBranch(branch)`（寅午戌起午、申子辰起子、巳酉丑起酉、亥卯未起卯）；`daxianList[]` 挂 `yunSuiqi/yunJiangqian`、流年项挂 `lnSuiqi/lnJiangqian`。
+- 面板：并入 `.pp-hs` 小字行（勾选「显示运曜和流曜」即可见，不再另设开关）；大限 12 宫全有、流年 12 宫全有。
+- 冒烟：戌限 `岁建戌…病符酉`、将星起午 ✓；2026 丙午 `岁建午…病符巳` ✓。
 
 ### 来因宫落地（iztro 口径）+「显示来因宫」开关
 - 口径（iztro `isOriginalPalace`）：生年天干与宫干相同的宫，子丑两宫除外（五虎遁下这两支永不对应生年干）。

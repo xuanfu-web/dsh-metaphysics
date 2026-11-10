@@ -10293,6 +10293,9 @@ function buildZiwei(input) {
         return out;
       })(),
       mutagen: Object.entries(sihuaTableOf(lnStemOf, schools)).map(([s, k]) => `${s}化${k}`),
+      // 流年十二神：岁前/将前随流年支重安（iztro getYearly12 口径）
+      lnSuiqi: suiqiByBranch(gz.branch, schools.suipoSchool),
+      lnJiangqian: jiangqianByBranch(gz.branch),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
         : null,
@@ -10692,6 +10695,34 @@ const PATTERN_TONE = {
   刑囚夹印: 'bad', 泛水桃花: 'bad',
 };
 
+// ── 限流十二神（iztro 口径）：随流年干支重安的只有岁前/将前两组 ──
+// 长生十二神、博士十二神只在本命排盘算一次，horoscope scope 不重算（iztro
+// FunctionalAstrolabe._getHoroscopeBySolarDate 里 yearlyDecStar=getYearly12(solarDate)
+// 只重出 suiqian12/jiangqian12，长生与博士留在本命宫位上）。
+// 岁前：流年支起岁建，顺数 SUIQI_NAMES；将前：寅午戌起午、申子辰起子、巳酉丑起酉、亥卯未起卯。
+function suiqiByBranch(branch, suipoSchool) {
+  const b = BRANCHES.indexOf(branch);
+  if (b < 0) return {};
+  const out = {};
+  for (let i = 0; i < 12; i++) {
+    let name = SUIQI_NAMES[i];
+    if (suipoSchool === 'zhongzhou' && name === '大耗') name = '岁破';
+    out[name] = BRANCHES[fix(b + i)];
+  }
+  return out;
+}
+
+function jiangqianByBranch(branch) {
+  const b = BRANCHES.indexOf(branch);
+  if (b < 0) return {};
+  const triad = ['寅午戌', '申子辰', '巳酉丑', '亥卯未'].find((t) => t.includes(branch));
+  if (!triad) return {};
+  const start = JIANGXING[triad];
+  const out = {};
+  for (let i = 0; i < 12; i++) out[JIANGQIAN_NAMES[i]] = BRANCHES[fix(start + i)];
+  return out;
+}
+
 // ── 大限一览：宫干四化落宫、三方主星 ──────────────────────────
 
 function daxianList(chart) {
@@ -10716,6 +10747,9 @@ function daxianList(chart) {
       mainStars: mainOf(p.sanfang),
       // 运曜：按大限宫干支安 10 颗（魁钺昌曲禄羊陀马鸾喜），映射 星名→地支
       yunStars: horoscopeStarsByBranch(p.ganzhi, false),
+      // 限流十二神：随大限宫支重安的岁前/将前两组（长生、博士不随限流变）
+      yunSuiqi: suiqiByBranch(p.branch, chart.schools.suipoSchool),
+      yunJiangqian: jiangqianByBranch(p.branch),
       mutagenHits: Object.entries(sihuaTableOf(p.stem, chart.schools)).map(([star, type]) => {
         const b = starBranchOf(chart, star);
         return { star, type, branch: b >= 0 ? BRANCHES[b] : null, palace: b >= 0 ? chart.palaces.find((x) => x.branch === BRANCHES[b])?.palace ?? null : null };
@@ -11062,7 +11096,7 @@ function flowOf(chart, asOf) {
   };
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, SIHUA_VARIANTS, sihuaTableOf, natalSihuaTableOf, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_BREAK_RULES, PATTERN_TONE, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, horoscopeStarsOf, horoscopeStarsByBranch, enrichLiunian, asOfParts, flowOf };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, SIHUA_VARIANTS, sihuaTableOf, natalSihuaTableOf, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_BREAK_RULES, PATTERN_TONE, suiqiByBranch, jiangqianByBranch, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, horoscopeStarsOf, horoscopeStarsByBranch, enrichLiunian, asOfParts, flowOf };
 })();
 
 __mods['tarot-cards'] = (function () {
@@ -31245,10 +31279,22 @@ window.__MP_VER = "0.64.0";
     }
     const hsByView = {
       da: dxObj && dxObj.yunStars
-        ? (() => { const o = {}; for (const [k, br] of Object.entries(dxObj.yunStars)) (o[br] = o[br] || {})[k] = br; return o; })()
+        ? (() => {
+            const o = {};
+            for (const [k, br] of Object.entries(dxObj.yunStars)) (o[br] = o[br] || {})[k] = br;
+            // 限流十二神（随大限宫支重安的岁前/将前）并入同一小字行
+            if (dxObj.yunSuiqi) for (const [k, br] of Object.entries(dxObj.yunSuiqi)) (o[br] = o[br] || {})[k] = br;
+            if (dxObj.yunJiangqian) for (const [k, br] of Object.entries(dxObj.yunJiangqian)) (o[br] = o[br] || {})[k] = br;
+            return o;
+          })()
         : null,
       ln: lnHsByBranch,
     };
+    if (r.liunian && r.liunian.length) {
+      const ln0 = r.liunian.find((x) => x.ganzhi === (r._lnSel || r.liunian[0].ganzhi)) || r.liunian[0];
+      if (ln0.lnSuiqi) for (const [k, br] of Object.entries(ln0.lnSuiqi)) (lnHsByBranch[br] = lnHsByBranch[br] || {})[k] = br;
+      if (ln0.lnJiangqian) for (const [k, br] of Object.entries(ln0.lnJiangqian)) (lnHsByBranch[br] = lnHsByBranch[br] || {})[k] = br;
+    }
     const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch, hsByView[kind] || null, r.laiyin && r.laiyin.branch)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'

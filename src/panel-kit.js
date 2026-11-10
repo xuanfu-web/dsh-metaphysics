@@ -1725,10 +1725,22 @@
     }
     const hsByView = {
       da: dxObj && dxObj.yunStars
-        ? (() => { const o = {}; for (const [k, br] of Object.entries(dxObj.yunStars)) (o[br] = o[br] || {})[k] = br; return o; })()
+        ? (() => {
+            const o = {};
+            for (const [k, br] of Object.entries(dxObj.yunStars)) (o[br] = o[br] || {})[k] = br;
+            // 限流十二神（随大限宫支重安的岁前/将前）并入同一小字行
+            if (dxObj.yunSuiqi) for (const [k, br] of Object.entries(dxObj.yunSuiqi)) (o[br] = o[br] || {})[k] = br;
+            if (dxObj.yunJiangqian) for (const [k, br] of Object.entries(dxObj.yunJiangqian)) (o[br] = o[br] || {})[k] = br;
+            return o;
+          })()
         : null,
       ln: lnHsByBranch,
     };
+    if (r.liunian && r.liunian.length) {
+      const ln0 = r.liunian.find((x) => x.ganzhi === (r._lnSel || r.liunian[0].ganzhi)) || r.liunian[0];
+      if (ln0.lnSuiqi) for (const [k, br] of Object.entries(ln0.lnSuiqi)) (lnHsByBranch[br] = lnHsByBranch[br] || {})[k] = br;
+      if (ln0.lnJiangqian) for (const [k, br] of Object.entries(ln0.lnJiangqian)) (lnHsByBranch[br] = lnHsByBranch[br] || {})[k] = br;
+    }
     const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch, hsByView[kind] || null, r.laiyin && r.laiyin.branch)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'

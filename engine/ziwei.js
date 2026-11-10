@@ -810,6 +810,9 @@ export function buildZiwei(input) {
         return out;
       })(),
       mutagen: Object.entries(sihuaTableOf(lnStemOf, schools)).map(([s, k]) => `${s}化${k}`),
+      // 流年十二神：岁前/将前随流年支重安（iztro getYearly12 口径）
+      lnSuiqi: suiqiByBranch(gz.branch, schools.suipoSchool),
+      lnJiangqian: jiangqianByBranch(gz.branch),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
         : null,
@@ -1209,6 +1212,34 @@ export const PATTERN_TONE = {
   刑囚夹印: 'bad', 泛水桃花: 'bad',
 };
 
+// ── 限流十二神（iztro 口径）：随流年干支重安的只有岁前/将前两组 ──
+// 长生十二神、博士十二神只在本命排盘算一次，horoscope scope 不重算（iztro
+// FunctionalAstrolabe._getHoroscopeBySolarDate 里 yearlyDecStar=getYearly12(solarDate)
+// 只重出 suiqian12/jiangqian12，长生与博士留在本命宫位上）。
+// 岁前：流年支起岁建，顺数 SUIQI_NAMES；将前：寅午戌起午、申子辰起子、巳酉丑起酉、亥卯未起卯。
+export function suiqiByBranch(branch, suipoSchool) {
+  const b = BRANCHES.indexOf(branch);
+  if (b < 0) return {};
+  const out = {};
+  for (let i = 0; i < 12; i++) {
+    let name = SUIQI_NAMES[i];
+    if (suipoSchool === 'zhongzhou' && name === '大耗') name = '岁破';
+    out[name] = BRANCHES[fix(b + i)];
+  }
+  return out;
+}
+
+export function jiangqianByBranch(branch) {
+  const b = BRANCHES.indexOf(branch);
+  if (b < 0) return {};
+  const triad = ['寅午戌', '申子辰', '巳酉丑', '亥卯未'].find((t) => t.includes(branch));
+  if (!triad) return {};
+  const start = JIANGXING[triad];
+  const out = {};
+  for (let i = 0; i < 12; i++) out[JIANGQIAN_NAMES[i]] = BRANCHES[fix(start + i)];
+  return out;
+}
+
 // ── 大限一览：宫干四化落宫、三方主星 ──────────────────────────
 
 export function daxianList(chart) {
@@ -1233,6 +1264,9 @@ export function daxianList(chart) {
       mainStars: mainOf(p.sanfang),
       // 运曜：按大限宫干支安 10 颗（魁钺昌曲禄羊陀马鸾喜），映射 星名→地支
       yunStars: horoscopeStarsByBranch(p.ganzhi, false),
+      // 限流十二神：随大限宫支重安的岁前/将前两组（长生、博士不随限流变）
+      yunSuiqi: suiqiByBranch(p.branch, chart.schools.suipoSchool),
+      yunJiangqian: jiangqianByBranch(p.branch),
       mutagenHits: Object.entries(sihuaTableOf(p.stem, chart.schools)).map(([star, type]) => {
         const b = starBranchOf(chart, star);
         return { star, type, branch: b >= 0 ? BRANCHES[b] : null, palace: b >= 0 ? chart.palaces.find((x) => x.branch === BRANCHES[b])?.palace ?? null : null };
