@@ -1,6 +1,5 @@
 // 问真神煞大全补缺批（0.66）：17 条新规则逐条验证 + 口径表对拍
 // 口径来源：《问真神煞大全》55 章实读（www.iwzbz.com 问真课堂），详见 CHANGELOG 0.66.0
-import assert from 'node:assert/strict';
 import { computeBaziShensha, RULE_TABLE } from '../engine/shensha.js';
 import { compute } from '../engine/index.js';
 
@@ -18,8 +17,15 @@ const hitInfo = (r, name) => {
   return `${it.pillars.join('/')}@${it.target}`;
 };
 
-let n = 0;
-const ok = (cond, label) => { assert.ok(cond, label); n++; };
+let pass = 0;
+let fail = 0;
+// 行首必须是 PASS / FAIL：tools/check-assertions.mjs 按 /^(PASS|FAIL) /gm 计数。
+// 之前这里是 assert.ok + 末尾一句「N PASS」，一条都数不进去，基线记成 pass:0 ——
+// 等于这 42 条断言从来没被闸门拦过（破了也不会红）。改成一断言一行。
+const ok = (cond, label) => {
+  if (cond) { pass += 1; console.log(`PASS  ${label}`); }
+  else { fail += 1; console.log(`FAIL  ${label}`); }
+};
 
 // ── 17 条新规则逐条命中 ──
 ok(hit(mk(['甲','戌','甲戌'], ['戊','辰','戊辰'], ['丁','丑','丁丑'], ['甲','辰','甲辰']), '天德合'), '天德合：辰月（天德壬→丁合）见丁');
@@ -74,9 +80,15 @@ ok(Object.keys(RULE_TABLE).length >= 51, `规则总数 >= 51（实际 ${Object.k
   ok(Array.isArray(r.shensha.names) && r.shensha.count > 0, '真实命例 shensha 正常');
   const r2 = compute({ system: 'bazi', datetime: '1984-06-15T10:00', gender: 'female' });
   ok(Array.isArray(r2.shensha.names), '女性命例不炸（勾绞/元辰按阴女取位）');
-  // 1990 庚午年（路旁土→土命）：学堂土见申、词馆土见亥
-  const hasStems = r.shensha.names.filter((x) => ['学堂','词馆'].includes(x));
-  ok(Array.isArray(hasStems), `庚午土命学堂/词馆可查（本例命中：${hasStems.join('、') || '无'}）`);
+  // 1990 庚午年 → 纳音路旁土 → 土命。学堂土见申、词馆土见亥；
+  // 本盘四支为午/巳/丑/未，无申无亥 → 两条都不该报（改成 Array.isArray 那种写法是永远不会红的）。
+  const hasStems = r.shensha.names.filter((x) => ['学堂', '词馆'].includes(x));
+  ok(hasStems.length === 0, `庚午土命本盘无申亥 → 学堂/词馆不报（实际：${hasStems.join('、') || '无'}）`);
+  // 反向验证：同年同类，换成申/亥在四支里就该报
+  const r3 = compute({ system: 'bazi', datetime: '1990-08-15T10:00', gender: 'male' });
+  const stems3 = r3.shensha.names.filter((x) => ['学堂', '词馆'].includes(x));
+  ok(stems3.length > 0, `庚午土命申月生 → 学堂/词馆出现（实际：${stems3.join('、') || '无'}）`);
 }
 
-console.log(`\n${n} PASS`);
+console.log(`\n${pass} PASS / ${fail} FAIL`);
+if (fail > 0) process.exitCode = 1;
