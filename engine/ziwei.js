@@ -795,6 +795,16 @@ export function buildZiwei(input) {
       liutuo: BRANCHES[fix(lu - 1)],
       liukui: BRANCHES[kuiyueTable[gz.stem][0]],
       liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
+      // 流曜补全（流昌曲按流年干、流马按流年支三合、流鸾流喜按流年支、年解按流年支）
+      ...(() => {
+        const s = horoscopeStarsByBranch(gz, true);
+        const out = {};
+        for (const [name, br] of Object.entries(s)) {
+          if (name === '流禄' || name === '流羊' || name === '流陀' || name === '流魁' || name === '流钺') continue;
+          out[name] = br;
+        }
+        return out;
+      })(),
       mutagen: Object.entries(sihuaTableOf(lnStemOf, schools)).map(([s, k]) => `${s}化${k}`),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
@@ -1215,6 +1225,8 @@ export function daxianList(chart) {
       selfHua: p.selfHua,
       sanfang: p.sanfang,
       mainStars: mainOf(p.sanfang),
+      // 运曜：按大限宫干支安 10 颗（魁钺昌曲禄羊陀马鸾喜），映射 星名→地支
+      yunStars: horoscopeStarsByBranch(p.ganzhi, false),
       mutagenHits: Object.entries(sihuaTableOf(p.stem, chart.schools)).map(([star, type]) => {
         const b = starBranchOf(chart, star);
         return { star, type, branch: b >= 0 ? BRANCHES[b] : null, palace: b >= 0 ? chart.palaces.find((x) => x.branch === BRANCHES[b])?.palace ?? null : null };
@@ -1397,7 +1409,61 @@ export function flyComposite(chart, { from = '命宫' } = {}) {
   };
 }
 
-// ── 流年四化落宫 ────────────────────────────────────────────
+// ── 限流星曜（运曜/流曜）────────────────────────────────────
+// 口径依据 iztro star/horoscopeStar.ts + star/location.ts（本命同表换干支重算）：
+//   · 魁钺、昌曲、禄羊陀 按运限天干；天马按运限地支三合；红鸾天喜按运限地支（卯起逆数）。
+//   · 流年另加「年解」：戌上起子，逆数至流年地支。
+// 与本命安星的差异只有两点：昌曲在本命按时支（戌起逆数/辰起顺数），限流按天干
+//（甲昌巳曲酉、乙昌午曲申、丙戊昌申曲午、丁己昌酉曲巳、庚昌亥曲卯、辛昌子曲寅、壬昌寅曲辰、癸昌卯曲巳）；
+// 火铃不随限流重安（iztro 同样只安这 10+1 颗）。
+const LIU_CHANGQU = {
+  甲: [5, 9], 乙: [6, 8], 丙: [8, 6], 戊: [8, 6], 丁: [9, 5], 己: [9, 5],
+  庚: [11, 3], 辛: [0, 2], 壬: [2, 4], 癸: [3, 5],
+};
+
+const NIANJIE_OF = { 子: 10, 丑: 9, 寅: 8, 卯: 7, 辰: 6, 巳: 5, 午: 4, 未: 3, 申: 2, 酉: 1, 戌: 0, 亥: 11 };
+
+/** 前缀：大限叫运X、流年叫流X（iztro 同款命名） */
+const HS_PREFIX = (yearly) => (yearly ? '流' : '运');
+
+/** 按一组干支安限流星曜，返回 12 宫（按地支序）各宫的星名数组。yearly=true 时前缀用「流」并加年解。 */
+export function horoscopeStarsOf(gz, yearly = false) {
+  const stem = gz.stem ?? String(gz).replace(/[子丑寅卯辰巳午未申酉戌亥]$/, '');
+  const branch = gz.branch ?? String(gz).slice(-1);
+  const sb = BRANCHES.indexOf(branch);
+  const pre = HS_PREFIX(yearly);
+  const lu = LUCUN[stem];
+  const [kui, yue] = KUI_YUE[stem];
+  const [chang, qu] = LIU_CHANGQU[stem];
+  const ma = TIANMA[triadOf(sb)];
+  const luang = fix(3 - sb);
+  const byBranch = Array.from({ length: 12 }, () => []);
+  const add = (idx, name) => byBranch[fix(idx)].push(name);
+  add(kui, `${pre}魁`);
+  add(yue, `${pre}钺`);
+  add(chang, `${pre}昌`);
+  add(qu, `${pre}曲`);
+  add(lu, `${pre}禄`);
+  add(lu + 1, `${pre}羊`);
+  add(lu - 1, `${pre}陀`);
+  add(ma, `${pre}马`);
+  add(luang, `${pre}鸾`);
+  add(luang + 6, `${pre}喜`);
+  if (yearly) add(NIANJIE_OF[branch], '年解');
+  return byBranch;
+}
+
+/** 把 12 宫的星名数组转成 {星名: 地支}（供 daxianList/liunian 挂字段） */
+export function horoscopeStarsByBranch(gz, yearly = false) {
+  const byBranch = horoscopeStarsOf(gz, yearly);
+  const out = {};
+  byBranch.forEach((stars, i) => {
+    for (const name of stars) out[name] = BRANCHES[i];
+  });
+  return out;
+}
+
+
 
 export function enrichLiunian(chart) {
   for (const ln of chart.liunian) {
