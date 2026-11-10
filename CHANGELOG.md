@@ -1,6 +1,22 @@
 ## 未发布
 
-> 本段主题（2026-11-10，D1+）：把命盘类四个 tab 合并成一个 `client.chart.js`，去掉四个分块各存一份的公共栈。**不改任何排盘口径、不改界面、不加功能**。
+> 本段主题（2026-11-10）：修「问进对话」的 chip 挂不上（C3 对话桥），再把命盘类四个 tab 合并成一个分块。**不改任何排盘口径、不加新功能**。
+
+### C3 对话桥：`slots.inject` 的 callback 必须返回可调用 disposer
+
+> 症状：面板里点「问进对话」一直回「对话输入框还没就绪」，输入框右侧也看不到「命理·问」chip。
+> 这条从 0.35.0 挂到现在没修好，之前几轮的排查方向（槽位未声明、注册时机、ctx.effect 包裹）都不对。
+
+- **根因：`slots.register` 实测返回对象，不是函数**（`src/app.js`）：宿主文档写的是「the idempotent definition disposer」，我们据此认为 `tryReg` 的返回值就是可调用清理器，于是直接 `return d` 交给 `slots.inject` 做 callback 返回值。但真机上 `typeof d === 'object'`——callback 返回的不是可调用 disposer，宿主判这次贡献无效：**座位占住了、`register` 不抛错、组件却永远不渲染**。面板自检把这句话原样打了出来，是这次定位的关键证据：`贡献 sidebar.panellist=object,main=object,input.right=undefined,composer.dock=undefined`。
+- **修法**：新增 `asDisposer()`，按能力探测把返回值归一成函数——函数直接用；有 `dispose` / `off` / `cancel` / `unregister` 方法的包一层；都认不出就退化成空清理器（仍满足「可调用」契约，不静默失效）。`tryReg` 统一走它。
+- **第二处缺陷：补注册与正式注册撞 id**（同上）：`sessionSeat` 走 `slots.inject` 的挂起路径时 `tryReg` 还没执行、`seatOk` 是空的，700ms 后的 `seatRetry` 就用**同一个 id** 再注册一次。宿主对同 id 要么抛错要么覆盖，会把先落地的那份挤掉。现在补注册有一次性闸（`seatRetryDone`），且只在 `seatOk` 确实为空时执行。
+- **第三处缺陷：补注册换新 id 会长出多个 chip**（同上）：旧实现用 `metaphysics-ask-1/-2/…` 逐轮补注册，而 `conversation.input.right` 是 **list** 槽，每次都挂一个新条目。已改为始终用同一个 id。
+- **`sessionSeat` 的 run 现在透传返回值**：这一处本身不是根因（传给 `slots.inject` 的是 `install`，它本来就返回 disposer），但 `ctx.effect.run` 返回 `undefined` 会让外层 effect 变成空效果、卸载时收不干净，一并修正。
+- **自检文案去掉技术词**（同上）：`bridgeDiagText` 原来会打印 `=object` / `=undefined`，而面板有一条「结果里不许出现 null / undefined / NaN」的闸，诊断信息把闸打红了。改成「已挂上 / 未挂上」，信息量不减、不再污染结果卡。
+- **测试补了三条能守住根因的断言**（`test/client-bundle.test.mjs`）：① 四个座位的 inject callback 都返回函数；② 把 `register` 的返回值钉成**对象**形态，要求归一化后仍可调用——**这条做过变异验证：撤掉 `asDisposer` 立刻红（`sidebar.panellist→object`），恢复立刻绿**；③ 同一槽位不许用同一 id 注册两次。旧测试的 mock 只提供了 `register`、没有 `inject`，走的是直调分支，所以从来测不到真实路径——这也是这个 bug 能活这么久的原因。
+- **边界（必须说明）**：以上三处都是**代码层面确定存在的缺陷**，已修好并有断言守住。但我**没有在真实宿主里复现并确认 chip 已出现**——离线环境无法复制宿主的真实 `slots` 服务。修复后 `e2e-panel` 110 项、全量 163 个测试文件全绿，但这些都不等于「用户在真机上确实看到了 chip」。**下次在真机打开面板时，请看一眼输入框右侧有没有「命理·问」；若仍没有，面板结果卡下方那行「桥自检」会把当前状态直接写出来，把那一行发我即可继续定位。**
+
+### D1+ 命盘四 tab 合并成一块
 
 - **命盘四 tab 合并：18 块 → 15 块，分块合计 gzip 2.56MB → 1.89MB**（`tools/build-client.mjs`）：八字 / 紫微 / 合盘 / 趋势原先各自背一套完整公共栈（`index` 42KB + `interpret` 49KB + `interpret-knowledge` 22KB + `plain-summary` 15KB + `classics` 12KB ≈ 140KB gzip）。用户在四个 tab 间切换时每切一次就重复下载一遍——「八字 → 紫微 → 合盘」这条最普通的路径累计 **809KB**，其中约 405KB 是重复字节。合并后单块 gzip **247KB**（几乎等于原来 bazi 单块），四 tab 全逛一遍从 809KB 降到 **336KB**，**省 58%**。
 - **这不是「抽共享块」**：先按常规思路量过，抽共享块在 DSH 上不成立——模块系统要求分块自包含（`dsh.client.external` 只解析到冻结的静态表或独立动态包 row，而本插件只注册一个 entry id），分块 factory 拿到的 `require` 是裸的，只有入口层的 `require.async` 由宿主注入。而且就算抽得出来也**不省**：实测「只看八字」在两种方案下都是 462KB，只是把同样的字节从 A 文件搬到 B 文件。真正能去掉重复的路径是「在一个自包含分块内让多个 tab 共用一套栈」。

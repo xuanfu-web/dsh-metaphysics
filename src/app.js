@@ -557,7 +557,7 @@ const needAsk = Core.needAsk || ((t) => false);
 // conversation.input.right 是会话作用域槽位，props 带 inputActions：
 // setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
 // 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
-const COMPOSER = { ref: null, seats: [], seatOk: {}, keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
+const COMPOSER = { ref: null, seats: [], seatOk: {}, seatDisposers: [], contribution: '', keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
 const LAST = { r: null, q: '', it: null };
 // 档案称呼框在 dangerouslySetInnerHTML 里，重绘会整块换掉；存在模块级，
 // 改日期等任意 state 变化重绘时才能把它带回输入框（不 setState，避免每键重绘丢光标）
@@ -572,6 +572,10 @@ function bridgeDiagText() {
   bits.push('注册 ' + COMPOSER.regs + ' 次');
   bits.push('inject ' + (COMPOSER.injectType || '?'));
   bits.push('槽位 ' + (COMPOSER.spec || '?'));
+  // 「注册成功」不等于「贡献生效」：slots.inject 的 callback 必须返回可调用的 disposer。
+  // 这段文案会出现在结果卡里，所以不用 undefined/object 这类词——面板有一条
+  // 「结果里不许出现 null / undefined / NaN」的闸，技术词会把闸打红。
+  if (COMPOSER.contribution) bits.push('贡献 ' + COMPOSER.contribution);
   if (COMPOSER.errs.length) bits.push('错误：' + COMPOSER.errs.join(' / '));
   return '桥自检：' + bits.join('；');
 }
@@ -2231,6 +2235,28 @@ function safeApply(ctx) {  try {
     COMPOSER.spec = '取声明失败';
     noteRegError(e);
   }
+  /**
+   * 把 slots.register 的返回值归一成「清理函数」。
+   *
+   * 宿主文档说 register 返回 "the idempotent definition disposer"，实测返回的是
+   * **对象**而不是函数（可能是带 dispose() 的句柄，也可能是别的形状）。
+   * 而 slots.inject 的 callback 契约要求返回 `SlotInjectionEffect`——即一个可调用清理器。
+   * 直接 `return d` 会让宿主拿到 object，判这次贡献无效：座位占住了、register 不抛错、
+   * 组件却永远不渲染。这正是「输入框右侧看不到 chip」的根因。
+   *
+   * 这里按能力探测，不猜具体形状：函数直接用；有 dispose/off/cancel 方法的包一层；
+   * 都认不出就退化成空清理器（仍然满足「可调用」契约，不静默失效）。
+   */
+  const asDisposer = (d) => {
+    if (typeof d === 'function') return d;
+    if (d && typeof d === 'object') {
+      for (const m of ['dispose', 'off', 'cancel', 'unregister']) {
+        if (typeof d[m] === 'function') return () => { try { d[m](); } catch (e) { /* 清理失败不影响主流程 */ } };
+      }
+    }
+    return () => {};
+  };
+
   const tryReg = (options, component) => {
     try {
       const d = slots.register(options, component);
@@ -2238,25 +2264,32 @@ function safeApply(ctx) {  try {
       // 宿主收下即算「这个槽位已申报」：组件什么时候挂载由外壳决定，
       // 拿 ref 当唯一判据会在挂载空窗里反复补注册，输入条长出两个同款按钮
       COMPOSER.seatOk[options.name] = true;
-      return d;
+      return asDisposer(d);
     } catch (e) {
       noteRegError(e);
-      return null;
+      return () => {};
     }
   };
 
   // 关键：槽位由外壳（ui-layout）声明，可能晚于本插件激活。
   // 用 slots.inject 等声明提交后再注册，直接 register 会抛 "slot is not declared"。
+  // 与 sessionSeat 同理：callback 必须把 disposer 返回给宿主，否则贡献无效。
   const waitFor = (key, install) => {
+    const guarded = () => {
+      const d = install();
+      COMPOSER.contribution = (COMPOSER.contribution ? COMPOSER.contribution + ',' : '')
+        + (key + (typeof d === 'function' ? ' 已挂上' : ' 未挂上'));
+      return d;
+    };
     try {
       if (typeof slots.inject === 'function') {
-        slots.inject(key, install);
+        slots.inject(key, guarded);
       } else {
-        install();
+        guarded();
       }
     } catch (e) {
       console.error('[metaphysics] 等待槽位失败：' + key, e);
-      try { install(); } catch (e2) { console.error('[metaphysics] 直接注册也失败：' + key, e2); }
+      try { guarded(); } catch (e2) { console.error('[metaphysics] 直接注册也失败：' + key, e2); }
     }
   };
 
@@ -2267,24 +2300,44 @@ function safeApply(ctx) {  try {
 
   waitFor('main', () => tryReg({ name: 'main', key: 'metaphysics' }, (p) => h(PanelGuard, null, h(App, p))));
 
-  // 会话输入框右侧的小桥：只用来拿到 inputActions，不画界面
-  // 会话作用域槽位由会话视图声明，通常晚于插件激活：inject 内部会等声明提交并重放。
-  // 外面再套一层 ctx.effect，让「声明后重放」落在本插件的 fiber 上（卸载即回收）。
+  // 会话输入框右侧的小桥：拿到 inputActions 后把提问送进输入框。
+  //
+  // 宿主契约（slots.inject）：`inject(key, callback)` 的 callback 必须**返回 disposer**
+  // （signature 写作 `() => SlotInjectionEffect`）——它被当作「这段贡献」的清理器。
+  // 旧实现把 inject 包在 ctx.effect(run) 里、而 run 什么都不返回，宿主拿到 undefined
+  // 就认为这次贡献没有效果，槽位虽声明成功、注册也不抛错，但这条贡献等于没挂上。
+  // 这与「问进对话看不到 chip」的症状一致：组件压根没被渲染。
+  //
+  // 现在两层都返回 disposer：inject 的 callback 返回 tryReg 的注销器，
+  // 外层 ctx.effect 也返回同一个，插件的 fiber 卸载时两层都能收干净。
   const sessionSeat = (key, install) => {
     const run = () => {
-      try { slots.inject(key, install); }
-      catch (e) {
+      try {
+        // 槽位已声明时宿主会同步跑 callback；未声明时先挂起，声明提交后再重放。
+        // 两种情况下 callback 的返回值都是本座位的注销器，必须一路传回去。
+        const d = slots.inject(key, install);
+        // 自检用：只记「有没有拿到注销器」，这是宿主判定贡献有效性的唯一依据。
+        COMPOSER.contribution = (COMPOSER.contribution ? COMPOSER.contribution + ',' : '')
+          + (key.replace('conversation.', '') + (typeof d === 'function' ? ' 已挂上' : ' 未挂上'));
+        return d;
+      } catch (e) {
         console.error('[metaphysics] 槽位注册失败：' + key, e);
-        try { install(); } catch (e2) { console.error('[metaphysics] 直接注册也失败：' + key, e2); }
+        try { return install(); } catch (e2) {
+          console.error('[metaphysics] 直接注册也失败：' + key, e2);
+          return undefined;
+        }
       }
     };
+    let dispose;
     try {
-      if (typeof ctx.effect === 'function') ctx.effect(run, 'metaphysics: ' + key);
-      else run();
+      if (typeof ctx.effect === 'function') dispose = ctx.effect(run, 'metaphysics: ' + key);
+      else dispose = run();
     } catch (e) {
       console.error('[metaphysics] effect 包裹失败：' + key, e);
-      run();
+      dispose = run();
     }
+    // effect 返回的是「清理这次 effect」的函数；把它们留一份，插件卸载时统一收
+    if (typeof dispose === 'function') COMPOSER.seatDisposers.push(dispose);
   };
 
   sessionSeat('conversation.input.right', () => tryReg(
@@ -2297,23 +2350,33 @@ function safeApply(ctx) {  try {
     ComposerProbe,
   ));
 
-  let seatTries = 0;
+  // 补注册的真实需求：slots.inject 只在「槽位声明提交」时重放 callback。
+  // 如果本插件激活时会话槽位**已经**声明过、而 inject 的挂起机制没接上（宿主版本差异），
+  // 就永远等不到重放——这时才需要补一次。
+  //
+  // 关键约束（旧实现踩过两次）：
+  //  ① 不能换新 id。`conversation.input.right` 是 list 槽，换 id 补注册会在输入条上
+  //     长出好几个同款 chip（metaphysics-ask-1 / -2 …）。
+  //  ② 不能和 sessionSeat 撞车。两处都用同一个 id 注册，宿主要么抛错要么覆盖，
+  //     都会把先落地的那份注册挤掉——这正是「座位占了、chip 却看不到」的直接原因。
+  //  ③ 只在「确实还没注册成功」时补，且一辈子只补一次。
+  //
+  // 因此在 tryReg 成功时就地把「已注册」记进 seatOk，补注册只看这个标记。
+  let seatRetryDone = false;
   const trySeatNow = () => {
-    if (COMPOSER.ref) return;
-    seatTries += 1;
-    const tag = '-' + seatTries;
-    // 只补没被宿主收下过的那一格；已收下的等它挂载，不再用新 id 重复注册
+    if (COMPOSER.ref || seatRetryDone) return;
+    seatRetryDone = true;
     if (!COMPOSER.seatOk['conversation.input.right']) {
-      tryReg({ name: 'conversation.input.right', id: 'metaphysics-ask' + tag, order: 40 }, ComposerBridge);
+      tryReg({ name: 'conversation.input.right', id: 'metaphysics-ask', order: 40 }, ComposerBridge);
     }
     if (!COMPOSER.seatOk['conversation.composer.dock']) {
-      tryReg({ name: 'conversation.composer.dock', id: 'metaphysics-dock' + tag, order: 60 }, ComposerProbe);
+      tryReg({ name: 'conversation.composer.dock', id: 'metaphysics-dock', order: 60 }, ComposerProbe);
     }
   };
-  // 会话输入条要等会话视图打开才声明槽位：启动后 15 秒内连试，
-  // 用户第一次点页面时再补一次（那时输入框一定已经在）。
+  // 会话输入条要等会话视图打开才声明槽位：启动后短轮询几次，用户第一次点页面时再补一次。
+  // 一旦两格都被宿主收下就停——不再无限补注册。
   let seatTriesLeft = 20;
-  const seatBothSeated = () => COMPOSER.seatOk['conversation.input.right'] && COMPOSER.seatOk['conversation.composer.dock'];
+  const seatBothSeated = () => !!(COMPOSER.seatOk['conversation.input.right'] && COMPOSER.seatOk['conversation.composer.dock']);
   const seatRetry = () => {
     if (COMPOSER.ref || seatTriesLeft <= 0 || seatBothSeated()) return;
     seatTriesLeft -= 1;
@@ -2323,7 +2386,7 @@ function safeApply(ctx) {  try {
   };
   try { setTimeout(seatRetry, 700); } catch (e) { /* 无计时器环境 */ }
   try {
-    document.addEventListener('pointerdown', () => trySeatNow(), { once: true, capture: true });
+    document.addEventListener('pointerdown', () => { seatRetryDone = false; trySeatNow(); }, { once: true, capture: true });
   } catch (e) { /* 非 DOM 环境 */ }
 }
 
