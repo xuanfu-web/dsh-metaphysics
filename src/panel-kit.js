@@ -167,29 +167,39 @@
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
-/* 三视图切换（学文墨天机：飞星/三合/四化）——第二组 radio，默认「四化」=全显（现状）。
-   三合派：只看星曜庙旺 + 生年四化，藏自化、大限/流年四化、飞星链；
-   飞星派：看宫干自化与命宫飞星链，藏大限/流年四化；
-   四化派：生年实心 + 大限/流年空心 + 自化 + 图例，藏飞星链。
-   纯显隐开关，不改任何渲染函数——宫内数据本来就全算了，只是选择性展示。 */
+/* 三视图切换（学文墨天机：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
+   四化派（默认）：生年四化实心 + 大限/流年空心 + 自化 + 飞星链 chips；
+   飞星派：每宫格内显示「宫干四化飞出」逐条（禄→某宫…），图例藏大限/流年四化；
+   三合派：只看星曜庙旺与宫位结构，所有四化徽章（含生年）、自化、飞星链全部藏起。 */
 .pp-schools{border-top:none}
 .pp-schools label{min-height:38px;padding:2px 16px;font-size:12px}
 #ppm-sc-sihe:checked~.pp-schools label[for="ppm-sc-sihe"],
 #ppm-sc-feixing:checked~.pp-schools label[for="ppm-sc-feixing"],
 #ppm-sc-sanhe:checked~.pp-schools label[for="ppm-sc-sanhe"]{background:var(--lu);color:var(--on-accent)}
-#ppm-sc-sanhe:checked~.pp-body .pp-zh,
-#ppm-sc-sanhe:checked~.pp-body .pp-m.view,
-#ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
-#ppm-sc-sanhe:checked~.pp-body .pp-zhlegend,
-#ppm-sc-sanhe:checked~.pp-flywrap{display:none}
+/* 飞星派专属：宫内宫干四化行，只在飞星模式展开 */
+.pp-fx{display:none;margin-top:3px;font-size:10.5px;line-height:1.55;color:var(--muted);border-top:1px dashed var(--hair);padding-top:2px}
+.pp-fx i{font-style:normal;white-space:nowrap;margin-right:4px}
+.pp-fx i em{font-style:normal;color:var(--faint)}
+#ppm-sc-feixing:checked~.pp-body .pp-fx{display:block}
 #ppm-sc-feixing:checked~.pp-body .pp-m.view,
 #ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
-#ppm-sc-sihe:checked~.pp-flywrap{display:none}
+/* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips） */
+#ppm-sc-sanhe:checked~.pp-body .pp-m,
+#ppm-sc-sanhe:checked~.pp-body .pp-zh,
+#ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
+#ppm-sc-sanhe:checked~.pp-flywrap{display:none}
+#ppm-sc-sihe:checked~.pp-flywrap{display:block}
+#ppm-sc-feixing:checked~.pp-flywrap{display:block}
 /* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
 .pp-zhlegend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:4px}
 .pp-zhlegend i{font-style:normal;font-weight:600}
 .pp-zhlegend .z-lu{color:var(--lu)}.pp-zhlegend .z-quan{color:var(--quan)}
 .pp-zhlegend .z-ke{color:var(--ke)}.pp-zhlegend .z-ji{color:var(--ji)}
+/* 纸纹：feTurbulence 纤维噪点叠加在盘面底色上，浅色偏灰纤维、暗色同用（低透明度不抢字） */
+.pp-paper{position:relative}
+.pp::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.29 0 0 0 0 0.24 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23p)'/%3E%3C/svg%3E")}
+.pp>*{position:relative;z-index:1}
 .pp-zh{margin-left:4px;white-space:nowrap}
 .pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
@@ -1510,7 +1520,7 @@
   const fx = (n) => ((n % 12) + 12) % 12;
   const isTrine = (b, m) => b !== m && [fx(m + 4), fx(m + 8), fx(m + 6)].includes(b);
 
-  function cellHTML(p, soulIdx, view, allPalaces, viewHua) {
+  function cellHTML(p, soulIdx, view, allPalaces, viewHua, flyByBranch) {
     const pos = POS[p.branch] || [1, 1];
     const b = BR.indexOf(p.branch);
     const cls = ['pp-cell'];
@@ -1539,6 +1549,7 @@
       <div class="pp-stars">${starsHTML(p.stars, viewHua)}${zh}</div>
       ${borrow}
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
+      ${fxLineHTML(p, flyByBranch)}
       <div class="pp-foot">
         <div class="ft-l">
           <span class="ft-dx">${ss.boshi} ${p.daxian.start}-${p.daxian.end}</span>
@@ -1552,6 +1563,15 @@
         </div>
       </div>
     </div>`;
+  }
+
+  /* 飞星派专属：本宫宫干四化飞到哪一宫，逐条摊在宫格内（只此模式展开，CSS 控显隐）。
+     宫数据不带 mutagenHits，从 r.daxianList 借：同一宫干，飞化等价。 */
+  function fxLineHTML(p, flyByBranch) {
+    const hits = (flyByBranch && flyByBranch[p.branch]) || [];
+    if (!hits.length) return '';
+    const items = hits.map((m) => `<i class="${MUT[m.type] || ''}" title="${esc(m.star)}化${esc(m.type)}">${esc(m.type)}<em>→${esc(m.palace || '未上盘')}</em></i>`).join('');
+    return `<div class="pp-fx">${esc(p.ganzhi)}宫干 ${items}</div>`;
   }
 
   function sizhuOf(r) {
@@ -1584,7 +1604,9 @@
     const dxObj = (r.daxianList || []).find((d) => d.branch === dxPalace.branch) || null;
     const huaByView = { da: huaMap(dxObj && dxObj.mutagenHits), ln: huaMap(ln && ln.mutagenHits) };
 
-    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null)).join('');
+    const flyByBranch = {};
+    for (const d of r.daxianList || []) flyByBranch[d.branch] = d.mutagenHits || [];
+    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'
         ? `<div class="ct-t1">大限 ${dxPalace.ganzhi}　${dxPalace.daxian.start}-${dxPalace.daxian.end}岁</div>`
