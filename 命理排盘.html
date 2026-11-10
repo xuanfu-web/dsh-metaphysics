@@ -29317,12 +29317,13 @@ window.__MP_VER = "0.62.5";
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
-  --bg:#f6f1e6;--card:#fffdf8;--band:#fbf7ee;--hover:#f3ede1;--hover2:#ece5d6;
-  --tri:#f3e8cd;--soul:#fae4dc;--sel:#fceee7;--link:#f9ece0;
-  --red:#b3261e;--red-rgb:179,38,30;--lu:#1f6f3f;--lu-rgb:31,111,63;
-  --quan:#8a5a00;--quan-rgb:138,90,0;--ke:#1f4e79;--ke-rgb:31,78,121;--ji:#b3261e;
+  /* 水墨风：宣纸白为底、淡墨分层；米黄系整体降饱和，纸感靠 --band 的微暖留一点 */
+  --bg:#f4f2ec;--card:#fdfdfb;--band:#f7f5ef;--hover:#eeece5;--hover2:#e6e4dc;
+  --tri:#eef0ea;--soul:#f7ece9;--sel:#f5efe9;--link:#f0efe9;
+  --red:#a02c26;--red-rgb:160,44,38;--lu:#3d5a52;--lu-rgb:61,90,82;
+  --quan:#6e5a2e;--quan-rgb:110,90,46;--ke:#3a5568;--ke-rgb:58,85,104;--ji:#a02c26;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
-  --tg-bi:#4a6f8a;--tg-shi:#4c7a5c;--tg-cai:#8a6b1f;--tg-guan:#9c5b56;--tg-yin:#6d5f83;
+  --tg-bi:#4e5d6b;--tg-shi:#55685c;--tg-cai:#6e5a2e;--tg-guan:#8a4a42;--tg-yin:#5d5570;
   /* 之前 mp-cli / mp-qt / mp-cl / 起名卡里引用了 --ink3、--fx、--sans，却从未定义：
      var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。 */
   --ink3:#8a8378;--fx:"Kaiti SC",KaiTi,"STKaiti","Songti SC",serif;--sans:system-ui,-apple-system,"Microsoft YaHei",sans-serif;--kai:"Kaiti SC",KaiTi,"STKaiti",serif;
@@ -29342,10 +29343,11 @@ window.__MP_VER = "0.62.5";
   .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
   /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
-    --bg:#12110c;--card:#211f18;--band:#282419;--hover:#2e2a1f;--hover2:#383322;
-    --tri:#332913;--soul:#3a231c;--sel:#43271f;--link:#33241c;
-    --red:#f08569;--red-rgb:240,133,105;--lu:#74c795;--lu-rgb:116,199,149;
-    --quan:#e2a95c;--quan-rgb:226,169,92;--ke:#86bcea;--ke-rgb:134,188,234;--ji:#f08569;
+    /* 暗色水墨：墨底宣纸灰字，降暖提灰 */
+    --bg:#131311;--card:#1f1f1c;--band:#26261f;--hover:#2c2c26;--hover2:#35352c;
+    --tri:#2a2e28;--soul:#332521;--sel:#322d27;--link:#2c2b25;
+    --red:#e08a7a;--red-rgb:224,138,122;--lu:#8fb8a8;--lu-rgb:143,184,168;
+    --quan:#c9a96a;--quan-rgb:201,169,106;--ke:#8aadc0;--ke-rgb:138,173,192;--ji:#e08a7a;
     --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
     --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0;
     --ink3:#8b8478;
@@ -29487,9 +29489,13 @@ window.__MP_VER = "0.62.5";
 .pp-cell:hover{background:var(--hover)}
 /* 键盘可达：宫格是 div+tabindex，焦点必须看得见（原先把 outline 关了却没补替代） */
 .pp-cell:focus-visible{box-shadow:inset 0 0 0 2px var(--red)}
-.pp-cell.pp-sel{background:var(--sel);box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.5)}
+.pp-cell.pp-sel{background:var(--sel);box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.55)}
+/* 三方四正虚线：ink 色细虚线，端点宫由 pp-sel/pp-link 底色呼应 */
+.pp-sf{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.pp-sf line{stroke:var(--ink);stroke-width:1.2px;stroke-dasharray:3 2.4;opacity:.38;vector-effect:non-scaling-stroke}
+.pp-sf circle{fill:var(--ink);opacity:.45}
 /* 选中宫的财帛/官禄/迁移三宫：能一眼看出命宫牵着哪几宫 */
-.pp-cell.pp-link{background:var(--link);box-shadow:inset 0 0 0 1.5px rgba(var(--red-rgb),.22)}
+.pp-cell.pp-link{background:var(--link);box-shadow:inset 0 0 0 1.5px rgba(var(--red-rgb),.3)}
 .pp-detail{display:none;border-top:1px solid var(--line);background:var(--card);padding:11px 14px 13px;font-family:system-ui,sans-serif}
 .pp-detail.open{display:block}
 .pp-detail .dt-dh{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;padding-bottom:6px;margin-bottom:7px;border-bottom:1px dashed var(--line)}
@@ -31047,6 +31053,69 @@ window.__MP_VER = "0.62.5";
     body.querySelectorAll('.pp-cell[aria-expanded="true"]').forEach((c) => c.setAttribute('aria-expanded', 'false'));
   }
 
+  /* 三方四正连线（文墨天机式）：点击宫位后，把本宫—对宫—财帛—官禄四点连成虚线。
+     实现是纯 SVG overlay：绝对定位在 .pp-body 里、pointer-events:none 不挡点击，
+     线段端点由宫位格在 grid 上的行列号换算成百分比坐标，窗口缩放自动跟随。 */
+  const SF_POS = { /* 与十二宫 POS 同构：地支 → [row, col]（1-based，含中宫 2/3） */ };
+  function drawSanfang(body, pi) {
+    clearSanfang(body);
+    const grid = body.querySelector('.pp-grid');
+    if (!grid) return;
+    const targets = [pi, (pi + 6) % 12, (pi + 4) % 12, (pi + 8) % 12];
+    /* 文墨式连线：线只走中宫，不穿周边宫位。
+       每个宫往中宫一侧的「边中点」取锚：上排宫取下边中点、下排宫取上边中点，
+       左列宫取右边中点、右列宫取左边中点。中宫占 col 2~3 / row 2~3（即 25%~75%），
+       锚点恰好落在中宫边界上，折线自然被中宫「接住」。 */
+    const anchorOf = (b) => {
+      const cell = body.querySelector('.pp-cell[data-pi="' + b + '"]');
+      if (!cell) return null;
+      const r = Number(cell.style.gridRow), c = Number(cell.style.gridColumn);
+      /* 锚点 = 该宫「朝中宫的那条竖边」上的点：
+         x 永远落在中宫边界（25 或 75），y 取该宫行的中心。
+         这样线段从中宫边界出发，全部活动范围被限制在中宫矩形内，
+         不会横穿左右两侧的宫位（文墨的线也只在中间那块动）。 */
+      // 左右两列宫：x 取中宫左右边界，y 取该宫行的中心（row 2/3 → y 37.5/62.5，都在中宫内）
+      // 上排/下排的角宫（row 1/4）按所属左右列同样处理——y 可能越界，
+      // 所以统一把 y 压回中宫范围（25~75 的 1/4、3/4 分位）。
+      const yy = Math.min(75, Math.max(25, (r - 0.5) * 25));
+      if (c === 1) return [25, yy];
+      return [75, yy];
+    };
+    const pts = targets.map(anchorOf);
+    if (pts.some((x) => !x)) return;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "pp-sf");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.setAttribute("preserveAspectRatio", "none");
+    const mk = (x1, y1, x2, y2) => {
+      const l = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+      l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+      svg.appendChild(l);
+    };
+    /* 文墨的三角/菱形画法：四个锚点首尾相连成闭环——
+       本宫 → 对宫（对角线，过中心）→ 三合1 → 三合2 → 回本宫。
+       两条对角交叉线 + 两条边线，落在中宫的形状就是一个斜菱形，
+       视觉上与文墨天机的三角形连线一致。 */
+    mk(pts[0][0], pts[0][1], pts[1][0], pts[1][1]);
+    mk(pts[1][0], pts[1][1], pts[2][0], pts[2][1]);
+    mk(pts[2][0], pts[2][1], pts[3][0], pts[3][1]);
+    mk(pts[3][0], pts[3][1], pts[0][0], pts[0][1]);
+    // 端点小圆点：本宫用实心红点，其余三方用墨点
+    for (let i = 0; i < 4; i++) {
+      const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", pts[i][0]); c.setAttribute("cy", pts[i][1]); c.setAttribute("r", i === 0 ? 0.9 : 0.7);
+      if (i === 0) c.setAttribute("style", "fill:var(--red);opacity:.85");
+      svg.appendChild(c);
+    }
+    grid.style.position = "relative";
+    grid.appendChild(svg);
+  }
+  function clearSanfang(body) {
+    const old = body.querySelector("svg.pp-sf");
+    if (old) old.remove();
+  }
+
   // 全局委托：面板与独立页都不需要额外初始化，panel-kit 一加载就生效
   function bindZiwei() {
     if (bindZiwei.done || typeof document === 'undefined' || !document.addEventListener) return;
@@ -31059,6 +31128,7 @@ window.__MP_VER = "0.62.5";
       // 再点同一宫 → 收起
       if (cell.classList.contains('pp-sel')) {
         clearMarks(body);
+        clearSanfang(body);
         detail.classList.remove('open');
         detail.innerHTML = '';
         return;
@@ -31066,6 +31136,7 @@ window.__MP_VER = "0.62.5";
       clearMarks(body);
       const pi = Number(cell.dataset.pi);
       const soulIdx = Number(body.dataset.soul);
+      drawSanfang(body, pi);
       const sel = body.querySelectorAll('.pp-cell');
       sel.forEach((c) => {
         const ci = Number(c.dataset.pi);
@@ -31082,6 +31153,7 @@ window.__MP_VER = "0.62.5";
         const body = t.closest('.pp-body');
         if (body) {
           clearMarks(body);
+          clearSanfang(body);
           const d = body.querySelector('.pp-detail');
           if (d) { d.classList.remove('open'); d.innerHTML = ''; }
           return;
