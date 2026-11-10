@@ -1,9 +1,9 @@
-// 紫微 · 十一类流派开关：默认盘必须一字不变，显式切换才改盘。
-// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时 / 杂曜全表；身主两派另见 ziwei-shenzhu.test.mjs。
+// 紫微 · 十三类流派开关：默认盘必须一字不变，显式切换才改盘。
+// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时 / 杂曜全表 / 流年四化取干 / 十干四化变体；身主两派另见 ziwei-shenzhu.test.mjs。
 import fs from 'node:fs';
 import { compute } from '../engine/index.js';
 import {
-  buildZiwei, ziweiSchoolsOf, schoolBrightness,
+  buildZiwei, ziweiSchoolsOf, schoolBrightness, sihuaTableOf, natalSihuaTableOf, SIHUA_VARIANTS,
   ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, BRIGHTNESS_SCHOOLS,
 } from '../engine/ziwei.js';
 import { ok, eq } from './_harness.mjs';
@@ -23,9 +23,9 @@ const mutagens = (r) => r.palaces.flatMap((p) => p.stars)
 
 // ── 一、开关表与默认值 ─────────────────────────────────────
 // 键名一起钉住：加一类要写理由，删一类会动到旧盘与存档，谁都不能顺手改
-eq('十二类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
+eq('十三类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
   ['brightnessSchool', 'changshengSchool', 'gengYearSihua', 'jiekongSchool', 'kuiyueSchool',
-    'lateZishi', 'liunianSihua', 'shenzhuSchool', 'tiankongSchool', 'tianmaSchool',
+    'lateZishi', 'liunianSihua', 'shenzhuSchool', 'sihuaVariant', 'tiankongSchool', 'tianmaSchool',
     'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
 ok('默认值都在可选范围内', Object.entries(ZIWEI_SCHOOL_DEFAULTS)
   .every(([k, v]) => ZIWEI_SCHOOL_OPTIONS[k].includes(v)));
@@ -171,15 +171,60 @@ ok('非默认口径进摘要流派行', /【流派】.*流年四化取干.*life-
   LN_SUM.summary.split('\n').find((l) => /流派/.test(l)) || '(无流派行)');
 ok('默认口径不插流派行', !/【流派】/.test(compute({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' }).summary));
 
+// ── 十二、十干四化变体（文墨「十干四化」全表）───────────────
+// 变体名按「禄 权 科 忌」顺序念，名字本身就是那张表。这里只钉三件事：
+// ① 默认档等于原有通行表（旧盘零漂移）；② 变体在对应天干上真能改到盘；
+// ③ 天干不符时不串表（癸的变体不许套到甲干上）。
+const JIA = { ...BASE, year: 1984 }; // 甲子年
+const JIA_DEF = buildZiwei(JIA);
+const JIA_VAR = buildZiwei({ ...JIA, sihuaVariant: '廉破曲阳' });
+eq('十干四化默认档', JIA_DEF.schools.sihuaVariant, 'default');
+eq('变体随盘回显', JIA_VAR.schools.sihuaVariant, '廉破曲阳');
+ok('默认档的甲干就是通行表（廉破武阳）',
+  JSON.stringify(sihuaTableOf('甲', {})) === JSON.stringify(sihuaTableOf('甲', { sihuaVariant: 'default' })));
+eq('甲干变体把科从武曲换到文曲', sihuaTableOf('甲', { sihuaVariant: '廉破曲阳' }).文曲, '科');
+ok('甲干变体的禄权忌不动',
+  [sihuaTableOf('甲', { sihuaVariant: '廉破曲阳' }).廉贞, sihuaTableOf('甲', { sihuaVariant: '廉破曲阳' }).破军,
+    sihuaTableOf('甲', { sihuaVariant: '廉破曲阳' }).太阳].join(',') === '禄,权,忌');
+const jiaPalace = (r) => r.palaces.find((p) => p.stem === '甲');
+ok('甲干宫的宫干四化跟着换',
+  JSON.stringify(jiaPalace(JIA_DEF).daxian.mutagen) !== JSON.stringify(jiaPalace(JIA_VAR).daxian.mutagen),
+  `${jiaPalace(JIA_DEF).daxian.mutagen.join(',')} vs ${jiaPalace(JIA_VAR).daxian.mutagen.join(',')}`);
+ok('飞星也跟着换干表',
+  JSON.stringify((JIA_DEF.fly || []).find((f) => f.stem === '甲')?.flies.map((x) => x.star))
+  !== JSON.stringify((JIA_VAR.fly || []).find((f) => f.stem === '甲')?.flies.map((x) => x.star)));
+ok('换变体不动星曜落宫',
+  JSON.stringify(JIA_DEF.palaces.map((p) => p.stars.map((s) => s.name)))
+  === JSON.stringify(JIA_VAR.palaces.map((p) => p.stars.map((s) => s.name))));
+eq('天干不符时不串表（癸变体套甲干无效）',
+  JSON.stringify(sihuaTableOf('甲', { sihuaVariant: '破巨阳贪' })), JSON.stringify(sihuaTableOf('甲', {})));
+eq('乙丙丁己无变体可换', sihuaTableOf('乙', { sihuaVariant: '廉破曲阳' }), sihuaTableOf('乙', {}));
+ok('庚干两项重叠时以 sihuaVariant 为准',
+  natalSihuaTableOf('庚', { gengYearSihua: 'GYWYT', sihuaVariant: '阳武府同' }).天府 === '科');
+ok('gengYearSihua 在 sihuaVariant 为默认时照旧生效（只作用于生年四化）',
+  natalSihuaTableOf('庚', { gengYearSihua: 'GYWFX', sihuaVariant: 'default' }).天相 === '忌');
+ok('gengYearSihua 不改宫干自化（那是另一套断法）',
+  sihuaTableOf('庚', { gengYearSihua: 'GYWFX' }).天相 === undefined);
+const VARS = SIHUA_VARIANTS;
+ok('十六个变体表都是完整四条（禄权科忌各一）', Object.values(VARS).every((v) => {
+  const vals = Object.values(v.table);
+  return Object.keys(v.table).length === 4 && ['禄', '权', '科', '忌'].every((t) => vals.includes(t));
+}));
+ok('每干默认变体与本插件通行表一致（不重复定义两份）',
+  Object.values(VARS).filter((v) => JSON.stringify(v.table) === JSON.stringify(sihuaTableOf(v.stem, {}))).length >= 5);
+const VAR_SUM = compute({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', sihuaVariant: '廉破曲阳' });
+ok('非默认变体进摘要流派行', /【流派】.*十干四化变体.*廉破曲阳/.test(VAR_SUM.summary),
+  VAR_SUM.summary.split('\n').find((l) => /流派/.test(l)) || '(无流派行)');
+
 // ── 十一、接线：compute / 摘要 / 规则 ─────────────────────
 const C = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', brightnessSchool: 'QS', jiekongSchool: 'double' });
 eq('compute 回显开关', [C.schools.brightnessSchool, C.schools.jiekongSchool], ['QS', 'double']);
 ok('compute 摘要写流派行', /【流派】.*亮度 QS.*截空 double/.test(C.summary),
   C.summary.split('\n').find((l) => /流派/.test(l)));
-ok('规则里把十二类口径逐条列全（漏一类就是旧盘对不上账）',
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干']
+ok('规则里把十三类口径逐条列全（漏一类就是旧盘对不上账）',
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干', '十干四化']
     .every((label) => C.rules.schools.includes(label)),
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干']
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干', '十干四化']
     .filter((label) => !C.rules.schools.includes(label)).join(','));
 const NEST = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', schools: { tianmaSchool: 'month-branch' } });
 eq('compute 接受嵌套 schools', NEST.schools.tianmaSchool, 'month-branch');

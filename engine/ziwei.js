@@ -97,6 +97,7 @@ export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   shenzhuSchool: 'common',
   zuoyaoSchool: 'minimal',
   liunianSihua: 'year-stem',
+  sihuaVariant: 'default',
 });
 
 export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
@@ -112,6 +113,10 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   shenzhuSchool: ['common', 'verse'],
   zuoyaoSchool: ['minimal', 'full'],
   liunianSihua: ['year-stem', 'life-palace-stem'],
+  // 十干四化变体：default 表示各干用本插件原有通行表；其余按文墨变体名整表替换。
+  // 只列与 default 不同的那一档（default 之外全是「换掉某一干」的显式选择）。
+  sihuaVariant: ['default', '廉破曲阳', '贪阴阳机', '阳武同阴', '阳武府同', '阳武府相',
+    '阳武同相', '巨阳武昌', '梁紫府武', '梁紫相武', '破巨阳贪'],
 });
 
 export function ziweiSchoolsOf(input = {}) {
@@ -223,9 +228,65 @@ const GENG_MUTAGEN = {
   GYWTX: { 太阳: '禄', 武曲: '权', 天同: '科', 天相: '忌' },
 };
 
+// 十干四化变体全表（文墨天机「十干四化」，2026-11 从 WMTJ-Pro64-2.5.26 的 App.swf 常量表挖出）。
+// 变体名一律取文墨原文四字，按「禄 权 科 忌」的顺序念，所以名字本身就是这张表：
+// 「廉破曲阳」= 廉贞化禄、破军化权、文曲化科、太阳化忌。
+// 每干第一个是与本插件原有默认表完全一致的那一档，乙丙丁己四干文墨没有变体。
+// 这张表和 gengYearSihua 不是一回事：gengYearSihua 只换生年四化里庚年那一支，
+// sihuaVariant 换的是整张十干四化表（生年、宫干自化、大限宫干、飞星、流年一起走）。
+export const SIHUA_VARIANTS = Object.freeze({
+  廉破武阳: { stem: '甲', table: MUTAGEN.甲 },
+  廉破曲阳: { stem: '甲', table: Object.freeze({ 廉贞: '禄', 破军: '权', 文曲: '科', 太阳: '忌' }) },
+  贪阴右机: { stem: '戊', table: MUTAGEN.戊 },
+  贪阴阳机: { stem: '戊', table: Object.freeze({ 贪狼: '禄', 太阴: '权', 太阳: '科', 天机: '忌' }) },
+  阳武阴同: { stem: '庚', table: GENG_MUTAGEN.GYWYT },
+  阳武同阴: { stem: '庚', table: GENG_MUTAGEN.GYWTY },
+  阳武府同: { stem: '庚', table: GENG_MUTAGEN.GYWFT },
+  阳武府相: { stem: '庚', table: GENG_MUTAGEN.GYWFX },
+  阳武同相: { stem: '庚', table: GENG_MUTAGEN.GYWTX },
+  巨阳曲昌: { stem: '辛', table: MUTAGEN.辛 },
+  巨阳武昌: { stem: '辛', table: Object.freeze({ 巨门: '禄', 太阳: '权', 武曲: '科', 文昌: '忌' }) },
+  梁紫辅武: { stem: '壬', table: MUTAGEN.壬 },
+  梁紫府武: { stem: '壬', table: Object.freeze({ 天梁: '禄', 紫微: '权', 天府: '科', 武曲: '忌' }) },
+  梁紫相武: { stem: '壬', table: Object.freeze({ 天梁: '禄', 紫微: '权', 天相: '科', 武曲: '忌' }) },
+  破巨阴贪: { stem: '癸', table: MUTAGEN.癸 },
+  破巨阳贪: { stem: '癸', table: Object.freeze({ 破军: '禄', 巨门: '权', 太阳: '科', 贪狼: '忌' }) },
+});
+
 function mutagenOf(stem, schools) {
   if (stem === '庚') return GENG_MUTAGEN[schools.gengYearSihua] || MUTAGEN.庚;
   return MUTAGEN[stem] ?? {};
+}
+
+/**
+ * 取某一干的四化表（宫干自化、大限宫干、飞星、流年都用这张）。
+ * 只认 `sihuaVariant`——`gengYearSihua` 按既有约定只管生年四化那一支，
+ * 不能让它顺带改掉宫干自化（那是另一套断法，混了就是两派口径串味）。
+ * 变体名所属天干对不上这一干时不生效，直接落回该干通行表，不会把甲的表套到乙上。
+ * @param {string} stem 天干
+ * @param {object} [schools] 流派开关
+ * @returns {Record<string,string>} 星名 → 禄/权/科/忌
+ */
+export function sihuaTableOf(stem, schools) {
+  const variant = schools && schools.sihuaVariant;
+  if (variant && variant !== 'default') {
+    const v = SIHUA_VARIANTS[variant];
+    if (v && v.stem === stem) return v.table;
+  }
+  return MUTAGEN[stem] ?? {};
+}
+
+/**
+ * 生年四化专用的取表：先看 `sihuaVariant`，没命中该干再让 `gengYearSihua` 生效。
+ * 两项同时指向庚干时以 `sihuaVariant` 为准——它说的是「整张表长这样」，比单点覆盖更明确。
+ * @param {string} stem 年干
+ * @param {object} [schools] 流派开关
+ * @returns {Record<string,string>} 星名 → 禄/权/科/忌
+ */
+export function natalSihuaTableOf(stem, schools) {
+  const table = sihuaTableOf(stem, schools);
+  if (table === MUTAGEN[stem]) return mutagenOf(stem, schools || {});
+  return table;
 }
 
 // 安魁钺三派：差异集中在庚辛壬癸年（「网络派」与 qs1 同表，不单列）
@@ -566,7 +627,7 @@ export function buildZiwei(input) {
   }
 
   // 生年四化（庚干按所选变体）
-  const mutagenMap = mutagenOf(yearStem, schools);
+  const mutagenMap = natalSihuaTableOf(yearStem, schools);
   for (const list of starsByBranch) {
     for (const star of list) {
       if (mutagenMap[star.name]) star.mutagen = mutagenMap[star.name];
@@ -602,7 +663,7 @@ export function buildZiwei(input) {
     const stepIndex = forward ? fix(branch - soulIndex) : fix(soulIndex - branch);
     const dxStart = startAge + stepIndex * 10;
     const gz = STEMS[stem] + BRANCHES[branch];
-    const pal = MUTAGEN[STEMS[stem]] ?? {};
+    const pal = sihuaTableOf(STEMS[stem], schools);
     const selfHua = starsByBranch[branch]
       .filter((s) => pal[s.name])
       .map((s) => ({ star: s.name, type: pal[s.name] }));
@@ -620,7 +681,7 @@ export function buildZiwei(input) {
         start: dxStart,
         end: dxStart + 9,
         stem: STEMS[stem],
-        mutagen: Object.entries(MUTAGEN[STEMS[stem]] ?? {}).map(([s, k]) => `${s}化${k}`),
+        mutagen: Object.entries(sihuaTableOf(STEMS[stem], schools)).map(([s, k]) => `${s}化${k}`),
       },
       xiaoxian: { age: xiaoxianAge(branch, triad, gender) },
       sanfang: [branch, branch + 4, branch + 8, branch + 6]
@@ -707,7 +768,7 @@ export function buildZiwei(input) {
       liutuo: BRANCHES[fix(lu - 1)],
       liukui: BRANCHES[kuiyueTable[gz.stem][0]],
       liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
-      mutagen: Object.entries(MUTAGEN[lnStemOf] ?? {}).map(([s, k]) => `${s}化${k}`),
+      mutagen: Object.entries(sihuaTableOf(lnStemOf, schools)).map(([s, k]) => `${s}化${k}`),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
         : null,
@@ -807,7 +868,7 @@ export function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）；庚干四化只作用于生年四化`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为文墨变体整表替换）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
       zuoyao: schools.zuoyaoSchool === 'full'
         ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
         : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
@@ -1114,7 +1175,7 @@ export function daxianList(chart) {
       selfHua: p.selfHua,
       sanfang: p.sanfang,
       mainStars: mainOf(p.sanfang),
-      mutagenHits: Object.entries(MUTAGEN[p.stem] ?? {}).map(([star, type]) => {
+      mutagenHits: Object.entries(sihuaTableOf(p.stem, chart.schools)).map(([star, type]) => {
         const b = starBranchOf(chart, star);
         return { star, type, branch: b >= 0 ? BRANCHES[b] : null, palace: b >= 0 ? chart.palaces.find((x) => x.branch === BRANCHES[b])?.palace ?? null : null };
       }),
@@ -1131,9 +1192,10 @@ export function daxianList(chart) {
 export const FLY_TYPES = ['禄', '权', '科', '忌'];
 
 // 某天干下某一化的星曜；表里没有就返回 null（不会凭印象补）
-export function flyStarOf(stem, type) {
-  const map = MUTAGEN[stem];
-  if (!map) return null;
+// 第三参 schools 选填：给了就按该盘的十干四化变体取表，不给沿用通行表（旧调用零漂移）
+export function flyStarOf(stem, type, schools) {
+  const map = sihuaTableOf(stem, schools || {});
+  if (!map || !Object.keys(map).length) return null;
   for (const [star, t] of Object.entries(map)) if (t === type) return star;
   return null;
 }
@@ -1146,7 +1208,7 @@ export function flyStars(chart) {
     branch: p.branch,
     stem: p.stem,
     flies: FLY_TYPES.map((type) => {
-      const star = flyStarOf(p.stem, type);
+      const star = flyStarOf(p.stem, type, chart.schools);
       const b = star ? starBranchOf(chart, star) : -1;
       const target = b >= 0 ? palaces.find((x) => x.branch === BRANCHES[b]) : null;
       return {
@@ -1172,7 +1234,7 @@ export function flyChain(chart, { from = '命宫', type = '忌', maxSteps = 12 }
   let cur = start;
   let ended = 'max';
   for (let i = 0; i < Math.max(1, maxSteps); i++) {
-    const star = flyStarOf(cur.stem, type);
+    const star = flyStarOf(cur.stem, type, chart.schools);
     if (!star) { ended = 'no-star'; break; }
     const b = starBranchOf(chart, star);
     if (b < 0) { ended = 'off-chart'; break; }
@@ -1222,7 +1284,7 @@ export function flyComposite(chart, { from = '命宫' } = {}) {
       branch: p.branch,
       stem: p.stem,
       flies: FLY_TYPES.map((type) => {
-        const star = flyStarOf(p.stem, type);
+        const star = flyStarOf(p.stem, type, chart.schools);
         const b = star ? starBranchOf(chart, star) : -1;
         const target = b >= 0 ? palaces.find((x) => x.branch === BRANCHES[b]) : null;
         return {
@@ -1300,7 +1362,7 @@ export function flyComposite(chart, { from = '命宫' } = {}) {
 export function enrichLiunian(chart) {
   for (const ln of chart.liunian) {
     const stem = ln.sihuaStem || ln.ganzhi[0];
-    ln.mutagenHits = Object.entries(MUTAGEN[stem] ?? {}).map(([star, type]) => {
+    ln.mutagenHits = Object.entries(sihuaTableOf(stem, chart.schools)).map(([star, type]) => {
       const b = starBranchOf(chart, star);
       return {
         star,
@@ -1362,7 +1424,7 @@ export function flowOf(chart, asOf) {
     const p = chart.palaces.find((x) => x.branch === br);
     const stem = p ? p.stem : null;
     const mutagenHits = stem
-      ? Object.entries(MUTAGEN[stem] ?? {}).map(([star, type]) => {
+      ? Object.entries(sihuaTableOf(stem, chart.schools)).map(([star, type]) => {
         const b = starBranchOf(chart, star);
         return {
           star,

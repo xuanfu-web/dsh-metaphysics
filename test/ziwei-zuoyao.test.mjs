@@ -118,7 +118,7 @@ ok('诀文块不带换行外的裸换行（一行一颗）', zuoyaoVerseBlock(pl
 ok('一行摘要把四路依据都写出来', ['生月', '生年干', '生年支', '命宫＋生年支', '身宫＋生年支'].every((b) => zuoyaoBriefText().includes(b)));
 
 // ── ⑤ 开关与默认盘 ─────────────────────────────────────────
-eq('开关扩到十二类', Object.keys(ZIWEI_SCHOOL_OPTIONS).length, 12);
+eq('开关扩到十三类', Object.keys(ZIWEI_SCHOOL_OPTIONS).length, 13);
 eq('杂曜开关默认 minimal', ZIWEI_SCHOOL_DEFAULTS.zuoyaoSchool, 'minimal');
 eq('只许 minimal / full', ZIWEI_SCHOOL_OPTIONS.zuoyaoSchool, ['minimal', 'full']);
 const BASE = {

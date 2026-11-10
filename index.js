@@ -66,6 +66,7 @@ const OPTION_KEYS = [
   'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool',
   'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang',
   'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua',
+  'sihuaVariant',
   'action', 'toAge', 'sitting', 'facing', 'fortuneYear', 'period',
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
   'fortuneDate', 'fortuneTime', 'surname', 'givenName', 'limit',
@@ -111,6 +112,7 @@ const OPTION_HINTS = {
   shenzhuSchool: '仅 ziwei：身主安法 common / verse',
   zuoyaoSchool: '仅 ziwei：杂曜取盘 minimal / full',
   liunianSihua: '仅 ziwei：流年四化取干 year-stem 按流年天干（默认）/ life-palace-stem 按流年命宫宫干',
+  sihuaVariant: '仅 ziwei：十干四化变体 default 或 廉破曲阳/贪阴阳机/阳武同阴…（整表替换）',
   action: 'fengshui：natal（默认）/ advise / xuankong 玄空；name：assess / generate',
   toAge: '仅 trend：算到几岁 10–100，默认 100',
   sitting: '仅 fengshui advise/xuankong 玄空：坐山（24 山之一）',
@@ -141,7 +143,7 @@ const READ_KEYS = ['withInterpret', 'detail', 'ask', 'question', 'direction', 's
 /** 每个体系实际会读的参数：help 按这张表展开，避免「有这个键但该体系不看」 */
 const SYSTEM_PARAMS = {
   bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
-  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'cross', 'diff', 'trace', ...READ_KEYS],
+  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'cross', 'diff', 'trace', ...READ_KEYS],
   liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
   tarot: ['count', 'seed', ...READ_KEYS],
   meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
@@ -836,6 +838,12 @@ export function apply(ctx) {
           type: 'string',
           enum: ['year-stem', 'life-palace-stem'],
           description: '紫微斗数：流年四化的取干口径。year-stem（默认）用该年干支的天干，life-palace-stem 改用该年流年命宫那一宫的宫干（文墨「依据流年命宫天干」）。年干随年份走，命宫宫干由五虎遁从生年干起，两者是两张表，实测十二年会换十二次，四颗化星全变。每年回显 sihuaStem / sihuaStemFrom 说明实际用了哪一干。',
+        },
+        sihuaVariant: {
+          type: 'string',
+          enum: ['default', '廉破曲阳', '贪阴阳机', '阳武同阴', '阳武府同', '阳武府相',
+            '阳武同相', '巨阳武昌', '梁紫府武', '梁紫相武', '破巨阳贪'],
+          description: '紫微斗数：十干四化变体，整表替换生年、宫干自化、大限宫干、飞星与流年所查的那张表。default（默认）各干取通行表；其余取值按文墨天机「十干四化」原文四字命名，依禄权科忌顺序念，如 廉破曲阳 = 廉贞禄破军权文曲科太阳忌。可选：廉破曲阳（甲）、贪阴阳机（戊）、阳武同阴/阳武府同/阳武府相/阳武同相（庚）、巨阳武昌（辛）、梁紫府武/梁紫相武（壬）、破巨阳贪（癸）；乙丙丁己四干无变体。变体天干与所查该干不符时不生效，不会串表。与庚干那一项重叠时以本参数为准。',
         },
         action: {
           type: 'string',

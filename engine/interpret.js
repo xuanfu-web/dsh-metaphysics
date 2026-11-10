@@ -12,7 +12,7 @@ import {
   LIUREN_JIANG, TAROT_ELEMENT_FOCUS, DISCLAIMER,
 } from './interpret-data.js';
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
-import { MUTAGEN } from './ziwei.js';
+import { natalSihuaTableOf } from './ziwei.js';
 // 紫微的词库单列一处：宫位取象、主星细节、双星、煞星辅星、四化措辞、庙旺语气、格局读法
 import {
   palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine,
@@ -666,9 +666,10 @@ function zwNatalSihua(r) {
   }
 
   // 年干四化表：用来补齐「盘上没有落点」的那几颗，以及保证输出顺序
+  // 该盘若选了十干四化变体，这张表也要跟着换，否则文案里的四化与盘面标的不是同一张
   const ganzhi = pick(r, 'yearGanzhi', '');
   const yearStem = typeof ganzhi === 'string' ? ganzhi.slice(0, 1) : '';
-  const table = MUTAGEN[yearStem] || {};
+  const table = natalSihuaTableOf(yearStem, r?.schools);
   const starOfType = {};
   for (const [star, type] of Object.entries(table)) starOfType[type] = star;
 

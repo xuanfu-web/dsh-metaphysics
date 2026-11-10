@@ -1,6 +1,6 @@
 ## 未发布
 
-> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题，并按文墨设置树补上「流年四化取干」这一档口径。**默认盘逐字节不变**：新增开关的默认值等于旧行为。
+> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题，并按文墨设置树补上「流年四化取干」与「十干四化变体」两档口径。**默认盘逐字节不变**：新增开关的默认值等于旧行为。
 
 ### SSH 兜底：msys git 起不了 `sh`，只能改走 `GIT_SSH`
 
@@ -35,6 +35,20 @@
 - **接线五处**：`ZIWEI_SCHOOL_DEFAULTS` / `ZIWEI_SCHOOL_OPTIONS`、`engine/index.js` 的 `ZIWEI_SCHOOL_KEYS` 与摘要 `labels`、根 `index.js` 的 `OPTION_KEYS` / 参数说明 / `SYSTEM_PARAMS.ziwei` / schema、`engine/diff.js` 的 `CALIBER_SWITCHES.ziwei`，以及 `rules.schools` 与 `rules.liunian` 两段规则文字。
 - **测试**（`test/ziwei-schools.test.mjs` 133 PASS，新增 12 条）：默认取干等于年干且来源写「流年天干」、另一档等于该宫 `stem`、换口径不动本命宫盘、确实换掉四化、`mutagenHits` 跟着换、两条口径下都是四条、非默认口径进摘要流派行而默认口径不插流派行。
 - **三处计数锁同步**：`ZIWEI_SCHOOL_OPTIONS` 十一类 → 十二类（`ziwei-schools.test.mjs` / `ziwei-zuoyao.test.mjs`）、`CALIBER_SWITCHES.ziwei` 13 组 → 14 组（`caliber-diff.test.mjs` 三条）、`schema-budget.test.mjs` 的 `OLD_KEYS` 88 → 89。
+
+### 新增第十三类流派开关：十干四化变体（文墨「十干四化」全表）
+
+> 来源：文墨天机 2.5.26 的十干四化设置项。此前我们只有庚干 5 变体（`gengYearSihua`），甲/戊/辛/壬/癸五干的变体没有出口，用户选不到。
+
+- **`sihuaVariant`**（`engine/ziwei.js` 的 `SIHUA_VARIANTS`，表里 16 条、开关暴露 11 档）：变体名一律取文墨原文四字，按「禄 权 科 忌」顺序念，**名字本身就是那张表**——「廉破曲阳」= 廉贞化禄、破军化权、文曲化科、太阳化忌。可选：廉破曲阳（甲）、贪阴阳机（戊）、阳武同阴/阳武府同/阳武府相/阳武同相（庚）、巨阳武昌（辛）、梁紫府武/梁紫相武（壬）、破巨阳贪（癸）；乙丙丁己四干文墨没有变体。表里另六条（廉破武阳/贪阴右机/阳武阴同/巨阳曲昌/梁紫辅武/破巨阴贪）就是各干通行表本身，不必单独选，所以没进枚举。`default`（默认）各干走通行表，与旧盘逐字节相同。
+- **不新增五个参数的取舍**：每干一个开关（`jiaSihua`/`wuSihua`/…）要吃满 2045 字符的 schema 预算余量里的绝大部分，而工具定义每次调用都整份进上下文。变体名自带天干，一个参数足够表达全部十六档。
+- **两把开关的作用范围不同，这一条是实测撞出来的**：「`gengYearSihua` 只换生年四化里庚年那一支」是既有约定（旧盘与存档依赖），而 `sihuaVariant` 换的是**宫干自化、大限宫干、飞星、流年共用的那张表**。第一版把两者塞进同一个 `sihuaTableOf()`，立刻被既有断言 `庚干变体不动宫干自化` 打红——属实是回归，不是测试过时。现在拆成两个入口：`sihuaTableOf()` 只认 `sihuaVariant`（宫干/飞星/流年用），`natalSihuaTableOf()` 先看 `sihuaVariant`、没命中再让 `gengYearSihua` 生效（生年四化用）。
+- **变体与天干不符时不串表**：拿癸干变体套到甲干上，甲干照旧走通行表，不会把别人的表套过来（有断言钉住）。庚干两项同时指定时以 `sihuaVariant` 为准——它说的是「整张表长这样」，比单点覆盖更明确。
+- **八处直取 `MUTAGEN[...]` 全部改走按盘取表**（`engine/ziwei.js` 七处 + `engine/interpret.js` 一处）：宫干自化、宫内 `daxian.mutagen`、流年 `mutagen`、`daxianList.mutagenHits`、`flyStarOf`、`enrichLiunian`、`flowOf` 的 `mutagenHits`、以及 `zwNatalSihua` 补齐未上盘四化时查的那张表。`flyStarOf(stem, type)` 增可选第三参 `schools`，不给时沿用通行表，旧调用零漂移。
+- **实测**：十六档逐档验证「在该干为年干的年份上真能改到盘」——五档与本插件通行表完全一致（甲/戊/辛/壬/癸各自的默认档，即 `廉破武阳`/`贪阴右机`/`巨阳曲昌`/`梁紫辅武`/`破巨阴贪`），其余十一档全部改盘；换变体后 12 宫星曜落宫逐字节不变，只有四化相关字段变。
+- **接线五处**：`ZIWEI_SCHOOL_DEFAULTS` / `ZIWEI_SCHOOL_OPTIONS`、`engine/index.js` 的 `ZIWEI_SCHOOL_KEYS` 与摘要 `labels`、根 `index.js` 的 `OPTION_KEYS` / 参数说明 / `SYSTEM_PARAMS.ziwei` / schema、`engine/diff.js` 的 `CALIBER_SWITCHES.ziwei`（口径卡只拿「甲干廉破曲阳」当对照样本，不枚举十六档），以及 `rules.schools` 一段规则文字。
+- **测试**（`test/ziwei-schools.test.mjs` 153 PASS，新增 20 条）：默认档等于通行表、变体随盘回显、甲干变体把科从武曲换到文曲而禄权忌不动、宫干四化与飞星跟着换、星曜落宫不变、癸变体套甲干无效、乙丙丁己无变体、庚干优先级、十六档都是完整四条、非默认进摘要流派行。
+- **三处计数锁同步**：`ZIWEI_SCHOOL_OPTIONS` 十二类 → 十三类（`ziwei-schools` / `ziwei-zuoyao`）、`CALIBER_SWITCHES.ziwei` 14 组 → 15 组（`caliber-diff` 四条含口径卡行数与标签列表）、`schema-budget.test.mjs` 的 `OLD_KEYS` 89 → 90。
 
 ## 0.63.0（2026-11-10，已发布）
 
