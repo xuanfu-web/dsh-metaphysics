@@ -1,3 +1,30 @@
+## 未发布
+
+> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，并修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题。**不改任何排盘口径、不动数据层**。
+
+### SSH 兜底：msys git 起不了 `sh`，只能改走 `GIT_SSH`
+
+> 症状：`tools/push-tag.mjs` 的 HTTPS 三次重试全失败时，SSH 兜底也必失败，报 `sh.exe: *** fatal error - couldn't create signal pipe, Win32 error 5`。
+
+- **根因：msys 的 `git.exe` 只要需要起 `sh -c` 就崩**。原实现用 `-c core.sshCommand=...` 和 `GIT_SSH_COMMAND` 这两种写法，两者都要求 git 通过 shell 拼命令行，于是无论 key 对不对都先在 `sh` 上死掉。实测三种传参（`tools/ssh-fallback.mjs`）：`GIT_SSH_COMMAND` 崩在 `couldn't create signal pipe`；不带覆盖的默认路径同样崩；**只有 `GIT_SSH=<ssh.exe 绝对路径>`（git 直接 exec，不经 shell）能走通**，返回的是干净的 `Permission denied (publickey)`——传输层通了，只差 key。
+- **第二处：Windows OpenSSH 不认环境变量改的 HOME**。原实现想用临时目录里的 `~/.ssh/config` 交代私钥，但 `ssh -G` 探针证明三条路都不通（不覆盖 / `USERPROFILE=` / `HOME=` 全都读不到临时 config，`port` 仍是 22、`identitiesonly` 仍是 no）。改成把一段带标记的 Host 块临时写进**真实** `%USERPROFILE%\.ssh\config`，`finally` 里先还原配置（哪怕删 key 的 API 卡住，用户 ssh 配置也不该长时间被改）、再删 deploy key、最后清临时目录。
+- **第三处：URL 不能再带 `:443`**。`GIT_SSH` 的 simple variant 不允许 git 自己拼 `-p`，端口交给 config 里的 `Port 443`；推送地址改用不带端口的 `ssh://git@ssh.github.com/...`。私钥 ACL 收窄到当前用户（太宽会被 ssh 忽略）。
+- **两处重复实现合并成一份**（新文件 `tools/ssh-fallback.mjs`）：`push-tag.mjs` 与 `autopublish.mjs` 原来各抄一份同样的 SSH 兜底、各带同样的 bug，现在都只调 `pushOverSshWithKey()`；两边启动时都会用 `clearStaleBlock()` 清掉上次崩在中途留下的临时 Host 块（含缺结束标记的半截块）。
+- **`push-tag.mjs` 新增 `--ssh-only`**：跳过 HTTPS 直接走兜底，用来单独验证兜底路径。
+- **实测**：`node tools/push-tag.mjs v0.0.0-sshprobe --ssh-only` → 三次都成功推上 `ssh.github.com:443`，deploy key 用完即删，`%USERPROFILE%\.ssh\config` 运行前后都复原成「不存在」。探测 tag 与 deploy key 都已清干净（远端只剩 `v0.63.0`，`GET /repos/.../keys` 为 0）。
+- **测试补了 8 条**（`test/push-tag.test.mjs` 43 PASS、`test/autopublish.test.mjs` 55 PASS）：传输层断言改为查共享模块、要求两边都接线到共享模块、要求启动时清残留；并把 `stripManagedBlock` 从源码切出来实跑，覆盖「缺结束标记的半截块」与「多段标记并存」。
+
+### 自化改成彩色小箭头：箭头尖顶住星名，才读得出「化回本宫」
+
+> 症状：自化原来只是一枚虚下划线的彩色小字（`禄/权/科/忌`），摊在星曜行尾。用户对照文墨天机后指出：那边是从宫缘飞出的彩色小箭头。
+
+- **形态**：`zhaMark()` 画一支 22×9 的 SVG 短箭头（`z-shaft` 弧线 + `z-head` 箭头尖），stroke 跟 `currentColor`，颜色由 `.pp-zha.lu/.quan/.ke/.ji` 决定，与四化同色系。
+- **位置定在星名左边**（`src/panel-kit.js` `starsHTML`）：先后试过左上角绝对定位、左缘垂直居中——都压住星名（实测压掉「紫微 庙」）。改成 inline 后，**放星名右边箭头朝外，视觉上成了「从本宫飞出去」，语义正好反**；最终放在星名前、箭头尖顶住星名，读成「这笔化飞出去又落回本宫」。宫位详情里的「宫干四化」行也用同一支箭头（`${箭头}${星名}`），盘面靠位置、详情靠文字。
+- **自化徽章与虚下划线一并退场**：`.pp-m.self` 样式与 `cellHTML` 里的 `pp-zh` 徽章已删（`.pp-zh` 的 CSS 与三合隐藏规则同步清掉），自化只剩箭头一种表示，不再出现「同一件事画两遍」。
+- **图例跟着换**：盘心图例文案 `虚下划线=自化` → `箭头=自化`；`.pp-zhlegend` 的符号从 `→禄` 文本换成真箭头（用 `zhaMark` 渲染），图例与盘面同一套图形。
+- **三合视图同时藏箭头**：`#ppm-sc-sanhe:checked~.pp-body .pp-zha{display:none}`，否则三合派会漏出四化信息——浏览器实测三合下 `.pp-zha` 的 `display` 为 `none`。
+- **测试**（`test/layout.test.mjs` 69 PASS）：原来的 `pp-zh` / `pp-m self` / `虚下划线=自化` 三条换成四条——箭头类名存在、四化颜色分层 + 图例口径、读屏说明含「宫干化回本宫」、SVG 含 `z-shaft` 与 `z-head` 两条路径。
+
 ## 0.63.0（2026-11-10，已发布）
 
 > 本段主题（2026-11-10）：修「问进对话」的 chip 挂不上（C3 对话桥）、把命盘类四个 tab 合并成一个分块、补 B15 三项量化字段的输出通道，再按文墨天机的样式重做紫微盘面（三方四正菱形闭环、四化/飞星/三合三视图、自化图示图例）与宿主侧栏宣纸纸纹。**不改任何排盘口径、不新增体系**；文墨 APK 只作只读逆向参照，其安星流派与十干四化变体表只存档、未接入引擎。

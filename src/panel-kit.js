@@ -75,9 +75,8 @@
 /* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
 .pp-m.view{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 .pp-m.view.lu{color:var(--lu)}.pp-m.view.quan{color:var(--quan)}.pp-m.view.ke{color:var(--ke)}.pp-m.view.ji{color:var(--ji)}
-/* 自化：宫干化回本宫。只留色字 + 虚下划线，与生年实心、大限/流年空心分三层 */
-.pp-m.self{background:transparent;box-shadow:none;padding:0;text-decoration:underline dotted;text-underline-offset:2px}
-.pp-m.self.lu{color:var(--lu)}.pp-m.self.quan{color:var(--quan)}.pp-m.self.ke{color:var(--ke)}.pp-m.self.ji{color:var(--ji)}
+/* 自化：宫干化回本宫。0.64.0 起不再用徽章，改在星名后画彩色小箭头（见 .pp-zha），
+   与生年实心块、大限/流年空心框分成三层——所以这里不再保留 .pp-m.self 样式 */
 /* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
    避免与四化的实心彩色方块抢层次 */
 .pp-b{font-style:normal;font-size:10px;margin-left:3px;padding:0 3px;border-radius:999px;color:var(--muted);letter-spacing:0;opacity:.92;background:var(--band)}
@@ -183,11 +182,21 @@
 #ppm-sc-feixing:checked~.pp-body .pp-fx{display:block}
 #ppm-sc-feixing:checked~.pp-body .pp-m.view,
 #ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
-/* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips） */
+/* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips/自化箭头） */
 #ppm-sc-sanhe:checked~.pp-body .pp-m,
-#ppm-sc-sanhe:checked~.pp-body .pp-zh,
+#ppm-sc-sanhe:checked~.pp-body .pp-zha,
 #ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
 #ppm-sc-sanhe:checked~.pp-flywrap{display:none}
+/* 自化箭头（学文墨天机）：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
+   由左向右弧着落回这颗星——读成「这笔化飞出去又落回自己」。
+   为什么必须放星名左边：放右边箭头就朝外，视觉上成了「从本宫飞出去」，意思正好反了。
+   为什么 inline 在星名旁而不是绝对定位：宫格左侧会被满星曜的宫撞上（实测压住「紫微 庙」）。 */
+.pp-zha{display:inline-block;margin-right:3px;vertical-align:-1px;line-height:0;cursor:help}
+.pp-zha .z-a{width:19px;height:8px;display:block;overflow:visible}
+.pp-zha .z-shaft{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
+.pp-zha .z-head{fill:currentColor;stroke:none}
+.pp-zha.lu{color:var(--lu)}.pp-zha.quan{color:var(--quan)}
+.pp-zha.ke{color:var(--ke)}.pp-zha.ji{color:var(--ji)}
 #ppm-sc-sihe:checked~.pp-flywrap{display:block}
 #ppm-sc-feixing:checked~.pp-flywrap{display:block}
 /* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
@@ -200,7 +209,6 @@
 .pp::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.5;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.29 0 0 0 0 0.24 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23p)'/%3E%3C/svg%3E")}
 .pp>*{position:relative;z-index:1}
-.pp-zh{margin-left:4px;white-space:nowrap}
 .pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
 /* —— 宫位点击展开详情 + 三方四正联动 ——
@@ -241,6 +249,7 @@
 .pp-detail .dt-tri em{font-style:normal;color:var(--muted);font-size:12px;margin-left:5px}
 .pp-detail .dt-tri em::before{content:"·";margin-right:3px}
 .pp-detail .dt-empty{color:var(--faint);font-size:12.5px}
+.pp-detail .dt-self{margin-right:10px;white-space:nowrap}
 .pp-detail .hint{color:var(--faint);font-size:11.5px;margin-top:6px}
 .pp-ss{display:flex;flex-wrap:wrap;gap:0 7px;font-size:12.5px;line-height:1.6}
 .pp-bz .pp-ss{flex-direction:column;align-items:center;gap:0;font-size:11.5px;line-height:1.5}
@@ -1492,7 +1501,7 @@
   pp._wxIcon = wxIcon;
   pp._triGlyph = triGlyph;
 
-  function starsHTML(stars, viewHua) {
+  function starsHTML(stars, viewHua, selfHuaMap) {
     if (!stars || !stars.length) return '';
     return stars.map((s) => {
       const cls = TYPE_CLASS[s.type] || 'aux';
@@ -1503,9 +1512,13 @@
       const b = s.brightness ? `<em class="pp-b ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
       // 全表杂曜的入庙标记（天官/天福只有四宫入庙，来路是庙地专论，不是十四主星那张亮度表）
       const tm = s.inTemple ? '<em class="pp-b good">庙</em>' : '';
-      // 顺序：星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
+      // 自化（宫干化回本宫）画成箭头，箭头尖顶在星名前——«化» 从宫干飞出去又落回这颗星，
+      // 所以读作「←这笔化飞回本宫」而不是「从这颗星飞出去」。放星名前是关键：
+      // 放星名后箭头朝右，视觉上就成了「飞出本宫」，意思正好反了
+      const zh = (selfHuaMap && selfHuaMap[s.name]) ? zhaMark(selfHuaMap[s.name], s.name) : '';
+      // 顺序：自化箭头 → 星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
-      return `<span class="pp-st ${cls}">${s.name}${b}${tm}${m}${vm}</span>`;
+      return `<span class="pp-st ${cls}">${zh}${s.name}${b}${tm}${m}${vm}</span>`;
     }).join('');
   }
 
@@ -1531,8 +1544,6 @@
     if (pos[1] === 4) cls.push('pp-lastcol');
     const ss = p.shensha || {};
     const pname = NAMES[fx(soulIdx - b)];
-    const zh = (p.selfHua && p.selfHua.length)
-      ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')}</span>` : '';
     // 命无正曜：命宫无十四主星时，传统要借对宫（迁移宫）主星来看
     let borrow = '';
     if (b === soulIdx && allPalaces) {
@@ -1546,7 +1557,7 @@
       }
     }
     return `<div class="${cls.join(' ')}" data-pi="${b}" data-view="${view}" role="button" tabindex="0" aria-expanded="false" style="grid-row:${pos[0]};grid-column:${pos[1]}">
-      <div class="pp-stars">${starsHTML(p.stars, viewHua)}${zh}</div>
+      <div class="pp-stars">${starsHTML(p.stars, viewHua, selfHuaMapOf(p))}</div>
       ${borrow}
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
       ${fxLineHTML(p, flyByBranch)}
@@ -1563,6 +1574,31 @@
         </div>
       </div>
     </div>`;
+  }
+
+  /* 自化箭头（文墨天机式）：自化的定义是「宫干化回本宫」，箭头从左侧弧进来、箭头尖顶住星名，
+     读成「这笔化飞出去又落回本宫」，不是「从这颗星飞出去」。
+     几何按 22×9 画：左侧起笔 → 弧线上行 → 右侧箭头尖落在星名左边缘。
+     stroke 跟 currentColor 走，颜色由 .pp-zha.lu/.quan/.ke/.ji 决定。
+     位置：星名左边 inline，不绝对定位——宫格左侧常被满星曜占满，绝对定位会压住星名（实测压「紫微 庙」）；
+     也不能放星名右边，那样箭头朝外，语义正好反了。 */
+  function zhaMark(type, star) {
+    return `<span class="pp-zha ${MUT[type]}" title="自化${esc(type)}：${esc(star)}·宫干化回本宫"><svg class="z-a" viewBox="0 0 22 9" role="img" aria-label="自化${esc(type)}">
+        <path class="z-shaft" d="M1 7C6.6 7 11.4 5.6 17.2 3.2"/>
+        <path class="z-head" d="M20.2 2 17.8 4.9 16.6 1.9Z"/>
+      </svg></span>`;
+  }
+  pp._zhaMark = zhaMark;
+
+  /* selfHua → { 星名: 化类型 }，供 starsHTML 把箭头贴到对应星上。
+     同一颗星一般只被一种化命中；万一多条，取第一条（数据层已按四化顺序排）。 */
+  function selfHuaMapOf(p) {
+    const map = {};
+    for (const x of p.selfHua || []) {
+      if (!x || !x.star || !MUT[x.type]) continue;
+      if (!map[x.star]) map[x.star] = x.type;
+    }
+    return map;
   }
 
   /* 飞星派专属：本宫宫干四化飞到哪一宫，逐条摊在宫格内（只此模式展开，CSS 控显隐）。
@@ -1625,7 +1661,7 @@
         ${kind === 'da' || kind === 'ln' ? `<div class="ct-t4 pp-viewhua">${kind === 'da' ? '大限' : '流年'}四化　${(kind === 'da' ? huaByView.da : huaByView.ln) && Object.keys(kind === 'da' ? huaByView.da : huaByView.ln).length
           ? Object.entries(kind === 'da' ? huaByView.da : huaByView.ln).map(([s2, t]) => `${s2}化${t}`).join('　')
           : '<span class="pp-dim">未飞四化</span>'}</div>` : ''}
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　虚下划线=自化　红框=命宫　浅底=三方四正</span></div>
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　箭头=自化　红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -1717,7 +1753,7 @@
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-      <div class="pp-zhlegend">自化图示　<i class="z-lu">→禄</i><i class="z-quan">→权</i><i class="z-ke">→科</i><i class="z-ji">→忌</i></div>
+      <div class="pp-zhlegend">自化图示　<span class="z-lu">${pp._zhaMark('禄', '本宫')}禄</span><span class="z-quan">${pp._zhaMark('权', '本宫')}权</span><span class="z-ke">${pp._zhaMark('科', '本宫')}科</span><span class="z-ji">${pp._zhaMark('忌', '本宫')}忌</span></div>
       <div class="pp-flywrap">${flyHTML}${flyCompositeHTML}</div>
     </div>${flowHTML}${chips}${pats}${dxs}${lnHit}${zyHTML}`;
   };
@@ -1749,8 +1785,9 @@
     const auxes = p.stars.filter((s) => s.type === '吉星' || s.type === '辅星');
     const bads = p.stars.filter((s) => s.type === '煞星');
     const misc = p.stars.filter((s) => !['主星', '吉星', '辅星', '煞星'].includes(s.type));
+    // 自化与盘面统一用箭头：详情里额外标出被化那颗星（盘面靠位置，这里靠文字）
     const selfHua = (p.selfHua || []).length
-      ? p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')
+      ? p.selfHua.map((x) => `<span class="dt-self">${zhaMark(x.type, x.star || '本宫')}${esc(x.star || '')}</span>`).join('')
       : '<span class="dt-empty">无</span>';
     // 三方四正：三合（+4/+8）与对宫（+6）
     const tri = [fx(b + 4), fx(b + 8), fx(b + 6)].map((idx) => {

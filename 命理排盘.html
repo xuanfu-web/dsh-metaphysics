@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.63.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.63.0</span><span class="ver-note" title="本版之后又改了 13 项（版本号未变）：根因：msys 的 `git.exe` 只要需要起 `sh -c` 就崩；第二处：Windows OpenSSH 不认环境变量改的 HOME；第三处：URL 不能再带 `:443`；两处重复实现合并成一份；`push-tag.mjs` 新增 `--ssh-only`；实测；测试补了 8 条；形态；位置定在星名左边；自化徽章与虚下划线一并退场；图例跟着换；三合视图同时藏箭头；测试">另含 13 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,8 +653,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：164 个测试文件 / 8817 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    
+    <ul><li>测试：164 个测试文件 / 8818 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <h3>本版之后又改了什么（版本号未变）</h3>
+    <ul><li>根因：msys 的 `git.exe` 只要需要起 `sh -c` 就崩</li><li>第二处：Windows OpenSSH 不认环境变量改的 HOME</li><li>第三处：URL 不能再带 `:443`</li><li>两处重复实现合并成一份</li><li>`push-tag.mjs` 新增 `--ssh-only`</li><li>实测</li><li>测试补了 8 条</li><li>形态</li><li>位置定在星名左边</li><li>自化徽章与虚下划线一并退场</li><li>图例跟着换</li><li>三合视图同时藏箭头</li><li>测试</li></ul>
+    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -29385,9 +29387,8 @@ window.__MP_VER = "0.63.0";
 /* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
 .pp-m.view{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 .pp-m.view.lu{color:var(--lu)}.pp-m.view.quan{color:var(--quan)}.pp-m.view.ke{color:var(--ke)}.pp-m.view.ji{color:var(--ji)}
-/* 自化：宫干化回本宫。只留色字 + 虚下划线，与生年实心、大限/流年空心分三层 */
-.pp-m.self{background:transparent;box-shadow:none;padding:0;text-decoration:underline dotted;text-underline-offset:2px}
-.pp-m.self.lu{color:var(--lu)}.pp-m.self.quan{color:var(--quan)}.pp-m.self.ke{color:var(--ke)}.pp-m.self.ji{color:var(--ji)}
+/* 自化：宫干化回本宫。0.64.0 起不再用徽章，改在星名后画彩色小箭头（见 .pp-zha），
+   与生年实心块、大限/流年空心框分成三层——所以这里不再保留 .pp-m.self 样式 */
 /* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
    避免与四化的实心彩色方块抢层次 */
 .pp-b{font-style:normal;font-size:10px;margin-left:3px;padding:0 3px;border-radius:999px;color:var(--muted);letter-spacing:0;opacity:.92;background:var(--band)}
@@ -29493,11 +29494,21 @@ window.__MP_VER = "0.63.0";
 #ppm-sc-feixing:checked~.pp-body .pp-fx{display:block}
 #ppm-sc-feixing:checked~.pp-body .pp-m.view,
 #ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
-/* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips） */
+/* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips/自化箭头） */
 #ppm-sc-sanhe:checked~.pp-body .pp-m,
-#ppm-sc-sanhe:checked~.pp-body .pp-zh,
+#ppm-sc-sanhe:checked~.pp-body .pp-zha,
 #ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
 #ppm-sc-sanhe:checked~.pp-flywrap{display:none}
+/* 自化箭头（学文墨天机）：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
+   由左向右弧着落回这颗星——读成「这笔化飞出去又落回自己」。
+   为什么必须放星名左边：放右边箭头就朝外，视觉上成了「从本宫飞出去」，意思正好反了。
+   为什么 inline 在星名旁而不是绝对定位：宫格左侧会被满星曜的宫撞上（实测压住「紫微 庙」）。 */
+.pp-zha{display:inline-block;margin-right:3px;vertical-align:-1px;line-height:0;cursor:help}
+.pp-zha .z-a{width:19px;height:8px;display:block;overflow:visible}
+.pp-zha .z-shaft{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
+.pp-zha .z-head{fill:currentColor;stroke:none}
+.pp-zha.lu{color:var(--lu)}.pp-zha.quan{color:var(--quan)}
+.pp-zha.ke{color:var(--ke)}.pp-zha.ji{color:var(--ji)}
 #ppm-sc-sihe:checked~.pp-flywrap{display:block}
 #ppm-sc-feixing:checked~.pp-flywrap{display:block}
 /* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
@@ -29510,7 +29521,6 @@ window.__MP_VER = "0.63.0";
 .pp::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.5;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.29 0 0 0 0 0.24 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23p)'/%3E%3C/svg%3E")}
 .pp>*{position:relative;z-index:1}
-.pp-zh{margin-left:4px;white-space:nowrap}
 .pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
 /* —— 宫位点击展开详情 + 三方四正联动 ——
@@ -29551,6 +29561,7 @@ window.__MP_VER = "0.63.0";
 .pp-detail .dt-tri em{font-style:normal;color:var(--muted);font-size:12px;margin-left:5px}
 .pp-detail .dt-tri em::before{content:"·";margin-right:3px}
 .pp-detail .dt-empty{color:var(--faint);font-size:12.5px}
+.pp-detail .dt-self{margin-right:10px;white-space:nowrap}
 .pp-detail .hint{color:var(--faint);font-size:11.5px;margin-top:6px}
 .pp-ss{display:flex;flex-wrap:wrap;gap:0 7px;font-size:12.5px;line-height:1.6}
 .pp-bz .pp-ss{flex-direction:column;align-items:center;gap:0;font-size:11.5px;line-height:1.5}
@@ -30802,7 +30813,7 @@ window.__MP_VER = "0.63.0";
   pp._wxIcon = wxIcon;
   pp._triGlyph = triGlyph;
 
-  function starsHTML(stars, viewHua) {
+  function starsHTML(stars, viewHua, selfHuaMap) {
     if (!stars || !stars.length) return '';
     return stars.map((s) => {
       const cls = TYPE_CLASS[s.type] || 'aux';
@@ -30813,9 +30824,13 @@ window.__MP_VER = "0.63.0";
       const b = s.brightness ? `<em class="pp-b ${BR_CLASS[s.brightness] || 'mid'}">${s.brightness}</em>` : '';
       // 全表杂曜的入庙标记（天官/天福只有四宫入庙，来路是庙地专论，不是十四主星那张亮度表）
       const tm = s.inTemple ? '<em class="pp-b good">庙</em>' : '';
-      // 顺序：星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
+      // 自化（宫干化回本宫）画成箭头，箭头尖顶在星名前——«化» 从宫干飞出去又落回这颗星，
+      // 所以读作「←这笔化飞回本宫」而不是「从这颗星飞出去」。放星名前是关键：
+      // 放星名后箭头朝右，视觉上就成了「飞出本宫」，意思正好反了
+      const zh = (selfHuaMap && selfHuaMap[s.name]) ? zhaMark(selfHuaMap[s.name], s.name) : '';
+      // 顺序：自化箭头 → 星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
-      return `<span class="pp-st ${cls}">${s.name}${b}${tm}${m}${vm}</span>`;
+      return `<span class="pp-st ${cls}">${zh}${s.name}${b}${tm}${m}${vm}</span>`;
     }).join('');
   }
 
@@ -30841,8 +30856,6 @@ window.__MP_VER = "0.63.0";
     if (pos[1] === 4) cls.push('pp-lastcol');
     const ss = p.shensha || {};
     const pname = NAMES[fx(soulIdx - b)];
-    const zh = (p.selfHua && p.selfHua.length)
-      ? `<span class="pp-zh">${p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')}</span>` : '';
     // 命无正曜：命宫无十四主星时，传统要借对宫（迁移宫）主星来看
     let borrow = '';
     if (b === soulIdx && allPalaces) {
@@ -30856,7 +30869,7 @@ window.__MP_VER = "0.63.0";
       }
     }
     return `<div class="${cls.join(' ')}" data-pi="${b}" data-view="${view}" role="button" tabindex="0" aria-expanded="false" style="grid-row:${pos[0]};grid-column:${pos[1]}">
-      <div class="pp-stars">${starsHTML(p.stars, viewHua)}${zh}</div>
+      <div class="pp-stars">${starsHTML(p.stars, viewHua, selfHuaMapOf(p))}</div>
       ${borrow}
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
       ${fxLineHTML(p, flyByBranch)}
@@ -30873,6 +30886,31 @@ window.__MP_VER = "0.63.0";
         </div>
       </div>
     </div>`;
+  }
+
+  /* 自化箭头（文墨天机式）：自化的定义是「宫干化回本宫」，箭头从左侧弧进来、箭头尖顶住星名，
+     读成「这笔化飞出去又落回本宫」，不是「从这颗星飞出去」。
+     几何按 22×9 画：左侧起笔 → 弧线上行 → 右侧箭头尖落在星名左边缘。
+     stroke 跟 currentColor 走，颜色由 .pp-zha.lu/.quan/.ke/.ji 决定。
+     位置：星名左边 inline，不绝对定位——宫格左侧常被满星曜占满，绝对定位会压住星名（实测压「紫微 庙」）；
+     也不能放星名右边，那样箭头朝外，语义正好反了。 */
+  function zhaMark(type, star) {
+    return `<span class="pp-zha ${MUT[type]}" title="自化${esc(type)}：${esc(star)}·宫干化回本宫"><svg class="z-a" viewBox="0 0 22 9" role="img" aria-label="自化${esc(type)}">
+        <path class="z-shaft" d="M1 7C6.6 7 11.4 5.6 17.2 3.2"/>
+        <path class="z-head" d="M20.2 2 17.8 4.9 16.6 1.9Z"/>
+      </svg></span>`;
+  }
+  pp._zhaMark = zhaMark;
+
+  /* selfHua → { 星名: 化类型 }，供 starsHTML 把箭头贴到对应星上。
+     同一颗星一般只被一种化命中；万一多条，取第一条（数据层已按四化顺序排）。 */
+  function selfHuaMapOf(p) {
+    const map = {};
+    for (const x of p.selfHua || []) {
+      if (!x || !x.star || !MUT[x.type]) continue;
+      if (!map[x.star]) map[x.star] = x.type;
+    }
+    return map;
   }
 
   /* 飞星派专属：本宫宫干四化飞到哪一宫，逐条摊在宫格内（只此模式展开，CSS 控显隐）。
@@ -30935,7 +30973,7 @@ window.__MP_VER = "0.63.0";
         ${kind === 'da' || kind === 'ln' ? `<div class="ct-t4 pp-viewhua">${kind === 'da' ? '大限' : '流年'}四化　${(kind === 'da' ? huaByView.da : huaByView.ln) && Object.keys(kind === 'da' ? huaByView.da : huaByView.ln).length
           ? Object.entries(kind === 'da' ? huaByView.da : huaByView.ln).map(([s2, t]) => `${s2}化${t}`).join('　')
           : '<span class="pp-dim">未飞四化</span>'}</div>` : ''}
-        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　虚下划线=自化　红框=命宫　浅底=三方四正</span></div>
+        <div class="pp-legend"><span class="pp-m lu">禄</span><span class="pp-m quan">权</span><span class="pp-m ke">科</span><span class="pp-m ji">忌</span><span>实心=生年四化　空心=大限/流年四化　箭头=自化　红框=命宫　浅底=三方四正</span></div>
       </div>`;
     };
 
@@ -31027,7 +31065,7 @@ window.__MP_VER = "0.63.0";
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-      <div class="pp-zhlegend">自化图示　<i class="z-lu">→禄</i><i class="z-quan">→权</i><i class="z-ke">→科</i><i class="z-ji">→忌</i></div>
+      <div class="pp-zhlegend">自化图示　<span class="z-lu">${pp._zhaMark('禄', '本宫')}禄</span><span class="z-quan">${pp._zhaMark('权', '本宫')}权</span><span class="z-ke">${pp._zhaMark('科', '本宫')}科</span><span class="z-ji">${pp._zhaMark('忌', '本宫')}忌</span></div>
       <div class="pp-flywrap">${flyHTML}${flyCompositeHTML}</div>
     </div>${flowHTML}${chips}${pats}${dxs}${lnHit}${zyHTML}`;
   };
@@ -31059,8 +31097,9 @@ window.__MP_VER = "0.63.0";
     const auxes = p.stars.filter((s) => s.type === '吉星' || s.type === '辅星');
     const bads = p.stars.filter((s) => s.type === '煞星');
     const misc = p.stars.filter((s) => !['主星', '吉星', '辅星', '煞星'].includes(s.type));
+    // 自化与盘面统一用箭头：详情里额外标出被化那颗星（盘面靠位置，这里靠文字）
     const selfHua = (p.selfHua || []).length
-      ? p.selfHua.map((x) => `<i class="pp-m self ${MUT[x.type]}" title="自化：宫干化回本宫">${x.type}</i>`).join('')
+      ? p.selfHua.map((x) => `<span class="dt-self">${zhaMark(x.type, x.star || '本宫')}${esc(x.star || '')}</span>`).join('')
       : '<span class="dt-empty">无</span>';
     // 三方四正：三合（+4/+8）与对宫（+6）
     const tri = [fx(b + 4), fx(b + 8), fx(b + 6)].map((idx) => {

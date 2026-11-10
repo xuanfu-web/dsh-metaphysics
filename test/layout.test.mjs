@@ -30,9 +30,12 @@ const out = PP.ziweiHTML(r);
 ok('三档 radio 齐全', ['ppm-ben', 'ppm-da', 'ppm-ln'].every((id) => out.includes(`id="${id}"`)));
 ok('三个 pp-body 齐全', ['ben', 'da', 'ln'].every((k) => out.includes(`pp-body ${k}`)));
 ok('含斗君文案', out.includes('子年斗君') && out.includes('流年斗君'));
-ok('含自化标记', out.includes('pp-zh'), (out.match(/pp-zh/g) || []).length + ' 处');
-ok('自化与生年/大限/流年分层', out.includes('pp-m self') && out.includes('虚下划线=自化'), out.match(/pp-m self[^"]*/)?.[0] || '缺类名');
-ok('自化带读屏说明', out.includes('自化：宫干化回本宫'));
+// 0.64.0 起自化由「虚下划线徽章」换成文墨天机式的彩色小箭头（贴在被化那颗星的星名后），
+// 断言跟着换：不再查 pp-m self / pp-zh，改查箭头本体与图例口径
+ok('含自化箭头标记', out.includes('pp-zha'), (out.match(/pp-zha/g) || []).length + ' 处');
+ok('自化与生年/大限/流年分层', /pp-zha (lu|quan|ke|ji)"/.test(out) && out.includes('箭头=自化'), out.match(/pp-zha [a-z]+"/)?.[0] || '缺类名');
+ok('自化带读屏说明', out.includes('宫干化回本宫') && /自化(禄|权|科|忌)：/.test(out));
+ok('自化箭头含绘制路径', out.includes('z-shaft') && out.includes('z-head'));
 ok('含三方底纹', out.includes('pp-tri'));
 ok('含 12 宫格 x3', (out.match(/pp-cell/g) || []).length === 36, String((out.match(/pp-cell/g) || []).length));
 
