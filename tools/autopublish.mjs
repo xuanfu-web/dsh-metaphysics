@@ -29,6 +29,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { pushOverSshWithKey, clearStaleBlock } from './ssh-fallback.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const args = process.argv.slice(2);
@@ -267,52 +268,27 @@ async function ghApi(cfg, method, apiPath, body) {
 }
 
 /**
- * GitHub 443 被阻断时的兜底：临时 ed25519 → 注册 deploy key（write）→
- * 走 ssh.github.com:443 推送 → 无论成败都删 key、删本地私钥。
- * 不落盘持久凭据：私钥只活在这一次运行的临时目录里。
+ * GitHub 443 被阻断时的兜底：临时 ed25519 → 注册 deploy key → 推送 → 无论成败都删 key、删私钥。
+ * 传输层与 ssh config 的处理都在 tools/ssh-fallback.mjs（与 push-tag 共用一份），
+ * 那里写了为什么只能用 GIT_SSH、为什么非动真实 ~/.ssh/config 不可。
  */
 async function pushOverSsh(cfg, label) {
   const slug = repoSlug();
   if (!slug) { log('SSH 兜底跳过：package.json 里读不出 repository'); return false; }
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-mp-ssh-'));
-  const key = path.join(dir, 'id_ed25519');
-  let keyId = null;
-  try {
-    const gen = sh(findSshKeygen(), ['-t', 'ed25519', '-N', '', '-C', 'dsh-metaphysics-autopublish', '-f', key]);
-    if (gen.status !== 0) { log('SSH 兜底失败：ssh-keygen 起不来\n' + gen.stderr); return false; }
-    const pub = fs.readFileSync(`${key}.pub`, 'utf8').trim();
-    const added = await ghApi(cfg, 'POST', `/repos/${slug.owner}/${slug.repo}/keys`, {
-      title: `autopublish ${new Date().toISOString()}`,
-      key: pub,
-      read_only: false,
-    });
-    if (!added.ok || !added.json || !added.json.id) {
-      log(`SSH 兜底失败：注册 deploy key 被拒（HTTP ${added.status}）\n${added.text.slice(0, 400)}`);
-      return false;
-    }
-    keyId = added.json.id;
-    const sshCmd = `ssh -i "${key.replace(/\\/g, '/')}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`;
-    const r = sh(process.env.AUTOPUBLISH_GIT || findGit(), [
-      '-c', `core.sshCommand=${sshCmd}`,
-      'push', `ssh://git@ssh.github.com:443/${slug.owner}/${slug.repo}.git`, 'HEAD:main',
-    ]);
-    if (r.status !== 0) { log(`${label} 走 SSH 兜底仍然失败：\n${r.stdout}${r.stderr}`); return false; }
-    log(`${label} 已改走 SSH 兜底并成功（ssh.github.com:443 + 临时 deploy key ${keyId}）`);
-    return true;
-  } catch (e) {
-    log('SSH 兜底异常：' + (e && e.message ? e.message : String(e)));
-    return false;
-  } finally {
-    if (keyId) {
-      let removed = false;
-      try {
-        const del = await ghApi(cfg, 'DELETE', `/repos/${slug.owner}/${slug.repo}/keys/${keyId}`);
-        removed = !!(del && del.ok);
-      } catch (e) { removed = false; }
-      log(removed ? `已删除临时 deploy key ${keyId}` : `临时 deploy key ${keyId} 删除失败，请手动到仓库 Settings → Deploy keys 删掉`);
-    }
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* 临时目录清不掉不影响结果 */ }
-  }
+  return pushOverSshWithKey({
+    cfg,
+    slug,
+    ghApi: (method, apiPath, body) => ghApi(cfg, method, apiPath, body),
+    git,
+    log,
+    refspecs: ['HEAD:main'],
+    label,
+    keygenName: findSshKeygen(),
+    sshEnvVar: 'AUTOPUBLISH_SSH',
+    dirPrefix: 'dsh-mp-ssh-',
+    keyComment: 'dsh-metaphysics-autopublish',
+    keyTitle: 'autopublish',
+  });
 }
 
 /** 推送带重试：GitHub 连接间歇性失败（甚至整段 443 被阻断），失败三次后换 SSH 再试一次 */
@@ -434,6 +410,9 @@ async function main() {
   log(`运行开始（${mode}，pid ${process.pid}）`);
   if (!fs.existsSync(path.join(root, '.git'))) fail('不是 git 仓库：' + root);
   repairGit();
+  /* 上次运行被 kill 时 finally 没跑，ssh config 里可能留着指向已删私钥的 Host 块；
+     那种块会让这台机器对 ssh.github.com 的 ssh 直接失败，先清掉。 */
+  if (clearStaleBlock()) log('已清掉上次运行残留在 ssh config 里的临时 Host 块');
 
   // 锁：两个入口（系统计划任务 / 手动）撞在一起时，后来的直接退出
   try {

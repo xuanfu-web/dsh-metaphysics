@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 8794,
+  "total": 8817,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -23,7 +23,7 @@
       "fail": 0
     },
     "autopublish.test.mjs": {
-      "pass": 53,
+      "pass": 55,
       "fail": 0
     },
     "baseline.test.mjs": {
@@ -395,7 +395,7 @@
       "fail": 0
     },
     "push-tag.test.mjs": {
-      "pass": 22,
+      "pass": 43,
       "fail": 0
     },
     "qimen-gan.test.mjs": {

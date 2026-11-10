@@ -10,6 +10,7 @@
 //   node tools/push-tag.mjs v0.58.0      # 指定 tag
 //   node tools/push-tag.mjs --dry-run    # 只报告会建/推哪个 tag，不动远端、不建 tag
 //   node tools/push-tag.mjs --no-create  # 远端已有、只推不建
+//   node tools/push-tag.mjs --ssh-only   # 跳过 HTTPS，直接走 SSH 兜底（验证兜底路径用）
 //
 // 凭据：<用户目录>/.dsh/metaphysics-autopublish.json（githubUser / githubToken），
 //      可用 PUSHTAG_CONFIG 指向别的文件。临时私钥只活在本次运行的临时目录里，
@@ -19,12 +20,17 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { pushOverSshWithKey, clearStaleBlock } from './ssh-fallback.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const PKG = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const noCreate = args.includes('--no-create');
+/* 直接走 SSH 兜底，跳过三次 HTTPS 重试（每次要等 8/16 秒）。
+   存在的理由：兜底路径平时只在「GitHub 443 真的被阻断」时才被走到，
+   想验证它就得等网络自己坏——所以给一个能主动跑它的开关。 */
+const sshOnly = args.includes('--ssh-only');
 const named = args.find((a) => !a.startsWith('--'));
 
 const log = (msg) => console.log(msg);
@@ -87,47 +93,26 @@ async function ghApi(cfg, method, apiPath, body) {
   return { ok: res.ok, status: res.status, json, text };
 }
 
-/** 同一个 tag 走 HTTPS 失败后换 SSH：临时 ed25519 → 注册 deploy key → 推 → 删 key 与私钥 */
+/** 同一个 tag 走 HTTPS 失败后换 SSH：临时 ed25519 → 注册 deploy key → 推 → 删 key 与私钥。
+ *  传输层与 ssh config 的处理都在 tools/ssh-fallback.mjs（与 autopublish 共用一份），
+ *  那里写了为什么只能用 GIT_SSH、为什么非动真实 ~/.ssh/config 不可。 */
 async function pushOverSsh(cfg, tag) {
   const slug = repoSlug();
   if (!slug) { log('SSH 兜底跳过：package.json 里读不出 repository'); return false; }
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsh-mp-tag-'));
-  const key = path.join(dir, 'id_ed25519');
-  let keyId = null;
-  try {
-    const gen = spawnSync(findSshKeygen(), ['-t', 'ed25519', '-N', '', '-C', 'dsh-metaphysics-push-tag', '-f', key], { encoding: 'utf8' });
-    if (gen.status !== 0) { log('SSH 兜底失败：ssh-keygen 起不来\n' + (gen.stderr || '')); return false; }
-    const pub = fs.readFileSync(`${key}.pub`, 'utf8').trim();
-    const added = await ghApi(cfg, 'POST', `/repos/${slug.owner}/${slug.repo}/keys`, {
-      title: `push-tag ${new Date().toISOString()}`,
-      key: pub,
-      read_only: false,
-    });
-    if (!added.ok || !added.json || !added.json.id) {
-      log(`SSH 兜底失败：注册 deploy key 被拒（HTTP ${added.status}）\n${added.text.slice(0, 400)}`);
-      return false;
-    }
-    keyId = added.json.id;
-    const sshCmd = `ssh -i "${key.replace(/\\/g, '/')}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`;
-    const r = git(['-c', `core.sshCommand=${sshCmd}`, 'push',
-      `ssh://git@ssh.github.com:443/${slug.owner}/${slug.repo}.git`, `refs/tags/${tag}:refs/tags/${tag}`]);
-    if (r.status !== 0) { log(`tag 走 SSH 兜底仍然失败：\n${r.stdout || ''}${r.stderr || ''}`); return false; }
-    log(`tag 已改走 SSH 兜底并成功（ssh.github.com:443 + 临时 deploy key ${keyId}）`);
-    return true;
-  } catch (e) {
-    log('SSH 兜底异常：' + (e && e.message ? e.message : String(e)));
-    return false;
-  } finally {
-    if (keyId) {
-      let removed = false;
-      try {
-        const del = await ghApi(cfg, 'DELETE', `/repos/${slug.owner}/${slug.repo}/keys/${keyId}`);
-        removed = !!(del && del.ok);
-      } catch (e) { removed = false; }
-      log(removed ? `已删除临时 deploy key ${keyId}` : `临时 deploy key ${keyId} 删除失败，请手动到仓库 Settings → Deploy keys 删掉`);
-    }
-    try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* 临时目录清不掉不影响结果 */ }
-  }
+  return pushOverSshWithKey({
+    cfg,
+    slug,
+    ghApi: (method, apiPath, body) => ghApi(cfg, method, apiPath, body),
+    git,
+    log,
+    refspecs: [`refs/tags/${tag}:refs/tags/${tag}`],
+    label: 'tag',
+    keygenName: findSshKeygen(),
+    sshEnvVar: 'PUSHTAG_SSH',
+    dirPrefix: 'dsh-mp-tag-',
+    keyComment: 'dsh-metaphysics-push-tag',
+    keyTitle: 'push-tag',
+  });
 }
 
 const HTTPS_BLOCKED = /Connection was reset|Failed to connect|Could not connect|Timeout|timed out|443|SSL|RPC failed|Recv failure/i;
@@ -145,12 +130,24 @@ async function main() {
     return;
   }
 
+  /* 上一次运行被 kill 时 finally 没跑，config 里可能留着指向已删私钥的块。
+     那种块会让这台机器对 ssh.github.com 的 ssh 直接失败，先清掉。 */
+  if (clearStaleBlock()) log('已清掉上次运行残留在 ssh config 里的临时 Host 块');
+
   if (!exists) {
     if (noCreate) fail(`本地没有 ${tag}，而你要求 --no-create`);
     const head = git(['rev-parse', '--short', 'HEAD']).stdout.trim();
     const made = git(['tag', '-a', tag, '-m', `${PKG.name} ${tag}（${head}）`]);
     if (made.status !== 0) fail(`建 tag 失败：${made.stderr || made.stdout}`);
     log(`已建 annotated tag ${tag} @ ${head}`);
+  }
+
+  if (sshOnly) {
+    const cfg = loadConfig();
+    if (!cfg || !cfg.githubToken) fail('--ssh-only 需要 .dsh/metaphysics-autopublish.json 里的 githubToken');
+    log('按 --ssh-only 跳过 HTTPS，直接走 SSH deploy key');
+    if (await pushOverSsh(cfg, tag)) return;
+    fail(`tag 走 SSH 兜底没成（--ssh-only）`);
   }
 
   let last = null;

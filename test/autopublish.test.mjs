@@ -48,10 +48,15 @@ ok('无改动也写一行日志（不再完全静默）', /无改动，跳过/.t
 ok('每次运行开头留痕', /运行开始（\$\{mode\}/.test(src));
 ok('日志有轮转（避免一天两跑撑爆）', /function trimLog\(\)/.test(src) && /LOG_MAX_BYTES/.test(src));
 ok('push 失败按「连不上」判定才换 SSH', /const HTTPS_BLOCKED = /.test(src));
-ok('SSH 兜底走 ssh.github.com:443', /ssh:\/\/git@ssh\.github\.com:443\//.test(src));
-ok('SSH 兜底临时生成 ed25519', /'-t', 'ed25519'/.test(src));
-ok('SSH 兜底会注册并删除 deploy key', /\/keys`/.test(src) && /DELETE/.test(src));
-ok('SSH 兜底不落盘持久凭据（用完删临时目录）', /fs\.rmSync\(dir, \{ recursive: true, force: true \}\)/.test(src));
+/* SSH 兜底的实现收敛到 tools/ssh-fallback.mjs（push-tag 与 autopublish 共用一份），
+   所以这几条要从共享模块里读——留在 autopublish 里查等于查一个已经不存在的位置。 */
+const sshSrc = read('tools/ssh-fallback.mjs');
+ok('SSH 兜底接线到共享模块（不再各抄一份）', /pushOverSshWithKey/.test(src) && /from '\.\/ssh-fallback\.mjs'/.test(src));
+ok('SSH 兜底目标仍是 ssh.github.com', /ssh:\/\/git@ssh\.github\.com\//.test(sshSrc));
+ok('SSH 兜底临时生成 ed25519', /'-t', 'ed25519'/.test(sshSrc));
+ok('SSH 兜底会注册并删除 deploy key', /\/keys`/.test(sshSrc) && /DELETE/.test(sshSrc));
+ok('SSH 兜底不落盘持久凭据（用完删临时目录）', /fs\.rmSync\(dir, \{ recursive: true, force: true \}\)/.test(sshSrc));
+ok('自动发布也会清 ssh config 残留', /clearStaleBlock/.test(src));
 ok('未捕获异常也留痕', /main\(\)\.catch[\s\S]{0,200}writeFileSync\(ERR/.test(src));
 // 自动发布自己跑测试时，测试里再起一个实例：共用一把锁会让内层直接跳过，测出假通过
 ok('锁路径可用环境变量换掉', /AUTOPUBLISH_LOCK/.test(src) && /process\.env\.AUTOPUBLISH_LOCK \|\|/.test(src));
