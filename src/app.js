@@ -80,13 +80,13 @@ const CSS = `
 .mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
 /* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
 .mp-panel{position:relative;background:
-  linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
+  linear-gradient(180deg,#f7f4ec,color-mix(in srgb,#f2eee4 88%,#ece7da));border:1px solid #d8d2c2;border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
   box-shadow:0 1px 2px color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent),0 16px 34px -30px color-mix(in srgb,var(--dsw-alias-label-primary) 45%,transparent)}
 /* 宣纸纤维噪点：叠在面板容器上，浅色下可见的纸面颗粒；暗色宿主主题自动减淡 */
-.mp-panel::before{content:"";position:absolute;inset:0;border-radius:15px;pointer-events:none;opacity:.16;
+.mp-panel::before{content:"";position:absolute;inset:0;border-radius:15px;pointer-events:none;opacity:.30;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='pp'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.30 0 0 0 0 0.27 0 0 0 0 0.22 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23pp)'/%3E%3C/svg%3E")}
 .mp-panel>*{position:relative;z-index:1}
-@media screen and (prefers-color-scheme:dark){.mp-panel::before{opacity:.10;
+@media screen and (prefers-color-scheme:dark){.mp-panel{background:linear-gradient(180deg,#1c1b18,#24221d);border-color:#4a453a}.mp-panel::before{opacity:.14;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='pp'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.83 0 0 0 0 0.78 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23pp)'/%3E%3C/svg%3E")}}
 .mp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:end}
 .mp-lbl{display:block;height:18px;line-height:18px;font-size:12.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
