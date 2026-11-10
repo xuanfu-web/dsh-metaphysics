@@ -542,7 +542,11 @@ export function buildBazi(input) {
   const monthBranch = pillars.month.branch;
 
   // 神煞：表驱动、双查法（年干/日干、年支/日支、月支、日柱、时柱），详见 engine/shensha.js
-  const shensha = computeBaziShensha(pillars, kongwang);
+  // gender 供勾绞煞/元辰辨阴阳男女；年柱纳音五行供学堂/词馆
+  const shensha = computeBaziShensha(pillars, kongwang, {
+    gender,
+    yearNayinElement: nayin(yearIdx).element,
+  });
 
   for (const key of ['year', 'month', 'day', 'hour']) {
     const pl = pillars[key];

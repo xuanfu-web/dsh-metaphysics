@@ -122,6 +122,31 @@ const SANQI = ['甲戊庚', '乙丙丁', '壬癸辛'];
 // 金神：时柱见之
 const JINSHEN = ['乙丑', '己巳', '癸酉'];
 
+// ── 问真神煞大全补缺批（0.66）：口径全部按《问真神煞大全》55 章实读钉死 ──
+
+// 天德合：天德之干五合/支六合（寅月天德丁→壬合…）
+const TIANDE_HE = { 寅: '壬', 卯: '巳', 辰: '丁', 巳: '丙', 午: '寅', 未: '己', 申: '戊', 酉: '亥', 戌: '辛', 亥: '庚', 子: '申', 丑: '乙' };
+// 血刃：按月支查支
+const XUEYREN = { 寅: '丑', 卯: '未', 辰: '寅', 巳: '申', 午: '卯', 未: '酉', 申: '辰', 酉: '戌', 戌: '巳', 亥: '亥', 子: '午', 丑: '子' };
+// 红艳煞：日干查支
+const HONGYAN = { 甲: ['午'], 乙: ['午'], 丙: ['寅'], 丁: ['未'], 戊: ['辰'], 己: ['辰'], 庚: ['戌'], 辛: ['酉'], 壬: ['子'], 癸: ['申'] };
+// 孤鸾煞：日柱
+const GUALUAN = ['甲寅', '乙巳', '丙午', '丁巳', '戊午', '戊申', '辛亥', '壬子'];
+// 十灵日：日柱
+const SHILING = ['甲辰', '乙亥', '丙辰', '丁酉', '戊午', '庚戌', '庚寅', '辛亥', '壬寅', '癸未'];
+// 八专：日柱
+const BAZHUAN = ['甲寅', '乙卯', '丁未', '戊戌', '己未', '庚申', '辛酉', '癸丑'];
+// 九丑：日柱
+const JIUCHOU = ['丁酉', '戊子', '戊午', '己卯', '己酉', '辛卯', '辛酉', '壬子', '壬午'];
+// 天转：寅卯辰月乙卯、巳午未月丙午、申酉戌月辛酉、亥子丑月壬子（日柱）
+const TIANZH = { 春: '乙卯', 夏: '丙午', 秋: '辛酉', 冬: '壬子' };
+// 地转：春辛卯、夏戊午、秋癸酉、冬丙子（日柱）
+const DIZH = { 春: '辛卯', 夏: '戊午', 秋: '癸酉', 冬: '丙子' };
+// 学堂（纳音长生查法，问真采用第一种）：年纳音五行 → 支
+const XUETANG = { 金: '巳', 木: '亥', 水: '申', 土: '申', 火: '寅' };
+// 词馆（纳音临官查法）：年纳音五行 → 支
+const CIGUAN = { 金: '申', 木: '寅', 水: '亥', 土: '亥', 火: '巳' };
+
 // ── 规则工厂 ────────────────────────────────────────────────────
 
 /** 天干查支：天乙、太极、文昌、福星、天官、国印、天厨、禄神、羊刃、飞刃、金舆、流霞 */
@@ -194,6 +219,13 @@ const RULES = [
       const he = k && YUEDE[k] ? YUEDE_HE[YUEDE[k]] : null;
       return he ? [S(he)] : [];
     }),
+  byMonth('天德合', '贵人', 'good',
+    '天德之合：寅月丁德→壬合、卯月申→巳、辰月壬→丁、巳月辛→丙、午月亥→寅、未月甲→己、申月癸→戊、酉月寅→亥、戌月丙→辛、亥月乙→庚、子月巳→申、丑月庚→乙（月支查干或支；无天德时天德合同样起作用）',
+    (ctx) => {
+      const ch = TIANDE_HE[ctx.pillars.month.branch];
+      if (!ch) return [];
+      return STEMS_LIST.includes(ch) ? [S(ch)] : [T(ch)];
+    }),
   byStem('福星贵人', '贵人', 'good',
     '甲丙见寅子，乙癸见卯丑，丁见酉、戊见申、己见未、庚见午、辛见巳、壬见辰（年干、日干查四支）',
     FUXING, ['year', 'day']),
@@ -256,6 +288,37 @@ const RULES = [
   byStem('金舆', '婚姻', 'good',
     '禄前二位：甲龙乙蛇丙戊羊、丁己申宫庚犬乡、辛猪壬牛癸虎位（日干查四支）',
     JINYU, ['day']),
+  byStem('红艳煞', '婚姻', 'neutral',
+    '甲乙午、丙寅、丁未、戊己辰、庚戌、辛酉、壬子、癸申（日干查四支）',
+    HONGYAN, ['day']),
+  byPillarGz('孤鸾煞', '婚姻', 'bad',
+    '日柱甲寅、乙巳、丙午、丁巳、戊午、戊申、辛亥、壬子（日柱见之；又名呻吟煞）',
+    GUALUAN),
+  // 勾绞煞：桃花六冲之位，阳男阴女命前三辰为勾、后三辰为绞；阴男阳女反之
+  byRefBranch('勾绞煞', '婚姻', 'bad',
+    '桃花六冲之位：子见卯酉、丑见辰戌、寅见巳亥……（年支查余三支；阳男阴女命前三辰为勾后三为绞，阴男阳女反之）',
+    (ctx) => {
+      const idx = BRANCHES.indexOf(ctx.pillars.year.branch);
+      const qian = BRANCHES[(idx + 3) % 12];
+      const hou = BRANCHES[(idx + 9) % 12];
+      const gouxian = ctx.gender === 'male'
+        ? ((idx % 2) === 0)      // 阳男：命前为勾
+        : ((idx % 2) === 1);     // 阴女：命前为勾
+      return gouxian
+        ? [{ kind: 'branch', ch: qian, label: '勾' }, { kind: 'branch', ch: hou, label: '绞' }]
+        : [{ kind: 'branch', ch: hou, label: '勾' }, { kind: 'branch', ch: qian, label: '绞' }];
+    }),
+  // 元辰：阳男阴女年支后一辰冲位、阴男阳女前一辰冲位（问真：阳男阴女子年未…阴男阳女子年巳…）
+  byRefBranch('元辰', '凶煞', 'bad',
+    '阳男阴女：子见未、丑见申、寅见酉……（年支次一位的对冲）；阴男阳女：子见巳、丑见午……（年支退一位的对冲）（年支查余三支；又名毛头星、大耗）',
+    (ctx) => {
+      const idx = BRANCHES.indexOf(ctx.pillars.year.branch);
+      const yangNan = ctx.gender === 'male'
+        ? ((idx % 2) === 0)
+        : ((idx % 2) === 1);
+      const base = yangNan ? (idx + 1) % 12 : (idx + 11) % 12;
+      return [T(BRANCHES[(base + 6) % 12])];
+    }),
 
   // 性情
   byTrio('华盖', '性情', 'neutral',
@@ -286,6 +349,15 @@ const RULES = [
   byPillarGz('日贵', '性情', 'good',
     '日柱丁酉、丁亥、癸巳、癸卯（日柱见之）',
     RIGUI),
+  byPillarGz('十灵日', '性情', 'good',
+    '日柱甲辰、乙亥、丙辰、丁酉、戊午、庚戌、庚寅、辛亥、壬寅、癸未（日柱见之；「男带十灵好文章，女带十灵好衣裳」）',
+    SHILING),
+  byPillarGz('八专', '性情', 'neutral',
+    '日柱甲寅、乙卯、丁未、戊戌、己未、庚申、辛酉、癸丑（日柱见之；干支同气坐禄或冠带）',
+    BAZHUAN),
+  byPillarGz('九丑', '性情', 'neutral',
+    '日柱丁酉、戊子、戊午、己卯、己酉、辛卯、辛酉、壬子、壬午（日柱见之；「丑」指名声风评非容貌）',
+    JIUCHOU),
 
   // 事业
   byStem('禄神', '事业', 'good',
@@ -330,6 +402,30 @@ const RULES = [
   byStem('流霞', '凶煞', 'bad',
     '甲酉、乙戌、丙未、丁申、戊巳、己午、庚辰、辛卯、壬亥、癸寅（日干查四支；通行表）',
     LIUXIA, ['day']),
+  byMonth('血刃', '凶煞', 'bad',
+    '寅月丑、卯月未、辰月寅、巳月申、午月卯、未月酉、申月辰、酉月戌、戌月巳、亥月亥、子月午、丑月子（月支查四支）',
+    (ctx) => {
+      const ch = XUEYREN[ctx.pillars.month.branch];
+      return ch ? [T(ch)] : [];
+    }),
+  byRefBranch('丧门', '凶煞', 'bad',
+    '年支前两位：子见寅、丑见卯……（年支查余三支）',
+    (ctx) => {
+      const idx = BRANCHES.indexOf(ctx.pillars.year.branch);
+      return [T(BRANCHES[(idx + 2) % 12])];
+    }),
+  byRefBranch('吊客', '凶煞', 'bad',
+    '年支后两位：子见戌、丑见亥……（年支查余三支）',
+    (ctx) => {
+      const idx = BRANCHES.indexOf(ctx.pillars.year.branch);
+      return [T(BRANCHES[(idx + 10) % 12])];
+    }),
+  byRefBranch('披麻', '凶煞', 'bad',
+    '年支后三位：子见酉、丑见戌……（年支查余三支）',
+    (ctx) => {
+      const idx = BRANCHES.indexOf(ctx.pillars.year.branch);
+      return [T(BRANCHES[(idx + 9) % 12])];
+    }),
 
   // 格局
   byMonth('天赦日', '格局', 'good',
@@ -342,6 +438,44 @@ const RULES = [
   byPillarGz('金神', '格局', 'neutral',
     '时柱乙丑、己巳、癸酉（时柱见之；严格成格另需日主身旺，此仅记星）',
     JINSHEN, 'hour'),
+  // 拱禄：五日五时，日时同干、虚拱禄支（癸亥日癸丑时拱子、癸丑日癸亥时拱子、丁巳日丁未时拱午、己未日己巳时拱午、戊辰日戊午时拱巳）
+  {
+    name: '拱禄', cat: '格局', luck: 'good',
+    rule: '日时同干而禄位虚拱：癸亥日癸丑时、癸丑日癸亥时（拱子），丁巳日丁未时、己未日己巳时（拱午），戊辰日戊午时（拱巳）；只宜虚拱，忌填实空亡',
+    custom: (ctx) => {
+      const GONG = { '癸亥|癸丑': '子', '癸丑|癸亥': '子', '丁巳|丁未': '午', '己未|己巳': '午', '戊辰|戊午': '巳' };
+      const k = `${ctx.pillars.day.ganzhi}|${ctx.pillars.hour.ganzhi}`;
+      return GONG[k] ? [{ pillars: ['day', 'hour'], via: '日时', target: GONG[k] }] : [];
+    },
+  },
+  // 天转 / 地转：以月支定季节查日柱（五行旺极之日，盛极而衰）
+  byMonth('天转', '凶煞', 'bad',
+    '春乙卯、夏丙午、秋辛酉、冬壬子（月支定季节查日柱；「春兔夏马天地转，秋鸡冬鼠便为殃」）',
+    (ctx) => {
+      const season = SEASON[ctx.pillars.month.branch];
+      const gz = ctx.pillars.day.ganzhi;
+      return season && TIANZH[season] === gz ? [GZ(gz)] : [];
+    }, ['day']),
+  byMonth('地转', '凶煞', 'bad',
+    '春辛卯、夏戊午、秋癸酉、冬丙子（月支定季节查日柱）',
+    (ctx) => {
+      const season = SEASON[ctx.pillars.month.branch];
+      const gz = ctx.pillars.day.ganzhi;
+      return season && DIZH[season] === gz ? [GZ(gz)] : [];
+    }, ['day']),
+  // 学堂 / 词馆：年柱纳音五行的长生 / 临官之支（问真采用禄命法第一种；正学堂另需干支同见，此仅记支）
+  {
+    name: '学堂', cat: '文星', luck: 'good',
+    rule: '年纳音五行之长生：金见巳、木见亥、水见申、土见申、火见寅（年纳音查月日时支；学堂为纳音长生，主人聪明文才出众）',
+    refs: ['year'], refKind: 'branch', viaLabel: '年纳音', slots: ['month', 'day', 'hour'],
+    targets: (ctx) => [T(XUETANG[ctx.nayinElement] || '')].filter((t) => t.ch),
+  },
+  {
+    name: '词馆', cat: '文星', luck: 'good',
+    rule: '年纳音五行之临官：金见申、木见寅、水见亥、土见亥、火见巳（年纳音查月日时支；词馆为纳音临官，主文章学识）',
+    refs: ['year'], refKind: 'branch', viaLabel: '年纳音', slots: ['month', 'day', 'hour'],
+    targets: (ctx) => [T(CIGUAN[ctx.nayinElement] || '')].filter((t) => t.ch),
+  },
   {
     name: '天罗', cat: '凶煞', luck: 'bad',
     rule: '四支见戌、亥俱全（戌亥为天罗）',
@@ -402,12 +536,14 @@ function runRule(r, ctx) {
  * 计算八字神煞
  * @param {object} pillars { year, month, day, hour }，每柱需有 stem/branch/ganzhi
  * @param {string[]} kongwang 日柱旬空的两个地支
+ * @param {object} [opts] { gender?: 'male'|'female', yearNayinElement?: string }
+ *   gender 供勾绞煞 / 元辰辨阴阳男女；yearNayinElement 供学堂 / 词馆（年柱纳音五行）
  * @returns {{ detail: object, groups: array, names: string[], count: number }}
  *   detail[key] = [{ name, cat, luck, via, target, rule }]
  *   groups = [{ cat, items: [{ name, luck, pillars, via, target, rule }] }]
  */
-export function computeBaziShensha(pillars, kongwang = []) {
-  const ctx = { pillars, kongwang };
+export function computeBaziShensha(pillars, kongwang = [], opts = {}) {
+  const ctx = { pillars, kongwang, gender: opts.gender, nayinElement: opts.yearNayinElement };
   const items = [];
   for (const r of RULES) {
     const hits = runRule(r, ctx);
