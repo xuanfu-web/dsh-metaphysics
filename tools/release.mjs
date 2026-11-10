@@ -187,3 +187,16 @@ npm(['publish', '--access', 'public', '--ignore-scripts', '--userconfig', npmrc]
 // npm 的发布是异步的：版本条目先可见，tarball 附件可能晚几分钟才落盘。
 // 所以核对以「附件能下载且字节对得上」为准，而不是 `npm view` 或 publish 的输出。
 await verifyReleased();
+
+// ── 6. tag 与 GitHub Release ───────────────────────────────
+// 这两步原先是手工的：npm 发完只打印一句「别忘了打 tag」，于是 tag 靠记性、
+// Release 靠手点——Releases 页面从 v0.63.0 起就断在那里（tag 全在，Release 一个没有）。
+// 能让脚本做的事别留给记性，串进来。
+if (process.env.RELEASE_SKIP_GITHUB === '1') {
+  step('按 RELEASE_SKIP_GITHUB=1 跳过 tag 与 GitHub Release');
+} else {
+  step('打 tag 并推送（HTTPS 不通自动走 SSH deploy key）');
+  run(process.execPath, [path.join(root, 'tools', 'push-tag.mjs')], 'push-tag');
+  step('建 GitHub Release（正文取 CHANGELOG 对应小节）');
+  run(process.execPath, [path.join(root, 'tools', 'gh-release.mjs')], 'gh-release');
+}

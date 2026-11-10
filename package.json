@@ -85,7 +85,8 @@
     "stress": "node test/stress.test.mjs",
     "e2e:page": "node tools/e2e-dom.mjs",
     "e2e:panel": "node tools/e2e-panel.mjs",
-    "check:verification": "node tools/check-verification.mjs"
+    "check:verification": "node tools/check-verification.mjs",
+    "gh:release": "node tools/gh-release.mjs"
   },
   "exports": {
     ".": "./index.js",
