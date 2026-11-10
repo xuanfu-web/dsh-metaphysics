@@ -77,10 +77,14 @@ export function buildXiaoliuren(input) {
   const info = PALACES[p3];
   return {
     system: 'xiaoliuren',
-    meta: { mode: mode === 'time' ? '时间起课' : '报数起课', question: input.question || null, originText },
+    // question 放在顶层，不放进 meta：句柄按设计不收 question（它不影响盘面），
+    // 放进 meta 会让「句柄回放」与「原始调用」的 meta 不一致（回放后变 null），
+    // 看起来像盘变了。其余体系也都是把 question 挂顶层。
+    meta: { mode: mode === 'time' ? '时间起课' : '报数起课', originText },
+    question: input.question || null,
     steps: [p1, p2, p3],
     result: { palace: p3, luck: info.luck, text: info.text },
-    sources: ['掌诀口径：通行马前课（白话提炼，非原文照录）'],
+    sources: ['掌诀口径：通行马前口诀（白话提炼，非原文照录）'],
     disclaimer: '小六壬为轻量快占，属民俗娱乐参考；重要事项请综合现实信息判断。',
   };
 }

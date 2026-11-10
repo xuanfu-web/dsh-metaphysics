@@ -1811,8 +1811,10 @@ function chengguText(r) {
 
 /** 小六壬文本 */
 function xiaoliurenText(r) {
+  // 所问从顶层读（引擎把 question 挂顶层，不进 meta——meta 要能被句柄完整复现）
+  const q = r.question || (r.meta && r.meta.question) || null;
   return [
-    `【小六壬·${r.meta.mode}】${r.meta.question ? `所问：${r.meta.question}` : ''}`,
+    `【小六壬·${r.meta.mode}】${q ? `所问：${q}` : ''}`,
     r.meta.originText,
     `落宫：${r.steps.join(' → ')}`,
     `断语：${r.result.palace}（${r.result.luck}）　${r.result.text}`,

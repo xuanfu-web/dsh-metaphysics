@@ -236,9 +236,14 @@ const CSS = `
 .mp-verify-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--dsw-alias-label-secondary);margin-bottom:8px}
 .mp-verify-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;padding:3px 0}
 .mp-verify-btns{display:flex;gap:4px}
-.mp-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer}
-.mp-chip.on{background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);border-color:transparent}
+.mp-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);cursor:pointer}.mp-chip.on{background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);border-color:transparent}
 .mp-verify-foot{display:flex;align-items:flex-start;gap:8px;margin-top:8px;flex-wrap:wrap}
+/* 反馈入口：常驻底部，低调但不隐藏；窄栏下按钮换行不挤压 */
+.mp-fb{margin-top:26px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}
+.mp-fb-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mp-fb-t{font-size:12px;color:var(--dsw-alias-label-secondary);flex:1;min-width:180px}
+.mp-fb-b{margin-top:8px;font-size:11.5px;color:var(--dsw-alias-label-secondary);opacity:.85;line-height:1.7}
+.mp-fb-note{color:var(--dsw-alias-brand-primary)}
 .mp-verify-fit{font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.7;flex:1;min-width:0}
 .mp-rect-row{display:flex;gap:6px;margin-bottom:6px}
 .mp-rect-row .mp-input{flex:1;min-width:0}
@@ -713,6 +718,9 @@ function App() {
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
+  // 反馈入口的两处瞬时状态：复制结果提示、附加说明（4 秒后自动清空）
+  const [fbCopied, setFbCopied] = useState('');
+  const [fbNote, setFbNote] = useState('');
   // 首屏耗时：引擎取块、排盘、首帧（rAF 两次）三段实测；只在本机显示
   const [perf, setPerf] = useState(null);
   const [hist, setHist] = useState(() => loadHistory());
@@ -1377,6 +1385,136 @@ function App() {
           () => setChatNote('对话输入框还没就绪' + diag + '，复制也没成功；先点「复制文字结果」再贴。'));
       } else { setChatNote('对话输入框还没就绪' + diag + '；先点「复制文字结果」再贴进对话窗。'); }
     } catch (e) { setChatNote('发到对话窗失败：' + (e && e.message ? e.message : e)); }
+  };
+
+  /**
+   * 反馈报告：把「开发者要反复追问的那几项」自动拼好——版本、环境、体系、完整输入、结果摘要、报错。
+   *
+   * 为什么要有它：反馈里最缺的从来不是意见，是复现信息。用户说「八字算得不对」，
+   * 没有出生时间、没有开关状态、没有版本号，就没法复现；来回问三轮，多半人就走了。
+   * 这里点一下就把这些全填好，用户只需补一句「哪里不对」。
+   *
+   * 隐私边界：只带盘面参数与引擎自己的输出，不带命盘档案、不带追问原文以外的任何本机信息：
+   *  - 出生时间/地点是用户自己主动要反馈的那张盘，属于必要信息；
+   *  - 不带 localStorage 里的「我的命盘」列表（那是别人的盘）；
+   *  - 不带设备信息、浏览器指纹、IP、安装路径。
+   */
+  const feedbackReport = () => {
+    const L = [];
+    const ver = window.__MP_VER || '未知';
+    L.push('# 命理插件反馈');
+    L.push('');
+    L.push('## 我遇到的情况');
+    L.push('');
+    L.push('（在这里写一句就好：哪里不对 / 读不懂哪一段 / 算得和别人不一样 / 想加什么。下面这些是自动带的复现信息，不用改。）');
+    L.push('');
+    L.push('## 复现信息');
+    L.push('');
+    L.push('- 插件版本：v' + ver);
+    {
+      const un = Array.isArray(window.__MP_UNRELEASED) ? window.__MP_UNRELEASED : [];
+      if (un.length) L.push('- 未发版改动：' + un.length + ' 项（版本号未变，说明这份产物比 v' + ver + ' 新）');
+    }
+    const tabName = TABS.find((x) => x.k === tab)?.label || tab;
+    L.push('- 体系：' + tabName + (tabName === tab ? '' : '（' + tab + '）'));
+    if (question) L.push('- 所问之事：' + question);
+    if (direction && direction !== 'general') {
+      const dl = (Array.isArray(Engine.DIRECTIONS) ? Engine.DIRECTIONS : []).find((x) => x.key === direction);
+      L.push('- 询问方向：' + (dl ? dl.label : direction));
+    }
+    L.push('');
+    L.push('### 输入');
+    L.push('');
+    L.push('```');
+    if (kindOf(tab) === 'time' || kindOf(tab) === 'date') {
+      L.push(`日期：${date}`);
+      if (kindOf(tab) === 'time') L.push(`时刻：${hourUnknown ? '（未知，按三柱排）' : time}`);
+      L.push(`性别：${gender === 'male' ? '男' : '女'}`);
+      if (address) L.push(`出生地：${address}`);
+      L.push(`真太阳时：${trueSolar ? '开' : '关'}　晚子时换日：${lateZi ? '开' : '关'}`);
+      if (tab === 'qimen') L.push(`奇门取局：${qimenRule}`);
+      if (crossOn) L.push('交叉验证：开');
+    }
+    // 各体系自己的输入项：直接摊出当前表单值，省得逐个体系手写
+    const extras = {
+      合盘: () => { L.push(`对方：${pDate} ${pTime} ${pGender === 'male' ? '男' : '女'}${pAddress ? ' ' + pAddress : ''}（${hpChart} 盘）`);
+        if (thirdOn) L.push(`第三方：${p2Date} ${p2Time} ${p2Gender === 'male' ? '男' : '女'}${p2Address ? ' ' + p2Address : ''}`); },
+      择日: () => { L.push(`事项：${task}　起算：${date}　天数：${days}${shengXiao ? '　属相：' + shengXiao : ''}${zCand ? '　候选日：' + zCand : ''}`); },
+      起名: () => { L.push(`姓：${surname || '（未填）'}　名：${givenName || '（未填）'}　模式：${nnMode}${nnMode === 'generate' ? '　候选数：' + (limitN || '默认') : ''}`); },
+      公农历: () => { L.push(`模式：${convMode}${lunarDate ? '　农历输入：' + lunarDate : ''}${leapMonth ? '（闰月）' : ''}`); },
+      小六壬: () => { L.push(`模式：${xlrMode}${xlrMode === 'number' ? `　报数：${num1}/${num2}/${num3}` : ''}`); },
+      风水: () => { L.push(`动作：${fsMode}${fsMode === 'natal' ? '' : `　坐：${sitting}　向：${facing}`}${fsMode === 'xuankong' ? `　运：${fsPeriod}` : ''}`); },
+    };
+    if (extras[tabName]) extras[tabName]();
+    L.push('```');
+    L.push('');
+    if (error) {
+      L.push('### 报错原文');
+      L.push('');
+      L.push('```');
+      L.push(String(error));
+      L.push('```');
+      L.push('');
+    }
+    if (result && result.r) {
+      L.push('### 结果摘要（引擎原文，前 40 行）');
+      L.push('');
+      L.push('```');
+      const sum = String(result.r.summary || (Engine.renderText ? Engine.renderText(result.r) : '') || '');
+      L.push(sum.split('\n').slice(0, 40).join('\n'));
+      L.push('```');
+      if (result.r.handle) {
+        L.push('');
+        L.push('排盘句柄（开发者可据此复现同一张盘）：`' + result.r.handle + '`');
+      }
+    } else {
+      L.push('### 结果摘要');
+      L.push('');
+      L.push('（这次没有生成盘面——如果是在排盘过程中出错，上面的「报错原文」就是关键。）');
+    }
+    L.push('');
+    L.push('## 联系渠道');
+    L.push('');
+    L.push('- GitHub issue：https://github.com/xuanfu-web/dsh-metaphysics/issues');
+    L.push('- 邮件：1129440028@qq.com');
+    L.push('- 微信群：dsh-metaphysics');
+    return L.join('\n');
+  };
+
+  const copyFeedbackReport = () => {
+    const text = feedbackReport();
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => { setFbCopied('已复制'); setFbNote('粘到 issue / 邮件 / 群里即可'); })
+          .catch(() => { setFbCopied('复制失败'); setFbNote('可改用「导出 .md」或手动选中'); });
+      } else {
+        // 旧宿主 / 非安全上下文没有 clipboard：退回到隐藏 textarea + execCommand
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+        document.body.appendChild(ta);
+        ta.select();
+        const okCopy = document.execCommand && document.execCommand('copy');
+        ta.remove();
+        setFbCopied(okCopy ? '已复制' : '复制失败');
+        setFbNote(okCopy ? '粘到 issue / 邮件 / 群里即可' : '可改用「导出 .md」或手动选中');
+      }
+    } catch (e) {
+      setFbCopied('复制失败');
+      setFbNote('可改用「导出 .md」');
+    }
+    setTimeout(() => { setFbCopied(''); setFbNote(''); }, 4000);
+  };
+
+  /** 开 issue：先把报告复制好，用户新建 issue 时直接粘 */
+  const openFeedbackIssue = () => {
+    try { copyFeedbackReport(); } catch (e) { /* 复制失败也要能开页面 */ }
+    const title = encodeURIComponent('[反馈] ' + (TABS.find((t) => t.k === tab)?.label || tab) + (error ? '：报错' : '：使用问题'));
+    try {
+      window.open('https://github.com/xuanfu-web/dsh-metaphysics/issues/new?title=' + title, '_blank', 'noopener');
+    } catch (e) {
+      setFbNote('浏览器拦了弹窗，请手动打开 GitHub issues');
+    }
   };
 
   /** 导出 Markdown：盘面 + 解析（一页读懂 / 三张表 / 交叉验证） */
@@ -2137,6 +2275,26 @@ function App() {
 
     (!result && !error) ? h('div', { key: 'ph', className: 'mp-dim', style: { marginTop: 24, fontSize: 12 } },
       '选择体系后点「排盘」。所有计算在本机完成，不上传任何数据。') : null,
+
+    // 反馈入口：常驻在面板底部（不是只有出错才出现——口径分歧、读不懂、想要什么功能都算）。
+    // 设计目标是「用户不用组织语言」：点一下就得到一份写好输入、版本、环境与结果摘要的报告，
+    // 直接粘贴到 issue / 邮件 / 群里即可。复现信息缺一项，开发者就得来回问一轮。
+    h('div', { key: 'fb', className: 'mp-fb' },
+      h('div', { className: 'mp-fb-h' },
+        h('span', { className: 'mp-fb-t' }, '用得不对、读不懂、或算得跟别家不一样？'),
+        h('button', {
+          className: 'mp-btn ghost', style: { fontSize: 12, padding: '4px 10px' },
+          onClick: copyFeedbackReport,
+          title: '生成一份含输入、版本、环境与结果摘要的报告，粘贴到 issue / 邮件 / 群聊即可',
+        }, fbCopied || '复制反馈报告'),
+        h('button', {
+          className: 'mp-btn ghost', style: { fontSize: 12, padding: '4px 10px', marginLeft: 6 },
+          onClick: () => openFeedbackIssue(),
+          title: '在浏览器打开 GitHub issue（报告已复制到剪贴板，粘进去即可）',
+        }, '开 issue')),
+      h('div', { className: 'mp-fb-b' },
+        '邮件 1129440028@qq.com　·　GitHub issues　·　微信群 dsh-metaphysics',
+        fbNote ? h('span', { className: 'mp-fb-note' }, '　' + fbNote) : null)),
   ];
 
   return h('div', { className: 'mp-wrap' }, children);
