@@ -65,7 +65,7 @@ const OPTION_KEYS = [
   'upper', 'lower', 'changing', 'count',
   'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool',
   'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang',
-  'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua',
+  'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua',
   'sihuaVariant',
   'action', 'toAge', 'sitting', 'facing', 'fortuneYear', 'period',
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
@@ -110,6 +110,7 @@ const OPTION_HINTS = {
   changshengSchool: '仅 ziwei：长生十二神起点流派',
   lateZishi: '仅 ziwei：晚子时口径 current-day / next-day',
   shenzhuSchool: '仅 ziwei：身主安法 common / verse',
+  mingzhuSchool: '仅 ziwei：命主取法 soul-branch 按命宫地支（默认）/ year-branch 按生年年支（中州派）',
   zuoyaoSchool: '仅 ziwei：杂曜取盘 minimal / full',
   liunianSihua: '仅 ziwei：流年四化取干 year-stem 按流年天干（默认）/ life-palace-stem 按流年命宫宫干',
   sihuaVariant: '仅 ziwei：十干四化变体 default 或 廉破曲阳/贪阴阳机/阳武同阴…（整表替换）',
@@ -143,7 +144,7 @@ const READ_KEYS = ['withInterpret', 'detail', 'ask', 'question', 'direction', 's
 /** 每个体系实际会读的参数：help 按这张表展开，避免「有这个键但该体系不看」 */
 const SYSTEM_PARAMS = {
   bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
-  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'cross', 'diff', 'trace', ...READ_KEYS],
+  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'cross', 'diff', 'trace', ...READ_KEYS],
   liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
   tarot: ['count', 'seed', ...READ_KEYS],
   meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
@@ -828,6 +829,11 @@ export function apply(ctx) {
           type: 'string',
           enum: ['common', 'verse'],
           description: '紫微斗数：身主安法（只影响子/午年生人）。common（默认，通行表）子午皆火星；verse 按安身主诀「子午安身铃火宿」逐字取子铃星、午火星。',
+        },
+        mingzhuSchool: {
+          type: 'string',
+          enum: ['soul-branch', 'year-branch'],
+          description: '紫微斗数：命主取法。两派共用同一张十二支→命主星的表（子贪狼、丑亥巨门、寅戌禄存、卯酉文曲、辰申廉贞、巳未武曲、午破军），分歧只在拿哪个地支去查：soul-branch（默认，通行本 /《紫微斗数全书》卷二「安命主」）用命宫地支，year-branch（中州派，文墨「安命主 - 依据中州派理论」）用生年年支。命主的定义是「依地支指定的一颗星」，命宫里不一定有它，换取法不改任何宫位与星曜落宫。实测命宫地支与生年年支重合的只占约 8%，两派约九成的人结果不同。',
         },
         zuoyaoSchool: {
           type: 'string',

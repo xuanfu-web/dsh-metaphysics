@@ -78,7 +78,7 @@ function requireGender(value, who = '') {
 const ZIWEI_SCHOOL_KEYS = [
   'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool',
   'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool',
-  'zuoyaoSchool', 'liunianSihua', 'sihuaVariant',
+  'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant',
 ];
 
 /** 紫微流派参数原样透传；非法值交给引擎按默认口径回退 */
@@ -211,7 +211,7 @@ function ziweiText(r) {
     const labels = {
       brightnessSchool: '亮度', gengYearSihua: '庚干四化', tianmaSchool: '天马', tiankongSchool: '天空',
       jiekongSchool: '截空', kuiyueSchool: '魁钺', tianshiTianshang: '天伤天使',
-      changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主',
+      changshengSchool: '长生', lateZishi: '晚子时', shenzhuSchool: '身主', mingzhuSchool: '命主取法',
       zuoyaoSchool: '杂曜全表', liunianSihua: '流年四化取干', sihuaVariant: '十干四化变体',
     };
     const diff = Object.entries(labels)
@@ -267,7 +267,7 @@ function ziweiText(r) {
     `【农历】${lunarText}（月首 ${r.lunar.monthStart}）　时支：${r.hourBranch}　年干支：${r.yearGanzhi}`,
     `【时刻】${r.solarTime ? `${r.solarTime.civilText} → 真太阳时 ${r.solarTime.trueSolarText}${r.input.geo ? '（' + r.input.geo.note + '）' : ''}` : ''}`,
     `【命宫】${r.soul.branch}（${r.soul.ganzhi}·${r.soul.nayin}）　【身宫】${r.body.branch}（落${r.body.lands}）　【五行局】${r.bureau.name}`,
-    `【紫微】${r.ziwei}　【天府】${r.tianfu}　【命主】${r.lifeMaster}　【身主】${r.bodyMaster}${r.bodyMasterNote ? `（${r.bodyMasterSchool === 'common' ? '子午皆火星' : '子铃午火'}）` : ''}`,
+    `【紫微】${r.ziwei}　【天府】${r.tianfu}　【命主】${r.lifeMaster}　【身主】${r.bodyMaster}${r.bodyMasterNote ? `（${r.bodyMasterSchool === 'common' ? '子午皆火星' : '子铃午火'}）` : ''}${r.lifeMasterNote ? `（${r.lifeMasterNote}）` : ''}`,
     `【大限】${r.daxian.rule}，${r.daxian.startAge}岁起　【小限】${r.xiaoxianRule.direction}`,
     schoolLine,
     `【昌曲】文昌${r.changqu.wenchang.branch}（${r.changqu.wenchang.palace}${r.changqu.wenchang.mutagen ? '·化' + r.changqu.wenchang.mutagen : ''}）　文曲${r.changqu.wenqu.branch}（${r.changqu.wenqu.palace}${r.changqu.wenqu.mutagen ? '·化' + r.changqu.wenqu.mutagen : ''}）`,

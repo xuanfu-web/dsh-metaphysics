@@ -95,6 +95,7 @@ export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   changshengSchool: 'yin-yang-shun-ni',
   lateZishi: 'current-day',
   shenzhuSchool: 'common',
+  mingzhuSchool: 'soul-branch',
   zuoyaoSchool: 'minimal',
   liunianSihua: 'year-stem',
   sihuaVariant: 'default',
@@ -111,6 +112,12 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   changshengSchool: ['yin-yang-shun-ni', 'shui-tu', 'huo-tu'],
   lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
   shenzhuSchool: ['common', 'verse'],
+  // 命主取法：两派共用同一张十二支→命主星的表（贪狼子、巨门丑亥、禄存寅戌、文曲卯酉、
+  // 廉贞辰申、武曲巳未、破军午），分歧只在「拿哪个地支去查」——
+  //   soul-branch（默认，通行本 /《紫微斗数全书》卷二「安命主」）：按命宫地支
+  //   year-branch（中州派，王亭之整理）：按生年年支
+  // 实测命宫地支与生年年支重合的只占约 8%，两派约九成的人的命主不同。
+  mingzhuSchool: ['soul-branch', 'year-branch'],
   zuoyaoSchool: ['minimal', 'full'],
   liunianSihua: ['year-stem', 'life-palace-stem'],
   // 十干四化变体：default 表示各干用本插件原有通行表；其余按文墨变体名整表替换。
@@ -319,7 +326,7 @@ export const KUI_YUE = {
 };
 KUI_YUE_SCHOOLS.qs1 = KUI_YUE;
 
-/** 命主：按命宫地支 */
+/** 命主：按地支查表。两派共用这张表，分歧在拿哪个地支 —— 见 mingzhuSchool。 */
 export const MING_ZHU = {
   子: '贪狼', 丑: '巨门', 寅: '禄存', 卯: '文曲', 辰: '廉贞', 巳: '武曲',
   午: '破军', 未: '武曲', 申: '廉贞', 酉: '文曲', 戌: '禄存', 亥: '巨门',
@@ -821,7 +828,20 @@ export function buildZiwei(input) {
       nayin: soulNayin.name,
     },
     body: { palace: '身宫', branch: BRANCHES[bodyIndex], lands: palaceNames[bodyIndex] },
-    lifeMaster: MING_ZHU[BRANCHES[soulIndex]],
+    lifeMaster: MING_ZHU[schools.mingzhuSchool === 'year-branch' ? BRANCHES[yb] : BRANCHES[soulIndex]],
+    lifeMasterSchool: schools.mingzhuSchool,
+    ...((() => {
+      // 两派取的地支不同时，把另一派的结果一并回显——不然用户切档后只看到命主变了一个字，
+      // 无从判断是取法变了还是排盘出了问题。
+      const bySoul = MING_ZHU[BRANCHES[soulIndex]];
+      const byYear = MING_ZHU[BRANCHES[yb]];
+      if (bySoul === byYear) return {};
+      return {
+        lifeMasterNote: schools.mingzhuSchool === 'year-branch'
+          ? `中州派按生年年支${BRANCHES[yb]}取${byYear}；通行本按命宫地支${BRANCHES[soulIndex]}取${bySoul}`
+          : `通行本按命宫地支${BRANCHES[soulIndex]}取${bySoul}；中州派按生年年支${BRANCHES[yb]}取${byYear}`,
+      };
+    })()),
     bodyMaster: SHEN_ZHU[schools.shenzhuSchool][BRANCHES[yb]],
     bodyMasterSchool: schools.shenzhuSchool,
     ...((yb === 0 || yb === 6) ? {
@@ -868,14 +888,14 @@ export function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为文墨变体整表替换）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、命主 ${schools.mingzhuSchool}（soul-branch 按命宫地支 / year-branch 按生年年支）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为文墨变体整表替换）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
       zuoyao: schools.zuoyaoSchool === 'full'
         ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
         : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
       leapMonth: '闰月默认按日切分（1–15 归本月、16 起归次月，主流排盘口径）；可传 leapMonth: next（整月归次月）或 prev（整月归本月），leapAsNext: true 等同 next',
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
-      masters: '命主按命宫地支，身主按生年地支',
+      masters: '命主按 mingzhuSchool 取地支再查表（soul-branch 命宫地支 / year-branch 生年年支），身主按生年地支；两派共用同一张十二支命主表，只换查表用的地支',
       liunian: '流年命宫取该年地支宫；三方四正为本宫与 +4/+8/+6；并给该年所属大限与小限；四化取干按 liunianSihua 口径，sihuaStem 回显实际用的那一干',
       flyComposite: '三方四正取本宫、对宫与两个三合宫共四宫，四宫宫干各化禄权科忌共 16 条，按落宫归堆标会聚（双忌会、禄忌同宫、三化会、自化）；只描会照，不折吉凶',
       changqu: '昌曲落宫只由时支决定，故与丑未的关系（夹/三合/同宫/无关）是结构性结论；absorb 的「清/杂」是启发式标记，依据昌曲化忌与会煞，不是断语',

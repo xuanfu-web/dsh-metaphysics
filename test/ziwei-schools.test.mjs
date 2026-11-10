@@ -1,9 +1,10 @@
-// 紫微 · 十三类流派开关：默认盘必须一字不变，显式切换才改盘。
-// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时 / 杂曜全表 / 流年四化取干 / 十干四化变体；身主两派另见 ziwei-shenzhu.test.mjs。
+// 紫微 · 十四类流派开关：默认盘必须一字不变，显式切换才改盘。
+// 覆盖：亮度 / 庚干四化 / 天马 / 天空 / 截空旬空 / 魁钺 / 天伤天使 / 长生 / 晚子时 / 身主 / 命主取法 / 杂曜全表 / 流年四化取干 / 十干四化变体。
+// 身主两派另见 ziwei-shenzhu.test.mjs；命主取法见本文件第十三节。
 import fs from 'node:fs';
 import { compute } from '../engine/index.js';
 import {
-  buildZiwei, ziweiSchoolsOf, schoolBrightness, sihuaTableOf, natalSihuaTableOf, SIHUA_VARIANTS,
+  buildZiwei, ziweiSchoolsOf, schoolBrightness, sihuaTableOf, natalSihuaTableOf, SIHUA_VARIANTS, MING_ZHU,
   ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, BRIGHTNESS_SCHOOLS,
 } from '../engine/ziwei.js';
 import { ok, eq } from './_harness.mjs';
@@ -23,10 +24,10 @@ const mutagens = (r) => r.palaces.flatMap((p) => p.stars)
 
 // ── 一、开关表与默认值 ─────────────────────────────────────
 // 键名一起钉住：加一类要写理由，删一类会动到旧盘与存档，谁都不能顺手改
-eq('十三类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
+eq('十四类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
   ['brightnessSchool', 'changshengSchool', 'gengYearSihua', 'jiekongSchool', 'kuiyueSchool',
-    'lateZishi', 'liunianSihua', 'shenzhuSchool', 'sihuaVariant', 'tiankongSchool', 'tianmaSchool',
-    'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
+    'lateZishi', 'liunianSihua', 'mingzhuSchool', 'shenzhuSchool', 'sihuaVariant',
+    'tiankongSchool', 'tianmaSchool', 'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
 ok('默认值都在可选范围内', Object.entries(ZIWEI_SCHOOL_DEFAULTS)
   .every(([k, v]) => ZIWEI_SCHOOL_OPTIONS[k].includes(v)));
 eq('全部走默认', ziweiSchoolsOf({}), { ...ZIWEI_SCHOOL_DEFAULTS });
@@ -216,15 +217,55 @@ const VAR_SUM = compute({ system: 'ziwei', datetime: '1990-05-12T14:30', gender:
 ok('非默认变体进摘要流派行', /【流派】.*十干四化变体.*廉破曲阳/.test(VAR_SUM.summary),
   VAR_SUM.summary.split('\n').find((l) => /流派/.test(l)) || '(无流派行)');
 
+// ── 十二、命主取法：通行本按命宫地支 / 中州派按生年年支 ─────
+// 两派共用同一张表，只换「拿哪个地支去查」。所以换档不该动任何宫位与星曜，
+// 盘上只多/少一个字——这一节就是在钉这件事。
+const MZ_BASE = { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' };
+const MZ_SOUL = compute(MZ_BASE);
+const MZ_YEAR = compute({ ...MZ_BASE, mingzhuSchool: 'year-branch' });
+eq('命主默认按命宫地支（通行本）', MZ_SOUL.lifeMasterSchool, 'soul-branch');
+eq('默认命主＝命宫地支查表', MZ_SOUL.lifeMaster, MING_ZHU[MZ_SOUL.soul.branch]);
+eq('中州派命主＝生年年支查表', MZ_YEAR.lifeMaster, MING_ZHU[MZ_YEAR.yearGanzhi[1]]);
+ok('两派在这张盘上确实不同', MZ_SOUL.lifeMaster !== MZ_YEAR.lifeMaster,
+  `${MZ_SOUL.lifeMaster} vs ${MZ_YEAR.lifeMaster}`);
+eq('换取法不动十二宫与星曜（命主只是查表来的标记）',
+  JSON.stringify(MZ_YEAR.palaces), JSON.stringify(MZ_SOUL.palaces));
+eq('换取法不动命宫、身宫、五行局',
+  [MZ_YEAR.soul.branch, MZ_YEAR.body.branch, MZ_YEAR.bureau.name],
+  [MZ_SOUL.soul.branch, MZ_SOUL.body.branch, MZ_SOUL.bureau.name]);
+ok('两派不同时把另一派结果写进说明', /命宫地支戌取禄存/.test(MZ_SOUL.lifeMasterNote) && /生年年支午取破军/.test(MZ_SOUL.lifeMasterNote),
+  MZ_SOUL.lifeMasterNote);
+ok('说明随档位换叙述顺序', /^中州派/.test(MZ_YEAR.lifeMasterNote), MZ_YEAR.lifeMasterNote);
+// 命宫地支恰好等于生年年支时两派一致，说明字段应当缺席（不写多余的括号）
+const MZ_SAME = compute({ ...MZ_BASE, datetime: '1994-05-12T14:30' });
+eq('两支相同时两派结果一致', MZ_SAME.lifeMaster, compute({ ...MZ_BASE, datetime: '1994-05-12T14:30', mingzhuSchool: 'year-branch' }).lifeMaster);
+eq('两支相同时不写辨认说明', MZ_SAME.lifeMasterNote, undefined);
+// 十二年扫描：两派必须有不同（若全同说明开关根本没接线）
+let mzDiff = 0;
+for (let y = 0; y < 12; y++) {
+  const dt = `${1990 + y}-05-12T14:30`;
+  if (compute({ ...MZ_BASE, datetime: dt }).lifeMaster
+    !== compute({ ...MZ_BASE, datetime: dt, mingzhuSchool: 'year-branch' }).lifeMaster) mzDiff++;
+}
+ok('十二年里两派大多不同（钉开关真的生效，不钉具体次数）', mzDiff >= 6, `${mzDiff}/12 年不同`);
+eq('命主十二支查表十二项齐全', Object.keys(MING_ZHU).length, 12);
+eq('命主表就是《全书》卷二那七颗星',
+  [...new Set(Object.values(MING_ZHU))].sort().join(','), ['巨门', '廉贞', '文曲', '武曲', '破军', '禄存', '贪狼'].sort().join(','));
+const MZ_SUM = compute({ ...MZ_BASE, mingzhuSchool: 'year-branch' });
+ok('非默认命主取法进摘要流派行', /【流派】.*命主取法.*year-branch/.test(MZ_SUM.summary),
+  MZ_SUM.summary.split('\n').find((l) => /流派/.test(l)) || '(无流派行)');
+ok('摘要命主行带辨认说明', /【命主】破军.*生年年支午取破军/.test(MZ_SUM.summary),
+  MZ_SUM.summary.split('\n').find((l) => /命主/.test(l)) || '(无命主行)');
+
 // ── 十一、接线：compute / 摘要 / 规则 ─────────────────────
 const C = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', brightnessSchool: 'QS', jiekongSchool: 'double' });
 eq('compute 回显开关', [C.schools.brightnessSchool, C.schools.jiekongSchool], ['QS', 'double']);
 ok('compute 摘要写流派行', /【流派】.*亮度 QS.*截空 double/.test(C.summary),
   C.summary.split('\n').find((l) => /流派/.test(l)));
-ok('规则里把十三类口径逐条列全（漏一类就是旧盘对不上账）',
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干', '十干四化']
+ok('规则里把十四类口径逐条列全（漏一类就是旧盘对不上账）',
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '命主', '杂曜', '流年四化取干', '十干四化']
     .every((label) => C.rules.schools.includes(label)),
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干', '十干四化']
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '命主', '杂曜', '流年四化取干', '十干四化']
     .filter((label) => !C.rules.schools.includes(label)).join(','));
 const NEST = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', schools: { tianmaSchool: 'month-branch' } });
 eq('compute 接受嵌套 schools', NEST.schools.tianmaSchool, 'month-branch');

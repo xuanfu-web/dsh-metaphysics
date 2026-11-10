@@ -338,6 +338,9 @@ export const CALIBER_SWITCHES = {
     ziweiSchoolSwitch('shenzhuSchool', '身主：子午皆火星 / 子铃午火', '身主', 'common', 'verse', {
       common: '子午皆火星', verse: '子铃午火（安身主诀逐字）',
     }),
+    ziweiSchoolSwitch('mingzhuSchool', '命主取法：命宫地支 / 生年年支', '命主取法', 'soul-branch', 'year-branch', {
+      'soul-branch': '命宫地支（通行本）', 'year-branch': '生年年支（中州派）',
+    }),
     ziweiSchoolSwitch('zuoyaoSchool', '杂曜：49 颗简盘 / 61 颗全表', '杂曜全表', 'minimal', 'full', {
       minimal: '49 颗（简盘）', full: '61 颗（加十二颗杂曜）',
     }),

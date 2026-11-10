@@ -1,6 +1,6 @@
 ## 未发布
 
-> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题，并按文墨设置树补上「流年四化取干」与「十干四化变体」两档口径。**默认盘逐字节不变**：新增开关的默认值等于旧行为。
+> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题，并按文墨设置树补上「流年四化取干」「十干四化变体」「命主取法」三档口径。**默认盘逐字节不变**：新增开关的默认值等于旧行为。
 
 ### SSH 兜底：msys git 起不了 `sh`，只能改走 `GIT_SSH`
 
@@ -49,6 +49,22 @@
 - **接线五处**：`ZIWEI_SCHOOL_DEFAULTS` / `ZIWEI_SCHOOL_OPTIONS`、`engine/index.js` 的 `ZIWEI_SCHOOL_KEYS` 与摘要 `labels`、根 `index.js` 的 `OPTION_KEYS` / 参数说明 / `SYSTEM_PARAMS.ziwei` / schema、`engine/diff.js` 的 `CALIBER_SWITCHES.ziwei`（口径卡只拿「甲干廉破曲阳」当对照样本，不枚举十六档），以及 `rules.schools` 一段规则文字。
 - **测试**（`test/ziwei-schools.test.mjs` 153 PASS，新增 20 条）：默认档等于通行表、变体随盘回显、甲干变体把科从武曲换到文曲而禄权忌不动、宫干四化与飞星跟着换、星曜落宫不变、癸变体套甲干无效、乙丙丁己无变体、庚干优先级、十六档都是完整四条、非默认进摘要流派行。
 - **三处计数锁同步**：`ZIWEI_SCHOOL_OPTIONS` 十二类 → 十三类（`ziwei-schools` / `ziwei-zuoyao`）、`CALIBER_SWITCHES.ziwei` 14 组 → 15 组（`caliber-diff` 四条含口径卡行数与标签列表）、`schema-budget.test.mjs` 的 `OLD_KEYS` 89 → 90。
+
+### 新增第十四类流派开关：命主取法（文墨「安命主 - 依据斗数全书 / 依据中州派理论」）
+
+> 来源：文墨天机 2.5.26 设置树 `group_other` 里的「安命主 - 依据斗数全书 / 安命主 - 依据中州派理论」。此前我们的命主固定按命宫地支取，中州派这条口径没有出口。
+>
+> 这条一开始以为是硬骨头：先试着从 APK 里挖表值——解 `App.swf`（`CWS` + `inflateSync{Z_SYNC_FLUSH}`，3.2MB DoABC 标签、18162 条字符串常量），`贪狼/巨门/禄存/文曲/廉贞/武曲/破军` 这些星名**在字符串常量表里一条都没有**，581 处星名命中全是「马头带箭」「日月夹财」这类格局断语。判定为「表值编译进字节码，静态挖不出，不猜」。**后来发现根本不用挖**——两派的差别不是两张表，是「拿哪个地支去查同一张表」。
+
+- **`mingzhuSchool`**（`engine/ziwei.js`）：`soul-branch`（默认，按命宫所在宫位的地支查表，与旧盘逐字节相同）/ `year-branch`（按生年年支查表，即中州派）。
+- **依据**：《紫微斗数全书》卷二「安命主」定的是那张十二支表（子贪狼、丑亥巨门、寅戌禄存、卯酉文曲、辰申廉贞、巳未武曲、午破军），两派的用法不同：通行本拿命宫地支查，中州派拿生年年支查。iztro 的实现就是这个形状——`earthlyBranches[algorithm === 'zhongzhou' ? earthlyBranchOfYear : earthlyBranchOfSoulPalace].soul`，同一张表换索引。所以不必新造表，`MING_ZHU` 一字未动，只换了查表用的地支。
+- **两派差异有多大要看得见**：实测命宫地支恰好等于生年年支的只占约 8%，即九成以上的人两派命主不同——所以换档时盘上不能只悄悄改一个字。新增 `lifeMasterNote`，两派结果不同时把另一派的结果一并写在括号里（「通行本按命宫地支戌取禄存；中州派按生年年支午取破军」），盘心、摘要、解析三处都会显示；两支相同时该字段缺席，不留空括号。同时新增 `lifeMasterSchool` 回显实际用的取法。
+- **换取法不动盘**：命主是「查表得到的一颗标记星」，不是安星结果。断言钉住 12 宫星曜 JSON 逐字节相等、命宫/身宫/五行局不变——只有命主那一格变。
+- **接线五处**：`ZIWEI_SCHOOL_DEFAULTS` / `ZIWEI_SCHOOL_OPTIONS`、`engine/index.js` 的 `ZIWEI_SCHOOL_KEYS` 与摘要 `labels`、根 `index.js` 的 `OPTION_KEYS` / 参数说明 / `SYSTEM_PARAMS.ziwei` / schema、`engine/diff.js` 的 `CALIBER_SWITCHES.ziwei`，以及 `rules.schools` 与 `rules.masters` 两段规则文字。
+- **实测**：1990-05-12T14:30 男命，命宫在戌、生年年支午 → 默认 `禄存`，中州派 `破军`；1990–2001 十二年扫描 9 年不同 3 年相同（相同的是命宫地支恰等于年支那几年），12 宫逐字节不变。
+- **测试**（`test/ziwei-schools.test.mjs` 172 PASS，新增 17 条）：默认取法、默认命主等于命宫地支查表、中州派命主等于生年年支查表、两派该盘确实不同、不动宫位与星曜、不动命宫身宫五行局、两派不同时写辨认说明、说明随档位换叙述顺序、两支相同时结果一致且不写说明、十二年扫描大多不同（钉开关生效，不钉具体次数）、十二支表齐全、表就是《全书》那七颗星、非默认进摘要流派行、摘要命主行带辨认说明。
+- **三处计数锁同步**：`ZIWEI_SCHOOL_OPTIONS` 十三类 → 十四类（`ziwei-schools` / `ziwei-zuoyao`）、`CALIBER_SWITCHES.ziwei` 15 组 → 16 组（`caliber-diff` 四条含口径卡行数与标签列表）、`schema-budget.test.mjs` 的 `OLD_KEYS` 90 → 91（工具定义 12786 / 14500 字符）。
+- **还没做的**：文墨中州派与通行本另有四处差异（戊庚壬三干的四化「科」、天使天伤位置、截路空亡有无、岁前十二神大耗改岁破），这四条本版没接，仍按通行本走。
 
 ## 0.63.0（2026-11-10，已发布）
 

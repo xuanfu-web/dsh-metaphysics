@@ -871,7 +871,7 @@ function ziweiInterpret(r) {
     soulPair ? `${soulPair.gist}；要留意的是${soulPair.watch}。` : '',
     bodyLands ? `身宫寄在${bodyLands}——${bodyField ? `${bodyField.field}是后天更容易使上劲的地方` : '这是后天着力点'}，中年以后会越来越明显。` : '',
     `五行局为${pick(r.bureau, 'name', '—')}，${pick(r.daxian, 'startAge', '—')}岁起运：局定的是节奏（几步起、十年一换），不是好坏。`,
-    `命主${pick(r, 'lifeMaster', '—')}、身主${pick(r, 'bodyMaster', '—')}：传统把这两颗当作整张盘的定调星，命主看底色，身主看后半程的着力点。`,
+    `命主${pick(r, 'lifeMaster', '—')}、身主${pick(r, 'bodyMaster', '—')}：传统把这两颗当作整张盘的定调星，命主看底色，身主看后半程的着力点。${r.lifeMasterNote ? '（本盘' + r.lifeMasterNote + '。）' : ''}`,
   ].filter(Boolean).join('\n');
 
   // ── 逐宫分析：十二宫各一行清单 + 一句读法 ────────────────────

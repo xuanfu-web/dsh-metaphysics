@@ -1654,7 +1654,7 @@
         <div class="ct-t2">公历 ${r.input.year}-${String(r.input.month).padStart(2, '0')}-${String(r.input.day).padStart(2, '0')} ${String(r.input.hour).padStart(2, '0')}:${String(r.input.minute).padStart(2, '0')}</div>
         <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? `闰${r.lunar.monthRaw || r.lunar.month}` : r.lunar.month}月${r.lunar.day}日${r.hourBranch}时${r.lunar.isLeap && r.lunar.monthRaw && r.lunar.month !== r.lunar.monthRaw ? `（按${r.lunar.month}月起盘）` : ''}</div>
         ${sizhuOf(r) ? `<div class="ct-t3">${sizhuOf(r)}</div>` : ''}
-        <div class="ct-t4">命主 ${r.lifeMaster}　身主 ${r.bodyMaster}${r.bodyMasterNote ? `<span class="pp-dim" title="${esc(r.bodyMasterNote)}">＊</span>` : ''}</div>
+        <div class="ct-t4">命主 ${r.lifeMaster}${r.lifeMasterNote ? `<span class="pp-dim" title="${esc(r.lifeMasterNote)}">＊</span>` : ''}　身主 ${r.bodyMaster}${r.bodyMasterNote ? `<span class="pp-dim" title="${esc(r.bodyMasterNote)}">＊</span>` : ''}</div>
         <div class="ct-t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
         <div class="ct-t4">子年斗君 ${r.doujun ? r.doujun.zinian : '—'}　流年斗君 ${ln && ln.doujun ? ln.doujun : '—'}</div>
         <div class="ct-t4">紫微 ${r.ziwei}　天府 ${r.tianfu}　${kind === 'da' ? '大限命宫 ' + BR[dxIdx] : kind === 'ln' ? '流年命宫 ' + BR[lnIdx] : '本命命宫 ' + r.soul.branch}</div>
