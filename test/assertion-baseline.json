@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 9019,
+  "total": 9074,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -468,6 +468,10 @@
     },
     "schema-budget.test.mjs": {
       "pass": 29,
+      "fail": 0
+    },
+    "school-rulings.test.mjs": {
+      "pass": 55,
       "fail": 0
     },
     "secrets-gate.test.mjs": {

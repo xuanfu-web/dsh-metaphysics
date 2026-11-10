@@ -545,7 +545,11 @@ export function buildBazi(input) {
   // gender 供勾绞煞/元辰辨阴阳男女；年柱纳音五行供学堂/词馆
   const shensha = computeBaziShensha(pillars, kongwang, {
     gender,
-    yearNayinElement: nayin(yearIdx).element,
+    // nayin() 返回的是纳音名（字符串），不是对象——取五行须走 nayinOf()。
+    // 这里长期写成 nayin(yearIdx).element 恒为 undefined，导致学堂/词馆（纳音长生/临官）
+    // 与童子煞纳音法在真实排盘里从未命中过；单测因为直接喂了 yearNayinElement 而没暴露。
+    yearNayinElement: nayinOf(yearIdx).element,
+    yearKongwang: xunKongOf(pillars.year.ganzhi),
   });
 
   for (const key of ['year', 'month', 'day', 'hour']) {

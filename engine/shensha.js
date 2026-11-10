@@ -62,7 +62,10 @@ const YUEDE_HE = { 丙: '辛', 壬: '丁', 甲: '己', 庚: '乙' };
 const FUXING = {
   甲: ['寅', '子'], 丙: ['寅', '子'],
   乙: ['卯', '丑'], 癸: ['卯', '丑'],
-  丁: ['酉'], 戊: ['申'], 己: ['未'], 庚: ['午'], 辛: ['巳'], 壬: ['辰'],
+  // 丁取亥：本表所引《甲丙相邀入虎乡歌》原文作「戊猴己未丁宜亥」。
+  // 旧表写丁酉，与自家所引歌诀对不上——酉是「丁酉」这个干支的干，不是亥的形讹，
+  // 属后世把干支名误当查法所致。改从歌诀，并保留旧说于 rule 文本备查。
+  丁: ['亥'], 戊: ['申'], 己: ['未'], 庚: ['午'], 辛: ['巳'], 壬: ['辰'],
 };
 // 天官贵人（通行表，流派有异）
 const TIANGUAN = { 甲: ['未'], 乙: ['辰'], 丙: ['巳'], 丁: ['酉'], 戊: ['戌'], 己: ['卯'], 庚: ['亥'], 辛: ['申'], 壬: ['午'], 癸: ['寅'] };
@@ -97,10 +100,16 @@ const WANGSHEN = { 寅午戌: ['巳'], 申子辰: ['亥'], 巳酉丑: ['申'], �
 const JINYU = { 甲: ['辰'], 乙: ['巳'], 丙: ['未'], 丁: ['申'], 戊: ['未'], 己: ['申'], 庚: ['戌'], 辛: ['亥'], 壬: ['丑'], 癸: ['寅'] };
 // 禄神
 const LUSHEN = { 甲: ['寅'], 乙: ['卯'], 丙: ['巳'], 丁: ['午'], 戊: ['巳'], 己: ['午'], 庚: ['申'], 辛: ['酉'], 壬: ['亥'], 癸: ['子'] };
-// 羊刃：禄前一位（阳干论刃为主）
-const YANGREN = { 甲: ['卯'], 乙: ['辰'], 丙: ['午'], 丁: ['未'], 戊: ['午'], 己: ['未'], 庚: ['酉'], 辛: ['戌'], 壬: ['子'], 癸: ['丑'] };
-// 飞刃：羊刃六冲
-const FEIREN = { 甲: ['酉'], 乙: ['戌'], 丙: ['子'], 丁: ['丑'], 戊: ['子'], 己: ['丑'], 庚: ['卯'], 辛: ['辰'], 壬: ['午'], 癸: ['未'] };
+// 羊刃（DeepSeek 派）：帝旺本位，阴阳干都取「禄后一位」——即阳干帝旺、阴干亦帝旺。
+// 阳干：甲卯 丙午 戊午 庚酉 壬子（十二长生帝旺位，历代无争议）。
+// 阴干：乙寅 丁巳 己巳 辛申 癸亥（阴干逆行长生，帝旺在其长生进位，非禄前）。
+// 旧表把阴干取成禄前一位（乙辰 丁未 己未 辛戌 癸丑），那一位其实是阴干的「衰」；
+// 说「乙刃在辰」是宋以后禄命家把阳干式硬套到阴干的结果，与十二长生自相矛盾。
+const YANGREN = { 甲: ['卯'], 乙: ['寅'], 丙: ['午'], 丁: ['巳'], 戊: ['午'], 己: ['巳'], 庚: ['酉'], 辛: ['申'], 壬: ['子'], 癸: ['亥'] };
+// 羊刃六冲（由 YANGREN 逐干取对冲，勿手写，免两表再度走散）
+const FEIREN = Object.fromEntries(
+  Object.entries(YANGREN).map(([stem, arr]) => [stem, arr.map((b) => BRANCHES[(BRANCHES.indexOf(b) + 6) % 12])]),
+);
 // 流霞（通行表）
 const LIUXIA = { 甲: ['酉'], 乙: ['戌'], 丙: ['未'], 丁: ['申'], 戊: ['巳'], 己: ['午'], 庚: ['辰'], 辛: ['卯'], 壬: ['亥'], 癸: ['寅'] };
 
@@ -117,6 +126,10 @@ const TIAN_SHE = { 春: '戊寅', 夏: '甲午', 秋: '戊申', 冬: '甲子' };
 const SIFEI = { 春: ['庚申', '辛酉'], 夏: ['壬子', '癸亥'], 秋: ['甲寅', '乙卯'], 冬: ['丙午', '丁巳'] };
 // 童子煞：春秋生见寅子，冬夏生见卯未辰
 const TONGZI = { 春: ['寅', '子'], 秋: ['寅', '子'], 夏: ['卯', '未', '辰'], 冬: ['卯', '未', '辰'] };
+// 童子煞（纳音法，与季节法并行）：金木命见午卯、水火命见酉戌、土命见辰巳
+// 口诀作「金木马卯合，水火鸡犬多，土命逢辰巳」——马=午、鸡=酉、犬=戌。
+// 旧实现只做季节法，把纳音法写作「流派多歧，仅作参考」，等于漏了一半查法。
+const TONGZI_NAYIN = { 金: ['午', '卯'], 木: ['午', '卯'], 水: ['酉', '戌'], 火: ['酉', '戌'], 土: ['辰', '巳'] };
 // 三奇贵人（须依序相连）
 const SANQI = ['甲戊庚', '乙丙丁', '壬癸辛'];
 // 金神：时柱见之
@@ -227,7 +240,8 @@ const RULES = [
       return STEMS_LIST.includes(ch) ? [S(ch)] : [T(ch)];
     }),
   byStem('福星贵人', '贵人', 'good',
-    '甲丙见寅子，乙癸见卯丑，丁见酉、戊见申、己见未、庚见午、辛见巳、壬见辰（年干、日干查四支）',
+    '甲丙见寅子，乙癸见卯丑，戊见申、己见未、丁见亥、庚见午、辛见巳、壬见辰（年干、日干查四支）。'
+    + '出自《甲丙相邀入虎乡歌》「戊猴己未丁宜亥」；旧本有作丁见酉者，与歌诀不合，本插件从歌诀',
     FUXING, ['year', 'day']),
   byStem('天官贵人', '贵人', 'good',
     '甲未、乙辰、丙巳、丁酉、戊戌、己卯、庚亥、辛申、壬午、癸寅（年干、日干查四支；此表流派有异）',
@@ -325,20 +339,24 @@ const RULES = [
     '寅午戌见戌、申子辰见辰、巳酉丑见丑、亥卯未见未（年支、日支双查）',
     HUAGAI),
   byStem('羊刃', '性情', 'bad',
-    '禄前一位：甲卯、乙辰、丙戊午、丁己未、庚酉、辛戌、壬子、癸丑（日干查四支；阳干论刃为主）',
+    '帝旺之位：甲卯、乙寅、丙午、丁巳、戊午、己巳、庚酉、辛申、壬子、癸亥（日干查四支）。'
+    + '旧本把阴干记作禄前一位（乙辰、丁未、己未、辛戌、癸丑），那一位实为阴干之「衰」，与十二长生自相矛盾，本插件不取',
     YANGREN, ['day']),
   byStem('飞刃', '性情', 'bad',
-    '羊刃六冲：甲酉、乙戌、丙子、丁丑、戊子、己丑、庚卯、辛辰、壬午、癸未（日干查四支）',
+    '羊刃六冲（由羊刃位逐干对冲推得，不另立表）：甲酉、乙申、丙子、丁亥、戊子、己亥、庚卯、辛寅、壬午、癸巳（日干查四支）',
     FEIREN, ['day']),
   byPillarGz('魁罡', '性情', 'neutral',
     '日柱庚辰、庚戌、壬辰、戊戌（日柱见之）',
     KUIGANG),
   byMonth('童子煞', '性情', 'neutral',
-    '春秋生见寅子，冬夏生见卯未辰（取季节口诀，查日支、时支；另有纳音五行一法，流派多歧，仅作参考）',
+    '两法并行：①季节法——春秋生见寅子，冬夏生见卯未辰（查日支、时支）；'
+    + '②纳音法——金木命见午卯，水火命见酉戌，土命见辰巳（年柱纳音查日支、时支）。任一中即算',
     (ctx) => {
+      const set = new Set();
       const season = SEASON[ctx.pillars.month.branch];
-      const list = season && TONGZI[season];
-      return list ? list.map(T) : [];
+      for (const b of (season && TONGZI[season]) || []) set.add(b);
+      for (const b of TONGZI_NAYIN[ctx.nayinElement] || []) set.add(b);
+      return [...set].map(T);
     }, ['day', 'hour']),
   byPillarGz('六秀日', '性情', 'good',
     '日柱丙午、丁未、戊子、戊午、己丑、己未（日柱见之）',
@@ -382,9 +400,18 @@ const RULES = [
     WANGSHEN),
   {
     name: '空亡', cat: '凶煞', luck: 'bad',
-    rule: '以日柱所在旬的空亡反查各柱地支（日柱旬空）',
+    // 日柱旬空为古法正传；年柱旬空另有一派（以年柱所在旬的空亡查余三支），
+    // 两派所据都是「本旬无支可用」，逻辑同构，故并列而不取此舍彼。
+    rule: '以日柱所在旬的空亡反查各柱地支（日柱旬空，主法）；另有年柱旬空一派，一并标出',
     refs: ['day'], refKind: 'branch', viaLabel: '日柱旬空',
     targets: (ctx) => (ctx.kongwang || []).map(T),
+  },
+  {
+    name: '年空', cat: '凶煞', luck: 'bad',
+    rule: '以年柱所在旬的空亡反查其余三支（年柱旬空；古法多取日柱旬空，此派并存，命中单独标注）',
+    refs: ['year'], refKind: 'branch', viaLabel: '年柱旬空',
+    slots: ['month', 'day', 'hour'],
+    targets: (ctx) => (ctx.yearKongwang || []).map(T),
   },
   byPillarGz('十恶大败', '凶煞', 'bad',
     '日柱甲辰、乙巳、丙申、丁亥、戊戌、己丑、庚辰、辛巳、壬申、癸亥（日柱见之）',
@@ -478,13 +505,15 @@ const RULES = [
   },
   {
     name: '天罗', cat: '凶煞', luck: 'bad',
-    rule: '四支见戌、亥俱全（戌亥为天罗）',
-    custom: (ctx) => chartPattern(ctx, ['戌', '亥']),
+    rule: '戌亥为天罗。法一以年支/日支查余三支：戌见亥、亥见戌即算，不要求四支俱全；'
+      + '法二以年柱纳音查日支：火命见戌或亥。两法任一成立即命中（男忌天罗）',
+    custom: (ctx) => luowangPair(ctx, '戌', '亥', '天罗', ['火']),
   },
   {
     name: '地网', cat: '凶煞', luck: 'bad',
-    rule: '四支见辰、巳俱全（辰巳为地网）',
-    custom: (ctx) => chartPattern(ctx, ['辰', '巳']),
+    rule: '辰巳为地网。法一以年支/日支查余三支：辰见巳、巳见辰即算，不要求四支俱全；'
+      + '法二以年柱纳音查日支：水命、土命见辰或巳。两法任一成立即命中（女忌地网）',
+    custom: (ctx) => luowangPair(ctx, '辰', '巳', '地网', ['水', '土']),
   },
   {
     name: '三奇贵人', cat: '格局', luck: 'good',
@@ -500,11 +529,29 @@ const RULES = [
   },
 ];
 
-/** 四支俱全即命中（天罗地网） */
-function chartPattern(ctx, branches) {
-  const keys = PILLAR_KEYS.filter((k) => branches.includes(ctx.pillars[k].branch));
-  if (keys.length < branches.length) return [];
-  return [{ pillars: keys, via: '四支', target: branches.join('') }];
+/**
+ * 天罗地网：两法并行，任一成立即命中。
+ * 法一（主）：以年支/日支查余三支——戌见亥、亥见戌为天罗；辰见巳、巳见辰为地网。只需两支成对，
+ *   不要求四支俱全（旧实现要求「戌亥俱全」，四支里必须同时出现戌与亥，漏掉大半）。
+ * 法二（辅）：以年柱纳音查日支——火命见戌或亥为天罗，水命、土命见辰或巳为地网，金木二命无。
+ * 命中时把「起查柱」与「应柱」都标出来，否则只看天罗在亥那一柱，读盘时找不到起因。
+ */
+function luowangPair(ctx, a, b, label, nayinEls) {
+  const out = [];
+  // 法一：以年/日支查余三支（只需两支成对）
+  for (const ref of ['year', 'day']) {
+    const rb = ctx.pillars[ref].branch;
+    const want = rb === a ? b : rb === b ? a : null;
+    if (!want) continue;
+    const hits = PILLAR_KEYS.filter((k) => k !== ref && ctx.pillars[k].branch === want);
+    for (const k of hits) out.push({ pillars: [ref, k], via: BRANCH_VIA[ref], target: want });
+  }
+  // 法二：以年纳音查日支
+  if (nayinEls.includes(ctx.nayinElement) && (ctx.pillars.day.branch === a || ctx.pillars.day.branch === b)) {
+    out.push({ pillars: ['day'], via: `年纳音${ctx.nayinElement}`, target: ctx.pillars.day.branch });
+  }
+  void label;
+  return out;
 }
 
 // ── 执行 ────────────────────────────────────────────────────────
@@ -543,7 +590,12 @@ function runRule(r, ctx) {
  *   groups = [{ cat, items: [{ name, luck, pillars, via, target, rule }] }]
  */
 export function computeBaziShensha(pillars, kongwang = [], opts = {}) {
-  const ctx = { pillars, kongwang, gender: opts.gender, nayinElement: opts.yearNayinElement };
+  const ctx = {
+    pillars, kongwang,
+    gender: opts.gender,
+    nayinElement: opts.yearNayinElement,
+    yearKongwang: opts.yearKongwang || [],
+  };
   const items = [];
   for (const r of RULES) {
     const hits = runRule(r, ctx);
