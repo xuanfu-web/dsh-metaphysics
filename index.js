@@ -65,7 +65,7 @@ const OPTION_KEYS = [
   'upper', 'lower', 'changing', 'count',
   'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool',
   'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang',
-  'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool',
+  'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua',
   'action', 'toAge', 'sitting', 'facing', 'fortuneYear', 'period',
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
   'fortuneDate', 'fortuneTime', 'surname', 'givenName', 'limit',
@@ -110,6 +110,7 @@ const OPTION_HINTS = {
   lateZishi: '仅 ziwei：晚子时口径 current-day / next-day',
   shenzhuSchool: '仅 ziwei：身主安法 common / verse',
   zuoyaoSchool: '仅 ziwei：杂曜取盘 minimal / full',
+  liunianSihua: '仅 ziwei：流年四化取干 year-stem 按流年天干（默认）/ life-palace-stem 按流年命宫宫干',
   action: 'fengshui：natal（默认）/ advise / xuankong 玄空；name：assess / generate',
   toAge: '仅 trend：算到几岁 10–100，默认 100',
   sitting: '仅 fengshui advise/xuankong 玄空：坐山（24 山之一）',
@@ -140,7 +141,7 @@ const READ_KEYS = ['withInterpret', 'detail', 'ask', 'question', 'direction', 's
 /** 每个体系实际会读的参数：help 按这张表展开，避免「有这个键但该体系不看」 */
 const SYSTEM_PARAMS = {
   bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
-  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'cross', 'diff', 'trace', ...READ_KEYS],
+  ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'cross', 'diff', 'trace', ...READ_KEYS],
   liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
   tarot: ['count', 'seed', ...READ_KEYS],
   meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
@@ -830,6 +831,11 @@ export function apply(ctx) {
           type: 'string',
           enum: ['minimal', 'full'],
           description: '紫微斗数：杂曜取盘。minimal（默认，通行简盘 49 颗，与旧盘和存档一致）；full 另按安星诀补入十二颗杂曜（解神、天巫、天月、阴煞、天官、天福、天厨、蜚廉、天德、年解、天才、天寿），共 61 颗。诀文属近代通行辑本并核，非《紫微斗数全书》原文。',
+        },
+        liunianSihua: {
+          type: 'string',
+          enum: ['year-stem', 'life-palace-stem'],
+          description: '紫微斗数：流年四化的取干口径。year-stem（默认）用该年干支的天干，life-palace-stem 改用该年流年命宫那一宫的宫干（文墨「依据流年命宫天干」）。年干随年份走，命宫宫干由五虎遁从生年干起，两者是两张表，实测十二年会换十二次，四颗化星全变。每年回显 sihuaStem / sihuaStemFrom 说明实际用了哪一干。',
         },
         action: {
           type: 'string',

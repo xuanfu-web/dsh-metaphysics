@@ -96,6 +96,7 @@ export const ZIWEI_SCHOOL_DEFAULTS = Object.freeze({
   lateZishi: 'current-day',
   shenzhuSchool: 'common',
   zuoyaoSchool: 'minimal',
+  liunianSihua: 'year-stem',
 });
 
 export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
@@ -110,6 +111,7 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   lateZishi: ['current-day', 'next-day', 'all-current', 'day-cur-time-next'],
   shenzhuSchool: ['common', 'verse'],
   zuoyaoSchool: ['minimal', 'full'],
+  liunianSihua: ['year-stem', 'life-palace-stem'],
 });
 
 export function ziweiSchoolsOf(input = {}) {
@@ -682,10 +684,21 @@ export function buildZiwei(input) {
     const xxAge = ((age - 1) % 12) + 1;
     const xxPalace = palaces.find((p) => p.xiaoxian.age === xxAge);
     const dxPalace = palaces.find((p) => age >= p.daxian.start && age <= p.daxian.end);
+    // 流年四化取干：默认按流年天干；liunianSihua: life-palace-stem 改按该年命宫
+    // 的宫干（文墨设置树里的「依据流年命宫天干」）。这两干各依不同的表：年干随年份走，
+    // 命宫宫干由五虎遁从出生年干起，所以实测十二年会换掉十二次，不是只差个别年。
+    // 取哪一干必须随盘回显，否则用户看不出四颗化星是被哪张表定的。
+    const lnStemOf = (() => {
+      if (schools.liunianSihua !== 'life-palace-stem') return gz.stem;
+      const lp = palaces.find((p) => p.branch === gz.branch);
+      return lp ? lp.stem : gz.stem;
+    })();
     liunian.push({
       year: y,
       ganzhi: gz.name,
       age,
+      sihuaStem: lnStemOf,
+      sihuaStemFrom: schools.liunianSihua === 'life-palace-stem' ? '流年命宫天干' : '流年天干',
       lifePalace: { branch: gz.branch, palace: palaceNames[b] },
       doujun: BRANCHES[fix(b - (lunarMonth - 1) + hb)],
       sanfang: [fix(b), fix(b + 4), fix(b + 8), fix(b + 6)].map((x) => palaceNames[x]),
@@ -694,7 +707,7 @@ export function buildZiwei(input) {
       liutuo: BRANCHES[fix(lu - 1)],
       liukui: BRANCHES[kuiyueTable[gz.stem][0]],
       liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
-      mutagen: Object.entries(MUTAGEN[gz.stem] ?? {}).map(([s, k]) => `${s}化${k}`),
+      mutagen: Object.entries(MUTAGEN[lnStemOf] ?? {}).map(([s, k]) => `${s}化${k}`),
       daxian: dxPalace
         ? { palace: dxPalace.palace, start: dxPalace.daxian.start, end: dxPalace.daxian.end }
         : null,
@@ -794,7 +807,7 @@ export function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）；庚干四化只作用于生年四化`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）；庚干四化只作用于生年四化`,
       zuoyao: schools.zuoyaoSchool === 'full'
         ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
         : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
@@ -802,7 +815,7 @@ export function buildZiwei(input) {
       auxStars: '火铃按年支三合起点顺数至生时；羊陀夹禄存；魁钺按年干；地空亥起子时逆行、地劫顺行；三台八座随辅弼；恩光天贵随昌曲退一位；台辅封诰按时支',
       shensha: '长生、博士随大限顺逆；将前、岁前恒顺行；天伤恒在交友、天使恒在疾厄',
       masters: '命主按命宫地支，身主按生年地支',
-      liunian: '流年命宫取该年地支宫；三方四正为本宫与 +4/+8/+6；并给该年所属大限与小限',
+      liunian: '流年命宫取该年地支宫；三方四正为本宫与 +4/+8/+6；并给该年所属大限与小限；四化取干按 liunianSihua 口径，sihuaStem 回显实际用的那一干',
       flyComposite: '三方四正取本宫、对宫与两个三合宫共四宫，四宫宫干各化禄权科忌共 16 条，按落宫归堆标会聚（双忌会、禄忌同宫、三化会、自化）；只描会照，不折吉凶',
       changqu: '昌曲落宫只由时支决定，故与丑未的关系（夹/三合/同宫/无关）是结构性结论；absorb 的「清/杂」是启发式标记，依据昌曲化忌与会煞，不是断语',
     },
@@ -1286,7 +1299,7 @@ export function flyComposite(chart, { from = '命宫' } = {}) {
 
 export function enrichLiunian(chart) {
   for (const ln of chart.liunian) {
-    const stem = ln.ganzhi[0];
+    const stem = ln.sihuaStem || ln.ganzhi[0];
     ln.mutagenHits = Object.entries(MUTAGEN[stem] ?? {}).map(([star, type]) => {
       const b = starBranchOf(chart, star);
       return {

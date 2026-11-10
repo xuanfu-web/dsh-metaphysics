@@ -1,6 +1,6 @@
 ## 未发布
 
-> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，并修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题。**不改任何排盘口径、不动数据层**。
+> 本段主题（2026-11-10）：自化从「虚下划线徽章」换成文墨天机式的彩色小箭头，修掉 push-tag / autopublish 的 SSH 兜底在这台机上必崩的问题，并按文墨设置树补上「流年四化取干」这一档口径。**默认盘逐字节不变**：新增开关的默认值等于旧行为。
 
 ### SSH 兜底：msys git 起不了 `sh`，只能改走 `GIT_SSH`
 
@@ -24,6 +24,17 @@
 - **图例跟着换**：盘心图例文案 `虚下划线=自化` → `箭头=自化`；`.pp-zhlegend` 的符号从 `→禄` 文本换成真箭头（用 `zhaMark` 渲染），图例与盘面同一套图形。
 - **三合视图同时藏箭头**：`#ppm-sc-sanhe:checked~.pp-body .pp-zha{display:none}`，否则三合派会漏出四化信息——浏览器实测三合下 `.pp-zha` 的 `display` 为 `none`。
 - **测试**（`test/layout.test.mjs` 69 PASS）：原来的 `pp-zh` / `pp-m self` / `虚下划线=自化` 三条换成四条——箭头类名存在、四化颜色分层 + 图例口径、读屏说明含「宫干化回本宫」、SVG 含 `z-shaft` 与 `z-head` 两条路径。
+
+### 新增第十二类流派开关：流年四化取干（文墨「依据流年天干 / 依据流年命宫天干」）
+
+> 来源：文墨天机 2.5.26 设置树 `group_other` 里的「流年四化-依据流年天干 / 流年四化-依据流年命宫天干」。此前我们的流年四化固定按流年天干取，这条口径没有出口。
+
+- **`liunianSihua`**（`engine/ziwei.js`）：`year-stem`（默认，与该年干支的天干一致，与旧盘逐字节相同）/ `life-palace-stem`（改用该年流年命宫那一宫的宫干）。
+- **取干结果随盘回显**：每年新增 `sihuaStem`（实际用的那一干）与 `sihuaStemFrom`（`流年天干` / `流年命宫天干`）。四化是被哪张表定的，不靠猜。
+- **实测**：1990-05-12 男命，2026–2037 十二年**取干十二年全不同**（年干随年份走，命宫宫干由五虎遁从生年干起，本来就是两张表），四颗化星随之全变；本命宫盘 12 宫逐字节不变。这条数据被写进代码注释与参数说明，因为一开始误以为「多数年份同干、只差个别年」，是实测推翻的。
+- **接线五处**：`ZIWEI_SCHOOL_DEFAULTS` / `ZIWEI_SCHOOL_OPTIONS`、`engine/index.js` 的 `ZIWEI_SCHOOL_KEYS` 与摘要 `labels`、根 `index.js` 的 `OPTION_KEYS` / 参数说明 / `SYSTEM_PARAMS.ziwei` / schema、`engine/diff.js` 的 `CALIBER_SWITCHES.ziwei`，以及 `rules.schools` 与 `rules.liunian` 两段规则文字。
+- **测试**（`test/ziwei-schools.test.mjs` 133 PASS，新增 12 条）：默认取干等于年干且来源写「流年天干」、另一档等于该宫 `stem`、换口径不动本命宫盘、确实换掉四化、`mutagenHits` 跟着换、两条口径下都是四条、非默认口径进摘要流派行而默认口径不插流派行。
+- **三处计数锁同步**：`ZIWEI_SCHOOL_OPTIONS` 十一类 → 十二类（`ziwei-schools.test.mjs` / `ziwei-zuoyao.test.mjs`）、`CALIBER_SWITCHES.ziwei` 13 组 → 14 组（`caliber-diff.test.mjs` 三条）、`schema-budget.test.mjs` 的 `OLD_KEYS` 88 → 89。
 
 ## 0.63.0（2026-11-10，已发布）
 

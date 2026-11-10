@@ -23,9 +23,10 @@ const mutagens = (r) => r.palaces.flatMap((p) => p.stars)
 
 // ── 一、开关表与默认值 ─────────────────────────────────────
 // 键名一起钉住：加一类要写理由，删一类会动到旧盘与存档，谁都不能顺手改
-eq('十一类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
+eq('十二类开关', Object.keys(ZIWEI_SCHOOL_OPTIONS).sort().join(','),
   ['brightnessSchool', 'changshengSchool', 'gengYearSihua', 'jiekongSchool', 'kuiyueSchool',
-    'lateZishi', 'shenzhuSchool', 'tiankongSchool', 'tianmaSchool', 'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
+    'lateZishi', 'liunianSihua', 'shenzhuSchool', 'tiankongSchool', 'tianmaSchool',
+    'tianshiTianshang', 'zuoyaoSchool'].sort().join(','));
 ok('默认值都在可选范围内', Object.entries(ZIWEI_SCHOOL_DEFAULTS)
   .every(([k, v]) => ZIWEI_SCHOOL_OPTIONS[k].includes(v)));
 eq('全部走默认', ziweiSchoolsOf({}), { ...ZIWEI_SCHOOL_DEFAULTS });
@@ -143,15 +144,42 @@ eq('day-cur-time-next 不改起盘日', zi('day-cur-time-next').lunar.day, 23);
 eq('晚子时不影响白天盘', buildZiwei({ ...BASE, lateZishi: 'next-day' }).lunar.day, DEF.lunar.day);
 eq('起盘日后延但时辰不变', zi('next-day').hourBranch, '子');
 
+// ── 十一、流年四化取干 ─────────────────────────────────────
+// 两条口径都要能落到 mutagen / mutagenHits / sihuaStem 三处，且默认盘一字不动。
+// 这两干各依不同的表（年干随年份、命宫宫干由五虎遁从生年干起），所以实测十二年
+// 会换十二次；断言只钉「换过」，不钉具体换几次——那是数据，不是约束。
+const LN_BASE = { ...BASE, asOf: '2026-01-01' };
+const LN_YEAR = buildZiwei(LN_BASE);
+const LN_LIFE = buildZiwei({ ...LN_BASE, liunianSihua: 'life-palace-stem' });
+eq('流年四化默认按流年天干', LN_YEAR.schools.liunianSihua, 'year-stem');
+eq('默认口径的取干就是年干', LN_YEAR.liunian[0].sihuaStem, LN_YEAR.liunian[0].ganzhi[0]);
+eq('默认口径回显来源', LN_YEAR.liunian[0].sihuaStemFrom, '流年天干');
+eq('按命宫宫干时取的是该宫 stem', LN_LIFE.liunian[0].sihuaStem,
+  LN_LIFE.palaces.find((p) => p.branch === LN_LIFE.liunian[0].lifePalace.branch).stem);
+eq('按命宫宫干时回显来源', LN_LIFE.liunian[0].sihuaStemFrom, '流年命宫天干');
+ok('换口径不改本命宫盘', JSON.stringify(LN_LIFE.palaces) === JSON.stringify(LN_YEAR.palaces));
+ok('换口径确实换掉了四化', JSON.stringify(LN_LIFE.liunian[0].mutagen) !== JSON.stringify(LN_YEAR.liunian[0].mutagen),
+  `${LN_YEAR.liunian[0].mutagen.join(',')} vs ${LN_LIFE.liunian[0].mutagen.join(',')}`);
+const lnChanged = LN_LIFE.liunian.filter((l, i) => l.sihuaStem !== LN_YEAR.liunian[i].sihuaStem).length;
+ok('十二年至少有一年取干不同（否则这一档等于空开关）', lnChanged > 0, `${lnChanged} / 12`);
+ok('mutagenHits 跟着换干走',
+  JSON.stringify(LN_LIFE.liunian[0].mutagenHits) !== JSON.stringify(LN_YEAR.liunian[0].mutagenHits));
+ok('两条口径下四化都是四条',
+  [LN_YEAR, LN_LIFE].every((r) => r.liunian.every((l) => l.mutagen.length === 4 && l.mutagenHits.length === 4)));
+const LN_SUM = compute({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male', liunianSihua: 'life-palace-stem' });
+ok('非默认口径进摘要流派行', /【流派】.*流年四化取干.*life-palace-stem/.test(LN_SUM.summary),
+  LN_SUM.summary.split('\n').find((l) => /流派/.test(l)) || '(无流派行)');
+ok('默认口径不插流派行', !/【流派】/.test(compute({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' }).summary));
+
 // ── 十一、接线：compute / 摘要 / 规则 ─────────────────────
 const C = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', brightnessSchool: 'QS', jiekongSchool: 'double' });
 eq('compute 回显开关', [C.schools.brightnessSchool, C.schools.jiekongSchool], ['QS', 'double']);
 ok('compute 摘要写流派行', /【流派】.*亮度 QS.*截空 double/.test(C.summary),
   C.summary.split('\n').find((l) => /流派/.test(l)));
-ok('规则里把十一类口径逐条列全（漏一类就是旧盘对不上账）',
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜']
+ok('规则里把十二类口径逐条列全（漏一类就是旧盘对不上账）',
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干']
     .every((label) => C.rules.schools.includes(label)),
-  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜']
+  ['亮度', '庚干四化', '天马', '天空', '截空', '魁钺', '天伤天使', '长生', '晚子时', '身主', '杂曜', '流年四化取干']
     .filter((label) => !C.rules.schools.includes(label)).join(','));
 const NEST = compute({ system: 'ziwei', datetime: '1990-06-15T10:00', gender: 'male', schools: { tianmaSchool: 'month-branch' } });
 eq('compute 接受嵌套 schools', NEST.schools.tianmaSchool, 'month-branch');

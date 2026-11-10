@@ -341,6 +341,9 @@ export const CALIBER_SWITCHES = {
     ziweiSchoolSwitch('zuoyaoSchool', '杂曜：49 颗简盘 / 61 颗全表', '杂曜全表', 'minimal', 'full', {
       minimal: '49 颗（简盘）', full: '61 颗（加十二颗杂曜）',
     }),
+    ziweiSchoolSwitch('liunianSihua', '流年四化取干：流年天干 / 流年命宫宫干', '流年四化取干', 'year-stem', 'life-palace-stem', {
+      'year-stem': '流年天干', 'life-palace-stem': '流年命宫宫干',
+    }),
   ],
   qimen: [
     {
