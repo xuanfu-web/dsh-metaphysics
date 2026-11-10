@@ -180,6 +180,11 @@
 .pp-fx i{font-style:normal;white-space:nowrap;margin-right:4px}
 .pp-fx i em{font-style:normal;color:var(--faint)}
 #ppm-sc-feixing:checked~.pp-body .pp-fx{display:block}
+/* 运曜/流曜行：默认隐藏，勾选「显示运曜和流曜」才显示（限流盘显示组，纯增强） */
+.pp-hs{display:none;margin-top:3px;font-size:10.5px;line-height:1.55;color:var(--muted);border-top:1px dashed var(--hair);padding-top:2px}
+.pp-hs i{font-style:normal;white-space:nowrap;margin-right:4px}
+.pp-hs i em{font-style:normal;color:var(--faint)}
+#ppm-d-hs:checked~.pp-body .pp-hs{display:block}
 #ppm-sc-feixing:checked~.pp-body .pp-m.view,
 #ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
 /* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips/自化箭头） */
@@ -1429,7 +1434,7 @@
 /* 结果卡阴影分层：默认最轻，hover 时浮起一档（只对可交互的卡，避免整页抖动） */
 .pp{transition:box-shadow var(--dur) var(--ease)}
 
-/* —— 文墨式「显示设置」12 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
+/* —— 文墨式「显示设置」13 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
    纯 CSS 显隐：勾了盘面立刻变，不重排盘、不进引擎、不进工具 schema。
    复选框必须是 .pp 的直接子元素，才能用 ~ 命中后面的 .pp-body / .pp-zhlegend。
    组1/组2 默认勾（:not(:checked) 才隐藏），组3 默认不勾（:checked 才增强，默认盘观感不变）。 */
@@ -1455,7 +1460,8 @@
 #ppm-d-sf:checked~.pp-disp label[for="ppm-d-sf"] .pp-disp-box,
 #ppm-d-zha-bold:checked~.pp-disp label[for="ppm-d-zha-bold"] .pp-disp-box,
 #ppm-d-bad-ink:checked~.pp-disp label[for="ppm-d-bad-ink"] .pp-disp-box,
-#ppm-d-bold:checked~.pp-disp label[for="ppm-d-bold"] .pp-disp-box{background:var(--lu);border-color:var(--lu);box-shadow:inset 0 0 0 2px var(--card)}
+#ppm-d-bold:checked~.pp-disp label[for="ppm-d-bold"] .pp-disp-box,
+#ppm-d-hs:checked~.pp-disp label[for="ppm-d-hs"] .pp-disp-box{background:var(--lu);border-color:var(--lu);box-shadow:inset 0 0 0 2px var(--card)}
 /* 组1 飞星派显示（默认全勾，取消才隐藏） */
 #ppm-d-ss:not(:checked)~.pp-body .pp-ss-txt{display:none}
 #ppm-d-sbg:not(:checked)~.pp-body .pp-st.st-sbg{display:none}
@@ -1586,7 +1592,7 @@
   const fx = (n) => ((n % 12) + 12) % 12;
   const isTrine = (b, m) => b !== m && [fx(m + 4), fx(m + 8), fx(m + 6)].includes(b);
 
-  function cellHTML(p, soulIdx, view, allPalaces, viewHua, flyByBranch) {
+  function cellHTML(p, soulIdx, view, allPalaces, viewHua, flyByBranch, hsByBranch) {
     const pos = POS[p.branch] || [1, 1];
     const b = BR.indexOf(p.branch);
     const cls = ['pp-cell'];
@@ -1614,6 +1620,7 @@
       ${borrow}
       <div class="pp-ages">${agesHTML(p.xiaoxian.age)}</div>
       ${fxLineHTML(p, flyByBranch)}
+      ${hsLineHTML(p, hsByBranch)}
       <div class="pp-foot">
         <div class="ft-l">
           <span class="ft-dx"><span class="pp-ss-txt">${ss.boshi}</span> ${p.daxian.start}-${p.daxian.end}</span>
@@ -1663,6 +1670,16 @@
     return `<div class="pp-fx">${esc(p.ganzhi)}宫干 ${items}</div>`;
   }
 
+  /* 运曜/流曜小字行（文墨天机「显示运曜和流曜」）：宫格内一行小字，形如「运禄巳 运羊午 …」。
+     大限视图传该宫的 yunStars（{星名:地支}），流年视图传流X 键值对；默认隐藏，勾选 ppm-d-hs 才显示。
+     返回空串时不占位（本命视图、无数据时不渲染）。 */
+  function hsLineHTML(p, hsByBranch) {
+    const o = (hsByBranch && hsByBranch[p.branch]) || null;
+    if (!o) return '';
+    const items = Object.entries(o).map(([k, br]) => `<i>${esc(k)}<em>${esc(br)}</em></i>`).join('');
+    return `<div class="pp-hs">${items}</div>`;
+  }
+
   function sizhuOf(r) {
     try {
       const E = window.Engine || (window.__PP && window.__PP.Engine);
@@ -1695,7 +1712,19 @@
 
     const flyByBranch = {};
     for (const d of r.daxianList || []) flyByBranch[d.branch] = d.mutagenHits || [];
-    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch)).join('');
+    // 运曜/流曜：按宫位摊。大限视图用 daxianList[].yunStars（{星名:地支}），流年视图用 ln 的 流X/年解 键。
+    let lnHsByBranch = null;
+    if (ln) {
+      lnHsByBranch = {};
+      for (const [k, br] of Object.entries(ln)) if (/^(流|年解)/.test(k) && typeof br === 'string' && BR.includes(br)) lnHsByBranch[br] = lnHsByBranch[br] || {}, lnHsByBranch[br][k] = br;
+    }
+    const hsByView = {
+      da: dxObj && dxObj.yunStars
+        ? (() => { const o = {}; for (const [k, br] of Object.entries(dxObj.yunStars)) (o[br] = o[br] || {})[k] = br; return o; })()
+        : null,
+      ln: lnHsByBranch,
+    };
+    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch, hsByView[kind] || null)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'
         ? `<div class="ct-t1">大限 ${dxPalace.ganzhi}　${dxPalace.daxian.start}-${dxPalace.daxian.end}岁</div>`
@@ -1796,7 +1825,7 @@
       <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
       <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
       <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
-      <!-- 文墨式显示设置：12 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
+      <!-- 文墨式显示设置：13 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
            组1/组2 默认勾（观感与旧版一致），组3 默认不勾（纯增强）。不重排盘、不进引擎。 -->
       <input type="checkbox" id="ppm-d-ss" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-sbg" class="pp-r" checked>
@@ -1810,8 +1839,9 @@
       <input type="checkbox" id="ppm-d-zha-bold" class="pp-r">
       <input type="checkbox" id="ppm-d-bad-ink" class="pp-r">
       <input type="checkbox" id="ppm-d-bold" class="pp-r">
+      <input type="checkbox" id="ppm-d-hs" class="pp-r">
       <details class="pp-disp">
-        <summary>显示设置 · 12 项（学文墨天机）</summary>
+        <summary>显示设置 · 13 项（学文墨天机）</summary>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
@@ -1829,6 +1859,7 @@
           <label for="ppm-d-zha-bold"><i class="pp-disp-box"></i>自化箭头加粗</label>
           <label for="ppm-d-bad-ink"><i class="pp-disp-box"></i>六煞星黑字</label>
           <label for="ppm-d-bold"><i class="pp-disp-box"></i>主辅星加粗</label>
+          <label for="ppm-d-hs"><i class="pp-disp-box"></i>显示运曜和流曜</label>
         </div>
       </details>
       <div class="pp-modes">
