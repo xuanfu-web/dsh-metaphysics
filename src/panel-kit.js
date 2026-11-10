@@ -188,6 +188,13 @@
 .pp-hs i{font-style:normal;white-space:nowrap;margin-right:4px}
 .pp-hs i em{font-style:normal;color:var(--faint)}
 #ppm-d-hs:checked~.pp-body .pp-hs{display:block}
+/* 日干四化：宫格下方一行小字（禄权科忌四颗化星落宫），默认隐藏，勾 ppm-d-rigan 才显示 */
+.pp-rigan{display:none;margin-top:6px;padding:5px 11px;border:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.7;color:var(--muted)}
+.pp-rigan b{color:var(--ink);font-weight:600;margin-right:8px}
+.pp-rigan i{font-style:normal;margin-right:10px;white-space:nowrap}
+.pp-rigan i em{font-style:normal}
+.pp-rigan i .rl{color:var(--lu)}.pp-rigan i .rq{color:var(--quan)}.pp-rigan i .rk{color:var(--ke)}.pp-rigan i .rj{color:var(--ji)}
+#ppm-d-rigan:checked~.pp-rigan{display:block}
 #ppm-sc-feixing:checked~.pp-body .pp-m.view,
 #ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
 /* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips/自化箭头） */
@@ -1698,6 +1705,25 @@
     } catch (e) { return ''; }
   }
 
+  /* 日干四化：取日柱天干，查十干四化表，四颗化星按本命落宫归堆。
+     口径：日干起四化（文墨飞星派「显示日干四化」）；表用 sihuaTableOf 的通行表
+     这里无法直接调引擎内部表，改用宫干自化同源法——宫干 = 生年干那颗的四化已由
+     mutagenMarks 体现，日干四化是另一层。实现：window.Engine 不暴露 sihuaTableOf，
+     改从宫干四化反推——十二宫宫干覆盖十干（寅申两支各占两干），日干对应的宫干四化
+     可从 daxianList[].mutagenHits（按宫干分组）直接借。 */
+  function dayStemOf(r) {
+    try {
+      const E = window.Engine || (window.__PP && window.__PP.Engine);
+      if (!E || !E.buildBazi || !r.input) return null;
+      const b = E.buildBazi({
+        year: r.input.year, month: r.input.month, day: r.input.day,
+        hour: r.input.hour, minute: r.input.minute,
+        gender: r.input.gender, trueSolar: false,
+      });
+      return b.pillars.day.stem;
+    } catch (e) { return null; }
+  }
+
   pp.ziweiHTML = function (r) {
     const soulIdx = BR.indexOf(r.soul.branch);
     const ln = (r.liunian && r.liunian[0]) || null;
@@ -1717,6 +1743,26 @@
 
     const flyByBranch = {};
     for (const d of r.daxianList || []) flyByBranch[d.branch] = d.mutagenHits || [];
+
+    // 日干四化：借宫干四化反推——daxianList[].mutagenHits 按「宫干→四化星」分组，
+    // 找到宫干 === 日干的那一宫，其 mutagenHits 就是日干四化（同一张十干四化表）。
+    // 星 → 落宫：palaces[].stars 里找星名。
+    const riGanHits = (() => {
+      const ds = dayStemOf(r);
+      if (!ds) return null;
+      const hit = (r.daxianList || []).find((d) => d.stem === ds);
+      if (!hit) return null;
+      const starBranch = {};
+      for (const p of r.palaces) for (const s of p.stars || []) if (!(s.name in starBranch)) starBranch[s.name] = p.branch;
+      return {
+        stem: ds,
+        items: (hit.mutagenHits || []).map((h) => ({
+          type: h.type, star: h.star,
+          branch: starBranch[h.star] || null,
+          palace: starBranch[h.star] ? (r.palaces.find((p) => p.branch === starBranch[h.star]) || {}).palace : null,
+        })),
+      };
+    })();
     // 运曜/流曜：按宫位摊。大限视图用 daxianList[].yunStars（{星名:地支}），流年视图用 ln 的 流X/年解 键。
     let lnHsByBranch = null;
     if (ln) {
@@ -1858,14 +1904,16 @@
       <input type="checkbox" id="ppm-d-bad-ink" class="pp-r">
       <input type="checkbox" id="ppm-d-bold" class="pp-r">
       <input type="checkbox" id="ppm-d-hs" class="pp-r">
+      <input type="checkbox" id="ppm-d-rigan" class="pp-r">
       <details class="pp-disp">
-        <summary>显示设置 · 14 项（学文墨天机）</summary>
+        <summary>显示设置 · 15 项（学文墨天机）</summary>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
           <label for="ppm-d-zha"><i class="pp-disp-box"></i>彩色箭头标识自化</label>
           <label for="ppm-d-ages"><i class="pp-disp-box"></i>流年虚岁年龄</label>
           <label for="ppm-d-sizhu"><i class="pp-disp-box"></i>中宫八字</label>
+          <label for="ppm-d-rigan"><i class="pp-disp-box"></i>显示日干四化</label>
         </div>
         <div class="pp-disp-g"><span>四化派显示</span>
           <label for="ppm-d-small"><i class="pp-disp-box"></i>显示小星</label>
@@ -1891,6 +1939,21 @@
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
+      ${(() => {
+        if (!riGanHits) return '';
+        const CLS = { 禄: 'rl', 权: 'rq', 科: 'rk', 忌: 'rj' };
+        const items = riGanHits.items
+          .map((h) => `<i><em class="${CLS[h.type] || ''}">${h.type}</em>${esc(h.star)}<em>${esc(h.branch || '?')}${h.palace ? `·${esc(h.palace)}` : ''}</em></i>`)
+          .join('');
+        return `<div class="pp-rigan"><b>日干${esc(riGanHits.stem)}四化</b>${items}</div>`;
+      })()}      ${(() => {
+        if (!riGanHits) return '';
+        const CLS = { 禄: 'rl', 权: 'rq', 科: 'rk', 忌: 'rj' };
+        const items = riGanHits.items
+          .map((h) => `<i><em class="${CLS[h.type] || ''}">${h.type}</em>${esc(h.star)}<em>${esc(h.branch || '?')}${h.palace ? `·${esc(h.palace)}` : ''}</em></i>`)
+          .join('');
+        return `<div class="pp-rigan"><b>日干${esc(riGanHits.stem)}四化</b>${items}</div>`;
+      })()}
       <div class="pp-zhlegend">自化图示　<span class="z-lu">${pp._zhaMark('禄', '本宫')}禄</span><span class="z-quan">${pp._zhaMark('权', '本宫')}权</span><span class="z-ke">${pp._zhaMark('科', '本宫')}科</span><span class="z-ji">${pp._zhaMark('忌', '本宫')}忌</span></div>
       <div class="pp-flywrap">${flyHTML}${flyCompositeHTML}</div>
     </div>${flowHTML}${chips}${pats}${dxs}${lnHit}${zyHTML}`;
