@@ -62,10 +62,15 @@ ok('未捕获异常也留痕', /main\(\)\.catch[\s\S]{0,200}writeFileSync\(ERR/.
 ok('锁路径可用环境变量换掉', /AUTOPUBLISH_LOCK/.test(src) && /process\.env\.AUTOPUBLISH_LOCK \|\|/.test(src));
 ok('测试用独立锁文件', /const TEST_LOCK = /.test(read('test/autopublish.test.mjs')));
 
-// 试跑一次：必须写「运行开始」，且不产生错误文件
+// 试跑一次：必须写「运行开始」，且不产生错误文件。
+// 配置用临时假凭据（AUTOPUBLISH_CONFIG 环境变量）：dry-run 只报告不发布，
+// 不该要求跑测试的机器真有 ~/.dsh/metaphysics-autopublish.json（CI runner 没有，之前五个 commit 全红）。
+const qaCfg = path.join(root, '.qa-autopublish-fake-config.json');
+fs.writeFileSync(qaCfg, JSON.stringify({ npmToken: 'qa-fake', githubUser: 'qa', githubToken: 'qa-fake' }), 'utf8');
 const hadErrBefore = fs.existsSync(ERR);
 const dry = spawnSync(process.execPath, ['tools/autopublish.mjs', '--dry-run'], {
-  cwd: root, encoding: 'utf8', env: { ...process.env, AUTOPUBLISH_LOCK: TEST_LOCK },
+  cwd: root, encoding: 'utf8',
+  env: { ...process.env, AUTOPUBLISH_CONFIG: qaCfg, AUTOPUBLISH_LOCK: TEST_LOCK },
 });
 eq('dry-run 退出码 0', dry.status, 0);
 ok('dry-run 往日志写了运行开始', /运行开始（dry-run/.test(logText()), logText().slice(-120));
@@ -161,3 +166,6 @@ ok('指纹未变且不领先才真的跳过', /if \(!FORCE && state && state\.ha
 ok('指纹未变但领先时继续推送', /指纹未变（\$\{hash\.slice\(0, 12\)\}），但本地领先远端[\s\S]{0,80}继续推送/.test(srcLF));
 ok('日志区分「指纹未变只推送」与「检测到改动」', /指纹未变，仅推送已提交的本地领先/.test(srcLF)
   && /检测到改动：/.test(srcLF));
+
+// 收尾：假凭据配置用完即删，不留在工作区
+try { fs.rmSync(qaCfg, { force: true }); } catch {}
