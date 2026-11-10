@@ -79,7 +79,11 @@ const CSS = `
 /* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
 .mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
 /* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
-.mp-panel{background:linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
+.mp-panel{background:
+  radial-gradient(640px 300px at 16% 8%, rgba(27,27,24,.05), transparent 62%),
+  radial-gradient(560px 340px at 88% 86%, rgba(61,90,82,.06), transparent 66%),
+  radial-gradient(420px 260px at 70% 22%, rgba(160,44,38,.035), transparent 60%),
+  linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
   box-shadow:0 1px 2px color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent),0 16px 34px -30px color-mix(in srgb,var(--dsw-alias-label-primary) 45%,transparent)}
 .mp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:end}
 .mp-lbl{display:block;height:18px;line-height:18px;font-size:12.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

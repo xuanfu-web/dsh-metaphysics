@@ -29479,6 +29479,29 @@ window.__MP_VER = "0.62.5";
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
+/* 三视图切换（学文墨天机：飞星/三合/四化）——第二组 radio，默认「四化」=全显（现状）。
+   三合派：只看星曜庙旺 + 生年四化，藏自化、大限/流年四化、飞星链；
+   飞星派：看宫干自化与命宫飞星链，藏大限/流年四化；
+   四化派：生年实心 + 大限/流年空心 + 自化 + 图例，藏飞星链。
+   纯显隐开关，不改任何渲染函数——宫内数据本来就全算了，只是选择性展示。 */
+.pp-schools{border-top:none}
+.pp-schools label{min-height:38px;padding:2px 16px;font-size:12px}
+#ppm-sc-sihe:checked~.pp-schools label[for="ppm-sc-sihe"],
+#ppm-sc-feixing:checked~.pp-schools label[for="ppm-sc-feixing"],
+#ppm-sc-sanhe:checked~.pp-schools label[for="ppm-sc-sanhe"]{background:var(--lu);color:var(--on-accent)}
+#ppm-sc-sanhe:checked~.pp-body .pp-zh,
+#ppm-sc-sanhe:checked~.pp-body .pp-m.view,
+#ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
+#ppm-sc-sanhe:checked~.pp-body .pp-zhlegend,
+#ppm-sc-sanhe:checked~.pp-flywrap{display:none}
+#ppm-sc-feixing:checked~.pp-body .pp-m.view,
+#ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
+#ppm-sc-sihe:checked~.pp-flywrap{display:none}
+/* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
+.pp-zhlegend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:4px}
+.pp-zhlegend i{font-style:normal;font-weight:600}
+.pp-zhlegend .z-lu{color:var(--lu)}.pp-zhlegend .z-quan{color:var(--quan)}
+.pp-zhlegend .z-ke{color:var(--ke)}.pp-zhlegend .z-ji{color:var(--ji)}
 .pp-zh{margin-left:4px;white-space:nowrap}
 .pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
@@ -30971,14 +30994,22 @@ window.__MP_VER = "0.62.5";
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
       <input type="radio" name="ppm" id="ppm-da" class="pp-r">
       <input type="radio" name="ppm" id="ppm-ln" class="pp-r">
+      <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
+      <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
+      <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
       <div class="pp-modes">
         <label for="ppm-ben">本命</label><label for="ppm-da">大限</label><label for="ppm-ln">流年</label>
         <span class="pp-soon">点任一宫位看详情</span>
       </div>
+      <div class="pp-modes pp-schools">
+        <label for="ppm-sc-sihe">四化</label><label for="ppm-sc-feixing">飞星</label><label for="ppm-sc-sanhe">三合</label>
+      </div>
       ${body('ben', soulIdx, 'ben')}
       ${body('da', dxIdx, 'da')}
       ${body('ln', lnIdx, 'ln')}
-    </div>${flowHTML}${chips}${flyHTML}${flyCompositeHTML}${pats}${dxs}${lnHit}${zyHTML}`;
+      <div class="pp-zhlegend">自化图示　<i class="z-lu">→禄</i><i class="z-quan">→权</i><i class="z-ke">→科</i><i class="z-ji">→忌</i></div>
+      <div class="pp-flywrap">${flyHTML}${flyCompositeHTML}</div>
+    </div>${flowHTML}${chips}${pats}${dxs}${lnHit}${zyHTML}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────

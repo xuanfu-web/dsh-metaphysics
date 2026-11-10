@@ -165,6 +165,29 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.62.5",factory(Zt){
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
+/* 三视图切换（学文墨天机：飞星/三合/四化）——第二组 radio，默认「四化」=全显（现状）。
+   三合派：只看星曜庙旺 + 生年四化，藏自化、大限/流年四化、飞星链；
+   飞星派：看宫干自化与命宫飞星链，藏大限/流年四化；
+   四化派：生年实心 + 大限/流年空心 + 自化 + 图例，藏飞星链。
+   纯显隐开关，不改任何渲染函数——宫内数据本来就全算了，只是选择性展示。 */
+.pp-schools{border-top:none}
+.pp-schools label{min-height:38px;padding:2px 16px;font-size:12px}
+#ppm-sc-sihe:checked~.pp-schools label[for="ppm-sc-sihe"],
+#ppm-sc-feixing:checked~.pp-schools label[for="ppm-sc-feixing"],
+#ppm-sc-sanhe:checked~.pp-schools label[for="ppm-sc-sanhe"]{background:var(--lu);color:var(--on-accent)}
+#ppm-sc-sanhe:checked~.pp-body .pp-zh,
+#ppm-sc-sanhe:checked~.pp-body .pp-m.view,
+#ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
+#ppm-sc-sanhe:checked~.pp-body .pp-zhlegend,
+#ppm-sc-sanhe:checked~.pp-flywrap{display:none}
+#ppm-sc-feixing:checked~.pp-body .pp-m.view,
+#ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
+#ppm-sc-sihe:checked~.pp-flywrap{display:none}
+/* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
+.pp-zhlegend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:4px}
+.pp-zhlegend i{font-style:normal;font-weight:600}
+.pp-zhlegend .z-lu{color:var(--lu)}.pp-zhlegend .z-quan{color:var(--quan)}
+.pp-zhlegend .z-ke{color:var(--ke)}.pp-zhlegend .z-ji{color:var(--ji)}
 .pp-zh{margin-left:4px;white-space:nowrap}
 .pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
@@ -1430,14 +1453,22 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.62.5",factory(Zt){
       <input type="radio" name="ppm" id="ppm-ben" class="pp-r" checked>
       <input type="radio" name="ppm" id="ppm-da" class="pp-r">
       <input type="radio" name="ppm" id="ppm-ln" class="pp-r">
+      <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
+      <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
+      <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
       <div class="pp-modes">
         <label for="ppm-ben">本命</label><label for="ppm-da">大限</label><label for="ppm-ln">流年</label>
         <span class="pp-soon">点任一宫位看详情</span>
       </div>
+      <div class="pp-modes pp-schools">
+        <label for="ppm-sc-sihe">四化</label><label for="ppm-sc-feixing">飞星</label><label for="ppm-sc-sanhe">三合</label>
+      </div>
       ${k("ben",i,"ben")}
       ${k("da",c,"da")}
       ${k("ln",d,"ln")}
-    </div>${w}${T}${te}${F}${H}${ee}${I}${M}`};function Xe(e){return e.length?e.map(i=>{const r=z[i.type]||"aux",l=i.brightness?`<em class="dt-br ${W[i.brightness]||"mid"}">${i.brightness}</em>`:"",o=i.inTemple?'<em class="dt-br good">庙</em>':"",c=i.mutagen?`<i class="pp-m ${D[i.mutagen]}">${i.mutagen}</i>`:"";return`<span class="dt-st ${r}">${i.name}${l}${o}${c}</span>`}).join(""):'<span class="dt-empty">无</span>'}function Le(e,i){const r=s._zw;if(!r)return"";const l=v=>r.palaces.find(M=>P.indexOf(M.branch)===v),o=l(e)||r.palaces.find(v=>P.indexOf(v.branch)===e);if(!o)return"";const c=P.indexOf(o.branch),d=Z[Y(i-c)],u=o.shensha||{},m=o.stars.filter(v=>v.type==="主星"),x=o.stars.filter(v=>v.type==="吉星"||v.type==="辅星"),b=o.stars.filter(v=>v.type==="煞星"),L=o.stars.filter(v=>!["主星","吉星","辅星","煞星"].includes(v.type)),k=(o.selfHua||[]).length?o.selfHua.map(v=>`<i class="pp-m self ${D[v.type]}" title="自化：宫干化回本宫">${v.type}</i>`).join(""):'<span class="dt-empty">无</span>',j=[Y(c+4),Y(c+8),Y(c+6)].map(v=>{const M=l(v),te=Z[Y(i-v)],F=M?M.stars.filter(w=>w.type==="主星").map(w=>w.name).join("、"):"",V=v===Y(c+6)?"对宫":"三合";return`<span class="dt-st">${te}[${P[v]}]<b>${F||"无主星"}</b><em>${V}</em></span>`}).join(""),T=l(Y(c+6)),H=T?T.stars.filter(v=>v.type==="主星"):[],ee=m.length?Xe(m):`<span class="dt-empty">无主星</span><span class="dt-tri">　借对宫 <b>${H.length?H.map(v=>v.name).join("、"):"亦无主星"}</b></span>`,I=(v,M)=>`<div class="dt-dr"><span class="dt-k">${v}</span><div class="dt-v">${M}</div></div>`;return`<div class="dt-dh">
+      <div class="pp-zhlegend">自化图示　<i class="z-lu">→禄</i><i class="z-quan">→权</i><i class="z-ke">→科</i><i class="z-ji">→忌</i></div>
+      <div class="pp-flywrap">${te}${F}</div>
+    </div>${w}${T}${H}${ee}${I}${M}`};function Xe(e){return e.length?e.map(i=>{const r=z[i.type]||"aux",l=i.brightness?`<em class="dt-br ${W[i.brightness]||"mid"}">${i.brightness}</em>`:"",o=i.inTemple?'<em class="dt-br good">庙</em>':"",c=i.mutagen?`<i class="pp-m ${D[i.mutagen]}">${i.mutagen}</i>`:"";return`<span class="dt-st ${r}">${i.name}${l}${o}${c}</span>`}).join(""):'<span class="dt-empty">无</span>'}function Le(e,i){const r=s._zw;if(!r)return"";const l=v=>r.palaces.find(M=>P.indexOf(M.branch)===v),o=l(e)||r.palaces.find(v=>P.indexOf(v.branch)===e);if(!o)return"";const c=P.indexOf(o.branch),d=Z[Y(i-c)],u=o.shensha||{},m=o.stars.filter(v=>v.type==="主星"),x=o.stars.filter(v=>v.type==="吉星"||v.type==="辅星"),b=o.stars.filter(v=>v.type==="煞星"),L=o.stars.filter(v=>!["主星","吉星","辅星","煞星"].includes(v.type)),k=(o.selfHua||[]).length?o.selfHua.map(v=>`<i class="pp-m self ${D[v.type]}" title="自化：宫干化回本宫">${v.type}</i>`).join(""):'<span class="dt-empty">无</span>',j=[Y(c+4),Y(c+8),Y(c+6)].map(v=>{const M=l(v),te=Z[Y(i-v)],F=M?M.stars.filter(w=>w.type==="主星").map(w=>w.name).join("、"):"",V=v===Y(c+6)?"对宫":"三合";return`<span class="dt-st">${te}[${P[v]}]<b>${F||"无主星"}</b><em>${V}</em></span>`}).join(""),T=l(Y(c+6)),H=T?T.stars.filter(v=>v.type==="主星"):[],ee=m.length?Xe(m):`<span class="dt-empty">无主星</span><span class="dt-tri">　借对宫 <b>${H.length?H.map(v=>v.name).join("、"):"亦无主星"}</b></span>`,I=(v,M)=>`<div class="dt-dr"><span class="dt-k">${v}</span><div class="dt-v">${M}</div></div>`;return`<div class="dt-dh">
         <b>${d}</b><span>${o.branch}宫 · ${o.ganzhi}</span>
         <span>大限 ${o.daxian.start}-${o.daxian.end}</span>
         <span>小限起 ${o.xiaoxian.age} 岁</span>
@@ -1941,7 +1972,11 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.62.5",factory(Zt){
 /* 内容统一收在同一列居中，避免宽屏下输入框拉成一条 */
 .mp-wrap>*{max-width:940px;margin-left:auto;margin-right:auto}
 /* ── 表单卡片：等宽栅格，问题独占一行，按钮落在右下 ── */
-.mp-panel{background:linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
+.mp-panel{background:
+  radial-gradient(640px 300px at 16% 8%, rgba(27,27,24,.05), transparent 62%),
+  radial-gradient(560px 340px at 88% 86%, rgba(61,90,82,.06), transparent 66%),
+  radial-gradient(420px 260px at 70% 22%, rgba(160,44,38,.035), transparent 60%),
+  linear-gradient(180deg,var(--dsw-alias-bg-layer-2),color-mix(in srgb,var(--dsw-alias-bg-layer-2) 88%,var(--dsw-alias-bg-layer-1)));border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:18px 20px 16px;margin-bottom:16px;
   box-shadow:0 1px 2px color-mix(in srgb,var(--dsw-alias-label-primary) 5%,transparent),0 16px 34px -30px color-mix(in srgb,var(--dsw-alias-label-primary) 45%,transparent)}
 .mp-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:end}
 .mp-lbl{display:block;height:18px;line-height:18px;font-size:12.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
