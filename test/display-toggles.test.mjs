@@ -1,5 +1,5 @@
-// 0.65.0 新增：文墨式「显示设置」15 项 —— 纯 CSS 显隐，不重排盘、不进引擎 schema。
-// 断言这 15 个开关结构完整、默认盘观感不变、目标元素真的可被 CSS 寻址。
+// 0.65.0 新增：文墨式「显示设置」16 项 —— 纯 CSS 显隐，不重排盘、不进引擎 schema。
+// 断言这 16 个开关结构完整、默认盘观感不变、目标元素真的可被 CSS 寻址。
 import fs from 'node:fs';
 import { compute } from '../engine/index.js';
 
@@ -16,20 +16,20 @@ new Function('window', SRC)(globalThis.window);
 const PP = globalThis.window.__PP;
 
 // ── 一、15 个复选框与 15 个 label 一一对应 ──────────────────────
-const IDS = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu', 'ppm-d-rigan',
+const IDS = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu', 'ppm-d-rigan', 'ppm-d-njq', 'ppm-d-tjz',
   'ppm-d-small', 'ppm-d-shen', 'ppm-d-hua', 'ppm-d-sf', 'ppm-d-laiyin',
   'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs'];
-// 复选框物理顺序（rigan 排最后，紧邻 ppm-d-hs，保证在 details 之前）
+// 复选框物理顺序（rigan/njq/tjz 排最后，紧邻 ppm-d-hs，保证在 details 之前）
 const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu',
   'ppm-d-small', 'ppm-d-shen', 'ppm-d-hua', 'ppm-d-sf', 'ppm-d-laiyin',
-  'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs', 'ppm-d-rigan'];
+  'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs', 'ppm-d-rigan', 'ppm-d-njq', 'ppm-d-tjz'];
 {
   const inputIds = [...SRC.matchAll(/<input type="checkbox" id="(ppm-d-[a-z-]+)" class="pp-r"( checked)?>/g)].map((m) => m[1]);
-  eq(inputIds.length, IDS.length, '复选框恰好 15 个');
-  eq(inputIds.join(','), INPUT_ORDER.join(','), '15 个 id 与物理顺序一致');
+  eq(inputIds.length, IDS.length, '复选框恰好 17 个');
+  eq(inputIds.join(','), INPUT_ORDER.join(','), '17 个 id 与物理顺序一致');
   const labelFors = [...SRC.matchAll(/<label for="(ppm-d-[a-z-]+)"><i class="pp-disp-box"><\/i>/g)].map((m) => m[1]);
-  eq(labelFors.length, IDS.length, '面板里恰好 15 个可点 label');
-  eq(labelFors.join(','), IDS.join(','), '15 个 label 的 for 与复选框一一对应');
+  eq(labelFors.length, IDS.length, '面板里恰好 17 个可点 label');
+  eq(labelFors.join(','), IDS.join(','), '17 个 label 的 for 与复选框一一对应');
   // CSS 里每个 id 都要出现（勾选态 + 显隐/增强规则），不能有只画了 UI 的假开关
   for (const id of IDS) {
     ok(SRC.includes(`#${id}:`), `${id} 在 CSS 里真的接线`, '缺规则');
@@ -41,14 +41,14 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
   const html = PP.ziweiHTML(compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州' }));
   const checked = [...SRC.matchAll(/<input type="checkbox" id="(ppm-d-[a-z-]+)" class="pp-r"( checked)?>/g)].filter((m) => m[2]).map((m) => m[1]);
   eq(checked.length, 10, '组1+组2 共 10 项默认勾选');
-  eq(checked.join(','), IDS.filter((x) => !['ppm-d-rigan', 'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs'].includes(x)).join(','), '日干四化 + 限流盘增强 5 项默认不勾');
+  eq(checked.join(','), IDS.filter((x) => !['ppm-d-rigan', 'ppm-d-njq', 'ppm-d-tjz', 'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs'].includes(x)).join(','), '日干四化/非节气四柱/太极点 + 限流盘增强 7 项默认不勾');
   // 默认不触发任何隐藏：组1/2 用 :not(:checked)，组3 用 :checked（默认不勾→不生效）
   eq((SRC.match(/:not\(:checked\)~[^{]*\{display:none\}/g) || []).length >= 10, true,
     '10 条隐藏规则都只在取消勾选时生效');
   ok(/#ppm-d-zha-bold:checked~[^}]*stroke-width:2\.8/.test(SRC), '箭头加粗走 :checked（默认不动）');
   ok(/#ppm-d-bad-ink:checked~[^}]*color:var\(--ink\)/.test(SRC), '六煞黑字走 :checked（默认不动）');
   ok(/#ppm-d-bold:checked~[^}]*font-weight:700/.test(SRC), '主辅加粗走 :checked（默认不动）');
-  eq((html.match(/id="ppm-d-[a-z-]+"/g) || []).length, 15, '每张盘都渲染 15 个开关');
+  eq((html.match(/id="ppm-d-[a-z-]+"/g) || []).length, 17, '每张盘都渲染 17 个开关');
 }
 
 // ── 三、兄弟选择器纪律：复选框必须在 .pp-body 与 .pp-disp 之前 ──
@@ -88,7 +88,7 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
     'ppm-d-ss': '.pp-ss-txt', 'ppm-d-sbg': '.pp-st.st-sbg', 'ppm-d-zha': '.pp-zha',
     'ppm-d-ages': '.pp-ages', 'ppm-d-sizhu': '.ct-t3', 'ppm-d-small': '.pp-st.aux',
     'ppm-d-shen': '.pp-shen::after', 'ppm-d-hua': '.pp-m', 'ppm-d-sf': 'svg.pp-sf',
-    'ppm-d-zha-bold': '.z-shaft', 'ppm-d-bad-ink': '.pp-st.bad', 'ppm-d-bold': '.pp-st.main', 'ppm-d-hs': '.pp-hs', 'ppm-d-laiyin': '.pp-laiyin::after', 'ppm-d-rigan': '.pp-rigan',
+    'ppm-d-zha-bold': '.z-shaft', 'ppm-d-bad-ink': '.pp-st.bad', 'ppm-d-bold': '.pp-st.main', 'ppm-d-hs': '.pp-hs', 'ppm-d-laiyin': '.pp-laiyin::after', 'ppm-d-rigan': '.pp-rigan', 'ppm-d-njq': '.ct-t3nj', 'ppm-d-tjz': '.dt-taiji',
   };
   for (const [id, sel] of Object.entries(targets)) {
     const re = new RegExp('#' + id + ':(?:not\\(:checked\\)|checked)~[^}]*' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^}]*\\{', 'm');
@@ -114,6 +114,17 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
   // 无关盘也安全：dayStemOf 拿不到日柱时不渲染该行、不抛错
   const html2 = PP.ziweiHTML(compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male' }));
   ok(html2.includes('pp-rigan') || !/日干[^<]*四化/.test(html2), '另一盘同样不抛错（有则渲染、无则静默）');
+  // 非节气四柱：1990-02-01 立春前应与八字四柱分歧（年柱 庚午 vs 己巳）；普通日期一致
+  const r3 = compute({ system: 'ziwei', datetime: '1990-02-01T10:00', gender: 'male' });
+  const html3 = PP.ziweiHTML(r3);
+  ok(r3.nonJieqi && r3.nonJieqi.year === '庚午', '1990-02-01 非节气年柱=庚午（农历口径，八字为 己巳）');
+  ok(/ct-t3nj/.test(html3) && html3.includes('庚午 戊寅'), '非节气四柱渲染进中宫');
+  const r4 = compute({ system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' });
+  eq(`${r4.nonJieqi.year}${r4.nonJieqi.month}${r4.nonJieqi.day}${r4.nonJieqi.hour}`, '庚午辛巳丁丑丁未', '普通日期非节气四柱与八字一致');
+  // 太极点转换：palaceDetailHTML 里以某宫立太极，重布十二宫名——新命宫必须是本宫自己
+  const html5 = PP._palaceDetailHTML(0, r.palaces.findIndex((p) => p.branch === r.soul.branch));
+  ok(html5.includes('太极转换') && html5.includes('立太极'), '详情面板含太极转换行');
+  ok(/立太极.*命宫\[/.test(html5.replace(/\s+/g, '')), '新命宫落在本宫自己（太极重布自洽）');
 }
 
 // ── 六、不碰引擎与工具 schema：这 12 项是纯 UI ───────────────────

@@ -1,5 +1,5 @@
 // 紫微斗数安星：命身宫 → 五行局 → 紫微/天府 → 十四主星 → 诸辅煞杂曜 → 十二宫 → 四化 → 大限小限流年 → 格局
-import { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd } from './calendar.js';
+import { STEMS, BRANCHES, ganzhiName, sexagenaryIndex, jdToParts, partsToJd, formatJd, dayGanzhiIndex } from './calendar.js';
 import { solarToLunar } from './lunar.js';
 import { applyTrueSolar } from './bazi.js';
 import { applyDst } from './dst.js';
@@ -857,6 +857,30 @@ export function buildZiwei(input) {
     },
     hourBranch,
     yearGanzhi: yearGanzhi.name,
+    ...((() => {
+      // 非节气四柱（紫微斗数口径，文墨「显示非节气四柱」开关的数据源）：
+      // 紫微按农历排盘，年柱以正月初一换岁（lunarYear 已是此口径）、月柱按农历月配五虎遁；
+      // 日柱、时柱与节气版完全一致（日时不受节气影响）。与八字（节气）四柱只在立春前后的
+      // 出生者上年/月两柱有差异，正好给用户对照。
+      const yIdx = (((lunarRaw.lunarYear - 4) % 60) + 60) % 60;
+      const nYinStem = ((STEMS.indexOf(yearGanzhi.stem) % 5) * 2 + 2) % 10;
+      const mBranchIdx = 2 + (lunarMonth - 1) >= 12 ? 2 + (lunarMonth - 1) - 12 : 2 + (lunarMonth - 1); // 正月建寅
+      const mStemIdx = (nYinStem + lunarMonth - 1) % 10;
+      const nJd = partsToJd({ year, month, day, hour: 12 });
+      const dIdx = dayGanzhiIndex(Math.floor(nJd + 0.5));
+      const dStemIdx = dIdx % 10;
+      const ziStem = ((dStemIdx % 5) * 2) % 10;
+      const hIdx = sexagenaryIndex((ziStem + hb) % 10, hb);
+      return {
+        nonJieqi: {
+          year: ganzhiName(yIdx).name,
+          month: ganzhiName(sexagenaryIndex(mStemIdx, mBranchIdx)).name,
+          day: ganzhiName(dIdx).name,
+          hour: ganzhiName(hIdx).name,
+          note: '非节气（农历）口径：年以正月初一、月以朔为界；与八字节气四柱仅立春前后出生者有差',
+        },
+      };
+    })()),
     soul: {
       palace: '命宫',
       branch: BRANCHES[soulIndex],

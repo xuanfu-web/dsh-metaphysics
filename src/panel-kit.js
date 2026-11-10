@@ -1480,6 +1480,12 @@
 #ppm-d-zha:not(:checked)~.pp-zhlegend{display:none}
 #ppm-d-ages:not(:checked)~.pp-body .pp-ages{display:none}
 #ppm-d-sizhu:not(:checked)~.pp-body .ct-t3{display:none}
+/* 非节气四柱行：默认隐藏，勾 ppm-d-njq 才显示（纯增强，不改默认观感） */
+.ct-t3nj{font-size:11.5px;letter-spacing:.2em;font-weight:500;color:var(--muted)}
+.ct-t3nj .nj-tag{font-style:normal;letter-spacing:.08em;font-size:10px;color:var(--lu);border:1px solid currentColor;border-radius:3px;padding:0 3px;margin-left:6px;vertical-align:1px}
+#ppm-d-njq:not(:checked)~.pp-body .ct-t3nj{display:none}
+/* 太极点转换信息：详情面板「太极转换」行，默认隐藏，勾 ppm-d-tjz 才显示 */
+#ppm-d-tjz:not(:checked)~.pp-body .pp-detail .dt-taiji{display:none}
 /* 组2 四化派显示（默认全勾，取消才隐藏） */
 #ppm-d-small:not(:checked)~.pp-body .pp-st.aux{display:none}
 #ppm-d-shen:not(:checked)~.pp-body .pp-shen::after{display:none}
@@ -1799,6 +1805,7 @@
         <div class="ct-t2">公历 ${r.input.year}-${String(r.input.month).padStart(2, '0')}-${String(r.input.day).padStart(2, '0')} ${String(r.input.hour).padStart(2, '0')}:${String(r.input.minute).padStart(2, '0')}</div>
         <div class="ct-t2">农历 ${r.lunar.year}年${r.lunar.isLeap ? `闰${r.lunar.monthRaw || r.lunar.month}` : r.lunar.month}月${r.lunar.day}日${r.hourBranch}时${r.lunar.isLeap && r.lunar.monthRaw && r.lunar.month !== r.lunar.monthRaw ? `（按${r.lunar.month}月起盘）` : ''}</div>
         ${sizhuOf(r) ? `<div class="ct-t3">${sizhuOf(r)}</div>` : ''}
+        ${r.nonJieqi ? `<div class="ct-t3 ct-t3nj" title="${esc(r.nonJieqi.note)}">${r.nonJieqi.year} ${r.nonJieqi.month} ${r.nonJieqi.day} ${r.nonJieqi.hour}<em class="nj-tag">非节气</em></div>` : ''}
         <div class="ct-t4">命主 ${r.lifeMaster}${r.lifeMasterNote ? `<span class="pp-dim" title="${esc(r.lifeMasterNote)}">＊</span>` : ''}　身主 ${r.bodyMaster}${r.bodyMasterNote ? `<span class="pp-dim" title="${esc(r.bodyMasterNote)}">＊</span>` : ''}</div>
         <div class="ct-t4">命宫 ${r.soul.branch}　身宫 ${r.body.branch}　五行局 ${r.bureau.name}</div>
         <div class="ct-t4">子年斗君 ${r.doujun ? r.doujun.zinian : '—'}　流年斗君 ${ln && ln.doujun ? ln.doujun : '—'}</div>
@@ -1905,8 +1912,10 @@
       <input type="checkbox" id="ppm-d-bold" class="pp-r">
       <input type="checkbox" id="ppm-d-hs" class="pp-r">
       <input type="checkbox" id="ppm-d-rigan" class="pp-r">
+      <input type="checkbox" id="ppm-d-njq" class="pp-r">
+      <input type="checkbox" id="ppm-d-tjz" class="pp-r">
       <details class="pp-disp">
-        <summary>显示设置 · 15 项（学文墨天机）</summary>
+        <summary>显示设置 · 17 项（学文墨天机）</summary>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
@@ -1914,6 +1923,8 @@
           <label for="ppm-d-ages"><i class="pp-disp-box"></i>流年虚岁年龄</label>
           <label for="ppm-d-sizhu"><i class="pp-disp-box"></i>中宫八字</label>
           <label for="ppm-d-rigan"><i class="pp-disp-box"></i>显示日干四化</label>
+          <label for="ppm-d-njq"><i class="pp-disp-box"></i>显示非节气四柱</label>
+          <label for="ppm-d-tjz"><i class="pp-disp-box"></i>显示太极点转换信息</label>
         </div>
         <div class="pp-disp-g"><span>四化派显示</span>
           <label for="ppm-d-small"><i class="pp-disp-box"></i>显示小星</label>
@@ -2005,6 +2016,14 @@
       ? starLine(mains)
       : `<span class="dt-empty">无主星</span><span class="dt-tri">　借对宫 <b>${borrowStars.length ? borrowStars.map((s) => s.name).join('、') : '亦无主星'}</b></span>`;
     const row = (k, v) => `<div class="dt-dr"><span class="dt-k">${k}</span><div class="dt-v">${v}</div></div>`;
+    // 太极点转换（文墨「显示太极点转换信息」）：以本宫为新命宫重布十二宫名。
+    // 宫序顺时针与本命同名序一致——新命宫=本宫，其后按本命十二宫顺序依次重排。
+    const N = NAMES.length;
+    const pivotOffset = fx(soulIdx - b); // 本宫在本命盘的宫名序
+    const taiji = NAMES.map((_, i) => {
+      const idx = fx(b + (i - pivotOffset + N) % N); // 从本宫起，按宫名序号推地支
+      return `<span class="dt-st">${NAMES[i]}[${BR[idx]}]</span>`;
+    }).join('');
 
     return `<div class="dt-dh">
         <b>${nm}</b><span>${p.branch}宫 · ${p.ganzhi}</span>
@@ -2020,6 +2039,7 @@
       ${row('宫干四化', selfHua)}
       ${row('十二神', `<span class="dt-tri">长生 ${ss.changsheng || '—'}　博士 ${ss.boshi || '—'}　将前 ${ss.jiangqian || '—'}　岁前 ${ss.suiqi || '—'}</span>`)}
       ${row('三方四正', `<span class="dt-tri">${tri}</span>`)}
+      ${row('太极转换', `<span class="dt-tri dt-taiji">以${nm}[${p.branch}]立太极${taiji}</span>`)}
       <div class="hint">三方四正在盘上已同步标出（浅红描边）。再点一次本宫可收起。</div>`;
   }
 
