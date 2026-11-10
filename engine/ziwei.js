@@ -716,6 +716,10 @@ export function buildZiwei(input) {
     });
   }
 
+  // 来因宫（iztro 口径）：生年天干与宫干相同的宫，子丑两宫除外（这两支五虎遁永不排甲己…的生年干）。
+  // 之所以叫「来因」：此宫是今生命局展开的起点，主「因何而来」，看一个人的先天因缘与执念方向。
+  const laiyin = palaces.find((p) => p.stem === yearStem && p.branch !== '子' && p.branch !== '丑') || null;
+
   // 昌曲专论：与丑未的关系、是否入命三方、吸收面的清杂
   const changqu = (() => {
     const set = new Set([wenchang, wenqu]);
@@ -887,6 +891,8 @@ export function buildZiwei(input) {
     ziwei: BRANCHES[ziwei],
     tianfu: BRANCHES[tianfu],
     changqu,
+    // 来因宫：{branch, palace, ganzhi} 或 null（理论上不 null，防御性保留）
+    laiyin: laiyin ? { branch: laiyin.branch, palace: laiyin.palace, ganzhi: laiyin.ganzhi } : null,
     // 杂曜全表的这一层只写「这一盘怎么定宫」：面板、独立页与「复制提问」共用。
     // 默认（minimal）时 placed 为空，但 skipped 照旧给出，说明为什么少了两颗。
     zuoyao: {

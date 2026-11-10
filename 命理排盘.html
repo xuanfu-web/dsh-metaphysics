@@ -653,7 +653,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：165 个测试文件 / 8962 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：165 个测试文件 / 9001 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -10199,6 +10199,10 @@ function buildZiwei(input) {
     });
   }
 
+  // 来因宫（iztro 口径）：生年天干与宫干相同的宫，子丑两宫除外（这两支五虎遁永不排甲己…的生年干）。
+  // 之所以叫「来因」：此宫是今生命局展开的起点，主「因何而来」，看一个人的先天因缘与执念方向。
+  const laiyin = palaces.find((p) => p.stem === yearStem && p.branch !== '子' && p.branch !== '丑') || null;
+
   // 昌曲专论：与丑未的关系、是否入命三方、吸收面的清杂
   const changqu = (() => {
     const set = new Set([wenchang, wenqu]);
@@ -10370,6 +10374,8 @@ function buildZiwei(input) {
     ziwei: BRANCHES[ziwei],
     tianfu: BRANCHES[tianfu],
     changqu,
+    // 来因宫：{branch, palace, ganzhi} 或 null（理论上不 null，防御性保留）
+    laiyin: laiyin ? { branch: laiyin.branch, palace: laiyin.palace, ganzhi: laiyin.ganzhi } : null,
     // 杂曜全表的这一层只写「这一盘怎么定宫」：面板、独立页与「复制提问」共用。
     // 默认（minimal）时 placed 为空，但 skipped 照旧给出，说明为什么少了两颗。
     zuoyao: {
@@ -29612,6 +29618,9 @@ window.__MP_VER = "0.64.0";
    .pp-body 是 static 定位的整块视图容器，::after 却是 absolute，
    结果每次排盘都会在文档左上角飘出一个孤立的灰色「身」方块。已删除。 */
 .pp-shen::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:var(--on-accent);background:var(--muted);padding:0 3px;border-radius:2px;z-index:1}
+/* 来因宫角标：右上角「因」，与身宫左上角对称；开关 ppm-d-laiyin 控显隐（默认勾） */
+.pp-laiyin::after{content:"因";position:absolute;top:4px;right:4px;font-size:12px;color:var(--on-accent);background:var(--ji);padding:0 3px;border-radius:2px;z-index:1}
+#ppm-d-laiyin:not(:checked)~.pp-body .pp-laiyin::after{display:none}
 .pp-legend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px}
 .pp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-family:system-ui,sans-serif}
 .pp-chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--line);color:var(--muted);background:var(--bg)}
@@ -30948,7 +30957,7 @@ window.__MP_VER = "0.64.0";
 /* 结果卡阴影分层：默认最轻，hover 时浮起一档（只对可交互的卡，避免整页抖动） */
 .pp{transition:box-shadow var(--dur) var(--ease)}
 
-/* —— 文墨式「显示设置」13 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
+/* —— 文墨式「显示设置」14 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
    纯 CSS 显隐：勾了盘面立刻变，不重排盘、不进引擎、不进工具 schema。
    复选框必须是 .pp 的直接子元素，才能用 ~ 命中后面的 .pp-body / .pp-zhlegend。
    组1/组2 默认勾（:not(:checked) 才隐藏），组3 默认不勾（:checked 才增强，默认盘观感不变）。 */
@@ -30972,6 +30981,7 @@ window.__MP_VER = "0.64.0";
 #ppm-d-shen:checked~.pp-disp label[for="ppm-d-shen"] .pp-disp-box,
 #ppm-d-hua:checked~.pp-disp label[for="ppm-d-hua"] .pp-disp-box,
 #ppm-d-sf:checked~.pp-disp label[for="ppm-d-sf"] .pp-disp-box,
+#ppm-d-laiyin:checked~.pp-disp label[for="ppm-d-laiyin"] .pp-disp-box,
 #ppm-d-zha-bold:checked~.pp-disp label[for="ppm-d-zha-bold"] .pp-disp-box,
 #ppm-d-bad-ink:checked~.pp-disp label[for="ppm-d-bad-ink"] .pp-disp-box,
 #ppm-d-bold:checked~.pp-disp label[for="ppm-d-bold"] .pp-disp-box,
@@ -31106,13 +31116,14 @@ window.__MP_VER = "0.64.0";
   const fx = (n) => ((n % 12) + 12) % 12;
   const isTrine = (b, m) => b !== m && [fx(m + 4), fx(m + 8), fx(m + 6)].includes(b);
 
-  function cellHTML(p, soulIdx, view, allPalaces, viewHua, flyByBranch, hsByBranch) {
+  function cellHTML(p, soulIdx, view, allPalaces, viewHua, flyByBranch, hsByBranch, laiyinBranch) {
     const pos = POS[p.branch] || [1, 1];
     const b = BR.indexOf(p.branch);
     const cls = ['pp-cell'];
     if (b === soulIdx) cls.push('pp-soul');
     else if (isTrine(b, soulIdx)) cls.push('pp-tri');
     if (p.isBody) cls.push('pp-shen');
+    if (laiyinBranch && p.branch === laiyinBranch) cls.push('pp-laiyin');
     if (pos[0] === 4) cls.push('pp-lastrow');
     if (pos[1] === 4) cls.push('pp-lastcol');
     const ss = p.shensha || {};
@@ -31238,7 +31249,7 @@ window.__MP_VER = "0.64.0";
         : null,
       ln: lnHsByBranch,
     };
-    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch, hsByView[kind] || null)).join('');
+    const grid = (m, kind) => r.palaces.map((p) => cellHTML(p, m, kind, r.palaces, huaByView[kind] || null, flyByBranch, hsByView[kind] || null, r.laiyin && r.laiyin.branch)).join('');
     const center = (m, kind) => {
       const mode = kind === 'da'
         ? `<div class="ct-t1">大限 ${dxPalace.ganzhi}　${dxPalace.daxian.start}-${dxPalace.daxian.end}岁</div>`
@@ -31339,7 +31350,7 @@ window.__MP_VER = "0.64.0";
       <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
       <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
       <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
-      <!-- 文墨式显示设置：13 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
+      <!-- 文墨式显示设置：14 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
            组1/组2 默认勾（观感与旧版一致），组3 默认不勾（纯增强）。不重排盘、不进引擎。 -->
       <input type="checkbox" id="ppm-d-ss" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-sbg" class="pp-r" checked>
@@ -31350,12 +31361,13 @@ window.__MP_VER = "0.64.0";
       <input type="checkbox" id="ppm-d-shen" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-hua" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-sf" class="pp-r" checked>
+      <input type="checkbox" id="ppm-d-laiyin" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-zha-bold" class="pp-r">
       <input type="checkbox" id="ppm-d-bad-ink" class="pp-r">
       <input type="checkbox" id="ppm-d-bold" class="pp-r">
       <input type="checkbox" id="ppm-d-hs" class="pp-r">
       <details class="pp-disp">
-        <summary>显示设置 · 13 项（学文墨天机）</summary>
+        <summary>显示设置 · 14 项（学文墨天机）</summary>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
@@ -31368,6 +31380,7 @@ window.__MP_VER = "0.64.0";
           <label for="ppm-d-shen"><i class="pp-disp-box"></i>显示身宫</label>
           <label for="ppm-d-hua"><i class="pp-disp-box"></i>显示命宫四化</label>
           <label for="ppm-d-sf"><i class="pp-disp-box"></i>显示三方四正</label>
+          <label for="ppm-d-laiyin"><i class="pp-disp-box"></i>显示来因宫</label>
         </div>
         <div class="pp-disp-g"><span>限流盘显示</span>
           <label for="ppm-d-zha-bold"><i class="pp-disp-box"></i>自化箭头加粗</label>

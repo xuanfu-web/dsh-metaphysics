@@ -216,6 +216,39 @@ ok('昌曲化忌时吸收面标杂', (() => {
   return anyJi ? chart.changqu.absorb.label === '杂' : true;
 })(), chart.changqu.absorb.reason);
 
+// ── 来因宫：宫干 = 生年干的宫，子丑除外（iztro 口径）─────────────
+{
+  const STEMS = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+  const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  // 五虎遁：年干甲己→寅起丙，乙庚→戊，丙辛→庚，丁壬→壬，戊癸→甲
+  const WUHU = { 甲:'丙', 己:'丙', 乙:'戊', 庚:'戊', 丙:'庚', 辛:'庚', 丁:'壬', 壬:'壬', 戊:'甲', 癸:'甲' };
+  let okCount = 0;
+  for (let y = 1984; y <= 1995; y++) {
+    const yStem = STEMS[(y - 4) % 10];
+    const c = buildZiwei({ year: y, month: 6, day: 15, hour: 10, minute: 0, gender: 'male' });
+    // 引擎报的来因宫
+    const ly = c.laiyin;
+    ok(!!ly && ly.branch !== '子' && ly.branch !== '丑', `来因宫不在子丑（${y} ${yStem}年）`, JSON.stringify(ly));
+    // 宫干 = 生年干的宫恰好一个（五虎遁下十年干在寅后十支各出现一次，唯子丑两支对应的干被跳过）
+    const matches = c.palaces.filter((p) => p.stem === yStem && p.branch !== '子' && p.branch !== '丑');
+    ok(matches.length === 1 && matches[0].branch === ly.branch && matches[0].palace === ly.palace,
+      `来因宫唯一且字段一致（${y} ${yStem}年 → ${ly.branch}${ly.palace}）`, JSON.stringify(matches));
+    // 与独立重算一致
+    const start = STEMS.indexOf(WUHU[yStem]);
+    const expect = (() => {
+      for (let i = 0; i < 12; i++) {
+        const st = STEMS[(start + i) % 10];
+        const br = BRANCHES[(2 + i) % 12];
+        if (st === yStem && br !== '子' && br !== '丑') return br;
+      }
+      return null;
+    })();
+    ok(expect === ly.branch, `来因宫与五虎遁重算一致（${y} 期望${expect}）`, ly.branch);
+    if (expect === ly.branch) okCount++;
+  }
+  ok(okCount === 12, '10 年干来因宫全部重算通过', String(okCount));
+}
+
 // ── 铃昌陀武检测器：与独立重算一致 ────────────────────────────
 const fix12 = (n) => ((n % 12) + 12) % 12;
 let detectorOk = true;

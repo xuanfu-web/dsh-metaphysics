@@ -1,5 +1,5 @@
-// 0.65.0 新增：文墨式「显示设置」13 项 —— 纯 CSS 显隐，不重排盘、不进引擎 schema。
-// 断言这 13 个开关结构完整、默认盘观感不变、目标元素真的可被 CSS 寻址。
+// 0.65.0 新增：文墨式「显示设置」14 项 —— 纯 CSS 显隐，不重排盘、不进引擎 schema。
+// 断言这 14 个开关结构完整、默认盘观感不变、目标元素真的可被 CSS 寻址。
 import fs from 'node:fs';
 import { compute } from '../engine/index.js';
 
@@ -15,17 +15,17 @@ const SRC = fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'ut
 new Function('window', SRC)(globalThis.window);
 const PP = globalThis.window.__PP;
 
-// ── 一、13 个复选框与 12 个 label 一一对应 ──────────────────────
+// ── 一、14 个复选框与 12 个 label 一一对应 ──────────────────────
 const IDS = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu',
-  'ppm-d-small', 'ppm-d-shen', 'ppm-d-hua', 'ppm-d-sf',
+  'ppm-d-small', 'ppm-d-shen', 'ppm-d-hua', 'ppm-d-sf', 'ppm-d-laiyin',
   'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs'];
 {
   const inputIds = [...SRC.matchAll(/<input type="checkbox" id="(ppm-d-[a-z-]+)" class="pp-r"( checked)?>/g)].map((m) => m[1]);
-  eq(inputIds.length, IDS.length, '复选框恰好 13 个');
-  eq(inputIds.join(','), IDS.join(','), '13 个 id 与定案清单一致');
+  eq(inputIds.length, IDS.length, '复选框恰好 14 个');
+  eq(inputIds.join(','), IDS.join(','), '14 个 id 与定案清单一致');
   const labelFors = [...SRC.matchAll(/<label for="(ppm-d-[a-z-]+)"><i class="pp-disp-box"><\/i>/g)].map((m) => m[1]);
-  eq(labelFors.length, IDS.length, '面板里恰好 13 个可点 label');
-  eq(labelFors.join(','), IDS.join(','), '13 个 label 的 for 与复选框一一对应');
+  eq(labelFors.length, IDS.length, '面板里恰好 14 个可点 label');
+  eq(labelFors.join(','), IDS.join(','), '14 个 label 的 for 与复选框一一对应');
   // CSS 里每个 id 都要出现（勾选态 + 显隐/增强规则），不能有只画了 UI 的假开关
   for (const id of IDS) {
     ok(SRC.includes(`#${id}:`), `${id} 在 CSS 里真的接线`, '缺规则');
@@ -36,15 +36,15 @@ const IDS = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu',
 {
   const html = PP.ziweiHTML(compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州' }));
   const checked = [...SRC.matchAll(/<input type="checkbox" id="(ppm-d-[a-z-]+)" class="pp-r"( checked)?>/g)].filter((m) => m[2]).map((m) => m[1]);
-  eq(checked.length, 9, '组1+组2 共 9 项默认勾选');
-  eq(checked.join(','), IDS.slice(0, 9).join(','), '后 3 项（限流盘增强）默认不勾');
+  eq(checked.length, 10, '组1+组2 共 10 项默认勾选');
+  eq(checked.join(','), IDS.slice(0, 10).join(','), '后 4 项（限流盘增强）默认不勾');
   // 默认不触发任何隐藏：组1/2 用 :not(:checked)，组3 用 :checked（默认不勾→不生效）
-  eq((SRC.match(/:not\(:checked\)~[^{]*\{display:none\}/g) || []).length >= 9, true,
-    '9 条隐藏规则都只在取消勾选时生效');
+  eq((SRC.match(/:not\(:checked\)~[^{]*\{display:none\}/g) || []).length >= 10, true,
+    '10 条隐藏规则都只在取消勾选时生效');
   ok(/#ppm-d-zha-bold:checked~[^}]*stroke-width:2\.8/.test(SRC), '箭头加粗走 :checked（默认不动）');
   ok(/#ppm-d-bad-ink:checked~[^}]*color:var\(--ink\)/.test(SRC), '六煞黑字走 :checked（默认不动）');
   ok(/#ppm-d-bold:checked~[^}]*font-weight:700/.test(SRC), '主辅加粗走 :checked（默认不动）');
-  eq((html.match(/id="ppm-d-[a-z-]+"/g) || []).length, 13, '每张盘都渲染 13 个开关');
+  eq((html.match(/id="ppm-d-[a-z-]+"/g) || []).length, 14, '每张盘都渲染 14 个开关');
 }
 
 // ── 三、兄弟选择器纪律：复选框必须在 .pp-body 与 .pp-disp 之前 ──
@@ -84,7 +84,7 @@ const IDS = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu',
     'ppm-d-ss': '.pp-ss-txt', 'ppm-d-sbg': '.pp-st.st-sbg', 'ppm-d-zha': '.pp-zha',
     'ppm-d-ages': '.pp-ages', 'ppm-d-sizhu': '.ct-t3', 'ppm-d-small': '.pp-st.aux',
     'ppm-d-shen': '.pp-shen::after', 'ppm-d-hua': '.pp-m', 'ppm-d-sf': 'svg.pp-sf',
-    'ppm-d-zha-bold': '.z-shaft', 'ppm-d-bad-ink': '.pp-st.bad', 'ppm-d-bold': '.pp-st.main', 'ppm-d-hs': '.pp-hs',
+    'ppm-d-zha-bold': '.z-shaft', 'ppm-d-bad-ink': '.pp-st.bad', 'ppm-d-bold': '.pp-st.main', 'ppm-d-hs': '.pp-hs', 'ppm-d-laiyin': '.pp-laiyin::after',
   };
   for (const [id, sel] of Object.entries(targets)) {
     const re = new RegExp('#' + id + ':(?:not\\(:checked\\)|checked)~[^}]*' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[^}]*\\{', 'm');
