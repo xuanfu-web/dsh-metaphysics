@@ -34,6 +34,10 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
   for (const id of IDS) {
     ok(SRC.includes(`#${id}:`), `${id} 在 CSS 里真的接线`, '缺规则');
   }
+  // 勾选视觉反馈：每个 checkbox 勾选后必须点亮自己 label 的方框（勾了没反应就是假开关）
+  for (const id of IDS) {
+    ok(SRC.includes(`#${id}:checked~.pp-disp label[for="${id}"] .pp-disp-box`), `${id} 勾选后方框高亮`);
+  }
 }
 
 // ── 二、默认盘观感逐字节不变 ─────────────────────────────────────

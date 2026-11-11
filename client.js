@@ -1456,7 +1456,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.67.0",factory(Qa){
 .pp-disp label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink2);user-select:none;padding:2px 0;min-height:26px}
 .pp-disp-box{width:13px;height:13px;border:1px solid var(--line);border-radius:3px;background:var(--card);display:inline-block;flex:none}
 .pp-disp label:hover .pp-disp-box{border-color:var(--lu)}
-/* 勾选态：12 条 :checked 各自点亮自己 label 的方框（复选框与 .pp-disp 同为 .pp 直接子元素） */
+/* 勾选态：17 条 :checked 各自点亮自己 label 的方框（复选框与 .pp-disp 同为 .pp 直接子元素） */
 #ppm-d-ss:checked~.pp-disp label[for="ppm-d-ss"] .pp-disp-box,
 #ppm-d-sbg:checked~.pp-disp label[for="ppm-d-sbg"] .pp-disp-box,
 #ppm-d-zha:checked~.pp-disp label[for="ppm-d-zha"] .pp-disp-box,
@@ -1470,7 +1470,10 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.67.0",factory(Qa){
 #ppm-d-zha-bold:checked~.pp-disp label[for="ppm-d-zha-bold"] .pp-disp-box,
 #ppm-d-bad-ink:checked~.pp-disp label[for="ppm-d-bad-ink"] .pp-disp-box,
 #ppm-d-bold:checked~.pp-disp label[for="ppm-d-bold"] .pp-disp-box,
-#ppm-d-hs:checked~.pp-disp label[for="ppm-d-hs"] .pp-disp-box{background:var(--lu);border-color:var(--lu);box-shadow:inset 0 0 0 2px var(--card)}
+#ppm-d-hs:checked~.pp-disp label[for="ppm-d-hs"] .pp-disp-box,
+#ppm-d-rigan:checked~.pp-disp label[for="ppm-d-rigan"] .pp-disp-box,
+#ppm-d-njq:checked~.pp-disp label[for="ppm-d-njq"] .pp-disp-box,
+#ppm-d-tjz:checked~.pp-disp label[for="ppm-d-tjz"] .pp-disp-box{background:var(--lu);border-color:var(--lu);box-shadow:inset 0 0 0 2px var(--card)}
 /* 组1 飞星派显示（默认全勾，取消才隐藏） */
 #ppm-d-ss:not(:checked)~.pp-body .pp-ss-txt{display:none}
 #ppm-d-sbg:not(:checked)~.pp-body .pp-st.st-sbg{display:none}
