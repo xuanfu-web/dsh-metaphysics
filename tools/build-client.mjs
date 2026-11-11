@@ -13,7 +13,7 @@ const unreleasedLine = () =>
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'structure', 'geju', 'bazi', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
+  'classics', 'structure', 'hehua', 'geju', 'bazi', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'chenggu', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -31,7 +31,7 @@ const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
 const BRIEF = ['plain-summary'];
 // 八字栈：命盘类四 tab 的公共底子（紫微与合盘也是在它之上补模块，见 CHART_STACK）
 // 顶部人话总结：只有八字与紫微有，所以挂在这条栈上，不塞进 INTERPRET
-const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'geju', 'bazi', 'bazi-words', 'classics', ...BRIEF, ...INTERPRET];
+const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'hehua', 'geju', 'bazi', 'bazi-words', 'classics', ...BRIEF, ...INTERPRET];
 
 // 命盘类四 tab（八字 / 紫微 / 合盘 / 趋势）合并成一个 chart 块。
 //
@@ -62,7 +62,7 @@ export const CHUNKS = {
   },
   name: {
     tabs: ['name'],
-    modules: [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'geju', 'bazi', 'bazi-words',
+    modules: [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'hehua', 'geju', 'bazi', 'bazi-words',
       'classics', 'name-extra', 'surname-data', 'name-data', 'name', ...BRIEF, ...ASK],
   },
   fengshui: { tabs: ['fengshui'], modules: [...COMMON, 'fengshui', ...BRIEF, ...ASK] },

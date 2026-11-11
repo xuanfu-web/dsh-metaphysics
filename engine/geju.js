@@ -849,6 +849,198 @@ export function scoreLuck(ganzhi, frame) {
   return { ganzhi, score: total, tier, stemTenGod: godStem, reasons, note: `${godStem}运，${tier}（${total}）` };
 }
 
+// ── 财库 ────────────────────────────────────────────────────
+
+// 五行之墓：木墓未、火墓戌、金墓丑、水墓辰；土取戊土十二长生的墓位（戌）。
+// 这样取，问真《专业知识·八字断财富技法》那张表五格全部对得上：
+//   木日主财土 → 土墓戌；水日主财火 → 火墓戌；火日主财金 → 金墓丑；
+//   土日主财水 → 水墓辰；金日主财木 → 木墓未。
+// 若改用「水土同宫」把土墓放辰，只有木日主一格会落到辰，与问真表冲突，故取戌。
+const TOMB_OF = { 木: '未', 火: '戌', 土: '戌', 金: '丑', 水: '辰' };
+const BRANCH_CHONG = {
+  子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅',
+  卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳',
+};
+const CAIKU_WEAK_PCT = 8;
+
+/**
+ * 财库：日主所克五行（财）的墓库，落在四支上；库被冲开才是「开库」。
+ * @param {object} p
+ * @param {string} p.dayStem 日干
+ * @param {object} p.pillars 四柱
+ * @param {object} p.wuxing 五行分值
+ * @param {object} p.yongshen 喜忌结果
+ */
+export function caiKuOf({ dayStem, pillars = {}, wuxing = {}, yongshen = {} }) {
+  const roles = elementRoles(dayStem);
+  const caiEl = roles.cai;
+  const store = TOMB_OF[caiEl] || '';
+  const keys = ['year', 'month', 'day', 'hour'].filter((k) => pillars[k] && pillars[k].branch);
+  const at = keys.filter((k) => pillars[k].branch === store);
+  const openerBranch = BRANCH_CHONG[store] || '';
+  const openers = keys.filter((k) => pillars[k].branch === openerBranch);
+
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+  const caiPct = pctOf(caiEl);
+  const caiWeak = caiPct < CAIKU_WEAK_PCT;
+
+  const favor = Array.isArray(yongshen.favor) ? yongshen.favor : [];
+  const avoid = Array.isArray(yongshen.avoid) ? yongshen.avoid : [];
+  const favorable = favor.includes(caiEl);
+  const avoidable = avoid.includes(caiEl);
+  const opened = at.length > 0 && openers.length > 0;
+  // 财星入库：库支的藏干里出现财这一行（不论本气／中气／余气），与「财库」是两件事。
+  // 没有库支时这两项一律为假——不能拿「本该是库的那一支」的藏干去充数。
+  const hiddenEls = at.length ? (HIDDEN[store] || []).map((h) => STEM_ELEMENT[h]) : [];
+  const caiInStore = hiddenEls.includes(caiEl);
+  const mainInStore = at.length > 0 && (HIDDEN[store] || []).slice(0, 1).map((h) => STEM_ELEMENT[h]).includes(caiEl);
+
+  const label = (ks) => ks.map((k) => ({ year: '年', month: '月', day: '日', hour: '时' }[k])).join('、');
+
+  let verdict = '无财库';
+  let detail = `日主${dayStem}${roles.me}，财为${caiEl}，${caiEl}之墓在${store}；四支里没有${store}，本盘不立财库`
+    + `${openers.length ? `（${label(openers)}支见${openerBranch}，但没有${store}可冲，冲不成库）` : ''}。`;
+  if (at.length) {
+    // 四库每一支都含所墓那一行的余气（戌藏丁、丑藏辛、辰藏癸、未藏乙），
+    // 所以「库里有财」几乎恒真；真正要分的是本气与余气——这才是「财星入库」的深浅。
+    const storeNote = mainInStore
+      ? `（${store}藏干本气即${caiEl}，正合「财星入库」）`
+      : `（${store}藏干里的${caiEl}只是余气，财星算入了库，但入得浅）`;
+    const head = `日主${dayStem}${roles.me}，财为${caiEl}，${caiEl}之墓在${store}；`
+      + `本盘${label(at)}支见${store}，财库成立${caiInStore ? storeNote : '，库中不见财星'}。`;
+    const tail = openers.length
+      ? `${label(openers)}支见${openerBranch}，${store}${openerBranch}相冲，库门被冲开。`
+      : `四支里没有${openerBranch}来冲，库是闭的——要等岁运引动。`;
+    const step = (() => {
+      if (favorable && !caiWeak) return opened ? `财${caiEl}为喜用且不弱（${caiPct}%），库开则财有出路，主发。` : `财${caiEl}为喜用且不弱（${caiPct}%），但库未开，是「有财待发」，不是已经发财。`;
+      if (favorable && caiWeak) return opened ? `财${caiEl}为喜用但偏弱（${caiPct}%），库开只是流动起来，发而不厚，先补财再谈库。` : `财${caiEl}为喜用但偏弱（${caiPct}%），库又未开，宜先扶财。`;
+      if (avoidable) return opened ? `财${caiEl}为忌（${caiPct}%），开库反主破财，冲得越实越明显。` : `财${caiEl}为忌（${caiPct}%），但库未开，破财之势未启。`;
+      return opened ? `财${caiEl}在喜忌里为中性（${caiPct}%），开库只算动了财，吉凶看岁运把哪一边引起来。` : `财${caiEl}在喜忌里为中性（${caiPct}%），库未开，暂不作财库论。`;
+    })();
+    verdict = opened
+      ? (favorable && !caiWeak ? '开库主发' : avoidable ? '开库反主破财' : favorable ? '开库发而不厚' : '开库，吉凶待引动')
+      : (favorable ? (caiWeak ? '库闭财弱' : '库闭待冲开') : avoidable ? '库闭未开' : '库闭，吉凶待引动');
+    detail = `${head}${tail}${step}`;
+  }
+
+  return {
+    dayElement: roles.me,
+    caiElement: caiEl,
+    store,
+    present: at.length > 0,
+    positions: at,
+    opener: openerBranch,
+    opened,
+    openerPositions: openers,
+    caiInStore,
+    mainInStore,
+    caiPct,
+    caiWeak,
+    favorState: favorable ? '喜' : avoidable ? '忌' : '中',
+    verdict,
+    detail,
+    rule: '财库＝财星（日主所克那一行）之墓在四支上；开库＝库支被对冲。「开库才发」有两个前提：财为喜用、且财不弱；财为忌时开库反主破财。',
+    method: `五行之墓取木未／火戌／金丑／水辰，土取戊土长生墓位戌；问真原表作「水木日主在戌、火在丑、土在辰、金在未」，与本法五格全同。财「不弱」以全局占比 >= ${CAIKU_WEAK_PCT}% 折算，是本插件口径，非古法原数。`,
+    boundary: '只作只读标注：不改旺衰分、不改喜忌、不参与取格。另一说把辰当作「水土同宫」的土墓，则木日主财库会落在辰，本插件不取此说。',
+  };
+}
+
+// ── 三平衡（富贵层次的解读方向）────────────────────────────
+
+// 地支阴阳：论八字时以藏干本气的阴阳定，不以奇偶定（问真《基础知识·干支上》）。
+// 子藏癸、午藏丁、卯藏乙、酉藏辛 → 阴；亥藏壬、巳藏丙、寅藏甲、申藏庚 → 阳。
+const BRANCH_YINYANG = {
+  子: '阴', 丑: '阴', 寅: '阳', 卯: '阴', 辰: '阳', 巳: '阳',
+  午: '阴', 未: '阴', 申: '阳', 酉: '阴', 戌: '阳', 亥: '阳',
+};
+const BALANCE_SPREAD_MAX = 22;
+const BALANCE_MIN_PCT = 4;
+const BALANCE_YINYANG_LO = 3;
+const BALANCE_YINYANG_HI = 5;
+const BALANCE_CLIMATE_W = 0.3;
+
+/**
+ * 三平衡：五行平衡 / 阴阳平衡 / 寒暖燥湿平衡。
+ * @param {object} p
+ * @param {string} p.dayStem 日干
+ * @param {object} p.pillars 四柱
+ * @param {object} p.wuxing 五行分值
+ * @param {object} p.climate judgeClimate 的结果（yongshen.climate）
+ * @param {object} p.strength 旺衰结果（只用于文案）
+ */
+export function balanceOf({ dayStem, pillars = {}, wuxing = {}, climate = null, strength = null }) {
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+
+  // ① 五行平衡：最高与最低的占比差，加上「有没有几乎缺掉的
+  const pcts = ELEMENTS.map((el) => ({ element: el, pct: pctOf(el) }));
+  const spread = Math.round((Math.max(...pcts.map((x) => x.pct)) - Math.min(...pcts.map((x) => x.pct))) * 10) / 10;
+  const lowest = pcts.slice().sort((a, b) => a.pct - b.pct)[0];
+  const highest = pcts.slice().sort((a, b) => b.pct - a.pct)[0];
+  const wuxingOk = spread <= BALANCE_SPREAD_MAX && lowest.pct >= BALANCE_MIN_PCT;
+  const wuxingDetail = wuxingOk
+    ? `五行占比在 ${lowest.pct}%–${highest.pct}% 之间，极差 ${spread} 个百分点，没有明显缺项。`
+    : lowest.pct < BALANCE_MIN_PCT
+      ? `${lowest.element}只有 ${lowest.pct}%，近乎缺项；${highest.element}高到 ${highest.pct}%，偏得明显。`
+      : `${highest.element}高到 ${highest.pct}%、${lowest.element}只有 ${lowest.pct}%，极差 ${spread} 个百分点，偏枯。`;
+
+  // ② 阴阳平衡：天干按奇偶，地支按藏干本气
+  const stemKeys = ['year', 'month', 'day', 'hour'].filter((k) => pillars[k] && pillars[k].stem);
+  const yStem = stemKeys.filter((k) => isYangStem(pillars[k].stem)).length;
+  const yBranch = stemKeys.filter((k) => BRANCH_YINYANG[pillars[k].branch] === '阳').length;
+  const yang = yStem + yBranch;
+  const yin = stemKeys.length * 2 - yang;
+  const yinyangOk = yang >= BALANCE_YINYANG_LO && yang <= BALANCE_YINYANG_HI;
+  const pure = yang === 0 ? '纯阴' : yang === stemKeys.length * 2 ? '纯阳' : '';
+  const yinyangDetail = pure
+    ? `${pure}之局（阳 ${yang}／阴 ${yin}），课里说纯阴纯阳减贵减富。`
+    : yinyangOk
+      ? `天干阳 ${yStem}、地支阳 ${yBranch}，合计阳 ${yang}／阴 ${yin}，阴阳相配。`
+      : `天干阳 ${yStem}、地支阳 ${yBranch}，合计阳 ${yang}／阴 ${yin}，一边倒。`;
+
+  // ③ 寒暖燥湿：气候平和，或调候之物在原局有根
+  const kind = climate && climate.kind ? climate.kind : '';
+  const needEl = climate && climate.need && climate.need.element ? climate.need.element : '';
+  const needW = needEl ? w(needEl) : 0;
+  const climateOk = kind === '平和' || (!!needEl && needW >= BALANCE_CLIMATE_W);
+  const climateDetail = !kind
+    ? '未见气候判定，本项不计。'
+    : kind === '平和'
+      ? `气候平和（${kind}），寒暖燥湿不偏。`
+      : needEl
+        ? climateOk
+          ? `气候偏${kind}，需${needEl}调候；原局${needEl}已有 ${needW} 分，调候之物在位。`
+          : `气候偏${kind}，需${needEl}调候；原局${needEl}只有 ${needW} 分，调候之物不实。`
+        : `气候偏${kind}，但未见明确调候之物。`;
+
+  const hits = [wuxingOk, yinyangOk, climateOk].filter(Boolean).length;
+  const tier = hits === 3 ? '三备' : hits === 2 ? '两备' : hits === 1 ? '一备' : '零备';
+  const tierText = {
+    三备: '三方面平衡全备，课里按大富大贵论方向。',
+    两备: '三方面备了两项，课里按中富中贵论方向。',
+    一备: '三方面只备一项，课里按小富小贵论方向。',
+    零备: '三项都不备，课里不给富贵层次；这不等于命薄，只说明这套衡量法在这一盘上不适用。',
+  }[tier];
+
+  return {
+    wuxing: { ok: wuxingOk, spread, highest: highest.element, lowest: lowest.element, pcts, detail: wuxingDetail },
+    yinyang: { ok: yinyangOk, yang, yin, yangStems: yStem, yangBranches: yBranch, pure, detail: yinyangDetail },
+    climate: { ok: climateOk, kind, need: needEl || null, needWeight: needW, detail: climateDetail },
+    hits,
+    tier,
+    text: `五行平衡：${wuxingOk ? '备' : '不备'}——${wuxingDetail}阴阳平衡：${yinyangOk ? '备' : '不备'}——${yinyangDetail}寒暖燥湿：${climateOk ? '备' : '不备'}——${climateDetail}${tierText}`,
+    strengthNote: strength && strength.level ? `日主${dayStem}，旺衰为${strength.level}。` : '',
+    rule: '问真《专业知识·论八字富贵层次》：五行平衡、阴阳平衡、寒暖燥湿平衡，三方面全备为大富大贵，两备为中富中贵，一备为小富小贵。',
+    method: `阈值是本插件的折算口径，不是古法原数：五行看最高最低占比差 <= ${BALANCE_SPREAD_MAX} 个百分点且无一项低于 ${BALANCE_MIN_PCT}%；`
+      + `阴阳看八位（四天干奇偶 + 四地支本气）阳数在 ${BALANCE_YINYANG_LO}–${BALANCE_YINYANG_HI} 之间；`
+      + `寒暖燥湿看气候为平和，或调候之物在原局有 ${BALANCE_CLIMATE_W} 分以上。`,
+    boundary: '只作解读方向：不改旺衰分、不改喜忌、不参与取格。格局法的贵贱十式另有专章，不并入这三项。',
+  };
+}
+
 // ── 对外入口 ────────────────────────────────────────────────
 
 /**
@@ -875,6 +1067,12 @@ export function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxi
   const bingyao = bingyaoOf({ dayStem, strength, wuxing, yongshen, geju });
   // 闲神：只读标注
   const xianshen = xianshenOf({ dayStem, wuxing, pillars, yongshen });
+  // 财库：只读标注，复用上面的喜忌
+  const caiKu = caiKuOf({ dayStem, pillars, wuxing, yongshen });
+  // 三平衡：只读标注，气候取用神层已判好的那一个
+  const balance = balanceOf({
+    dayStem, pillars, wuxing, climate: yongshen.climate || null, strength,
+  });
   return {
     geju,
     primary: month,
@@ -883,6 +1081,8 @@ export function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxi
     yongshen,
     bingyao,
     xianshen,
+    caiKu,
+    balance,
     patternScore,
     dayStem,
     monthBranch,

@@ -547,6 +547,29 @@ function baziInterpret(r) {
         + `边界：暗合与上面的「地支关系」（三合、三会、六合、六冲、刑、害）是两条线，本插件不把它们合并计分；`
         + `${r.relations.anhe.length === 1 ? '本盘只出现一对，按课里口径可以直接忽略。' : `本盘共 ${r.relations.anhe.length} 对，可作取象参考，但仍不折旺衰。`}`,
     }] : []),
+    // 五合化与不化：上面「天干关系」只写「化某待定」，这一节才拿四条件去判。
+    // 判完仍然不改旺衰与喜忌——所以把「不改什么」写进节里，别让人当成合化后重排。
+    ...(r.relations && r.relations.hehua && Array.isArray(r.relations.hehua.items) && r.relations.hehua.items.length ? [{
+      key: 'hehua', label: '合化',
+      text: `${r.relations.hehua.text}\n`
+        + `口径：${r.relations.hehua.method}\n`
+        + `边界：${r.relations.hehua.boundary}\n`
+        + (r.relations.hehua.notes || []).map((n) => `· ${n}`).join('\n'),
+    }] : []),
+    // 财库：库在四支、冲开与否、财是喜是忌——三件事一起才有结论
+    ...(frame.caiKu ? [{
+      key: 'caiku', label: '财库',
+      text: `【${frame.caiKu.verdict}】${frame.caiKu.detail}\n`
+        + `口径：${frame.caiKu.rule}${frame.caiKu.method}\n`
+        + `边界：${frame.caiKu.boundary}`,
+    }] : []),
+    // 三平衡：只给富贵层次的「解读方向」，不反改旺衰与喜忌
+    ...(frame.balance ? [{
+      key: 'balance', label: '三平衡',
+      text: `【${frame.balance.tier}】${frame.balance.text}\n`
+        + `口径：${frame.balance.rule}${frame.balance.method}\n`
+        + `边界：${frame.balance.boundary}`,
+    }] : []),
     (() => {
       const ss = r.shensha;
       const cols = { year: '年', month: '月', day: '日', hour: '时' };

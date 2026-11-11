@@ -362,7 +362,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.66.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.67.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -653,7 +653,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：167 个测试文件 / 9117 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：170 个测试文件 / 9352 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -5427,6 +5427,196 @@ function weightPctOf(pillars = {}, { hourUnknown = false } = {}) {
 return { PILLAR_WEIGHT, HIDDEN_PCT, supportOf, branchStructureOf, weightPctOf };
 })();
 
+__mods.hehua = (function () {
+// 天干五合的「合化」判定。
+//
+// bazi.js 的 buildRelations 在干支关系层只写「有合、化某待定」——那一层不该断言化与不化。
+// 是否真化要过问真《基础知识·干支中》给的四条件：
+//   ① 天干紧挨（隔一位＝隔合、隔两位＝遥合，都不化；争合、妒合一律不化）
+//   ② 被化天干（阴干一侧）在天干上无同类（比劫）帮扶
+//   ③ 月令有引化物（月支五行或月支本气＝化神五行）
+//   ④ 引化物不被克（克化神之五行不现于月干、日干，月支本气也不是它）
+//
+// 判完只作只读标注：不改旺衰分、不改五行权重、不改喜忌、不改 relations.stems 的文案。
+// 反化（甲己化木、乙庚化木、丙辛化火或金、丁壬化火或水、戊癸化土或水）诸家分歧大，本插件不做。
+
+const STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+const STEM_ELEMENT = {
+  甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水',
+};
+const BRANCH_ELEMENT = {
+  子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火',
+  午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水',
+};
+const OVERCOMES = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+const HIDDEN = {
+  子: ['癸'], 丑: ['己', '癸', '辛'], 寅: ['甲', '丙', '戊'], 卯: ['乙'],
+  辰: ['戊', '乙', '癸'], 巳: ['丙', '庚', '戊'], 午: ['丁', '己'], 未: ['己', '丁', '乙'],
+  申: ['庚', '壬', '戊'], 酉: ['辛'], 戌: ['戊', '辛', '丁'], 亥: ['壬', '甲'],
+};
+const STEM_HE = { 甲己: '土', 乙庚: '金', 丙辛: '水', 丁壬: '木', 戊癸: '火' };
+const KEYS = ['year', 'month', 'day', 'hour'];
+const LABEL = { year: '年', month: '月', day: '日', hour: '时' };
+
+const METHOD = '问真《基础知识·干支中》：五合是否真化看四条件——天干紧挨、被化天干无同类帮扶、'
+  + '月令有引化物、引化物不被克；隔合、遥合、争合、妒合一律不化';
+const BOUNDARY = '只作只读标注：不改旺衰分、不改五行权重、不改喜忌。'
+  + '争合＝两阳干争一阴干，妒合＝两阴干争一阳干，问真说这两者「实际指的就是合绊」，故判不化。';
+
+const isYangStem = (stem) => STEMS.indexOf(stem) % 2 === 0;
+const heOf = (a, b) => STEM_HE[a + b] || STEM_HE[b + a] || null;
+const elOf = (stem) => STEM_ELEMENT[stem] || '';
+/** 克某五行的那一行 */
+const keOf = (element) => Object.keys(OVERCOMES).find((el) => OVERCOMES[el] === element) || '';
+/** 月支本气所属五行 */
+const mainElOf = (branch) => elOf((HIDDEN[branch] || [])[0] || '');
+
+/**
+ * 判四柱天干的五合化与不化。
+ * @param {object} pillars 四柱（bazi.js 的 pillar 对象；用到 stem 与 branch）
+ * @param {string} monthBranch 月支（省略时取 pillars.month.branch）
+ * @param {string} dayStem 日干（省略时取 pillars.day.stem）
+ * @param {string[]} keys 参与判定的柱；时辰未知时传 ['year','month','day']
+ */
+function judgeHehua(pillars, monthBranch, dayStem, keys = KEYS) {
+  const slots = (Array.isArray(keys) ? keys : KEYS)
+    .filter((k) => pillars && pillars[k] && pillars[k].stem && pillars[k].branch)
+    .map((k) => ({ key: k, label: LABEL[k] || k, stem: pillars[k].stem, branch: pillars[k].branch }));
+  const mb = monthBranch || (pillars && pillars.month && pillars.month.branch) || '';
+  const ds = dayStem || (pillars && pillars.day && pillars.day.stem) || '';
+
+  const notes = [
+    '反化（甲己化木、乙庚化木、丙辛化火或金、丁壬化火或水、戊癸化土或水）是近代易人的演绎，诸家分歧大，本插件不做。',
+    '日元参与合化时，即使化成功仍以原五行论：问真说「五行的本质属性不会转变，只不过表现形式可能会发生变化」。',
+    '天干五合未必以日元为主——年月干合化成功同样算数（问真所举己酉造就是年月干合）。',
+  ];
+
+  if (slots.length < 2) {
+    return {
+      items: [], transformed: [], text: '天干不足两柱，五合无从判起。', method: METHOD, boundary: BOUNDARY, notes,
+    };
+  }
+
+  const monthEl = BRANCH_ELEMENT[mb] || '';
+  const monthMain = mainElOf(mb);
+  const items = [];
+
+  for (let i = 0; i < slots.length; i++) {
+    for (let j = i + 1; j < slots.length; j++) {
+      const a = slots[i];
+      const b = slots[j];
+      if (a.stem === b.stem) continue;
+      const hua = heOf(a.stem, b.stem);
+      if (!hua) continue;
+
+      const gap = j - i - 1;
+      const closeness = gap === 0 ? '紧挨' : gap === 1 ? '隔合' : '遥合';
+      const yin = isYangStem(a.stem) ? b : a;
+      const yang = isYangStem(a.stem) ? a : b;
+      const others = slots.filter((s) => s !== a && s !== b);
+
+      // 争合 / 妒合：第三干与这一对里的某一干另成五合
+      let conflict = null;
+      let conflictStem = '';
+      for (const s of others) {
+        if (!heOf(s.stem, a.stem) && !heOf(s.stem, b.stem)) continue;
+        conflict = isYangStem(s.stem) ? '争合' : '妒合';
+        conflictStem = s.stem;
+        break;
+      }
+
+      // ② 被化天干（阴干一侧）无同类帮扶。
+      // 只算「同类（比劫）」，不算印：问真的唯一完整例「己酉 甲戌 壬戌 丁未」里，
+      // 被化的己土有丁火为印（火生土）却仍判化成功——把印计进生扶会与它自己的例子冲突。
+      const sameKind = others.filter((s) => elOf(s.stem) === elOf(yin.stem));
+
+      // ④ 引化物不被克：问真原文点明「月干/日干透出」与「月支本气」两处。
+      const keEl = keOf(hua);
+      const keMajor = others.filter((s) => elOf(s.stem) === keEl && (s.key === 'month' || s.key === 'day'));
+      const keMinor = others.filter((s) => elOf(s.stem) === keEl && s.key !== 'month' && s.key !== 'day');
+      const keMonth = !!keEl && monthMain === keEl;
+
+      const conditions = {
+        adjacent: gap === 0,
+        noConflict: !conflict,
+        unrescued: sameKind.length === 0,
+        monthLead: (monthEl && monthEl === hua) || (monthMain && monthMain === hua) || false,
+        leadUnchecked: keMajor.length === 0 && !keMonth,
+      };
+      const ok = conditions.adjacent && conditions.noConflict && conditions.unrescued
+        && conditions.monthLead && conditions.leadUnchecked;
+
+      const missing = [];
+      if (!conditions.adjacent) missing.push(closeness === '隔合' ? '相隔一位（隔合）' : '相隔两位（遥合）');
+      if (!conditions.noConflict) {
+        missing.push(`${conflict}（另有${conflictStem}与${conflict === '争合' ? '同一阴干' : '同一阳干'}成合）`);
+      }
+      if (!conditions.unrescued) missing.push(`被化干${yin.stem}在天干有同类${sameKind.map((s) => s.stem).join('、')}帮扶`);
+      if (!conditions.monthLead) missing.push(`月令${mb}（${monthEl || '—'}）不是化神${hua}`);
+      if (!conditions.leadUnchecked) {
+        const who = [
+          ...keMajor.map((s) => `${s.stem}（${s.label}干）`),
+          keMonth ? `月支${mb}本气${keEl}` : '',
+        ].filter(Boolean);
+        missing.push(`引化物${hua}被${keEl}克：${who.join('、')}`);
+      }
+
+      const status = ok ? '化成功'
+        : !conditions.adjacent ? `${closeness}不化`
+          : !conditions.noConflict ? `${conflict}不化`
+            : '合绊不化';
+
+      const pair = `${a.stem}${b.stem}`;
+      const positionText = `${a.label}干${a.stem}与${b.label}干${b.stem}`;
+      const leadText = monthEl === monthMain || !monthMain
+        ? `月令${mb}为${monthEl}`
+        : `月令${mb}为${monthEl}、本气${monthMain}`;
+      const evidence = ok
+        ? `${positionText}紧挨，成${pair}合化${hua}；${leadText}，正好引化；`
+          + `被化干${yin.stem}${elOf(yin.stem)}在天干无同类帮扶；克${hua}的${keEl}不在月干与日干，月支本气也不是它。`
+        : `${positionText}成${pair}合，但${missing.join('；')}，只作合绊，不论化。`;
+
+      items.push({
+        pair,
+        huaElement: hua,
+        positions: `${a.key}-${b.key}`,
+        positionText,
+        closeness,
+        distance: gap,
+        yinStem: yin.stem,
+        yangStem: yang.stem,
+        conflict,
+        conflictStem: conflictStem || null,
+        conditions,
+        status,
+        ok,
+        dayMasterInvolved: !!ds && (a.stem === ds || b.stem === ds),
+        evidence,
+      });
+    }
+  }
+
+  const transformed = items.filter((x) => x.ok).map((x) => `${x.pair}化${x.huaElement}`);
+  const lines = items.map((x) => `【${x.status}】${x.evidence}`);
+  if (items.some((x) => x.ok && x.dayMasterInvolved)) {
+    lines.push('日元参与的那一组即使化成功，五行属性仍按原干论，只表现形式变。');
+  }
+  // 克化神之五行只在年干/时干出现时不挡化，但要写明——离得远，力道打折
+  for (const x of items) {
+    if (!x.ok) continue;
+    const keEl = keOf(x.huaElement);
+    const far = slots.filter((s) => elOf(s.stem) === keEl && x.positions.split('-').indexOf(s.key) < 0
+      && s.key !== 'month' && s.key !== 'day');
+    if (far.length) lines.push(`${x.pair}化${x.huaElement}：克化神的${keEl}只在${far.map((s) => `${s.label}干`).join('、')}，被化神隔开，不挡化。`);
+  }
+  const text = items.length ? lines.join('\n') : '四柱天干未见五合。';
+
+  return { items, transformed, text, method: METHOD, boundary: BOUNDARY, notes };
+}
+
+return { judgeHehua };
+})();
+
 __mods.geju = (function () {
 // 八字格局、用神与行运评分
 //
@@ -6279,6 +6469,198 @@ function scoreLuck(ganzhi, frame) {
   return { ganzhi, score: total, tier, stemTenGod: godStem, reasons, note: `${godStem}运，${tier}（${total}）` };
 }
 
+// ── 财库 ────────────────────────────────────────────────────
+
+// 五行之墓：木墓未、火墓戌、金墓丑、水墓辰；土取戊土十二长生的墓位（戌）。
+// 这样取，问真《专业知识·八字断财富技法》那张表五格全部对得上：
+//   木日主财土 → 土墓戌；水日主财火 → 火墓戌；火日主财金 → 金墓丑；
+//   土日主财水 → 水墓辰；金日主财木 → 木墓未。
+// 若改用「水土同宫」把土墓放辰，只有木日主一格会落到辰，与问真表冲突，故取戌。
+const TOMB_OF = { 木: '未', 火: '戌', 土: '戌', 金: '丑', 水: '辰' };
+const BRANCH_CHONG = {
+  子: '午', 午: '子', 丑: '未', 未: '丑', 寅: '申', 申: '寅',
+  卯: '酉', 酉: '卯', 辰: '戌', 戌: '辰', 巳: '亥', 亥: '巳',
+};
+const CAIKU_WEAK_PCT = 8;
+
+/**
+ * 财库：日主所克五行（财）的墓库，落在四支上；库被冲开才是「开库」。
+ * @param {object} p
+ * @param {string} p.dayStem 日干
+ * @param {object} p.pillars 四柱
+ * @param {object} p.wuxing 五行分值
+ * @param {object} p.yongshen 喜忌结果
+ */
+function caiKuOf({ dayStem, pillars = {}, wuxing = {}, yongshen = {} }) {
+  const roles = elementRoles(dayStem);
+  const caiEl = roles.cai;
+  const store = TOMB_OF[caiEl] || '';
+  const keys = ['year', 'month', 'day', 'hour'].filter((k) => pillars[k] && pillars[k].branch);
+  const at = keys.filter((k) => pillars[k].branch === store);
+  const openerBranch = BRANCH_CHONG[store] || '';
+  const openers = keys.filter((k) => pillars[k].branch === openerBranch);
+
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+  const caiPct = pctOf(caiEl);
+  const caiWeak = caiPct < CAIKU_WEAK_PCT;
+
+  const favor = Array.isArray(yongshen.favor) ? yongshen.favor : [];
+  const avoid = Array.isArray(yongshen.avoid) ? yongshen.avoid : [];
+  const favorable = favor.includes(caiEl);
+  const avoidable = avoid.includes(caiEl);
+  const opened = at.length > 0 && openers.length > 0;
+  // 财星入库：库支的藏干里出现财这一行（不论本气／中气／余气），与「财库」是两件事。
+  // 没有库支时这两项一律为假——不能拿「本该是库的那一支」的藏干去充数。
+  const hiddenEls = at.length ? (HIDDEN[store] || []).map((h) => STEM_ELEMENT[h]) : [];
+  const caiInStore = hiddenEls.includes(caiEl);
+  const mainInStore = at.length > 0 && (HIDDEN[store] || []).slice(0, 1).map((h) => STEM_ELEMENT[h]).includes(caiEl);
+
+  const label = (ks) => ks.map((k) => ({ year: '年', month: '月', day: '日', hour: '时' }[k])).join('、');
+
+  let verdict = '无财库';
+  let detail = `日主${dayStem}${roles.me}，财为${caiEl}，${caiEl}之墓在${store}；四支里没有${store}，本盘不立财库`
+    + `${openers.length ? `（${label(openers)}支见${openerBranch}，但没有${store}可冲，冲不成库）` : ''}。`;
+  if (at.length) {
+    // 四库每一支都含所墓那一行的余气（戌藏丁、丑藏辛、辰藏癸、未藏乙），
+    // 所以「库里有财」几乎恒真；真正要分的是本气与余气——这才是「财星入库」的深浅。
+    const storeNote = mainInStore
+      ? `（${store}藏干本气即${caiEl}，正合「财星入库」）`
+      : `（${store}藏干里的${caiEl}只是余气，财星算入了库，但入得浅）`;
+    const head = `日主${dayStem}${roles.me}，财为${caiEl}，${caiEl}之墓在${store}；`
+      + `本盘${label(at)}支见${store}，财库成立${caiInStore ? storeNote : '，库中不见财星'}。`;
+    const tail = openers.length
+      ? `${label(openers)}支见${openerBranch}，${store}${openerBranch}相冲，库门被冲开。`
+      : `四支里没有${openerBranch}来冲，库是闭的——要等岁运引动。`;
+    const step = (() => {
+      if (favorable && !caiWeak) return opened ? `财${caiEl}为喜用且不弱（${caiPct}%），库开则财有出路，主发。` : `财${caiEl}为喜用且不弱（${caiPct}%），但库未开，是「有财待发」，不是已经发财。`;
+      if (favorable && caiWeak) return opened ? `财${caiEl}为喜用但偏弱（${caiPct}%），库开只是流动起来，发而不厚，先补财再谈库。` : `财${caiEl}为喜用但偏弱（${caiPct}%），库又未开，宜先扶财。`;
+      if (avoidable) return opened ? `财${caiEl}为忌（${caiPct}%），开库反主破财，冲得越实越明显。` : `财${caiEl}为忌（${caiPct}%），但库未开，破财之势未启。`;
+      return opened ? `财${caiEl}在喜忌里为中性（${caiPct}%），开库只算动了财，吉凶看岁运把哪一边引起来。` : `财${caiEl}在喜忌里为中性（${caiPct}%），库未开，暂不作财库论。`;
+    })();
+    verdict = opened
+      ? (favorable && !caiWeak ? '开库主发' : avoidable ? '开库反主破财' : favorable ? '开库发而不厚' : '开库，吉凶待引动')
+      : (favorable ? (caiWeak ? '库闭财弱' : '库闭待冲开') : avoidable ? '库闭未开' : '库闭，吉凶待引动');
+    detail = `${head}${tail}${step}`;
+  }
+
+  return {
+    dayElement: roles.me,
+    caiElement: caiEl,
+    store,
+    present: at.length > 0,
+    positions: at,
+    opener: openerBranch,
+    opened,
+    openerPositions: openers,
+    caiInStore,
+    mainInStore,
+    caiPct,
+    caiWeak,
+    favorState: favorable ? '喜' : avoidable ? '忌' : '中',
+    verdict,
+    detail,
+    rule: '财库＝财星（日主所克那一行）之墓在四支上；开库＝库支被对冲。「开库才发」有两个前提：财为喜用、且财不弱；财为忌时开库反主破财。',
+    method: `五行之墓取木未／火戌／金丑／水辰，土取戊土长生墓位戌；问真原表作「水木日主在戌、火在丑、土在辰、金在未」，与本法五格全同。财「不弱」以全局占比 >= ${CAIKU_WEAK_PCT}% 折算，是本插件口径，非古法原数。`,
+    boundary: '只作只读标注：不改旺衰分、不改喜忌、不参与取格。另一说把辰当作「水土同宫」的土墓，则木日主财库会落在辰，本插件不取此说。',
+  };
+}
+
+// ── 三平衡（富贵层次的解读方向）────────────────────────────
+
+// 地支阴阳：论八字时以藏干本气的阴阳定，不以奇偶定（问真《基础知识·干支上》）。
+// 子藏癸、午藏丁、卯藏乙、酉藏辛 → 阴；亥藏壬、巳藏丙、寅藏甲、申藏庚 → 阳。
+const BRANCH_YINYANG = {
+  子: '阴', 丑: '阴', 寅: '阳', 卯: '阴', 辰: '阳', 巳: '阳',
+  午: '阴', 未: '阴', 申: '阳', 酉: '阴', 戌: '阳', 亥: '阳',
+};
+const BALANCE_SPREAD_MAX = 22;
+const BALANCE_MIN_PCT = 4;
+const BALANCE_YINYANG_LO = 3;
+const BALANCE_YINYANG_HI = 5;
+const BALANCE_CLIMATE_W = 0.3;
+
+/**
+ * 三平衡：五行平衡 / 阴阳平衡 / 寒暖燥湿平衡。
+ * @param {object} p
+ * @param {string} p.dayStem 日干
+ * @param {object} p.pillars 四柱
+ * @param {object} p.wuxing 五行分值
+ * @param {object} p.climate judgeClimate 的结果（yongshen.climate）
+ * @param {object} p.strength 旺衰结果（只用于文案）
+ */
+function balanceOf({ dayStem, pillars = {}, wuxing = {}, climate = null, strength = null }) {
+  const total = Object.values(wuxing).reduce((n, v) => n + (Number(v) || 0), 0);
+  const w = (el) => Math.round((Number(wuxing[el]) || 0) * 10) / 10;
+  const pctOf = (el) => (total > 0 ? Math.round((w(el) / total) * 1000) / 10 : 0);
+
+  // ① 五行平衡：最高与最低的占比差，加上「有没有几乎缺掉的
+  const pcts = ELEMENTS.map((el) => ({ element: el, pct: pctOf(el) }));
+  const spread = Math.round((Math.max(...pcts.map((x) => x.pct)) - Math.min(...pcts.map((x) => x.pct))) * 10) / 10;
+  const lowest = pcts.slice().sort((a, b) => a.pct - b.pct)[0];
+  const highest = pcts.slice().sort((a, b) => b.pct - a.pct)[0];
+  const wuxingOk = spread <= BALANCE_SPREAD_MAX && lowest.pct >= BALANCE_MIN_PCT;
+  const wuxingDetail = wuxingOk
+    ? `五行占比在 ${lowest.pct}%–${highest.pct}% 之间，极差 ${spread} 个百分点，没有明显缺项。`
+    : lowest.pct < BALANCE_MIN_PCT
+      ? `${lowest.element}只有 ${lowest.pct}%，近乎缺项；${highest.element}高到 ${highest.pct}%，偏得明显。`
+      : `${highest.element}高到 ${highest.pct}%、${lowest.element}只有 ${lowest.pct}%，极差 ${spread} 个百分点，偏枯。`;
+
+  // ② 阴阳平衡：天干按奇偶，地支按藏干本气
+  const stemKeys = ['year', 'month', 'day', 'hour'].filter((k) => pillars[k] && pillars[k].stem);
+  const yStem = stemKeys.filter((k) => isYangStem(pillars[k].stem)).length;
+  const yBranch = stemKeys.filter((k) => BRANCH_YINYANG[pillars[k].branch] === '阳').length;
+  const yang = yStem + yBranch;
+  const yin = stemKeys.length * 2 - yang;
+  const yinyangOk = yang >= BALANCE_YINYANG_LO && yang <= BALANCE_YINYANG_HI;
+  const pure = yang === 0 ? '纯阴' : yang === stemKeys.length * 2 ? '纯阳' : '';
+  const yinyangDetail = pure
+    ? `${pure}之局（阳 ${yang}／阴 ${yin}），课里说纯阴纯阳减贵减富。`
+    : yinyangOk
+      ? `天干阳 ${yStem}、地支阳 ${yBranch}，合计阳 ${yang}／阴 ${yin}，阴阳相配。`
+      : `天干阳 ${yStem}、地支阳 ${yBranch}，合计阳 ${yang}／阴 ${yin}，一边倒。`;
+
+  // ③ 寒暖燥湿：气候平和，或调候之物在原局有根
+  const kind = climate && climate.kind ? climate.kind : '';
+  const needEl = climate && climate.need && climate.need.element ? climate.need.element : '';
+  const needW = needEl ? w(needEl) : 0;
+  const climateOk = kind === '平和' || (!!needEl && needW >= BALANCE_CLIMATE_W);
+  const climateDetail = !kind
+    ? '未见气候判定，本项不计。'
+    : kind === '平和'
+      ? `气候平和（${kind}），寒暖燥湿不偏。`
+      : needEl
+        ? climateOk
+          ? `气候偏${kind}，需${needEl}调候；原局${needEl}已有 ${needW} 分，调候之物在位。`
+          : `气候偏${kind}，需${needEl}调候；原局${needEl}只有 ${needW} 分，调候之物不实。`
+        : `气候偏${kind}，但未见明确调候之物。`;
+
+  const hits = [wuxingOk, yinyangOk, climateOk].filter(Boolean).length;
+  const tier = hits === 3 ? '三备' : hits === 2 ? '两备' : hits === 1 ? '一备' : '零备';
+  const tierText = {
+    三备: '三方面平衡全备，课里按大富大贵论方向。',
+    两备: '三方面备了两项，课里按中富中贵论方向。',
+    一备: '三方面只备一项，课里按小富小贵论方向。',
+    零备: '三项都不备，课里不给富贵层次；这不等于命薄，只说明这套衡量法在这一盘上不适用。',
+  }[tier];
+
+  return {
+    wuxing: { ok: wuxingOk, spread, highest: highest.element, lowest: lowest.element, pcts, detail: wuxingDetail },
+    yinyang: { ok: yinyangOk, yang, yin, yangStems: yStem, yangBranches: yBranch, pure, detail: yinyangDetail },
+    climate: { ok: climateOk, kind, need: needEl || null, needWeight: needW, detail: climateDetail },
+    hits,
+    tier,
+    text: `五行平衡：${wuxingOk ? '备' : '不备'}——${wuxingDetail}阴阳平衡：${yinyangOk ? '备' : '不备'}——${yinyangDetail}寒暖燥湿：${climateOk ? '备' : '不备'}——${climateDetail}${tierText}`,
+    strengthNote: strength && strength.level ? `日主${dayStem}，旺衰为${strength.level}。` : '',
+    rule: '问真《专业知识·论八字富贵层次》：五行平衡、阴阳平衡、寒暖燥湿平衡，三方面全备为大富大贵，两备为中富中贵，一备为小富小贵。',
+    method: `阈值是本插件的折算口径，不是古法原数：五行看最高最低占比差 <= ${BALANCE_SPREAD_MAX} 个百分点且无一项低于 ${BALANCE_MIN_PCT}%；`
+      + `阴阳看八位（四天干奇偶 + 四地支本气）阳数在 ${BALANCE_YINYANG_LO}–${BALANCE_YINYANG_HI} 之间；`
+      + `寒暖燥湿看气候为平和，或调候之物在原局有 ${BALANCE_CLIMATE_W} 分以上。`,
+    boundary: '只作解读方向：不改旺衰分、不改喜忌、不参与取格。格局法的贵贱十式另有专章，不并入这三项。',
+  };
+}
+
 // ── 对外入口 ────────────────────────────────────────────────
 
 /**
@@ -6305,6 +6687,12 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   const bingyao = bingyaoOf({ dayStem, strength, wuxing, yongshen, geju });
   // 闲神：只读标注
   const xianshen = xianshenOf({ dayStem, wuxing, pillars, yongshen });
+  // 财库：只读标注，复用上面的喜忌
+  const caiKu = caiKuOf({ dayStem, pillars, wuxing, yongshen });
+  // 三平衡：只读标注，气候取用神层已判好的那一个
+  const balance = balanceOf({
+    dayStem, pillars, wuxing, climate: yongshen.climate || null, strength,
+  });
   return {
     geju,
     primary: month,
@@ -6313,6 +6701,8 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
     yongshen,
     bingyao,
     xianshen,
+    caiKu,
+    balance,
     patternScore,
     dayStem,
     monthBranch,
@@ -6321,7 +6711,7 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   };
 }
 
-return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, scoreLuck, analyzeBaziFrame };
+return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, scoreLuck, caiKuOf, balanceOf, analyzeBaziFrame };
 })();
 
 __mods.bazi = (function () {
@@ -6335,6 +6725,7 @@ const { bool } = (__mods.bool || {});
 const { nayinOf } = (__mods.nayin || {});
 const { SANHE } = (__mods.sanhe || {});
 const { analyzeBaziFrame, scoreLuck } = (__mods.geju || {});
+const { judgeHehua } = (__mods.hehua || {});
 const { branchStructureOf, weightPctOf } = (__mods.structure || {});
 
 // 地支藏干（本气 / 中气 / 余气）
@@ -6588,6 +6979,8 @@ function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour']) {
     branches: uniq(branchOut),
     anhe: anheOf(pillars, keys),
     anheNote: '暗合只作取象与风水参考，不参与旺衰与格局；只出现一对时按课里可忽略',
+    // 五合化与不化：另起一层判四条件，上面的 stems 文案保持不变（那里只说「待定」）
+    hehua: judgeHehua(pillars, pillars.month ? pillars.month.branch : '', pillars.day ? pillars.day.stem : '', keys),
   };
 }
 
@@ -7211,6 +7604,32 @@ function buildBazi(input) {
     if (out.strength.weightPct) {
       out.strength.weightPct.placeholderHour = true;
       out.strength.weightPct.note = '时柱暂缺：时柱权重不计入合计（本盘 81%），不重新归一化；补上出生时刻后再按 100% 看';
+    }
+    // 财库与三平衡都用到了时支：财库看四支有没有库、有没有冲开，三平衡数地支阴阳。
+    // 与结构同一条规矩——照实标占位，不把编出来的时支说成实有。
+    if (out.frame && out.frame.caiKu) {
+      const ck = out.frame.caiKu;
+      ck.placeholderHour = true;
+      // 判「这一条要不要紧」不能看占位时支碰巧有没有库/冲，要看结论本身是否依赖未知的时支：
+      // 库与冲都已落在年月日三支上才稳；库没找到、或库找到了但冲没找到，
+      // 都可能是因为真正的时支里正好有那一支，结论必须存疑。
+      const atHour = (ck.positions || []).includes('hour') || (ck.openerPositions || []).includes('hour');
+      const robust = ck.present && ck.opened && !atHour;
+      ck.note = robust
+        ? '时柱暂缺：库与冲都已落在年月日三支上，结论不受时支影响'
+        : '时柱暂缺：库或开库可能落在未知的时支上，这一条只按正午占位算，补上出生时刻后可能整条改变';
+      ck.detail = `${ck.detail}（时支为占位值）`;
+    }
+    if (out.frame && out.frame.balance) {
+      const bal = out.frame.balance;
+      bal.placeholderHour = true;
+      bal.note = '时柱暂缺：阴阳的八位与五行占比都按正午时柱占位算过，补上出生时刻后层次可能变化';
+      bal.text = `${bal.text}（阴阳与五行未含真实时柱，层次只作方向）`;
+    }
+    if (out.relations && out.relations.hehua) {
+      const hh = out.relations.hehua;
+      hh.placeholderHour = true;
+      hh.text = `${hh.text}\n（时柱暂缺：只判了年月日三干，日干与时干那一组无从判起）`;
     }
     out.notes = [
       '时柱暂缺：未提供出生时刻，时柱不对外给出，也不计入神煞与干支关系',
@@ -23035,6 +23454,29 @@ function baziInterpret(r) {
         + `边界：暗合与上面的「地支关系」（三合、三会、六合、六冲、刑、害）是两条线，本插件不把它们合并计分；`
         + `${r.relations.anhe.length === 1 ? '本盘只出现一对，按课里口径可以直接忽略。' : `本盘共 ${r.relations.anhe.length} 对，可作取象参考，但仍不折旺衰。`}`,
     }] : []),
+    // 五合化与不化：上面「天干关系」只写「化某待定」，这一节才拿四条件去判。
+    // 判完仍然不改旺衰与喜忌——所以把「不改什么」写进节里，别让人当成合化后重排。
+    ...(r.relations && r.relations.hehua && Array.isArray(r.relations.hehua.items) && r.relations.hehua.items.length ? [{
+      key: 'hehua', label: '合化',
+      text: `${r.relations.hehua.text}\n`
+        + `口径：${r.relations.hehua.method}\n`
+        + `边界：${r.relations.hehua.boundary}\n`
+        + (r.relations.hehua.notes || []).map((n) => `· ${n}`).join('\n'),
+    }] : []),
+    // 财库：库在四支、冲开与否、财是喜是忌——三件事一起才有结论
+    ...(frame.caiKu ? [{
+      key: 'caiku', label: '财库',
+      text: `【${frame.caiKu.verdict}】${frame.caiKu.detail}\n`
+        + `口径：${frame.caiKu.rule}${frame.caiKu.method}\n`
+        + `边界：${frame.caiKu.boundary}`,
+    }] : []),
+    // 三平衡：只给富贵层次的「解读方向」，不反改旺衰与喜忌
+    ...(frame.balance ? [{
+      key: 'balance', label: '三平衡',
+      text: `【${frame.balance.tier}】${frame.balance.text}\n`
+        + `口径：${frame.balance.rule}${frame.balance.method}\n`
+        + `边界：${frame.balance.boundary}`,
+    }] : []),
     (() => {
       const ss = r.shensha;
       const cols = { year: '年', month: '月', day: '日', hour: '时' };
@@ -27048,9 +27490,20 @@ function baziSummary(r) {
     : cl.label === '燥热' ? '火土偏燥，像久旱的地，需要水和湿气来松一松'
       : '寒暖相对均衡，没有极端的偏枯';
   const needEl = (cl.need && cl.need.element) || favor[0] || '';
+  // 财库：库在不在、开没开、财是喜是忌——把三件事压成一句人话，接在总纲末尾
+  const ck = (r.frame && r.frame.caiKu) || null;
+  const caiKuLine = (() => {
+    if (!ck) return '';
+    if (!ck.present) return '财这一路没有立库，赚多少看明面上的财星与行运，不靠「开库」这一说。';
+    if (ck.opened && ck.verdict === '开库主发') return `财有库（${ck.store}），而且库门被${ck.opener}冲开了：钱是能进来的，关键在于你肯不肯把它存住。`;
+    if (ck.opened && ck.verdict === '开库反主破财') return `财有库（${ck.store}）也被冲开了，但这一行在你这盘上是忌：动得越多漏得越快，稳比冲重要。`;
+    if (ck.opened) return `财有库（${ck.store}），库门也开了，但财本身不算厚：有得有失，别指望一次翻身。`;
+    return `财有库（${ck.store}），门还关着：不是没有，是要等对的时间或对的选择把它引出来。`;
+  })();
   const lead = `${dm.stem || ''}${dm.element || ''}日主，生在${season}${month.branch || ''}月：${climateWord}。`
     + `${needEl ? `最需要的是${needEl}${cl.need && cl.need.why ? `——${cl.need.why}` : ''}。` : ''}`
-    + `整体${r.strength ? r.strength.level : '中和'}，不是极旺也不是极弱，所以${r.strength && r.strength.level === '身弱' ? '很多事要靠外部条件配合，硬扛不如借力' : '撑得住，关键是别把力气用在错的地方'}。`;
+    + `整体${r.strength ? r.strength.level : '中和'}，不是极旺也不是极弱，所以${r.strength && r.strength.level === '身弱' ? '很多事要靠外部条件配合，硬扛不如借力' : '撑得住，关键是别把力气用在错的地方'}。`
+    + caiKuLine;
 
   // ── 底色：十神权重前两位 ──
   const top2 = topGods.slice(0, 2).map(([k]) => k);
@@ -27105,6 +27558,17 @@ function baziSummary(r) {
   if (avoid.length) advice.push(`少把自己放在${avoid.slice(0, 2).join('、')}过重的环境里——不是不能碰，是别长期待在那种氛围中。`);
   if (top2.includes('印')) advice.push('给「想」设个时限：一件事想超过十分钟还没结论，就先做一个最小动作，用行动换信息。');
   if (gejuNames.includes('伤官见官')) advice.push('把标准用在事情上，不要用在人身上；对人提要求之前，先说清你需要什么。');
+  // 三平衡：只作「往哪个方向补」的一句话，不给富贵层次的下断语（层次见解析层的三平衡节）
+  const bal = (r.frame && r.frame.balance) || null;
+  if (bal) {
+    const gaps = [];
+    if (!bal.wuxing.ok) gaps.push(`五行偏在${bal.wuxing.highest}、缺在${bal.wuxing.lowest}`);
+    if (!bal.yinyang.ok) gaps.push(bal.yinyang.pure ? `${bal.yinyang.pure}之局` : `阴阳一边倒（阳 ${bal.yinyang.yang}／阴 ${bal.yinyang.yin}）`);
+    if (!bal.climate.ok) gaps.push(`寒暖燥湿没调匀（${bal.climate.kind}）`);
+    advice.push(gaps.length
+      ? `结构上${gaps.join('、')}：不必去「补命」，把这几处当作长期要照看的方向就行。`
+      : '五行、阴阳、寒暖燥湿三方面都还匀：这种盘最忌讳的是为了「更好」而硬改节奏，稳住就是优势。');
+  }
 
   return {
     system: 'bazi',
@@ -29663,7 +30127,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.66.0";
+window.__MP_VER = "0.67.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。

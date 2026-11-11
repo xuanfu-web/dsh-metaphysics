@@ -114,9 +114,20 @@ function baziSummary(r) {
     : cl.label === '燥热' ? '火土偏燥，像久旱的地，需要水和湿气来松一松'
       : '寒暖相对均衡，没有极端的偏枯';
   const needEl = (cl.need && cl.need.element) || favor[0] || '';
+  // 财库：库在不在、开没开、财是喜是忌——把三件事压成一句人话，接在总纲末尾
+  const ck = (r.frame && r.frame.caiKu) || null;
+  const caiKuLine = (() => {
+    if (!ck) return '';
+    if (!ck.present) return '财这一路没有立库，赚多少看明面上的财星与行运，不靠「开库」这一说。';
+    if (ck.opened && ck.verdict === '开库主发') return `财有库（${ck.store}），而且库门被${ck.opener}冲开了：钱是能进来的，关键在于你肯不肯把它存住。`;
+    if (ck.opened && ck.verdict === '开库反主破财') return `财有库（${ck.store}）也被冲开了，但这一行在你这盘上是忌：动得越多漏得越快，稳比冲重要。`;
+    if (ck.opened) return `财有库（${ck.store}），库门也开了，但财本身不算厚：有得有失，别指望一次翻身。`;
+    return `财有库（${ck.store}），门还关着：不是没有，是要等对的时间或对的选择把它引出来。`;
+  })();
   const lead = `${dm.stem || ''}${dm.element || ''}日主，生在${season}${month.branch || ''}月：${climateWord}。`
     + `${needEl ? `最需要的是${needEl}${cl.need && cl.need.why ? `——${cl.need.why}` : ''}。` : ''}`
-    + `整体${r.strength ? r.strength.level : '中和'}，不是极旺也不是极弱，所以${r.strength && r.strength.level === '身弱' ? '很多事要靠外部条件配合，硬扛不如借力' : '撑得住，关键是别把力气用在错的地方'}。`;
+    + `整体${r.strength ? r.strength.level : '中和'}，不是极旺也不是极弱，所以${r.strength && r.strength.level === '身弱' ? '很多事要靠外部条件配合，硬扛不如借力' : '撑得住，关键是别把力气用在错的地方'}。`
+    + caiKuLine;
 
   // ── 底色：十神权重前两位 ──
   const top2 = topGods.slice(0, 2).map(([k]) => k);
@@ -171,6 +182,17 @@ function baziSummary(r) {
   if (avoid.length) advice.push(`少把自己放在${avoid.slice(0, 2).join('、')}过重的环境里——不是不能碰，是别长期待在那种氛围中。`);
   if (top2.includes('印')) advice.push('给「想」设个时限：一件事想超过十分钟还没结论，就先做一个最小动作，用行动换信息。');
   if (gejuNames.includes('伤官见官')) advice.push('把标准用在事情上，不要用在人身上；对人提要求之前，先说清你需要什么。');
+  // 三平衡：只作「往哪个方向补」的一句话，不给富贵层次的下断语（层次见解析层的三平衡节）
+  const bal = (r.frame && r.frame.balance) || null;
+  if (bal) {
+    const gaps = [];
+    if (!bal.wuxing.ok) gaps.push(`五行偏在${bal.wuxing.highest}、缺在${bal.wuxing.lowest}`);
+    if (!bal.yinyang.ok) gaps.push(bal.yinyang.pure ? `${bal.yinyang.pure}之局` : `阴阳一边倒（阳 ${bal.yinyang.yang}／阴 ${bal.yinyang.yin}）`);
+    if (!bal.climate.ok) gaps.push(`寒暖燥湿没调匀（${bal.climate.kind}）`);
+    advice.push(gaps.length
+      ? `结构上${gaps.join('、')}：不必去「补命」，把这几处当作长期要照看的方向就行。`
+      : '五行、阴阳、寒暖燥湿三方面都还匀：这种盘最忌讳的是为了「更好」而硬改节奏，稳住就是优势。');
+  }
 
   return {
     system: 'bazi',

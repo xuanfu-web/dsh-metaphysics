@@ -12,6 +12,7 @@ import { bool } from './bool.js';
 import { nayinOf } from './nayin.js';
 import { SANHE } from './sanhe.js';
 import { analyzeBaziFrame, scoreLuck } from './geju.js';
+import { judgeHehua } from './hehua.js';
 import { branchStructureOf, weightPctOf } from './structure.js';
 
 // 地支藏干（本气 / 中气 / 余气）
@@ -265,6 +266,8 @@ export function buildRelations(pillars, keys = ['year', 'month', 'day', 'hour'])
     branches: uniq(branchOut),
     anhe: anheOf(pillars, keys),
     anheNote: '暗合只作取象与风水参考，不参与旺衰与格局；只出现一对时按课里可忽略',
+    // 五合化与不化：另起一层判四条件，上面的 stems 文案保持不变（那里只说「待定」）
+    hehua: judgeHehua(pillars, pillars.month ? pillars.month.branch : '', pillars.day ? pillars.day.stem : '', keys),
   };
 }
 
@@ -888,6 +891,32 @@ export function buildBazi(input) {
     if (out.strength.weightPct) {
       out.strength.weightPct.placeholderHour = true;
       out.strength.weightPct.note = '时柱暂缺：时柱权重不计入合计（本盘 81%），不重新归一化；补上出生时刻后再按 100% 看';
+    }
+    // 财库与三平衡都用到了时支：财库看四支有没有库、有没有冲开，三平衡数地支阴阳。
+    // 与结构同一条规矩——照实标占位，不把编出来的时支说成实有。
+    if (out.frame && out.frame.caiKu) {
+      const ck = out.frame.caiKu;
+      ck.placeholderHour = true;
+      // 判「这一条要不要紧」不能看占位时支碰巧有没有库/冲，要看结论本身是否依赖未知的时支：
+      // 库与冲都已落在年月日三支上才稳；库没找到、或库找到了但冲没找到，
+      // 都可能是因为真正的时支里正好有那一支，结论必须存疑。
+      const atHour = (ck.positions || []).includes('hour') || (ck.openerPositions || []).includes('hour');
+      const robust = ck.present && ck.opened && !atHour;
+      ck.note = robust
+        ? '时柱暂缺：库与冲都已落在年月日三支上，结论不受时支影响'
+        : '时柱暂缺：库或开库可能落在未知的时支上，这一条只按正午占位算，补上出生时刻后可能整条改变';
+      ck.detail = `${ck.detail}（时支为占位值）`;
+    }
+    if (out.frame && out.frame.balance) {
+      const bal = out.frame.balance;
+      bal.placeholderHour = true;
+      bal.note = '时柱暂缺：阴阳的八位与五行占比都按正午时柱占位算过，补上出生时刻后层次可能变化';
+      bal.text = `${bal.text}（阴阳与五行未含真实时柱，层次只作方向）`;
+    }
+    if (out.relations && out.relations.hehua) {
+      const hh = out.relations.hehua;
+      hh.placeholderHour = true;
+      hh.text = `${hh.text}\n（时柱暂缺：只判了年月日三干，日干与时干那一组无从判起）`;
     }
     out.notes = [
       '时柱暂缺：未提供出生时刻，时柱不对外给出，也不计入神煞与干支关系',
