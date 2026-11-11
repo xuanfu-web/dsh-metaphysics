@@ -121,24 +121,31 @@ if (dirty) {
 }
 if (!/^\d+\.\d+\.\d+/.test(pkg.version)) fail(`package.json 版本号不合法：${pkg.version}`);
 
-// ── 1. 测试 ────────────────────────────────────────────────
+// ── 1. 构建 + 产物校验 ─────────────────────────────────────
+// 先构建、再跑测试。理由是测试本身依赖产物是最新的：
+//   · verification.test 断言「报告文件与生成器逐字节一致」，而报告里写着
+//     package.json 的版本号（tools/verification.mjs），改版本号后报告必然陈旧；
+//   · standalone.test 读单文件 HTML，正文里有断言基线的数字。
+// 旧顺序（先测试）让这两条在每一次改版本的发布上都先红一次，且报错是两个
+// 相同长度的数字对比，看不出根因——0.67.0 就卡在这里。
+// 构建放在测试之前，测试读到的就是这一版真实的产物。
+step('重建 client.js、引擎分块与单文件 HTML');
+run(process.execPath, [path.join(root, 'tools', 'build-client.mjs')], '构建 client.js 与分块');
+run(process.execPath, [path.join(root, 'tools', 'build-html.mjs')], '构建 HTML');
+run(process.execPath, [path.join(root, 'tools', 'verification.mjs')], '构建公开对拍报告');
+step('校验构建产物与源码一致（产物须已提交）');
+run('git', ['add', '-N', 'client.js', 'client.*.js'], '登记分块（新文件也能被 diff 看到）');
+run('git', ['diff', '--exit-code', '--', 'client.js', 'client.*.js'], '校验 client.js 与分块（未提交的产物差异）');
+run('git', ['add', '-N', 'docs/verification.html', 'docs/assets/verification-badge.svg'], '登记对拍报告');
+run('git', ['diff', '--exit-code', '--', 'docs/verification.html', 'docs/assets/verification-badge.svg'], '校验对拍报告（未提交的产物差异）');
+
+// ── 2. 测试 ────────────────────────────────────────────────
 if (skipTests) {
   step('跳过测试（--skip-tests）');
 } else {
   step('跑全部回归');
   run(process.execPath, [path.join(root, 'tools', 'test-all.mjs')], '测试');
 }
-
-// ── 2. 构建 + 产物校验 ─────────────────────────────────────
-step('重建 client.js、引擎分块与单文件 HTML');
-run(process.execPath, [path.join(root, 'tools', 'build-client.mjs')], '构建 client.js 与分块');
-run(process.execPath, [path.join(root, 'tools', 'build-html.mjs')], '构建 HTML');
-run(process.execPath, [path.join(root, 'tools', 'verification.mjs')], '构建公开对拍报告');
-step('校验构建产物与源码一致');
-run('git', ['add', '-N', 'client.js', 'client.*.js'], '登记分块（新文件也能被 diff 看到）');
-run('git', ['diff', '--exit-code', '--', 'client.js', 'client.*.js'], '校验 client.js 与分块（未提交的产物差异）');
-run('git', ['add', '-N', 'docs/verification.html', 'docs/assets/verification-badge.svg'], '登记对拍报告');
-run('git', ['diff', '--exit-code', '--', 'docs/verification.html', 'docs/assets/verification-badge.svg'], '校验对拍报告（未提交的产物差异）');
 
 // ── 3. 发布前检查 ──────────────────────────────────────────
 const token = process.env.NPM_TOKEN || '';
