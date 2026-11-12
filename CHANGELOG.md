@@ -1,3 +1,77 @@
+## 0.68.0（2026-11-12，已发布）
+
+- **太乙神数：积年推局，太乙落宫**（`engine/taiyi.js`、`engine/index.js`、`engine/plain-summary.js`、`src/panel-kit.js`、`src/app.js`、`src/web-ui.js`、`src/groups.mjs`、`tools/build-html.mjs`、`tools/build-client.mjs`、`test/taiyi.test.mjs`）：
+
+> 本段主题：第 22 个体系是象数盘，不是命盘。按积年推局（积年 = 公元年 + 10153917，残年取 360 的余数，再取 72 的余数得局数），局数二十四局一周、三年一宫、不入中五宫，阳遁自乾一宫顺行、阴遁自巽九宫逆行，判出太乙落在哪一宫、理天理地理人；另配八门（三十年一转）与文昌（十八年一周）。它给的是「位置对位置」的结构，不做吉凶断语。
+
+### 新增
+- `engine/taiyi.js`：十六间辰与十六神（乾 1 阴德 … 戌 1 阴主，宫数两两共用）、太乙九宫数（乾一离二艮三震四中五兑六坤七坎八巽九，与奇门不同）、`taiyiJinian / taiyiRound / yuanJiOf / taiyiPalace / eightGate / wenChang` 与 `buildTaiyi({ year, month, day })`。八门三十年一转、1954 年休门起；文昌按积年取 18 的余数，阳局自申（武德）起、阴局自寅（吕申）起，路上遇乾（阴德）与坤（大武）各数两次，所以十八步才走完一圈。
+- 面板与独立页都加了「太乙」入口（日期类，不用生辰，不挂性别）；结果卡第一块是九宫地盘（南上北下：巽离坤 / 震中兑 / 艮坎乾），太乙所在格高亮、文昌加标记，下面是落宫、八门、文昌、积年四行。
+- 引擎侧 `SYSTEM_LABEL`、`plain-summary`（先说结论方框）、根 `index.js` 的 system 枚举 / 参数 / 必填说明同步；分块新增 `client.taiyi.js`。
+
+### 测试
+- 新建 `test/taiyi.test.mjs` 120 条：十六神表与宫数两两共用、顺逆两套走宫都不含中五、积年与五元六纪（2024 → 残年 341 / 53 局 / 第六纪 41 年 / 壬子元 53 年）、三年一宫（2024 阳遁 53 局在离宫理地、2025 理人、同年阴遁落到坎宫）、八门按三十年轮、文昌十八步与遇乾坤各数两次、`brief` 结构、两个入口与渲染层。
+- 断言基线 9752 → 9879（176 → 177 文件）。
+
+### 已知
+- 只算到太乙、八门、文昌三个落点。计神 / 始击 / 定目、主算与客算、主客大小将参将、三基（君基 / 臣基 / 民基）、五福、十精，以及掩迫关囚击格这些格局判定都未收录，盘面上不显示、文案里也写明没有——这几项各有独立起例，需要单独对着《太乙金镜式经》逐条对拍，不混进这一层。
+
+- **五运六气：中运与司天在泉**（`engine/wuyunliuqi.js`、`engine/index.js`、`engine/plain-summary.js`、`src/panel-kit.js`、`src/app.js`、`src/web-ui.js`、`src/groups.mjs`、`tools/build-html.mjs`、`tools/build-client.mjs`、`test/wuyunliuqi.test.mjs`）：
+
+> 本段主题：第 21 个体系不是命盘，而是「今年偏什么」——按大寒分运气年，十干化运定中运太过不及，年支定司天在泉，再按 73.05 日一运、60.875 日一气切出客运五步与客气六步，标出此刻落在哪一步，并判天符 / 岁会 / 同天符 / 同岁会 / 太乙天符。它和八字是两套口径：运气年以大寒为界，八字年柱以立春为界，两者不互相印证。
+
+### 新增
+- `engine/wuyunliuqi.js`：数据表（主气六步与客气六步两张次序表分开、十干化运、年支配司天）与 `buildWuyunliuqi({ year, month, day, hour, minute })`，返回运气年、中运、司天在泉、主运五步 / 客运五步 / 主气六步 / 客气六步（每步带起止时刻）、当前所处运与气、客主加临（只判同气 / 顺 / 泄 / 逆 / 从五类）、特殊格局与能力边界。
+- 面板与独立页都加了「运气」入口（日期类，不用生辰，不挂性别）；结果卡第一块是运气年 + 中运与九步时刻表，当前那一步高亮；`plain-summary` 给四段人话，顶栏三条 chips。
+- 引擎侧 `SYSTEM_LABEL`、根 `index.js` 的枚举 / 参数 / 必填说明同步；分块新增 `client.wuyunliuqi.js`。
+
+### 测试
+- 新建 `test/wuyunliuqi.test.mjs` 114 条：十干化运与年干支、大寒分界（前后各取一天）、司天在泉七组年份对拍、步长与首尾相接、九个年份的特殊格局（含 2005 乙酉 / 2009 己丑的太乙天符）、当前运气的落点、能力边界、`brief` 结构、两个入口与渲染层。
+- 断言基线 9631 → 9752（175 → 176 文件）；入口预算收紧到 raw 349.8KB / gzip 105KB（余量已不足 1KB，下一个体系该拆模块而不是继续抬线）。
+
+- **中医体质：45 题自评出主次**（`engine/constitution.js`、`engine/index.js`、`engine/plain-summary.js`、`src/panel-kit.js`、`src/app.js`、`src/web-ui.js`、`tools/build-html.mjs`、`test/constitution.test.mjs`）：
+
+> 本段主题：第 20 个体系不是排盘，是问卷——九种体质（平和 / 气虚 / 阳虚 / 阴虚 / 痰湿 / 湿热 / 血瘀 / 气郁 / 特禀）各 5 题共 45 题，按 1（没有）到 5（总是）打分，用转化分判主次与兼夹，再给调养方向。它补的是「人本身舒不舒服」这一格，与八字紫微看的是不同的事。
+
+### 新增
+- `engine/constitution.js`：题库（9 × 5 题，每题带所属体质）、`constitutionPaper()`（不给答案先返回题目）、`buildConstitution({ answers })`。转化分 = (原始分 − 题数) / (题数 × 4) × 100；偏颇质 ≥ 40 判「是」、30–39「有倾向」；平和质 ≥ 60 且其余八种 < 30 才成立。跳过的题传 `null`，长度必须是 45；全 `null`、越界、小数一律 `E_INPUT`。
+- 面板与独立页都加了「体质」入口：5 题一页，答满 27 题（60%）可先看结果；结果卡第一块是九条横条，40% 处画判定线，主质那条加粗，后面跟「这体质是什么 / 容易被什么影响 / 调养方向」。
+- 引擎侧 `SYSTEM_LABEL`、`plain-summary`（先说结论方框）、根 `index.js` 的 system 枚举 / 参数 / 必填说明同步；分块新增 `client.constitution.js`。
+
+### 测试
+- 新建 `test/constitution.test.mjs` 89 条：题库结构、计分与判定（含「每题都选同一项」的 `flat` 提示）、五种 `E_INPUT`、引擎接入、面板（整份 45 个不剪尾、不进历史、不挂影子盘、先加载卷子再切 tab）、独立页与页面骨架、渲染层（40% 判定线、全部转义）。
+- `tools/e2e-panel.mjs` 加「十二·七、体质问卷」9 条真机断言：第 1 / 9 页、一页 5 题、25 个选项、答满 27 题可点、结果卡第一块是 `.mp-cs`。
+- 断言基线 9535 → 9631（174 → 175 文件）；入口预算因第 20 个体系由 340KB / 105KB 放宽到 345KB / 108KB（注释写明再涨就该拆模块，而不是继续抬线）。
+
+- **结果区先给盘面**（`src/app.js`、`test/panel-chart-first.test.mjs`、`tools/e2e-panel.mjs`、`README.md`）：
+
+> 本段主题：结果卡原来的顺序是 起卦时刻 → 性能 → 修订 → 句柄 → 影子盘 → 推导链 → 盘面，一屏里最先看到的是「12ms」「修订 3 处」这类技术行，卦象要往下翻才见。盘面才是这张盘唯一有吸引力的东西，所以把它提成第一块，解读紧跟，技术信息一律后置。
+
+### 改动
+- `src/app.js`：新增模块级 `chartHTML(result)`，把原来内联在 `resultWithInterpret(...)` 第一实参里的 19 体系盘面分派整段搬进来（15 个 `kind` 分支 + `quickHTML` 兜底）；结果卡 `__html` 改为 `chartHTML(result) + castAtHTML(result) + PP.resultWithInterpret('', result.it, ...) + 性能 / 修订 / 句柄 / 影子盘 / 推导链 + 口径对照`。
+- 只动顺序：盘面渲染器、起卦时刻行、解读、复制 / 导出 / 追问等按钮的写法都没改，`chartHTML` 里也不掺任何技术块（测试会拦）。
+
+### 测试
+- 新建 `test/panel-chart-first.test.mjs`，25 条：`chartHTML` 存在且名字以 `HTML` 结尾（`check-html-sinks` 的渲染器契约）、15 个 `kind` 分支及其顺序、18 个渲染器齐全（含 `trendHTML` / `qimenFactsHTML` / `ziweiHepanHTML`）、盘面函数里不掺 perf / trace / caliber、以分号而非逗号收尾、结果卡九块位置逐对比较、每块只出现一次。
+- `tools/e2e-panel.mjs` 加「十二·六、结果区第一块是盘面」2 条真机断言：点塔罗起卦后 `.mp-card` 的第一个子元素就是 `.mp-tt-card`，且不是技术信息行。
+- 断言基线 9510 → 9535（173 → 174 文件）。
+
+- **一键起卦：六体系**（`src/app.js`、`test/panel-cast-chips.test.mjs`、`README.md`）：
+
+> 本段主题：命理面板的表单顶部加一行折叠 chip——六爻、梅花、六壬、奇门、塔罗、小六壬各一个，点一下就用当下时刻起一卦，省掉「先切 tab、再找按钮」两步；起卦路径与点 tab 完全同一条，不新增第二种「取当下」的口径。
+
+### 新增
+- `src/app.js`：`CAST_CHIPS` 六项（`sys` / `label` / `tip`）+ 模块级 `castRow(props)`；在表单顶部（`.mp-panel` 内、日期/时刻行之前）渲染折叠表头，展开后是六个 chip，当前体系的 chip 高亮（带 `data-cast` 供定位）。
+- 点击 = `castChip(k)` → `activate(k)`，与点 tab 之后是同一套 `switchTo`：cast 体系用起卦当下的年月日时，塔罗不看时间直接抽；**不自己调 `run`、不自己取 `nowParts`**，口径只有一处。
+- 展开后若已有盘，行尾给「把这张盘问进对话」——直接接结果卡下方那条已有的 `askInChat`（`Engine.askPrompt` + `sendToComposer`），不另写 handoff。
+- 折叠状态存 `mp.cast.open`（纯布尔，走既有的 `storeGet` / `storeSet` 降级；不存任何输入过的出生信息或问题），默认折叠。
+
+### 测试
+- 新建 `test/panel-cast-chips.test.mjs`，33 条：六项齐全与顺序、六项在 `TIME_KIND` 里确实是 cast/none、口语说明覆盖「不看时间」「必填」「数字起卦」、默认折叠与持久化、折叠态只渲染表头、aria 属性与 `id` 对应、chip 走 `activate` 且函数体里没有 `run(` / `nowParts(`、高亮与 `data-cast`、`onAsk` 直连 `askInChat`、快捷行位置在面板输入区且在日期行之前、CSS 齐备且窄侧栏能换行、引擎侧没有被塞进入口逻辑。
+- 断言基线 9476 → 9509（172 → 173 文件）。
+
+### 已知
+- 面板的**实际点击**还没在重启后的宿主里实测（本次只到构建与断言层），三条确认清单留给下次重启后过。
 ## 0.67.1（2026-11-11，已发布）
 
 > 本段主题：紫微盘「显示设置」三个开关补上勾选方框高亮——日干四化、非节气四柱、太极点转换此前勾了有反应但方框不变色，看起来像「点不上」。

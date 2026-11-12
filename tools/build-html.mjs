@@ -425,6 +425,9 @@ function page() {
       <button class="tab" data-tab="fengshui">风水</button>
       <button class="tab" data-tab="name">起名</button>
       <button class="tab" data-tab="mbti">人格</button>
+      <button class="tab" data-tab="constitution">体质</button>
+      <button class="tab" data-tab="wuyunliuqi">运气</button>
+      <button class="tab" data-tab="taiyi">太乙</button>
     </div>
   </header>
 
@@ -533,12 +536,16 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
       <label class="field">询问方向
         <select id="direction">${DIR_OPTIONS}</select>
       </label>
-      <!-- 塔罗牌阵张数：仅塔罗 tab 显示（1/3/5 由引擎 TAROT SPREADS 支持） -->
+      <!-- 塔罗牌阵：仅塔罗 tab 显示（张数由牌阵定，命名牌阵见 engine/tarot.js SPREAD_DEFS） -->
       <label class="field" id="for-count" style="display:none">牌阵
         <select id="tcount">
-          <option value="1">1 张（当下指引）</option>
-          <option value="3" selected>3 张（过去·现在·未来）</option>
-          <option value="5">5 张（现状·阻碍·建议·结果·潜在）</option>
+          <option value="one">1 张 · 单张指引</option>
+          <option value="three" selected>3 张 · 过去现在未来</option>
+          <option value="five">5 张 · 五张局势</option>
+          <option value="celtic">10 张 · 凯尔特十字</option>
+          <option value="either">5 张 · 二选一</option>
+          <option value="relation">7 张 · 关系阵</option>
+          <option value="timeflow">3 张 · 时间流</option>
         </select>
       </label>
     </div>
@@ -626,6 +633,25 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
             <button type="button" class="mb-btn primary" id="mbti-submit" disabled>看结果</button>
             <button type="button" class="mb-btn" id="mbti-clear">清空</button>
             <span class="mb-hint" id="mbti-hint">答满 12 题可先看结果</span>
+          </div>
+        </div>
+      </div>
+      <!-- 中医体质问卷：5 题一页、1–5 打分；与人格问卷同一套 mb-* 版式，
+           题目与 1–5 的说明同样由 web-ui 从引擎取，页面只放容器 -->
+      <div id="for-constitution" style="display:none">
+        <div class="field">
+          <span>中医体质问卷 · 9 种体质各 5 题，共 45 题 · 5 题一页，按 1（没有）到 5（总是）打分</span>
+          <div class="mb-top">
+            <div class="mb-prog" aria-hidden="true"><i id="cs-fill"></i></div>
+            <span class="mb-count" id="cs-count">第 1 / 9 页 · 已答 0 / 45</span>
+          </div>
+          <div class="mb-qs" id="cs-qs"></div>
+          <div class="mb-nav">
+            <button type="button" class="mb-btn" id="cs-prev" disabled>上一页</button>
+            <button type="button" class="mb-btn" id="cs-next">下一页</button>
+            <button type="button" class="mb-btn primary" id="cs-submit" disabled>看结果</button>
+            <button type="button" class="mb-btn" id="cs-clear">清空</button>
+            <span class="mb-hint" id="cs-hint">答满 27 题可先看结果</span>
           </div>
         </div>
       </div>

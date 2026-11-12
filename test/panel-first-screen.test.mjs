@@ -15,18 +15,18 @@ const pageBuild = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta
 const flat = GROUPS.flatMap((g) => g.items);
 const keys = flat.map((it) => it.k);
 
-// ── ① 分组数据：三组、19 项、顺序与文案 ─────────────────────────
+// ── ① 分组数据：三组、22 项、顺序与文案 ─────────────────────────
 eq('分组数', GROUPS.length, 3);
 eq('组名与顺序', GROUPS.map((g) => g.title).join(','), '问一件事,看一个人,查日子');
 ok('每组一句白话提示', GROUPS.every((g) => g.hint && g.hint.length >= 8), GROUPS.map((g) => g.hint).join(' / '));
-eq('入口共 19 项', flat.length, 19);
-eq('入口不重复', new Set(keys).size, 19);
+eq('入口共 22 项', flat.length, 22);
+eq('入口不重复', new Set(keys).size, 22);
 ok('每项都有名称与白话说明', flat.every((it) => it.label && it.tip && it.tip.length >= 4));
 ok('窄屏奇数项的「人生K」铺满整行', GROUPS[1].items.some((it) => it.k === 'trend' && it.wide === true));
 
-// ── ② 与平铺的 19 个 tab 一一对应 ───────────────────────────────
+// ── ② 与平铺的 22 个 tab 一一对应 ───────────────────────────────
 const tabKeys = [...app.matchAll(/\{ k: '([a-z]+)', label: '/g)].map((m) => m[1]);
-eq('面板平铺 tab 也是 19 个', tabKeys.length, 19);
+eq('面板平铺 tab 也是 22 个', tabKeys.length, 22);
 eq('分组入口与平铺 tab 集合一致', [...keys].sort().join(','), [...tabKeys].sort().join(','));
 
 // ── ③ 唯一数据源：面板注入、页面生成，两边都不再手抄 ─────────────
@@ -40,7 +40,7 @@ ok('页面分组由 GROUPS 生成', /\$\{GROUPS\.map\(\(g\) => `/.test(pageBuild
 // ── ④ 页面产物与分组数据逐项一致 ───────────────────────────────
 const pageTools = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="([a-z]+)"><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)]
   .map((m) => ({ k: m[1], label: m[2], tip: m[3] }));
-eq('页面生成 19 个入口', pageTools.length, 19);
+eq('页面生成 22 个入口', pageTools.length, 22);
 eq('页面入口顺序与数据一致', pageTools.map((t) => t.k).join(','), keys.join(','));
 eq('页面名称与数据一致', pageTools.map((t) => t.label).join(','), flat.map((it) => it.label).join(','));
 eq('页面白话与数据一致', pageTools.map((t) => t.tip).join(','), flat.map((it) => it.tip).join(','));

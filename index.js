@@ -30,9 +30,9 @@ const TOOL_NAME = 'metaphysics_chart';
 
 const DESCRIPTION = [
   '排中国传统命理盘（玄学·命理·占卜，用户说「玄学」「算命」「占卜」时也用本工具）与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）、奇门遁甲（qimen）、合盘（hepan）或塔罗抽牌（tarot）。',
-  '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
-  '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
-  'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回。',
+  '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、中医体质（constitution，九种体质自评问卷）、五运六气（wuyunliuqi，中运与司天在泉）、太乙神数（taiyi，积年推局与八门文昌）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
+  '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 中医体质 / 九种体质 / 测体质 / 五运六气 / 运气盘 / 司天在泉 / 太乙神数 / 太乙盘 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
+  'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回；constitution 同样不用时间，先调一次拿到 45 道题，逐题打 1–5 分（跳过的传 null，别缩短数组），再把 45 个分数按顺序传回；wuyunliuqi 只要一个日期（省略补今天），运气年按大寒分界；taiyi 同样只要一个日期，年家按积年推局（太乙落宫、八门、文昌），主客算与格局未收录。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true（仅八字/紫微/六爻/梅花/大六壬/奇门/塔罗 7 个体系产出解析；合盘、人生 K 线、起名与速查类不产这一段），并尽量带上 question（所问之事）与 direction（询问方向）；缺省 detail: "brief" 只给结论、所问方向与三张表（解析段不设体积上限，超长就长），要其余维度用 lean，用户追问「为什么/依据」时改回 full。',
   '用户用一句话改参数（「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」）时，把原话放进 revise（可配合 handle），引擎翻译成参数补丁并在结果 revision 里回报改了哪些、没认哪些；不要自己把原话拆成猜测的参数。',
   '追问同一张盘：结果里有 handle，下次传 handle + 增量即可（例如 { handle, asOf: 2030 }、{ handle, withInterpret: true, question: "何时换工作" }、{ handle, system: "ziwei" } 看同一时间另一套盘），不必让用户重报出生信息；句柄带校验位，截断或改字会报 E_HANDLE。',
@@ -41,8 +41,8 @@ const DESCRIPTION = [
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
 
-/** 19 个体系的固定顺序：system 枚举与 help 索引共用 */
-const SYSTEM_ENUM = ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'trend', 'fengshui', 'name', 'convert'];
+/** 22 个体系的固定顺序：system 枚举与 help 索引共用 */
+const SYSTEM_ENUM = ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'trend', 'fengshui', 'name', 'convert'];
 
 /**
  * 顶层只留通用参数：出生信息、解读开关、句柄与多数体系共用的分析项。
@@ -62,7 +62,7 @@ const OPTION_KEYS = [
   'lines', 'task', 'startDate', 'days', 'candidates', 'shengXiao',
   'lunarYear', 'lunarMonth', 'lunarDay', 'isLeapMonth', 'num1', 'num2', 'num3',
   'juMethod', 'lateZiHourMode', 'partner2', 'chart', 'rectifyHours',
-  'upper', 'lower', 'changing', 'count',
+  'upper', 'lower', 'changing', 'count', 'spread',
   'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool',
   'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang',
   'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua',
@@ -97,7 +97,8 @@ const OPTION_HINTS = {
   upper: '仅 meihua 数字起卦：定上卦的数，与 lower 成对',
   lower: '仅 meihua 数字起卦：定下卦的数',
   changing: '仅 meihua 数字起卦：手动指定动爻 1–6',
-  count: '仅 tarot：牌数 1 / 3 / 5，默认 3',
+  count: '仅 tarot：牌数 1 / 3 / 5，默认 3；给了 spread 时以 spread 为准',
+  spread: '仅 tarot：牌阵 one 单张 / three 过去现在未来 / five 五张局势 / celtic 凯尔特十字(10) / either 二选一(5) / relation 关系阵(7) / timeflow 时间流(3)',
   leapMonth: '仅 ziwei：闰月口径 split / next / prev',
   leapAsNext: '仅 ziwei：旧写法，true 等同 leapMonth=next',
   brightnessSchool: '仅 ziwei：十四主星亮度流派 default/QS/XD1/ZZ/XD2',
@@ -137,7 +138,7 @@ const OPTION_HINTS = {
   year: '仅 name：公历出生年，配合 month/day/hour',
   month: '仅 name：公历出生月 1–12',
   day: '仅 name：公历出生日 1–31',
-  answers: '仅 mbti：按题目顺序的 24 个 1–5 分，跳过传 null',
+  answers: '仅 mbti / constitution：按题目顺序的 1–5 分（mbti 24 题、体质 45 题），跳过传 null',
 };
 
 const BIRTH_KEYS = ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'lateZi', 'dst', 'asOf', 'shadow'];
@@ -148,7 +149,7 @@ const SYSTEM_PARAMS = {
   bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
   ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'jieluSchool', 'suipoSchool', 'cross', 'diff', 'trace', ...READ_KEYS],
   liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
-  tarot: ['count', 'seed', ...READ_KEYS],
+  tarot: ['spread', 'count', 'seed', ...READ_KEYS],
   meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
   daliuren: ['datetime', 'trace', ...READ_KEYS],
   hepan: [...BIRTH_KEYS, 'partner', 'partner2', 'chart', 'leapMonth', 'ask'],
@@ -160,6 +161,9 @@ const SYSTEM_PARAMS = {
   star: ['datetime', 'shadow'],
   numerology: ['datetime', 'shadow'],
   mbti: ['answers', 'shadow'],
+  constitution: ['answers', 'shadow'],
+  wuyunliuqi: ['datetime', 'shadow'],
+  taiyi: ['datetime', 'shadow'],
   trend: ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'hourUnknown', 'toAge', 'asOf', 'shadow', 'ask'],
   fengshui: ['action', 'datetime', 'gender', 'sitting', 'facing', 'fortuneYear', 'period', 'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree', 'fortuneDate', 'fortuneTime', 'dst', 'shadow'],
   name: ['action', 'datetime', 'surname', 'givenName', 'limit', 'charElements', 'strokeOverrides', 'surnameStrokes', 'year', 'month', 'day', 'hour', 'minute', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'dst', 'shadow'],
@@ -182,6 +186,9 @@ const SYSTEM_REQUIRED = {
   star: '无（省略补今天）',
   numerology: '无（省略补今天）',
   mbti: '无（先不带 answers 拿题）',
+  constitution: '无（先不带 answers 拿 45 道题）',
+  wuyunliuqi: '无（省略则用今天；要算别的年份就传那年的日期）',
+  taiyi: '无（省略则用今天；年家按积年推局，给哪一年的日期就算哪一年）',
   trend: 'datetime、gender',
   fengshui: 'natal 要 datetime + gender；advise/xuankong 要 sitting 或 facing',
   name: 'assess 要 surname + givenName；generate 要生辰（datetime 或 year/month/day）',
@@ -558,7 +565,7 @@ export function apply(ctx) {
         system: {
           type: 'string',
           enum: SYSTEM_ENUM,
-          description: 'bazi = 四柱八字（含调候寒暖与《穷通宝鉴》120 格用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、卦体关系、用神落位与月建日辰旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需同时给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（某事项在日期区间或候选日内逐日打分排序；宜忌依《协纪辨方书》卷十一「用事」逐条神煞，轻重依卷十「宜忌」六等与德神制化）；chenggu = 袁天罡称骨（骨重 + 通行本称骨歌原文 + 白话释义）；xiaoliuren = 小六壬（时间或报数起课）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（MBTI 风格 24 题问卷：给 answers 出类型，不给则先返回题目）；trend = 人生 K 线（大运/流年走势可视化）；fengshui = 风水（八宅命卦/流年飞星/门主灶布局/玄空下卦，action 三选一）；name = 起名（391 字库的用字五行评估与候选生成；未收录字可传 charElements 指定五行）；convert = 公农历互转（solar2lunar 公历转农历 / lunar2solar 农历转公历）。',
+          description: 'bazi = 四柱八字（含调候与《穷通宝鉴》用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、用神与旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（区间或候选日逐日打分；宜忌依《协纪辨方书》用事与六等轻重）；chenggu = 袁天罡称骨（骨重 + 称骨歌 + 白话）；xiaoliuren = 小六壬（时间或报数）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（24 题：给 answers 出类型，不给先返回题目）；constitution = 中医体质（九种各 5 题：给 answers 出主次，不给先返回题目）；wuyunliuqi = 五运六气（大寒界；中运太过不及、司天在泉、客运客气六步）；taiyi = 太乙神数（积年推局；太乙落宫、八门、文昌）；trend = 人生 K 线（大运/流年走势）；fengshui = 风水（八宅/飞星/门主灶/玄空，action 三选一）；name = 起名（391 字库五行评估与候选；未收录字传 charElements）；convert = 公农历互转（solar2lunar / lunar2solar）。',
         },
         datetime: {
           type: 'string',
@@ -771,7 +778,12 @@ export function apply(ctx) {
         count: {
           type: 'number',
           enum: [1, 3, 5],
-          description: '塔罗张数：1 单张指引、3 过去现在未来、5 十字牌阵。默认 3。',
+          description: '塔罗张数：1 单张指引、3 过去现在未来、5 五张局势。默认 3。给了 spread 时以 spread 为准。',
+        },
+        spread: {
+          type: 'string',
+          enum: ['one', 'three', 'five', 'celtic', 'either', 'relation', 'timeflow'],
+          description: '塔罗牌阵（按问法选，张数由牌阵决定）：one 单张指引｜three 过去现在未来｜five 五张局势｜celtic 凯尔特十字 10 张｜either 二选一 5 张（A 的发展/结果、B 的发展/结果）｜relation 关系阵 7 张（你/对方/现状/双方期待/阻碍/走向）｜timeflow 时间流 3 张（眼下/这阵子/往后）。不给则按 count。',
         },
         leapMonth: {
           type: 'string',

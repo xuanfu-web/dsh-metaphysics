@@ -1,6 +1,6 @@
 // 0.39.0：首屏按「想干什么」分组（问一件事 / 看一个人 / 查日子）+ 最近用过 + 分组↔平铺。
 //
-// 约束：分组卡片只是另一套入口——19 个 tab 原样保留，两套入口走同一条 setTab/activate 路径；
+// 约束：分组卡片只是另一套入口——22 个 tab 原样保留，两套入口走同一条 setTab/activate 路径；
 // 页面断网、localStorage 不可用时，分组与平铺都必须照常能用，只是不记「最近用过」。
 import fs from 'node:fs';
 import { page } from '../tools/build-html.mjs';
@@ -24,19 +24,19 @@ eq('三个分组', (html.match(/class="tgroup"/g) || []).length, 3);
   ok('提示不是占位文案', hints.every((h) => h.length >= 8), hints.join(' / '));
 }
 
-// ── ② 19 个入口不多不少，与平铺 tab 一一对应 ──────────────────
-eq('分组里 19 个入口', toolList.length, 19);
-eq('入口不重复', new Set(toolList).size, 19);
+// ── ② 22 个入口不多不少，与平铺 tab 一一对应 ──────────────────
+eq('分组里 22 个入口', toolList.length, 22);
+eq('入口不重复', new Set(toolList).size, 22);
 eq('分组的 tab 集合与平铺完全一致', [...toolList].sort().join(','), [...tabList].sort().join(','));
 {
   const entries = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="[a-z]+"><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)];
-  eq('19 项都带名称与白话说明', entries.length, 19);
+  eq('22 项都带名称与白话说明', entries.length, 22);
   ok('白话说明不是空串', entries.every((m) => m[2].trim().length >= 4));
   ok('六爻的白话说明在页面上', html.includes('<b>六爻</b><span>摇六次，问一件事</span>'));
 }
 
-// ── ③ 平铺回退：19 个 tab 原样保留，可一键切回 ──────────────────
-eq('平铺的 19 个 tab 仍在', tabList.length, 19);
+// ── ③ 平铺回退：22 个 tab 原样保留，可一键切回 ──────────────────
+eq('平铺的 22 个 tab 仍在', tabList.length, 22);
 ok('视图开关默认选中分组', /<button type="button" data-view="group" class="on">分组<\/button>/.test(html));
 ok('可切回平铺', /<button type="button" data-view="flat">平铺<\/button>/.test(html));
 ok('分组视图收起平铺 tab 条', /body\.view-group \.tabs\{display:none\}/.test(html));

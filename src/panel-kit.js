@@ -3720,6 +3720,152 @@
   }
   pp.profilesAgo = profAgo;
 
+  // ── 卦例库（本机命例集）────────────────────────────────────────
+  // 存「这一次问的事」而不是「这个人」：同一个人可攒很多条，每条带应验状态。
+  // 只存输入 + 一句摘要，不存盘面（一份结果几十 KB，几百条就撑爆 5MB 配额）；
+  // 回看拿同一组参数重排，面板的 replay 走的就是这条路。
+  const CASE_KEY = 'dsh-metaphysics/cases-v1';
+  const CASE_MAX = 480;
+  const CASE_STATUS = ['pending', 'hit', 'miss', 'void'];
+  const CASE_STATUS_LABEL = { pending: '待验', hit: '应验', miss: '未应', void: '作废' };
+  const CASE_NOTE_MAX = 120;
+  pp.CASE_KEY = CASE_KEY;
+  pp.CASE_MAX = CASE_MAX;
+  pp.CASE_STATUS = CASE_STATUS;
+  pp.caseStatusLabel = (s) => CASE_STATUS_LABEL[s] || CASE_STATUS_LABEL.pending;
+
+  /** 同样是外部输入（手改/写坏/半条）：逐字段验，坏条目整条丢，别让它排出一张不存在的盘 */
+  function caseClean(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (!isStr(raw.id) || !raw.id || raw.id.length > 64) return null;
+    const e = raw.entry;
+    if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+    if (!isStr(e.kind) || PROF_KINDS.indexOf(e.kind) < 0) return null;
+    // 回看至少要有一套能交给 run() 的参数：出生盘有日期，起卦类有时间或所问之事
+    if (!isStr(e.date) && !isStr(e.time) && !isStr(e.question)) return null;
+    const at = Number(raw.at || e.at) || 0;
+    if (!at) return null;
+    return {
+      id: raw.id,
+      at,
+      status: CASE_STATUS.indexOf(raw.status) >= 0 ? raw.status : 'pending',
+      note: isStr(raw.note) ? raw.note.slice(0, CASE_NOTE_MAX) : '',
+      question: isStr(e.question) ? e.question.slice(0, 80) : '',
+      entry: e,
+    };
+  }
+
+  function caseReadRaw() {
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(CASE_KEY) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  function caseSave(list) {
+    if (!window.localStorage) return false; // 没有存储就别报成功
+    try {
+      window.localStorage.setItem(CASE_KEY, JSON.stringify(list.slice(0, CASE_MAX)));
+      return true;
+    } catch (e) { return false; }
+  }
+  pp.casesSave = caseSave;
+
+  /** 新的在前；同一毫秒内按 id 兜底，保证两次渲染顺序一致 */
+  pp.casesLoad = function () {
+    return caseReadRaw().map(caseClean).filter(Boolean)
+      .sort((a, b) => (b.at - a.at) || (a.id < b.id ? 1 : -1));
+  };
+
+  pp.casesNewId = function () {
+    const taken = {};
+    caseReadRaw().forEach((x) => { if (x && x.id) taken[x.id] = 1; });
+    let id = '';
+    for (let i = 0; i < 8; i += 1) {
+      id = 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+      if (!taken[id]) break;
+    }
+    return id;
+  };
+
+  /** 一分钟内参数完全相同的只留一条（连点排盘会重复）；其余照收 */
+  pp.casesAdd = function (entry, opt) {
+    const o = opt || {};
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      return { ok: false, list: pp.casesLoad() };
+    }
+    // 取已排好序的列表：FIFO 淘汰靠这个顺序，直接用原始数组会淘汰错那一头
+    const list = pp.casesLoad();
+    const at = Number(entry.at) || Date.now();
+    const dup = list.some((x) => x.at > at - 60000 && x.entry.kind === entry.kind
+      && x.entry.date === entry.date && x.entry.time === entry.time
+      && (x.entry.question || '') === (entry.question || '')
+      && (x.entry.lines || '') === (entry.lines || ''));
+    if (dup) return { ok: true, dup: true, list: pp.casesLoad() };
+
+    const item = caseClean({
+      id: pp.casesNewId(),
+      at,
+      status: o.status || 'pending',
+      note: o.note || '',
+      entry,
+    });
+    if (!item) return { ok: false, list: pp.casesLoad() };
+    // FIFO：超上限淘汰最旧的
+    const next = [item].concat(list.filter((x) => x.id !== item.id)).slice(0, CASE_MAX);
+    if (!caseSave(next)) return { ok: false, list: pp.casesLoad() };
+    return { ok: true, item, list: next };
+  };
+
+  pp.casesSetStatus = function (id, status) {
+    if (CASE_STATUS.indexOf(status) < 0) return pp.casesLoad();
+    const list = caseReadRaw().map(caseClean).filter(Boolean)
+      .map((x) => (x.id === id ? Object.assign({}, x, { status }) : x));
+    if (!caseSave(list)) return pp.casesLoad();
+    return list;
+  };
+
+  pp.casesRemove = function (id) {
+    const list = caseReadRaw().map(caseClean).filter(Boolean).filter((x) => x.id !== id);
+    if (!caseSave(list)) return pp.casesLoad();
+    return list;
+  };
+
+  /** 导出 JSONL：一行一条 */
+  pp.casesExport = function (list) {
+    const src = Array.isArray(list) ? list : pp.casesLoad();
+    return src.map((x) => JSON.stringify({
+      id: x.id, at: x.at, atISO: new Date(x.at).toISOString(),
+      kind: x.entry.kind, label: isStr(x.entry.label) ? x.entry.label : '',
+      question: x.question, status: x.status, note: x.note, params: x.entry,
+    })).join('\n');
+  };
+
+  /** 把旧的「最近排过」并进来（幂等：迁过的 id 带 h- 前缀） */
+  pp.casesMigrate = function (histList) {
+    const src = Array.isArray(histList) ? histList : [];
+    if (!src.length) return { added: 0, list: pp.casesLoad() };
+    const list = caseReadRaw().map(caseClean).filter(Boolean);
+    const seen = {};
+    list.forEach((x) => { seen[x.id] = 1; });
+    let added = 0;
+    for (let i = 0; i < src.length; i += 1) {
+      const h = src[i];
+      if (!h || typeof h !== 'object' || !isStr(h.kind)) continue;
+      const at = Number(h.at) || 0;
+      const id = `h-${at || '0'}-${i}-${h.kind}`;
+      if (seen[id]) continue;
+      const item = caseClean({ id, at: at || Date.now(), status: 'pending', entry: h });
+      if (!item) continue;
+      seen[id] = 1;
+      list.push(item);
+      added += 1;
+    }
+    if (added) caseSave(list.sort((a, b) => b.at - a.at));
+    return { added, list: pp.casesLoad() };
+  };
+
   const PROF_GENDER = { male: '♂', female: '♀' };
 
   /**
@@ -3918,6 +4064,113 @@
    * 十六型人格：四维净分条 + 类型倾向 + 优势/留意 + 认知功能栈 + 工作/关系/学习。
    * 未答题时（引擎回问卷）改渲染题目清单，供照着逐题打分。
    */
+  // 中医体质：九条转化分横条 + 判定线 40 + 调养方向。
+  // 分数是数值，直接插；文字一律走 esc（check-html-sinks 按「调用了 esc」核对）。
+  // 太乙神数：九宫地盘 + 太乙/文昌落点 + 八门 + 五元六纪。
+  // 地盘按「南上北下」排：巽离坤 / 震中兑 / 艮坎乾。中五宫太乙不入，只作方位补全。
+  // 只有太乙、八门、文昌三个落点是算实的，其余项目（主客算、格局）不在盘上出现。
+  pp.taiyiHTML = function (r) {
+    if (!r || !r.taiyi || !r.meta) return '';
+    const t = r.taiyi;
+    const wc = r.wenchang || {};
+    const grid = [[9, '巽'], [2, '离'], [7, '坤'], [4, '震'], [5, '中'], [6, '兑'], [3, '艮'], [8, '坎'], [1, '乾']];
+    const cells = grid.map((c) => {
+      const num = c[0];
+      const nm = c[1];
+      const on = t.palace === num;
+      const w = wc.num === num;
+      const marks = (on ? '<i class="mp-ty-mark">太乙</i>' : '') + (w ? '<i class="mp-ty-mark w">文昌</i>' : '');
+      return `<div class="mp-ty-cell${on ? ' on' : ''}${nm === '中' ? ' mid' : ''}"><b>${esc(nm)}</b><em>${num}</em>${marks}</div>`;
+    }).join('');
+    const nc = (r.scope && r.scope.notCovered) || [];
+    return `<section class="mp-ty" aria-label="太乙神数">
+      <div class="mp-ty-h">
+        <span class="mp-ty-y">${esc(String(r.meta.year))} 年</span>
+        <span class="mp-ty-j">${esc(r.meta.dunText || '')}${esc(String(r.meta.ju))}局</span>
+        <span class="mp-ty-m">太乙临 ${esc(t.palaceName || '')} 宫</span>
+        <span class="mp-ty-m">${esc(r.gate ? r.gate.gate : '')}</span>
+      </div>
+      <div class="mp-ty-g">${cells}</div>
+      <div class="mp-ty-sec"><em>太乙</em>第 ${esc(String(t.palace || ''))} 宫（${esc(t.dir || '')}），三年里的第 ${esc(String(t.yearInPalace || ''))} 年，${esc(t.li || '')}</div>
+      <div class="mp-ty-sec"><em>八门</em>${esc(r.gate ? r.gate.gate : '')}　八门三十年一转，1954 年从休门起</div>
+      <div class="mp-ty-sec"><em>文昌</em>${esc(wc.pos || '')}（${esc(wc.god || '')}，${esc(wc.palaceName || '')}宫）　十八年一周</div>
+      <div class="mp-ty-sec"><em>积年</em>${esc(String(r.meta.jinian || ''))}　残年 ${esc(String(r.meta.rest360 || ''))}　${esc(r.year ? r.year.jiName : '')}${esc(r.year ? String(r.year.jiYear) : '')}年　${esc(r.year ? r.year.yuanName : '')}第 ${esc(r.year ? String(r.year.yuanYear) : '')} 年</div>
+      <div class="mp-ty-note">只算到太乙、八门、文昌三个落点；${esc(nc.join('、'))}未收录，盘上不显示。</div>
+    </section>`;
+  };
+
+  pp.wuyunliuqiHTML = function (r) {
+    if (!r || !r.zhongyun || !r.year) return '';
+    const z = r.zhongyun;
+    const cur = r.current || {};
+    const sp = [];
+    if (r.special && r.special.taiYi) sp.push('太乙天符');
+    if (r.special && r.special.tianFu && !r.special.taiYi) sp.push('天符');
+    if (r.special && r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+    if (r.special && r.special.tongTianFu) sp.push('同天符');
+    if (r.special && r.special.tongSuiHui) sp.push('同岁会');
+    const rows = (list, isQi) => (list || []).map((s) => {
+      const nm = isQi ? s.qi : s.name;
+      const on = isQi ? !!(cur.keQi && cur.keQi.qi === s.qi) : !!(cur.keYun && cur.keYun.name === s.name);
+      const tag = isQi ? (s.sitian ? '司天' : s.zaiquan ? '在泉' : '') : (s.taiShao || '');
+      return `<div class="mp-wl-step${on ? ' on' : ''}"><span class="mp-wl-no">${s.no}</span><span>${esc(nm || '')}</span><span class="mp-wl-tg">${esc(tag)}</span><span class="mp-wl-tm">${esc(s.startTime || '')}—${esc(s.endTime || '')}</span></div>`;
+    }).join('');
+    const tags = sp.map((x) => `<span class="mp-wl-tag on">${esc(x)}</span>`).join('');
+    return `<section class="mp-wl" aria-label="五运六气">
+      <div class="mp-wl-h">
+        <span class="mp-wl-y">${esc(r.year.ganzhi)}</span>
+        <span class="mp-wl-z">${esc(z.name)}</span>
+        <span class="mp-wl-m">${esc(r.year.startTime || '')} — ${esc(r.year.endTime || '')}</span>
+      </div>
+      ${tags ? `<div class="mp-wl-sec"><em>格局</em>${tags}</div>` : ''}
+      <div class="mp-wl-sec"><em>司天在泉</em>${esc(r.sitian.qi)}司天　${esc(r.zaiquan.qi)}在泉</div>
+      <div class="mp-wl-sec"><em>此刻</em>${esc(cur.text || '')}</div>
+      <div class="mp-wl-sec"><em>客运五步</em></div>
+      <div class="mp-wl-steps">${rows(r.keYun, false)}</div>
+      <div class="mp-wl-sec"><em>客气六步</em></div>
+      <div class="mp-wl-steps">${rows(r.keQi, true)}</div>
+      <div class="mp-wl-note">${esc(r.scope ? r.scope.note : '')}</div>
+    </section>`;
+  };
+
+  pp.constitutionHTML = function (r) {
+    if (!r) return '';
+    if (r.paper && Array.isArray(r.questions)) {
+      const items = r.questions.map((q) => `<li><span class="mp-cs-no">${q.no}</span><span class="mp-cs-t">${esc(q.text)}</span><em>${esc(q.name)}</em></li>`).join('');
+      return `<section class="mp-cs-paper" aria-label="中医体质问卷">
+        <div class="mp-cs-h"><span><b>中医体质问卷</b><i>${r.scaleCount} 种体质 × ${r.itemsPerScale} 题 · 1 没有 / 5 总是</i></span>
+        <span class="mp-cs-count">填完分数再看结果</span></div>
+        <ol>${items}</ol>
+        <div class="mp-cs-note">${esc(r.note || '')}</div>
+      </section>`;
+    }
+    const p = r.primary || {};
+    const rows = (r.scales || []).map((s) => {
+      const v = Math.max(0, Math.min(100, s.converted || 0));
+      const on = s.level && s.level !== '否';
+      const main = p.key === s.key;
+      return `<div class="mp-cs-row${main ? ' main' : ''}">
+        <span class="mp-cs-n">${esc(s.name)}</span>
+        <span class="mp-cs-track"><i class="${on ? 'on' : ''}" style="width:${v}%"></i><b class="mp-cs-tick" style="left:40%"></b></span>
+        <span class="mp-cs-v">${v}</span>
+        <span class="mp-cs-l">${esc(s.level || '')}</span>
+      </div>`;
+    }).join('');
+    const care = (r.care || []).map((c) => `<li>${esc(c)}</li>`).join('');
+    return `<section class="mp-cs" aria-label="中医体质结果">
+      <div class="mp-cs-h">
+        <span class="mp-cs-main">${esc(p.name || '—')}</span>
+        <span class="mp-cs-meta"><b>${esc(p.oneLine || '')}</b><i>${r.secondary ? `兼夹 ${esc(r.secondary.name)}（${Math.round(r.secondary.converted)}）` : '无兼夹'}${r.flat ? ' · 区分度不足' : ''}</i></span>
+        <span class="mp-cs-count">已答 ${r.meta ? r.meta.answered : 0}/${r.meta ? r.meta.total : 0} 题</span>
+      </div>
+      <div class="mp-cs-bars">${rows}</div>
+      <div class="mp-cs-sec"><em>这体质</em>${esc(p.trait || '')}</div>
+      <div class="mp-cs-sec"><em>倾向</em>${esc(p.tendency || '')}</div>
+      <div class="mp-cs-care"><b>调养方向</b><ul>${care}</ul></div>
+      <div class="mp-cs-note">${esc(r.note || '')}</div>
+    </section>`;
+  };
+
   pp.mbtiHTML = function (r) {
     if (!r) return '';
     if (r.needAnswers && Array.isArray(r.questions)) {

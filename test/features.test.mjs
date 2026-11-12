@@ -66,7 +66,7 @@ ok('历史条目记下各体系自己的参数', /k === 'zeri' \? \{ task, days,
   && /k === 'fengshui' \? \{ fsMode, fsPeriod, sitting, facing \}/.test(app)
   && /k === 'convert' \? \{ convMode, lunarDate, leapMonth \}/.test(app)
   && /k === 'trend' \? \{ toAge \}/.test(app));
-ok('历史去重比对方向 / 张数 / 动爻', /a\.direction === b\.direction && a\.count === b\.count && a\.changing === b\.changing/.test(app));
+ok('历史去重比对方向 / 牌阵 / 动爻', /a\.direction === b\.direction && a\.spread === b\.spread && a\.changing === b\.changing/.test(app));
 ok('历史去重比对各体系参数', /a\.kind !== 'zeri' \|\| \(a\.task === b\.task/.test(app)
   && /a\.kind !== 'name' \|\| \(a\.nnMode === b\.nnMode/.test(app)
   && /a\.kind !== 'qimen' \|\| \(a\.qimenRule === b\.qimenRule/.test(app));

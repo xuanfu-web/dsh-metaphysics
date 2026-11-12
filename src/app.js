@@ -24,8 +24,8 @@ const sameEntry = (a, b) =>
   && (a.lateZi !== false) === (b.lateZi !== false)
   && a.address === b.address && a.lines === b.lines && a.question === b.question
   && a.mhMode === b.mhMode && a.upper === b.upper && a.lower === b.lower
-  // 方向 / 张数 / 动爻也换一张结果：漏比就会把两条不同的盘当成重复条目顶掉
-  && a.direction === b.direction && a.count === b.count && a.changing === b.changing
+  // 方向 / 牌阵 / 动爻也换一张结果：漏比就会把两条不同的盘当成重复条目顶掉
+  && a.direction === b.direction && a.spread === b.spread && a.changing === b.changing
   // 各体系自己的参数（流派、事项、起卦方式等）各比各的；旧条目缺字段时两边都是 undefined
   && (a.kind !== 'qimen' || (a.qimenRule === b.qimenRule && a.qLateZi === b.qLateZi))
   && (a.kind !== 'zeri' || (a.task === b.task && a.days === b.days
@@ -154,6 +154,49 @@ const CSS = `
   transition:background .16s,color .16s,border-color .16s,box-shadow .16s}
 .mp-tab:hover{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary)}
 .mp-tab.on{background:var(--dsw-alias-brand-primary);border-color:transparent;color:var(--mp-on-brand,#fff);font-weight:600;box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
+/* ── 起卦快捷行：折叠一条，展开就是六个占卜体系的一键起卦 ──
+   放在输入区最上面：占卜这类是「当下就问」的用法，先选体系再填时刻的路径太长。 */
+.mp-castrow{margin:0 0 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 48%,transparent);overflow:hidden}
+.mp-castrow-h{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:6px 10px;border:0;background:none;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12.5px;text-align:left;cursor:pointer}
+.mp-castrow-h:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
+.mp-castrow-t{font-weight:600;color:var(--dsw-alias-label-primary);white-space:nowrap}
+.mp-castrow-l{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.78}
+.mp-castrow-i{font-style:normal;opacity:.6}
+.mp-castlist{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 9px}
+.mp-castchip{min-height:30px;padding:5px 11px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:color-mix(in srgb,var(--dsw-alias-bg-layer-2) 62%,transparent);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12.5px;cursor:pointer;
+  transition:background .16s,color .16s,border-color .16s}
+.mp-castchip:hover{background:var(--dsw-alias-bg-layer-2);border-color:color-mix(in srgb,var(--dsw-alias-border-l1) 45%,var(--dsw-alias-brand-primary))}
+.mp-castchip.on{border-color:transparent;background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);font-weight:600}
+.mp-wl-h{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:7px}
+.mp-wl-y{font-size:15px;font-weight:700}
+.mp-wl-z{font-weight:600;color:var(--dsw-alias-brand-primary,#3b6fe0)}
+.mp-wl-m,.mp-wl-tm,.mp-wl-tg,.mp-wl-no{font-size:11px;color:var(--dsw-alias-label-tertiary,#8a8f9a)}
+.mp-wl-tag{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border-radius:999px;background:var(--dsw-alias-fill-tertiary,#eceef2)}
+.mp-wl-tag.on{background:var(--dsw-alias-brand-primary,#3b6fe0);color:#fff}
+.mp-wl-sec,.mp-wl-note{font-size:13px;line-height:1.6;padding-bottom:5px}
+.mp-wl-sec em{font-style:normal;margin-right:6px}
+.mp-wl-steps{display:flex;flex-direction:column;gap:3px}
+.mp-wl-step{display:grid;grid-template-columns:16px 1fr 34px auto;gap:7px;font-size:12px;padding:3px 7px;border-radius:7px}
+.mp-wl-step.on{background:var(--dsw-alias-fill-tertiary,#eceef2);font-weight:600}
+.mp-ty-h{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;padding-bottom:7px}
+.mp-ty-y{font-size:15px;font-weight:700}
+.mp-ty-j{font-weight:600;color:var(--dsw-alias-brand-primary,#3b6fe0)}
+.mp-ty-m{font-size:11px;color:var(--dsw-alias-label-tertiary,#8a8f9a)}
+.mp-ty-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:2px 0 8px}
+.mp-ty-cell{position:relative;border-radius:8px;background:var(--dsw-alias-fill-tertiary,#eceef2);padding:7px 6px;text-align:center;font-size:12px;min-height:50px}
+.mp-ty-cell b{display:block;font-size:13px}
+.mp-ty-cell em{font-style:normal;font-size:11px;color:var(--dsw-alias-label-tertiary,#8a8f9a)}
+.mp-ty-cell.on{background:var(--dsw-alias-brand-primary,#3b6fe0);color:#fff}
+.mp-ty-cell.on em{color:rgba(255,255,255,.82)}
+.mp-ty-cell.mid{opacity:.5}
+.mp-ty-mark{position:absolute;top:3px;right:4px;font-style:normal;font-size:10px;padding:0 4px;border-radius:999px;background:#fff;color:var(--dsw-alias-brand-primary,#3b6fe0)}
+.mp-ty-mark.w{right:auto;left:4px;color:var(--dsw-alias-label-secondary,#5a6070)}
+.mp-ty-sec{font-size:13px;line-height:1.6;padding-bottom:4px}
+.mp-ty-sec em{font-style:normal;margin-right:6px;color:var(--dsw-alias-label-tertiary,#8a8f9a)}
+.mp-ty-note{font-size:11px;line-height:1.6;color:var(--dsw-alias-label-tertiary,#8a8f9a)}
+.mp-castask{padding:0 10px 9px}
+.mp-castgo{box-sizing:border-box;width:100%;min-height:30px;padding:5px 11px;border-radius:8px;border:1px dashed var(--dsw-alias-border-l1);background:none;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;cursor:pointer}
+.mp-castgo:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-brand-primary)}
 .mp-field{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dsw-alias-label-secondary);min-width:0}
 /* 「时辰未知」勾选：与时刻框同一行，字小一号，不抢主操作 */
 .mp-chk{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--dsw-alias-label-secondary);cursor:pointer;user-select:none;white-space:nowrap}
@@ -196,6 +239,39 @@ const CSS = `
 .mp-quiz-btn:disabled{opacity:.42;cursor:not-allowed}
 .mp-quiz-btn.primary{border-color:transparent;background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);font-weight:600}
 .mp-quiz-hint{margin-left:auto;font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.6}
+/* 中医体质（P4）：九条转化分横条 + 40 分判定线；文字全部来自引擎，字体只负责排版 */
+.mp-cs{border-radius:12px;overflow:hidden;background:var(--dsw-alias-bg-base,#fff);border:1px solid var(--dsw-alias-line-secondary,#ececf0)}
+.mp-cs-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--dsw-alias-line-secondary,#ececf0)}
+.mp-cs-main{font-size:20px;font-weight:800;letter-spacing:.04em}
+.mp-cs-meta{display:flex;flex-direction:column;gap:1px;flex:1 1 160px;min-width:0}
+.mp-cs-meta b{font-size:13px;font-weight:600;line-height:1.5}
+.mp-cs-meta i{font-size:12px;font-style:normal;color:var(--dsw-alias-label-secondary,#8b8f98)}
+.mp-cs-count{font-size:12px;color:var(--dsw-alias-label-secondary,#8b8f98);white-space:nowrap}
+.mp-cs-bars{display:flex;flex-direction:column;gap:5px;padding:10px 12px 8px}
+.mp-cs-row{display:grid;grid-template-columns:52px 1fr 30px 52px;align-items:center;gap:8px;font-size:12px;line-height:1.4}
+.mp-cs-row.main{font-weight:700}
+.mp-cs-n{white-space:nowrap}
+.mp-cs-track{position:relative;height:8px;border-radius:999px;background:var(--dsw-alias-fill-tertiary,#eceef2)}
+.mp-cs-track i{display:block;height:100%;border-radius:999px;background:var(--dsw-alias-fill-quaternary,#c9cdd6)}
+.mp-cs-track i.on{background:var(--dsw-alias-brand-primary,#3b6fe0)}
+.mp-cs-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--dsw-alias-label-tertiary,#b9bec9)}
+.mp-cs-v{text-align:right;color:var(--dsw-alias-label-primary,#222)}
+.mp-cs-l{color:var(--dsw-alias-label-secondary,#8b8f98);font-size:11px}
+.mp-cs-sec{padding:2px 12px 6px;font-size:13px;line-height:1.7}
+.mp-cs-sec em{display:inline-block;margin-right:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;background:var(--dsw-alias-fill-tertiary,#f0f1f4);color:var(--dsw-alias-label-secondary,#666)}
+.mp-cs-care{padding:4px 12px 8px;font-size:13px;line-height:1.7}
+.mp-cs-care b{display:block;margin-bottom:2px}
+.mp-cs-care ul{margin:0;padding-left:18px}
+.mp-cs-note{padding:6px 12px 10px;font-size:12px;line-height:1.6;color:var(--dsw-alias-label-secondary,#8b8f98)}
+.mp-cs-paper{padding:8px 12px;font-size:13px;line-height:1.7}
+.mp-cs-paper ol{margin:6px 0;padding-left:20px}
+.mp-cs-paper li{margin:2px 0}
+.mp-cs-no{display:inline-block;min-width:22px;color:var(--dsw-alias-label-secondary,#9aa0a6);font-variant-numeric:tabular-nums}
+.mp-cs-paper li em{margin-left:6px;font-style:normal;font-size:11px;color:var(--dsw-alias-label-secondary,#9aa0a6)}
+.mp-cs-paper .mp-cs-h{display:flex;align-items:center;gap:10px;padding:0 0 6px}
+.mp-cs-paper .mp-cs-h i{font-size:12px;font-style:normal;color:var(--dsw-alias-label-secondary,#8b8f98)}
+.mp-cs-paper .mp-cs-count{font-size:12px;color:var(--dsw-alias-label-secondary,#8b8f98)}
+.mp-cs-paper .mp-cs-note{font-size:12px;color:var(--dsw-alias-label-secondary,#8b8f98)}
 .mp-btn{padding:8px 22px;border-radius:9px;border:none;background:var(--dsw-alias-brand-primary);color:var(--mp-on-brand,#fff);cursor:pointer;font-size:14px;font-weight:600;min-width:132px;
   box-shadow:0 10px 20px -14px var(--dsw-alias-brand-primary);transition:transform .14s,filter .14s,box-shadow .14s}
 .mp-btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
@@ -226,6 +302,25 @@ const CSS = `
 .mp-hist-list{display:flex;gap:8px;flex-wrap:wrap}
 .mp-hist-item{display:flex;align-items:baseline;gap:6px;padding:6px 10px;border-radius:9px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-primary);font-size:12px;cursor:pointer;max-width:100%}
 .mp-hist-item:hover{border-color:var(--dsw-alias-brand-primary)}
+.mp-hist-acts{display:flex;align-items:center;gap:10px}
+.mp-hist-more{color:var(--dsw-alias-brand-primary)}
+.mp-cases-layer{position:fixed;inset:0;z-index:60;display:flex;justify-content:flex-end;background:rgba(0,0,0,.28)}
+.mp-cases-box{display:flex;flex-direction:column;width:min(540px,100vw);height:100%;background:var(--dsw-alias-bg-layer-1);border-left:1px solid var(--dsw-alias-border-l1)}
+.mp-cases-h,.mp-cases-f{display:flex;align-items:center;gap:10px;padding:10px 16px;border:0 solid var(--dsw-alias-border-l1)}
+.mp-cases-h{justify-content:space-between;border-bottom-width:1px;font-size:13.5px;color:var(--dsw-alias-label-primary)}
+.mp-cases-f{border-top-width:1px}
+.mp-cases-x{background:none;border:0;color:var(--dsw-alias-label-secondary);font-size:15px;cursor:pointer;line-height:1}
+.mp-cases-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px 2px}
+.mp-cases-list{flex:1;overflow:auto;padding:8px 12px 12px}
+.mp-case{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;margin-bottom:8px}
+.mp-case-main{flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;background:none;border:0;color:var(--dsw-alias-label-primary);font-size:12.5px;text-align:left;cursor:pointer;padding:0}
+.mp-case-main b{font-weight:600;flex:none}
+.mp-case-main span{color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-case-main i{font-style:normal;color:var(--dsw-alias-label-secondary);opacity:.65;font-size:11px;flex:none;margin-left:auto}
+.mp-case-sel{flex:none;background:none;border:1px solid var(--dsw-alias-border-l1);border-radius:6px;color:var(--dsw-alias-label-secondary);font-size:11px;padding:1px 2px;cursor:pointer}
+.mp-case-del{flex:none;background:none;border:0;color:var(--dsw-alias-label-secondary);font-size:11px;cursor:pointer;opacity:.7}
+.mp-case-del:hover{color:var(--dsw-alias-state-error-primary);opacity:1}
+.mp-cases-tip{font-size:11px;color:var(--dsw-alias-label-secondary);line-height:1.5}
 .mp-hist-item b{font-weight:600}
 .mp-hist-item span{color:var(--dsw-alias-label-secondary)}
 .mp-hist-item i{font-style:normal;color:var(--dsw-alias-label-secondary);opacity:.7;font-size:11px}.mp-hint{font-size:12.5px;color:var(--dsw-alias-label-secondary);line-height:1.7;margin:0 0 14px;padding-left:2px}
@@ -403,6 +498,11 @@ function DateInput(props) {
 // 只在第一次取一次；答案按题序放在 App 的 mbAns 里，null = 未答。
 const MBTI_PER_PAGE = 4;
 const MBTI_MIN = 12;
+// 中医体质（P4）：九种体质各 5 题，共 45 题；一页 5 题，题面由引擎的卷子给。
+// 答满 27 题（60%）可先看结果——剩余题按「有时」补齐，引擎会在 note 里说清。
+const CS_PER_PAGE = 5;
+const CS_MIN = 27;
+const CS_TOTAL = 45;
 let MBTI_INFO = null;
 function mbtiInfo() {
   if (MBTI_INFO) return MBTI_INFO;
@@ -454,6 +554,52 @@ function MbtiQuiz(props) {
   );
 }
 
+/** 体质问卷：九种体质各 5 题、一页 5 题；题面由引擎的卷子（paper）给，状态留在 App */
+function CsQuiz(props) {
+  const { paper, answers, page, onPick, onPage, onSubmit, onClear } = props;
+  if (!paper || !Array.isArray(paper.questions)) {
+    return h('div', { className: 'mp-quiz' }, h('div', { className: 'mp-quiz-hint' }, '正在加载问卷题面…'));
+  }
+  const total = paper.questions.length;
+  const pages = Math.max(1, Math.ceil(total / CS_PER_PAGE));
+  const start = page * CS_PER_PAGE;
+  const slice = paper.questions.slice(start, start + CS_PER_PAGE);
+  const answered = answers.filter((v) => v != null).length;
+  const pct = total ? Math.round((answered / total) * 100) : 0;
+  const last = page >= pages - 1;
+  const ready = answered >= CS_MIN;
+  // 量表文案从卷子里取，别在面板里再抄一份：改引擎的 1–5 措辞时两边不会走散
+  const say = (n) => {
+    const hit = (paper.scale || []).filter((x) => x && x.v === n)[0];
+    return hit ? hit.label : String(n);
+  };
+  return h('div', { className: 'mp-quiz' },
+    h('div', { className: 'mp-quiz-top' },
+      h('div', { className: 'mp-quiz-bar', 'aria-hidden': 'true' }, h('i', { style: { width: pct + '%' } })),
+      h('span', { className: 'mp-quiz-count' }, `第 ${page + 1} / ${pages} 页 · 已答 ${answered} / ${total}`)),
+    h('div', { className: 'mp-quiz-list' }, slice.map((q, k) => {
+      const i = start + k;
+      return h('div', { key: q.no || i, className: 'mp-quiz-q' },
+        h('div', { className: 'mp-quiz-qt' }, h('b', null, String(i + 1).padStart(2, '0')), h('span', null, q.text)),
+        h('div', { className: 'mp-quiz-opts', role: 'radiogroup', 'aria-label': `第 ${i + 1} 题` },
+          [1, 2, 3, 4, 5].map((n) => h('label', { key: n, className: 'mp-quiz-o' + (answers[i] === n ? ' on' : '') },
+            h('input', {
+              type: 'radio', name: `mpcsq${i}`, value: String(n), checked: answers[i] === n,
+              onChange: () => onPick(i, n),
+            }),
+            h('b', null, String(n)),
+            h('span', null, say(n))))));
+    })),
+    h('div', { className: 'mp-quiz-nav' },
+      h('button', { className: 'mp-quiz-btn', disabled: page <= 0, onClick: () => onPage(-1) }, '上一页'),
+      last ? null : h('button', { className: 'mp-quiz-btn', onClick: () => onPage(1) }, '下一页'),
+      h('button', { className: 'mp-quiz-btn primary', disabled: !ready, onClick: onSubmit }, '看结果'),
+      h('button', { className: 'mp-quiz-btn', onClick: onClear }, '清空'),
+      h('span', { className: 'mp-quiz-hint' }, ready
+        ? `已够 ${CS_MIN} 题，可以看结果；答完 ${total} 题会更准。`
+        : `答满 ${CS_MIN} 题可先看结果（还差 ${CS_MIN - answered} 题）。`)),
+  );
+}
 /** 渲染兜底：面板里任何一层组件抛错时，把错误原文摊在面板上，
  *  而不是留给用户一片空白（桌面端不一定开得了 devtools）。 */
 class PanelGuard extends (React.Component || Object) {
@@ -508,6 +654,9 @@ const TABS = [
   { k: 'star', label: '星座', timeLabel: '', hint: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。' },
   { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
   { k: 'mbti', label: '人格', timeLabel: '', hint: '十六型人格是 24 道自我报告题的 MBTI 风格测算：4 题一页，按 1–5 打分，答满 12 题即可看结果；只作自我参照，不是官方量表。' },
+  { k: 'constitution', label: '体质', timeLabel: '', hint: '中医体质是九种体质各 5 题的自评问卷（共 45 题，1 没有 / 5 总是），按转化分判主次体质并给调养方向；不是医学诊断。' },
+    { k: 'wuyunliuqi', label: '运气', timeLabel: '', hint: '五运六气按大寒分年：中运、司天在泉、六步。' },
+  { k: 'taiyi', label: '太乙', timeLabel: '', hint: '太乙神数按积年推局：太乙落宫、八门、文昌三个落点，主客算与格局未收。' },
   { k: 'trend', label: '人生K线', timeLabel: '出生时刻', hint: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。' },
   { k: 'fengshui', label: '风水', timeLabel: '', hint: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。' },
   { k: 'name', label: '起名', timeLabel: '', hint: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。' },
@@ -516,7 +665,22 @@ const TABS = [
 function pad(n) { return String(n).padStart(2, '0'); }
 
 // 速查类：不算完整命盘，主按钮统一叫「看结果」；与独立页（web-ui）保持同一套文案
-const QUICK_TABS = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name'];
+const QUICK_TABS = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'constitution', 'wuyunliuqi', 'taiyi'];
+
+// ── 起卦快捷行（P3）────────────────────────────────────────────
+// 六个占卜体系一键起卦：点一下 = 切到该体系 + 用当前时刻起卦，走的是与主按钮
+// 完全相同的 activate/switchTo/run 通路——这里只提供入口，不复制任何排盘逻辑。
+// 顺序按上手难度排：摇卦/按时刻成卦的四项在前，报数类（小六壬）最后。
+// 折叠状态只记一个「开/关」，不落任何输入内容，与 RECENT_KEY 同一套降级逻辑。
+const CAST_CHIPS = [
+  { sys: 'liuyao', label: '六爻', tip: '摇一卦：只用起卦当下定六神旺衰，所问之事写下面（必填）' },
+  { sys: 'meihua', label: '梅花', tip: '梅花易数：按起卦时刻的年月日时成卦，也可改成两个数字起卦' },
+  { sys: 'daliuren', label: '六壬', tip: '大六壬：按起卦时刻的日干支、时支与月将起天地盘' },
+  { sys: 'qimen', label: '奇门', tip: '奇门遁甲：时家转盘，默认拆补取局，可换超神接气/置闰' },
+  { sys: 'tarot', label: '塔罗', tip: '塔罗：不看时间，点一下就抽牌；牌阵在下面选' },
+  { sys: 'xiaoliuren', label: '小六壬', tip: '小六壬：按起课时刻推算，也可切报数起课' },
+];
+const CHIP_KEY = 'mp.cast.open';
 
 // 首屏分组：与独立页（命理排盘.html）同一套「问一件事 / 看一个人 / 查日子」。
 // 卡片只是另一套入口——19 个 tab 原样保留，两套入口都走 switchTo，分组不改变任何排盘行为。
@@ -564,6 +728,9 @@ const TIME_KIND = {
   chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
   xiaoliuren: 'cast',
   mbti: 'none',
+  constitution: 'none',
+  wuyunliuqi: 'date',
+  taiyi: 'date',
 };
 const SAMPLE = { date: '1990-05-12', time: '14:30' };
 const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -671,6 +838,80 @@ function sendToComposer(text) {
   return true;
 }
 
+/**
+ * 起卦快捷行：输入区最上面的一条折叠面板。
+ *
+ * 只做入口，不做计算：onCast 由 App 接到 activate()（= recordRecent + switchTo），
+ * switchTo 本来就会「起卦类自动取当前时刻 → run」，所以点一下就等于切过去并起好卦。
+ * 折叠时只留一行文字（六个名字并排），展开才出 chip——窄侧栏里不该白占一行高度。
+ * 展开后若已有结果，再给一个「把这张盘问进对话」：它直接复用底部的 askInChat
+ * （同 Engine.askPrompt + sendToComposer 通路），不另写一份 handoff。
+ */
+/**
+ * 盘面本体：结果区第一个块。22 个体系各写各的渲染器，这里只做分派；
+ * 单独抽出来，是为了让「盘面在最前」在拼接处一眼可见，
+ * 不用在几十个 + 号里找盘面到底排第几。
+ */
+function chartHTML(result) {
+  const html = result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
+  : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))
+    : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
+      : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
+        : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
+        : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
+        : result.kind === 'tarot' ? PP.tarotHTML(result.r)
+          : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
+            : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
+              : result.kind === 'almanac' ? PP.almanacHTML(result.r)
+              : result.kind === 'zeri' ? PP.zeriHTML(result.r)
+              : result.kind === 'trend' ? PP.trendHTML(result.r)
+              : result.kind === 'name' ? PP.nameHTML(result.r)
+              : result.kind === 'mbti' ? PP.mbtiHTML(result.r)
+              : result.kind === 'constitution' ? PP.constitutionHTML(result.r)
+              : result.kind === 'wuyunliuqi' ? PP.wuyunliuqiHTML(result.r)
+              : result.kind === 'taiyi' ? PP.taiyiHTML(result.r)
+              : result.kind === 'fengshui' ? PP.fengshuiHTML(result.r)
+              : PP.quickHTML(result.r);
+
+  // 各体系渲染器都把「先说结论」方框摆在盘面前面（panel-kit 侧这么设计，测试也钉着）；
+  // 结果卡要的是盘面第一，所以把开头那段 <section class="mp-br">…</section> 剥下来，
+  // 挪到盘面之后：先看牌 / 卦，再看一句人话，然后才是技术信息。
+  // 方框内容全部经过 esc，内部不可能出现 </section>，找第一处就是它的结尾。
+  const end = html.startsWith('<section class="mp-br"') ? html.indexOf('</section>') : -1;
+  return end < 0 ? html : html.slice(end + 10) + html.slice(0, end + 10);
+}
+
+function castRow(props) {
+  const open = !!props.open;
+  const head = h('button', {
+    type: 'button', className: 'mp-castrow-h',
+    'aria-expanded': open ? 'true' : 'false',
+    'aria-controls': 'mp-castlist',
+    onClick: props.onToggle,
+    title: '展开六个占卜体系的起卦入口：点一个就切过去，并用当前时刻起卦',
+  },
+    h('span', { className: 'mp-castrow-t' }, '起卦'),
+    h('span', { className: 'mp-castrow-l' }, open ? '六个占卜体系，点一下就起' : CAST_CHIPS.map((x) => x.label).join(' · ')),
+    h('i', { className: 'mp-castrow-i', 'aria-hidden': 'true' }, open ? '▴' : '▾'));
+  if (!open) return h('div', { key: 'cast', className: 'mp-castrow' }, head);
+  return h('div', { key: 'cast', className: 'mp-castrow open' },
+    head,
+    h('div', { key: 'list', id: 'mp-castlist', className: 'mp-castlist' },
+      CAST_CHIPS.map((x) => h('button', {
+        key: x.sys, type: 'button',
+        className: 'mp-castchip' + (props.tab === x.sys ? ' on' : ''),
+        'data-cast': x.sys,
+        'aria-pressed': props.tab === x.sys ? 'true' : 'false',
+        title: x.tip,
+        onClick: () => props.onCast(x.sys),
+      }, x.label))),
+    props.hasResult ? h('div', { key: 'ask', className: 'mp-castask' },
+      h('button', {
+        type: 'button', className: 'mp-castgo', onClick: props.onAsk,
+        title: '把这张盘和所问之事发进 DSH 对话窗（与下面的「问进对话」同一个通路）',
+      }, '把这张盘问进对话')) : null);
+}
+
 function App() {
   const [tab, setTab] = useState('ziwei');
   const [date, setDate] = useState('1990-05-12');
@@ -721,6 +962,10 @@ function App() {
   // 十六型人格：24 个 1–5 的分数（null = 未答）+ 当前页；题目按引擎给的长度初始化
   const [mbAns, setMbAns] = useState(() => new Array(mbtiInfo().total).fill(null));
   const [mbPage, setMbPage] = useState(0);
+  // 体质问卷：题面从引擎卷子来（首次进 tab 时取一次），答案按题位存 45 个 null
+  const [csPaper, setCsPaper] = useState(null);
+  const [csAns, setCsAns] = useState(() => new Array(CS_TOTAL).fill(null));
+  const [csPage, setCsPage] = useState(0);
   const [toAge, setToAge] = useState('60');
   const [fsMode, setFsMode] = useState('natal');
   const [fsPeriod, setFsPeriod] = useState('9');
@@ -754,7 +999,7 @@ function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [engineLoading, setEngineLoading] = useState(false);
-  const [count, setCount] = useState('3');
+  const [spread, setSpread] = useState('three');
   const [question, setQuestion] = useState('');
   const [direction, setDirection] = useState('general');
   // 对外打包的「所问」：追问优先，其次「所问之事」。复制提问 / 问进对话 / 对话桥
@@ -768,6 +1013,8 @@ function App() {
   }, [result, askText, question]);
   // 解析模块较长：窄屏默认收起、宽屏默认展开；用户手动切过就以他的选择为准
   const [foldPref, setFoldPref] = useState(null);
+  // 起卦快捷行：默认折叠（只占一行），切过就记住——只存布尔，不存任何输入内容
+  const [chipOpen, setChipOpen] = useState(storeGet(CHIP_KEY) === true);
   // 「所问之事」未填就起卦时，输入框转红提示
   const [askInvalid, setAskInvalid] = useState(false);
   const [mhMode, setMhMode] = useState('time');
@@ -786,7 +1033,7 @@ function App() {
   const timeKind = kindOf(tab);
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
   // 人格问卷与日期无关：留着起卦日期/时刻只会让人以为要填生辰
-  const showDate = tab !== 'tarot' && tab !== 'mbti' && usesTimeInput;
+  const showDate = tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && usesTimeInput;
   const showTime = showDate && timeKind !== 'date';
   const showDT = showTime;
 
@@ -836,7 +1083,7 @@ function App() {
       const datetime = `${dt.date}T${dt.time}`;
       const args = { system: k };
       // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
-      args.shadow = k !== 'mbti';
+      args.shadow = k !== 'mbti' && k !== 'constitution';
       // 推导链只覆盖六爻 / 八字 / 紫微；其余体系没有中间层可摊
       args.trace = k === 'liuyao' || k === 'bazi' || k === 'ziwei' || k === 'qimen' || k === 'daliuren';
       if (k !== 'tarot') args.datetime = datetime;
@@ -898,6 +1145,11 @@ function App() {
         while (nums.length && nums[nums.length - 1] == null) nums.pop();
         if (nums.length) args.answers = nums;
       }
+      if (k === 'constitution') {
+        delete args.datetime;
+        // 体质问卷必须传满 45 个：引擎按题位对齐体质，null 表示跳过，缩短数组会直接报错
+        args.answers = csAns.slice();
+      }
       if (k === 'trend' && canUnknown && huV) args.hourUnknown = true;
       // 性别 / 出生地 / 两个开关已在上面的出生盘分支里给齐，这里只补 K 线自己的参数
       if (k === 'trend') args.toAge = Number(toAge) || 60;
@@ -941,7 +1193,7 @@ function App() {
           args.mode = 'solar2lunar';
         }
       }
-      if (k === 'tarot') args.count = Number(count);
+      if (k === 'tarot') args.spread = spread;
       if (k === 'hepan') {
         args.chart = hpChart;
         args.partner = {
@@ -1049,7 +1301,7 @@ function App() {
       setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
       setError('');      setCopied('');
       // 历史记录：塔罗是随机抽牌，重放会变成另一副牌；人格的输入是 24 个答案、没存进来，重放也没法还原。两者都不入历史
-      if (k !== 'tarot' && k !== 'mbti') {
+      if (k !== 'tarot' && k !== 'mbti' && k !== 'constitution') {
         // 记「这次实际用的输入」，不是渲染闭包里的旧 state：切换体系 / 看示例 / 载入档案
         // 都是在同一个 handler 里先 setState 再 run，闭包读到的还是上一张盘的日期。
         const huV2 = !!(canUnknown && huV);
@@ -1064,7 +1316,7 @@ function App() {
           trueSolar: tsV, lateZi: lateZiV,
           lines: k === 'liuyao' ? linesV : '',
           question: needAsk(k) ? questionV.trim() : '',
-          direction, count,
+          direction, spread,
           mhMode: mh, upper, lower, changing,
           // 各体系自己的输入也是这张结果的输入：只存日期，重放就会按表单此刻的
           // 流派 / 事项 / 起卦方式重算，看到的已不是当初那一张
@@ -1090,6 +1342,13 @@ function App() {
           saveHistory(next);
           return next;
         });
+        // 每一次排盘都往卦例库记一条：一分钟内参数完全相同的由 casesAdd 自己去重
+        // （连点排盘、回看后又排一次都会撞），存储写不进去也不影响这次结果
+        try {
+          const acc = PP.casesAdd(entry);
+          if (acc && acc.ok && !acc.dup && acc.list) setCases(acc.list);
+        } catch (e) { /* 隐私模式 / 配额满：只丢这一条，不打断排盘 */ }
+
       }
     } catch (e) {
       if (stale()) return;
@@ -1116,6 +1375,27 @@ function App() {
       if (switchSeq !== perfSeq) return;
       setTab(next);
       if (mbAns.filter((v) => v != null).length >= MBTI_MIN) run(next);
+      else setResult(null);
+      return;
+    }
+    // 体质问卷的题面也在引擎分块里：与人格一样先加载再切，题面到了才渲染
+    if (next === 'constitution') {
+      setNotice('');
+      setEngineLoading(true);
+      try {
+        await ensureEngine(next);
+        if (switchSeq === perfSeq && !csPaper) {
+          const p = Engine.compute({ system: 'constitution' });
+          if (p && p.paper) setCsPaper(p);
+        }
+      } catch (e) {
+        if (switchSeq === perfSeq) setError(e && e.message ? e.message : String(e));
+      } finally {
+        if (switchSeq === perfSeq) setEngineLoading(false);
+      }
+      if (switchSeq !== perfSeq) return;
+      setTab(next);
+      if (csAns.filter((v) => v != null).length >= CS_MIN) run(next);
       else setResult(null);
       return;
     }
@@ -1148,6 +1428,21 @@ function App() {
     switchTo(k);
   };
 
+  /**
+   * 起卦快捷行：折叠开关 + 一键起卦。
+   * onCast 与 tab 卡、tabs 条走同一个 activate——起卦类 tab 在 switchTo 里会自动
+   * 取当前时刻再 run，所以这里不需要（也不该）自己调 run：多一条排盘路径就多一处
+   * 「自动取当下」的口径分叉。
+   */
+  const toggleChips = () => {
+    const next = !chipOpen;
+    setChipOpen(next);
+    storeSet(CHIP_KEY, next);
+  };
+  const castChip = (k) => {
+    activate(k);
+  };
+
   /** 手动改日期/时刻：记进当前语义分类，之后切同类 tab 会保留 */
   const editDate = (value) => {
     setDate(value);
@@ -1177,6 +1472,16 @@ function App() {
       const n = mbAns.filter((v) => v != null).length;
       if (n < MBTI_MIN) {
         setNotice(`先答满 ${MBTI_MIN} 题再看结果（现答 ${n} 题，还差 ${MBTI_MIN - n} 题）。`);
+        return;
+      }
+      run(tab);
+      return;
+    }
+    // 体质问卷同样不看时间：先确认答够，再走同一套计算
+    if (tab === 'constitution') {
+      const n = csAns.filter((v) => v != null).length;
+      if (n < CS_MIN) {
+        setNotice(`先答满 ${CS_MIN} 题再看结果（现答 ${n} 题，还差 ${CS_MIN - n} 题）。`);
         return;
       }
       run(tab);
@@ -1616,7 +1921,8 @@ function App() {
     setLines(x.lines || '');
     setQuestion(x.question || '');
     setDirection(x.direction || 'general');
-    setCount(x.count || '3');
+    // 旧条目只存了张数（1/3/5）：折成牌阵名，别让重放退回默认的三张
+    setSpread(x.spread || ({ 1: 'one', 3: 'three', 5: 'five' })[x.count] || 'three');
     setMhMode(x.mhMode || 'time');
     setUpper(x.upper || '');
     setLower(x.lower || '');
@@ -1673,6 +1979,72 @@ function App() {
     setReplayArgs(x);
   };
   const clearHist = () => { setHist([]); saveHistory([]); };
+
+  // ── 卦例库：长期攒、带应验状态（history 只有 20 条且随排随换，只为重放）
+  // 存储层在 panel-kit 的 PP.cases* 里，面板只管渲染与交互。
+  const [cases, setCases] = useState(() => {
+    try { return PP.casesLoad(); } catch (e) { return []; }
+  });
+  const [casesOpen, setCasesOpen] = useState(false);
+  const [caseFilter, setCaseFilter] = useState('all');
+
+  const openCases = () => {
+    try { setCases(PP.casesLoad()); } catch (e) { /* 读不出来就按空列表开 */ }
+    setCaseFilter('all');
+    setCasesOpen(true);
+  };
+  const closeCases = () => setCasesOpen(false);
+  const caseCount = (s) => (s === 'all' ? cases.length : cases.filter((x) => x.status === s).length);
+  const caseList = caseFilter === 'all' ? cases : cases.filter((x) => x.status === caseFilter);
+
+  const exportCases = () => {
+    const text = PP.casesExport(cases);
+    if (!text) { setNotice('还没有可导出的卦例'); return; }
+    try {
+      const blob = new Blob([text], { type: 'application/x-ndjson;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `metaphysics-cases-${new Date().toISOString().slice(0, 10)}.jsonl`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) { /* 已释放 */ } }, 1000);
+      setNotice(`已导出 ${cases.length} 条卦例（JSONL）`);
+    } catch (e) {
+      setNotice('导出失败：' + (e && e.message ? e.message : '当前环境不支持下载'));
+    }
+  };
+
+  // 第一次进面板：把旧的「最近排过」并进卦例库（幂等，失败静默——不该挡住排盘）
+  useEffect(() => {
+    try {
+      const r = PP.casesMigrate(hist);
+      if (r && r.added) setCases(r.list);
+    } catch (e) { /* 迁移失败：卦例库照样能从零新建 */ }
+  }, []);
+
+  /** 一条卦例：左半边点了回填重排，右边是应验状态与本条删除 */
+  const caseRow = (x) => {
+    const e = x.entry || {};
+    const d = new Date(x.at);
+    const p2 = (n) => String(n).padStart(2, '0');
+    return h('div', { key: x.id, className: 'mp-case' },
+      h('button', {
+        className: 'mp-case-main',
+        onClick: () => { replay(Object.assign({}, e)); closeCases(); },
+        title: [e.date, e.hourUnknown ? '时辰未知' : e.time, e.address].filter(Boolean).join(' ') || '点一下回填这组参数并重排',
+      },
+        h('b', null, PP.profKindLabel(e.kind)),
+        h('span', null, e.label || x.question || '—'),
+        h('i', null, `${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`)),
+      h('select', {
+        className: 'mp-case-sel', value: x.status, title: '标应验状态',
+        onChange: (ev) => setCases(PP.casesSetStatus(x.id, ev.target.value)),
+      }, PP.CASE_STATUS.map((s) => h('option', { key: s, value: s }, PP.caseStatusLabel(s)))),
+      h('button', { className: 'mp-case-del', title: '删除这条', onClick: () => setCases(PP.casesRemove(x.id)) }, '删'));
+  };
+
 
   /**
    * 我的命盘：一张卡一个人，点卡直接出盘，不必每次重报出生信息。
@@ -1898,6 +2270,11 @@ function App() {
       }, t.label))),
 
     h('div', { key: 'head', className: 'mp-panel' },
+      // 起卦快捷行排在所有输入之前：占卜是「当下就问」，先选体系比先填时刻顺手
+      castRow({
+        tab, open: chipOpen, onToggle: toggleChips, onCast: castChip,
+        onAsk: askInChat, hasResult: !!result,
+      }),
       h('div', { className: 'mp-row' },
         showDate ? field(isBirth ? '出生日期（公历）' : timeKind === 'date' ? '日期（公历）' : '起卦日期（公历）',
           h(DateInput, {
@@ -1990,9 +2367,15 @@ function App() {
           className: 'mp-input', value: direction,
           onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
         }, (Engine.DIRECTIONS || []).map((d) => h('option', { key: d.key, value: d.key }, d.label)))) : null,
-        tab === 'tarot' ? field('张数', h('select', {
-          className: 'mp-input', value: count, onChange: (e) => setCount(e.target.value),
-        }, h('option', { value: '1' }, '1 张 · 指引'), h('option', { value: '3' }, '3 张 · 过去现在未来'), h('option', { value: '5' }, '5 张 · 十字牌阵'))) : null,
+        tab === 'tarot' ? field('牌阵', h('select', {
+          className: 'mp-input', value: spread, onChange: (e) => setSpread(e.target.value),
+        }, h('option', { value: 'one' }, '1 张 · 单张指引'),
+        h('option', { value: 'three' }, '3 张 · 过去现在未来'),
+        h('option', { value: 'five' }, '5 张 · 五张局势'),
+        h('option', { value: 'celtic' }, '10 张 · 凯尔特十字'),
+        h('option', { value: 'either' }, '5 张 · 二选一'),
+        h('option', { value: 'relation' }, '7 张 · 关系阵'),
+        h('option', { value: 'timeflow' }, '3 张 · 时间流'))) : null,
         tab === 'liuyao' ? field('六爻（可空）', h('input', {
           className: 'mp-input', placeholder: '空则随机，如 9 7 8 8 7 6', value: lines,
           onChange: (e) => setLines(e.target.value),
@@ -2080,6 +2463,28 @@ function App() {
               setResult(null);   // 重新答时旧结果不该留在下面
             },
           })) : null,
+        tab === 'constitution' ? h('div', { className: 'mp-quiz-wrap' },
+          h('div', { className: 'mp-lbl' }, '中医体质问卷 · 9 种体质各 5 题，共 45 题 · 5 题一页，按 1（没有）到 5（总是）打分'),
+          h(CsQuiz, {
+            paper: csPaper,
+            answers: csAns,
+            page: csPage,
+            onPick: (i, n) => setCsAns((prev) => {
+              const next = prev.slice();
+              next[i] = n;
+              return next;
+            }),
+            onPage: (d) => setCsPage((p) => Math.max(0, Math.min(
+              p + d,
+              Math.max(0, Math.ceil((csPaper && csPaper.questions ? csPaper.questions.length : CS_TOTAL) / CS_PER_PAGE) - 1),
+            ))),
+            onSubmit: go,
+            onClear: () => {
+              setCsAns(new Array(CS_TOTAL).fill(null));
+              setCsPage(0);
+              setResult(null);   // 重新答时旧结果不该留在下面
+            },
+          })) : null,
         tab === 'trend' ? field('算到几岁', h('input', {
           className: 'mp-input', type: 'number', min: 10, max: 100, value: toAge,
           onChange: (e) => setToAge(e.target.value),
@@ -2134,7 +2539,7 @@ function App() {
           onBlur: (e) => refreshInterpret(undefined, e.target.value),
         })) : null,
       // 人格问卷的「看结果 / 清空」在问卷自己的翻页条里，底部不再重复放一个主按钮
-      tab === 'mbti' ? null : h('div', { key: 'actions', className: 'mp-actions' },
+      tab === 'mbti' || tab === 'constitution' ? null : h('div', { key: 'actions', className: 'mp-actions' },
         h('button', {
           className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginRight: 8 },
           onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
@@ -2148,10 +2553,13 @@ function App() {
 
     h('div', { key: 'hint', className: 'mp-hint' }, meta.hint),
 
-    hist.length ? h('div', { key: 'hist', className: 'mp-hist' },
+    (hist.length || cases.length) ? h('div', { key: 'hist', className: 'mp-hist' },
       h('div', { className: 'mp-hist-h' },
-        h('span', null, '最近排过'),
-        h('button', { className: 'mp-hist-clear', onClick: clearHist }, '清空')),
+        h('span', null, hist.length ? '最近排过' : '卦例库'),
+        h('span', { className: 'mp-hist-acts' },
+          hist.length ? h('button', { className: 'mp-hist-clear', onClick: clearHist }, '清空') : null,
+          h('button', { className: 'mp-hist-clear mp-hist-more', onClick: openCases },
+            cases.length ? `卦例库 ${cases.length}` : '卦例库'))),
       h('div', { className: 'mp-hist-list' }, hist.map((x, i) =>
         h('button', {
           key: i, className: 'mp-hist-item',
@@ -2176,10 +2584,12 @@ function App() {
       h('b', null, tab === 'ziwei' || tab === 'bazi' ? '填好出生信息，点「排盘」'
         : tab === 'tarot' ? '写下想问的事，点「抽牌」'
           : tab === 'mbti' ? '按 1–5 给题目打分，答满 12 题就能看结果'
+            : tab === 'constitution' ? '按 1–5 给题目打分，答满 27 题就能看结果'
             : QUICK_TABS.indexOf(tab) >= 0 ? '填好参数，点「看结果」'
               : '写下所问之事，点「起卦」'),
       tab === 'ziwei' || tab === 'bazi' ? '出生日期、时刻与性别即可；出生地只影响真太阳时。'
         : tab === 'mbti' ? '4 题一页，答案只在本地参与计算，不会上传。'
+          : tab === 'constitution' ? '5 题一页，答案只在本地参与计算，不会上传；这是自评问卷，不是医学诊断。'
           : QUICK_TABS.indexOf(tab) >= 0 ? '按上面的选项填好参数即可；全部在本机计算，不上传。'
             : '起卦时刻已自动取当下，也可以手动改。') : null,
 
@@ -2191,27 +2601,10 @@ function App() {
       'aria-live': 'polite',
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
-        __html: castAtHTML(result) + PP.perfHTML(perf) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
-          + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.resultWithInterpret(
-          result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-            : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))
-              : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
-                : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
-                  : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
-                  : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
-                  : result.kind === 'tarot' ? PP.tarotHTML(result.r)
-                    : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
-                      : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
-                        : result.kind === 'almanac' ? PP.almanacHTML(result.r)
-                        : result.kind === 'zeri' ? PP.zeriHTML(result.r)
-                        : result.kind === 'trend' ? PP.trendHTML(result.r)
-                        : result.kind === 'name' ? PP.nameHTML(result.r)
-                        : result.kind === 'mbti' ? PP.mbtiHTML(result.r)
-                        : result.kind === 'fengshui' ? PP.fengshuiHTML(result.r)
-                        : PP.quickHTML(result.r),
-          result.it,
-          { folded: defaultFolded() },
-        ) + PP.caliberHTML(result.caliber),
+        __html: chartHTML(result) + castAtHTML(result) + PP.resultWithInterpret('', result.it, { folded: defaultFolded() })
+          // 盘面（卦象 / 牌面 / 星盘）先出：先让人看见盘，性能与修订这些技术信息往后排
+          + PP.perfHTML(perf) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
+          + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.caliberHTML(result.caliber),
       },
     }) : null,
 
@@ -2310,6 +2703,35 @@ function App() {
       h('div', { className: 'mp-fb-b' },
         '邮件 1129440028@qq.com　·　GitHub issues　·　微信群 dsh-metaphysics',
         fbNote ? h('span', { className: 'mp-fb-note' }, '　' + fbNote) : null)),
+    // 卦例抽屉：不占 tab——tab 是「排盘体系」，卦例是查看类入口，混进 TABS 会被当成要出生时辰的体系
+    casesOpen ? h('div', {
+      key: 'cases',
+      className: 'mp-cases-layer',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-label': '卦例库',
+      onClick: (e) => { if (e.target === e.currentTarget) closeCases(); },
+    },
+      h('div', { className: 'mp-cases-box' },
+        h('div', { className: 'mp-cases-h' },
+          h('b', null, `卦例库 · ${caseList.length}/${cases.length}`),
+          h('button', { className: 'mp-cases-x', onClick: closeCases, 'aria-label': '关闭' }, '✕')),
+        h('div', { className: 'mp-cases-tabs' },
+          [['all', '全部']].concat(PP.CASE_STATUS.map((s) => [s, PP.caseStatusLabel(s)]))
+            .map((pair) => h('button', {
+              key: pair[0],
+              className: 'mp-chip' + (caseFilter === pair[0] ? ' on' : ''),
+              onClick: () => setCaseFilter(pair[0]),
+            }, `${pair[1]} ${caseCount(pair[0])}`))),
+        h('div', { className: 'mp-cases-list' }, caseList.length
+          ? caseList.map((x) => caseRow(x))
+          : h('div', { className: 'mp-empty' },
+            '这一栏还空着。排一次盘或起一卦就会自动记一条；过些天回来标应验。')),
+        h('div', { className: 'mp-cases-f' },
+          h('button', {
+            className: 'mp-btn ghost', style: { fontSize: 12, padding: '4px 10px' }, onClick: exportCases,
+          }, '导出 JSONL'),
+          h('span', { className: 'mp-cases-tip' }, '只存参数与一句摘要，不存盘面；点条目回填重排。')))) : null,
   ];
 
   return h('div', { className: 'mp-wrap' }, children);

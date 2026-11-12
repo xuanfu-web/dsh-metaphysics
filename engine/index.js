@@ -2,7 +2,7 @@
 import { buildBazi } from './bazi.js';
 import { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower, yingqiWindow } from './liuyao.js';
 import { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } from './ziwei.js';
-import { drawTarot } from './tarot.js';
+import { drawTarot, SPREAD_KEYS } from './tarot.js';
 import { buildMeihua } from './meihua.js';
 import { buildDaliuren } from './daliuren.js';
 import { buildHepan, tripleOf } from './hepan.js';
@@ -27,6 +27,9 @@ import { buildXiaoliuren } from './xiaoliuren.js';
 import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
 import { buildMbti, mbtiPaper } from './mbti.js';
+import { buildConstitution, constitutionPaper } from './constitution.js';
+import { buildWuyunliuqi } from './wuyunliuqi.js';
+import { buildTaiyi } from './taiyi.js';
 import { buildConvert } from './convert.js';
 import { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } from './classics.js';
 import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES, viewRows } from './diff.js';
@@ -632,7 +635,7 @@ function shadowParams(args, result) {
     else put(key, value);
   }
   if (system === 'daliuren' && params.lateZi === undefined) params.lateZi = true;
-  if (system === 'tarot' && params.count === undefined) params.count = 3;
+  if (system === 'tarot' && params.spread === undefined && params.count === undefined) params.count = 3;
   if (system === 'meihua' && params.mode === undefined) params.mode = 'time';
   if (system === 'xiaoliuren' && params.mode === undefined) params.mode = 'time';
   if (system === 'convert' && params.mode === undefined) params.mode = 'solar2lunar';
@@ -1345,14 +1348,24 @@ function computeRaw(args = {}) {
     return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: ziweiText(result) };
   }
   if (system === 'tarot') {
-    const count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
-    if (!TAROT_COUNTS.includes(count)) {
-      throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
+    // 给了牌阵名就由牌阵定张数，count 只在没给名字时兜底（1/3/5）
+    const hasSpread = args.spread !== undefined && args.spread !== null && String(args.spread).trim() !== '';
+    let count;
+    if (hasSpread) {
+      if (SPREAD_KEYS.indexOf(String(args.spread).trim().toLowerCase()) < 0) {
+        throw fail('E_SPREAD', `塔罗牌阵只能是 ${SPREAD_KEYS.join(' / ')}，收到「${args.spread}」`);
+      }
+      count = undefined;
+    } else {
+      count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
+      if (!TAROT_COUNTS.includes(count)) {
+        throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
+      }
     }
     if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
     const asOf = checkAsOf(args.asOf);
     // 抽牌不看时间：castAt 只记录此刻（或 asOf），避免误用出生时间；给了 seed 就能复现同一次抽牌
-    const result = drawTarot({ count, question: args.question, at: args.asOf, random: randomOf(args.seed) });
+    const result = drawTarot({ spread: hasSpread ? args.spread : undefined, count, question: args.question, at: args.asOf, random: randomOf(args.seed) });
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: tarotText(result) };
   }
@@ -1613,6 +1626,31 @@ function computeRaw(args = {}) {
     const result = buildNumerology({ year: dt.year, month: dt.month, day: dt.day });
     return { ...result, summary: numerologyText(result) };
   }
+  if (system === 'wuyunliuqi') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildWuyunliuqi({
+      year: dt.year,
+      month: dt.month,
+      day: dt.day,
+      hour: dt.hour,
+      minute: dt.minute,
+    });
+    return { ...result, summary: wuyunliuqiText(result) };
+  }
+  if (system === 'taiyi') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildTaiyi({ year: dt.year, month: dt.month, day: dt.day });
+    return { ...result, summary: taiyiText(result) };
+  }
+  if (system === 'constitution') {
+    // 与 mbti 同一套路：没给答案先发卷，别让模型替人打分（体质题答歪了，判定会整体偏掉）
+    if (args.answers === undefined || args.answers === null) {
+      const paper = constitutionPaper();
+      return { ...paper, summary: constitutionPaperText(paper) };
+    }
+    const result = buildConstitution({ answers: args.answers });
+    return { ...result, summary: constitutionText(result) };
+  }
   if (system === 'mbti') {
     // 没给答案就先发问卷：让模型把 24 题交给用户逐题打分，而不是自己编一个类型
     if (args.answers === undefined || args.answers === null) {
@@ -1727,9 +1765,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。`);
 }
 
 /** 黄历文本 */
@@ -1856,6 +1894,66 @@ function numerologyText(r) {
 }
 
 /** 十六型人格文本 */
+/** 中医体质文本 */
+/** 五运六气的纯文本版（对话里直接读）。 */
+function taiyiText(r) {
+  const L = [];
+  L.push(`太乙积年 ${r.meta.jinian}，残年 ${r.meta.rest360}，${r.meta.dunText}${r.meta.ju}局。`);
+  L.push(`${r.year.jiName}${r.year.jiYear}年，${r.year.yuanName}第${r.year.yuanYear}年。`);
+  L.push(`太乙在${r.taiyi.palaceName}宫（第${r.taiyi.palace}宫，${r.taiyi.dir}），第${r.taiyi.yearInPalace}年，${r.taiyi.li}。`);
+  L.push(`八门：${r.gate.gate}。`);
+  L.push(`文昌在${r.wenchang.pos}（${r.wenchang.god}，${r.wenchang.palaceName}宫）。`);
+  L.push(`这一层只算到太乙、八门、文昌三个落点；${r.scope.notCovered.join('、')}。`);
+  return L.join('\n');
+}
+
+function wuyunliuqiText(r) {
+  const L = [];
+  L.push(`【运气年】${r.year.ganzhi}　${r.year.nian} 年（大寒界：${r.year.startTime} — ${r.year.endTime}）`);
+  L.push(`【中运】${r.zhongyun.text}`);
+  L.push(`【司天在泉】${r.sitian.qi}司天　${r.zaiquan.qi}在泉`);
+  L.push(`【当前】${r.current.text}`);
+  L.push('【客运五步】');
+  for (const s of r.keYun) L.push(`  ${s.no} ${s.name}（${s.taiShao}）　${s.startTime} — ${s.endTime}`);
+  L.push('【客气六步】');
+  for (const s of r.keQi) {
+    const tag = s.sitian ? '（司天）' : s.zaiquan ? '（在泉）' : '';
+    L.push(`  ${s.no} ${s.qi}${tag}　${s.startTime} — ${s.endTime}`);
+  }
+  const sp = [];
+  if (r.special.taiYi) sp.push('太乙天符');
+  if (r.special.tianFu && !r.special.taiYi) sp.push('天符');
+  if (r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+  if (r.special.tongTianFu) sp.push('同天符');
+  if (r.special.tongSuiHui) sp.push('同岁会');
+  if (sp.length) L.push(`【特殊】${sp.join('、')}`);
+  L.push(`【组合】${r.combo.text}`);
+  L.push(`【边界】${r.scope.note}`);
+  return L.join('\n');
+}
+function constitutionText(r) {
+  return [
+    `【中医体质】${r.primary.name}（主）${r.primary.level === '是' ? '' : `·${r.primary.level}`}　转化分 ${r.primary.converted}`,
+    r.secondary ? `兼夹：${r.secondary.name}（${r.secondary.converted}）${r.mingled.length ? '；同判为「是」：' + r.mingled.join('、') : ''}` : '',
+    '九种体质转化分（偏颇质 ≥40 判是、30–39 有倾向）：',
+    r.scales.map((x) => `· ${x.name}：${x.converted}${x.level === '否' ? '' : `（${x.level}）`}`).join('\n'),
+    r.primary.oneLine,
+    r.primary.tendency,
+    '调养方向：',
+    r.care.map((c) => '· ' + c).join('\n'),
+    r.note,
+  ].filter(Boolean).join('\n');
+}
+
+function constitutionPaperText(p) {
+  return [
+    `【中医体质·问卷】${p.scaleCount} 种体质 × ${p.itemsPerScale} 题，共 ${p.total} 题`,
+    '打分：' + p.scale.map((x) => `${x.v}=${x.label}`).join('　'),
+    p.howto,
+    p.note,
+  ].join('\n');
+}
+
 function mbtiText(r) {
   const dims = r.dims.map((d) => {
     const side = d.picked === d.left ? d.leftSay : d.rightSay;
@@ -2093,6 +2191,9 @@ export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText, crossSection };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName };
+export { buildConstitution };
+export { buildWuyunliuqi };
+export { buildTaiyi };
 export { buildTrace, traceMarkdown };
 export { encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys };
 // C3 对话桥替代：深链编解码、表单还原、三档复制包（面板与独立页共用一份）

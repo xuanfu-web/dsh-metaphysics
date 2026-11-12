@@ -830,6 +830,205 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(errors.length === errsBefore, '复制提问流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
 }
 
+
+// ── 十二·五、起卦快捷行：六个体系一键起卦 ──────────────────────
+// 静态测试只能证明「字符串长得对」；这一段证明点下去真的换体系、真的出盘，
+// 且与点 tab 走同一条 switchTo——所以六爻没填问题时照样被拦住。
+{
+  const errsBefore = errors.length;
+  await page.locator('.mp-tool[data-tab="ziwei"]').click();
+  await page.waitForTimeout(300);
+  ok((await page.locator('.mp-castrow-h').count()) === 1, '面板表单顶部有起卦表头');
+  ok((await page.locator('.mp-castchip').count()) === 0, '起卦行默认折叠（不展开时没有 chip）');
+  const headText = await text('.mp-castrow-l');
+  ok(['六爻', '梅花', '六壬', '奇门', '塔罗', '小六壬'].every((l) => headText.includes(l)),
+    '折叠态并排列出六个体系', headText.slice(0, 60));
+
+  await page.locator('.mp-castrow-h').click();
+  await page.waitForTimeout(250);
+  ok((await page.locator('.mp-castchip').count()) === 6, '展开后六个 chip', String(await page.locator('.mp-castchip').count()));
+  const order = await page.evaluate(() => [...document.querySelectorAll('.mp-castchip')].map((b) => b.getAttribute('data-cast')));
+  ok(order.join(',') === 'liuyao,meihua,daliuren,qimen,tarot,xiaoliuren', 'chip 顺序与常量一致', order.join(','));
+  const stored = await page.evaluate(() => localStorage.getItem('mp.cast.open'));
+  ok(stored === 'true', '展开状态记进本机', String(stored));
+
+  // 塔罗不看时间：点一下就抽牌，最不依赖输入
+  await page.locator('.mp-castchip[data-cast="tarot"]').click();
+  await page.waitForTimeout(1500);
+  ok((await page.locator('.mp-castchip[data-cast="tarot"]').getAttribute('aria-pressed')) === 'true',
+    '点过的体系高亮', String(await page.locator('.mp-castchip[data-cast="tarot"]').getAttribute('aria-pressed')));
+  const tarotMain = await text('#main');
+  ok(tarotMain.length > 200, '点塔罗 chip 直接出牌面（不用再点按钮）', tarotMain.length + ' 字符');
+
+  // 已有盘时行尾给「把这张盘问进对话」，与结果卡下方那条是同一通路
+  ok((await page.locator('.mp-castgo').count()) === 1, '有结果时出现「把这张盘问进对话」');
+  await page.evaluate(() => navigator.clipboard.writeText('__before__'));
+  await page.locator('.mp-castgo').click();
+  await page.waitForTimeout(400);
+  const chipPack = await page.evaluate(() => navigator.clipboard.readText());
+  ok(chipPack !== '__before__' && chipPack.includes('——盘面摘要——'),
+    'chip 的问进对话走既有 handoff（桥未就绪退回剪贴板）', chipPack.slice(0, 40));
+
+  // 六爻必填：chip 与 tab 同一条 switchTo，所以这里同样会被拦住
+  await page.locator('.mp-castchip[data-cast="liuyao"]').click();
+  await page.waitForTimeout(700);
+  ok((await page.locator('.mp-textarea').count()) === 1, '点六爻 chip 切到六爻面板');
+  // 前面几段填过「所问之事」，状态还在——先清空，才能测到「没填就被拦」
+  await page.locator('.mp-textarea').fill('');
+  await page.waitForTimeout(200);
+  await page.locator('.mp-castchip[data-cast="liuyao"]').click();
+  await page.waitForTimeout(600);
+  // 面板本来就有「所问之事（必填）」这行标签，所以不能拿全文关键词当判据——
+  // 只看错误行本身（setError 写进 .mp-err，role=alert），外加输入框的 invalid 态。
+  const lyErr = await page.locator('.mp-err').first().innerText().catch(() => '');
+  const lyInvalid = (await page.locator('.mp-textarea.invalid').count()) === 1;
+  ok(/所问之事/.test(lyErr), '没填问题就起卦同样被拦（chip 没绕开必填）', lyErr.replace(/\s+/g, ' ').slice(0, 50));
+  ok(lyInvalid, '被拦时输入框标红（不静默出错盘）', String(lyInvalid));
+  ok(errors.length === errsBefore, '起卦快捷行全程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
+}
+
+// ── 十二·六、结果区第一块是盘面 ────────────────────────────────
+// 静态测试只能证明拼接顺序写对了；这一段看真机 DOM：一屏里第一眼必须是牌面/卦象，
+// 不是「12ms」「修订 3 处」这类技术行。
+{
+  await page.locator('.mp-tool[data-tab="tarot"]').click();
+  await page.waitForTimeout(300);
+  // 问事体系问题必填（十二·五 末尾把框清空过），先写一句再起卦
+  await page.locator('.mp-textarea').fill('这周能不能把这件事定下来');
+  if (!(await page.locator('.mp-castchip[data-cast="tarot"]').count())) {
+    await page.locator('.mp-castrow-h').click();
+    await page.waitForTimeout(200);
+  }
+  await page.locator('.mp-castchip[data-cast="tarot"]').click();
+  await page.waitForSelector('.mp-card', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const diag = await page.evaluate(() => {
+    const card = document.querySelector('.mp-card');
+    const el = card && card.firstElementChild;
+    return {
+      hasCard: !!card,
+      cardCls: card ? String(card.className) : null,
+      kids: card ? [...card.children].slice(0, 4).map((x) => String(x.className || x.tagName)) : [],
+      first: el ? String(el.className || el.tagName) : null,
+      ttFirst: !!(el && el.classList && (el.classList.contains('mp-tt-card') || el.querySelector('.mp-tt-card'))),
+      ttAnywhere: !!(card && card.querySelector('.mp-tt-card')),
+    };
+  });
+  ok(diag.ttFirst, '结果卡第一块就是塔罗牌面', JSON.stringify(diag));
+  ok(!!diag.first && !/mp-perf|mp-rev|mp-handle|mp-shadow|mp-trace|mp-cast-at|mp-caliber/.test(diag.first),
+    '第一块不是技术信息行', JSON.stringify(diag.kids));
+}
+
+// ── 十二·七、体质问卷：第 20 个体系，45 题分 9 页 ──────────────
+// 引擎侧有静态测试，这一段看真机：点进去拿得到题面、能翻页、答满 27 题能出结果卡，
+// 且结果卡第一块是体质盘面（chartHTML 分派），不是技术行。
+{
+  const errsBefore = errors.length;
+  await page.locator('.mp-tool[data-tab="constitution"]').click();
+  await page.waitForSelector('.mp-quiz-list', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const head = await page.locator('.mp-quiz-count').first().innerText().catch(() => '');
+  ok(/第 1 \/ 9 页/.test(head), '体质问卷一进来就是第 1 / 9 页', head.replace(/\s+/g, ' '));
+  ok((await page.locator('.mp-quiz-q').count()) === 5, '一页 5 题', String(await page.locator('.mp-quiz-q').count()));
+  ok((await page.locator('.mp-quiz-o').count()) === 25, '每题 5 个选项（1 没有 … 5 总是）', String(await page.locator('.mp-quiz-o').count()));
+  ok((await page.locator('.mp-quiz-btn.primary').count()) === 1, '看结果在问卷导航里，没有另起主按钮', String(await page.locator('.mp-quiz-btn.primary').count()));
+
+  // 答满 27 题：每题点第 3 个选项（「有时」），一页答完再翻页
+  for (let p = 0; p < 6; p += 1) {
+    const groups = page.locator('.mp-quiz-opts');
+    const n = await groups.count();
+    for (let i = 0; i < n; i += 1) {
+      await groups.nth(i).locator('.mp-quiz-o').nth(2).click();
+    }
+    const next = page.locator('.mp-quiz-btn', { hasText: '下一页' });
+    if (await next.count()) await next.first().click();
+    await page.waitForTimeout(140);
+  }
+  const cnt = await page.locator('.mp-quiz-count').first().innerText().catch(() => '');
+  const answered = Number((/已答 (\d+) \/ 45/.exec(cnt) || [])[1] || 0);
+  ok(answered >= 27, '答满 27 题就够看结果', cnt.replace(/\s+/g, ' '));
+  const goBtn = page.locator('.mp-quiz-btn.primary').first();
+  const canGo = await goBtn.isEnabled().catch(() => false);
+  ok(canGo, '够 27 题后「看结果」可点', String(canGo));
+  await goBtn.click();
+  await page.waitForSelector('.mp-card', { timeout: 8000 }).catch(() => {});
+  await page.waitForTimeout(400);
+  const csDiag = await page.evaluate(() => {
+    const card = document.querySelector('.mp-card');
+    const el = card && card.firstElementChild;
+    return { hasCard: !!card, first: el ? String(el.className || el.tagName) : null, cs: !!(card && card.querySelector('.mp-cs')) };
+  });
+  ok(csDiag.cs, '体质结果卡里有九条横条（.mp-cs）', JSON.stringify(csDiag));
+  ok(/mp-cs/.test(String(csDiag.first)), '结果卡第一块就是体质盘面', JSON.stringify(csDiag));
+  ok(errors.length === errsBefore, '体质问卷全程无新增 JS 报错', errors.slice(errsBefore).join(' | '));
+}
+
+// ── 十二·八、五运六气：第 21 个体系，只要日期、不要生辰 ────────
+// 引擎侧有 114 条静态断言，这一段只验真机：切进去能出结果卡、第一块是运气盘面、
+// 日期字段在而性别不在（TIME_KIND 是 date，不是 birth）。
+{
+  const errsBefore = errors.length;
+  await page.locator('.mp-tool[data-tab="wuyunliuqi"]').click();
+  await page.waitForTimeout(500);
+  const dateField = page.locator('#main .mp-panel input.mp-input[placeholder^="年-月-日"]');
+  ok((await dateField.count()) >= 1, '运气 tab 有日期字段', String(await dateField.count()));
+  ok((await page.locator('#main .mp-panel select').count()) === 0, '运气 tab 不显示性别下拉', String(await page.locator('#main .mp-panel select').count()));
+  await page.waitForSelector('.mp-card', { timeout: 8000 }).catch(() => {});
+  const info = await page.evaluate(() => {
+    const card = document.querySelector('#main .mp-card');
+    if (!card) return { hasCard: false };
+    const first = card.firstElementChild;
+    return {
+      hasCard: true,
+      first: first ? first.className : '',
+      steps: card.querySelectorAll('.mp-wl-step').length,
+      on: card.querySelectorAll('.mp-wl-step.on').length,
+      tags: card.querySelectorAll('.mp-wl-tag').length,
+      text: (card.textContent || '').slice(0, 60),
+    };
+  });
+  ok(info.hasCard && /mp-wl/.test(info.first), '运气结果卡第一块是运气盘面', JSON.stringify(info).slice(0, 160));
+  ok(info.steps === 11, '九步时刻表（客运 5 + 客气 6）', String(info.steps));
+  ok(info.on >= 1, '当前所处那一步高亮', String(info.on));
+  ok(errors.length === errsBefore, '运气 tab 全程无新增 JS 报错', errors.slice(errsBefore).join(' | '));
+}
+
+// ── 十二·九、太乙神数：第 22 个体系，九宫地盘 + 三个落点 ────────
+// 引擎侧有 120 条静态断言，这一段只验真机：切进去能出结果卡、第一块是九宫图、
+// 太乙那一格恰好亮一个（三年一宫，不会同时亮两格）。
+{
+  const errsBefore = errors.length;
+  await page.locator('.mp-tool[data-tab="taiyi"]').click();
+  await page.waitForTimeout(500);
+  const dateField = page.locator('#main .mp-panel input.mp-input[placeholder^="年-月-日"]');
+  ok((await dateField.count()) >= 1, '太乙 tab 有日期字段', String(await dateField.count()));
+  ok((await page.locator('#main .mp-panel select').count()) === 0, '太乙 tab 不显示性别下拉', String(await page.locator('#main .mp-panel select').count()));
+  await page.waitForSelector('.mp-card', { timeout: 8000 }).catch(() => {});
+  const info = await page.evaluate(() => {
+    const card = document.querySelector('#main .mp-card');
+    if (!card) return { hasCard: false };
+    const first = card.firstElementChild;
+    const on = card.querySelectorAll('.mp-ty-cell.on');
+    return {
+      hasCard: true,
+      first: first ? first.className : '',
+      cells: card.querySelectorAll('.mp-ty-cell').length,
+      on: on.length,
+      onText: on[0] ? (on[0].textContent || '') : '',
+      wc: card.querySelectorAll('.mp-ty-mark.w').length,
+      secs: card.querySelectorAll('.mp-ty-sec').length,
+      text: (card.textContent || '').slice(0, 60),
+    };
+  });
+  ok(info.hasCard && /mp-ty/.test(info.first), '太乙结果卡第一块是九宫盘面', JSON.stringify(info).slice(0, 160));
+  ok(info.cells === 9, '九宫格正好九格', String(info.cells));
+  ok(info.on === 1, '太乙恰好落在一格', String(info.on));
+  ok(info.wc >= 1, '文昌带标记', String(info.wc));
+  ok(info.secs >= 4, '落宫 / 八门 / 文昌 / 积年四行都在', String(info.secs));
+  ok(/太乙|宫|局/.test(info.onText + info.text), '盘面写出了太乙落宫与局数', (info.onText + '|' + info.text).slice(0, 80));
+  ok(errors.length === errsBefore, '太乙 tab 全程无新增 JS 报错', errors.slice(errsBefore).join(' | '));
+}
+
 // ── 十三、未发版改动清单：面板运行时得真的拿得到 ────────────────
 // client.js 里那行注入是构建期写进去的，源码断言看不到压缩后的形态；
 // 错误边界的环境行（版本号 + 未发版改动 N 项）全靠它，所以在真 React 里读一次。

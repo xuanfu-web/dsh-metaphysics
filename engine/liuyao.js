@@ -465,7 +465,7 @@ export function yongshenOf(result, opts = {}) {
 }
 
 /** 随机摇卦：三枚铜钱，背为阳（3），字为阴（2），合计 6/7/8/9 */
-export function tossLines(random = Math.random) {
+export function tossLines(random = randomOf()) {
   const lines = [];
   for (let i = 0; i < 6; i++) {
     let sum = 0;

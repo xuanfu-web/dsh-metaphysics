@@ -46,7 +46,13 @@ const unminified = assemble();
 const gzipSize = zlib.gzipSync(Buffer.from(clientCode, 'utf8')).length;
 ok('client.js 已压缩（低于源码 80%）', clientCode.length < unminified.length * 0.8,
   `${Math.round(clientCode.length / 1024)}KB / 源 ${Math.round(unminified.length / 1024)}KB`);
-ok('client.js gzip 预算 < 100KB（引擎已拆到分块）', gzipSize < 100 * 1024, `${Math.round(gzipSize / 1024)}KB`);
+// 上限只在 tools/check-bundle.mjs 写一份（2026-11-12 起）：之前这里写死 108KB、
+// CI 判 105KB，超线时会出现「测试绿、CI 红」的两套事实。
+const bundleSrc = fs.readFileSync(new URL('../tools/check-bundle.mjs', import.meta.url), 'utf8');
+const entCapMatch = /const ENTRY_GZIP_CAP = ([0-9*\s.]+);/.exec(bundleSrc);
+if (!entCapMatch) throw new Error('tools/check-bundle.mjs 里找不到 ENTRY_GZIP_CAP');
+const ENTRY_GZIP_CAP = Function(`return (${entCapMatch[1]});`)();
+ok(`client.js gzip 预算 < ${Math.round(ENTRY_GZIP_CAP / 1024)}KB（引擎已拆到分块）`, gzipSize < ENTRY_GZIP_CAP, `${Math.round(gzipSize / 1024)}KB`);
 
 // 1b) 「问进对话」这条链在源码里必须完整：生成提问 → 写草稿 → 走正常回车路径
 const appSrc = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');

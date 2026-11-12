@@ -2,7 +2,7 @@
 //
 // 两处各写一份曾在 0.39.0 之后悄悄分叉：页面加了「还有 N 个」的折叠、面板还是 19 个 tab 平铺。
 // 现在分组、标题、白话说明都只写在这里；页面构建时生成 HTML，面板构建时注入进 client.js。
-// 卡片只是另一套入口——19 个 tab 原样保留，两套入口走同一条激活路径，分组不改变排盘行为。
+// 卡片只是另一套入口——22 个 tab 原样保留，两套入口走同一条激活路径，分组不改变排盘行为。
 export const GROUPS = [
   {
     title: '问一件事', hint: '心里有一件具体的事，起一卦再决定',
@@ -22,6 +22,9 @@ export const GROUPS = [
       { k: 'ziwei', label: '紫微', tip: '十二宫细看' },
       { k: 'hepan', label: '合盘', tip: '两个人合不合' },
       { k: 'mbti', label: '人格', tip: '16 型性格问卷' },
+      { k: 'constitution', label: '体质', tip: '九种体质自评，45 题' },
+      { k: 'wuyunliuqi', label: '运气', tip: '五运六气，看一年大势' },
+      { k: 'taiyi', label: '太乙', tip: '积年推局，太乙落宫与八门' },
       { k: 'chenggu', label: '称骨', tip: '按生辰称命重' },
       { k: 'numerology', label: '数字', tip: '生日数字看性格' },
       { k: 'trend', label: '人生K', tip: '一生高低走势', wide: true },
