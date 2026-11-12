@@ -24,15 +24,16 @@ eq('三个分组', (html.match(/class="tgroup"/g) || []).length, 3);
   ok('提示不是占位文案', hints.every((h) => h.length >= 8), hints.join(' / '));
 }
 
-// ── ② 22 个入口不多不少，与平铺 tab 一一对应 ──────────────────
-eq('分组里 22 个入口', toolList.length, 22);
-eq('入口不重复', new Set(toolList).size, 22);
-eq('分组的 tab 集合与平铺完全一致', [...toolList].sort().join(','), [...tabList].sort().join(','));
+// ── ② 分组是精选入口：20 个，缺的两个留在平铺 ──────────────────
+eq('分组里 20 个入口', toolList.length, 20);
+eq('入口不重复', new Set(toolList).size, 20);
+ok('分组是平铺的子集', toolList.every((k) => tabList.includes(k)), toolList.filter((k) => !tabList.includes(k)).join(','));
+eq('分组刻意不收录星座与数字', tabList.filter((k) => !toolList.includes(k)).sort().join(','), 'numerology,star');
 {
-  const entries = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="[a-z]+"><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)];
-  eq('22 项都带名称与白话说明', entries.length, 22);
+  const entries = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="[a-z]+"(?: title="[^"]*")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)];
+  eq('20 项都带名称与白话说明', entries.length, 20);
   ok('白话说明不是空串', entries.every((m) => m[2].trim().length >= 4));
-  ok('六爻的白话说明在页面上', html.includes('<b>六爻</b><span>摇六次，问一件事</span>'));
+  ok('六爻的白话说明在页面上', html.includes('<b>六爻</b><span>摇六次问事</span>'));
 }
 
 // ── ③ 平铺回退：22 个 tab 原样保留，可一键切回 ──────────────────
@@ -66,10 +67,10 @@ ok('读存储失败返回空', /function storeGet\(key\) \{\s*try \{/.test(ui) &
 ok('写存储失败静默降级', /function storeSet\(key, val\) \{\s*try \{/.test(ui) && /catch \(e\) \{ \/\* 存不了不影响使用 \*\/ \}/.test(ui));
 ok('最近用过的名称走文本节点，不拼 HTML', /b\.appendChild\(document\.createTextNode\(labels\[x\.tab\]\)\)/.test(ui));
 
-// ── ⑥ 手机端：每组先露 4 个，其余折起来 ───────────────────────
-ok('窄屏每组只露前 4 个', /\.tgroup:not\(\.open\) \.ttools>\.tool:nth-child\(n\+5\)\{display:none\}/.test(narrow));
-ok('窄屏出现「还有 N 个」', /\.tmore\{display:flex\}/.test(narrow));
-ok('桌面端不显示折叠按钮', /\.tmore\{display:none;grid-column:1\/-1/.test(html));
+// ── ⑥ 每组先露 4 个，其余折起来（宽窄屏同一口径） ───────────────
+ok('每组只露前 4 个（全局规则）', /\.tgroup:not\(\.open\) \.ttools>\.tool:nth-child\(n\+5\)\{display:none\}/.test(html));
+ok('折叠按钮默认可见', /\.tmore\{display:flex;/.test(html));
+ok('桌面端也折叠，不再只在窄屏', !/\.tmore\{display:none/.test(html));
 ok('折叠按钮写明还有几个', /more\.textContent = `还有 \$\{extra\} 个`/.test(ui));
 ok('展开/收起并有 aria 状态', /g\.classList\.toggle\('open'\)/.test(ui) && /aria-expanded/.test(ui));
 ok('按实际入口数算折叠数量', /g\.querySelectorAll\('\.ttools>\.tool'\)\.length - 4/.test(ui));

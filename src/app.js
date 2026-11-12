@@ -127,26 +127,26 @@ const CSS = `
 .mp-tgroup-head h2{display:flex;align-items:center;gap:7px;margin:0;font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary);letter-spacing:.06em}
 .mp-tgroup-head h2::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--dsw-alias-brand-primary)}
 .mp-tgroup-head p{margin:3px 0 9px;font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-secondary)}
-.mp-ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mp-ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;grid-auto-rows:1fr}
 .mp-tool{display:flex;flex-direction:column;gap:1px;padding:7px 9px;text-align:left;border:1px solid var(--dsw-alias-border-l1);border-radius:9px;
   background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 72%,transparent);color:var(--dsw-alias-label-primary);font-family:inherit;cursor:pointer;
   transition:border-color .14s,background .14s,box-shadow .14s}
 .mp-tool b{font-size:13px;font-weight:600;letter-spacing:.02em}
-.mp-tool span{font-size:11px;line-height:1.4;color:var(--dsw-alias-label-secondary)}
+.mp-tool span{font-size:11px;line-height:1.4;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mp-tool:hover{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-bg-layer-1)}
 .mp-tool.on{border-color:transparent;background:var(--dsw-alias-brand-primary);box-shadow:0 8px 18px -12px var(--dsw-alias-brand-primary)}
 .mp-tool.on b,.mp-tool.on span{color:var(--mp-on-brand,#fff)}
-.mp-tool.wide{grid-column:1/-1}
-.mp-tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:7px;border:1px dashed var(--dsw-alias-border-l1);border-radius:9px;
+.mp-tmore{display:flex;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:7px;border:1px dashed var(--dsw-alias-border-l1);border-radius:9px;
   background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:12px;cursor:pointer}
 .mp-tmore:hover{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary)}
 /* 侧栏宽度不等于窗口宽度：用容器查询决定每组先露 4 项、其余折在「还有 N 个」后面 */
+/* 首屏每组只露 4 项，其余折在「还有 N 个」后面（宽窄屏同一口径） */
+.mp-tgroup:not(.open) .mp-ttools>.mp-tool:nth-child(n+5){display:none}
 @container (max-width:560px){
   /* 窄侧栏：视图开关另起一行右对齐，避免和「最近用过」挤在同一行被裁掉 */
   .mp-start-top{flex-direction:column;align-items:stretch;gap:8px}
   .mp-viewsw{margin-left:0;align-self:flex-end}
-  .mp-tgroup:not(.open) .mp-ttools>.mp-tool:nth-child(n+5){display:none}
-  .mp-tmore{display:flex}
+  .mp-tool.wide{grid-column:1/-1}
 }
 .mp-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:6px;margin-bottom:14px;width:100%;max-width:940px}
 .mp-tabs.hide{display:none}
@@ -2211,7 +2211,7 @@ function App() {
   const recentList = (recent || []).filter((x) => x && TABS.some((t) => t.k === x.tab)).slice(0, RECENT_MAX);
   const tabLabel = (k) => (TABS.find((t) => t.k === k) || {}).label || k;
   const toolOf = ({ k, label, tip, wide }) => h('button', {
-    key: k, type: 'button', className: 'mp-tool' + (wide ? ' wide' : '') + (tab === k ? ' on' : ''), 'data-tab': k,
+    key: k, type: 'button', title: tip, className: 'mp-tool' + (wide ? ' wide' : '') + (tab === k ? ' on' : ''), 'data-tab': k,
     onClick: () => activate(k),
   }, h('b', null, label), h('span', null, tip));
 

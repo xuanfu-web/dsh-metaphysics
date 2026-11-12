@@ -109,13 +109,39 @@ ok(true, '页面加载完成');
 /** 点某个 tab：平铺/分组两种视图里都找得到 */
 async function openTab(k) {
   // 平铺视图用 .tab，分组视图用 .tool；默认是分组视图，所以不能只找 .tab
-  const loc = page.locator(`[data-tab="${k}"]`);
-  const n = await loc.count();
-  for (let i = 0; i < n; i++) {
-    const el = loc.nth(i);
-    if (await el.isVisible()) { await el.click(); return true; }
+  const sel = `[data-tab="${k}"]`;
+  const clickVisible = async () => {
+    const loc = page.locator(sel);
+    const n = await loc.count();
+    for (let i = 0; i < n; i++) {
+      const el = loc.nth(i);
+      if (await el.isVisible()) { await el.click(); return true; }
+    }
+    return false;
+  };
+  if (await clickVisible()) return true;
+
+  // 第 5 项往后折在「还有 N 个」里：先展开它所在的分组
+  const opened = await page.evaluate((key) => {
+    const els = [...document.querySelectorAll(`[data-tab="${key}"]`)];
+    for (const el of els) {
+      const group = el.closest('.tgroup, .mp-tgroup');
+      const more = group && group.querySelector('.tmore, .mp-tmore');
+      if (more) { more.click(); return true; }
+    }
+    return false;
+  }, k);
+  if (opened) {
+    await page.waitForTimeout(300);
+    if (await clickVisible()) return true;
   }
-  return false;
+
+  // 不在分组里的体系（星座 / 数字）只在平铺视图：切过去再点
+  const sw = page.locator('[data-view="flat"], .mp-viewsw button:has-text("平铺")');
+  if ((await sw.count()) === 0) return false;
+  await sw.first().click();
+  await page.locator(`.mp-tabs ${sel}`).first().waitFor({ state: 'visible', timeout: 4000 }).catch(() => {});
+  return clickVisible();
 }
 
 /** 填该 tab 必填的表单项（只填可见的） */

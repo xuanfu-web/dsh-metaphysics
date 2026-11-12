@@ -57,8 +57,8 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
-/* 首屏按「想干什么」分组：19 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
-   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（19 个 tab 原样保留）。 */
+/* 首屏按「想干什么」分组：22 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
+   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（22 个 tab 原样保留）。 */
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
@@ -73,26 +73,26 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:border-color .14s ease,background .14s ease}
 .rc:hover{border-color:var(--gold);background:var(--panel)}
 .rc i{font-style:normal;font-size:11.5px;color:var(--dim)}
-.groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:12px}
 .tgroup{padding:14px 14px 12px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--bg)));box-shadow:var(--shadow)}
 .tgroup-head h2{display:flex;align-items:center;gap:8px;margin:0;font-size:15.5px;font-weight:600;color:var(--ink);letter-spacing:.06em}
 .tgroup-head h2::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--gold)}
 .tgroup-head p{margin:4px 0 11px;font-size:12.5px;line-height:1.6;color:var(--dim)}
-.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
+.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;grid-auto-rows:1fr}
 .tool{display:flex;flex-direction:column;gap:1px;padding:8px 10px;text-align:left;border:1px solid var(--line);border-radius:9px;
   background:color-mix(in srgb,var(--panel2) 72%,transparent);color:var(--ink);font-family:inherit;cursor:pointer;
   transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
 .tool b{font-size:13.5px;font-weight:600;letter-spacing:.02em}
-.tool span{font-size:11.5px;line-height:1.4;color:var(--dim)}
+.tool span{font-size:11.5px;line-height:1.4;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tool:hover{border-color:var(--gold);background:var(--panel)}
 .tool.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 8px 18px -12px var(--gold)}
 .tool.on b{color:var(--on-accent)}
 .tool.on span{color:var(--on-accent-soft)}
-/* 奇数个的那一组：末项铺满整行，避免右下留一个孤格 */
-.tool.wide{grid-column:1/-1}
+/* 奇数个的那一组：窄屏末项铺满整行，避免右下留一个孤格（大屏三列时不铺） */
 /* 手机端每组先露 4 个，其余折在「还有 N 个」后面：三组全展开会把表单挤到第二屏 */
-.tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
+.tmore{display:flex;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
   background:transparent;color:var(--dim);font-family:inherit;font-size:12.5px;cursor:pointer}
 .tmore:hover{color:var(--gold);border-color:var(--gold)}
 body.view-group .tabs{display:none}
@@ -268,10 +268,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .tool{padding:9px 10px;min-height:52px}
   .tool b{font-size:14px}
   .tool span{font-size:11px}
-  .tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
-  .tmore{display:flex}
+  .tool.wide{grid-column:1/-1}
   .rc{min-height:36px}
-  /* 19 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
+  /* 22 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
     margin:0 -12px;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -362,7 +361,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.68.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.69.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -411,40 +410,38 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
       <section class="tgroup">
         <div class="tgroup-head"><h2>问一件事</h2><p>心里有一件具体的事，起一卦再决定</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="liuyao"><b>六爻</b><span>摇六次，问一件事</span></button>
-          <button type="button" class="tool" data-tab="meihua"><b>梅花</b><span>见闻起卦，看当下</span></button>
-          <button type="button" class="tool" data-tab="tarot"><b>塔罗</b><span>抽牌，看关系与选择</span></button>
-          <button type="button" class="tool" data-tab="qimen"><b>奇门</b><span>看方位、时机与取舍</span></button>
-          <button type="button" class="tool" data-tab="daliuren"><b>六壬</b><span>占事，断来意与结果</span></button>
-          <button type="button" class="tool" data-tab="xiaoliuren"><b>小六壬</b><span>掐指一算，快速断</span></button>
+          <button type="button" class="tool" data-tab="liuyao" title="摇六次问事"><b>六爻</b><span>摇六次问事</span></button>
+          <button type="button" class="tool" data-tab="tarot" title="抽牌看选择"><b>塔罗</b><span>抽牌看选择</span></button>
+          <button type="button" class="tool" data-tab="meihua" title="见闻起卦"><b>梅花</b><span>见闻起卦</span></button>
+          <button type="button" class="tool" data-tab="qimen" title="看方位时机"><b>奇门</b><span>看方位时机</span></button>
+          <button type="button" class="tool" data-tab="daliuren" title="占事断来意"><b>六壬</b><span>占事断来意</span></button>
+          <button type="button" class="tool" data-tab="xiaoliuren" title="掐指一算"><b>小六壬</b><span>掐指一算</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
       <section class="tgroup">
-        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情、格局与运程</p></div>
+        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情与格局</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="bazi"><b>八字</b><span>四柱看一生格局</span></button>
-          <button type="button" class="tool" data-tab="ziwei"><b>紫微</b><span>十二宫细看</span></button>
-          <button type="button" class="tool" data-tab="hepan"><b>合盘</b><span>两个人合不合</span></button>
-          <button type="button" class="tool" data-tab="mbti"><b>人格</b><span>16 型性格问卷</span></button>
-          <button type="button" class="tool" data-tab="constitution"><b>体质</b><span>九种体质自评，45 题</span></button>
-          <button type="button" class="tool" data-tab="wuyunliuqi"><b>运气</b><span>五运六气，看一年大势</span></button>
-          <button type="button" class="tool" data-tab="taiyi"><b>太乙</b><span>积年推局，太乙落宫与八门</span></button>
-          <button type="button" class="tool" data-tab="chenggu"><b>称骨</b><span>按生辰称命重</span></button>
-          <button type="button" class="tool" data-tab="numerology"><b>数字</b><span>生日数字看性格</span></button>
-          <button type="button" class="tool wide" data-tab="trend"><b>人生K</b><span>一生高低走势</span></button>
+          <button type="button" class="tool" data-tab="bazi" title="四柱看格局"><b>八字</b><span>四柱看格局</span></button>
+          <button type="button" class="tool" data-tab="ziwei" title="十二宫细看"><b>紫微</b><span>十二宫细看</span></button>
+          <button type="button" class="tool" data-tab="hepan" title="两人合不合"><b>合盘</b><span>两人合不合</span></button>
+          <button type="button" class="tool" data-tab="mbti" title="16 型问卷"><b>人格</b><span>16 型问卷</span></button>
+          <button type="button" class="tool" data-tab="constitution" title="九种体质"><b>体质</b><span>九种体质</span></button>
+          <button type="button" class="tool" data-tab="chenggu" title="生辰称命重"><b>称骨</b><span>生辰称命重</span></button>
+          <button type="button" class="tool wide" data-tab="trend" title="一生走势"><b>人生K</b><span>一生走势</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
       <section class="tgroup">
-        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，顺带看看家里和名字</p></div>
+        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，看一年的气与方位</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="almanac"><b>黄历</b><span>今天宜忌、时辰吉凶</span></button>
-          <button type="button" class="tool" data-tab="zeri"><b>择日</b><span>挑个办事的好日子</span></button>
-          <button type="button" class="tool" data-tab="convert"><b>农历</b><span>公历农历互转</span></button>
-          <button type="button" class="tool" data-tab="star"><b>星座</b><span>星座性格与今日运</span></button>
-          <button type="button" class="tool" data-tab="fengshui"><b>风水</b><span>房屋朝向与布置</span></button>
-          <button type="button" class="tool" data-tab="name"><b>起名</b><span>按八字选字</span></button>
+          <button type="button" class="tool" data-tab="almanac" title="今日宜忌"><b>黄历</b><span>今日宜忌</span></button>
+          <button type="button" class="tool" data-tab="zeri" title="挑好日子"><b>择日</b><span>挑好日子</span></button>
+          <button type="button" class="tool" data-tab="convert" title="公历农历"><b>农历</b><span>公历农历</span></button>
+          <button type="button" class="tool" data-tab="wuyunliuqi" title="一年大势"><b>运气</b><span>一年大势</span></button>
+          <button type="button" class="tool" data-tab="taiyi" title="积年推局"><b>太乙</b><span>积年推局</span></button>
+          <button type="button" class="tool" data-tab="fengshui" title="房屋朝向"><b>风水</b><span>房屋朝向</span></button>
+          <button type="button" class="tool" data-tab="name" title="八字选字"><b>起名</b><span>八字选字</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
@@ -682,7 +679,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：177 个测试文件 / 9879 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：177 个测试文件 / 9881 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -31431,7 +31428,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.68.0";
+window.__MP_VER = "0.69.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。

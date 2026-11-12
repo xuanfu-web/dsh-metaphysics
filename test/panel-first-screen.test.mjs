@@ -15,19 +15,20 @@ const pageBuild = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta
 const flat = GROUPS.flatMap((g) => g.items);
 const keys = flat.map((it) => it.k);
 
-// ── ① 分组数据：三组、22 项、顺序与文案 ─────────────────────────
+// ── ① 分组数据：三组、20 项、顺序与文案 ─────────────────────────
 eq('分组数', GROUPS.length, 3);
 eq('组名与顺序', GROUPS.map((g) => g.title).join(','), '问一件事,看一个人,查日子');
 ok('每组一句白话提示', GROUPS.every((g) => g.hint && g.hint.length >= 8), GROUPS.map((g) => g.hint).join(' / '));
-eq('入口共 22 项', flat.length, 22);
-eq('入口不重复', new Set(keys).size, 22);
+eq('入口共 20 项', flat.length, 20);
+eq('入口不重复', new Set(keys).size, 20);
 ok('每项都有名称与白话说明', flat.every((it) => it.label && it.tip && it.tip.length >= 4));
 ok('窄屏奇数项的「人生K」铺满整行', GROUPS[1].items.some((it) => it.k === 'trend' && it.wide === true));
 
 // ── ② 与平铺的 22 个 tab 一一对应 ───────────────────────────────
 const tabKeys = [...app.matchAll(/\{ k: '([a-z]+)', label: '/g)].map((m) => m[1]);
 eq('面板平铺 tab 也是 22 个', tabKeys.length, 22);
-eq('分组入口与平铺 tab 集合一致', [...keys].sort().join(','), [...tabKeys].sort().join(','));
+ok('分组入口是平铺的子集', keys.every((k) => tabKeys.includes(k)), keys.filter((k) => !tabKeys.includes(k)).join(','));
+eq('分组不收录星座与数字', tabKeys.filter((k) => !keys.includes(k)).sort().join(','), 'numerology,star');
 
 // ── ③ 唯一数据源：面板注入、页面生成，两边都不再手抄 ─────────────
 ok('面板从 window.__MPGroups 取分组', /const GROUPS = Array\.isArray\(window\.__MPGroups\) \? window\.__MPGroups : \[\]/.test(app));
@@ -38,9 +39,9 @@ ok('页面构建引入 groups.mjs', /from '\.\.\/src\/groups\.mjs'/.test(pageBui
 ok('页面分组由 GROUPS 生成', /\$\{GROUPS\.map\(\(g\) => `/.test(pageBuild));
 
 // ── ④ 页面产物与分组数据逐项一致 ───────────────────────────────
-const pageTools = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="([a-z]+)"><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)]
+const pageTools = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="([a-z]+)"(?: title="[^"]*")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)]
   .map((m) => ({ k: m[1], label: m[2], tip: m[3] }));
-eq('页面生成 22 个入口', pageTools.length, 22);
+eq('页面生成 20 个入口', pageTools.length, 20);
 eq('页面入口顺序与数据一致', pageTools.map((t) => t.k).join(','), keys.join(','));
 eq('页面名称与数据一致', pageTools.map((t) => t.label).join(','), flat.map((it) => it.label).join(','));
 eq('页面白话与数据一致', pageTools.map((t) => t.tip).join(','), flat.map((it) => it.tip).join(','));
@@ -63,7 +64,7 @@ ok('tab 与卡片都走 activate', /onClick: \(\) => activate\(t\.k\)/.test(app)
 // ── ⑥ 窄屏收纳：每组先露 4 项，其余折起来 ──────────────────────
 ok('容器查询按侧栏宽度折叠', /@container \(max-width:560px\)/.test(app));
 ok('折叠规则只藏第 5 项以后', /\.mp-tgroup:not\(\.open\) \.mp-ttools>\.mp-tool:nth-child\(n\+5\)\{display:none\}/.test(app));
-ok('折叠按钮平时不显示', /\.mp-tmore\{display:none/.test(app));
+ok('折叠按钮平时也显示（宽窄屏同口径）', !/\.mp-tmore\{display:none/.test(app));
 ok('折叠按钮写明还有几个', /`还有 \$\{extra\} 个`/.test(app));
 ok('展开/收起带 aria-expanded', /'aria-expanded': open \? 'true' : 'false'/.test(app));
 ok('按实际入口数算折叠数量', /Math\.max\(0, g\.items\.length - 4\)/.test(app));

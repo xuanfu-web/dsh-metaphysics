@@ -142,6 +142,29 @@ const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 
+// 分组卡默认只露 4 项：第 5 项往后要先点「还有 N 个」展开，否则点击超时
+async function openTool(k) {
+  const sel = '.mp-tool[data-tab="' + k + '"]';
+  const target = page.locator(sel);
+  if (await target.count()) {
+    for (let i = 0; i < await target.count(); i++) {
+      const el = target.nth(i);
+      if (await el.isVisible()) { await el.click(); return; }
+    }
+  }
+  const opened = await page.evaluate((key) => {
+    const el = document.querySelector('.mp-tool[data-tab="' + key + '"]');
+    if (!el) return false;
+    const group = el.closest('.mp-tgroup');
+    const more = group && group.querySelector('.mp-tmore');
+    if (!more) return false;
+    more.click();
+    return true;
+  }, k);
+  if (opened) await page.waitForTimeout(300);
+  await page.locator(sel).first().click();
+}
+
 await page.goto(base + '/_panel-harness.html', { waitUntil: 'load' });
 await page.waitForTimeout(200);
 
@@ -217,7 +240,7 @@ await page.waitForTimeout(600);
 const text = async (sel) => (await page.locator(sel).count()) ? (await page.locator(sel).first().innerText()).trim() : '';
 const outLen = () => page.evaluate(() => (document.getElementById('main') || {}).innerHTML?.length || 0);
 
-// 首屏（面板与单页同一套信息架构：三组卡片）
+// 首屏（面板与单页同一套信息架构：三组卡片，每组先露 4 个）
 ok((await page.locator('#side-icon svg').count()) === 1, '侧栏图标画出来了');
 ok((await page.locator('.mp-start').count()) === 1, '主面板出现首屏');
 ok((await page.locator('.mp-tgroup').count()) === 3, '首屏三组卡片', String(await page.locator('.mp-tgroup').count()));
@@ -227,7 +250,7 @@ ok(bootResult > 4000, '面板打开即排默认盘（紫微）', `${bootResult} 
 ok(!(await page.locator('.mp-err, .mp-wrap pre').count()), '没有渲染兜底/错误块');
 
 // ── 五、八字：点卡片 → 排盘 → 出结果 ────────────────────────────
-await page.locator('.mp-tool[data-tab="bazi"]').click();
+await openTool('bazi');
 await page.waitForTimeout(200);
 ok((await page.locator('.mp-btn').filter({ hasText: '排盘' }).count()) >= 1, '切到八字后有「排盘」按钮');
 await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
@@ -296,7 +319,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // 历史只记主方生日时，改过对方资料再点旧条目，会拿表单里此刻的对方重排——
 // 排出来的已不是当初看的那张盘，而且两条不同对方的盘还会被当成重复条目顶掉。
 {
-  await page.locator('.mp-tool[data-tab="hepan"]').click();
+  await openTool('hepan');
   await page.waitForTimeout(700);
   const pDateInput = page.locator('#main label.mp-field:has(span:text-is("对方出生日期")) input');
   const pTimeInput = page.locator('#main label.mp-field:has(span:text-is("对方出生时刻")) input');
@@ -334,7 +357,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
   };
   ok(back.date === '1993-03-08' && back.time === '09:15', '面板 · 点历史重放会还原对方生日与时刻', JSON.stringify(back));
   // 回到八字 tab，后面的用例按八字面板继续
-  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await openTool('bazi');
   await page.waitForTimeout(600);
 }
 
@@ -381,7 +404,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // K 线页是出生盘，表单给了出生地与真太阳时开关；只对八字传地址会让同一份输入
 // 在两张表里算出不同的时柱。
 {
-  await page.locator('.mp-tool[data-tab="trend"]').click();
+  await openTool('trend');
   await page.waitForTimeout(700);
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
   const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
@@ -399,7 +422,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
   const klYes = await text('.mp-kline');
   ok(klNo.length > 100 && klYes !== klNo, '面板 · 人生K线也把出生地换算成真太阳时', klYes.slice(0, 40));
   await addrInput.fill('');
-  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await openTool('bazi');
   await page.waitForTimeout(500);
 }
 
@@ -407,7 +430,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // 只看日期会把「开业」和「嫁娶」两种择日当成同一条历史：点旧的回来，
 // 下拉还停在后一次的事项上，排出来的已是另一件事。
 {
-  await page.locator('.mp-tool[data-tab="zeri"]').click();
+  await openTool('zeri');
   await page.waitForTimeout(600);
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("日期（公历）")) input');
   const taskSel = page.locator('#main label.mp-field:has(span:text-is("所办事项")) select');
@@ -452,7 +475,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
   ok(taskBack === '开业', '面板 · 点历史重放还原所办事项', taskBack);
   ok(zeriBack === kaiye, '面板 · 重放回来的是同一张择日盘', zeriBack.slice(0, 40));
   // 回到八字 tab，后面的用例按八字面板继续
-  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await openTool('bazi');
   await page.waitForTimeout(500);
 }
 
@@ -477,7 +500,7 @@ ok(colCount === 3, '盘面只画三列', String(colCount));
 ok(!/\bnull\b|undefined|NaN/.test(baziText), '结果里没有 null / undefined / NaN');
 
 // ── 七、问事体系：问题必填、复制提示按钮 ────────────────────────
-await page.locator('.mp-tool[data-tab="liuyao"]').click();
+await openTool('liuyao');
 await page.waitForTimeout(250);
 ok((await page.locator('.mp-textarea').count()) === 1, '六爻面板出现「所问之事」');
 await page.locator('button.mp-btn').filter({ hasText: '起卦' }).first().click();
@@ -627,12 +650,12 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   const errsBefore = errors.length;
 
   // 档案只描述「一个人」，占事体系不给存入条
-  await page.locator('.mp-tool[data-tab="liuyao"]').click();
+  await openTool('liuyao');
   await page.waitForTimeout(200);
   ok((await page.locator('#main .mp-prof').count()) === 1, '六爻页也显示「我的命盘」区');
   ok((await page.locator('#main .mp-prof-name').count()) === 0, '占事体系不给「存为我的命盘」输入条');
 
-  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await openTool('bazi');
   await page.waitForTimeout(250);
   ok((await page.locator('#main .mp-prof-empty').count()) === 1, '没有档案时给一句引导而不是空框');
   ok((await page.locator('#main .mp-prof-name').count()) === 1, '八字页出现称呼输入框');
@@ -792,7 +815,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
 {
   const errsBefore = errors.length;
   // ① 只填「所问之事」、追问框空着：包里的所问必须是用户的主问题
-  await page.locator('.mp-tool[data-tab="liuyao"]').click();
+  await openTool('liuyao');
   await page.waitForTimeout(300);
   await page.locator('.mp-textarea').fill('今年适合换工作吗');
   await page.locator('button.mp-btn').filter({ hasText: '起卦' }).first().click();
@@ -814,7 +837,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(chatPack.split('——盘面摘要——')[0].includes('所问：今年适合换工作吗'), '面板问进对话 · 只填「所问之事」时也进包');
 
   // ③ 八字填入追问：写在按钮左边的那句必须进包，且带上已有开场结论
-  await page.locator('.mp-tool[data-tab="bazi"]').click();
+  await openTool('bazi');
   await page.waitForTimeout(300);
   await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
   await page.waitForSelector('.pp-bz', { timeout: 15000 }).catch(() => {});
@@ -836,7 +859,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
 // 且与点 tab 走同一条 switchTo——所以六爻没填问题时照样被拦住。
 {
   const errsBefore = errors.length;
-  await page.locator('.mp-tool[data-tab="ziwei"]').click();
+  await openTool('ziwei');
   await page.waitForTimeout(300);
   ok((await page.locator('.mp-castrow-h').count()) === 1, '面板表单顶部有起卦表头');
   ok((await page.locator('.mp-castchip').count()) === 0, '起卦行默认折叠（不展开时没有 chip）');
@@ -891,7 +914,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
 // 静态测试只能证明拼接顺序写对了；这一段看真机 DOM：一屏里第一眼必须是牌面/卦象，
 // 不是「12ms」「修订 3 处」这类技术行。
 {
-  await page.locator('.mp-tool[data-tab="tarot"]').click();
+  await openTool('tarot');
   await page.waitForTimeout(300);
   // 问事体系问题必填（十二·五 末尾把框清空过），先写一句再起卦
   await page.locator('.mp-textarea').fill('这周能不能把这件事定下来');
@@ -924,7 +947,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
 // 且结果卡第一块是体质盘面（chartHTML 分派），不是技术行。
 {
   const errsBefore = errors.length;
-  await page.locator('.mp-tool[data-tab="constitution"]').click();
+  await openTool('constitution');
   await page.waitForSelector('.mp-quiz-list', { timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(400);
   const head = await page.locator('.mp-quiz-count').first().innerText().catch(() => '');
@@ -968,7 +991,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
 // 日期字段在而性别不在（TIME_KIND 是 date，不是 birth）。
 {
   const errsBefore = errors.length;
-  await page.locator('.mp-tool[data-tab="wuyunliuqi"]').click();
+  await openTool('wuyunliuqi');
   await page.waitForTimeout(500);
   const dateField = page.locator('#main .mp-panel input.mp-input[placeholder^="年-月-日"]');
   ok((await dateField.count()) >= 1, '运气 tab 有日期字段', String(await dateField.count()));
@@ -998,7 +1021,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
 // 太乙那一格恰好亮一个（三年一宫，不会同时亮两格）。
 {
   const errsBefore = errors.length;
-  await page.locator('.mp-tool[data-tab="taiyi"]').click();
+  await openTool('taiyi');
   await page.waitForTimeout(500);
   const dateField = page.locator('#main .mp-panel input.mp-input[placeholder^="年-月-日"]');
   ok((await dateField.count()) >= 1, '太乙 tab 有日期字段', String(await dateField.count()));
