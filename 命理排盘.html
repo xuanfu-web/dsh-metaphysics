@@ -57,8 +57,8 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
-/* 首屏按「想干什么」分组：19 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
-   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（19 个 tab 原样保留）。 */
+/* 首屏按「想干什么」分组：22 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
+   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（22 个 tab 原样保留）。 */
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
@@ -73,26 +73,26 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:border-color .14s ease,background .14s ease}
 .rc:hover{border-color:var(--gold);background:var(--panel)}
 .rc i{font-style:normal;font-size:11.5px;color:var(--dim)}
-.groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:12px}
 .tgroup{padding:14px 14px 12px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--bg)));box-shadow:var(--shadow)}
 .tgroup-head h2{display:flex;align-items:center;gap:8px;margin:0;font-size:15.5px;font-weight:600;color:var(--ink);letter-spacing:.06em}
 .tgroup-head h2::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--gold)}
 .tgroup-head p{margin:4px 0 11px;font-size:12.5px;line-height:1.6;color:var(--dim)}
-.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
+.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;grid-auto-rows:1fr}
 .tool{display:flex;flex-direction:column;gap:1px;padding:8px 10px;text-align:left;border:1px solid var(--line);border-radius:9px;
   background:color-mix(in srgb,var(--panel2) 72%,transparent);color:var(--ink);font-family:inherit;cursor:pointer;
   transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
 .tool b{font-size:13.5px;font-weight:600;letter-spacing:.02em}
-.tool span{font-size:11.5px;line-height:1.4;color:var(--dim)}
+.tool span{font-size:11.5px;line-height:1.4;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tool:hover{border-color:var(--gold);background:var(--panel)}
 .tool.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 8px 18px -12px var(--gold)}
 .tool.on b{color:var(--on-accent)}
 .tool.on span{color:var(--on-accent-soft)}
-/* 奇数个的那一组：末项铺满整行，避免右下留一个孤格 */
-.tool.wide{grid-column:1/-1}
+/* 奇数个的那一组：窄屏末项铺满整行，避免右下留一个孤格（大屏三列时不铺） */
 /* 手机端每组先露 4 个，其余折在「还有 N 个」后面：三组全展开会把表单挤到第二屏 */
-.tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
+.tmore{display:flex;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
   background:transparent;color:var(--dim);font-family:inherit;font-size:12.5px;cursor:pointer}
 .tmore:hover{color:var(--gold);border-color:var(--gold)}
 body.view-group .tabs{display:none}
@@ -268,10 +268,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .tool{padding:9px 10px;min-height:52px}
   .tool b{font-size:14px}
   .tool span{font-size:11px}
-  .tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
-  .tmore{display:flex}
+  .tool.wide{grid-column:1/-1}
   .rc{min-height:36px}
-  /* 19 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
+  /* 22 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
     margin:0 -12px;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -362,7 +361,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.67.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.70.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -391,6 +390,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
       <button class="tab" data-tab="fengshui">风水</button>
       <button class="tab" data-tab="name">起名</button>
       <button class="tab" data-tab="mbti">人格</button>
+      <button class="tab" data-tab="constitution">体质</button>
+      <button class="tab" data-tab="wuyunliuqi">运气</button>
+      <button class="tab" data-tab="taiyi">太乙</button>
     </div>
   </header>
 
@@ -408,37 +410,38 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
       <section class="tgroup">
         <div class="tgroup-head"><h2>问一件事</h2><p>心里有一件具体的事，起一卦再决定</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="liuyao"><b>六爻</b><span>摇六次，问一件事</span></button>
-          <button type="button" class="tool" data-tab="meihua"><b>梅花</b><span>见闻起卦，看当下</span></button>
-          <button type="button" class="tool" data-tab="tarot"><b>塔罗</b><span>抽牌，看关系与选择</span></button>
-          <button type="button" class="tool" data-tab="qimen"><b>奇门</b><span>看方位、时机与取舍</span></button>
-          <button type="button" class="tool" data-tab="daliuren"><b>六壬</b><span>占事，断来意与结果</span></button>
-          <button type="button" class="tool" data-tab="xiaoliuren"><b>小六壬</b><span>掐指一算，快速断</span></button>
+          <button type="button" class="tool" data-tab="liuyao" title="摇六次问事"><b>六爻</b><span>摇六次问事</span></button>
+          <button type="button" class="tool" data-tab="tarot" title="抽牌看选择"><b>塔罗</b><span>抽牌看选择</span></button>
+          <button type="button" class="tool" data-tab="meihua" title="见闻起卦"><b>梅花</b><span>见闻起卦</span></button>
+          <button type="button" class="tool" data-tab="qimen" title="看方位时机"><b>奇门</b><span>看方位时机</span></button>
+          <button type="button" class="tool" data-tab="daliuren" title="占事断来意"><b>六壬</b><span>占事断来意</span></button>
+          <button type="button" class="tool" data-tab="xiaoliuren" title="掐指一算"><b>小六壬</b><span>掐指一算</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
       <section class="tgroup">
-        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情、格局与运程</p></div>
+        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情与格局</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="bazi"><b>八字</b><span>四柱看一生格局</span></button>
-          <button type="button" class="tool" data-tab="ziwei"><b>紫微</b><span>十二宫细看</span></button>
-          <button type="button" class="tool" data-tab="hepan"><b>合盘</b><span>两个人合不合</span></button>
-          <button type="button" class="tool" data-tab="mbti"><b>人格</b><span>16 型性格问卷</span></button>
-          <button type="button" class="tool" data-tab="chenggu"><b>称骨</b><span>按生辰称命重</span></button>
-          <button type="button" class="tool" data-tab="numerology"><b>数字</b><span>生日数字看性格</span></button>
-          <button type="button" class="tool wide" data-tab="trend"><b>人生K</b><span>一生高低走势</span></button>
+          <button type="button" class="tool" data-tab="bazi" title="四柱看格局"><b>八字</b><span>四柱看格局</span></button>
+          <button type="button" class="tool" data-tab="ziwei" title="十二宫细看"><b>紫微</b><span>十二宫细看</span></button>
+          <button type="button" class="tool" data-tab="hepan" title="两人合不合"><b>合盘</b><span>两人合不合</span></button>
+          <button type="button" class="tool" data-tab="mbti" title="16 型问卷"><b>人格</b><span>16 型问卷</span></button>
+          <button type="button" class="tool" data-tab="constitution" title="九种体质"><b>体质</b><span>九种体质</span></button>
+          <button type="button" class="tool" data-tab="chenggu" title="生辰称命重"><b>称骨</b><span>生辰称命重</span></button>
+          <button type="button" class="tool wide" data-tab="trend" title="一生走势"><b>人生K</b><span>一生走势</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
       <section class="tgroup">
-        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，顺带看看家里和名字</p></div>
+        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，看一年的气与方位</p></div>
         <div class="ttools">
-          <button type="button" class="tool" data-tab="almanac"><b>黄历</b><span>今天宜忌、时辰吉凶</span></button>
-          <button type="button" class="tool" data-tab="zeri"><b>择日</b><span>挑个办事的好日子</span></button>
-          <button type="button" class="tool" data-tab="convert"><b>农历</b><span>公历农历互转</span></button>
-          <button type="button" class="tool" data-tab="star"><b>星座</b><span>星座性格与今日运</span></button>
-          <button type="button" class="tool" data-tab="fengshui"><b>风水</b><span>房屋朝向与布置</span></button>
-          <button type="button" class="tool" data-tab="name"><b>起名</b><span>按八字选字</span></button>
+          <button type="button" class="tool" data-tab="almanac" title="今日宜忌"><b>黄历</b><span>今日宜忌</span></button>
+          <button type="button" class="tool" data-tab="zeri" title="挑好日子"><b>择日</b><span>挑好日子</span></button>
+          <button type="button" class="tool" data-tab="convert" title="公历农历"><b>农历</b><span>公历农历</span></button>
+          <button type="button" class="tool" data-tab="wuyunliuqi" title="一年大势"><b>运气</b><span>一年大势</span></button>
+          <button type="button" class="tool" data-tab="taiyi" title="积年推局"><b>太乙</b><span>积年推局</span></button>
+          <button type="button" class="tool" data-tab="fengshui" title="房屋朝向"><b>风水</b><span>房屋朝向</span></button>
+          <button type="button" class="tool" data-tab="name" title="八字选字"><b>起名</b><span>八字选字</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
@@ -529,12 +532,16 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
       <label class="field">询问方向
         <select id="direction"><option value="general" selected>综合</option><option value="wealth">财运</option><option value="career">事业</option><option value="love">感情</option><option value="health">健康</option><option value="study">学业</option><option value="travel">出行</option></select>
       </label>
-      <!-- 塔罗牌阵张数：仅塔罗 tab 显示（1/3/5 由引擎 TAROT SPREADS 支持） -->
+      <!-- 塔罗牌阵：仅塔罗 tab 显示（张数由牌阵定，命名牌阵见 engine/tarot.js SPREAD_DEFS） -->
       <label class="field" id="for-count" style="display:none">牌阵
         <select id="tcount">
-          <option value="1">1 张（当下指引）</option>
-          <option value="3" selected>3 张（过去·现在·未来）</option>
-          <option value="5">5 张（现状·阻碍·建议·结果·潜在）</option>
+          <option value="one">1 张 · 单张指引</option>
+          <option value="three" selected>3 张 · 过去现在未来</option>
+          <option value="five">5 张 · 五张局势</option>
+          <option value="celtic">10 张 · 凯尔特十字</option>
+          <option value="either">5 张 · 二选一</option>
+          <option value="relation">7 张 · 关系阵</option>
+          <option value="timeflow">3 张 · 时间流</option>
         </select>
       </label>
     </div>
@@ -625,6 +632,25 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
           </div>
         </div>
       </div>
+      <!-- 中医体质问卷：5 题一页、1–5 打分；与人格问卷同一套 mb-* 版式，
+           题目与 1–5 的说明同样由 web-ui 从引擎取，页面只放容器 -->
+      <div id="for-constitution" style="display:none">
+        <div class="field">
+          <span>中医体质问卷 · 9 种体质各 5 题，共 45 题 · 5 题一页，按 1（没有）到 5（总是）打分</span>
+          <div class="mb-top">
+            <div class="mb-prog" aria-hidden="true"><i id="cs-fill"></i></div>
+            <span class="mb-count" id="cs-count">第 1 / 9 页 · 已答 0 / 45</span>
+          </div>
+          <div class="mb-qs" id="cs-qs"></div>
+          <div class="mb-nav">
+            <button type="button" class="mb-btn" id="cs-prev" disabled>上一页</button>
+            <button type="button" class="mb-btn" id="cs-next">下一页</button>
+            <button type="button" class="mb-btn primary" id="cs-submit" disabled>看结果</button>
+            <button type="button" class="mb-btn" id="cs-clear">清空</button>
+            <span class="mb-hint" id="cs-hint">答满 27 题可先看结果</span>
+          </div>
+        </div>
+      </div>
       <div id="qk-name" style="display:none">
         <div class="field">看什么
           <div class="seg" id="nnmode">
@@ -653,7 +679,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：171 个测试文件 / 9387 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：177 个测试文件 / 10072 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -2535,8 +2561,14 @@ return { CITIES, PROVINCES, resolveAddress, geocodeAddress };
 })();
 
 __mods.random = (function () {
-// 确定性伪随机数：只用于让「同一次摇卦 / 抽牌」可以复现（seed 相同 → 结果相同）。
-// 不用于任何安全用途，也不承担密码学强度。
+// 摇卦 / 抽牌的随机源，两条路线分工：
+//   · 不给 seed —— 走系统加密随机（globalThis.crypto.getRandomValues）。
+//     占卜里「这一卦真是随机摇出来的」是可信度的一部分：Math.random 内部状态只有 48 位，
+//     连续输出可以被倒推，对一个用来问事的东西来说太轻。
+//   · 给了 seed —— 走 mulberry32，同 seed 同结果；句柄回放、影子盘对拍都靠这条。
+//
+// engine/ 是对外一份纯计算（客户端也要打包进去），所以这里既不 import node:crypto，
+// 也不碰浏览器全局对象（tools/check-patterns.mjs 会拦）——只认 globalThis.crypto。
 
 /** mulberry32：32 位状态，分布够用，实现只有几行 */
 function mulberry32(seed) {
@@ -2559,6 +2591,25 @@ function mulberry32(seed) {
   };
 }
 
+/**
+ * 系统加密随机源：从 globalThis.crypto（Node 19+ 与浏览器同源）按批取 32 位整数，
+ * 一批够塔罗洗 78 张、六爻摇 18 次，省掉每次取数跨进 native 的开销。
+ * 完全没有 crypto 的运行时退 Math.random —— 只为不抛错，这条兜底不承担强度。
+ */
+function cryptoRandom() {
+  const web = globalThis.crypto;
+  if (!web || typeof web.getRandomValues !== 'function') return Math.random;
+  const POOL = 128;
+  const pool = new Uint32Array(POOL);
+  let idx = POOL;
+  const next = () => {
+    if (idx >= POOL) { web.getRandomValues(pool); idx = 0; }
+    return pool[idx++] / 4294967296;
+  };
+  next.source = 'crypto';
+  return next;
+}
+
 // 与宿主 / bool.js 同一把尺：只认十进制（可带指数、尾点）。Number() 会把
 // "0x10"、false、[] 也变成有效数字，于是直接调引擎能排出盘、走工具层却被拒——
 // 同一份输入两种命运，正是句柄与复现最容易分叉的地方。
@@ -2575,14 +2626,14 @@ const seedNumber = (seed) => {
 
 /**
  * 从参数里取随机源：
- * - 没给 seed：沿用 Math.random（保持"真随机"的手感）
- * - 给了数字或十进制数字串：mulberry32(seed)，可复现
- * - 给了别的东西：调用方应当先报错，这里兜底回 Math.random
+ * - 没给 seed：系统加密随机（crypto），手感还是真随机，但挪不出可猜的规律
+ * - 给了数字或十进制数字串：mulberry32(seed)，同 seed 同结果，可复现
+ * - 给了别的东西：调用方应当先报错，这里兜底回 crypto
  */
 function randomOf(seed) {
-  if (seed === undefined || seed === null || seed === '') return Math.random;
+  if (seed === undefined || seed === null || seed === '') return cryptoRandom();
   const n = seedNumber(seed);
-  return Number.isFinite(n) ? mulberry32(n) : Math.random;
+  return Number.isFinite(n) ? mulberry32(n) : cryptoRandom();
 }
 
 /** 是否是一个可以接受的 seed */
@@ -8907,7 +8958,7 @@ function yongshenOf(result, opts = {}) {
 }
 
 /** 随机摇卦：三枚铜钱，背为阳（3），字为阴（2），合计 6/7/8/9 */
-function tossLines(random = Math.random) {
+function tossLines(random = randomOf()) {
   const lines = [];
   for (let i = 0; i < 6; i++) {
     let sum = 0;
@@ -11904,6 +11955,7 @@ __mods.tarot = (function () {
 const { CARD_LIB, CARD_COUNTS } = (__mods['tarot-cards'] || {});
 const { fail } = (__mods.fail || {});
 const { assertObject } = (__mods.validate || {});
+const { randomOf } = (__mods.random || {});
 
 const MAJOR = [
   ['愚者', '0', '新开始 冒险 纯真 无限可能', '鲁莽 逃避 原地打转 不切实际'],
@@ -12072,6 +12124,60 @@ const SPREADS = {
     { name: '潜在', hint: '尚未浮出水面、却在暗中推动的部分' },
   ],
 };
+
+// 命名牌阵：只认张数（1/3/5）时，问「两个人」「A 还是 B」都得自己拆成三轮来问。
+// 这里按问法给成套的位置表，张数由位置表长度决定；数字键那三套原样保留在后面兼容。
+const SPREAD_DEFS = {
+  one: { label: '单张指引', positions: SPREADS[1] },
+  three: { label: '过去现在未来', positions: SPREADS[3] },
+  five: { label: '五张局势', positions: SPREADS[5] },
+  celtic: {
+    label: '凯尔特十字',
+    positions: [
+      { name: '现状', hint: '问题此刻的真实位置，别再按印象猜' },
+      { name: '阻碍', hint: '横在中间、需要先跨过的那一件事' },
+      { name: '根基', hint: '埋在底下、已经成型的原因' },
+      { name: '过去', hint: '刚刚过去、余波仍在影响当下的部分' },
+      { name: '目标', hint: '你意识里想达成的方向，未必是真正想要的' },
+      { name: '近期', hint: '接下来几周会先落到的那一步' },
+      { name: '自我', hint: '你在这局里正扮演的角色与姿态' },
+      { name: '环境', hint: '别人的态度与外部的实际条件' },
+      { name: '希望与恐惧', hint: '你既想要又怕的那一面，常常是同一件事' },
+      { name: '结果', hint: '照现在这样走下去，事情大致停在哪里' },
+    ],
+  },
+  either: {
+    label: '二选一',
+    positions: [
+      { name: '现状', hint: '做选择之前，先看清脚下站的是什么' },
+      { name: 'A 的发展', hint: '选这一条，过程会怎么走' },
+      { name: 'A 的结果', hint: '选这一条，最后停在哪里' },
+      { name: 'B 的发展', hint: '选另一条，过程会怎么走' },
+      { name: 'B 的结果', hint: '选另一条，最后停在哪里' },
+    ],
+  },
+  relation: {
+    label: '关系阵',
+    positions: [
+      { name: '你', hint: '你在这段关系里的位置与状态' },
+      { name: '对方', hint: '对方此刻的位置与状态' },
+      { name: '关系现状', hint: '两个人之间正在发生的事' },
+      { name: '你的期待', hint: '你嘴上没说、心里想要的那件事' },
+      { name: '对方的期待', hint: '对方没说出口、在等的那件事' },
+      { name: '阻碍', hint: '卡在两人之间、谁都没先提的那层' },
+      { name: '走向', hint: '维持现状会滑向的位置' },
+    ],
+  },
+  timeflow: {
+    label: '时间流',
+    positions: [
+      { name: '眼下', hint: '这几天会先显出来的那件事' },
+      { name: '这阵子', hint: '几周到一两个月之间的推进' },
+      { name: '往后', hint: '更远一点的落点，只看方向不看日期' },
+    ],
+  },
+};
+const SPREAD_KEYS = ['one', 'three', 'five', 'celtic', 'either', 'relation', 'timeflow'];
 
 const COURT = ['侍从', '骑士', '王后', '国王'];
 // 宫廷牌的「牌位」＝这个角色在牌阵里通常顶替的位置（人物 or 自身的一个侧面），
@@ -12304,22 +12410,36 @@ function tarotReading(input = {}) {
   return paras;
 }
 
-/** 抽牌：count 张，按牌阵给出位置。random 可注入（配合 seed 复现同一次抽牌） */
-function drawTarot(input = {}) {
-  const { count: rawCount, question = '', at, random = Math.random } = input || {};
+/** 牌阵解析：spread（名字）优先，没给名字才退回 count（1/3/5） */
+function resolveSpread(rawSpread, rawCount) {
+  const name = String(rawSpread == null ? '' : rawSpread).trim().toLowerCase();
+  if (name) {
+    if (!SPREAD_DEFS[name]) {
+      throw fail('E_INPUT', `塔罗牌阵只能是 ${SPREAD_KEYS.join(' / ')}，收到「${rawSpread}」`);
+    }
+    return SPREAD_DEFS[name];
+  }
   let count = rawCount;
   if (count === undefined || count === null || count === '') count = 3;
   const n = Number(count);
   if (![1, 3, 5].includes(n)) {
-    throw fail('E_INPUT', `塔罗张数只能是 1 / 3 / 5，收到「${count}」`);
+    throw fail('E_INPUT', `塔罗张数只能是 1 / 3 / 5，收到「${rawCount}」`);
   }
-  const rand = typeof random === 'function' ? random : Math.random;
+  return { label: `${n} 张牌阵`, positions: SPREADS[n] };
+}
+
+/** 抽牌：count 张，按牌阵给出位置。random 可注入（配合 seed 复现同一次抽牌） */
+function drawTarot(input = {}) {
+  const { count: rawCount, spread: rawSpread, question = '', at, random = randomOf() } = input || {};
+  const def = resolveSpread(rawSpread, rawCount);
+  const positions = def.positions;
+  const n = positions.length;
+  const rand = typeof random === 'function' ? random : randomOf();
   const deck = tarotDeck();
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
-  const positions = SPREADS[n];
   const cards = deck.slice(0, n).map((c, i) => {
     const upright = rand() < 0.5;
     const pos = positions[i];
@@ -12357,7 +12477,7 @@ function drawTarot(input = {}) {
     system: 'tarot',
     question: q || null,
     castAt: stamp(at),
-    spread: `${n} 张牌阵（${positions.map((p) => p.name).join(' / ')}）`,
+    spread: `${def.label}（${positions.map((p) => p.name).join(' / ')}）`,
     cards,
     reading: tarotReading({ question: q, cards }),
     systemNote: SYSTEM_NOTE,
@@ -12366,7 +12486,7 @@ function drawTarot(input = {}) {
 
 
 
-return { MAJOR, SUITS, MINOR, ROMAN, SPREADS, TAROT_STATS, tarotDeck, tarotReading, drawTarot };
+return { MAJOR, SUITS, MINOR, ROMAN, SPREADS, SPREAD_DEFS, SPREAD_KEYS, TAROT_STATS, tarotDeck, tarotReading, drawTarot };
 })();
 
 __mods.meihua = (function () {
@@ -18164,6 +18284,334 @@ function buildMbti(input = {}) {
 return { DIMENSIONS, QUESTIONS, FUNCTION_STACKS, FUNCTIONS, TYPES, mbtiPaper, buildMbti };
 })();
 
+__mods.constitution = (function () {
+// 中医体质（九种体质）：按中华中医药学会《中医体质分类与判定》的条目结构做的简化问卷——
+// 九个体质各 5 条自评题，1–5 计分，用「转化分」判主次体质。
+//
+// 口径（沿用通行标准，条目数是压缩过的）：
+//   转化分 = [(原始分 − 条目数) / (条目数 × 4)] × 100
+//   偏颇体质：≥40 为「是」，30–39 为「有倾向」，<30 为「否」
+//   平和质：≥60 且其余八种都 <30 为「是」；≥60 且其余都 <40 为「基本是」
+// 题目与阈值取自公开标准的结构，文案为白话重写；判定只作自我观察的参照，不是医学诊断。
+const { fail } = (__mods.fail || {});
+
+const ITEMS = 5;
+
+/** 九种体质：判定题 + 表现 + 调养方向。 */
+const CONSTITUTIONS = [
+  {
+    key: 'pinghe',
+    name: '平和质',
+    oneLine: '阴阳气血相对匀，吃得下、睡得着、恢复快。',
+    trait: '精力够用，耐受冷热，情绪起伏不大，睡醒后能缓过来。',
+    tendency: '这种底子最省心，重点是别自己把它折腾坏。',
+    care: [
+      '食：什么都能吃一点，别追一个味道到底；七分饱比补品有用。',
+      '起居：睡点固定比睡够时长更关键，熬夜是最快的消耗方式。',
+      '动：每周三四次微汗即可，不必练到力竭。',
+      '情志：留一点「什么都不干」的时间，别把日程排满。',
+    ],
+    questions: [
+      '你精力充沛，不太容易觉得累',
+      '你能耐受冷也能耐受热，换季不太难受',
+      '你胃口稳定，吃完不胀不反酸',
+      '你睡得踏实，醒来精神能回来',
+      '你情绪起伏不大，遇事能较快平复',
+    ],
+  },
+  {
+    key: 'qixu',
+    name: '气虚质',
+    oneLine: '气不够用：容易累、说话没劲、稍动就出汗。',
+    trait: '容易疲乏、气短、说话声音低，活动后出汗多，容易感冒。',
+    tendency: '不是懒，是电量掉得快；硬撑只会更空。',
+    care: [
+      '食：主食别减太狠，山药、小米、黄豆这类平补的东西比猛补更合适。',
+      '起居：宁可早睡半小时，也别靠咖啡顶着；午间闭眼十分钟有用。',
+      '动：散步、八段锦这类「不喘」的运动优先，别一上来就高强度。',
+      '情志：少做长时间的强撑式社交，累了就直说。',
+    ],
+    questions: [
+      '你容易疲乏，休息后也不太容易缓过来',
+      '你说话声音偏低，说久了觉得没气',
+      '你稍一活动就比别人容易出汗',
+      '你容易感冒，或者感冒后拖得久',
+      '你吃完饭容易腹胀、消化慢',
+    ],
+  },
+  {
+    key: 'yangxu',
+    name: '阳虚质',
+    oneLine: '火力不足：怕冷、手脚凉、喜欢热的。',
+    trait: '畏寒怕冷、手脚发凉，吃凉的容易不舒服，大便偏稀，精神偏静。',
+    tendency: '不是矫情，是产热不够；冷饮和空调直吹对这个体质最伤。',
+    care: [
+      '食：热的、熟的优先；姜、羊肉、桂圆可以吃，但别一顿猛补。',
+      '起居：腰腹和脚要保暖，睡前泡脚比吃补药直接。',
+      '动：白天动起来产热，晒背十分钟比闷在屋里强。',
+      '情志：冬天与阴雨天情绪容易低，把户外时间挪到中午。',
+    ],
+    questions: [
+      '你比一般人怕冷，别人不觉得冷时你已经要加衣服',
+      '你的手脚常年偏凉',
+      '你喝冷饮或吃凉的东西后容易不舒服',
+      '你大便偏稀，或者一受凉就腹泻',
+      '你精神偏静，不太想动',
+    ],
+  },
+  {
+    key: 'yinxu',
+    name: '阴虚质',
+    oneLine: '水不够：口干、手心热、睡不沉。',
+    trait: '口燥咽干、手足心热、容易上火、睡浅多梦、大便偏干。',
+    tendency: '不是火气大，是水少；越熬夜越明显。',
+    care: [
+      '食：银耳、百合、梨、黑芝麻这类润的；辛辣烧烤少碰。',
+      '起居：熬夜对这个体质伤害最直接，十一点前躺下比什么方子都强。',
+      '动：别在正午暴晒下猛练，选傍晚、选温和的。',
+      '情志：容易急、容易烦，发现自己在赶时间就先停三分钟。',
+    ],
+    questions: [
+      '你常觉得口干、咽干，想喝水',
+      '你手足心发热，或者下午容易烘热',
+      '你容易上火，口腔溃疡或脸上起东西',
+      '你睡得不沉，多梦，容易醒',
+      '你容易大便干结，排便不太顺畅',
+    ],
+  },
+  {
+    key: 'tanshi',
+    name: '痰湿质',
+    oneLine: '水湿停着走不动：身重、腹胀、容易困。',
+    trait: '身体沉重、腹部松软肥满、容易困倦、口中黏腻、痰多。',
+    tendency: '不是吃太多，是运化不动；久坐加甜腻会加重。',
+    care: [
+      '食：少甜少油少夜宵；薏米、赤小豆、冬瓜这类利湿的可以常吃。',
+      '起居：别吃完就躺；房间保持干燥通风。',
+      '动：出汗是重点，快走、跳绳这类能真出汗的优先。',
+      '情志：困倦时容易拖，把要紧事放在上午做。',
+    ],
+    questions: [
+      '你常觉得身体沉重、不清爽',
+      '你腹部松软，容易胀',
+      '你容易困倦，睡够了也昏沉',
+      '你口中黏腻，或者痰偏多',
+      '你脸上或头发容易出油',
+    ],
+  },
+  {
+    key: 'shire',
+    name: '湿热质',
+    oneLine: '又湿又热：脸油、口苦、容易长东西。',
+    trait: '面垢油光、容易生痤疮、口苦口干、大便黏滞、小便偏黄。',
+    tendency: '不是「火大」这么简单，湿裹着热，清得太猛反而伤脾。',
+    care: [
+      '食：少酒少辣少油炸；绿豆、冬瓜、苦瓜可以吃，但别长期只吃寒凉。',
+      '起居：别熬夜加夜宵，这两样凑一起最容易出湿热。',
+      '动：规律出汗，运动后及时擦干换衣。',
+      '情志：急躁时先降一件事的优先级，别同时开五个头。',
+    ],
+    questions: [
+      '你脸上或头皮容易出油',
+      '你容易长痘、长疖子或起湿疹',
+      '你常觉得口苦或口干',
+      '你大便黏滞，不容易冲干净',
+      '你的小便颜色偏黄、量偏少',
+    ],
+  },
+  {
+    key: 'xueyu',
+    name: '血瘀质',
+    oneLine: '血行不畅：肤色暗、易有瘀青、痛处固定。',
+    trait: '面色偏暗、口唇偏紫、容易出现瘀斑、身体某处固定刺痛。',
+    tendency: '久坐不动和长期受寒是两大来源。',
+    care: [
+      '食：山楂、黑木耳、玫瑰花这类活血的可以常吃；经期量多时别过量。',
+      '起居：别久坐，每小时起来走两分钟。',
+      '动：有氧为主，练到微微出汗；拉伸比猛练更对症。',
+      '情志：闷着不说话最容易瘀，找个人把话说完。',
+    ],
+    questions: [
+      '你面色或口唇偏暗、偏紫',
+      '你身上容易出现瘀青，磕一下就好久不退',
+      '你身体某处有固定的刺痛或胀痛',
+      '你皮肤偏干，或者容易起红血丝',
+      '你记性下降，或者常常觉得「脑子转不动」',
+    ],
+  },
+  {
+    key: 'qiyu',
+    name: '气郁质',
+    oneLine: '气堵着不顺：胸闷、爱叹气、情绪闷。',
+    trait: '情绪低沉、容易紧张焦虑、胸闷叹气、咽部有异物感、睡不安稳。',
+    tendency: '不是想太多，是气机不通；长期憋着会连带影响睡眠和胃口。',
+    care: [
+      '食：少食多餐，别用吃东西压情绪；玫瑰花、陈皮、佛手可以泡水。',
+      '起居：把「必须做」的事减到三件以内，留出空档。',
+      '动：唱歌、快走、拉伸这类能「把气呼出去」的最有用。',
+      '情志：写下来比在脑子里绕有效，哪怕只写三行。',
+    ],
+    questions: [
+      '你常觉得闷闷不乐，情绪提不起来',
+      '你容易紧张、焦虑，或者心里放不下事',
+      '你常叹气，觉得胸口不畅',
+      '你咽喉像有东西堵着，吞不下也吐不出',
+      '你睡不安稳，容易醒或者多梦',
+    ],
+  },
+  {
+    key: 'tebing',
+    name: '特禀质',
+    oneLine: '对外界刺激反应大：过敏、易起反应。',
+    trait: '容易过敏（鼻炎、皮肤、食物）、对季节与气味敏感、易起荨麻疹。',
+    tendency: '不是体质弱，是反应阈值低；避开诱因比「增强体质」更直接。',
+    care: [
+      '食：把自己的过敏原记下来，比记一堆「该吃什么」有用。',
+      '起居：换季前把床品洗晒一遍，花粉季回家先洗脸。',
+      '动：室内温和运动为主，避开花粉浓度高的时段户外跑。',
+      '情志：反复发作容易烦，把「避免诱因」当成日常动作而不是任务。',
+    ],
+    questions: [
+      '你容易打喷嚏、流清涕，或者鼻子痒',
+      '你皮肤容易起荨麻疹、湿疹或红疹',
+      '你对某些食物或药物有过敏反应',
+      '你对季节变化、气味或灰尘特别敏感',
+      '你换环境后容易不舒服（比如新房间、新城市）',
+    ],
+  },
+];
+
+/** 题目扁平成一张卷：每题带所属体质，顺序按体质分组。 */
+const QUESTIONS = CONSTITUTIONS.flatMap((c) => c.questions.map((q, i) => ({ i: c.key + '-' + (i + 1), key: c.key, name: c.name, text: q })));
+
+const SCALE_OPTIONS = [
+  { v: 1, label: '没有' },
+  { v: 2, label: '很少' },
+  { v: 3, label: '有时' },
+  { v: 4, label: '经常' },
+  { v: 5, label: '总是' },
+];
+
+/** 转化分：0–100，保留一位小数。 */
+function converted(raw, n) {
+  return Math.round(((raw - n) / (n * 4)) * 1000) / 10;
+}
+
+function levelOf(conv, isPinghe) {
+  if (isPinghe) return conv >= 60 ? '是' : conv >= 50 ? '倾向是' : '否';
+  return conv >= 40 ? '是' : conv >= 30 ? '倾向是' : '否';
+}
+
+/** 卷子：不带 answers 时先给题，别让模型替人打分。 */
+function constitutionPaper() {
+  return {
+    system: 'constitution',
+    paper: true,
+    total: QUESTIONS.length,
+    scaleCount: CONSTITUTIONS.length,
+    itemsPerScale: ITEMS,
+    scale: SCALE_OPTIONS,
+    scales: CONSTITUTIONS.map((c) => ({ key: c.key, name: c.name, oneLine: c.oneLine, from: QUESTIONS.findIndex((q) => q.key === c.key) })),
+    questions: QUESTIONS.map((q, i) => ({ no: i + 1, key: q.key, name: q.name, text: q.text })),
+    howto: '按最近一年的真实感受给每题打 1–5 分（1 没有 / 2 很少 / 3 有时 / 4 经常 / 5 总是），'
+      + '拿不准的题传 null 跳过；把分数按题目顺序填成 answers 数组再调一次。',
+    note: '九种体质各 5 题，共 45 题。这是按通行标准结构做的简化问卷，不是量表原件；结果只作自我观察的参照。',
+  };
+}
+
+/**
+ * 体质判定。
+ * @param {{answers?: Array<number|null>}} input answers 按题目顺序的 1–5 分，null 表示跳过
+ */
+function buildConstitution(input) {
+  const answers = input && Array.isArray(input.answers) ? input.answers : null;
+  if (!answers) throw fail('E_INPUT', '体质判定需要 answers（按题目顺序的 1–5 分）；先不带 answers 调一次拿问卷');
+  const total = QUESTIONS.length;
+  // 长度不匹配是最常见的错：短一位就会整体错位，静默按「第 N 题」算下去更糟
+  if (answers.length !== total) {
+    throw fail('E_INPUT', `answers 要 ${total} 个（九种体质各 5 题），收到 ${answers.length} 个；跳过的题传 null，不要缩短数组`);
+  }
+  const seen = answers.map((v, i) => {
+    if (v === null || v === undefined) return null;
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 1 || n > 5) {
+      throw fail('E_INPUT', `第 ${i + 1} 题的分数要是 1–5 的整数或 null，收到「${String(v).slice(0, 16)}」`);
+    }
+    return n;
+  });
+  const answered = seen.filter((x) => x !== null).length;
+  if (!answered) throw fail('E_INPUT', 'answers 全为 null：至少答几题才能判体质，否则每种都是同一个分数');
+
+  const scales = CONSTITUTIONS.map((c) => {
+    const idx = [];
+    QUESTIONS.forEach((q, i) => { if (q.key === c.key) idx.push(i); });
+    const vals = idx.map((i) => seen[i]).filter((x) => x !== null);
+    // 未答的题按「3（有时）」补齐：直接丢题会抬高转化分，把没答的人判成更偏
+    const raw = idx.reduce((sum, i) => sum + (seen[i] === null ? 3 : seen[i]), 0);
+    const conv = converted(raw, idx.length);
+    return {
+      key: c.key,
+      name: c.name,
+      oneLine: c.oneLine,
+      trait: c.trait,
+      tendency: c.tendency,
+      care: c.care.slice(),
+      answered: vals.length,
+      skipped: idx.length - vals.length,
+      raw,
+      max: idx.length * 5,
+      converted: conv,
+      level: levelOf(conv, c.key === 'pinghe'),
+    };
+  });
+
+  const pinghe = scales.find((s) => s.key === 'pinghe');
+  const biased = scales.filter((s) => s.key !== 'pinghe').slice().sort((a, b) => b.converted - a.converted);
+  const others = biased.map((s) => s.converted);
+  const othersMax = others.length ? Math.max(...others) : 0;
+  // 平和质按标准要「其余八种都很低」才算成立：光自己分高不算
+  let pingheLevel = pinghe.level;
+  if (pinghe.converted >= 60) {
+    if (othersMax < 30) pingheLevel = '是';
+    else if (othersMax < 40) pingheLevel = '基本是';
+    else pingheLevel = '否';
+  }
+  const pingheFinal = { ...pinghe, level: pingheLevel };
+
+  const primaryBiased = biased.find((s) => s.level === '是') || biased[0];
+  const hasBiased = biased.some((s) => s.level === '是' || s.level === '倾向是');
+  const isPinghe = pingheLevel === '是' || pingheLevel === '基本是';
+  const primary = isPinghe && !biased.some((s) => s.level === '是') ? pingheFinal : primaryBiased;
+  const secondary = biased.find((s) => s.key !== primary.key && s.converted >= 30) || null;
+  const mingled = biased.filter((s) => s.level === '是' && s.key !== primary.key && (!secondary || s.key !== secondary.key)).map((s) => s.name);
+
+  // 全选同一项等于没区分：转化分会整齐地落在 50 上下，把人判成「九种都偏」。
+  // 这种卷子只提示、不改判定门槛——门槛一改就和公开标准的口径分叉了。
+  const vals = seen.filter((x) => x !== null);
+  const flat = vals.length >= 10 && new Set(vals).size === 1;
+  const main = primary.key === 'pinghe' ? pingheFinal : primary;
+  return {
+    system: 'constitution',
+    meta: { answered, total, scaleCount: CONSTITUTIONS.length, itemsPerScale: ITEMS, scale: SCALE_OPTIONS },
+    scales: scales.map((s) => (s.key === 'pinghe' ? { ...s, level: pingheLevel } : s)),
+    primary: { key: main.key, name: main.name, converted: main.converted, level: main.level, oneLine: main.oneLine, trait: main.trait, tendency: main.tendency },
+    secondary: secondary ? { key: secondary.key, name: secondary.name, converted: secondary.converted, level: secondary.level } : null,
+    mingled,
+    pinghe: { converted: pinghe.converted, level: pingheLevel },
+    balanced: isPinghe && !biased.some((s) => s.level === '是'),
+    hasTendency: hasBiased,
+    flat,
+    care: main.care.slice(),
+    top: biased.slice(0, 3).map((s) => ({ name: s.name, converted: s.converted, level: s.level })),
+    note: '九种体质各 5 题的简化问卷，转化分按 [(原始分 − 题数) / (题数 × 4)] × 100 换算；'
+      + '偏颇质 ≥40 判「是」、30–39 判「有倾向」，平和质要 ≥60 且其余八种都低才成立。'
+      + '体质是长期倾向，不是当下病名；有具体不适请就医，这份结果不与八字、星座互证。'
+      + (flat ? ' 本次每题都选了同一个选项，问卷对你的区分度不足，主次体质仅供参考。' : ''),
+  };
+}
+return { CONSTITUTIONS, QUESTIONS, SCALE_OPTIONS, constitutionPaper, buildConstitution };
+})();
+
 __mods.chenggu = (function () {
 // 袁天罡称骨：按农历年/月/日/时辰四柱骨重求和，查通行本《称骨歌》原文，附白话释义。
 // 骨重表与歌诀均为通行本口径（各版本有异文，此处照录通行本）；释义是白话自撰，不是原文。
@@ -18378,6 +18826,1169 @@ function buildChenggu(input) {
 }
 
 return { YEAR_WEIGHT, MONTH_WEIGHT, DAY_WEIGHT, HOUR_WEIGHT, formatWeight, lunarDayText, lunarMonthText, CHENGGU_SONG, songOf, buildChenggu };
+})();
+
+__mods.wuyunliuqi = (function () {
+// 五运六气（运气学说）· 本地确定性 · 通行口径
+//
+// 提供：运气年（大寒界）、年干支、岁运（中运）太过/不及、司天与在泉、主运/客运五步、
+// 主气/客气六步、当前所处的运与气、天符/岁会/同天符/同岁会/太乙天符，以及气候与病位倾向。
+//
+// 诚实边界：本文件只做「按规则推盘」这一层。运气学说里的方药、运气合参、
+// 《素问·六元正纪大论》六十年逐年全文与「刚柔失守」「升降不前」等推演未收录（见 scope）。
+// 病位与气候倾向照传统说法转述，是象征与经验归纳，不是医学判断。
+const { fail } = (__mods.fail || {});
+const { STEMS, BRANCHES, termInstantJd, ganzhiName, formatJd } = (__mods.calendar || {});
+const { assertCivil, daysInMonth } = (__mods.validate || {});
+
+/** 主气六步的固定次序（《素问·六微旨大论》）：厥阴 → 少阴 → 少阳 → 太阴 → 阳明 → 太阳。 */
+const ZHU_QI_ORDER = ['厥阴风木', '少阴君火', '少阳相火', '太阴湿土', '阳明燥金', '太阳寒水'];
+
+/** 客气（三阴三阳）的轮转次序：厥阴 → 少阴 → 太阴 → 少阳 → 阳明 → 太阳。 */
+const QI_ORDER = ['厥阴风木', '少阴君火', '太阴湿土', '少阳相火', '阳明燥金', '太阳寒水'];
+
+/** 主运五步的固定次序：木（角）→ 火（徵）→ 土（宫）→ 金（商）→ 水（羽）。 */
+const ZHU_YUN_ORDER = ['木', '火', '土', '金', '水'];
+
+/** 天干化五运（《素问·天元纪大论》）：甲己化土、乙庚化金、丙辛化水、丁壬化木、戊癸化火。 */
+const YUN_OF_STEM = {
+  甲: '土', 己: '土',
+  乙: '金', 庚: '金',
+  丙: '水', 辛: '水',
+  丁: '木', 壬: '木',
+  戊: '火', 癸: '火',
+};
+
+/** 地支化六气之「司天」（子午少阴、丑未太阴、寅申少阳、卯酉阳明、辰戌太阳、巳亥厥阴）。 */
+const SITIAN_INDEX_OF_BRANCH = [1, 2, 3, 4, 5, 0];
+
+/** 五运的乐音与所主脏腑、气候（传统对应，只作命名与取象）。 */
+const YUN_INFO = {
+  木: { tone: '角', organ: '肝', nature: '风', text: '木运' },
+  火: { tone: '徵', organ: '心', nature: '热', text: '火运' },
+  土: { tone: '宫', organ: '脾', nature: '湿', text: '土运' },
+  金: { tone: '商', organ: '肺', nature: '燥', text: '金运' },
+  水: { tone: '羽', organ: '肾', nature: '寒', text: '水运' },
+};
+
+/** 六气所主脏腑与气候。 */
+const QI_INFO = {
+  厥阴风木: { wuxing: '木', organ: '肝', nature: '风', short: '风木' },
+  少阴君火: { wuxing: '火', organ: '心', nature: '热', short: '君火' },
+  太阴湿土: { wuxing: '土', organ: '脾', nature: '湿', short: '湿土' },
+  少阳相火: { wuxing: '火', organ: '三焦', nature: '火', short: '相火' },
+  阳明燥金: { wuxing: '金', organ: '肺', nature: '燥', short: '燥金' },
+  太阳寒水: { wuxing: '水', organ: '肾', nature: '寒', short: '寒水' },
+};
+
+/**
+ * 岁运太过/不及的取象：太过则本气偏胜、克其所胜；不及则本气不足、所不胜乘之。
+ * 每条都只写「传统上常这样描述」，不写「必然出现」。
+ */
+const YUN_EFFECT = {
+  木: {
+    tai: { climate: '风气偏胜，草木早荣', organ: '肝气偏旺，脾土受克', sign: '易怒、胁胀、食少、肢体震颤' },
+    bu: { climate: '风气不足，燥气乘之', organ: '肝木不及，肺金偏胜', sign: '筋脉拘急、目干、情绪低落' },
+  },
+  火: {
+    tai: { climate: '火气偏胜，暑热早至', organ: '心火偏旺，肺金受克', sign: '心烦、失眠、咳喘、口疮' },
+    bu: { climate: '火气不足，寒气乘之', organ: '心火不及，肾水偏胜', sign: '心悸、畏寒、胸闷、精神不振' },
+  },
+  土: {
+    tai: { climate: '雨湿偏多，土气壅滞', organ: '脾湿偏胜，肾水受克', sign: '腹胀、身重、大便黏、四肢困倦' },
+    bu: { climate: '土气不足，风气乘之', organ: '脾土不及，肝木偏胜', sign: '飧泄、乏力、腹鸣、食后胀' },
+  },
+  金: {
+    tai: { climate: '燥气偏胜，天气清凉', organ: '肺燥偏胜，肝木受克', sign: '干咳、鼻干、皮肤干、筋急' },
+    bu: { climate: '金气不足，火气乘之', organ: '肺金不及，心火偏胜', sign: '咳逆、鼻塞、咽干、易感外邪' },
+  },
+  水: {
+    tai: { climate: '寒气偏胜，冰霜早降', organ: '肾寒偏胜，心火受克', sign: '畏寒、水肿、腰冷、心悸' },
+    bu: { climate: '水气不足，湿土乘之', organ: '肾水不及，脾土偏胜', sign: '腰膝无力、小便不利、下肢沉' },
+  },
+};
+
+/** 六气司天时传统上说的气候与病位（《素问·五常政大论》《至真要大论》通行转述）。 */
+const QI_CLIMATE = {
+  厥阴风木: { climate: '风气流行，草木动摇', sign: '眩晕、抽搐、胁痛、过敏类症状偏多' },
+  少阴君火: { climate: '热气偏胜，暑热早来', sign: '心烦、口疮、失眠、咽痛偏多' },
+  太阴湿土: { climate: '湿气偏胜，阴雨多', sign: '腹胀、身重、泄泻、关节酸沉偏多' },
+  少阳相火: { climate: '火气偏胜，炎热', sign: '头痛、目赤、耳鸣、疮疡偏多' },
+  阳明燥金: { climate: '燥气偏胜，干燥少雨', sign: '干咳、鼻干、皮肤裂、便秘偏多' },
+  太阳寒水: { climate: '寒气偏胜，霜雪多', sign: '畏寒、关节痛、腹痛、水肿偏多' },
+};
+
+/** 本文件覆盖到哪一层。 */
+const WUYUNLIUQI_SCOPE = {
+  covered: [
+    '运气年（大寒为界）与年干支',
+    '岁运（中运）五行与太过/不及、五音太少',
+    '司天、在泉',
+    '主运五步与客运五步（含每步起止时刻）',
+    '主气六步与客气六步（含每步起止时刻）',
+    '当前时刻所处的运与气',
+    '天符 / 岁会 / 同天符 / 同岁会 / 太乙天符',
+  ],
+  notCovered: [
+    '《素问·六元正纪大论》六十年逐年全文与「先立其年，以明其气」的逐气病证条辨',
+    '刚柔失守、升降不前、不迁正、不退位等岁气交司推演',
+    '运气合参的方药与针灸取穴',
+    '地域与体质差异对运气的修正',
+  ],
+  note: '病位、气候与症状倾向都是传统说法的转述，用来对照季节与身体感受，不是诊断结论。',
+};
+
+const YUN_DAYS = 365.25 / 5; // 73.05 日一运
+const QI_DAYS = 365.25 / 6; // 60.875 日一气
+
+function stemIndex(stem) {
+  const i = STEMS.indexOf(stem);
+  if (i < 0) throw fail('E_INPUT', `天干「${stem}」不在十干之内`);
+  return i;
+}
+
+function branchIndex(branch) {
+  const i = BRANCHES.indexOf(branch);
+  if (i < 0) throw fail('E_INPUT', `地支「${branch}」不在十二支之内`);
+  return i;
+}
+
+/** 公历年 → 该年干支（甲子起 1984，年界按立春，与八字侧同源）。 */
+function yearGanzhiOf(year) {
+  const idx = (((year - 4) % 60) + 60) % 60;
+  return ganzhiName(idx);
+}
+
+/** 中运（岁运）：由年干化运，阳干太过、阴干不及。 */
+function zhongyunOf(stem) {
+  const si = stemIndex(stem);
+  const wuxing = YUN_OF_STEM[stem];
+  const tai = si % 2 === 0; // 甲丙戊庚壬为阳干（索引 0/2/4/6/8）
+  const info = YUN_INFO[wuxing];
+  return {
+    gan: stem,
+    wuxing,
+    tone: info.tone,
+    tai,
+    name: `${wuxing}运${tai ? '太过' : '不及'}`,
+    taiShao: `${tai ? '太' : '少'}${info.tone}`,
+    organ: info.organ,
+    nature: info.nature,
+  };
+}
+
+/** 司天与在泉：由年支定，在泉为司天的对宫（相隔三步）。 */
+function sitianOf(branch) {
+  const bi = branchIndex(branch);
+  const sitIdx = SITIAN_INDEX_OF_BRANCH[bi % 6];
+  const zaiIdx = (sitIdx + 3) % 6;
+  return {
+    sitIdx,
+    zaiIdx,
+    sitian: QI_ORDER[sitIdx],
+    zaiquan: QI_ORDER[zaiIdx],
+  };
+}
+
+/** 主运五步：初运木，按相生序，每步 73.05 日，从大寒起算。 */
+function zhuYunSteps(startJd) {
+  return ZHU_YUN_ORDER.map((wuxing, i) => {
+    const info = YUN_INFO[wuxing];
+    const start = startJd + i * YUN_DAYS;
+    const end = start + YUN_DAYS;
+    return {
+      no: i + 1,
+      wuxing,
+      name: `${wuxing}运`,
+      tone: info.tone,
+      taiShao: `太${info.tone}`,
+      startJd: start,
+      endJd: end,
+      startTime: formatJd(start),
+      endTime: formatJd(end),
+      days: Math.round(YUN_DAYS * 100) / 100,
+    };
+  });
+}
+
+/** 客运五步：以岁运为初运，按五行相生轮转，太少相生（太过生不及、不及生太过）。 */
+function keYunSteps(zhongyun, startJd) {
+  const startIdx = ZHU_YUN_ORDER.indexOf(zhongyun.wuxing);
+  return Array.from({ length: 5 }, (_, i) => {
+    const wuxing = ZHU_YUN_ORDER[(startIdx + i) % 5];
+    const info = YUN_INFO[wuxing];
+    const tai = i % 2 === 0 ? zhongyun.tai : !zhongyun.tai;
+    const start = startJd + i * YUN_DAYS;
+    const end = start + YUN_DAYS;
+    return {
+      no: i + 1,
+      wuxing,
+      tai,
+      name: `${wuxing}运${tai ? '太过' : '不及'}`,
+      tone: info.tone,
+      taiShao: `${tai ? '太' : '少'}${info.tone}`,
+      startTime: formatJd(start),
+      endTime: formatJd(end),
+    };
+  });
+}
+
+/** 主气六步：初之气厥阴风木，按固定次序，每步 60.875 日。 */
+function zhuQiSteps(startJd) {
+  return ZHU_QI_ORDER.map((qi, i) => {
+    const info = QI_INFO[qi];
+    const start = startJd + i * QI_DAYS;
+    const end = start + QI_DAYS;
+    return {
+      no: i + 1,
+      qi,
+      wuxing: info.wuxing,
+      organ: info.organ,
+      nature: info.nature,
+      name: `${qi}`,
+      startTime: formatJd(start),
+      endTime: formatJd(end),
+      days: Math.round(QI_DAYS * 100) / 100,
+    };
+  });
+}
+
+/** 客气六步：三之气为司天、终之气为在泉，初之气由司天倒退两步。 */
+function keQiSteps(sitIdx, startJd) {
+  const first = ((sitIdx - 2) % 6 + 6) % 6;
+  return Array.from({ length: 6 }, (_, i) => {
+    const qi = QI_ORDER[(first + i) % 6];
+    const info = QI_INFO[qi];
+    const start = startJd + i * QI_DAYS;
+    const end = start + QI_DAYS;
+    return {
+      no: i + 1,
+      qi,
+      wuxing: info.wuxing,
+      organ: info.organ,
+      nature: info.nature,
+      name: qi,
+      sitian: i === 2,
+      zaiquan: i === 5,
+      startTime: formatJd(start),
+      endTime: formatJd(end),
+    };
+  });
+}
+
+/** 年支的「本位五行」：子水午火卯木酉金、辰戌丑未土；寅申巳亥为长生位，不参与岁会。 */
+const BRANCH_BENWEI = {
+  子: '水', 午: '火', 卯: '木', 酉: '金',
+  辰: '土', 戌: '土', 丑: '土', 未: '土',
+  寅: null, 申: null, 巳: null, 亥: null,
+};
+
+/**
+ * 五运六气的「运气年」：以大寒为界（不是立春、不是正月初一）。
+ * 交大寒之前仍算上一运气年。
+ */
+function yunYearOf(year, jd) {
+  const daHan = termInstantJd(year, 1);
+  if (jd >= daHan) {
+    return { nian: year, startJd: daHan, endJd: termInstantJd(year + 1, 1) };
+  }
+  return { nian: year - 1, startJd: termInstantJd(year - 1, 1), endJd: daHan };
+}
+
+/** 特殊格局：天符 / 岁会 / 同天符 / 同岁会 / 太乙天符。 */
+function specialOf(zhongyun, sitian, zaiquan, branch) {
+  const yunWx = zhongyun.wuxing;
+  const sitWx = QI_INFO[sitian].wuxing;
+  const zaiWx = QI_INFO[zaiquan].wuxing;
+  const benwei = BRANCH_BENWEI[branch] || null;
+  const tianFu = yunWx === sitWx;
+  const suiHui = !!benwei && yunWx === benwei;
+  const tongTianFu = zhongyun.tai && yunWx === zaiWx;
+  const tongSuiHui = !zhongyun.tai && yunWx === zaiWx;
+  const taiYi = tianFu && suiHui;
+  const notes = [];
+  if (taiYi) {
+    notes.push('太乙天符：中运与司天同气、又与年支本位同气，传统上视为六十年里最「重」的一类年份之一，气候与病气的变化都容易被放大。');
+  } else if (tianFu) {
+    notes.push('天符：中运与司天同气。传统上说这一年本气专一而偏胜，气候变化来得整齐。');
+  }
+  if (suiHui) {
+    notes.push('岁会：中运与年支本位同气。传统上说这一年气令与地域相应，来得比较「正」。');
+  }
+  if (tongTianFu) {
+    notes.push('同天符：阳年太过之运与在泉同气，下半年（在泉主事）容易延续上半年的偏胜。');
+  }
+  if (tongSuiHui) {
+    notes.push('同岁会：阴年不及之运与在泉同气，本气本已不足，下半年又被同一气拖住，恢复更慢。');
+  }
+  return { tianFu, suiHui, tongTianFu, tongSuiHui, taiYi, notes };
+}
+
+/**
+ * 排一年的五运六气。
+ * @param {{year:number, month:number, day:number, hour?:number, minute?:number}} input
+ */
+function buildWuyunliuqi(input) {
+  assertCivil(input, '五运六气');
+  const { year, month, day } = input;
+  if (day > daysInMonth(year, month)) {
+    throw fail('E_INPUT', `非法日期：${year} 年 ${month} 月没有 ${day} 日`);
+  }
+  const hour = Number.isInteger(input.hour) ? input.hour : 12;
+  const minute = Number.isInteger(input.minute) ? input.minute : 0;
+  if (hour < 0 || hour > 23) throw fail('E_INPUT', 'hour 要在 0–23 之间');
+  if (minute < 0 || minute > 59) throw fail('E_INPUT', 'minute 要在 0–59 之间');
+
+  // 当日正午的 jd 作参考点；有具体时刻时用它，判断「当前在第几气」更准
+  const jd = termInstantJd(year, 1) * 0
+    + (function () {
+      // 用公历日期构造本地时间轴 jd：以当日 00:00 为整数、按 24 小时折算
+      const jdn = (function (y, m, d) {
+        const a = Math.floor((14 - m) / 12);
+        const yy = y + 4800 - a;
+        const mm = m + 12 * a - 3;
+        return d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4)
+          - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+      })(year, month, day);
+      return jdn - 0.5 + (hour * 60 + minute) / 1440;
+    })();
+
+  const yun = yunYearOf(year, jd);
+  const gz = yearGanzhiOf(yun.nian);
+  const zhongyun = zhongyunOf(gz.stem);
+  const sit = sitianOf(gz.branch);
+
+  const zhuYun = zhuYunSteps(yun.startJd);
+  const keYun = keYunSteps(zhongyun, yun.startJd);
+  const zhuQi = zhuQiSteps(yun.startJd);
+  const keQi = keQiSteps(sit.sitIdx, yun.startJd);
+
+  const dayInYear = jd - yun.startJd;
+  const yunNo = Math.min(5, Math.max(1, Math.floor(dayInYear / YUN_DAYS) + 1));
+  const qiNo = Math.min(6, Math.max(1, Math.floor(dayInYear / QI_DAYS) + 1));
+  const curZhuYun = zhuYun[yunNo - 1];
+  const curKeYun = keYun[yunNo - 1];
+  const curZhuQi = zhuQi[qiNo - 1];
+  const curKeQi = keQi[qiNo - 1];
+
+  const eff = YUN_EFFECT[zhongyun.wuxing][zhongyun.tai ? 'tai' : 'bu'];
+  const sitClimate = QI_CLIMATE[sit.sitian];
+  const zaiClimate = QI_CLIMATE[sit.zaiquan];
+  const special = specialOf(zhongyun, sit.sitian, sit.zaiquan, gz.branch);
+
+  // 客气加临主气：只看「同气 / 相生 / 相克」，给一层很轻的提示，不做病证条辨
+  const curKeQx = QI_INFO[curKeQi.qi].wuxing;
+  const curZhuQx = QI_INFO[curZhuQi.qi].wuxing;
+  const sheng = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+  const ke = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+  let lin = '相安';
+  if (curKeQx === curZhuQx) lin = '同气';
+  else if (sheng[curKeQx] === curZhuQx) lin = '客生主（顺）';
+  else if (sheng[curZhuQx] === curKeQx) lin = '主生客（泄）';
+  else if (ke[curKeQx] === curZhuQx) lin = '客克主（逆）';
+  else if (ke[curZhuQx] === curKeQx) lin = '主克客（从）';
+
+  const comboName = `${sit.sitian}司天 · ${zhongyun.name}`;
+  const comboText = `这一运气年是「${gz.name}」年：中运${zhongyun.name}（${zhongyun.taiShao}），${sit.sitian}司天、${sit.zaiquan}在泉。`
+    + `传统上把这样的组合读成「${eff.climate}」，司天一侧偏「${sitClimate.climate}」，在泉一侧偏「${zaiClimate.climate}」。`;
+
+  return {
+    system: 'wuyunliuqi',
+    meta: {
+      datetime: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+      nian: yun.nian,
+      ganzhi: gz.name,
+      stem: gz.stem,
+      branch: gz.branch,
+      isYang: zhongyun.tai,
+      startTime: formatJd(yun.startJd),
+      endTime: formatJd(yun.endJd),
+      dayInYear: Math.round(dayInYear * 100) / 100,
+    },
+    year: {
+      ganzhi: gz.name,
+      stem: gz.stem,
+      branch: gz.branch,
+      nian: yun.nian,
+      startTime: formatJd(yun.startJd),
+      endTime: formatJd(yun.endJd),
+      note: '运气年以大寒为界：交大寒之前仍算上一运气年，与八字按立春定年柱不同。',
+    },
+    zhongyun: {
+      ...zhongyun,
+      effect: eff,
+      text: `中运${zhongyun.name}（${zhongyun.taiShao}），主${zhongyun.organ}，气候偏${zhongyun.nature}。`,
+    },
+    sitian: {
+      qi: sit.sitian,
+      ...QI_INFO[sit.sitian],
+      climate: sitClimate,
+      text: `${sit.sitian}司天：上半年（三之气起）主事，气候偏${QI_INFO[sit.sitian].nature}。`,
+    },
+    zaiquan: {
+      qi: sit.zaiquan,
+      ...QI_INFO[sit.zaiquan],
+      climate: zaiClimate,
+      text: `${sit.zaiquan}在泉：下半年（终之气）主事，气候偏${QI_INFO[sit.zaiquan].nature}。`,
+    },
+    zhuYun,
+    keYun,
+    zhuQi,
+    keQi,
+    current: {
+      dayInYear: Math.round(dayInYear * 100) / 100,
+      yunNo,
+      qiNo,
+      zhuYun: curZhuYun,
+      keYun: curKeYun,
+      zhuQi: curZhuQi,
+      keQi: curKeQi,
+      lin,
+      text: `此刻在第 ${yunNo} 运（主运${curZhuYun.name} / 客运${curKeYun.name}）、第 ${qiNo} 气（主气${curZhuQi.qi} / 客气${curKeQi.qi}，客气加临主气：${lin}）。`,
+    },
+    special,
+    combo: { name: comboName, text: comboText },
+    scope: WUYUNLIUQI_SCOPE,
+  };
+}
+
+
+return { YUN_DAYS, QI_DAYS, ZHU_QI_ORDER, QI_ORDER, ZHU_YUN_ORDER, YUN_OF_STEM, SITIAN_INDEX_OF_BRANCH, YUN_INFO, QI_INFO, YUN_EFFECT, QI_CLIMATE, WUYUNLIUQI_SCOPE, yearGanzhiOf, zhongyunOf, sitianOf, yunYearOf, specialOf, buildWuyunliuqi };
+})();
+
+__mods.taiyi = (function () {
+// 太乙神数（年家）：积年 → 五元六纪 → 局数 → 阴阳遁 → 太乙落宫 → 八门 → 文昌。
+//
+// 这一层只做「能对着口诀逐条复核」的部分：
+//   1. 太乙积年 = 公元年 + 10153917（《太乙数统宗》口径，公元 0 年为 10153917）
+//   2. 积年 mod 360 = 残年（六纪 × 60 年），残年再 mod 72 = 局数（五元 × 72 局）
+//   3. 冬至后为阳遁、夏至后为阴遁
+//   4. 局数 mod 24：三年一宫、不入中五宫。阳遁自乾一宫顺行八宫，阴遁自巽九宫逆行八宫
+//   5. 八门三十年一转，1954 年休门起，休生伤杜景死惊开
+//   6. 文昌：积年 mod 18，阳局自武德（申）起、阴局自吕申（寅）起，顺行十六神，
+//      遇阴德（乾）、大武（坤）各数两次
+//
+//   7. 计神：积年 mod 60 得六十甲子序，从寅起逆数十二支
+//   8. 始击：计神加和德（艮）之宫，天目（文昌）随盘移一位，即始击
+//   9. 主算 / 客算：沿九宫环顺行累加宫数，天目在正宫按本数、在间神先计一，
+//      数到太乙宫前一位为止
+//  10. 大将 = 算数个位（得十置一），参将 = 大将 × 3 的个位
+//  11. 掩、迫、囚、格、关五种位置关系
+//
+//  12. 定目、三基、五福、大游、十精、八种格局、阴阳数和
+//  13. 月计 / 日计 / 时计：按《太乙金镜式经》卷一的积月、积日、时实三套推法
+//  14. 古法吉凶：按卷一《推太公考时法》——八种相犯全无、主客数和，算和顺；
+//      命中任何一犯，古法算相犯。这是古籍的占断口径，不是预测，文案里必须写明。
+//
+// 没有做的（scope 里写明，别在文案里假装有）：四神拆成本身与绛宫、明堂、玉堂
+// 十二位全序；胜负断辞与三旗五将。
+
+const { termInstantJd, toJDN, jdToParts, dayGanzhiIndex, STEMS } = (__mods.calendar || {});
+const { assertCivil } = (__mods.validate || {});
+const { assertObject } = (__mods.validate || {});
+
+/** 上元甲子到公元 0 年的积年数（《太乙数统宗》通行口径） */
+const TAIYI_EPOCH = 10153917;
+
+/** 九宫（太乙特有的宫位数，与奇门不同：乾一、离二、艮三、震四、中五、兑六、坤七、坎八、巽九） */
+const PALACES = {
+  1: { name: '乾', gua: '乾', dir: '西北' },
+  2: { name: '离', gua: '离', dir: '正南' },
+  3: { name: '艮', gua: '艮', dir: '东北' },
+  4: { name: '震', gua: '震', dir: '正东' },
+  5: { name: '中', gua: '中', dir: '中央' },
+  6: { name: '兑', gua: '兑', dir: '正西' },
+  7: { name: '坤', gua: '坤', dir: '西南' },
+  8: { name: '坎', gua: '坎', dir: '正北' },
+  9: { name: '巽', gua: '巽', dir: '东南' },
+};
+
+/**
+ * 十六神：从乾起顺时针一圈。`num` 是该间辰落在地盘上的宫数，
+ * 十六个间辰两两共用一宫（乾与戌共用 1 宫、亥与子共用 8 宫……）。
+ */
+const SIXTEEN = [
+  { idx: 0, pos: '乾', god: '阴德', num: 1 },
+  { idx: 1, pos: '亥', god: '大义', num: 8 },
+  { idx: 2, pos: '子', god: '地主', num: 8 },
+  { idx: 3, pos: '丑', god: '阳德', num: 3 },
+  { idx: 4, pos: '艮', god: '和德', num: 3 },
+  { idx: 5, pos: '寅', god: '吕申', num: 4 },
+  { idx: 6, pos: '卯', god: '高丛', num: 4 },
+  { idx: 7, pos: '辰', god: '太阳', num: 9 },
+  { idx: 8, pos: '巽', god: '大炅', num: 9 },
+  { idx: 9, pos: '巳', god: '大神', num: 2 },
+  { idx: 10, pos: '午', god: '大威', num: 2 },
+  { idx: 11, pos: '未', god: '天道', num: 7 },
+  { idx: 12, pos: '坤', god: '大武', num: 7 },
+  { idx: 13, pos: '申', god: '武德', num: 6 },
+  { idx: 14, pos: '酉', god: '太簇', num: 6 },
+  { idx: 15, pos: '戌', god: '阴主', num: 1 },
+];
+
+/** 阳遁太乙行宫次序：顺行八宫，不入中五 */
+const YANG_WALK = [1, 2, 3, 4, 6, 7, 8, 9];
+/** 阴遁太乙行宫次序：逆行八宫，同样不入中五 */
+const YIN_WALK = [9, 8, 7, 6, 4, 3, 2, 1];
+
+/** 八门三十年一转，1954 年为休门 */
+const EIGHT_GATES = ['休门', '生门', '伤门', '杜门', '景门', '死门', '惊门', '开门'];
+const GATE_BASE_YEAR = 1954;
+const GATE_PERIOD = 30;
+
+/** 五元：七十二局一元 */
+const FIVE_YUAN = ['甲子元', '丙子元', '戊子元', '庚子元', '壬子元'];
+/** 三理：太乙在每一宫理天、理地、理人各一年 */
+const THREE_LI = ['理天', '理地', '理人'];
+
+/** 《太乙金镜式经》卷一的天文常数：章岁、章月、日法、月法 */
+const ZHANG_SUI = 657;
+const ZHANG_YUE = 8726;
+const RI_FA = 49;
+const YUE_FA = 2447;
+
+/** 二十四局一周 → 宫序（起一宫顺行八宫、不游中五）与入宫第几期 */
+function palaceFromR24(r24) {
+  const k = Math.ceil(r24 / 3);
+  const inPalace = r24 - (k - 1) * 3 || 3;
+  return { k, palace: YANG_WALK[k - 1], inPalace };
+}
+
+/** 从某支起、逆行第 n 步（n 取 1..12，1 就是起点） */
+function branchWalk(startIdx, step) {
+  const idx = (((startIdx - (step - 1)) % 12) + 12) % 12;
+  return { idx, branch: BRANCH_NAMES[idx] };
+}
+
+/** 十六神顺行第 n 步：遇阴德（乾）、大武（坤）各数两次，故十八步一周 */
+function sixteenStep(startGod, rest18) {
+  const start = SIXTEEN.findIndex((x) => x.god === startGod);
+  const steps = [];
+  for (let i = 0; i < SIXTEEN.length; i += 1) {
+    const cur = SIXTEEN[(start + i) % SIXTEEN.length];
+    steps.push(cur);
+    if (cur.pos === '乾' || cur.pos === '坤') steps.push(cur);
+  }
+  return steps[rim(rest18, 18) - 1];
+}
+
+/** 月计：积月 = ⌊积年 × 章月 ÷ 章岁⌋，其余数称闰余 */
+function monthJiOf(jinian) {
+  const jiyue = Number((BigInt(jinian) * BigInt(ZHANG_YUE)) / BigInt(ZHANG_SUI));
+  const r24 = rim(jiyue, 24);
+  const t = palaceFromR24(r24);
+  const mu = sixteenStep('武德', rim(jiyue, 18));
+  const js = branchWalk(2, rim(rim(jiyue, 60), 12));
+  return {
+    jiyue,
+    taiyi: { rest24: r24, palace: t.palace, palaceName: PALACES[t.palace].name, unitInPalace: t.inPalace },
+    mu: { pos: mu.pos, god: mu.god, palace: mu.num },
+    jishen: js,
+  };
+}
+
+/** 日计：积日 = ⌊积月 × 月法 ÷ 日法⌋ */
+function dayJiOf(jinian) {
+  const jiyue = Number((BigInt(jinian) * BigInt(ZHANG_YUE)) / BigInt(ZHANG_SUI));
+  const jiri = Number((BigInt(jiyue) * BigInt(YUE_FA)) / BigInt(RI_FA));
+  const r24 = rim(jiri, 24);
+  const t = palaceFromR24(r24);
+  const mu = sixteenStep('武德', rim(jiri, 18));
+  const js = branchWalk(2, rim(rim(jiri, 60), 12));
+  return {
+    jiri,
+    taiyi: { rest24: r24, palace: t.palace, palaceName: PALACES[t.palace].name, unitInPalace: t.inPalace },
+    mu: { pos: mu.pos, god: mu.god, palace: mu.num },
+    jishen: js,
+  };
+}
+
+/** 时计：以上年冬至为天正、十二时一辰，时实 = (冬至积日 − 1) × 12 + 时辰序 */
+function hourJiOf(datetime) {
+  const { year, month, day, hour } = datetime;
+  const wp = jdToParts(termInstantJd(year - 1, 23));
+  const winterJdn = toJDN(wp.year, wp.month, wp.day);
+  const summerJd = termInstantJd(year, 11);
+  const nowJd = toJDN(year, month, day) - 0.5 + (hour * 60) / 1440;
+  const dun = nowJd >= summerJd ? 'yin' : 'yang';
+  const hIdx = Math.floor(((hour + 1) % 24) / 2);
+  const shiShi = (winterJdn - 1) * 12 + hIdx;
+  const r24 = rim(shiShi, 24);
+  const t = palaceFromR24(r24);
+  const start = dun === 'yang' ? 2 : 8;
+  const js = branchWalk(start, rim(rim(shiShi, 60), 12));
+  return {
+    shiShi,
+    dun,
+    taiyi: { rest24: r24, palace: t.palace, palaceName: PALACES[t.palace].name, unitInPalace: t.inPalace },
+    jishen: js,
+    note: '时计用现代节气定冬至与夏至，不用唐代气法常数；与卷一的古历口径会有几日差。',
+  };
+}
+
+/** 古法吉凶：按卷一《推太公考时法》的位置判据，只判「相犯与否」与「数和不和」 */
+function jiXiongOf(o) {
+  const items = (o.geju && o.geju.list) || [];
+  const xiangFan = items.length > 0;
+  const zhuHe = !!(o.heshu && o.heshu.zhu && o.heshu.zhu.he);
+  const keHe = !!(o.heshu && o.heshu.ke && o.heshu.ke.he);
+  const he = zhuHe && keHe;
+  const gate = (o.gate && o.gate.gate) || '';
+  // 卷一「吉道谓开休生三门」，年家只值一门，能判的就到这里
+  const jiDao = gate === '开' || gate === '休' || gate === '生';
+  // 用词照《太乙金镜式经》：凶、不和、吉、大吉；不自造档位
+  let grade = 'ji';
+  if (xiangFan) grade = 'xiong';
+  else if (!he) grade = 'buhe';
+  else if (jiDao) grade = 'daji';
+  const label = grade === 'xiong' ? '凶' : grade === 'buhe' ? '不和' : grade === 'daji' ? '大吉' : '吉';
+  const basis = xiangFan
+    ? '命中' + items.join('、') + '，不满足卷一「上下无掩击迫囚关格对、并不相犯」'
+    : !he
+      ? '不相犯，但' + (zhuHe ? '客算' : '主算') + '落在不和'
+      : jiDao
+        ? '阴阳和顺、不相犯，八门又值' + gate + '（卷一所称吉道）'
+        : '阴阳和顺、不相犯，八门值' + gate + '，不在开休生之内';
+  const text = basis + '。';
+  const note = '卷一另有「大利」「利以行兵」「先吉后凶」，要五将与神将同参，这一层没有做。';
+  return { xiangFan, items, he, gate, grade, label, text, note };
+}
+
+/* ── 神将层（第五层）─────────────────────────────────────────────
+   卷一《推太乙当时法》：「以日度加时因步六壬式，知天乙成败之分」——
+   借六壬十二神看四将与文昌、始击落在吉神还是凶神下。口径由本盘自定，写在这里备查：
+   1) 十二神用六壬序（贵人、螣蛇、朱雀、六合、勾陈、青龙、天后、太阴、玄武、太常、白虎、天空）；
+   2) 贵人按日干起（甲戊庚丑未 / 乙己子申 / 丙丁亥酉 / 壬癸巳卯 / 辛午寅），卯至申用昼贵、酉至寅用夜贵；
+   3) 贵人临亥子丑寅卯辰顺行、临巳午未申酉戌逆行；
+   4) 四将与文昌、始击的卦位按后天八卦取一支（乾亥、坎子、艮丑、震卯、巽巳、离午、坤未、兑酉），
+      再取该支上的神；太乙九宫一宫两支，取生支这一支，是本盘唯一能自洽的一档。
+   这一层只给「古法怎么判」，不给成不成。 */
+
+const TWELVE_GODS = ['贵人', '螣蛇', '朱雀', '六合', '勾陈', '青龙', '天后', '太阴', '玄武', '太常', '白虎', '天空'];
+const GOD_GOOD = ['贵人', '六合', '青龙', '太阴', '太常'];
+const GOD_BAD = ['螣蛇', '朱雀', '勾陈', '玄武', '白虎', '天空'];
+/** 后天八卦取支：一宫两支时取生支（与十六神位里同向那一支一致） */
+const TRIGRAM_TO_BRANCH = { 乾: '亥', 坎: '子', 艮: '丑', 震: '卯', 巽: '巳', 离: '午', 坤: '未', 兑: '酉' };
+/** 十六神位名 → 地支：卦位取生支，支位原样 */
+const POS_TO_BRANCH = { ...TRIGRAM_TO_BRANCH, 子: '子', 丑: '丑', 寅: '寅', 卯: '卯', 辰: '辰', 巳: '巳', 午: '午', 未: '未', 申: '申', 酉: '酉', 戌: '戌', 亥: '亥' };
+const GUI_REN = { 甲: '丑', 戊: '丑', 庚: '丑', 乙: '子', 己: '子', 丙: '亥', 丁: '亥', 壬: '巳', 癸: '巳', 辛: '午' };
+const GUI_REN_NIGHT = { 甲: '未', 戊: '未', 庚: '未', 乙: '申', 己: '申', 丙: '酉', 丁: '酉', 壬: '卯', 癸: '卯', 辛: '寅' };
+
+/** 当天的日干 */
+function dayStemOf(year, month, day) {
+  const idx = dayGanzhiIndex(toJDN(year, month, day));
+  return STEMS[((idx % 10) + 10) % 10];
+}
+
+/** 起十二神：昼贵 / 夜贵按卯～申、酉～寅分；反回 { stem, day, startBranch, dir, table } */
+function twelveGodsOf(stem, hour) {
+  const h = typeof hour === 'number' ? hour : 0;
+  const bi = Math.floor(((h + 1) % 24) / 2);
+  const day = bi >= 2 && bi <= 7;
+  const start = (day ? GUI_REN : GUI_REN_NIGHT)[stem] || '丑';
+  const si = BRANCH_NAMES.indexOf(start);
+  const dir = ['亥', '子', '丑', '寅', '卯', '辰'].includes(start) ? 1 : -1;
+  const table = {};
+  TWELVE_GODS.forEach((g, k) => {
+    const bi2 = ((si + dir * k) % 12 + 12) % 12;
+    table[BRANCH_NAMES[bi2]] = g;
+  });
+  return { stem, day, startBranch: start, dir, table };
+}
+
+/** 四将与文昌、始击各落哪一神下 */
+function shenJiangOf(o) {
+  const t = twelveGodsOf(o.dayStem, o.hour);
+  const b2b = POS_TO_BRANCH;
+  const rows = [
+    ['主大将', o.jiang.zhuDaName],
+    ['主参将', o.jiang.zhuCanName],
+    ['客大将', o.jiang.keDaName],
+    ['客参将', o.jiang.keCanName],
+    ['文昌', o.wenchang && o.wenchang.pos],
+    ['始击', o.shiji && o.shiji.pos],
+  ].map(([who, gua]) => {
+    const br = b2b[gua] || '';
+    const god = br ? t.table[br] || '' : '';
+    const kind = GOD_GOOD.includes(god) ? 'good' : GOD_BAD.includes(god) ? 'bad' : 'mid';
+    return { who, gua, branch: br, god, kind };
+  });
+  const goods = rows.filter((x) => x.kind === 'good').map((x) => x.who + '在' + x.god);
+  const bads = rows.filter((x) => x.kind === 'bad').map((x) => x.who + '在' + x.god);
+  const mids = rows.filter((x) => x.kind === 'mid').map((x) => x.who + '在' + (x.god || '无名'));
+  return { ...t, rows, goods, bads, mids };
+}
+
+/**
+ * 位置层 + 神将层合成卷一的判辞：凶 / 不和 / 吉 / 大吉 / 大利 / 先吉后凶。
+ * 卷一判语：门具将发遇吉神则大吉；门杜闭塞遇吉神守固大利；门杜闭塞遇凶神则先吉后凶。
+ * 位置层已相犯时古法认定「不相犯」不成立，不再往上抬。
+ */
+function verdictOf(o) {
+  const pos = o.jixiong || {};
+  const sj = o.shenjiang || {};
+  const gate = (o.gate && o.gate.gate) || '';
+  const jiDao = gate === '开' || gate === '休' || gate === '生';
+  const rows = sj.rows || [];
+  const allGood = rows.length > 0 && (sj.bads || []).length === 0 && (sj.mids || []).length === 0;
+  const anyBad = (sj.bads || []).length > 0;
+  let grade = pos.grade || 'ji';
+  let label = pos.label || '吉';
+  if (grade !== 'xiong' && allGood) {
+    grade = jiDao ? 'daji' : 'dali';
+    label = jiDao ? '大吉' : '大利';
+  } else if (grade !== 'xiong' && anyBad) {
+    grade = jiDao ? 'xianji' : 'xiong';
+    label = jiDao ? '先吉后凶' : '凶';
+  }
+  return { grade, label, jiDao, allGood, anyBad, posGrade: pos.grade, text: pos.text };
+}
+
+/** 《太乙金镜式经》这一层覆盖的算法清单（面板与文案都从这里取） */
+const TAIYI_SCOPE = {
+  covered: [
+    '太乙积年与五元六纪',
+    '局数（残年再取 72 的余数）',
+    '阴阳遁（冬至后阳、夏至后阴）',
+    '太乙落宫（三年一宫、不入中五）',
+    '八门（三十年一转）',
+    '文昌（十八年一周，遇乾、坤各数两次）',
+    '计神（积年 mod 60，从寅起逆数）',
+    '始击（计神加和德，天目随移）',
+    '主算、客算与主客大小将、参将',
+    '掩、击、格、对、提、迫、囚、关八种位置关系',
+    '定目（年支合神移至太岁宫）',
+    '三基（君基、臣基、民基）',
+    '五福、大游',
+    '十精其余（天乙、地乙、直符、四神、小游）',
+    '阴阳数和（重阳、重阴、上和、次和、下和）',
+    '月计、日计、时计（积月、积日、时实三套推法）',
+    '古法吉凶倾向（相犯与否 ＋ 数和不和）',
+  ],
+  notCovered: [
+    '四神拆成本身与绛宫、明堂、玉堂的十二位全序',
+    '胜负断辞、三旗五将',
+  ],
+  note: '这一层做到太乙、八门、文昌、计神、始击、主客算与四将、八种格局、定目、三基、五福、大游、十精、阴阳数和、月日时三计、古法吉凶与神将判辞；阴阳遁按冬至夏至交节判；四神十二位全序、胜负断辞不做。',
+};
+
+/** 取模成 1..n（余数 0 当 n） */
+const rim = (n, m) => {
+  const r = n % m;
+  return r === 0 ? m : r;
+};
+
+/** 太乙积年：公元年 + 常数 */
+function taiyiJinian(year) {
+  return TAIYI_EPOCH + year;
+}
+
+/** 残年（360 年一周）与局数（72 局一元） */
+function taiyiRound(jinian) {
+  const rest360 = rim(jinian, 360);
+  const ju = rim(rest360, 72);
+  return { rest360, ju };
+}
+
+/** 五元六纪：残年第几年、第几纪、第几元 */
+function yuanJiOf(rest360) {
+  const ji = Math.floor((rest360 - 1) / 60); // 0..5
+  const yuan = Math.floor((rest360 - 1) / 72); // 0..4
+  return {
+    jiNo: ji + 1,
+    jiName: `第${['一', '二', '三', '四', '五', '六'][ji]}纪`,
+    jiYear: ((rest360 - 1) % 60) + 1,
+    yuanNo: yuan + 1,
+    yuanName: FIVE_YUAN[yuan],
+    yuanYear: ((rest360 - 1) % 72) + 1,
+  };
+}
+
+/**
+ * 阴阳遁：冬至到次年夏至之间为阳遁，夏至到冬至之间为阴遁。
+ * 传 jd 就按交节时刻判，不传就按「年家默认阳遁」——年盘本身不落到某一天，
+ * 所以这里把口径写进结果，别让调用方以为它按月份算。
+ */
+function dunOf(jd) {
+  if (typeof jd !== 'number' || !Number.isFinite(jd)) return { dun: 'yang', by: 'default' };
+  const p = jdToParts(jd);
+  const summer = termInstantJd(p.year, 11); // 当年夏至
+  const winter = termInstantJd(p.year, 23); // 当年冬至
+  const yin = jd >= summer && jd < winter;
+  return { dun: yin ? 'yin' : 'yang', by: 'jd', summer, winter };
+}
+
+/** 太乙落宫：局数 mod 24，三年一宫 */
+function taiyiPalace(ju, dun) {
+  const walk = dun === 'yin' ? YIN_WALK : YANG_WALK;
+  const rest24 = rim(ju, 24);
+  const groupIdx = Math.ceil(rest24 / 3) - 1;
+  const palace = walk[groupIdx];
+  const yearInPalace = ((rest24 - 1) % 3) + 1;
+  return {
+    rest24,
+    palace,
+    palaceName: PALACES[palace].name,
+    dir: PALACES[palace].dir,
+    yearInPalace,
+    li: THREE_LI[yearInPalace - 1],
+  };
+}
+
+/** 八门：三十年一转 */
+function eightGate(year) {
+  const idx = Math.floor((year - GATE_BASE_YEAR) / GATE_PERIOD);
+  const mod = ((idx % 8) + 8) % 8;
+  return { gate: EIGHT_GATES[mod], idx: mod + 1 };
+}
+
+/**
+ * 文昌：积年 mod 18，阳局自武德（申）起、阴局自吕申（寅）起，
+ * 顺行十六神，遇阴德（乾）、大武（坤）各数两次。
+ */
+function wenChang(jinian, dun) {
+  const steps = [];
+  const startIdx = dun === 'yin' ? SIXTEEN.findIndex((s) => s.pos === '寅') : SIXTEEN.findIndex((s) => s.pos === '申');
+  let i = startIdx;
+  while (steps.length < 18) {
+    const s = SIXTEEN[i % 16];
+    steps.push(s);
+    // 遇乾（阴德）与坤（大武）各数两次
+    if (s.pos === '乾' || s.pos === '坤') steps.push(s);
+    i += 1;
+    if (steps.length > 18) steps.length = 18;
+  }
+  const r = rim(jinian, 18);
+  const hit = steps[r - 1];
+  return { rest18: r, pos: hit.pos, god: hit.god, num: hit.num, palaceName: PALACES[hit.num].name };
+}
+
+/** 八卦正宫名（十六神里 pos 落在这八个上就是正宫，其余是间神） */
+const GUA_NAMES = ['乾', '兑', '离', '震', '巽', '坎', '艮', '坤'];
+
+/** 九宫环顺行：坎八 → 艮三 → 震四 → 巽九 → 离二 → 坤七 → 兑六 → 乾一 */
+const PALACE_RING = [8, 3, 4, 9, 2, 7, 6, 1];
+
+/** 十二支名 */
+const BRANCH_NAMES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+/** 地支序 → 十六神索引（子→地主、丑→阳德、寅→吕申……） */
+const BRANCH_TO_SIXTEEN = [2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 1];
+
+/** 对宫：一乾对九巽、二离对八坎、三艮对七坤、四震对六兑，中五无对 */
+const OPPOSITE_PALACE = { 1: 9, 9: 1, 2: 8, 8: 2, 3: 7, 7: 3, 4: 6, 6: 4, 5: 5 };
+
+/** 九宫环上的下一宫 */
+function nextPalace(palace) {
+  const i = PALACE_RING.indexOf(palace);
+  return PALACE_RING[(i + 1) % PALACE_RING.length];
+}
+
+/** 九宫环上的上一宫（顺行的「前一宫」，即太乙左右） */
+function prevPalace(palace) {
+  const i = PALACE_RING.indexOf(palace);
+  return PALACE_RING[(i - 1 + PALACE_RING.length) % PALACE_RING.length];
+}
+
+/** 六合：与某支相合的那一支（子丑、寅亥、卯戌、辰酉、巳申、午未） */
+const LIU_HE = [1, 0, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+
+/**
+ * 定目：淘金歌「为客最难详定计，便以合神加太岁」——把合神搬到太岁所在处，
+ * 盘整体旋转，原先天目（文昌）落到的位置就是定目。
+ */
+function dingMuOf(wenChangIdx, yearBranchIdx) {
+  const heIdx = LIU_HE[yearBranchIdx];
+  const taiSui16 = BRANCH_TO_SIXTEEN[yearBranchIdx];
+  const he16 = BRANCH_TO_SIXTEEN[heIdx];
+  const idx16 = ((wenChangIdx + (taiSui16 - he16)) % 16 + 16) % 16;
+  const item = SIXTEEN[idx16];
+  return { shift: taiSui16 - he16, idx16, pos: item.pos, god: item.god, palace: item.num, palaceName: PALACES[item.num].name };
+}
+
+/** 三基：君基三十年一移起午、臣基三年一移起午、民基一年一移起戌，顺行十二支 */
+function sanJiOf(jinian) {
+  const step = (base, period, start) => BRANCH_NAMES[(start + Math.floor((jinian - 1) / period)) % 12];
+  return {
+    jun: step('jun', 30, 6),
+    chen: step('chen', 3, 6),
+    min: step('min', 1, 10),
+    note: '君基三十年一移、臣基三年一移，都从午起；民基一年一移，从戌起，顺行十二支。',
+  };
+}
+
+/** 五福：四十五年移一位，上元甲子起一宫，乾一 → 艮三 → 巽九 → 坤七 → 中五 */
+const WUFU_ORDER = [1, 3, 9, 7, 5];
+function wuFuOf(jinian) {
+  const i = Math.floor((jinian - 1) / 45) % WUFU_ORDER.length;
+  const palace = WUFU_ORDER[i];
+  return { index: i, palace, palaceName: PALACES[palace].name };
+}
+
+/** 大游：三十六年移一位，上元甲子起七宫，逆数 七→六→四→三→二→一→九→八 */
+const DAYOU_ORDER = [7, 6, 4, 3, 2, 1, 9, 8];
+function daYouOf(jinian) {
+  const i = Math.floor((jinian - 1) / 36) % DAYOU_ORDER.length;
+  const palace = DAYOU_ORDER[i];
+  return { index: i, palace, palaceName: PALACES[palace].name };
+}
+
+/** 十二支上的位移取位（起点按地支索引，三年/三十年一移） */
+function branchStep(startIdx, period, jinian) {
+  return { index: (startIdx + Math.floor((jinian - 1) / period)) % 12, name: BRANCH_NAMES[(startIdx + Math.floor((jinian - 1) / period)) % 12] };
+}
+
+/**
+ * 十精里的四个「十二宫」神：
+ * 天乙「甲子上元从六起，三年一徙顺行踪」（第六位 = 巳）
+ * 地乙「上元甲子九宫九，顺行十二宫中序，三年亦易」
+ * 直符「上元甲子元从五，十二宫中顺数详」（第五位 = 辰 → 按九宫数五 = 中宫，这里按十二支第五位辰起）
+ * 小游：三年一移，起一宫。
+ */
+function shiJingOf(jinian) {
+  const tianYi = branchStep(5, 3, jinian);
+  const diYi = branchStep(8, 3, jinian);
+  const zhiFu = branchStep(4, 3, jinian);
+  const SI_SHEN_RING = ['一宫', '二宫', '三宫', '四宫', '五宫', '六宫', '七宫', '八宫', '九宫', '绛宫', '明堂', '玉堂'];
+  const siShen = SI_SHEN_RING[Math.floor((jinian - 1) / 3) % 12];
+  const xiaoYou = PALACES[YANG_WALK[Math.floor((jinian - 1) / 3) % 8]].name;
+  return {
+    tianyi: tianYi.name,
+    diyi: diYi.name,
+    zhifu: zhiFu.name,
+    sishen: siShen,
+    xiaoyou: xiaoYou,
+    note: '天乙、地乙、直符、四神、小游都按上元甲子起例、三年一移；十精的另一半是五福、君基、臣基、民基、大游。',
+  };
+}
+
+/**
+ * 阴阳和不和（张良经 / 卷二）：太乙在阳宫（八三四九）得奇数为重阳，得偶数为和；
+ * 太乙在阴宫（二七六一）得偶数为重阴，得奇数为和。这里只判这一段，不做胜负推断。
+ */
+function heShuOf(taiyiPalace, suan) {
+  const YANG = [8, 3, 4, 9];
+  const yin = !YANG.includes(taiyiPalace);
+  const odd = suan % 2 === 1;
+  const chongYang = !yin && odd;
+  const chongYin = yin && !odd;
+  const he = !chongYang && !chongYin;
+  const SHANG = [14, 18];
+  const CI = [23, 29, 32];
+  const XIA = [12, 16, 27, 34, 38];
+  const grade = SHANG.includes(suan) ? '上和' : CI.includes(suan) ? '次和' : XIA.includes(suan) ? '下和' : '';
+  return {
+    grade,
+    yang: !yin,
+    odd,
+    he,
+    chongYang,
+    chongYin,
+    text: he
+      ? `太乙在${yin ? '阴' : '阳'}宫、算得${odd ? '奇' : '偶'}数，为阴阳和${grade ? '（' + grade + '）' : ''}。`
+      : chongYang
+        ? '太乙在阳宫、算得奇数，为重阳，按经文属不和。'
+        : '太乙在阴宫、算得偶数，为重阴，按经文属不和。',
+  };
+}
+
+
+/**
+ * 计神：积年 mod 60 得六十甲子第几年（1..60），从寅起逆数十二支。
+ * 甲子年（序 1）计神在寅；寅年（序 3）计神在子，即「太岁在寅，计神在子」。
+ */
+function jiShenOf(jinian) {
+  const r = rim(jinian, 60);
+  const bi = (((2 - (r - 1)) % 12) + 12) % 12;
+  const idx16 = BRANCH_TO_SIXTEEN[bi];
+  const item = SIXTEEN[idx16];
+  return { r, branch: BRANCH_NAMES[bi], idx16, god: item.god, palace: item.num, palaceName: PALACES[item.num].name };
+}
+
+/**
+ * 始击：计神加和德（艮，十六神索引 4）之宫，天目随盘整体移动。
+ * 位移 = 和德索引 − 计神索引；文昌落位顺移同一位移。
+ */
+function shiJiOf(wenChangIdx, jiIdx16) {
+  const HE_DE = 4;
+  const shift = HE_DE - jiIdx16;
+  const idx16 = ((wenChangIdx + shift) % 16 + 16) % 16;
+  const item = SIXTEEN[idx16];
+  return { shift, idx16, pos: item.pos, god: item.god, palace: item.num, palaceName: PALACES[item.num].name };
+}
+
+/**
+ * 主算 / 客算：从某位天目所在处起，沿九宫环顺行累加宫数。
+ * 天目在正宫按本宫数起；在间神先计一，再从该间神所属的正宫继续。
+ * 数到太乙宫前一位为止（不含太乙宫本身）。
+ */
+function suanOf(idx16, taiyiPalace) {
+  const item = SIXTEEN[idx16];
+  const isJian = !GUA_NAMES.includes(item.pos);
+  let total = isJian ? 1 : 0;
+  let cur = item.num;
+  for (let i = 0; i < PALACE_RING.length; i += 1) {
+    if (cur === taiyiPalace) break;
+    total += cur;
+    cur = nextPalace(cur);
+  }
+  return total === 0 ? 1 : total;
+}
+
+/** 大将宫数：算数个位，整十按「得十置一」归一宫 */
+function generalOf(n) {
+  const g = n % 10;
+  return g === 0 ? 1 : g;
+}
+
+/** 参将宫数：大将 × 3 的个位，整十同样归一宫 */
+function canJiangOf(g) {
+  const c = (g * 3) % 10;
+  return c === 0 ? 1 : c;
+}
+
+/** 掩迫囚格关：只判位置关系，不掺吉凶 */
+function gejuOf(o) {
+  const { taiyiPalace, shiJiPalace, wenChangPalace, zhuDa, keDa, zhuCan, keCan } = o;
+  const near = [nextPalace(taiyiPalace), prevPalace(taiyiPalace)];
+  const yan = shiJiPalace === taiyiPalace;
+  const ji = near.includes(shiJiPalace);
+  const ge = shiJiPalace === OPPOSITE_PALACE[taiyiPalace];
+  const dui = wenChangPalace === OPPOSITE_PALACE[taiyiPalace];
+  const ti = keDa === wenChangPalace;
+  const poAt = [];
+  if (near.includes(wenChangPalace)) poAt.push('文昌');
+  if (near.includes(zhuDa)) poAt.push('主大将');
+  if (near.includes(keDa)) poAt.push('客大将');
+  if (near.includes(zhuCan)) poAt.push('主参将');
+  if (near.includes(keCan)) poAt.push('客参将');
+  const qiuAt = [['主大将', zhuDa], ['客大将', keDa], ['主参将', zhuCan], ['客参将', keCan]]
+    .filter((x) => x[1] === taiyiPalace).map((x) => x[0]);
+  const cross = [
+    ['主大将', zhuDa, '客大将', keDa],
+    ['主大将', zhuDa, '客参将', keCan],
+    ['客大将', keDa, '主参将', zhuCan],
+    ['主参将', zhuCan, '客参将', keCan],
+  ];
+  const guan = cross.filter((x) => x[1] === x[3]).map((x) => x[0] + '与' + x[2] + '同宫');
+  const list = [];
+  if (yan) list.push('掩：始击与太乙同宫');
+  if (ji) list.push('击：始击在太乙左右');
+  if (ge) list.push('格：太乙与始击相望（对宫）');
+  if (dui) list.push('对：文昌冲太乙宫');
+  if (ti) list.push('提：客大将与文昌同宫');
+  if (poAt.length) list.push('迫：' + poAt.join('、') + '在太乙前后');
+  if (qiuAt.length) list.push('囚：' + qiuAt.join('、') + '与太乙同宫');
+  if (guan.length) list.push('关：' + guan.join('，'));
+  return { yan, ji, ge, dui, ti, po: poAt, qiu: qiuAt, guan, list };
+}
+
+/** 主入口 */
+function buildTaiyi(input) {
+  assertObject(input, '太乙神数');
+  assertCivil(input, '太乙神数');
+  const { year, month, day } = input;
+
+  const jinian = taiyiJinian(year);
+  const { rest360, ju } = taiyiRound(jinian);
+  const yuanji = yuanJiOf(rest360);
+  const gate = eightGate(year);
+
+  // 阳遁 / 阴遁按交节判：冬至到次年夏至为阳，夏至到冬至为阴。
+  // 这一盘总要落到某一天，所以直接按日期判，不再默认阳遁。
+  const hourNum = typeof input.hour === 'number' ? input.hour : 0;
+  const nowJd = toJDN(year, month, day) - 0.5 + hourNum / 24;
+  const dunInfo = dunOf(nowJd);
+  const dun = dunInfo.dun;
+
+  const t = taiyiPalace(ju, dun);
+  const wc = wenChang(jinian, dun);
+
+  const wcIdx16 = SIXTEEN.findIndex((x) => x.pos === wc.pos && x.god === wc.god);
+  const js = jiShenOf(jinian);
+  const sj = shiJiOf(wcIdx16, js.idx16);
+  const zhuSuan = suanOf(wcIdx16, t.palace);
+  const keSuan = suanOf(sj.idx16, t.palace);
+  const zhuDa = generalOf(zhuSuan);
+  const keDa = generalOf(keSuan);
+  const zhuCan = canJiangOf(zhuDa);
+  const keCan = canJiangOf(keDa);
+  const geju = gejuOf({
+    taiyiPalace: t.palace,
+    shiJiPalace: sj.palace,
+    wenChangPalace: wc.num,
+    zhuDa,
+    keDa,
+    zhuCan,
+    keCan,
+  });
+  const yearBranchIdx = (((year - 4) % 12) + 12) % 12;
+  const dm = dingMuOf(wcIdx16, yearBranchIdx);
+  const heZhu = heShuOf(t.palace, zhuSuan);
+  const heKe = heShuOf(t.palace, keSuan);
+  const heshu = { zhu: heZhu, ke: heKe };
+  const jixiong = jiXiongOf({ geju, heshu, gate });
+  const dayStem = dayStemOf(year, month, day);
+  const jiangObj = {
+    zhuDa, keDa, zhuCan, keCan,
+    zhuDaName: PALACES[zhuDa].name, keDaName: PALACES[keDa].name,
+    zhuCanName: PALACES[zhuCan].name, keCanName: PALACES[keCan].name,
+  };
+  const shenjiang = shenJiangOf({ dayStem, hour: typeof input.hour === 'number' ? input.hour : 0, jiang: jiangObj, wenchang: wc, shiji: sj });
+  const verdict = verdictOf({ jixiong, shenjiang, gate });
+  const monthJi = monthJiOf(jinian);
+  const dayJi = dayJiOf(jinian);
+  const hourJi = hourJiOf({ year, month, day, hour: typeof input.hour === 'number' ? input.hour : 0 });
+
+  return {
+    system: 'taiyi',
+    meta: {
+      datetime: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+      year,
+      jinian,
+      rest360,
+      ju,
+      dun,
+      dunText: dun === 'yin' ? '阴遁' : '阳遁',
+      dunBy: dunInfo.by,
+      epoch: TAIYI_EPOCH,
+    },
+    year: { ...yuanji, rest360 },
+    taiyi: t,
+    gate,
+    wenchang: wc,
+    jishen: js,
+    shiji: sj,
+    suan: { zhu: zhuSuan, ke: keSuan },
+    jiang: {
+      zhuDa,
+      keDa,
+      zhuCan,
+      keCan,
+      zhuDaName: PALACES[zhuDa].name,
+      keDaName: PALACES[keDa].name,
+      zhuCanName: PALACES[zhuCan].name,
+      keCanName: PALACES[keCan].name,
+    },
+    geju,
+    dingmu: dm,
+    sanji: sanJiOf(jinian),
+    wufu: wuFuOf(jinian),
+    dayou: daYouOf(jinian),
+    shijing: shiJingOf(jinian),
+    heshu,
+    jixiong,
+    verdict,
+    shenjiang,
+    month: monthJi,
+    day: dayJi,
+    hour: hourJi,
+    scope: TAIYI_SCOPE,
+  };
+}
+
+
+return { TAIYI_EPOCH, PALACES, SIXTEEN, YANG_WALK, YIN_WALK, EIGHT_GATES, GATE_BASE_YEAR, GATE_PERIOD, FIVE_YUAN, THREE_LI, ZHANG_SUI, ZHANG_YUE, RI_FA, YUE_FA, palaceFromR24, branchWalk, sixteenStep, monthJiOf, dayJiOf, hourJiOf, jiXiongOf, TWELVE_GODS, GOD_GOOD, GOD_BAD, TRIGRAM_TO_BRANCH, POS_TO_BRANCH, dayStemOf, twelveGodsOf, shenJiangOf, verdictOf, TAIYI_SCOPE, taiyiJinian, taiyiRound, yuanJiOf, dunOf, taiyiPalace, eightGate, wenChang, GUA_NAMES, PALACE_RING, BRANCH_NAMES, BRANCH_TO_SIXTEEN, OPPOSITE_PALACE, nextPalace, prevPalace, LIU_HE, dingMuOf, sanJiOf, WUFU_ORDER, wuFuOf, DAYOU_ORDER, daYouOf, shiJingOf, heShuOf, jiShenOf, shiJiOf, suanOf, generalOf, canJiangOf, gejuOf, buildTaiyi };
 })();
 
 __mods.xiaoliuren = (function () {
@@ -26624,6 +28235,9 @@ const SYSTEM_LABEL = {
   qimen: '奇门', hepan: '合盘', tarot: '塔罗', almanac: '黄历', zeri: '择日',
   chenggu: '称骨', xiaoliuren: '小六壬', star: '星座', numerology: '生命数字',
   mbti: '人格', trend: '人生K线', fengshui: '风水', name: '起名', convert: '农历',
+  constitution: '体质',
+  wuyunliuqi: '运气',
+  taiyi: '太乙',
 };
 
 const labelOf = (system) => SYSTEM_LABEL[system] || system || '未知体系';
@@ -27991,6 +29605,131 @@ function trendSummary(r) {
  * @param {object} r compute() 的结果
  * @returns {null|{system,title,chips,lead,sections,advice,caveat,footer}}
  */
+/**
+ * 中医体质：主质一条、次高一条、调养三条。
+ * 判定线是公开标准的口径，这里不改；问卷区分度不足时照实说（flat），别硬给一个主质。
+ */
+/**
+ * 五运六气：一句总纲、四段（气候底色 / 当前运与气 / 被强调的脏腑 / 常见不适）。
+ * 特殊格局（天符岁会那一类）只放在 caveat 里点一句，不喧宾夺主。
+ */
+function taiyiSummary(r) {
+  const t = r.taiyi;
+  const sec = [
+    {
+      h: '太乙落在哪一宫',
+      t: `${t.palaceName}宫（${t.dir}），这是三年里的第 ${t.yearInPalace} 年，对应「${t.li}」。太乙三年换一宫，走的是八宫、不入中五，所以在盘面上永远看不到它落在中间。`,
+    },
+    {
+      h: '八门这三十年',
+      t: `${r.gate.gate}。八门三十年一转，1954 年从休门起，顺序是休、生、伤、杜、景、死、惊、开，所以一个门要值三十年，不是每年都换。`,
+    },
+    {
+      h: '文昌在哪',
+      t: `文昌在${r.wenchang.pos}（${r.wenchang.god}，${r.wenchang.palaceName}宫）。文昌十八年一周，阳局从申起、阴局从寅起，路上遇乾、坤各数两次，所以要数满十八步才回到原点。`,
+    },
+    {
+      h: '计神、始击与主客算',
+      t: `计神在${r.jishen.branch}，始击在${r.shiji.pos}（${r.shiji.god}）。主算 ${r.suan.zhu}、客算 ${r.suan.ke}：大将按算数的个位落宫（整十归一），参将是大将乘三的个位。四个将分别落在${r.jiang.zhuDaName}、${r.jiang.keDaName}、${r.jiang.zhuCanName}、${r.jiang.keCanName}宫。`,
+    },
+    {
+      h: '定目、三基与五福',
+      t: `定目在${r.dingmu.pos}（${r.dingmu.god}）：淘金歌讲「以合神加太岁」，把合神搬到太岁处，天目跟着转过去，落点就是定目。三基——君基${r.sanji.jun}（三十年一移）、臣基${r.sanji.chen}（三年一移）、民基${r.sanji.min}（一年一移）；五福在${r.wufu.palaceName}宫（四十五年一移），大游在${r.dayou.palaceName}宫（三十六年一移、逆数）。十精另五位：天乙${r.shijing.tianyi}、地乙${r.shijing.diyi}、直符${r.shijing.zhifu}、四神${r.shijing.sishen}、小游${r.shijing.xiaoyou}。`,
+    },
+    {
+      h: '阴阳数和',
+      t: `主算：${r.heshu.zhu.text}客算：${r.heshu.ke.text}这一段只说「和不和」，上和、次和、下和是算数落在特定数上的分级，不据此断胜负。`,
+    },
+    {
+      h: '卦象吉凶',
+      t: `${r.jixiong.label}。${r.jixiong.text}${r.jixiong.note}判据出自卷一《推太公考时法》，只标吉凶，不推成与不成。`,
+    },
+    {
+      h: '神将与判辞',
+      t: (() => {
+        const sj = r.shenjiang;
+        if (!sj || !sj.rows) return '这一盘没有排神将。';
+        const goods = sj.goods && sj.goods.length ? '在吉神下的：' + sj.goods.join('、') : '没有将落在吉神下';
+        const bads = sj.bads && sj.bads.length ? '在凶神下的：' + sj.bads.join('、') : '没有将落在凶神下';
+        const v = r.verdict ? '合起来判「' + r.verdict.label + '」。' : '';
+        return '按日干起十二神（' + sj.stem + '日、' + (sj.day ? '昼贵' : '夜贵') + '、贵人临' + sj.startBranch + (sj.dir > 0 ? '顺' : '逆') + '行），' + goods + '；' + bads + '。' + v + '这一层是古人拿十二神看四将落位的办法，只说明古法怎么判，不是对事情的预测。';
+      })(),
+    },
+    {
+      h: '这一盘算到哪一层',
+      t: `积年 ${r.meta.jinian}，残年 ${r.meta.rest360}，${r.meta.dunText}${r.meta.ju}局。太乙、八门、文昌、计神、始击、主客算与四将、掩迫囚格关、定目、三基、五福、大游、十精、阴阳数和、月日时三计、古法吉凶都在；${r.scope.notCovered.join('、')}这几项没有收录，盘面上也不显示。`,
+    },
+  ];
+  return {
+    system: 'taiyi',
+    title: '先看这一张',
+    chips: [`${r.meta.year}年`, `${r.meta.dunText}${r.meta.ju}局`, `${t.palaceName}宫`].filter(Boolean),
+    lead: `${r.meta.year} 年太乙：${r.meta.dunText}${r.meta.ju}局，太乙临 ${t.palaceName} 宫（${t.dir}），八门值 ${r.gate.gate}。`,
+    sections: sec,
+    advice: [
+      `先看太乙落在哪：${t.palaceName}宫${t.dir}，这三年的大方向就在这一格，别拿它当每年的细节来读。`,
+      `八门十年一变的说法常被混用，这里按三十年一转的口径——${r.gate.gate}值这三十年，不是今年才轮到。`,
+      '太乙是象数盘，给的是位置的对应关系，不是「今年会发生什么」的判决。',
+    ],
+    caveat: `这一层到太乙、八门、文昌、计神、始击、主客算与四将、八种格局、定目、三基、五福、大游、十精与阴阳数和；${r.scope.notCovered.join('；')}都未收录，别按它们解读。`,
+    footer: '太乙年家用积年推局，与八字按立春换年、运气按大寒分年都不同口径，三套不要互相印证。',
+  };
+}
+function wuyunliuqiSummary(r) {
+  const sp = [];
+  if (r.special.taiYi) sp.push('太乙天符');
+  if (r.special.tianFu && !r.special.taiYi) sp.push('天符');
+  if (r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+  if (r.special.tongTianFu) sp.push('同天符');
+  if (r.special.tongSuiHui) sp.push('同岁会');
+  const sec = [
+    { h: '这一年的气候底色', t: r.combo.text },
+    { h: '此刻在哪个运、哪口气', t: r.current.text },
+    { h: '被强调的脏腑', t: `中运主${r.zhongyun.organ}：传统上这样描述——${r.zhongyun.effect.organ}。${r.zhongyun.effect.sign}` },
+    { h: '今年常被说到的身体反应', t: `上半年（${r.sitian.qi}司天）：${r.sitian.climate.sign}；下半年（${r.zaiquan.qi}在泉）：${r.zaiquan.climate.sign}` },
+  ];
+  return {
+    system: 'wuyunliuqi',
+    title: '先看这一张',
+    chips: [`${r.year.ganzhi}年`, r.zhongyun.name, `${r.sitian.qi}司天`].filter(Boolean),
+    lead: `${r.year.ganzhi} 运气年：中运${r.zhongyun.name}，${r.sitian.qi}司天、${r.zaiquan.qi}在泉。`,
+    sections: sec,
+    advice: [
+      `顺着「${r.zhongyun.nature}」来调：${r.zhongyun.tai ? '本气偏胜，别再加码，先把被克的那一头护住' : '本气不足，别硬扛，先补本气再谈其他'}。`,
+      `这一年偏「${r.sitian.climate.climate}」，起居上按这个方向做减法，比按季节硬套更贴。`,
+      '运气盘给的是「今年偏什么」，不是「你会得什么病」；有具体不适看医生。',
+    ],
+    caveat: sp.length
+      ? `特殊格局：${sp.join('、')}。${r.special.notes.join('')}`
+      : '这一年在格局上没有天符、岁会那一类标记，按中运与司天在泉的常例读就好。',
+    footer: '运气年以大寒为界，与八字按立春定年柱不同；两套口径不要互相印证。',
+  };
+}
+function constitutionSummary(r) {
+  const p = r.primary;
+  const sec = [];
+  if (p) {
+    sec.push({ h: p.name + '是什么', t: (p.oneLine || '') + (p.trait ? ' ' + p.trait : '') });
+    if (p.tendency) sec.push({ h: '容易被影响的地方', t: p.tendency });
+  }
+  const second = (r.top || []).find((x) => p && x.name !== p.name);
+  if (second) sec.push({ h: '次高的一项', t: `${second.name} ${second.converted} 分（${second.level}）——它常和主质一起出现，调的时候顺手带上。` });
+  return {
+    system: 'constitution',
+    title: '先看这一张',
+    chips: [p ? p.name : '未判定', r.pinghe ? `平和 ${r.pinghe.converted}` : '', r.meta ? `${r.meta.answered}/${r.meta.total} 题` : ''].filter(Boolean),
+    lead: p
+      ? `主体质是「${p.name}」${p.level === '是' ? '' : `（${p.level}，未完全达判定线）`}，转化分 ${p.converted}；平和质 ${r.pinghe ? r.pinghe.converted : '—'} 分。`
+      : '这份问卷还没答够，先别急着对号入座。',
+    sections: sec,
+    advice: (r.care || []).slice(0, 3),
+    caveat: r.flat
+      ? '每题都选了同一个选项，问卷对你的区分度不足——主质仅供参考，建议按最近一年的真实感受重答一遍。'
+      : '体质是长期倾向，不是病名，也不与八字、星座互证；有具体不适请就医。',
+    footer: '打分为自评，同一个人隔一个月再答可能差一档，看趋势比看单次结果有用。',
+  };
+}
+
 function plainSummary(r) {
   if (!r || typeof r !== 'object') return null;
   if (r.system === 'bazi') return baziSummary(r);
@@ -28002,6 +29741,9 @@ function plainSummary(r) {
   if (r.system === 'tarot') return tarotSummary(r);
   if (r.system === 'hepan') return hepanSummary(r);
   if (r.system === 'trend') return trendSummary(r);
+  if (r.system === 'constitution') return constitutionSummary(r);
+  if (r.system === 'wuyunliuqi') return wuyunliuqiSummary(r);
+  if (r.system === 'taiyi') return taiyiSummary(r);
   return null;
 }
 
@@ -28013,7 +29755,7 @@ __mods.index = (function () {
 const { buildBazi } = (__mods.bazi || {});
 const { buildLiuyao, tossLines, bodyLabels, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower, yingqiWindow } = (__mods.liuyao || {});
 const { buildZiwei, BRIGHTNESS, flowOf, asOfParts, ZIWEI_SCHOOL_DEFAULTS } = (__mods.ziwei || {});
-const { drawTarot } = (__mods.tarot || {});
+const { drawTarot, SPREAD_KEYS } = (__mods.tarot || {});
 const { buildMeihua } = (__mods.meihua || {});
 const { buildDaliuren } = (__mods.daliuren || {});
 const { buildHepan, tripleOf } = (__mods.hepan || {});
@@ -28038,6 +29780,9 @@ const { buildXiaoliuren } = (__mods.xiaoliuren || {});
 const { buildStar } = (__mods.star || {});
 const { buildNumerology } = (__mods.numerology || {});
 const { buildMbti, mbtiPaper } = (__mods.mbti || {});
+const { buildConstitution, constitutionPaper } = (__mods.constitution || {});
+const { buildWuyunliuqi } = (__mods.wuyunliuqi || {});
+const { buildTaiyi } = (__mods.taiyi || {});
 const { buildConvert } = (__mods.convert || {});
 const { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } = (__mods.classics || {});
 const { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES, viewRows } = (__mods.diff || {});
@@ -28643,7 +30388,7 @@ function shadowParams(args, result) {
     else put(key, value);
   }
   if (system === 'daliuren' && params.lateZi === undefined) params.lateZi = true;
-  if (system === 'tarot' && params.count === undefined) params.count = 3;
+  if (system === 'tarot' && params.spread === undefined && params.count === undefined) params.count = 3;
   if (system === 'meihua' && params.mode === undefined) params.mode = 'time';
   if (system === 'xiaoliuren' && params.mode === undefined) params.mode = 'time';
   if (system === 'convert' && params.mode === undefined) params.mode = 'solar2lunar';
@@ -29356,14 +31101,24 @@ function computeRaw(args = {}) {
     return { ...result, ...(asOf ? { asOf } : {}), precision: dt.precision, summary: ziweiText(result) };
   }
   if (system === 'tarot') {
-    const count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
-    if (!TAROT_COUNTS.includes(count)) {
-      throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
+    // 给了牌阵名就由牌阵定张数，count 只在没给名字时兜底（1/3/5）
+    const hasSpread = args.spread !== undefined && args.spread !== null && String(args.spread).trim() !== '';
+    let count;
+    if (hasSpread) {
+      if (SPREAD_KEYS.indexOf(String(args.spread).trim().toLowerCase()) < 0) {
+        throw fail('E_SPREAD', `塔罗牌阵只能是 ${SPREAD_KEYS.join(' / ')}，收到「${args.spread}」`);
+      }
+      count = undefined;
+    } else {
+      count = args.count === undefined || args.count === null || args.count === '' ? 3 : Number(args.count);
+      if (!TAROT_COUNTS.includes(count)) {
+        throw fail('E_COUNT', `塔罗张数只能是 1 / 3 / 5，收到「${args.count}」`);
+      }
     }
     if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
     const asOf = checkAsOf(args.asOf);
     // 抽牌不看时间：castAt 只记录此刻（或 asOf），避免误用出生时间；给了 seed 就能复现同一次抽牌
-    const result = drawTarot({ count, question: args.question, at: args.asOf, random: randomOf(args.seed) });
+    const result = drawTarot({ spread: hasSpread ? args.spread : undefined, count, question: args.question, at: args.asOf, random: randomOf(args.seed) });
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
     return { ...result, ...(asOf ? { asOf } : {}), summary: tarotText(result) };
   }
@@ -29624,6 +31379,31 @@ function computeRaw(args = {}) {
     const result = buildNumerology({ year: dt.year, month: dt.month, day: dt.day });
     return { ...result, summary: numerologyText(result) };
   }
+  if (system === 'wuyunliuqi') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildWuyunliuqi({
+      year: dt.year,
+      month: dt.month,
+      day: dt.day,
+      hour: dt.hour,
+      minute: dt.minute,
+    });
+    return { ...result, summary: wuyunliuqiText(result) };
+  }
+  if (system === 'taiyi') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildTaiyi({ year: dt.year, month: dt.month, day: dt.day, hour: dt.hour });
+    return { ...result, summary: taiyiText(result) };
+  }
+  if (system === 'constitution') {
+    // 与 mbti 同一套路：没给答案先发卷，别让模型替人打分（体质题答歪了，判定会整体偏掉）
+    if (args.answers === undefined || args.answers === null) {
+      const paper = constitutionPaper();
+      return { ...paper, summary: constitutionPaperText(paper) };
+    }
+    const result = buildConstitution({ answers: args.answers });
+    return { ...result, summary: constitutionText(result) };
+  }
   if (system === 'mbti') {
     // 没给答案就先发问卷：让模型把 24 题交给用户逐题打分，而不是自己编一个类型
     if (args.answers === undefined || args.answers === null) {
@@ -29738,9 +31518,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、convert（公农历互转）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。`);
 }
 
 /** 黄历文本 */
@@ -29867,6 +31647,84 @@ function numerologyText(r) {
 }
 
 /** 十六型人格文本 */
+/** 中医体质文本 */
+/** 五运六气的纯文本版（对话里直接读）。 */
+function taiyiText(r) {
+  const L = [];
+  L.push(`太乙积年 ${r.meta.jinian}，残年 ${r.meta.rest360}，${r.meta.dunText}${r.meta.ju}局。`);
+  L.push(`${r.year.jiName}${r.year.jiYear}年，${r.year.yuanName}第${r.year.yuanYear}年。`);
+  L.push(`太乙在${r.taiyi.palaceName}宫（第${r.taiyi.palace}宫，${r.taiyi.dir}），第${r.taiyi.yearInPalace}年，${r.taiyi.li}。`);
+  L.push(`八门：${r.gate.gate}。`);
+  L.push(`文昌在${r.wenchang.pos}（${r.wenchang.god}，${r.wenchang.palaceName}宫）。`);
+  L.push(`计神在${r.jishen.branch}（${r.jishen.god}），始击在${r.shiji.pos}（${r.shiji.god}，${r.shiji.palaceName}宫）。`);
+  L.push(`主算 ${r.suan.zhu}：主大将${r.jiang.zhuDaName}宫、主参将${r.jiang.zhuCanName}宫；客算 ${r.suan.ke}：客大将${r.jiang.keDaName}宫、客参将${r.jiang.keCanName}宫。`);
+  L.push(r.geju.list.length ? `格局：${r.geju.list.join('；')}。` : '四将之间不相犯，没有掩、迫、囚、格、关。');
+  L.push(`定目在${r.dingmu.pos}（${r.dingmu.god}，${r.dingmu.palaceName}宫）。`);
+  L.push(`三基：君基${r.sanji.jun}、臣基${r.sanji.chen}、民基${r.sanji.min}；五福在${r.wufu.palaceName}宫，大游在${r.dayou.palaceName}宫。`);
+  L.push(`十精：天乙${r.shijing.tianyi}、地乙${r.shijing.diyi}、直符${r.shijing.zhifu}、四神${r.shijing.sishen}、小游${r.shijing.xiaoyou}。`);
+  L.push(`数和－主算：${r.heshu.zhu.text} 客算：${r.heshu.ke.text}`);
+  const sj = r.shenjiang || {};
+  if (sj.rows) {
+    const goods = sj.goods && sj.goods.length ? sj.goods.join('、') : '无';
+    const bads = sj.bads && sj.bads.length ? sj.bads.join('、') : '无';
+    L.push(`神将：${sj.stem}日（${sj.day ? '昼贵' : '夜贵'}）起${sj.startBranch}、${sj.dir > 0 ? '顺' : '逆'}行；在吉神下的有 ${goods}；在凶神下的有 ${bads}。`);
+  }
+  if (r.verdict) L.push(`判辞：${r.verdict.label}。`);
+  L.push(`月计：太乙在${r.month.taiyi.palaceName}宫（第${r.month.taiyi.unitInPalace}月），天目${r.month.mu.pos}（${r.month.mu.god}），计神在${r.month.jishen.branch}。`);
+  L.push(`日计：太乙在${r.day.taiyi.palaceName}宫（第${r.day.taiyi.unitInPalace}日），天目${r.day.mu.pos}（${r.day.mu.god}），计神在${r.day.jishen.branch}。`);
+  L.push(`时计：太乙在${r.hour.taiyi.palaceName}宫（第${r.hour.taiyi.unitInPalace}时），计神在${r.hour.jishen.branch}。${r.hour.note}`);
+  L.push(`卦象：${r.jixiong.label}——${r.jixiong.text}`);
+  L.push(`这一层到太乙、八门、文昌、计神、始击、主客算与四将、八种格局、定目、三基、五福、大游、十精、阴阳数和、月日时三计与古法吉凶；${r.scope.notCovered.join('、')}未收录。`);
+  return L.join('\n');
+}
+
+function wuyunliuqiText(r) {
+  const L = [];
+  L.push(`【运气年】${r.year.ganzhi}　${r.year.nian} 年（大寒界：${r.year.startTime} — ${r.year.endTime}）`);
+  L.push(`【中运】${r.zhongyun.text}`);
+  L.push(`【司天在泉】${r.sitian.qi}司天　${r.zaiquan.qi}在泉`);
+  L.push(`【当前】${r.current.text}`);
+  L.push('【客运五步】');
+  for (const s of r.keYun) L.push(`  ${s.no} ${s.name}（${s.taiShao}）　${s.startTime} — ${s.endTime}`);
+  L.push('【客气六步】');
+  for (const s of r.keQi) {
+    const tag = s.sitian ? '（司天）' : s.zaiquan ? '（在泉）' : '';
+    L.push(`  ${s.no} ${s.qi}${tag}　${s.startTime} — ${s.endTime}`);
+  }
+  const sp = [];
+  if (r.special.taiYi) sp.push('太乙天符');
+  if (r.special.tianFu && !r.special.taiYi) sp.push('天符');
+  if (r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+  if (r.special.tongTianFu) sp.push('同天符');
+  if (r.special.tongSuiHui) sp.push('同岁会');
+  if (sp.length) L.push(`【特殊】${sp.join('、')}`);
+  L.push(`【组合】${r.combo.text}`);
+  L.push(`【边界】${r.scope.note}`);
+  return L.join('\n');
+}
+function constitutionText(r) {
+  return [
+    `【中医体质】${r.primary.name}（主）${r.primary.level === '是' ? '' : `·${r.primary.level}`}　转化分 ${r.primary.converted}`,
+    r.secondary ? `兼夹：${r.secondary.name}（${r.secondary.converted}）${r.mingled.length ? '；同判为「是」：' + r.mingled.join('、') : ''}` : '',
+    '九种体质转化分（偏颇质 ≥40 判是、30–39 有倾向）：',
+    r.scales.map((x) => `· ${x.name}：${x.converted}${x.level === '否' ? '' : `（${x.level}）`}`).join('\n'),
+    r.primary.oneLine,
+    r.primary.tendency,
+    '调养方向：',
+    r.care.map((c) => '· ' + c).join('\n'),
+    r.note,
+  ].filter(Boolean).join('\n');
+}
+
+function constitutionPaperText(p) {
+  return [
+    `【中医体质·问卷】${p.scaleCount} 种体质 × ${p.itemsPerScale} 题，共 ${p.total} 题`,
+    '打分：' + p.scale.map((x) => `${x.v}=${x.label}`).join('　'),
+    p.howto,
+    p.note,
+  ].join('\n');
+}
+
 function mbtiText(r) {
   const dims = r.dims.map((d) => {
     const side = d.picked === d.left ? d.leftSay : d.rightSay;
@@ -30106,6 +31964,9 @@ function renderText(result) {
 
 
 
+
+
+
 // C3 对话桥替代：深链编解码、表单还原、三档复制包（面板与独立页共用一份）
 
 // 问事解读提示：把一张盘打包成「先答他所问、不堆术语、回到现实核对」的提示，供面板一键复制
@@ -30123,11 +31984,11 @@ const { plainSummary } = (__mods['plain-summary'] || {});
 
 
 
-return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDateTime, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildTrace, traceMarkdown, encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys, askLink, parseAskLink, formOf, restNote, askPackages, buildEventPrompt, ASK_KINDS, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, normalizeLongitudes, renderText };
+return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDateTime, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildConstitution, buildWuyunliuqi, buildTaiyi, buildTrace, traceMarkdown, encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys, askLink, parseAskLink, formOf, restNote, askPackages, buildEventPrompt, ASK_KINDS, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, normalizeLongitudes, renderText };
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.67.1";
+window.__MP_VER = "0.70.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -30248,7 +32109,7 @@ window.__MP_VER = "0.67.1";
   --tri:#eef0ea;--soul:#f7ece9;--sel:#f5efe9;--link:#f0efe9;
   --red:#a02c26;--red-rgb:160,44,38;--lu:#3d5a52;--lu-rgb:61,90,82;
   --quan:#6e5a2e;--quan-rgb:110,90,46;--ke:#3a5568;--ke-rgb:58,85,104;--ji:#a02c26;
-  --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
+  --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:var(--on-accent);--wx-metal:#8a6b1f;
   --tg-bi:#4e5d6b;--tg-shi:#55685c;--tg-cai:#6e5a2e;--tg-guan:#8a4a42;--tg-yin:#5d5570;
   /* 之前 mp-cli / mp-qt / mp-cl / 起名卡里引用了 --ink3、--fx、--sans，却从未定义：
      var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。 */
@@ -30857,6 +32718,77 @@ window.__MP_VER = "0.67.1";
 /* 三柱盘提示：表下一行，别让人以为漏画了一列 */
 .pp-warn{margin:8px 0 0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--quan) 34%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--quan) 10%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.55}
 /* 顶部人话总结：第一屏唯一的「先说结论」块，边框与留白都比盘面重一档 */
+.mp-wl-h{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:7px}
+.mp-wl-y{font-size:15px;font-weight:700}
+.mp-wl-z{font-weight:600;color:var(--lu)}
+.mp-wl-m,.mp-wl-tm,.mp-wl-tg,.mp-wl-no{font-size:11px;color:var(--label)}
+.mp-wl-tag{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border-radius:999px;background:var(--band)}
+.mp-wl-tag.on{background:var(--lu);color:var(--on-accent)}
+.mp-wl-sec,.mp-wl-note{font-size:13px;line-height:1.6;padding-bottom:5px}
+.mp-wl-sec em{font-style:normal;margin-right:6px}
+.mp-wl-steps{display:flex;flex-direction:column;gap:3px}
+.mp-wl-step{display:grid;grid-template-columns:16px 1fr 34px auto;gap:7px;font-size:12px;padding:3px 7px;border-radius:7px}
+.mp-wl-step.on{background:var(--band);font-weight:600}
+.mp-ty-h{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;padding-bottom:7px}
+.mp-ty-y{font-size:15px;font-weight:700}
+.mp-ty-j{font-weight:600;color:var(--lu)}
+.mp-ty-m{font-size:11px;color:var(--label)}
+.mp-ty-plain{padding:9px 2px 10px;border-top:1px solid var(--hair);margin-top:8px}
+.mp-ty-plain p{margin:0 0 6px;font-size:13px;line-height:1.65;color:var(--ink2)}
+.mp-ty-plain .mp-ty-lead{font-size:14px;font-weight:600;color:var(--ink)}
+.mp-ty-plain .mp-ty-close{font-size:12px;color:var(--label);margin-bottom:0}
+.mp-ty-det{margin-top:4px}
+.mp-ty-det summary{cursor:pointer;font-size:12px;color:var(--label);padding:4px 0}
+.mp-ty-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:2px 0 8px}
+.mp-ty-cell{position:relative;border-radius:8px;background:var(--band);padding:7px 6px;text-align:center;font-size:12px;min-height:50px}
+.mp-ty-cell b{display:block;font-size:13px}
+.mp-ty-cell em{font-style:normal;font-size:11px;color:var(--label)}
+.mp-ty-cell.on{background:var(--lu);color:var(--on-accent)}
+.mp-ty-cell.on em{color:rgba(255,255,255,.82)}
+.mp-ty-cell.mid{opacity:.5}
+.mp-ty-mark{position:absolute;top:3px;right:4px;font-style:normal;font-size:10px;padding:0 4px;border-radius:999px;background:var(--on-accent);color:var(--lu)}
+.mp-ty-jx{font-weight:600}
+.mp-ty-jx.xiong{color:var(--red)}
+.mp-ty-jx.buhe{color:var(--quan)}
+.mp-ty-jx.daji{color:var(--lu);font-weight:700}
+.mp-ty-jx.ji{color:var(--lu)}
+.mp-ty-mark.s{top:19px;background:var(--band);color:var(--ink2)}
+.mp-ty-mark.w{right:auto;left:4px;color:var(--ink2)}
+.mp-ty-sec{font-size:13px;line-height:1.6;padding-bottom:4px}
+.mp-ty-sec em{font-style:normal;margin-right:6px;color:var(--label)}
+.mp-ty-note{font-size:11px;line-height:1.6;color:var(--label)}
+.mp-cs{border-radius:12px;overflow:hidden;background:var(--label);border:1px solid var(--hair)}
+.mp-cs-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--hair)}
+.mp-cs-main{font-size:20px;font-weight:800;letter-spacing:.04em}
+.mp-cs-meta{display:flex;flex-direction:column;gap:1px;flex:1 1 160px;min-width:0}
+.mp-cs-meta b{font-size:13px;font-weight:600;line-height:1.5}
+.mp-cs-meta i{font-size:12px;font-style:normal;color:var(--ink2)}
+.mp-cs-count{font-size:12px;color:var(--ink2);white-space:nowrap}
+.mp-cs-bars{display:flex;flex-direction:column;gap:5px;padding:10px 12px 8px}
+.mp-cs-row{display:grid;grid-template-columns:52px 1fr 30px 52px;align-items:center;gap:8px;font-size:12px;line-height:1.4}
+.mp-cs-row.main{font-weight:700}
+.mp-cs-n{white-space:nowrap}
+.mp-cs-track{position:relative;height:8px;border-radius:999px;background:var(--band)}
+.mp-cs-track i{display:block;height:100%;border-radius:999px;background:var(--dimline)}
+.mp-cs-track i.on{background:var(--lu)}
+.mp-cs-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--label)}
+.mp-cs-v{text-align:right;color:var(--ink)}
+.mp-cs-l{color:var(--ink2);font-size:11px}
+.mp-cs-sec{padding:2px 12px 6px;font-size:13px;line-height:1.7}
+.mp-cs-sec em{display:inline-block;margin-right:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;background:var(--band);color:var(--ink2)}
+.mp-cs-care{padding:4px 12px 8px;font-size:13px;line-height:1.7}
+.mp-cs-care b{display:block;margin-bottom:2px}
+.mp-cs-care ul{margin:0;padding-left:18px}
+.mp-cs-note{padding:6px 12px 10px;font-size:12px;line-height:1.6;color:var(--ink2)}
+.mp-cs-paper{padding:8px 12px;font-size:13px;line-height:1.7}
+.mp-cs-paper ol{margin:6px 0;padding-left:20px}
+.mp-cs-paper li{margin:2px 0}
+.mp-cs-no{display:inline-block;min-width:22px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.mp-cs-paper li em{margin-left:6px;font-style:normal;font-size:11px;color:var(--ink2)}
+.mp-cs-paper .mp-cs-h{display:flex;align-items:center;gap:10px;padding:0 0 6px}
+.mp-cs-paper .mp-cs-h i{font-size:12px;font-style:normal;color:var(--ink2)}
+.mp-cs-paper .mp-cs-count{font-size:12px;color:var(--ink2)}
+.mp-cs-paper .mp-cs-note{font-size:12px;color:var(--ink2)}
 .mp-br{margin:0 0 12px;padding:14px 16px 12px;border:1px solid color-mix(in srgb,var(--red) 26%,var(--line));border-radius:12px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--red) 6%,var(--card)),var(--card));color:var(--ink)}
 .mp-br-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -33958,6 +35890,152 @@ window.__MP_VER = "0.67.1";
   }
   pp.profilesAgo = profAgo;
 
+  // ── 卦例库（本机命例集）────────────────────────────────────────
+  // 存「这一次问的事」而不是「这个人」：同一个人可攒很多条，每条带应验状态。
+  // 只存输入 + 一句摘要，不存盘面（一份结果几十 KB，几百条就撑爆 5MB 配额）；
+  // 回看拿同一组参数重排，面板的 replay 走的就是这条路。
+  const CASE_KEY = 'dsh-metaphysics/cases-v1';
+  const CASE_MAX = 480;
+  const CASE_STATUS = ['pending', 'hit', 'miss', 'void'];
+  const CASE_STATUS_LABEL = { pending: '待验', hit: '应验', miss: '未应', void: '作废' };
+  const CASE_NOTE_MAX = 120;
+  pp.CASE_KEY = CASE_KEY;
+  pp.CASE_MAX = CASE_MAX;
+  pp.CASE_STATUS = CASE_STATUS;
+  pp.caseStatusLabel = (s) => CASE_STATUS_LABEL[s] || CASE_STATUS_LABEL.pending;
+
+  /** 同样是外部输入（手改/写坏/半条）：逐字段验，坏条目整条丢，别让它排出一张不存在的盘 */
+  function caseClean(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (!isStr(raw.id) || !raw.id || raw.id.length > 64) return null;
+    const e = raw.entry;
+    if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+    if (!isStr(e.kind) || PROF_KINDS.indexOf(e.kind) < 0) return null;
+    // 回看至少要有一套能交给 run() 的参数：出生盘有日期，起卦类有时间或所问之事
+    if (!isStr(e.date) && !isStr(e.time) && !isStr(e.question)) return null;
+    const at = Number(raw.at || e.at) || 0;
+    if (!at) return null;
+    return {
+      id: raw.id,
+      at,
+      status: CASE_STATUS.indexOf(raw.status) >= 0 ? raw.status : 'pending',
+      note: isStr(raw.note) ? raw.note.slice(0, CASE_NOTE_MAX) : '',
+      question: isStr(e.question) ? e.question.slice(0, 80) : '',
+      entry: e,
+    };
+  }
+
+  function caseReadRaw() {
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(CASE_KEY) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  function caseSave(list) {
+    if (!window.localStorage) return false; // 没有存储就别报成功
+    try {
+      window.localStorage.setItem(CASE_KEY, JSON.stringify(list.slice(0, CASE_MAX)));
+      return true;
+    } catch (e) { return false; }
+  }
+  pp.casesSave = caseSave;
+
+  /** 新的在前；同一毫秒内按 id 兜底，保证两次渲染顺序一致 */
+  pp.casesLoad = function () {
+    return caseReadRaw().map(caseClean).filter(Boolean)
+      .sort((a, b) => (b.at - a.at) || (a.id < b.id ? 1 : -1));
+  };
+
+  pp.casesNewId = function () {
+    const taken = {};
+    caseReadRaw().forEach((x) => { if (x && x.id) taken[x.id] = 1; });
+    let id = '';
+    for (let i = 0; i < 8; i += 1) {
+      id = 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+      if (!taken[id]) break;
+    }
+    return id;
+  };
+
+  /** 一分钟内参数完全相同的只留一条（连点排盘会重复）；其余照收 */
+  pp.casesAdd = function (entry, opt) {
+    const o = opt || {};
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      return { ok: false, list: pp.casesLoad() };
+    }
+    // 取已排好序的列表：FIFO 淘汰靠这个顺序，直接用原始数组会淘汰错那一头
+    const list = pp.casesLoad();
+    const at = Number(entry.at) || Date.now();
+    const dup = list.some((x) => x.at > at - 60000 && x.entry.kind === entry.kind
+      && x.entry.date === entry.date && x.entry.time === entry.time
+      && (x.entry.question || '') === (entry.question || '')
+      && (x.entry.lines || '') === (entry.lines || ''));
+    if (dup) return { ok: true, dup: true, list: pp.casesLoad() };
+
+    const item = caseClean({
+      id: pp.casesNewId(),
+      at,
+      status: o.status || 'pending',
+      note: o.note || '',
+      entry,
+    });
+    if (!item) return { ok: false, list: pp.casesLoad() };
+    // FIFO：超上限淘汰最旧的
+    const next = [item].concat(list.filter((x) => x.id !== item.id)).slice(0, CASE_MAX);
+    if (!caseSave(next)) return { ok: false, list: pp.casesLoad() };
+    return { ok: true, item, list: next };
+  };
+
+  pp.casesSetStatus = function (id, status) {
+    if (CASE_STATUS.indexOf(status) < 0) return pp.casesLoad();
+    const list = caseReadRaw().map(caseClean).filter(Boolean)
+      .map((x) => (x.id === id ? Object.assign({}, x, { status }) : x));
+    if (!caseSave(list)) return pp.casesLoad();
+    return list;
+  };
+
+  pp.casesRemove = function (id) {
+    const list = caseReadRaw().map(caseClean).filter(Boolean).filter((x) => x.id !== id);
+    if (!caseSave(list)) return pp.casesLoad();
+    return list;
+  };
+
+  /** 导出 JSONL：一行一条 */
+  pp.casesExport = function (list) {
+    const src = Array.isArray(list) ? list : pp.casesLoad();
+    return src.map((x) => JSON.stringify({
+      id: x.id, at: x.at, atISO: new Date(x.at).toISOString(),
+      kind: x.entry.kind, label: isStr(x.entry.label) ? x.entry.label : '',
+      question: x.question, status: x.status, note: x.note, params: x.entry,
+    })).join('\n');
+  };
+
+  /** 把旧的「最近排过」并进来（幂等：迁过的 id 带 h- 前缀） */
+  pp.casesMigrate = function (histList) {
+    const src = Array.isArray(histList) ? histList : [];
+    if (!src.length) return { added: 0, list: pp.casesLoad() };
+    const list = caseReadRaw().map(caseClean).filter(Boolean);
+    const seen = {};
+    list.forEach((x) => { seen[x.id] = 1; });
+    let added = 0;
+    for (let i = 0; i < src.length; i += 1) {
+      const h = src[i];
+      if (!h || typeof h !== 'object' || !isStr(h.kind)) continue;
+      const at = Number(h.at) || 0;
+      const id = `h-${at || '0'}-${i}-${h.kind}`;
+      if (seen[id]) continue;
+      const item = caseClean({ id, at: at || Date.now(), status: 'pending', entry: h });
+      if (!item) continue;
+      seen[id] = 1;
+      list.push(item);
+      added += 1;
+    }
+    if (added) caseSave(list.sort((a, b) => b.at - a.at));
+    return { added, list: pp.casesLoad() };
+  };
+
   const PROF_GENDER = { male: '♂', female: '♀' };
 
   /**
@@ -34156,6 +36234,188 @@ window.__MP_VER = "0.67.1";
    * 十六型人格：四维净分条 + 类型倾向 + 优势/留意 + 认知功能栈 + 工作/关系/学习。
    * 未答题时（引擎回问卷）改渲染题目清单，供照着逐题打分。
    */
+  // 中医体质：九条转化分横条 + 判定线 40 + 调养方向。
+  // 分数是数值，直接插；文字一律走 esc（check-html-sinks 按「调用了 esc」核对）。
+  // 太乙神数：九宫地盘 + 太乙/文昌落点 + 八门 + 五元六纪。
+  // 地盘按「南上北下」排：巽离坤 / 震中兑 / 艮坎乾。中五宫太乙不入，只作方位补全。
+  // 太乙、八门、文昌、计神、始击、主客算与四将都是算实的；定目、三基五福十精、击格不在盘上出现。
+  pp.taiyiHTML = function (r) {
+    if (!r || !r.taiyi || !r.meta) return '';
+    const t = r.taiyi;
+    const wc = r.wenchang || {};
+    const sj = r.shiji || {};
+    const js = r.jishen || {};
+    const su = r.suan || {};
+    const jj = r.jiang || {};
+    const gj = r.geju || {};
+    const grid = [[9, '巽'], [2, '离'], [7, '坤'], [4, '震'], [5, '中'], [6, '兑'], [3, '艮'], [8, '坎'], [1, '乾']];
+    const cells = grid.map((c) => {
+      const num = c[0];
+      const nm = c[1];
+      const on = t.palace === num;
+      const w = wc.num === num;
+      const sjOn = sj.palace === num;
+      const marks = (on ? '<i class="mp-ty-mark">太乙</i>' : '') + (sjOn ? '<i class="mp-ty-mark s">始击</i>' : '') + (w ? '<i class="mp-ty-mark w">文昌</i>' : '');
+      return `<div class="mp-ty-cell${on ? ' on' : ''}${nm === '中' ? ' mid' : ''}"><b>${esc(nm)}</b><em>${num}</em>${marks}</div>`;
+    }).join('');
+    const nc = (r.scope && r.scope.notCovered) || [];
+    const mo = r.month || {};
+    const da = r.day || {};
+    const ho = r.hour || {};
+    const monthN = (mo.taiyi && mo.taiyi.palaceName) || '';
+    const monthU = String((mo.taiyi && mo.taiyi.unitInPalace) || '');
+    const monthMu = mo.mu ? mo.mu.pos + '（' + mo.mu.god + '）' : '';
+    const monthJs = (mo.jishen && mo.jishen.branch) || '';
+    const dayN = (da.taiyi && da.taiyi.palaceName) || '';
+    const dayU = String((da.taiyi && da.taiyi.unitInPalace) || '');
+    const dayMu = da.mu ? da.mu.pos + '（' + da.mu.god + '）' : '';
+    const dayJs = (da.jishen && da.jishen.branch) || '';
+    const hourN = (ho.taiyi && ho.taiyi.palaceName) || '';
+    const hourU = String((ho.taiyi && ho.taiyi.unitInPalace) || '');
+    const hourJs = (ho.jishen && ho.jishen.branch) || '';
+    const jx = r.jixiong || {};
+    const vd = r.verdict || {};
+    const vdGrade = vd.grade || jx.grade || 'xiong';
+    const vdLabel = vd.label || jx.label || '凶';
+    const sjj = r.shenjiang || {};
+    const sjLine = sjj.rows
+      ? `${sjj.stem}日、${sjj.day ? '昼贵' : '夜贵'}起${sjj.startBranch}${sjj.dir > 0 ? '顺' : '逆'}行；吉神下：${(sjj.goods || []).join('、') || '无'}；凶神下：${(sjj.bads || []).join('、') || '无'}`
+      : '未排';
+    const jxGrade = jx.grade || 'xiong';
+    const jxLabel = jx.label || '凶';
+    const gateName = (r.gate && r.gate.gate) || '';
+    // 八种格局翻成日常话，一个词只翻一次
+    const SAY = {
+      掩: '客方的目和太乙挤在同一格',
+      击: '始击挨在太乙左右',
+      格: '太乙和始击隔一格正面对上',
+      对: '文昌从对面顶过来',
+      提: '客大将和文昌挤在一格',
+      迫: '有将贴得太近，就在太乙前后一格',
+      囚: '有将被关在太乙那一格里',
+      关: '主客两边的人撞在一处',
+    };
+    const hits = (gj.list || []).map((x) => {
+      const k = String(x).charAt(0);
+      return SAY[k] ? k + '——' + SAY[k] : String(x);
+    });
+    const lead = jxGrade === 'xiong'
+      ? `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判凶：主客两边有几样撞到了一起。`
+      : jxGrade === 'daji'
+        ? `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判大吉：位置和数都顺，门也在吉道上。`
+        : jxGrade === 'buhe'
+          ? `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判不和：位置不冲突，但数上不合。`
+          : `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判吉：位置不冲突。`;
+    return `<section class="mp-ty" aria-label="太乙神数">
+      <div class="mp-ty-h">
+        <span class="mp-ty-y">${esc(String(r.meta.year))} 年</span>
+        <span class="mp-ty-j">${esc(r.meta.dunText || '')}${esc(String(r.meta.ju))}局</span>
+        <span class="mp-ty-m">太乙临 ${esc(t.palaceName || '')} 宫</span>
+        <span class="mp-ty-m">${esc(gateName)}</span>
+      </div>
+      <div class="mp-ty-g">${cells}</div>
+      <div class="mp-ty-plain">
+        <p class="mp-ty-lead">${esc(lead)}</p>
+        <p>先看太乙落在哪一格——那是「主」这一年的位置，整张盘围着它转。</p>
+        <p>${esc(gateName)}门一值三十年，管的是这三十年的大环境，不是今年单一年的事。</p>
+        <p>判${esc(jxLabel)}，是因为${esc(hits.length ? hits.join('；') : '八种位置关系一个都没犯')}。</p>
+        <p class="mp-ty-close">这一层只摆位置和数，不回答事情成不成；想看每一步怎么来的，展开下面的细目。</p>
+      </div>
+      <details class="mp-ty-det">
+        <summary>细目（想核对推导再展开）</summary>
+        <div class="mp-ty-sec"><em>太乙</em>第 ${esc(String(t.palace || ''))} 宫（${esc(t.dir || '')}），三年里的第 ${esc(String(t.yearInPalace || ''))} 年，${esc(t.li || '')}</div>
+        <div class="mp-ty-sec"><em>八门</em>${esc(gateName)}　八门三十年一转，1954 年从休门起</div>
+        <div class="mp-ty-sec"><em>文昌</em>${esc(wc.pos || '')}（${esc(wc.god || '')}，${esc(wc.palaceName || '')}宫）　十八年一周</div>
+        <div class="mp-ty-sec"><em>定目</em>${esc((r.dingmu && r.dingmu.pos) || '')}（${esc((r.dingmu && r.dingmu.god) || '')}）　<em>三基</em>君${esc((r.sanji && r.sanji.jun) || '')} 臣${esc((r.sanji && r.sanji.chen) || '')} 民${esc((r.sanji && r.sanji.min) || '')}</div>
+        <div class="mp-ty-sec"><em>五福</em>${esc((r.wufu && r.wufu.palaceName) || '')}宫　<em>大游</em>${esc((r.dayou && r.dayou.palaceName) || '')}宫　<em>十精</em>天乙${esc((r.shijing && r.shijing.tianyi) || '')} 地乙${esc((r.shijing && r.shijing.diyi) || '')} 直符${esc((r.shijing && r.shijing.zhifu) || '')}</div>
+        <div class="mp-ty-sec"><em>数和</em>主算 ${esc((r.heshu && r.heshu.zhu && r.heshu.zhu.text) || '')}　客算 ${esc((r.heshu && r.heshu.ke && r.heshu.ke.text) || '')}</div>
+        <div class="mp-ty-sec"><em>月计</em>太乙在 ${esc(monthN)} 宫（第 ${esc(monthU)} 月）　天目 ${esc(monthMu)}　计神 ${esc(monthJs)}</div>
+        <div class="mp-ty-sec"><em>日计</em>太乙在 ${esc(dayN)} 宫（第 ${esc(dayU)} 日）　天目 ${esc(dayMu)}　计神 ${esc(dayJs)}</div>
+        <div class="mp-ty-sec"><em>时计</em>太乙在 ${esc(hourN)} 宫（第 ${esc(hourU)} 时）　计神 ${esc(hourJs)}</div>
+        <div class="mp-ty-sec"><em>吉凶</em><b class="mp-ty-jx ${esc(vdGrade)}">${esc(vdLabel)}</b> ${esc((r.jixiong && r.jixiong.text) || '')}</div>
+        <div class="mp-ty-sec"><em>神将</em>${esc(sjLine)}</div>
+        <div class="mp-ty-sec"><em>计神</em>${esc(js.branch || '')}（${esc(js.god || '')}）　<em>始击</em>${esc(sj.pos || '')}（${esc(sj.god || '')}，${esc(sj.palaceName || '')}宫）</div>
+        <div class="mp-ty-sec"><em>主算</em>${esc(String(su.zhu || ''))}　主大将${esc(jj.zhuDaName || '')}宫　主参将${esc(jj.zhuCanName || '')}宫</div>
+        <div class="mp-ty-sec"><em>客算</em>${esc(String(su.ke || ''))}　客大将${esc(jj.keDaName || '')}宫　客参将${esc(jj.keCanName || '')}宫</div>
+        <div class="mp-ty-sec"><em>格局</em>${gj.list && gj.list.length ? esc(gj.list.join('；')) : '四将不相犯，没有掩、迫、囚、格、关'}</div>
+        <div class="mp-ty-sec"><em>积年</em>${esc(String(r.meta.jinian || ''))}　残年 ${esc(String(r.meta.rest360 || ''))}　${esc(r.year ? r.year.jiName : '')}${esc(r.year ? String(r.year.jiYear) : '')}年　${esc(r.year ? r.year.yuanName : '')}第 ${esc(r.year ? String(r.year.yuanYear) : '')} 年</div>
+        <div class="mp-ty-note">算到太乙、八门、文昌、计神、始击、主客算与四将、五种格局；${esc(nc.join('、'))}未收录，盘上不显示。将落中五时只标数不加宫名。</div>
+      </details>
+    </section>`;
+  };
+
+  pp.wuyunliuqiHTML = function (r) {
+    if (!r || !r.zhongyun || !r.year) return '';
+    const z = r.zhongyun;
+    const cur = r.current || {};
+    const sp = [];
+    if (r.special && r.special.taiYi) sp.push('太乙天符');
+    if (r.special && r.special.tianFu && !r.special.taiYi) sp.push('天符');
+    if (r.special && r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+    if (r.special && r.special.tongTianFu) sp.push('同天符');
+    if (r.special && r.special.tongSuiHui) sp.push('同岁会');
+    const rows = (list, isQi) => (list || []).map((s) => {
+      const nm = isQi ? s.qi : s.name;
+      const on = isQi ? !!(cur.keQi && cur.keQi.qi === s.qi) : !!(cur.keYun && cur.keYun.name === s.name);
+      const tag = isQi ? (s.sitian ? '司天' : s.zaiquan ? '在泉' : '') : (s.taiShao || '');
+      return `<div class="mp-wl-step${on ? ' on' : ''}"><span class="mp-wl-no">${s.no}</span><span>${esc(nm || '')}</span><span class="mp-wl-tg">${esc(tag)}</span><span class="mp-wl-tm">${esc(s.startTime || '')}—${esc(s.endTime || '')}</span></div>`;
+    }).join('');
+    const tags = sp.map((x) => `<span class="mp-wl-tag on">${esc(x)}</span>`).join('');
+    return `<section class="mp-wl" aria-label="五运六气">
+      <div class="mp-wl-h">
+        <span class="mp-wl-y">${esc(r.year.ganzhi)}</span>
+        <span class="mp-wl-z">${esc(z.name)}</span>
+        <span class="mp-wl-m">${esc(r.year.startTime || '')} — ${esc(r.year.endTime || '')}</span>
+      </div>
+      ${tags ? `<div class="mp-wl-sec"><em>格局</em>${tags}</div>` : ''}
+      <div class="mp-wl-sec"><em>司天在泉</em>${esc(r.sitian.qi)}司天　${esc(r.zaiquan.qi)}在泉</div>
+      <div class="mp-wl-sec"><em>此刻</em>${esc(cur.text || '')}</div>
+      <div class="mp-wl-sec"><em>客运五步</em></div>
+      <div class="mp-wl-steps">${rows(r.keYun, false)}</div>
+      <div class="mp-wl-sec"><em>客气六步</em></div>
+      <div class="mp-wl-steps">${rows(r.keQi, true)}</div>
+      <div class="mp-wl-note">${esc(r.scope ? r.scope.note : '')}</div>
+    </section>`;
+  };
+
+  pp.constitutionHTML = function (r) {
+    if (!r) return '';
+    if (r.paper && Array.isArray(r.questions)) {
+      const items = r.questions.map((q) => `<li><span class="mp-cs-no">${q.no}</span><span class="mp-cs-t">${esc(q.text)}</span><em>${esc(q.name)}</em></li>`).join('');
+      return `<section class="mp-cs-paper" aria-label="中医体质问卷">
+        <div class="mp-cs-h"><span><b>中医体质问卷</b><i>${r.scaleCount} 种体质 × ${r.itemsPerScale} 题 · 1 没有 / 5 总是</i></span>
+        <span class="mp-cs-count">填完分数再看结果</span></div>
+        <ol>${items}</ol>
+        <div class="mp-cs-note">${esc(r.note || '')}</div>
+      </section>`;
+    }
+    const p = r.primary || {};
+    const rows = (r.scales || []).map((s) => {
+      const v = Math.max(0, Math.min(100, s.converted || 0));
+      const on = s.level && s.level !== '否';
+      const main = p.key === s.key;
+      return `<div class="mp-cs-row${main ? ' main' : ''}">
+        <span class="mp-cs-n">${esc(s.name)}</span>
+        <span class="mp-cs-track"><i class="${on ? 'on' : ''}" style="width:${v}%"></i><b class="mp-cs-tick" style="left:40%"></b></span>
+        <span class="mp-cs-v">${v}</span>
+        <span class="mp-cs-l">${esc(s.level || '')}</span>
+      </div>`;
+    }).join('');
+    const care = (r.care || []).map((c) => `<li>${esc(c)}</li>`).join('');
+    return `<section class="mp-cs" aria-label="中医体质结果">
+      <div class="mp-cs-h">
+        <span class="mp-cs-main">${esc(p.name || '—')}</span>
+        <span class="mp-cs-meta"><b>${esc(p.oneLine || '')}</b><i>${r.secondary ? `兼夹 ${esc(r.secondary.name)}（${Math.round(r.secondary.converted)}）` : '无兼夹'}${r.flat ? ' · 区分度不足' : ''}</i></span>
+        <span class="mp-cs-count">已答 ${r.meta ? r.meta.answered : 0}/${r.meta ? r.meta.total : 0} 题</span>
+      </div>
+      <div class="mp-cs-bars">${rows}</div>
+      <div class="mp-cs-sec"><em>这体质</em>${esc(p.trait || '')}</div>
+      <div class="mp-cs-sec"><em>倾向</em>${esc(p.tendency || '')}</div>
+      <div class="mp-cs-care"><b>调养方向</b><ul>${care}</ul></div>
+      <div class="mp-cs-note">${esc(r.note || '')}</div>
+    </section>`;
+  };
+
   pp.mbtiHTML = function (r) {
     if (!r) return '';
     if (r.needAnswers && Array.isArray(r.questions)) {
@@ -34684,7 +36944,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   function activate(next) {
     setTab(next);
     recordRecent(next);
-    if (next === 'mbti') mbEnter(); else run();
+    if (next === 'mbti') mbEnter();
+    else if (next === 'constitution') csEnter();
+    else run();
   }
 
   // ── 我的命盘（本机档案）────────────────────────────────────────
@@ -34843,6 +37105,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
     mbti: 'none',
+  constitution: 'none',
+    wuyunliuqi: 'date',
+    taiyi: 'date',
   };
   const SAMPLE = { date: '1990-05-12', time: '14:30' };
   const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -34878,6 +37143,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。',
     name: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。',
     mbti: '十六型人格是一份 MBTI 风格问卷：24 题分 6 页，每题按 1（完全不像）到 5（很像我）打分；答满 12 题就能出结果。',
+  constitution: '中医体质是九种体质各 5 题的自评问卷：45 题分 9 页，每题按 1（没有）到 5（总是）打分；答满 27 题就能出结果，按转化分判主次体质并给调养方向，不是医学诊断。',
   };
 
   // 问事的体系必须写清「所问之事」，解读才有落点；命盘类（八字/紫微）不问事，不显示这两项
@@ -34938,7 +37204,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   /** 当前 tab 是否真的用到日期/时刻（塔罗、人格不看时间；梅花「数字起卦」也不用）
    *  与 syncMhMode 里的显隐共用这一处判断：字段既然藏起来了，run() 就不能拿它拦人。 */
   function usesTimeInput() {
-    return tab !== 'tarot' && tab !== 'mbti' && !(tab === 'meihua' && mhMode === 'number');
+    return tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && !(tab === 'meihua' && mhMode === 'number');
   }
 
   /** 用户手动改了日期或时刻 */
@@ -35329,7 +37595,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     markAskInvalid(false);
     const args = { system: tab };
     // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
-    args.shadow = tab !== 'mbti';
+    args.shadow = tab !== 'mbti' && tab !== 'constitution';
     // 推导链只覆盖六爻 / 八字 / 紫微
     args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
@@ -35398,7 +37664,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
         if (el('changing').value !== '') args.changing = Number(el('changing').value);
       }
     }
-    if (tab === 'tarot') args.count = Number(el('tcount') ? el('tcount').value : 3) || 3;
+    if (tab === 'tarot') args.spread = (el('tcount') && el('tcount').value) || 'three';
     // 速查类：各体系自己的最小输入
     if (tab === 'zeri') {
       args.startDate = date;
@@ -35435,6 +37701,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       delete args.datetime;
       const nums = mbAnswersForEngine();
       if (nums.length) args.answers = nums;
+    }
+    if (tab === 'constitution') {
+      // 体质问卷不剪尾：引擎按题位对齐九种体质，null 表示跳过，长度必须还是 45
+      delete args.datetime;
+      args.answers = csAns.slice();
     }
     if (tab === 'trend' && hourUnknown) args.hourUnknown = true;
     // 性别 / 出生地 / 两个开关已在上面的出生盘分支里给齐，这里只补 K 线自己的参数
@@ -35522,6 +37793,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : tab === 'name' ? window.__PP.nameHTML(r)
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
+                          : tab === 'constitution' ? window.__PP.constitutionHTML(r)
+                            : tab === 'wuyunliuqi' ? window.__PP.wuyunliuqiHTML(r)
+                            : tab === 'taiyi' ? window.__PP.taiyiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
       // 新盘就是新的一轮：上一次的自评、贴合度、候选时辰不能跟着贴到这张盘上
@@ -35560,6 +37834,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     recordRecent(tab);
     // 人格问卷没有时间可补：先看答够没有，再走同一套计算
     if (tab === 'mbti') { mbSubmit(); return; }
+    if (tab === 'constitution') { csSubmit(); return; }
     const k = kindOf(tab);
     if (k !== 'none' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
     run();
@@ -35583,7 +37858,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
   }
 
-  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
 
   // 窄屏下 tab 栏是单行横滑：切到靠后的 tab 时把它滚到可视区中间，
   // 否则点了「人格」页面变了、高亮却停在屏幕外，看着像没响应
@@ -35613,6 +37888,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     el('for-qimen').style.display = tab === 'qimen' ? '' : 'none';
     const fm = el('for-mbti');
     if (fm) fm.style.display = tab === 'mbti' ? '' : 'none';
+    const csForm = el('for-constitution');
+    if (csForm) csForm.style.display = tab === 'constitution' ? '' : 'none';
     const fq = el('for-quick');
     if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
@@ -35640,10 +37917,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
           : QUICK.indexOf(tab) >= 0 ? '看结果'
             : birth ? '排盘' : '起卦';
     // 人格问卷自带「看结果」和「清空」：底部再放一个主按钮就是两个一样的入口
-    const mbtiOn = tab === 'mbti';
-    el('go').style.display = mbtiOn ? 'none' : '';
+    const quizOn = tab === 'mbti' || tab === 'constitution';
+    el('go').style.display = quizOn ? 'none' : '';
     const sampleBtn = el('sample');
-    if (sampleBtn) sampleBtn.style.display = mbtiOn ? 'none' : '';
+    if (sampleBtn) sampleBtn.style.display = quizOn ? 'none' : '';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
@@ -35688,6 +37965,165 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (el('qk-convert-lunar')) el('qk-convert-lunar').style.display = convMode === 'lunar2solar' ? '' : 'none';
   }
 
+  // ── 中医体质（P4）：9 种体质各 5 题、一页 5 题的分页问卷 ─────────
+  // 题面与 1–5 的说法都从引擎卷子取；答案按题位存在 csAns 里（长度固定 45，null = 跳过）。
+  const CS_PER_PAGE = 5;
+  const CS_MIN = 27;
+  let csPaper = null;
+  let csAns = [];
+  let csPage = 0;
+
+  function ensureCsPaper() {
+    if (csPaper) return csPaper;
+    let p = null;
+    try { p = window.Engine.compute({ system: 'constitution' }); } catch (e) { p = null; }
+    const questions = (p && p.questions) || [];
+    csPaper = { total: (p && p.total) || questions.length, questions, scale: (p && p.scale) || [] };
+    csAns = new Array(csPaper.total).fill(null);
+    return csPaper;
+  }
+
+  function csAnswered() {
+    let n = 0;
+    for (let i = 0; i < csAns.length; i += 1) if (csAns[i] != null) n += 1;
+    return n;
+  }
+
+  function csScaleSay(n) {
+    const hit = (csPaper && csPaper.scale ? csPaper.scale : []).filter((x) => x && x.v === n)[0];
+    return hit ? hit.label : String(n);
+  }
+
+  function csPageCount() {
+    return Math.max(1, Math.ceil((csPaper ? csPaper.total : 0) / CS_PER_PAGE));
+  }
+
+  function refreshCsMeta() {
+    const total = csPaper ? csPaper.total : 0;
+    const answered = csAnswered();
+    const pages = csPageCount();
+    const count = el('cs-count');
+    if (count) count.textContent = `第 ${csPage + 1} / ${pages} 页 · 已答 ${answered} / ${total}`;
+    const fill = el('cs-fill');
+    if (fill) fill.style.width = total ? `${Math.round((answered / total) * 100)}%` : '0%';
+    const prev = el('cs-prev');
+    if (prev) prev.disabled = csPage <= 0;
+    const next = el('cs-next');
+    if (next) next.style.display = csPage >= pages - 1 ? 'none' : '';
+    const sub = el('cs-submit');
+    if (sub) sub.disabled = answered < CS_MIN;
+    const hint = el('cs-hint');
+    if (hint) {
+      hint.classList.remove('warn');
+      hint.textContent = answered >= CS_MIN
+        ? `已够 ${CS_MIN} 题，可以看结果；答完 ${total} 题会更准。`
+        : `答满 ${CS_MIN} 题可先看结果（还差 ${CS_MIN - answered} 题）。`;
+    }
+  }
+
+  /** 用 createElement 拼题干：题面来自引擎，少一层 innerHTML 就少一个注入面 */
+  function renderCs() {
+    const host = el('cs-qs');
+    if (!host) return;
+    const paper = ensureCsPaper();
+    csPage = Math.min(Math.max(0, csPage), csPageCount() - 1);
+    const start = csPage * CS_PER_PAGE;
+    host.textContent = '';
+    paper.questions.slice(start, start + CS_PER_PAGE).forEach((q, k) => {
+      const i = start + k;
+      const row = document.createElement('div');
+      row.className = 'mb-q';
+      const qt = document.createElement('div');
+      qt.className = 'mb-qt';
+      const no = document.createElement('b');
+      no.textContent = pad(i + 1);
+      const tx = document.createElement('span');
+      tx.textContent = q.text;
+      qt.append(no, tx);
+      const opts = document.createElement('div');
+      opts.className = 'mb-opts';
+      opts.setAttribute('role', 'radiogroup');
+      opts.setAttribute('aria-label', `第 ${i + 1} 题`);
+      [1, 2, 3, 4, 5].forEach((n) => {
+        const lab = document.createElement('label');
+        lab.className = 'mb-o' + (csAns[i] === n ? ' on' : '');
+        const inp = document.createElement('input');
+        inp.type = 'radio';
+        inp.name = `csq${i}`;
+        inp.value = String(n);
+        inp.checked = csAns[i] === n;
+        const b = document.createElement('b');
+        b.textContent = String(n);
+        const say = document.createElement('span');
+        say.textContent = csScaleSay(n);
+        lab.append(inp, b, say);
+        opts.appendChild(lab);
+      });
+      row.append(qt, opts);
+      host.appendChild(row);
+    });
+    refreshCsMeta();
+  }
+
+  function onCsPick(e) {
+    const inp = e.target;
+    if (!inp || inp.type !== 'radio' || String(inp.name || '').indexOf('csq') !== 0) return;
+    const i = Number(String(inp.name).slice(3));
+    if (!Number.isInteger(i) || i < 0 || i >= csAns.length) return;
+    csAns[i] = Number(inp.value) || null;
+    const row = inp.closest('.mb-q');
+    if (row) row.querySelectorAll('.mb-o').forEach((lab) => lab.classList.toggle('on', lab.contains(inp)));
+    refreshCsMeta();
+  }
+
+  function csTurn(delta) {
+    csPage = Math.min(Math.max(0, csPage + delta), csPageCount() - 1);
+    renderCs();
+    const box = el('for-constitution');
+    if (box && box.scrollIntoView) box.scrollIntoView({ block: 'nearest' });
+  }
+
+  function csNudge() {
+    const hint = el('cs-hint');
+    if (hint) {
+      hint.classList.add('warn');
+      hint.textContent = `至少答 ${CS_MIN} 题才能出结果，还差 ${Math.max(0, CS_MIN - csAnswered())} 题。`;
+    }
+    const host = el('cs-qs');
+    if (host) {
+      const rows = host.querySelectorAll('.mb-q');
+      for (let k = 0; k < rows.length; k += 1) {
+        if (csAns[csPage * CS_PER_PAGE + k] == null) {
+          const inp = rows[k].querySelector('input');
+          if (inp && inp.focus) inp.focus({ preventScroll: true });
+          break;
+        }
+      }
+    }
+    const box = el('for-constitution');
+    if (box && box.scrollIntoView) box.scrollIntoView({ block: 'nearest' });
+  }
+
+  function csClear() {
+    csAns = new Array(csPaper ? csPaper.total : 0).fill(null);
+    csPage = 0;
+    renderCs();
+    if (last && last.tab === 'constitution') { last = null; el('out').replaceChildren(); }
+  }
+
+  function csSubmit() {
+    if (csAnswered() < CS_MIN) { csNudge(); return; }
+    recordRecent('constitution');
+    run();
+  }
+
+  /** 切到体质 tab：答够了就直接出结果，否则清空结果区，只留问卷 */
+  function csEnter() {
+    renderCs();
+    if (csAnswered() >= CS_MIN) { run(); return; }
+    last = null;
+    el('out').replaceChildren();
+  }
   // ── 十六型人格：4 题一页的分页问卷 ──────────────────────────────
   // 题目与 1–5 的说法都从引擎取（compute 不带 answers 就回问卷），
   // 前端不再抄一份题目表；答案按题序存在 mbAns 里，null = 未答。
@@ -35899,6 +38335,19 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       if (mbSub) mbSub.addEventListener('click', mbSubmit);
       const mbClr = el('mbti-clear');
       if (mbClr) mbClr.addEventListener('click', mbClear);
+    }
+    const csHost = el('cs-qs');
+    if (csHost) {
+      renderCs();
+      csHost.addEventListener('change', onCsPick);
+      const csPrev = el('cs-prev');
+      if (csPrev) csPrev.addEventListener('click', () => csTurn(-1));
+      const csNext = el('cs-next');
+      if (csNext) csNext.addEventListener('click', () => csTurn(1));
+      const csSub = el('cs-submit');
+      if (csSub) csSub.addEventListener('click', csSubmit);
+      const csClr = el('cs-clear');
+      if (csClr) csClr.addEventListener('click', csClear);
     }
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.addEventListener('click', () => {
       mhMode = b.dataset.mode;
