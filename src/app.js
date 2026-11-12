@@ -890,7 +890,10 @@ function chartHTML(result) {
   // 挪到盘面之后：先看牌 / 卦，再看一句人话，然后才是技术信息。
   // 方框内容全部经过 esc，内部不可能出现 </section>，找第一处就是它的结尾。
   const end = html.startsWith('<section class="mp-br"') ? html.indexOf('</section>') : -1;
-  return end < 0 ? html : html.slice(end + 10) + html.slice(0, end + 10);
+  const body = end < 0 ? html : html.slice(end + 10);
+  const tail = end < 0 ? '' : html.slice(0, end + 10);
+  // 盘面之后插一段「说人话」，再是「先说结论」方框；太乙自带白话层，不重复插。
+  return body + PP.plainHTML(result.r) + tail;
 }
 
 function castRow(props) {

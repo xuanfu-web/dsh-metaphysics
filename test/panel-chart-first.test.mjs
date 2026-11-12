@@ -21,7 +21,8 @@ eq('分支顺序与原分派一致',
   'ziwei,bazi,meihua,daliuren,qimen,hepan,tarot,liuyao,chenggu,almanac,zeri,trend,name,mbti,constitution,wuyunliuqi,taiyi,fengshui');
 
 const renderers = [...new Set([...chart.matchAll(/PP\.([a-zA-Z]+HTML)\(/g)].map((m) => m[1]))];
-ok('渲染器去重后 21 个（18 体系 + trend/qimenFacts/ziweiHepan + quickHTML 兜底）', renderers.length === 21, renderers.join(','));
+// plainHTML 是「说人话」层，不是盘面渲染器，但它也叫 *HTML，会被同一个正则抓到，所以计 22。
+ok('渲染器去重后 22 个（18 体系 + trend/qimenFacts/ziweiHepan + quickHTML + plainHTML）', renderers.length === 22, renderers.join(','));
 ok('盘面函数只做分派，不掺技术块',
   !/perfHTML|revisionHTML|handleHTML|shadowHTML|traceHTML|caliberHTML/.test(chart),
   renderers.join(','));
@@ -31,8 +32,8 @@ ok('没有裸逗号收尾', !/PP\.quickHTML\(result\.r\),\s*\}/.test(chart));
 // 「先说结论」方框：panel-kit 侧钉着「方框在盘面之前」，结果卡要盘面第一，
 // 所以在 chartHTML 里把它剥下来挪到盘面之后——渲染器不改，只有顺序变。
 ok('按开头是不是 mp-br 方框来判断', chart.includes("html.startsWith('<section class=\"mp-br\"')"), chart.slice(-300));
-ok('剥下来的段接到盘面之后', /html\.slice\(end \+ 10\) \+ html\.slice\(0, end \+ 10\)/.test(chart), chart.slice(-200));
-ok('没命中时原样返回', /return end < 0 \? html :/.test(chart));
+ok('剥下来的段接到盘面之后', /const body = end < 0 \? html : html\.slice\(end \+ 10\);/.test(chart), chart.slice(-260));
+ok('没命中时原样返回', /const body = end < 0 \? html :/.test(chart));
 
 // ── ② 结果卡拼接顺序 ──────────────────────────────────────────
 const iHtml = app.indexOf('__html: chartHTML(result)');
@@ -61,4 +62,17 @@ fn: {
   eq('chartHTML 调用一次', n('__html: chartHTML\\(result\\)'), 1);
   eq('perf 一处', n('PP\\.perfHTML\\(perf\\)'), 1);
   eq('trace 一处', n('PP\\.traceHTML\\(result\\.r\\.trace'), 1);
+
+// ── 结果卡「说人话」层 ─────────────────────────────────────────────
+{
+  const appSrc = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+  const pkSrc = fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8');
+
+  ok('panel-kit 有 pp.plainHTML', pkSrc.includes('pp.plainHTML = function'));
+  ok('太乙跳过白话层（自带一套）', pkSrc.includes("r.system === 'taiyi'"));
+  ok('三组读法齐全', ['SAY.cast', 'SAY.person', 'SAY.day'].every((x) => pkSrc.includes(x)));
+  ok('输出带 mp-pl 外壳', pkSrc.includes('class="mp-pl"') && pkSrc.includes('mp-pl-lead'));
+  ok('chartHTML 把白话接在盘面之后', appSrc.includes('return body + PP.plainHTML(result.r) + tail;'));
+  ok('白话层不预测成败', !/必成|一定|注定/.test(pkSrc.slice(pkSrc.indexOf('pp.plainHTML'), pkSrc.indexOf('pp.taiyiHTML'))));
+}
 }

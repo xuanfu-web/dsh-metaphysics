@@ -361,7 +361,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.70.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">命</span><span class="brand-txt">命理排盘<span class="ver">v0.71.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -679,7 +679,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：177 个测试文件 / 10072 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：177 个测试文件 / 10078 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -19545,6 +19545,8 @@ function verdictOf(o) {
 }
 
 /** 《太乙金镜式经》这一层覆盖的算法清单（面板与文案都从这里取） */
+
+
 const TAIYI_SCOPE = {
   covered: [
     '太乙积年与五元六纪',
@@ -31988,7 +31990,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.70.0";
+window.__MP_VER = "0.71.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -32733,6 +32735,9 @@ window.__MP_VER = "0.70.0";
 .mp-ty-y{font-size:15px;font-weight:700}
 .mp-ty-j{font-weight:600;color:var(--lu)}
 .mp-ty-m{font-size:11px;color:var(--label)}
+.mp-pl{padding:8px 2px 2px;margin-top:6px}
+.mp-pl-lead{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--ink)}
+.mp-pl-how{margin:0;font-size:13px;line-height:1.6;color:var(--ink2)}
 .mp-ty-plain{padding:9px 2px 10px;border-top:1px solid var(--hair);margin-top:8px}
 .mp-ty-plain p{margin:0 0 6px;font-size:13px;line-height:1.65;color:var(--ink2)}
 .mp-ty-plain .mp-ty-lead{font-size:14px;font-weight:600;color:var(--ink)}
@@ -36239,6 +36244,24 @@ window.__MP_VER = "0.70.0";
   // 太乙神数：九宫地盘 + 太乙/文昌落点 + 八门 + 五元六纪。
   // 地盘按「南上北下」排：巽离坤 / 震中兑 / 艮坎乾。中五宫太乙不入，只作方位补全。
   // 太乙、八门、文昌、计神、始击、主客算与四将都是算实的；定目、三基五福十精、击格不在盘上出现。
+
+  // 盘面下一句人话 + 怎么读；太乙自带白话层，返回空避重复。
+  const PC = ' liuyao tarot meihua daliuren qimen xiaoliuren ';
+  const PD = ' almanac zeri convert star numerology wuyunliuqi ';
+  const SAY = {
+    cast: '先看卦名或牌名——事情此刻的样子；再看动爻、正逆位，变化在那里。',
+    person: '先找「你」那一格（日主、命宫或主质）；再看被强调的字或星。',
+    day: '先看今天值什么，再看宜忌那几栏。',
+  };
+  pp.plainHTML = function (r) {
+    if (!r || r.system === 'taiyi') return '';
+    const lead = (r.brief && r.brief.lead) || '';
+    if (!lead) return '';
+    const s = ' ' + String(r.system || '') + ' ';
+    const say = PC.indexOf(s) >= 0 ? SAY.cast : PD.indexOf(s) >= 0 ? SAY.day : SAY.person;
+    return '<div class="mp-pl"><p class="mp-pl-lead">' + esc(lead) + '</p><p class="mp-pl-how">' + esc(say) + '</p></div>';
+  };
+
   pp.taiyiHTML = function (r) {
     if (!r || !r.taiyi || !r.meta) return '';
     const t = r.taiyi;
@@ -37779,7 +37802,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       if (window.Engine.caliberCompare) {
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
-      const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
+      const chart0 = (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
@@ -37798,6 +37821,12 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
                             : tab === 'taiyi' ? window.__PP.taiyiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
+      // 独立页按和面板一样的口径：盘面第一、白话其次、结论方框最后（早前只在 app.js 做，独立页没跟上）。
+      const cut = chart0.startsWith('<section class="mp-br"') ? chart0.indexOf('</section>') : -1;
+      const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '')
+        + (cut < 0 ? chart0 : chart0.slice(cut + 10))
+        + window.__PP.plainHTML(r)
+        + (cut < 0 ? '' : chart0.slice(0, cut + 10));
       // 新盘就是新的一轮：上一次的自评、贴合度、候选时辰不能跟着贴到这张盘上
       // （它们只在模块里存着，重绘不会自己清）。
       pastMarks = {}; pastFit = null; rectOut = null;

@@ -1000,7 +1000,7 @@
       if (window.Engine.caliberCompare) {
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
-      const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '') + (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
+      const chart0 = (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
         : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
@@ -1019,6 +1019,12 @@
                             : tab === 'taiyi' ? window.__PP.taiyiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
+      // 独立页按和面板一样的口径：盘面第一、白话其次、结论方框最后（早前只在 app.js 做，独立页没跟上）。
+      const cut = chart0.startsWith('<section class="mp-br"') ? chart0.indexOf('</section>') : -1;
+      const html = (lineWarn ? `<div class="note">${lineWarn}</div>` : '')
+        + (cut < 0 ? chart0 : chart0.slice(cut + 10))
+        + window.__PP.plainHTML(r)
+        + (cut < 0 ? '' : chart0.slice(0, cut + 10));
       // 新盘就是新的一轮：上一次的自评、贴合度、候选时辰不能跟着贴到这张盘上
       // （它们只在模块里存着，重绘不会自己清）。
       pastMarks = {}; pastFit = null; rectOut = null;

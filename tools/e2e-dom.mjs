@@ -394,6 +394,38 @@ for (const t of TABS) {
     await p4.waitForTimeout(900);
     const len = await p4.evaluate(() => (document.getElementById('out') || {}).innerHTML.length || 0);
     ok(len > 800, '窄屏 · 出结果', String(len));
+    const hasPl = await p4.evaluate(() => !!document.querySelector('#out .mp-pl'));
+    ok(hasPl, '窄屏 · 八字结果有说人话层');
+
+    // 太乙：九宫格必须还是三列 grid。早前 mp-ty 样式只写在 app.js，独立页没有，
+    // 手机上九宫退化成竖排一列——这条就是钉那次的回归。
+    const tyTab = p4.locator('[data-tab="taiyi"]');
+    const tn = await tyTab.count();
+    let tyHit = false;
+    for (let i = 0; i < tn; i++) { const el = tyTab.nth(i); if (await el.isVisible()) { await el.click(); tyHit = true; break; } }
+    if (tyHit) {
+      const g2 = p4.locator('#go');
+      if (await g2.count() && await g2.isVisible()) await g2.click();
+      await p4.waitForTimeout(900);
+      const ty = await p4.evaluate(() => {
+        const grid = document.querySelector('#out .mp-ty-g');
+        if (!grid) return { has: false };
+        const cs = getComputedStyle(grid);
+        return {
+          has: true,
+          display: cs.display,
+          cols: cs.gridTemplateColumns.split(' ').filter(Boolean).length,
+          plain: !!document.querySelector('#out .mp-ty-plain'),
+          mark: document.querySelectorAll('#out .mp-ty-cell').length,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        };
+      });
+      ok(ty.has && ty.display === 'grid', '窄屏 · 太乙九宫是 grid', JSON.stringify(ty));
+      ok(ty.cols === 3, '窄屏 · 九宫三列', String(ty.cols));
+      ok(ty.mark === 9, '窄屏 · 九格齐全', String(ty.mark));
+      ok(ty.plain, '窄屏 · 太乙有白话总解');
+      ok(ty.overflow <= 2, '窄屏 · 太乙结果无横向溢出', String(ty.overflow));
+    }
     await p4.screenshot({ path: path.join(root, '_e2e-mobile.png'), fullPage: false });
     console.log('      窄屏截图：' + path.join(root, '_e2e-mobile.png'));
   }

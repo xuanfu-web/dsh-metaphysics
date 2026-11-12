@@ -634,6 +634,9 @@
 .mp-ty-y{font-size:15px;font-weight:700}
 .mp-ty-j{font-weight:600;color:var(--lu)}
 .mp-ty-m{font-size:11px;color:var(--label)}
+.mp-pl{padding:8px 2px 2px;margin-top:6px}
+.mp-pl-lead{margin:0 0 4px;font-size:14px;font-weight:600;color:var(--ink)}
+.mp-pl-how{margin:0;font-size:13px;line-height:1.6;color:var(--ink2)}
 .mp-ty-plain{padding:9px 2px 10px;border-top:1px solid var(--hair);margin-top:8px}
 .mp-ty-plain p{margin:0 0 6px;font-size:13px;line-height:1.65;color:var(--ink2)}
 .mp-ty-plain .mp-ty-lead{font-size:14px;font-weight:600;color:var(--ink)}
@@ -4140,6 +4143,24 @@
   // 太乙神数：九宫地盘 + 太乙/文昌落点 + 八门 + 五元六纪。
   // 地盘按「南上北下」排：巽离坤 / 震中兑 / 艮坎乾。中五宫太乙不入，只作方位补全。
   // 太乙、八门、文昌、计神、始击、主客算与四将都是算实的；定目、三基五福十精、击格不在盘上出现。
+
+  // 盘面下一句人话 + 怎么读；太乙自带白话层，返回空避重复。
+  const PC = ' liuyao tarot meihua daliuren qimen xiaoliuren ';
+  const PD = ' almanac zeri convert star numerology wuyunliuqi ';
+  const SAY = {
+    cast: '先看卦名或牌名——事情此刻的样子；再看动爻、正逆位，变化在那里。',
+    person: '先找「你」那一格（日主、命宫或主质）；再看被强调的字或星。',
+    day: '先看今天值什么，再看宜忌那几栏。',
+  };
+  pp.plainHTML = function (r) {
+    if (!r || r.system === 'taiyi') return '';
+    const lead = (r.brief && r.brief.lead) || '';
+    if (!lead) return '';
+    const s = ' ' + String(r.system || '') + ' ';
+    const say = PC.indexOf(s) >= 0 ? SAY.cast : PD.indexOf(s) >= 0 ? SAY.day : SAY.person;
+    return '<div class="mp-pl"><p class="mp-pl-lead">' + esc(lead) + '</p><p class="mp-pl-how">' + esc(say) + '</p></div>';
+  };
+
   pp.taiyiHTML = function (r) {
     if (!r || !r.taiyi || !r.meta) return '';
     const t = r.taiyi;

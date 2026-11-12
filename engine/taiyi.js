@@ -286,6 +286,8 @@ export function verdictOf(o) {
 }
 
 /** 《太乙金镜式经》这一层覆盖的算法清单（面板与文案都从这里取） */
+
+
 export const TAIYI_SCOPE = {
   covered: [
     '太乙积年与五元六纪',
