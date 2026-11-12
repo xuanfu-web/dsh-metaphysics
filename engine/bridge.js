@@ -26,6 +26,9 @@ const SYSTEM_LABEL = {
   qimen: '奇门', hepan: '合盘', tarot: '塔罗', almanac: '黄历', zeri: '择日',
   chenggu: '称骨', xiaoliuren: '小六壬', star: '星座', numerology: '生命数字',
   mbti: '人格', trend: '人生K线', fengshui: '风水', name: '起名', convert: '农历',
+  constitution: '体质',
+  wuyunliuqi: '运气',
+  taiyi: '太乙',
 };
 
 const labelOf = (system) => SYSTEM_LABEL[system] || system || '未知体系';

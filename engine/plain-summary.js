@@ -615,6 +615,131 @@ function trendSummary(r) {
  * @param {object} r compute() 的结果
  * @returns {null|{system,title,chips,lead,sections,advice,caveat,footer}}
  */
+/**
+ * 中医体质：主质一条、次高一条、调养三条。
+ * 判定线是公开标准的口径，这里不改；问卷区分度不足时照实说（flat），别硬给一个主质。
+ */
+/**
+ * 五运六气：一句总纲、四段（气候底色 / 当前运与气 / 被强调的脏腑 / 常见不适）。
+ * 特殊格局（天符岁会那一类）只放在 caveat 里点一句，不喧宾夺主。
+ */
+function taiyiSummary(r) {
+  const t = r.taiyi;
+  const sec = [
+    {
+      h: '太乙落在哪一宫',
+      t: `${t.palaceName}宫（${t.dir}），这是三年里的第 ${t.yearInPalace} 年，对应「${t.li}」。太乙三年换一宫，走的是八宫、不入中五，所以在盘面上永远看不到它落在中间。`,
+    },
+    {
+      h: '八门这三十年',
+      t: `${r.gate.gate}。八门三十年一转，1954 年从休门起，顺序是休、生、伤、杜、景、死、惊、开，所以一个门要值三十年，不是每年都换。`,
+    },
+    {
+      h: '文昌在哪',
+      t: `文昌在${r.wenchang.pos}（${r.wenchang.god}，${r.wenchang.palaceName}宫）。文昌十八年一周，阳局从申起、阴局从寅起，路上遇乾、坤各数两次，所以要数满十八步才回到原点。`,
+    },
+    {
+      h: '计神、始击与主客算',
+      t: `计神在${r.jishen.branch}，始击在${r.shiji.pos}（${r.shiji.god}）。主算 ${r.suan.zhu}、客算 ${r.suan.ke}：大将按算数的个位落宫（整十归一），参将是大将乘三的个位。四个将分别落在${r.jiang.zhuDaName}、${r.jiang.keDaName}、${r.jiang.zhuCanName}、${r.jiang.keCanName}宫。`,
+    },
+    {
+      h: '定目、三基与五福',
+      t: `定目在${r.dingmu.pos}（${r.dingmu.god}）：淘金歌讲「以合神加太岁」，把合神搬到太岁处，天目跟着转过去，落点就是定目。三基——君基${r.sanji.jun}（三十年一移）、臣基${r.sanji.chen}（三年一移）、民基${r.sanji.min}（一年一移）；五福在${r.wufu.palaceName}宫（四十五年一移），大游在${r.dayou.palaceName}宫（三十六年一移、逆数）。十精另五位：天乙${r.shijing.tianyi}、地乙${r.shijing.diyi}、直符${r.shijing.zhifu}、四神${r.shijing.sishen}、小游${r.shijing.xiaoyou}。`,
+    },
+    {
+      h: '阴阳数和',
+      t: `主算：${r.heshu.zhu.text}客算：${r.heshu.ke.text}这一段只说「和不和」，上和、次和、下和是算数落在特定数上的分级，不据此断胜负。`,
+    },
+    {
+      h: '卦象吉凶',
+      t: `${r.jixiong.label}。${r.jixiong.text}${r.jixiong.note}判据出自卷一《推太公考时法》，只标吉凶，不推成与不成。`,
+    },
+    {
+      h: '神将与判辞',
+      t: (() => {
+        const sj = r.shenjiang;
+        if (!sj || !sj.rows) return '这一盘没有排神将。';
+        const goods = sj.goods && sj.goods.length ? '在吉神下的：' + sj.goods.join('、') : '没有将落在吉神下';
+        const bads = sj.bads && sj.bads.length ? '在凶神下的：' + sj.bads.join('、') : '没有将落在凶神下';
+        const v = r.verdict ? '合起来判「' + r.verdict.label + '」。' : '';
+        return '按日干起十二神（' + sj.stem + '日、' + (sj.day ? '昼贵' : '夜贵') + '、贵人临' + sj.startBranch + (sj.dir > 0 ? '顺' : '逆') + '行），' + goods + '；' + bads + '。' + v + '这一层是古人拿十二神看四将落位的办法，只说明古法怎么判，不是对事情的预测。';
+      })(),
+    },
+    {
+      h: '这一盘算到哪一层',
+      t: `积年 ${r.meta.jinian}，残年 ${r.meta.rest360}，${r.meta.dunText}${r.meta.ju}局。太乙、八门、文昌、计神、始击、主客算与四将、掩迫囚格关、定目、三基、五福、大游、十精、阴阳数和、月日时三计、古法吉凶都在；${r.scope.notCovered.join('、')}这几项没有收录，盘面上也不显示。`,
+    },
+  ];
+  return {
+    system: 'taiyi',
+    title: '先看这一张',
+    chips: [`${r.meta.year}年`, `${r.meta.dunText}${r.meta.ju}局`, `${t.palaceName}宫`].filter(Boolean),
+    lead: `${r.meta.year} 年太乙：${r.meta.dunText}${r.meta.ju}局，太乙临 ${t.palaceName} 宫（${t.dir}），八门值 ${r.gate.gate}。`,
+    sections: sec,
+    advice: [
+      `先看太乙落在哪：${t.palaceName}宫${t.dir}，这三年的大方向就在这一格，别拿它当每年的细节来读。`,
+      `八门十年一变的说法常被混用，这里按三十年一转的口径——${r.gate.gate}值这三十年，不是今年才轮到。`,
+      '太乙是象数盘，给的是位置的对应关系，不是「今年会发生什么」的判决。',
+    ],
+    caveat: `这一层到太乙、八门、文昌、计神、始击、主客算与四将、八种格局、定目、三基、五福、大游、十精与阴阳数和；${r.scope.notCovered.join('；')}都未收录，别按它们解读。`,
+    footer: '太乙年家用积年推局，与八字按立春换年、运气按大寒分年都不同口径，三套不要互相印证。',
+  };
+}
+function wuyunliuqiSummary(r) {
+  const sp = [];
+  if (r.special.taiYi) sp.push('太乙天符');
+  if (r.special.tianFu && !r.special.taiYi) sp.push('天符');
+  if (r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+  if (r.special.tongTianFu) sp.push('同天符');
+  if (r.special.tongSuiHui) sp.push('同岁会');
+  const sec = [
+    { h: '这一年的气候底色', t: r.combo.text },
+    { h: '此刻在哪个运、哪口气', t: r.current.text },
+    { h: '被强调的脏腑', t: `中运主${r.zhongyun.organ}：传统上这样描述——${r.zhongyun.effect.organ}。${r.zhongyun.effect.sign}` },
+    { h: '今年常被说到的身体反应', t: `上半年（${r.sitian.qi}司天）：${r.sitian.climate.sign}；下半年（${r.zaiquan.qi}在泉）：${r.zaiquan.climate.sign}` },
+  ];
+  return {
+    system: 'wuyunliuqi',
+    title: '先看这一张',
+    chips: [`${r.year.ganzhi}年`, r.zhongyun.name, `${r.sitian.qi}司天`].filter(Boolean),
+    lead: `${r.year.ganzhi} 运气年：中运${r.zhongyun.name}，${r.sitian.qi}司天、${r.zaiquan.qi}在泉。`,
+    sections: sec,
+    advice: [
+      `顺着「${r.zhongyun.nature}」来调：${r.zhongyun.tai ? '本气偏胜，别再加码，先把被克的那一头护住' : '本气不足，别硬扛，先补本气再谈其他'}。`,
+      `这一年偏「${r.sitian.climate.climate}」，起居上按这个方向做减法，比按季节硬套更贴。`,
+      '运气盘给的是「今年偏什么」，不是「你会得什么病」；有具体不适看医生。',
+    ],
+    caveat: sp.length
+      ? `特殊格局：${sp.join('、')}。${r.special.notes.join('')}`
+      : '这一年在格局上没有天符、岁会那一类标记，按中运与司天在泉的常例读就好。',
+    footer: '运气年以大寒为界，与八字按立春定年柱不同；两套口径不要互相印证。',
+  };
+}
+function constitutionSummary(r) {
+  const p = r.primary;
+  const sec = [];
+  if (p) {
+    sec.push({ h: p.name + '是什么', t: (p.oneLine || '') + (p.trait ? ' ' + p.trait : '') });
+    if (p.tendency) sec.push({ h: '容易被影响的地方', t: p.tendency });
+  }
+  const second = (r.top || []).find((x) => p && x.name !== p.name);
+  if (second) sec.push({ h: '次高的一项', t: `${second.name} ${second.converted} 分（${second.level}）——它常和主质一起出现，调的时候顺手带上。` });
+  return {
+    system: 'constitution',
+    title: '先看这一张',
+    chips: [p ? p.name : '未判定', r.pinghe ? `平和 ${r.pinghe.converted}` : '', r.meta ? `${r.meta.answered}/${r.meta.total} 题` : ''].filter(Boolean),
+    lead: p
+      ? `主体质是「${p.name}」${p.level === '是' ? '' : `（${p.level}，未完全达判定线）`}，转化分 ${p.converted}；平和质 ${r.pinghe ? r.pinghe.converted : '—'} 分。`
+      : '这份问卷还没答够，先别急着对号入座。',
+    sections: sec,
+    advice: (r.care || []).slice(0, 3),
+    caveat: r.flat
+      ? '每题都选了同一个选项，问卷对你的区分度不足——主质仅供参考，建议按最近一年的真实感受重答一遍。'
+      : '体质是长期倾向，不是病名，也不与八字、星座互证；有具体不适请就医。',
+    footer: '打分为自评，同一个人隔一个月再答可能差一档，看趋势比看单次结果有用。',
+  };
+}
+
 export function plainSummary(r) {
   if (!r || typeof r !== 'object') return null;
   if (r.system === 'bazi') return baziSummary(r);
@@ -626,5 +751,8 @@ export function plainSummary(r) {
   if (r.system === 'tarot') return tarotSummary(r);
   if (r.system === 'hepan') return hepanSummary(r);
   if (r.system === 'trend') return trendSummary(r);
+  if (r.system === 'constitution') return constitutionSummary(r);
+  if (r.system === 'wuyunliuqi') return wuyunliuqiSummary(r);
+  if (r.system === 'taiyi') return taiyiSummary(r);
   return null;
 }

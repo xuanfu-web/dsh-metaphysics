@@ -15,6 +15,7 @@
 import { CARD_LIB, CARD_COUNTS } from './tarot-cards.js';
 import { fail } from './fail.js';
 import { assertObject } from './validate.js';
+import { randomOf } from './random.js';
 
 const MAJOR = [
   ['愚者', '0', '新开始 冒险 纯真 无限可能', '鲁莽 逃避 原地打转 不切实际'],
@@ -183,6 +184,60 @@ const SPREADS = {
     { name: '潜在', hint: '尚未浮出水面、却在暗中推动的部分' },
   ],
 };
+
+// 命名牌阵：只认张数（1/3/5）时，问「两个人」「A 还是 B」都得自己拆成三轮来问。
+// 这里按问法给成套的位置表，张数由位置表长度决定；数字键那三套原样保留在后面兼容。
+const SPREAD_DEFS = {
+  one: { label: '单张指引', positions: SPREADS[1] },
+  three: { label: '过去现在未来', positions: SPREADS[3] },
+  five: { label: '五张局势', positions: SPREADS[5] },
+  celtic: {
+    label: '凯尔特十字',
+    positions: [
+      { name: '现状', hint: '问题此刻的真实位置，别再按印象猜' },
+      { name: '阻碍', hint: '横在中间、需要先跨过的那一件事' },
+      { name: '根基', hint: '埋在底下、已经成型的原因' },
+      { name: '过去', hint: '刚刚过去、余波仍在影响当下的部分' },
+      { name: '目标', hint: '你意识里想达成的方向，未必是真正想要的' },
+      { name: '近期', hint: '接下来几周会先落到的那一步' },
+      { name: '自我', hint: '你在这局里正扮演的角色与姿态' },
+      { name: '环境', hint: '别人的态度与外部的实际条件' },
+      { name: '希望与恐惧', hint: '你既想要又怕的那一面，常常是同一件事' },
+      { name: '结果', hint: '照现在这样走下去，事情大致停在哪里' },
+    ],
+  },
+  either: {
+    label: '二选一',
+    positions: [
+      { name: '现状', hint: '做选择之前，先看清脚下站的是什么' },
+      { name: 'A 的发展', hint: '选这一条，过程会怎么走' },
+      { name: 'A 的结果', hint: '选这一条，最后停在哪里' },
+      { name: 'B 的发展', hint: '选另一条，过程会怎么走' },
+      { name: 'B 的结果', hint: '选另一条，最后停在哪里' },
+    ],
+  },
+  relation: {
+    label: '关系阵',
+    positions: [
+      { name: '你', hint: '你在这段关系里的位置与状态' },
+      { name: '对方', hint: '对方此刻的位置与状态' },
+      { name: '关系现状', hint: '两个人之间正在发生的事' },
+      { name: '你的期待', hint: '你嘴上没说、心里想要的那件事' },
+      { name: '对方的期待', hint: '对方没说出口、在等的那件事' },
+      { name: '阻碍', hint: '卡在两人之间、谁都没先提的那层' },
+      { name: '走向', hint: '维持现状会滑向的位置' },
+    ],
+  },
+  timeflow: {
+    label: '时间流',
+    positions: [
+      { name: '眼下', hint: '这几天会先显出来的那件事' },
+      { name: '这阵子', hint: '几周到一两个月之间的推进' },
+      { name: '往后', hint: '更远一点的落点，只看方向不看日期' },
+    ],
+  },
+};
+const SPREAD_KEYS = ['one', 'three', 'five', 'celtic', 'either', 'relation', 'timeflow'];
 
 const COURT = ['侍从', '骑士', '王后', '国王'];
 // 宫廷牌的「牌位」＝这个角色在牌阵里通常顶替的位置（人物 or 自身的一个侧面），
@@ -415,22 +470,36 @@ export function tarotReading(input = {}) {
   return paras;
 }
 
-/** 抽牌：count 张，按牌阵给出位置。random 可注入（配合 seed 复现同一次抽牌） */
-export function drawTarot(input = {}) {
-  const { count: rawCount, question = '', at, random = Math.random } = input || {};
+/** 牌阵解析：spread（名字）优先，没给名字才退回 count（1/3/5） */
+function resolveSpread(rawSpread, rawCount) {
+  const name = String(rawSpread == null ? '' : rawSpread).trim().toLowerCase();
+  if (name) {
+    if (!SPREAD_DEFS[name]) {
+      throw fail('E_INPUT', `塔罗牌阵只能是 ${SPREAD_KEYS.join(' / ')}，收到「${rawSpread}」`);
+    }
+    return SPREAD_DEFS[name];
+  }
   let count = rawCount;
   if (count === undefined || count === null || count === '') count = 3;
   const n = Number(count);
   if (![1, 3, 5].includes(n)) {
-    throw fail('E_INPUT', `塔罗张数只能是 1 / 3 / 5，收到「${count}」`);
+    throw fail('E_INPUT', `塔罗张数只能是 1 / 3 / 5，收到「${rawCount}」`);
   }
-  const rand = typeof random === 'function' ? random : Math.random;
+  return { label: `${n} 张牌阵`, positions: SPREADS[n] };
+}
+
+/** 抽牌：count 张，按牌阵给出位置。random 可注入（配合 seed 复现同一次抽牌） */
+export function drawTarot(input = {}) {
+  const { count: rawCount, spread: rawSpread, question = '', at, random = randomOf() } = input || {};
+  const def = resolveSpread(rawSpread, rawCount);
+  const positions = def.positions;
+  const n = positions.length;
+  const rand = typeof random === 'function' ? random : randomOf();
   const deck = tarotDeck();
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
-  const positions = SPREADS[n];
   const cards = deck.slice(0, n).map((c, i) => {
     const upright = rand() < 0.5;
     const pos = positions[i];
@@ -468,11 +537,11 @@ export function drawTarot(input = {}) {
     system: 'tarot',
     question: q || null,
     castAt: stamp(at),
-    spread: `${n} 张牌阵（${positions.map((p) => p.name).join(' / ')}）`,
+    spread: `${def.label}（${positions.map((p) => p.name).join(' / ')}）`,
     cards,
     reading: tarotReading({ question: q, cards }),
     systemNote: SYSTEM_NOTE,
   };
 }
 
-export { MAJOR, SUITS, MINOR, ROMAN, SPREADS };
+export { MAJOR, SUITS, MINOR, ROMAN, SPREADS, SPREAD_DEFS, SPREAD_KEYS };

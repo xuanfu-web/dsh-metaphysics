@@ -10,7 +10,7 @@
   --tri:#eef0ea;--soul:#f7ece9;--sel:#f5efe9;--link:#f0efe9;
   --red:#a02c26;--red-rgb:160,44,38;--lu:#3d5a52;--lu-rgb:61,90,82;
   --quan:#6e5a2e;--quan-rgb:110,90,46;--ke:#3a5568;--ke-rgb:58,85,104;--ji:#a02c26;
-  --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:#fff;--wx-metal:#8a6b1f;
+  --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:var(--on-accent);--wx-metal:#8a6b1f;
   --tg-bi:#4e5d6b;--tg-shi:#55685c;--tg-cai:#6e5a2e;--tg-guan:#8a4a42;--tg-yin:#5d5570;
   /* 之前 mp-cli / mp-qt / mp-cl / 起名卡里引用了 --ink3、--fx、--sans，却从未定义：
      var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。 */
@@ -619,6 +619,77 @@
 /* 三柱盘提示：表下一行，别让人以为漏画了一列 */
 .pp-warn{margin:8px 0 0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--quan) 34%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--quan) 10%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.55}
 /* 顶部人话总结：第一屏唯一的「先说结论」块，边框与留白都比盘面重一档 */
+.mp-wl-h{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:7px}
+.mp-wl-y{font-size:15px;font-weight:700}
+.mp-wl-z{font-weight:600;color:var(--lu)}
+.mp-wl-m,.mp-wl-tm,.mp-wl-tg,.mp-wl-no{font-size:11px;color:var(--label)}
+.mp-wl-tag{display:inline-block;margin:0 6px 4px 0;padding:1px 8px;border-radius:999px;background:var(--band)}
+.mp-wl-tag.on{background:var(--lu);color:var(--on-accent)}
+.mp-wl-sec,.mp-wl-note{font-size:13px;line-height:1.6;padding-bottom:5px}
+.mp-wl-sec em{font-style:normal;margin-right:6px}
+.mp-wl-steps{display:flex;flex-direction:column;gap:3px}
+.mp-wl-step{display:grid;grid-template-columns:16px 1fr 34px auto;gap:7px;font-size:12px;padding:3px 7px;border-radius:7px}
+.mp-wl-step.on{background:var(--band);font-weight:600}
+.mp-ty-h{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;padding-bottom:7px}
+.mp-ty-y{font-size:15px;font-weight:700}
+.mp-ty-j{font-weight:600;color:var(--lu)}
+.mp-ty-m{font-size:11px;color:var(--label)}
+.mp-ty-plain{padding:9px 2px 10px;border-top:1px solid var(--hair);margin-top:8px}
+.mp-ty-plain p{margin:0 0 6px;font-size:13px;line-height:1.65;color:var(--ink2)}
+.mp-ty-plain .mp-ty-lead{font-size:14px;font-weight:600;color:var(--ink)}
+.mp-ty-plain .mp-ty-close{font-size:12px;color:var(--label);margin-bottom:0}
+.mp-ty-det{margin-top:4px}
+.mp-ty-det summary{cursor:pointer;font-size:12px;color:var(--label);padding:4px 0}
+.mp-ty-g{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:2px 0 8px}
+.mp-ty-cell{position:relative;border-radius:8px;background:var(--band);padding:7px 6px;text-align:center;font-size:12px;min-height:50px}
+.mp-ty-cell b{display:block;font-size:13px}
+.mp-ty-cell em{font-style:normal;font-size:11px;color:var(--label)}
+.mp-ty-cell.on{background:var(--lu);color:var(--on-accent)}
+.mp-ty-cell.on em{color:rgba(255,255,255,.82)}
+.mp-ty-cell.mid{opacity:.5}
+.mp-ty-mark{position:absolute;top:3px;right:4px;font-style:normal;font-size:10px;padding:0 4px;border-radius:999px;background:var(--on-accent);color:var(--lu)}
+.mp-ty-jx{font-weight:600}
+.mp-ty-jx.xiong{color:var(--red)}
+.mp-ty-jx.buhe{color:var(--quan)}
+.mp-ty-jx.daji{color:var(--lu);font-weight:700}
+.mp-ty-jx.ji{color:var(--lu)}
+.mp-ty-mark.s{top:19px;background:var(--band);color:var(--ink2)}
+.mp-ty-mark.w{right:auto;left:4px;color:var(--ink2)}
+.mp-ty-sec{font-size:13px;line-height:1.6;padding-bottom:4px}
+.mp-ty-sec em{font-style:normal;margin-right:6px;color:var(--label)}
+.mp-ty-note{font-size:11px;line-height:1.6;color:var(--label)}
+.mp-cs{border-radius:12px;overflow:hidden;background:var(--label);border:1px solid var(--hair)}
+.mp-cs-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--hair)}
+.mp-cs-main{font-size:20px;font-weight:800;letter-spacing:.04em}
+.mp-cs-meta{display:flex;flex-direction:column;gap:1px;flex:1 1 160px;min-width:0}
+.mp-cs-meta b{font-size:13px;font-weight:600;line-height:1.5}
+.mp-cs-meta i{font-size:12px;font-style:normal;color:var(--ink2)}
+.mp-cs-count{font-size:12px;color:var(--ink2);white-space:nowrap}
+.mp-cs-bars{display:flex;flex-direction:column;gap:5px;padding:10px 12px 8px}
+.mp-cs-row{display:grid;grid-template-columns:52px 1fr 30px 52px;align-items:center;gap:8px;font-size:12px;line-height:1.4}
+.mp-cs-row.main{font-weight:700}
+.mp-cs-n{white-space:nowrap}
+.mp-cs-track{position:relative;height:8px;border-radius:999px;background:var(--band)}
+.mp-cs-track i{display:block;height:100%;border-radius:999px;background:var(--dimline)}
+.mp-cs-track i.on{background:var(--lu)}
+.mp-cs-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--label)}
+.mp-cs-v{text-align:right;color:var(--ink)}
+.mp-cs-l{color:var(--ink2);font-size:11px}
+.mp-cs-sec{padding:2px 12px 6px;font-size:13px;line-height:1.7}
+.mp-cs-sec em{display:inline-block;margin-right:6px;padding:0 6px;border-radius:4px;font-style:normal;font-size:11px;background:var(--band);color:var(--ink2)}
+.mp-cs-care{padding:4px 12px 8px;font-size:13px;line-height:1.7}
+.mp-cs-care b{display:block;margin-bottom:2px}
+.mp-cs-care ul{margin:0;padding-left:18px}
+.mp-cs-note{padding:6px 12px 10px;font-size:12px;line-height:1.6;color:var(--ink2)}
+.mp-cs-paper{padding:8px 12px;font-size:13px;line-height:1.7}
+.mp-cs-paper ol{margin:6px 0;padding-left:20px}
+.mp-cs-paper li{margin:2px 0}
+.mp-cs-no{display:inline-block;min-width:22px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.mp-cs-paper li em{margin-left:6px;font-style:normal;font-size:11px;color:var(--ink2)}
+.mp-cs-paper .mp-cs-h{display:flex;align-items:center;gap:10px;padding:0 0 6px}
+.mp-cs-paper .mp-cs-h i{font-size:12px;font-style:normal;color:var(--ink2)}
+.mp-cs-paper .mp-cs-count{font-size:12px;color:var(--ink2)}
+.mp-cs-paper .mp-cs-note{font-size:12px;color:var(--ink2)}
 .mp-br{margin:0 0 12px;padding:14px 16px 12px;border:1px solid color-mix(in srgb,var(--red) 26%,var(--line));border-radius:12px;
   background:linear-gradient(180deg,color-mix(in srgb,var(--red) 6%,var(--card)),var(--card));color:var(--ink)}
 .mp-br-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
@@ -3720,6 +3791,152 @@
   }
   pp.profilesAgo = profAgo;
 
+  // ── 卦例库（本机命例集）────────────────────────────────────────
+  // 存「这一次问的事」而不是「这个人」：同一个人可攒很多条，每条带应验状态。
+  // 只存输入 + 一句摘要，不存盘面（一份结果几十 KB，几百条就撑爆 5MB 配额）；
+  // 回看拿同一组参数重排，面板的 replay 走的就是这条路。
+  const CASE_KEY = 'dsh-metaphysics/cases-v1';
+  const CASE_MAX = 480;
+  const CASE_STATUS = ['pending', 'hit', 'miss', 'void'];
+  const CASE_STATUS_LABEL = { pending: '待验', hit: '应验', miss: '未应', void: '作废' };
+  const CASE_NOTE_MAX = 120;
+  pp.CASE_KEY = CASE_KEY;
+  pp.CASE_MAX = CASE_MAX;
+  pp.CASE_STATUS = CASE_STATUS;
+  pp.caseStatusLabel = (s) => CASE_STATUS_LABEL[s] || CASE_STATUS_LABEL.pending;
+
+  /** 同样是外部输入（手改/写坏/半条）：逐字段验，坏条目整条丢，别让它排出一张不存在的盘 */
+  function caseClean(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    if (!isStr(raw.id) || !raw.id || raw.id.length > 64) return null;
+    const e = raw.entry;
+    if (!e || typeof e !== 'object' || Array.isArray(e)) return null;
+    if (!isStr(e.kind) || PROF_KINDS.indexOf(e.kind) < 0) return null;
+    // 回看至少要有一套能交给 run() 的参数：出生盘有日期，起卦类有时间或所问之事
+    if (!isStr(e.date) && !isStr(e.time) && !isStr(e.question)) return null;
+    const at = Number(raw.at || e.at) || 0;
+    if (!at) return null;
+    return {
+      id: raw.id,
+      at,
+      status: CASE_STATUS.indexOf(raw.status) >= 0 ? raw.status : 'pending',
+      note: isStr(raw.note) ? raw.note.slice(0, CASE_NOTE_MAX) : '',
+      question: isStr(e.question) ? e.question.slice(0, 80) : '',
+      entry: e,
+    };
+  }
+
+  function caseReadRaw() {
+    try {
+      const raw = window.localStorage ? window.localStorage.getItem(CASE_KEY) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  function caseSave(list) {
+    if (!window.localStorage) return false; // 没有存储就别报成功
+    try {
+      window.localStorage.setItem(CASE_KEY, JSON.stringify(list.slice(0, CASE_MAX)));
+      return true;
+    } catch (e) { return false; }
+  }
+  pp.casesSave = caseSave;
+
+  /** 新的在前；同一毫秒内按 id 兜底，保证两次渲染顺序一致 */
+  pp.casesLoad = function () {
+    return caseReadRaw().map(caseClean).filter(Boolean)
+      .sort((a, b) => (b.at - a.at) || (a.id < b.id ? 1 : -1));
+  };
+
+  pp.casesNewId = function () {
+    const taken = {};
+    caseReadRaw().forEach((x) => { if (x && x.id) taken[x.id] = 1; });
+    let id = '';
+    for (let i = 0; i < 8; i += 1) {
+      id = 'c' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+      if (!taken[id]) break;
+    }
+    return id;
+  };
+
+  /** 一分钟内参数完全相同的只留一条（连点排盘会重复）；其余照收 */
+  pp.casesAdd = function (entry, opt) {
+    const o = opt || {};
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      return { ok: false, list: pp.casesLoad() };
+    }
+    // 取已排好序的列表：FIFO 淘汰靠这个顺序，直接用原始数组会淘汰错那一头
+    const list = pp.casesLoad();
+    const at = Number(entry.at) || Date.now();
+    const dup = list.some((x) => x.at > at - 60000 && x.entry.kind === entry.kind
+      && x.entry.date === entry.date && x.entry.time === entry.time
+      && (x.entry.question || '') === (entry.question || '')
+      && (x.entry.lines || '') === (entry.lines || ''));
+    if (dup) return { ok: true, dup: true, list: pp.casesLoad() };
+
+    const item = caseClean({
+      id: pp.casesNewId(),
+      at,
+      status: o.status || 'pending',
+      note: o.note || '',
+      entry,
+    });
+    if (!item) return { ok: false, list: pp.casesLoad() };
+    // FIFO：超上限淘汰最旧的
+    const next = [item].concat(list.filter((x) => x.id !== item.id)).slice(0, CASE_MAX);
+    if (!caseSave(next)) return { ok: false, list: pp.casesLoad() };
+    return { ok: true, item, list: next };
+  };
+
+  pp.casesSetStatus = function (id, status) {
+    if (CASE_STATUS.indexOf(status) < 0) return pp.casesLoad();
+    const list = caseReadRaw().map(caseClean).filter(Boolean)
+      .map((x) => (x.id === id ? Object.assign({}, x, { status }) : x));
+    if (!caseSave(list)) return pp.casesLoad();
+    return list;
+  };
+
+  pp.casesRemove = function (id) {
+    const list = caseReadRaw().map(caseClean).filter(Boolean).filter((x) => x.id !== id);
+    if (!caseSave(list)) return pp.casesLoad();
+    return list;
+  };
+
+  /** 导出 JSONL：一行一条 */
+  pp.casesExport = function (list) {
+    const src = Array.isArray(list) ? list : pp.casesLoad();
+    return src.map((x) => JSON.stringify({
+      id: x.id, at: x.at, atISO: new Date(x.at).toISOString(),
+      kind: x.entry.kind, label: isStr(x.entry.label) ? x.entry.label : '',
+      question: x.question, status: x.status, note: x.note, params: x.entry,
+    })).join('\n');
+  };
+
+  /** 把旧的「最近排过」并进来（幂等：迁过的 id 带 h- 前缀） */
+  pp.casesMigrate = function (histList) {
+    const src = Array.isArray(histList) ? histList : [];
+    if (!src.length) return { added: 0, list: pp.casesLoad() };
+    const list = caseReadRaw().map(caseClean).filter(Boolean);
+    const seen = {};
+    list.forEach((x) => { seen[x.id] = 1; });
+    let added = 0;
+    for (let i = 0; i < src.length; i += 1) {
+      const h = src[i];
+      if (!h || typeof h !== 'object' || !isStr(h.kind)) continue;
+      const at = Number(h.at) || 0;
+      const id = `h-${at || '0'}-${i}-${h.kind}`;
+      if (seen[id]) continue;
+      const item = caseClean({ id, at: at || Date.now(), status: 'pending', entry: h });
+      if (!item) continue;
+      seen[id] = 1;
+      list.push(item);
+      added += 1;
+    }
+    if (added) caseSave(list.sort((a, b) => b.at - a.at));
+    return { added, list: pp.casesLoad() };
+  };
+
   const PROF_GENDER = { male: '♂', female: '♀' };
 
   /**
@@ -3918,6 +4135,188 @@
    * 十六型人格：四维净分条 + 类型倾向 + 优势/留意 + 认知功能栈 + 工作/关系/学习。
    * 未答题时（引擎回问卷）改渲染题目清单，供照着逐题打分。
    */
+  // 中医体质：九条转化分横条 + 判定线 40 + 调养方向。
+  // 分数是数值，直接插；文字一律走 esc（check-html-sinks 按「调用了 esc」核对）。
+  // 太乙神数：九宫地盘 + 太乙/文昌落点 + 八门 + 五元六纪。
+  // 地盘按「南上北下」排：巽离坤 / 震中兑 / 艮坎乾。中五宫太乙不入，只作方位补全。
+  // 太乙、八门、文昌、计神、始击、主客算与四将都是算实的；定目、三基五福十精、击格不在盘上出现。
+  pp.taiyiHTML = function (r) {
+    if (!r || !r.taiyi || !r.meta) return '';
+    const t = r.taiyi;
+    const wc = r.wenchang || {};
+    const sj = r.shiji || {};
+    const js = r.jishen || {};
+    const su = r.suan || {};
+    const jj = r.jiang || {};
+    const gj = r.geju || {};
+    const grid = [[9, '巽'], [2, '离'], [7, '坤'], [4, '震'], [5, '中'], [6, '兑'], [3, '艮'], [8, '坎'], [1, '乾']];
+    const cells = grid.map((c) => {
+      const num = c[0];
+      const nm = c[1];
+      const on = t.palace === num;
+      const w = wc.num === num;
+      const sjOn = sj.palace === num;
+      const marks = (on ? '<i class="mp-ty-mark">太乙</i>' : '') + (sjOn ? '<i class="mp-ty-mark s">始击</i>' : '') + (w ? '<i class="mp-ty-mark w">文昌</i>' : '');
+      return `<div class="mp-ty-cell${on ? ' on' : ''}${nm === '中' ? ' mid' : ''}"><b>${esc(nm)}</b><em>${num}</em>${marks}</div>`;
+    }).join('');
+    const nc = (r.scope && r.scope.notCovered) || [];
+    const mo = r.month || {};
+    const da = r.day || {};
+    const ho = r.hour || {};
+    const monthN = (mo.taiyi && mo.taiyi.palaceName) || '';
+    const monthU = String((mo.taiyi && mo.taiyi.unitInPalace) || '');
+    const monthMu = mo.mu ? mo.mu.pos + '（' + mo.mu.god + '）' : '';
+    const monthJs = (mo.jishen && mo.jishen.branch) || '';
+    const dayN = (da.taiyi && da.taiyi.palaceName) || '';
+    const dayU = String((da.taiyi && da.taiyi.unitInPalace) || '');
+    const dayMu = da.mu ? da.mu.pos + '（' + da.mu.god + '）' : '';
+    const dayJs = (da.jishen && da.jishen.branch) || '';
+    const hourN = (ho.taiyi && ho.taiyi.palaceName) || '';
+    const hourU = String((ho.taiyi && ho.taiyi.unitInPalace) || '');
+    const hourJs = (ho.jishen && ho.jishen.branch) || '';
+    const jx = r.jixiong || {};
+    const vd = r.verdict || {};
+    const vdGrade = vd.grade || jx.grade || 'xiong';
+    const vdLabel = vd.label || jx.label || '凶';
+    const sjj = r.shenjiang || {};
+    const sjLine = sjj.rows
+      ? `${sjj.stem}日、${sjj.day ? '昼贵' : '夜贵'}起${sjj.startBranch}${sjj.dir > 0 ? '顺' : '逆'}行；吉神下：${(sjj.goods || []).join('、') || '无'}；凶神下：${(sjj.bads || []).join('、') || '无'}`
+      : '未排';
+    const jxGrade = jx.grade || 'xiong';
+    const jxLabel = jx.label || '凶';
+    const gateName = (r.gate && r.gate.gate) || '';
+    // 八种格局翻成日常话，一个词只翻一次
+    const SAY = {
+      掩: '客方的目和太乙挤在同一格',
+      击: '始击挨在太乙左右',
+      格: '太乙和始击隔一格正面对上',
+      对: '文昌从对面顶过来',
+      提: '客大将和文昌挤在一格',
+      迫: '有将贴得太近，就在太乙前后一格',
+      囚: '有将被关在太乙那一格里',
+      关: '主客两边的人撞在一处',
+    };
+    const hits = (gj.list || []).map((x) => {
+      const k = String(x).charAt(0);
+      return SAY[k] ? k + '——' + SAY[k] : String(x);
+    });
+    const lead = jxGrade === 'xiong'
+      ? `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判凶：主客两边有几样撞到了一起。`
+      : jxGrade === 'daji'
+        ? `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判大吉：位置和数都顺，门也在吉道上。`
+        : jxGrade === 'buhe'
+          ? `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判不和：位置不冲突，但数上不合。`
+          : `太乙站在${t.palaceName}宫（${t.dir}），值${gateName}门，判吉：位置不冲突。`;
+    return `<section class="mp-ty" aria-label="太乙神数">
+      <div class="mp-ty-h">
+        <span class="mp-ty-y">${esc(String(r.meta.year))} 年</span>
+        <span class="mp-ty-j">${esc(r.meta.dunText || '')}${esc(String(r.meta.ju))}局</span>
+        <span class="mp-ty-m">太乙临 ${esc(t.palaceName || '')} 宫</span>
+        <span class="mp-ty-m">${esc(gateName)}</span>
+      </div>
+      <div class="mp-ty-g">${cells}</div>
+      <div class="mp-ty-plain">
+        <p class="mp-ty-lead">${esc(lead)}</p>
+        <p>先看太乙落在哪一格——那是「主」这一年的位置，整张盘围着它转。</p>
+        <p>${esc(gateName)}门一值三十年，管的是这三十年的大环境，不是今年单一年的事。</p>
+        <p>判${esc(jxLabel)}，是因为${esc(hits.length ? hits.join('；') : '八种位置关系一个都没犯')}。</p>
+        <p class="mp-ty-close">这一层只摆位置和数，不回答事情成不成；想看每一步怎么来的，展开下面的细目。</p>
+      </div>
+      <details class="mp-ty-det">
+        <summary>细目（想核对推导再展开）</summary>
+        <div class="mp-ty-sec"><em>太乙</em>第 ${esc(String(t.palace || ''))} 宫（${esc(t.dir || '')}），三年里的第 ${esc(String(t.yearInPalace || ''))} 年，${esc(t.li || '')}</div>
+        <div class="mp-ty-sec"><em>八门</em>${esc(gateName)}　八门三十年一转，1954 年从休门起</div>
+        <div class="mp-ty-sec"><em>文昌</em>${esc(wc.pos || '')}（${esc(wc.god || '')}，${esc(wc.palaceName || '')}宫）　十八年一周</div>
+        <div class="mp-ty-sec"><em>定目</em>${esc((r.dingmu && r.dingmu.pos) || '')}（${esc((r.dingmu && r.dingmu.god) || '')}）　<em>三基</em>君${esc((r.sanji && r.sanji.jun) || '')} 臣${esc((r.sanji && r.sanji.chen) || '')} 民${esc((r.sanji && r.sanji.min) || '')}</div>
+        <div class="mp-ty-sec"><em>五福</em>${esc((r.wufu && r.wufu.palaceName) || '')}宫　<em>大游</em>${esc((r.dayou && r.dayou.palaceName) || '')}宫　<em>十精</em>天乙${esc((r.shijing && r.shijing.tianyi) || '')} 地乙${esc((r.shijing && r.shijing.diyi) || '')} 直符${esc((r.shijing && r.shijing.zhifu) || '')}</div>
+        <div class="mp-ty-sec"><em>数和</em>主算 ${esc((r.heshu && r.heshu.zhu && r.heshu.zhu.text) || '')}　客算 ${esc((r.heshu && r.heshu.ke && r.heshu.ke.text) || '')}</div>
+        <div class="mp-ty-sec"><em>月计</em>太乙在 ${esc(monthN)} 宫（第 ${esc(monthU)} 月）　天目 ${esc(monthMu)}　计神 ${esc(monthJs)}</div>
+        <div class="mp-ty-sec"><em>日计</em>太乙在 ${esc(dayN)} 宫（第 ${esc(dayU)} 日）　天目 ${esc(dayMu)}　计神 ${esc(dayJs)}</div>
+        <div class="mp-ty-sec"><em>时计</em>太乙在 ${esc(hourN)} 宫（第 ${esc(hourU)} 时）　计神 ${esc(hourJs)}</div>
+        <div class="mp-ty-sec"><em>吉凶</em><b class="mp-ty-jx ${esc(vdGrade)}">${esc(vdLabel)}</b> ${esc((r.jixiong && r.jixiong.text) || '')}</div>
+        <div class="mp-ty-sec"><em>神将</em>${esc(sjLine)}</div>
+        <div class="mp-ty-sec"><em>计神</em>${esc(js.branch || '')}（${esc(js.god || '')}）　<em>始击</em>${esc(sj.pos || '')}（${esc(sj.god || '')}，${esc(sj.palaceName || '')}宫）</div>
+        <div class="mp-ty-sec"><em>主算</em>${esc(String(su.zhu || ''))}　主大将${esc(jj.zhuDaName || '')}宫　主参将${esc(jj.zhuCanName || '')}宫</div>
+        <div class="mp-ty-sec"><em>客算</em>${esc(String(su.ke || ''))}　客大将${esc(jj.keDaName || '')}宫　客参将${esc(jj.keCanName || '')}宫</div>
+        <div class="mp-ty-sec"><em>格局</em>${gj.list && gj.list.length ? esc(gj.list.join('；')) : '四将不相犯，没有掩、迫、囚、格、关'}</div>
+        <div class="mp-ty-sec"><em>积年</em>${esc(String(r.meta.jinian || ''))}　残年 ${esc(String(r.meta.rest360 || ''))}　${esc(r.year ? r.year.jiName : '')}${esc(r.year ? String(r.year.jiYear) : '')}年　${esc(r.year ? r.year.yuanName : '')}第 ${esc(r.year ? String(r.year.yuanYear) : '')} 年</div>
+        <div class="mp-ty-note">算到太乙、八门、文昌、计神、始击、主客算与四将、五种格局；${esc(nc.join('、'))}未收录，盘上不显示。将落中五时只标数不加宫名。</div>
+      </details>
+    </section>`;
+  };
+
+  pp.wuyunliuqiHTML = function (r) {
+    if (!r || !r.zhongyun || !r.year) return '';
+    const z = r.zhongyun;
+    const cur = r.current || {};
+    const sp = [];
+    if (r.special && r.special.taiYi) sp.push('太乙天符');
+    if (r.special && r.special.tianFu && !r.special.taiYi) sp.push('天符');
+    if (r.special && r.special.suiHui && !r.special.taiYi) sp.push('岁会');
+    if (r.special && r.special.tongTianFu) sp.push('同天符');
+    if (r.special && r.special.tongSuiHui) sp.push('同岁会');
+    const rows = (list, isQi) => (list || []).map((s) => {
+      const nm = isQi ? s.qi : s.name;
+      const on = isQi ? !!(cur.keQi && cur.keQi.qi === s.qi) : !!(cur.keYun && cur.keYun.name === s.name);
+      const tag = isQi ? (s.sitian ? '司天' : s.zaiquan ? '在泉' : '') : (s.taiShao || '');
+      return `<div class="mp-wl-step${on ? ' on' : ''}"><span class="mp-wl-no">${s.no}</span><span>${esc(nm || '')}</span><span class="mp-wl-tg">${esc(tag)}</span><span class="mp-wl-tm">${esc(s.startTime || '')}—${esc(s.endTime || '')}</span></div>`;
+    }).join('');
+    const tags = sp.map((x) => `<span class="mp-wl-tag on">${esc(x)}</span>`).join('');
+    return `<section class="mp-wl" aria-label="五运六气">
+      <div class="mp-wl-h">
+        <span class="mp-wl-y">${esc(r.year.ganzhi)}</span>
+        <span class="mp-wl-z">${esc(z.name)}</span>
+        <span class="mp-wl-m">${esc(r.year.startTime || '')} — ${esc(r.year.endTime || '')}</span>
+      </div>
+      ${tags ? `<div class="mp-wl-sec"><em>格局</em>${tags}</div>` : ''}
+      <div class="mp-wl-sec"><em>司天在泉</em>${esc(r.sitian.qi)}司天　${esc(r.zaiquan.qi)}在泉</div>
+      <div class="mp-wl-sec"><em>此刻</em>${esc(cur.text || '')}</div>
+      <div class="mp-wl-sec"><em>客运五步</em></div>
+      <div class="mp-wl-steps">${rows(r.keYun, false)}</div>
+      <div class="mp-wl-sec"><em>客气六步</em></div>
+      <div class="mp-wl-steps">${rows(r.keQi, true)}</div>
+      <div class="mp-wl-note">${esc(r.scope ? r.scope.note : '')}</div>
+    </section>`;
+  };
+
+  pp.constitutionHTML = function (r) {
+    if (!r) return '';
+    if (r.paper && Array.isArray(r.questions)) {
+      const items = r.questions.map((q) => `<li><span class="mp-cs-no">${q.no}</span><span class="mp-cs-t">${esc(q.text)}</span><em>${esc(q.name)}</em></li>`).join('');
+      return `<section class="mp-cs-paper" aria-label="中医体质问卷">
+        <div class="mp-cs-h"><span><b>中医体质问卷</b><i>${r.scaleCount} 种体质 × ${r.itemsPerScale} 题 · 1 没有 / 5 总是</i></span>
+        <span class="mp-cs-count">填完分数再看结果</span></div>
+        <ol>${items}</ol>
+        <div class="mp-cs-note">${esc(r.note || '')}</div>
+      </section>`;
+    }
+    const p = r.primary || {};
+    const rows = (r.scales || []).map((s) => {
+      const v = Math.max(0, Math.min(100, s.converted || 0));
+      const on = s.level && s.level !== '否';
+      const main = p.key === s.key;
+      return `<div class="mp-cs-row${main ? ' main' : ''}">
+        <span class="mp-cs-n">${esc(s.name)}</span>
+        <span class="mp-cs-track"><i class="${on ? 'on' : ''}" style="width:${v}%"></i><b class="mp-cs-tick" style="left:40%"></b></span>
+        <span class="mp-cs-v">${v}</span>
+        <span class="mp-cs-l">${esc(s.level || '')}</span>
+      </div>`;
+    }).join('');
+    const care = (r.care || []).map((c) => `<li>${esc(c)}</li>`).join('');
+    return `<section class="mp-cs" aria-label="中医体质结果">
+      <div class="mp-cs-h">
+        <span class="mp-cs-main">${esc(p.name || '—')}</span>
+        <span class="mp-cs-meta"><b>${esc(p.oneLine || '')}</b><i>${r.secondary ? `兼夹 ${esc(r.secondary.name)}（${Math.round(r.secondary.converted)}）` : '无兼夹'}${r.flat ? ' · 区分度不足' : ''}</i></span>
+        <span class="mp-cs-count">已答 ${r.meta ? r.meta.answered : 0}/${r.meta ? r.meta.total : 0} 题</span>
+      </div>
+      <div class="mp-cs-bars">${rows}</div>
+      <div class="mp-cs-sec"><em>这体质</em>${esc(p.trait || '')}</div>
+      <div class="mp-cs-sec"><em>倾向</em>${esc(p.tendency || '')}</div>
+      <div class="mp-cs-care"><b>调养方向</b><ul>${care}</ul></div>
+      <div class="mp-cs-note">${esc(r.note || '')}</div>
+    </section>`;
+  };
+
   pp.mbtiHTML = function (r) {
     if (!r) return '';
     if (r.needAnswers && Array.isArray(r.questions)) {

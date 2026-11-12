@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 9387,
+  "total": 10072,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -107,7 +107,7 @@
       "fail": 0
     },
     "bundle-budget.test.mjs": {
-      "pass": 22,
+      "pass": 25,
       "fail": 0
     },
     "bzform.test.mjs": {
@@ -126,12 +126,16 @@
       "pass": 12,
       "fail": 0
     },
+    "cases-store.test.mjs": {
+      "pass": 63,
+      "fail": 0
+    },
     "chenggu.test.mjs": {
       "pass": 18,
       "fail": 0
     },
     "chunks.test.mjs": {
-      "pass": 106,
+      "pass": 124,
       "fail": 0
     },
     "citations.test.mjs": {
@@ -152,6 +156,10 @@
     },
     "client-race.test.mjs": {
       "pass": 22,
+      "fail": 0
+    },
+    "constitution.test.mjs": {
+      "pass": 89,
       "fail": 0
     },
     "contract.test.mjs": {
@@ -231,7 +239,7 @@
       "fail": 0
     },
     "first-screen.test.mjs": {
-      "pass": 45,
+      "pass": 46,
       "fail": 0
     },
     "flow.test.mjs": {
@@ -386,8 +394,16 @@
       "pass": 52,
       "fail": 0
     },
+    "panel-cast-chips.test.mjs": {
+      "pass": 34,
+      "fail": 0
+    },
+    "panel-chart-first.test.mjs": {
+      "pass": 25,
+      "fail": 0
+    },
     "panel-first-screen.test.mjs": {
-      "pass": 40,
+      "pass": 41,
       "fail": 0
     },
     "panel-form-align.test.mjs": {
@@ -534,12 +550,16 @@
       "pass": 20,
       "fail": 0
     },
+    "taiyi.test.mjs": {
+      "pass": 311,
+      "fail": 0
+    },
     "tarot-cards.test.mjs": {
       "pass": 89,
       "fail": 0
     },
     "tarot.test.mjs": {
-      "pass": 98,
+      "pass": 124,
       "fail": 0
     },
     "theme.test.mjs": {
@@ -608,6 +628,10 @@
     },
     "verify.test.mjs": {
       "pass": 34,
+      "fail": 0
+    },
+    "wuyunliuqi.test.mjs": {
+      "pass": 114,
       "fail": 0
     },
     "xunkong-parity.test.mjs": {

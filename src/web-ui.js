@@ -165,7 +165,9 @@
   function activate(next) {
     setTab(next);
     recordRecent(next);
-    if (next === 'mbti') mbEnter(); else run();
+    if (next === 'mbti') mbEnter();
+    else if (next === 'constitution') csEnter();
+    else run();
   }
 
   // ── 我的命盘（本机档案）────────────────────────────────────────
@@ -324,6 +326,9 @@
     chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
     mbti: 'none',
+  constitution: 'none',
+    wuyunliuqi: 'date',
+    taiyi: 'date',
   };
   const SAMPLE = { date: '1990-05-12', time: '14:30' };
   const kindOf = (t) => TIME_KIND[t] || 'none';
@@ -359,6 +364,7 @@
     fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。',
     name: '起名按八字喜用匹配字库五行，可评估现有名字或生成候选名。',
     mbti: '十六型人格是一份 MBTI 风格问卷：24 题分 6 页，每题按 1（完全不像）到 5（很像我）打分；答满 12 题就能出结果。',
+  constitution: '中医体质是九种体质各 5 题的自评问卷：45 题分 9 页，每题按 1（没有）到 5（总是）打分；答满 27 题就能出结果，按转化分判主次体质并给调养方向，不是医学诊断。',
   };
 
   // 问事的体系必须写清「所问之事」，解读才有落点；命盘类（八字/紫微）不问事，不显示这两项
@@ -419,7 +425,7 @@
   /** 当前 tab 是否真的用到日期/时刻（塔罗、人格不看时间；梅花「数字起卦」也不用）
    *  与 syncMhMode 里的显隐共用这一处判断：字段既然藏起来了，run() 就不能拿它拦人。 */
   function usesTimeInput() {
-    return tab !== 'tarot' && tab !== 'mbti' && !(tab === 'meihua' && mhMode === 'number');
+    return tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && !(tab === 'meihua' && mhMode === 'number');
   }
 
   /** 用户手动改了日期或时刻 */
@@ -810,7 +816,7 @@
     markAskInvalid(false);
     const args = { system: tab };
     // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
-    args.shadow = tab !== 'mbti';
+    args.shadow = tab !== 'mbti' && tab !== 'constitution';
     // 推导链只覆盖六爻 / 八字 / 紫微
     args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
     if (tab !== 'tarot') args.datetime = `${date}T${time}`;
@@ -879,7 +885,7 @@
         if (el('changing').value !== '') args.changing = Number(el('changing').value);
       }
     }
-    if (tab === 'tarot') args.count = Number(el('tcount') ? el('tcount').value : 3) || 3;
+    if (tab === 'tarot') args.spread = (el('tcount') && el('tcount').value) || 'three';
     // 速查类：各体系自己的最小输入
     if (tab === 'zeri') {
       args.startDate = date;
@@ -916,6 +922,11 @@
       delete args.datetime;
       const nums = mbAnswersForEngine();
       if (nums.length) args.answers = nums;
+    }
+    if (tab === 'constitution') {
+      // 体质问卷不剪尾：引擎按题位对齐九种体质，null 表示跳过，长度必须还是 45
+      delete args.datetime;
+      args.answers = csAns.slice();
     }
     if (tab === 'trend' && hourUnknown) args.hourUnknown = true;
     // 性别 / 出生地 / 两个开关已在上面的出生盘分支里给齐，这里只补 K 线自己的参数
@@ -1003,6 +1014,9 @@
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : tab === 'name' ? window.__PP.nameHTML(r)
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
+                          : tab === 'constitution' ? window.__PP.constitutionHTML(r)
+                            : tab === 'wuyunliuqi' ? window.__PP.wuyunliuqiHTML(r)
+                            : tab === 'taiyi' ? window.__PP.taiyiHTML(r)
                           : tab === 'fengshui' ? window.__PP.fengshuiHTML(r)
                           : window.__PP.quickHTML(r));
       // 新盘就是新的一轮：上一次的自评、贴合度、候选时辰不能跟着贴到这张盘上
@@ -1041,6 +1055,7 @@
     recordRecent(tab);
     // 人格问卷没有时间可补：先看答够没有，再走同一套计算
     if (tab === 'mbti') { mbSubmit(); return; }
+    if (tab === 'constitution') { csSubmit(); return; }
     const k = kindOf(tab);
     if (k !== 'none' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
     run();
@@ -1064,7 +1079,7 @@
     }
   }
 
-  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
 
   // 窄屏下 tab 栏是单行横滑：切到靠后的 tab 时把它滚到可视区中间，
   // 否则点了「人格」页面变了、高亮却停在屏幕外，看着像没响应
@@ -1094,6 +1109,8 @@
     el('for-qimen').style.display = tab === 'qimen' ? '' : 'none';
     const fm = el('for-mbti');
     if (fm) fm.style.display = tab === 'mbti' ? '' : 'none';
+    const csForm = el('for-constitution');
+    if (csForm) csForm.style.display = tab === 'constitution' ? '' : 'none';
     const fq = el('for-quick');
     if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
@@ -1121,10 +1138,10 @@
           : QUICK.indexOf(tab) >= 0 ? '看结果'
             : birth ? '排盘' : '起卦';
     // 人格问卷自带「看结果」和「清空」：底部再放一个主按钮就是两个一样的入口
-    const mbtiOn = tab === 'mbti';
-    el('go').style.display = mbtiOn ? 'none' : '';
+    const quizOn = tab === 'mbti' || tab === 'constitution';
+    el('go').style.display = quizOn ? 'none' : '';
     const sampleBtn = el('sample');
-    if (sampleBtn) sampleBtn.style.display = mbtiOn ? 'none' : '';
+    if (sampleBtn) sampleBtn.style.display = quizOn ? 'none' : '';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
@@ -1169,6 +1186,165 @@
     if (el('qk-convert-lunar')) el('qk-convert-lunar').style.display = convMode === 'lunar2solar' ? '' : 'none';
   }
 
+  // ── 中医体质（P4）：9 种体质各 5 题、一页 5 题的分页问卷 ─────────
+  // 题面与 1–5 的说法都从引擎卷子取；答案按题位存在 csAns 里（长度固定 45，null = 跳过）。
+  const CS_PER_PAGE = 5;
+  const CS_MIN = 27;
+  let csPaper = null;
+  let csAns = [];
+  let csPage = 0;
+
+  function ensureCsPaper() {
+    if (csPaper) return csPaper;
+    let p = null;
+    try { p = window.Engine.compute({ system: 'constitution' }); } catch (e) { p = null; }
+    const questions = (p && p.questions) || [];
+    csPaper = { total: (p && p.total) || questions.length, questions, scale: (p && p.scale) || [] };
+    csAns = new Array(csPaper.total).fill(null);
+    return csPaper;
+  }
+
+  function csAnswered() {
+    let n = 0;
+    for (let i = 0; i < csAns.length; i += 1) if (csAns[i] != null) n += 1;
+    return n;
+  }
+
+  function csScaleSay(n) {
+    const hit = (csPaper && csPaper.scale ? csPaper.scale : []).filter((x) => x && x.v === n)[0];
+    return hit ? hit.label : String(n);
+  }
+
+  function csPageCount() {
+    return Math.max(1, Math.ceil((csPaper ? csPaper.total : 0) / CS_PER_PAGE));
+  }
+
+  function refreshCsMeta() {
+    const total = csPaper ? csPaper.total : 0;
+    const answered = csAnswered();
+    const pages = csPageCount();
+    const count = el('cs-count');
+    if (count) count.textContent = `第 ${csPage + 1} / ${pages} 页 · 已答 ${answered} / ${total}`;
+    const fill = el('cs-fill');
+    if (fill) fill.style.width = total ? `${Math.round((answered / total) * 100)}%` : '0%';
+    const prev = el('cs-prev');
+    if (prev) prev.disabled = csPage <= 0;
+    const next = el('cs-next');
+    if (next) next.style.display = csPage >= pages - 1 ? 'none' : '';
+    const sub = el('cs-submit');
+    if (sub) sub.disabled = answered < CS_MIN;
+    const hint = el('cs-hint');
+    if (hint) {
+      hint.classList.remove('warn');
+      hint.textContent = answered >= CS_MIN
+        ? `已够 ${CS_MIN} 题，可以看结果；答完 ${total} 题会更准。`
+        : `答满 ${CS_MIN} 题可先看结果（还差 ${CS_MIN - answered} 题）。`;
+    }
+  }
+
+  /** 用 createElement 拼题干：题面来自引擎，少一层 innerHTML 就少一个注入面 */
+  function renderCs() {
+    const host = el('cs-qs');
+    if (!host) return;
+    const paper = ensureCsPaper();
+    csPage = Math.min(Math.max(0, csPage), csPageCount() - 1);
+    const start = csPage * CS_PER_PAGE;
+    host.textContent = '';
+    paper.questions.slice(start, start + CS_PER_PAGE).forEach((q, k) => {
+      const i = start + k;
+      const row = document.createElement('div');
+      row.className = 'mb-q';
+      const qt = document.createElement('div');
+      qt.className = 'mb-qt';
+      const no = document.createElement('b');
+      no.textContent = pad(i + 1);
+      const tx = document.createElement('span');
+      tx.textContent = q.text;
+      qt.append(no, tx);
+      const opts = document.createElement('div');
+      opts.className = 'mb-opts';
+      opts.setAttribute('role', 'radiogroup');
+      opts.setAttribute('aria-label', `第 ${i + 1} 题`);
+      [1, 2, 3, 4, 5].forEach((n) => {
+        const lab = document.createElement('label');
+        lab.className = 'mb-o' + (csAns[i] === n ? ' on' : '');
+        const inp = document.createElement('input');
+        inp.type = 'radio';
+        inp.name = `csq${i}`;
+        inp.value = String(n);
+        inp.checked = csAns[i] === n;
+        const b = document.createElement('b');
+        b.textContent = String(n);
+        const say = document.createElement('span');
+        say.textContent = csScaleSay(n);
+        lab.append(inp, b, say);
+        opts.appendChild(lab);
+      });
+      row.append(qt, opts);
+      host.appendChild(row);
+    });
+    refreshCsMeta();
+  }
+
+  function onCsPick(e) {
+    const inp = e.target;
+    if (!inp || inp.type !== 'radio' || String(inp.name || '').indexOf('csq') !== 0) return;
+    const i = Number(String(inp.name).slice(3));
+    if (!Number.isInteger(i) || i < 0 || i >= csAns.length) return;
+    csAns[i] = Number(inp.value) || null;
+    const row = inp.closest('.mb-q');
+    if (row) row.querySelectorAll('.mb-o').forEach((lab) => lab.classList.toggle('on', lab.contains(inp)));
+    refreshCsMeta();
+  }
+
+  function csTurn(delta) {
+    csPage = Math.min(Math.max(0, csPage + delta), csPageCount() - 1);
+    renderCs();
+    const box = el('for-constitution');
+    if (box && box.scrollIntoView) box.scrollIntoView({ block: 'nearest' });
+  }
+
+  function csNudge() {
+    const hint = el('cs-hint');
+    if (hint) {
+      hint.classList.add('warn');
+      hint.textContent = `至少答 ${CS_MIN} 题才能出结果，还差 ${Math.max(0, CS_MIN - csAnswered())} 题。`;
+    }
+    const host = el('cs-qs');
+    if (host) {
+      const rows = host.querySelectorAll('.mb-q');
+      for (let k = 0; k < rows.length; k += 1) {
+        if (csAns[csPage * CS_PER_PAGE + k] == null) {
+          const inp = rows[k].querySelector('input');
+          if (inp && inp.focus) inp.focus({ preventScroll: true });
+          break;
+        }
+      }
+    }
+    const box = el('for-constitution');
+    if (box && box.scrollIntoView) box.scrollIntoView({ block: 'nearest' });
+  }
+
+  function csClear() {
+    csAns = new Array(csPaper ? csPaper.total : 0).fill(null);
+    csPage = 0;
+    renderCs();
+    if (last && last.tab === 'constitution') { last = null; el('out').replaceChildren(); }
+  }
+
+  function csSubmit() {
+    if (csAnswered() < CS_MIN) { csNudge(); return; }
+    recordRecent('constitution');
+    run();
+  }
+
+  /** 切到体质 tab：答够了就直接出结果，否则清空结果区，只留问卷 */
+  function csEnter() {
+    renderCs();
+    if (csAnswered() >= CS_MIN) { run(); return; }
+    last = null;
+    el('out').replaceChildren();
+  }
   // ── 十六型人格：4 题一页的分页问卷 ──────────────────────────────
   // 题目与 1–5 的说法都从引擎取（compute 不带 answers 就回问卷），
   // 前端不再抄一份题目表；答案按题序存在 mbAns 里，null = 未答。
@@ -1380,6 +1556,19 @@
       if (mbSub) mbSub.addEventListener('click', mbSubmit);
       const mbClr = el('mbti-clear');
       if (mbClr) mbClr.addEventListener('click', mbClear);
+    }
+    const csHost = el('cs-qs');
+    if (csHost) {
+      renderCs();
+      csHost.addEventListener('change', onCsPick);
+      const csPrev = el('cs-prev');
+      if (csPrev) csPrev.addEventListener('click', () => csTurn(-1));
+      const csNext = el('cs-next');
+      if (csNext) csNext.addEventListener('click', () => csTurn(1));
+      const csSub = el('cs-submit');
+      if (csSub) csSub.addEventListener('click', csSubmit);
+      const csClr = el('cs-clear');
+      if (csClr) csClr.addEventListener('click', csClear);
     }
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.addEventListener('click', () => {
       mhMode = b.dataset.mode;

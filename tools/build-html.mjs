@@ -70,8 +70,8 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
-/* 首屏按「想干什么」分组：19 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
-   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（19 个 tab 原样保留）。 */
+/* 首屏按「想干什么」分组：22 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
+   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（22 个 tab 原样保留）。 */
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
@@ -86,26 +86,26 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:border-color .14s ease,background .14s ease}
 .rc:hover{border-color:var(--gold);background:var(--panel)}
 .rc i{font-style:normal;font-size:11.5px;color:var(--dim)}
-.groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:12px}
 .tgroup{padding:14px 14px 12px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--bg)));box-shadow:var(--shadow)}
 .tgroup-head h2{display:flex;align-items:center;gap:8px;margin:0;font-size:15.5px;font-weight:600;color:var(--ink);letter-spacing:.06em}
 .tgroup-head h2::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--gold)}
 .tgroup-head p{margin:4px 0 11px;font-size:12.5px;line-height:1.6;color:var(--dim)}
-.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
+.ttools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;grid-auto-rows:1fr}
 .tool{display:flex;flex-direction:column;gap:1px;padding:8px 10px;text-align:left;border:1px solid var(--line);border-radius:9px;
   background:color-mix(in srgb,var(--panel2) 72%,transparent);color:var(--ink);font-family:inherit;cursor:pointer;
   transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
 .tool b{font-size:13.5px;font-weight:600;letter-spacing:.02em}
-.tool span{font-size:11.5px;line-height:1.4;color:var(--dim)}
+.tool span{font-size:11.5px;line-height:1.4;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tool:hover{border-color:var(--gold);background:var(--panel)}
 .tool.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 8px 18px -12px var(--gold)}
 .tool.on b{color:var(--on-accent)}
 .tool.on span{color:var(--on-accent-soft)}
-/* 奇数个的那一组：末项铺满整行，避免右下留一个孤格 */
-.tool.wide{grid-column:1/-1}
+/* 奇数个的那一组：窄屏末项铺满整行，避免右下留一个孤格（大屏三列时不铺） */
 /* 手机端每组先露 4 个，其余折在「还有 N 个」后面：三组全展开会把表单挤到第二屏 */
-.tmore{display:none;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
+.tmore{display:flex;grid-column:1/-1;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px dashed var(--line);border-radius:9px;
   background:transparent;color:var(--dim);font-family:inherit;font-size:12.5px;cursor:pointer}
 .tmore:hover{color:var(--gold);border-color:var(--gold)}
 body.view-group .tabs{display:none}
@@ -281,10 +281,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .tool{padding:9px 10px;min-height:52px}
   .tool b{font-size:14px}
   .tool span{font-size:11px}
-  .tgroup:not(.open) .ttools>.tool:nth-child(n+5){display:none}
-  .tmore{display:flex}
+  .tool.wide{grid-column:1/-1}
   .rc{min-height:36px}
-  /* 19 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
+  /* 22 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
     margin:0 -12px;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -425,6 +424,9 @@ function page() {
       <button class="tab" data-tab="fengshui">风水</button>
       <button class="tab" data-tab="name">起名</button>
       <button class="tab" data-tab="mbti">人格</button>
+      <button class="tab" data-tab="constitution">体质</button>
+      <button class="tab" data-tab="wuyunliuqi">运气</button>
+      <button class="tab" data-tab="taiyi">太乙</button>
     </div>
   </header>
 
@@ -442,7 +444,7 @@ function page() {
 ${GROUPS.map((g) => `      <section class="tgroup">
         <div class="tgroup-head"><h2>${g.title}</h2><p>${g.hint}</p></div>
         <div class="ttools">
-${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' wide' : ''}" data-tab="${it.k}"><b>${it.label}</b><span>${it.tip}</span></button>`).join('\n')}
+${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' wide' : ''}" data-tab="${it.k}" title="${it.tip}"><b>${it.label}</b><span>${it.tip}</span></button>`).join('\n')}
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>`).join('\n')}
@@ -533,12 +535,16 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
       <label class="field">询问方向
         <select id="direction">${DIR_OPTIONS}</select>
       </label>
-      <!-- 塔罗牌阵张数：仅塔罗 tab 显示（1/3/5 由引擎 TAROT SPREADS 支持） -->
+      <!-- 塔罗牌阵：仅塔罗 tab 显示（张数由牌阵定，命名牌阵见 engine/tarot.js SPREAD_DEFS） -->
       <label class="field" id="for-count" style="display:none">牌阵
         <select id="tcount">
-          <option value="1">1 张（当下指引）</option>
-          <option value="3" selected>3 张（过去·现在·未来）</option>
-          <option value="5">5 张（现状·阻碍·建议·结果·潜在）</option>
+          <option value="one">1 张 · 单张指引</option>
+          <option value="three" selected>3 张 · 过去现在未来</option>
+          <option value="five">5 张 · 五张局势</option>
+          <option value="celtic">10 张 · 凯尔特十字</option>
+          <option value="either">5 张 · 二选一</option>
+          <option value="relation">7 张 · 关系阵</option>
+          <option value="timeflow">3 张 · 时间流</option>
         </select>
       </label>
     </div>
@@ -626,6 +632,25 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
             <button type="button" class="mb-btn primary" id="mbti-submit" disabled>看结果</button>
             <button type="button" class="mb-btn" id="mbti-clear">清空</button>
             <span class="mb-hint" id="mbti-hint">答满 12 题可先看结果</span>
+          </div>
+        </div>
+      </div>
+      <!-- 中医体质问卷：5 题一页、1–5 打分；与人格问卷同一套 mb-* 版式，
+           题目与 1–5 的说明同样由 web-ui 从引擎取，页面只放容器 -->
+      <div id="for-constitution" style="display:none">
+        <div class="field">
+          <span>中医体质问卷 · 9 种体质各 5 题，共 45 题 · 5 题一页，按 1（没有）到 5（总是）打分</span>
+          <div class="mb-top">
+            <div class="mb-prog" aria-hidden="true"><i id="cs-fill"></i></div>
+            <span class="mb-count" id="cs-count">第 1 / 9 页 · 已答 0 / 45</span>
+          </div>
+          <div class="mb-qs" id="cs-qs"></div>
+          <div class="mb-nav">
+            <button type="button" class="mb-btn" id="cs-prev" disabled>上一页</button>
+            <button type="button" class="mb-btn" id="cs-next">下一页</button>
+            <button type="button" class="mb-btn primary" id="cs-submit" disabled>看结果</button>
+            <button type="button" class="mb-btn" id="cs-clear">清空</button>
+            <span class="mb-hint" id="cs-hint">答满 27 题可先看结果</span>
           </div>
         </div>
       </div>

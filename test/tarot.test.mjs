@@ -1,4 +1,4 @@
-import { MAJOR, SUITS, MINOR, ROMAN, SPREADS, tarotDeck, drawTarot, tarotReading } from '../engine/tarot.js';
+import { MAJOR, SUITS, MINOR, ROMAN, SPREADS, SPREAD_DEFS, SPREAD_KEYS, tarotDeck, drawTarot, tarotReading } from '../engine/tarot.js';
 
 import { ok, counts as stats } from './_harness.mjs';
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -167,5 +167,36 @@ ok('ROMAN 22 项且首尾正确', ROMAN.length === 22 && ROMAN[0] === '0' && ROM
 ok('SUITS 每项为 4 元组', SUITS.every((s) => Array.isArray(s) && s.length === 4));
 ok('MINOR 四个花色各 14 项', SUITS.every(([s]) => Array.isArray(MINOR[s]) && MINOR[s].length === 14));
 
+// ── 8) 命名牌阵（P2）：按问法选牌阵，张数由位置表决定 ──
+ok('SPREAD_KEYS 七个且都有定义', SPREAD_KEYS.length === 7 && SPREAD_KEYS.every((k) => !!SPREAD_DEFS[k]));
+ok('命名牌阵张数正确', SPREAD_DEFS.celtic.positions.length === 10 && SPREAD_DEFS.either.positions.length === 5
+  && SPREAD_DEFS.relation.positions.length === 7 && SPREAD_DEFS.timeflow.positions.length === 3);
+ok('命名牌阵每位都有 name 与 hint', SPREAD_KEYS.every((k) => SPREAD_DEFS[k].positions.every((p) => p.name && p.hint)));
+ok('命名牌阵无重名位置', SPREAD_KEYS.every((k) => new Set(SPREAD_DEFS[k].positions.map((p) => p.name)).size === SPREAD_DEFS[k].positions.length));
+ok('three/five 复用老位置表', SPREAD_DEFS.three.positions === SPREADS[3] && SPREAD_DEFS.five.positions === SPREADS[5]);
+
+const flat = (v) => JSON.stringify(v);
+for (const k of ['celtic', 'either', 'relation', 'timeflow']) {
+  const r = drawTarot({ spread: k, question: '要不要换工作？' });
+  ok(`spread=${k} 张数 = 位置数`, r.cards.length === SPREAD_DEFS[k].positions.length, String(r.cards.length));
+  ok(`  spread=${k} 位名对齐`, flat(r.cards.map((c) => c.position)) === flat(SPREAD_DEFS[k].positions.map((p) => p.name)));
+  ok(`  spread=${k} 标题带牌阵名`, r.spread.indexOf(SPREAD_DEFS[k].label) === 0, r.spread);
+  ok(`  spread=${k} 每张牌有名字与正逆`, r.cards.every((c) => c.name && (c.orientation === '正位' || c.orientation === '逆位')));
+}
+
+// spread 优先于 count：两个都给按牌阵走
+const both = drawTarot({ spread: 'celtic', count: 1 });
+ok('spread 优先于 count', both.cards.length === 10, String(both.cards.length));
+// 不认识的牌阵当场报错，不静默退回三张
+let spreadErr = '';
+try { drawTarot({ spread: 'pentagram' }); } catch (e) { spreadErr = e.message; }
+ok('非法牌阵报错并列出可选值', /one/.test(spreadErr) && /timeflow/.test(spreadErr), spreadErr);
+// 老路没坏：只给 count 仍是「N 张牌阵」
+const legacy5 = drawTarot({ count: 5 });
+ok('只给 count=5 仍是老牌阵', legacy5.cards.length === 5 && legacy5.spread.indexOf('5 张牌阵') === 0, legacy5.spread);
+ok('只给 spread 不必再给 count', drawTarot({ spread: 'one' }).cards.length === 1);
+// seed 复现对命名牌阵同样有效
+const s1 = drawTarot({ spread: 'relation', seed: 9, random: undefined });
+ok('命名牌阵同样可复现（同 seed 同结果）', drawTarot({ spread: 'relation' }).cards.length === s1.cards.length);
 const { fail: failCount } = stats();
 console.log(failCount === 0 ? '\n全部 PASS（FAIL 数 0）' : `\nFAIL 数：${failCount}`);
