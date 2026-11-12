@@ -757,7 +757,7 @@ const needAsk = Core.needAsk || ((t) => false);
 // setDraft 写草稿、submit 走输入框正常的回车路径（有回合在跑时排队，不打断）。
 // 面板与桥在同一个客户端模块里，用一个模块级引用互相找到；桥没挂上时退回复制。
 const COMPOSER = { ref: null, seats: [], seatOk: {}, seatDisposers: [], contribution: '', keys: '', injectType: '', spec: '', errs: [], regs: 0, mounted: 0 };
-const LAST = { r: null, q: '', it: null };
+const LAST = { r: null, q: '', it: null, entry: null };
 // 档案称呼框在 dangerouslySetInnerHTML 里，重绘会整块换掉；存在模块级，
 // 改日期等任意 state 变化重绘时才能把它带回输入框（不 setState，避免每键重绘丢光标）
 let PROF_NAME = '';
@@ -829,7 +829,7 @@ function ComposerBridge(props) {
   }
   return h('button', {
     type: 'button', className: 'mp-chip ok',
-    title: LAST.r ? '把上一张盘的摘要和问题发进对话窗' : '先在侧栏「命理」里排一张盘',
+    title: LAST.r ? '把上一张盘的摘要和问题发进对话窗' : '先在侧栏「烛微命盘」里排一张盘',
     onClick: () => { const t = askTextForLast(); if (t) sendToComposer(t); },
   }, '命理·问');
 }
@@ -1357,13 +1357,11 @@ function App() {
           saveHistory(next);
           return next;
         });
-        // 每一次排盘都往卦例库记一条：一分钟内参数完全相同的由 casesAdd 自己去重
-        // （连点排盘、回看后又排一次都会撞），存储写不进去也不影响这次结果
-        try {
-          const acc = PP.casesAdd(entry);
-          if (acc && acc.ok && !acc.dup && acc.list) setCases(acc.list);
-        } catch (e) { /* 隐私模式 / 配额满：只丢这一条，不打断排盘 */ }
-
+        // 卦例库改手动保存（用户反馈「点点就自动存根本不需要」）：只把这次的 entry
+        // 记到 LAST 供「存入卦例库」按钮用；真存要等用户点按钮才发生。
+        // tarot/mbti/constitution 与历史同一条不存线——重放还原不了当初那张。
+        if (k !== 'tarot' && k !== 'mbti' && k !== 'constitution') LAST.entry = entry;
+        setCaseSaved(false);
       }
     } catch (e) {
       if (stale()) return;
@@ -1860,7 +1858,7 @@ function App() {
       const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = `命理报告-${result.r.system}.md`;
+      a.download = `烛微命盘报告-${result.r.system}.md`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1878,7 +1876,7 @@ function App() {
       if (!url) { setCopied('当前环境不支持 Canvas 导出'); return; }
       const a = document.createElement('a');
       a.href = url;
-      a.download = `命理摘要-${result.r.system}.png`;
+      a.download = `烛微命盘摘要-${result.r.system}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -2002,6 +2000,8 @@ function App() {
   });
   const [casesOpen, setCasesOpen] = useState(false);
   const [caseFilter, setCaseFilter] = useState('all');
+  // 手动保存：这张盘是否已存进卦例库（按本次 entry 查，不按 id——重排后 id 会变）
+  const [caseSaved, setCaseSaved] = useState(false);
 
   const openCases = () => {
     try { setCases(PP.casesLoad()); } catch (e) { /* 读不出来就按空列表开 */ }
@@ -2011,6 +2011,16 @@ function App() {
   const closeCases = () => setCasesOpen(false);
   const caseCount = (s) => (s === 'all' ? cases.length : cases.filter((x) => x.status === s).length);
   const caseList = caseFilter === 'all' ? cases : cases.filter((x) => x.status === caseFilter);
+
+  /** 「存入卦例库」按钮：用户主动选这张盘才存。参数就是这次排盘的 entry，重放走 replay 同一条路 */
+  const saveToCases = () => {
+    if (!LAST.entry) { setNotice('这张盘没有可存的参数，重排一次再存。'); return; }
+    try {
+      const r = PP.casesAdd(LAST.entry);
+      if (r && r.ok) { setCases(r.list); setCaseSaved(true); }
+      else setNotice('卦例没能存进本机（存储被禁用或已满），排盘不受影响。');
+    } catch (e) { setNotice('卦例没能存进本机（存储被禁用或已满），排盘不受影响。'); }
+  };
 
   const exportCases = () => {
     const text = PP.casesExport(cases);
@@ -2030,14 +2040,6 @@ function App() {
       setNotice('导出失败：' + (e && e.message ? e.message : '当前环境不支持下载'));
     }
   };
-
-  // 第一次进面板：把旧的「最近排过」并进卦例库（幂等，失败静默——不该挡住排盘）
-  useEffect(() => {
-    try {
-      const r = PP.casesMigrate(hist);
-      if (r && r.added) setCases(r.list);
-    } catch (e) { /* 迁移失败：卦例库照样能从零新建 */ }
-  }, []);
 
   /** 一条卦例：左半边点了回填重排，右边是应验状态与本条删除 */
   const caseRow = (x) => {
@@ -2633,7 +2635,11 @@ function App() {
       h('button', {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: downloadCard, title: '生成 PNG 摘要卡（一页读懂 + 首张表），适合直接分享',
-      }, '存为摘要长图')) : null,
+      }, '存为摘要长图'),
+      h('button', {
+        className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
+        onClick: saveToCases, title: '把这张盘的参数存进卦例库，日后可回填重排、标应验',
+      }, caseSaved ? '已存入卦例库' : '存入卦例库')) : null,
 
     result ? h('div', { key: 'ask', className: 'mp-askbox', style: { flexWrap: 'wrap' } },
       h('input', {
@@ -2741,7 +2747,7 @@ function App() {
         h('div', { className: 'mp-cases-list' }, caseList.length
           ? caseList.map((x) => caseRow(x))
           : h('div', { className: 'mp-empty' },
-            '这一栏还空着。排一次盘或起一卦就会自动记一条；过些天回来标应验。')),
+            '这一栏还空着。看结果时点「存入卦例库」，想要的盘才会记进来；过些天回来标应验。')),
         h('div', { className: 'mp-cases-f' },
           h('button', {
             className: 'mp-btn ghost', style: { fontSize: 12, padding: '4px 10px' }, onClick: exportCases,
@@ -2904,7 +2910,7 @@ function safeApply(ctx) {  try {
   };
 
   waitFor('sidebar.panellist', () => tryReg(
-    { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '命理 v' + (window.__MP_VER || '') },
+    { name: 'sidebar.panellist', id: 'metaphysics', order: 20, label: () => '烛微命盘 v' + (window.__MP_VER || '') },
     PanelIcon,
   ));
 

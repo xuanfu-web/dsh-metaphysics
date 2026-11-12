@@ -761,7 +761,7 @@
     if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存为 PDF」'); return; }
     const a = document.createElement('a');
     a.href = url;
-    a.download = `命理摘要-${last.r.system}-${last.date || ''}.png`;
+    a.download = `烛微命盘摘要-${last.r.system}-${last.date || ''}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -774,7 +774,7 @@
     const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `命理报告-${last.r.system}-${last.date || ''}.md`;
+    a.download = `烛微命盘报告-${last.r.system}-${last.date || ''}.md`;
     document.body.appendChild(a);
     a.click();
     a.remove();

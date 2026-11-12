@@ -81,7 +81,7 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
   ok('独立页导出走 renderText', /downloadReport/.test(ui) && /renderText/.test(ui));
   const app = read('src/app.js');
   ok('面板有导出 .md', /downloadReport/.test(app) && /导出 \.md/.test(app));
-  ok('导出文件名带体系', /命理报告-/.test(app));
+  ok('导出文件名带体系', /烛微命盘报告-/.test(app));
   ok('独立页有存为长图按钮', /data-act="png"/.test(ui) && /downloadCard/.test(ui));
   ok('面板有存为长图按钮', /存为摘要长图/.test(app) && /summaryCardPNG/.test(app));
 

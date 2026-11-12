@@ -361,7 +361,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.72.2</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.73.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -31990,7 +31990,7 @@ return { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDate
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.72.2";
+window.__MP_VER = "0.73.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -37563,7 +37563,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存为 PDF」'); return; }
     const a = document.createElement('a');
     a.href = url;
-    a.download = `命理摘要-${last.r.system}-${last.date || ''}.png`;
+    a.download = `烛微命盘摘要-${last.r.system}-${last.date || ''}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -37576,7 +37576,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `命理报告-${last.r.system}-${last.date || ''}.md`;
+    a.download = `烛微命盘报告-${last.r.system}-${last.date || ''}.md`;
     document.body.appendChild(a);
     a.click();
     a.remove();
