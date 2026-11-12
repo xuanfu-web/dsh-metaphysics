@@ -1,3 +1,12 @@
+## 0.72.2（2026-11-12，已发布）
+
+> 侧栏那个名字的真正来源找到了：DSH 的插件界面读 `package.json` 的 `meta.title`，`displayName` 它根本不看。
+
+- **根因**：`@deepseek-ai/dsh-client-ui-plugin-manager` 的 `packageText` / `rowText` 是 `title: pkg.meta?.title === void 0 ? pkg.name : resolveText(pkg.meta.title)`——没有 `meta.title` 就退回包名，我们两个都没有，于是显示的是别处带到界面的「命理」。
+- **修法**：`package.json` 增加 `meta: { title: '烛微命盘', description: '二十二套命理排盘与速查，本地计算，每一步都能展开核对。' }`。
+- **保留**：`displayName`（对其他宿主有用）、`locale/*.json` 的 `meta.title`（工具描述用）、包名 `dsh-metaphysics`、产物 `命理排盘.html`。
+- **生效**：link 安装，重启 App 即读新 `package.json`。
+
 ## 0.72.1（2026-11-12，已发布）
 
 > 插件在侧栏里显示的名字，也从「命理插件」换成了「烛微命盘」。
