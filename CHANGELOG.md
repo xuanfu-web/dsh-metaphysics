@@ -1,3 +1,11 @@
+## 0.72.1（2026-11-12，已发布）
+
+> 插件在侧栏里显示的名字，也从「命理插件」换成了「烛微命盘」。
+
+- **显示名**：`locale/zh.json` 的 `meta.title` 由「烛微命盘（玄学）· 八字紫微六爻梅花六壬奇门合盘塔罗」缩成「烛微命盘」，`locale/en.json` 由「Zhuwei Mingpan · Chinese Metaphysics Charts」缩成「Zhuwei Mingpan」；`package.json` 增加 `displayName: "烛微命盘"`，供宿主界面读取。
+- **不变**：npm 包名仍是 `dsh-metaphysics`，构建产物仍叫 `命理排盘.html`——包内 files 清单、exports、测试与网页版入口全按这两个名字走。
+- **生效方式**：本机以 `link:` 方式安装，重启 App 后侧栏即显示新名。
+
 ## 0.72.0（2026-11-12，已发布）
 
 > 本段主题：定名「烛微命盘」
