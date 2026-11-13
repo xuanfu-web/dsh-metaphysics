@@ -171,6 +171,12 @@ ok('独立页给还原提示', /function deepNote/.test(web));
 ok('独立页启动时先还原', /const deep = readDeepLink\(\)/.test(web));
 ok('独立页有复制深链按钮', /data-act="link"/.test(web));
 ok('独立页有复制提问按钮', /data-act="copyask"/.test(web));
+ok('独立页有存入卦例库与对错标记按钮',
+  /data-act="case"/.test(web) && /data-act="hit"/.test(web) && /data-act="miss"/.test(web));
+ok('独立页对错标记走本机卦例库（复用 casesAdd）',
+  /function caseMark[\s\S]{0,400}casesAdd/.test(web));
+ok('独立页有发邮件反馈入口（mailto）',
+  /data-act="mail"/.test(web) && /mailto:1129440028@qq\.com/.test(web));
 ok('独立页复制走同一份包', /window\.Engine\.askPackages/.test(web));
 
 const build = read('tools/build-client.mjs');

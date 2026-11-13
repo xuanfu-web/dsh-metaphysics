@@ -732,8 +732,58 @@
       <button type="button" data-act="md">导出 .md</button>
       <button type="button" data-act="png">存为摘要长图</button>
       <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制深链</button>
+      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存入卦例库</button>
+      <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
+      <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
+      <button type="button" data-act="mail" title="打开邮件客户端，报告自动复制，粘进正文即可">发邮件反馈</button>
       <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）</span>
     </div>`;
+  }
+
+  /** 从 last 与表单拼卦例 entry：只存参数，不存盘面（与面板卦例库同构） */
+  function caseEntryFromLast() {
+    if (!last || !last.r) return null;
+    const hu = el('hourunknown');
+    return {
+      kind: last.tab || '',
+      date: last.date || '',
+      // 时辰未知时 time 是占位值，不能存成假正午
+      time: hu && hu.checked ? '' : (last.time || ''),
+      hourUnknown: !!(hu && hu.checked),
+      gender: last.gender || '',
+      address: last.address || '',
+      trueSolar: last.trueSolar !== false,
+      lateZi: last.lateZi !== false,
+      at: Date.now(),
+    };
+  }
+
+  function caseMark(btn, act) {
+    const PP = window.__PP;
+    if (!PP || !PP.casesAdd || !btn) return;
+    const entry = caseEntryFromLast();
+    if (!entry) return;
+    const status = act === 'hit' ? 'hit' : act === 'miss' ? 'miss' : 'pending';
+    const done = act === 'hit' ? '已记「准」' : act === 'miss' ? '已记「不准」' : '已存卦例库';
+    const idle = act === 'hit' ? '记准' : act === 'miss' ? '记不准' : '存入卦例库';
+    let okSaved = false;
+    try {
+      const r = PP.casesAdd(entry, { status });
+      okSaved = !!(r && r.ok);
+    } catch (e) { /* 存储被禁用也不打断排盘 */ }
+    btn.textContent = okSaved ? done : '存储不可用';
+    setTimeout(() => { btn.textContent = idle; }, 1600);
+  }
+
+  function mailFeedback() {
+    if (!last || !last.r) return;
+    const text = window.Engine.renderText ? window.Engine.renderText(last.r) : '';
+    if (text && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => { /* 复制失败也照常开邮件 */ });
+    }
+    const subject = encodeURIComponent('[反馈] 烛微命盘网页版 · ' + (last.tab || ''));
+    const body = encodeURIComponent('（盘面报告已复制到剪贴板，直接粘贴在这里）\n\n我遇到的情况：\n');
+    window.open('mailto:1129440028@qq.com?subject=' + subject + '&body=' + body, '_self');
   }
 
   function onExportClick(e) {
@@ -741,6 +791,11 @@
     if (!b) return;
     if (b.dataset.act === 'md') { downloadReport(); return; }
     if (b.dataset.act === 'png') { downloadCard(); return; }
+    if (b.dataset.act === 'case' || b.dataset.act === 'hit' || b.dataset.act === 'miss') {
+      caseMark(b, b.dataset.act);
+      return;
+    }
+    if (b.dataset.act === 'mail') { mailFeedback(); return; }
     if (b.dataset.act === 'link') {
       const pkg = bridgePackages();
       if (!pkg || !pkg.link) {

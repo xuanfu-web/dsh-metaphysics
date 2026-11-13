@@ -42,6 +42,10 @@ ok('不带安装路径', !/__dirname|process\.cwd|absolutePath/.test(body));
 ok('反馈入口渲染在面板主区域（不是错误分支内）', appSrc.includes("className: 'mp-fb'"));
 ok('反馈区有「复制反馈报告」按钮', appSrc.includes('复制反馈报告'));
 ok('反馈区有「开 issue」按钮', appSrc.includes('开 issue'));
+ok('反馈区有「发邮件」按钮（mailto：不上 GitHub 的人也有路）',
+  appSrc.includes('发邮件') && /mailto:1129440028@qq\.com/.test(appSrc));
+ok('发邮件也先复制报告（用户直接粘）',
+  /const openFeedbackMail = \(\) => \{[\s\S]{0,200}copyFeedbackReport\(\)/.test(appSrc));
 ok('开 issue 前先复制报告（用户直接粘）',
   /const openFeedbackIssue = \(\) => \{[\s\S]{0,200}copyFeedbackReport\(\)/.test(appSrc));
 ok('issue 标题带体系名与「报错/使用问题」区分',

@@ -3916,6 +3916,42 @@
     })).join('\n');
   };
 
+  // 脱敏导出用：日期只留月日 / 时刻整点化 / 地址直接去掉 —— 足够按盘对账，拼不回一个人
+  const MASK_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const MASK_TIME = /^(\d{1,2}):(\d{2})(:\d{2})?$/;
+
+  function maskDate(v) {
+    const m = isStr(v) && MASK_DATE.exec(v.trim());
+    return m ? m[2] + '-' + m[3] : '';
+  }
+
+  function maskTime(v) {
+    const m = isStr(v) && MASK_TIME.exec(v.trim());
+    return m ? m[1] + ':00' : '';
+  }
+
+  /** 脱敏导出：去出生年份（只留月日）、时刻整点化、去出生地与备注里的自由文本；保留结果结论字段 */
+  pp.casesExportMasked = function (list) {
+    const src = Array.isArray(list) ? list : pp.casesLoad();
+    return src.map((x) => {
+      const e = x.entry || {};
+      const params = {};
+      Object.keys(e).forEach((k) => {
+        if (k === 'address') return;                       // 出生地直接去掉
+        if (k === 'date') { const v = maskDate(e[k]); if (v) params.date = v; return; }
+        if (k === 'time') { const v = maskTime(e[k]); if (v) params.time = v; return; }
+        if (k === 'question') { return; }                  // 所问之事常带隐私，脱敏版不带
+        params[k] = e[k];
+      });
+      return JSON.stringify({
+        id: x.id, kind: e.kind || '',
+        label: isStr(e.label) ? e.label : '',
+        status: x.status, note: '',
+        params,
+      });
+    }).join('\n');
+  };
+
   /** 把旧的「最近排过」并进来（幂等：迁过的 id 带 h- 前缀） */
   pp.casesMigrate = function (histList) {
     const src = Array.isArray(histList) ? histList : [];

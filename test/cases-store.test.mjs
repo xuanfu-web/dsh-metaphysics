@@ -222,6 +222,31 @@ const entry = (over) => Object.assign({ kind: 'bazi', date: '1990-05-12', time: 
   eq('空列表导出空串', PP.casesExport([]), '');
 }
 
+// ── 9b. 脱敏导出：拼不回一个人 ─────────────────────────────────────
+{
+  const { PP } = boot([
+    { id: 'a', at: T0, status: 'hit', note: '备注里有隐私', entry: entry({ question: '问事业', address: '北京市海淀区' }) },
+    { id: 'b', at: T0 + 1000, entry: entry({ question: '问婚姻' }) },
+  ]);
+  const txt = PP.casesExportMasked();
+  const lines = txt.split('\n');
+  eq('脱敏两条各一行', lines.length, 2);
+  let parsed = [];
+  try { parsed = lines.map((s) => JSON.parse(s)); } catch (e) { parsed = null; }
+  ok('脱敏每行都是合法 JSON', Array.isArray(parsed) && parsed.length === 2);
+  if (parsed && parsed.length === 2) {
+    const a = parsed[0].id === 'a' ? parsed[0] : parsed[1];
+    ok('脱敏不带走出生年份（只留月日）', a.params.date === '05-12');
+    ok('脱敏时刻整点化', a.params.time === '14:00');
+    ok('脱敏不带走出生地', a.params.address === undefined);
+    ok('脱敏不带走备注', a.note === '');
+    ok('脱敏保留应验状态', a.status === 'hit');
+    ok('脱敏保留体系', a.kind === 'bazi');
+    ok('脱敏不带走所问之事', a.params.question === undefined);
+  }
+  eq('脱敏空列表导出空串', PP.casesExportMasked([]), '');
+}
+
 // ── 10. 迁移旧「最近排过」：幂等 ─────────────────────────────────
 {
   const { PP } = boot(null);
