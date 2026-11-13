@@ -80,7 +80,7 @@ ok('历史去重认得时辰未知', /!!a\.hourUnknown === !!b\.hourUnknown/.tes
 ok('重放历史会恢复时辰未知', /setHourUnknown\(!!x\.hourUnknown\)/.test(APP));
 ok('生时校正按这张盘自己的输入反推', /const at = result\.at \|\| \{ date, time \};/.test(APP));
 ok('独立页生时校正也按这张盘自己的输入', /gender: last\.gender/.test(UI) && /trueSolar: last\.trueSolar !== false/.test(UI));
-ok('独立页缓存盘带上性别与出生地', /last = \{ r, html, tab, date, time, timed, trend, caliber, shadowDiff,\s*gender: args\.gender/.test(UI));
+ok('独立页缓存盘带上性别与出生地', /last = \{ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu,\s*gender: args\.gender/.test(UI));
 // 人生K线也是出生盘：出生地 / 真太阳时不能只对八字生效
 ok('独立页人生K线也传出生地', /tab === 'bazi' \|\| tab === 'ziwei' \|\| tab === 'hepan' \|\| tab === 'trend'/.test(UI));
 ok('面板人生K线也传出生地', /k === 'bazi' \|\| k === 'ziwei' \|\| k === 'hepan' \|\| k === 'trend'/.test(APP));

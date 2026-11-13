@@ -240,10 +240,10 @@ await page.waitForTimeout(600);
 const text = async (sel) => (await page.locator(sel).count()) ? (await page.locator(sel).first().innerText()).trim() : '';
 const outLen = () => page.evaluate(() => (document.getElementById('main') || {}).innerHTML?.length || 0);
 
-// 首屏（面板与单页同一套信息架构：三组卡片，每组先露 4 个）
+// 首屏（面板与单页同一套信息架构：四组卡片，每组先露 4 个）
 ok((await page.locator('#side-icon svg').count()) === 1, '侧栏图标画出来了');
 ok((await page.locator('.mp-start').count()) === 1, '主面板出现首屏');
-ok((await page.locator('.mp-tgroup').count()) === 3, '首屏三组卡片', String(await page.locator('.mp-tgroup').count()));
+ok((await page.locator('.mp-tgroup').count()) === 4, '首屏四组卡片', String(await page.locator('.mp-tgroup').count()));
 ok((await text('.mp-start')).includes('问一件事'), '首屏分组标题正确');
 const bootResult = await outLen();
 ok(bootResult > 4000, '面板打开即排默认盘（紫微）', `${bootResult} 字符`);

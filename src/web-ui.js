@@ -1023,7 +1023,14 @@
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
       let shadowDiff = null;
       try { shadowDiff = window.__PP.shadowTrack ? window.__PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
-      // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend（确定性、无网络）
+      // 八字结果里直接嵌人：同一份出生信息再排一次称骨与 trend（确定性、无网络）。
+      // 时辰未知时不嵌称骨：称骨四柱缺时辰不可算，拿正午占位会编出一个假骨重。
+      let chenggu = null;
+      if (tab === 'bazi' && !hourUnknown && window.Engine.buildChenggu) {
+        try {
+          chenggu = window.Engine.buildChenggu({ year: Number(date.slice(0, 4)), month: Number(date.slice(5, 7)), day: Number(date.slice(8, 10)), hour: Number(time.slice(0, 2)), minute: Number(time.slice(3, 5)), lateZi: args.lateZi !== false });
+        } catch (e) { chenggu = null; }
+      }
       let trend = null;
       if (tab === 'bazi') {
         try {
@@ -1043,7 +1050,7 @@
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
       const chart0 = (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
-        : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
+        : tab === 'bazi' ? (window.__PP.baziHTML(r, { chenggu }) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
@@ -1072,7 +1079,7 @@
       pastMarks = {}; pastFit = null; rectOut = null;
       // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
       // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff,
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu,
         gender: args.gender || el('gender').value,
         address: typeof args.address === 'string' ? args.address : '',
         trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,

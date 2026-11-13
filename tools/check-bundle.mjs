@@ -167,7 +167,9 @@ try {
 // 入口每加一个体系约 +0.6–0.9KB gzip，太乙是最后一个。抬的是界面预算，不是架构：
 // 入口只由 src/app.js + core.js + panel-kit.js + engine-lazy.js 拼成，这条由
 // test/client-bundle.test.mjs 的「入口不含引擎源码」守着，比字节数更靠得住。
-const ENTRY_GZIP_CAP = 110 * 1024;
+// 0.76.0：称骨嵌入八字卡后入口微涨；预算抬 2KB（抬的是界面预算不是架构，
+// 引擎仍全部走分块，入口不含引擎源码由 client-bundle.test.mjs 守着）。
+const ENTRY_GZIP_CAP = 112 * 1024;
 const entryGzip = zlib.gzipSync(Buffer.from(raw, 'utf8')).length;
 if (entryGzip >= ENTRY_GZIP_CAP) problems.push(`client.js gzip ${Math.round(entryGzip / 1024)}KB 超出 ${Math.round(ENTRY_GZIP_CAP / 1024)}KB 预算`);
 if (chunksGzip > CHUNKS_TOTAL_GZIP_CAP) {

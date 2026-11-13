@@ -1087,6 +1087,19 @@
 .mp-cg-plain{margin-top:7px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
 .mp-cg-plain em,.mp-cg-band em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px;vertical-align:1px}
 .mp-cg-band{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+/* 八字卡内嵌的折叠称骨：summary 一行低调，展开才见骨重/歌诀/释义 */
+.mp-bzcg{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.mp-bzcg summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none}
+.mp-bzcg summary::before{content:'▸ ';color:var(--lu)}
+.mp-bzcg[open] summary::before{content:'▾ '}
+.mp-bzcg-lunar{font-size:11px;color:var(--muted);margin-top:6px}
+.mp-bzcg-ws{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;font-size:12.5px;color:var(--ink2)}
+.mp-bzcg-ws b{color:var(--ink);font-weight:600}
+.mp-bzcg-song{margin-top:7px;padding:8px 11px;border-left:3px solid var(--quan);background:var(--band);border-radius:0 6px 6px 0;font-family:var(--kai,system-ui),serif;font-size:14px;line-height:1.9;color:var(--ink)}
+.mp-bzcg-plain{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
+.mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px}
+.mp-bzcg-band{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
+.mp-bzcg-note{margin-top:7px;font-size:11px;color:var(--muted)}
 .mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 @media print{.mp-cg{break-inside:avoid}}
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -3116,7 +3129,7 @@
     </section>`;
   };
 
-  pp.baziHTML = function (r) {
+  pp.baziHTML = function (r, opt) {
     // 时辰未知时 pillars.hour 为 null：只画存在的柱，不能拿 null 去取 .stemTenGod
     const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']]
       .filter(([k]) => r.pillars[k]);
@@ -3267,6 +3280,23 @@
         ${ssGroups.map((g) => `<div class="pp-ssg"><span class="ssg-gt">${g.cat}</span><span class="ssg-gi">${g.items.map((i) => `<span class="pp-ssi ${i.luck || 'neutral'}" title="${esc(`${i.via}查${i.target} ｜ ${i.rule}`)}">${i.name}<em>${i.pillars.map((k) => SHORT[k] || '').join('')}</em></span>`).join('')}</span></div>`).join('')}
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>` : '';
+    // 附带称骨：同一份出生信息的民俗层延伸，默认折起不抢版面（用户展开才见）
+    const cgOpt = opt && opt.chenggu;
+    const cgHTML = cgOpt ? (() => {
+      const cg = cgOpt;
+      const cgCells = ['year', 'month', 'day', 'hour'].map((k) => {
+        const x = cg.weights && cg.weights[k] || { label: '' };
+        return `<span class="mp-bzcg-w">${esc(String(x.label).split(' ')[0])} <b>${esc(String(x.label).split(' ')[1] || '')}</b></span>`;
+      }).join('');
+      return `<details class="mp-bzcg"><summary>袁天罡称骨 · ${esc(cg.total && cg.total.label || '')}（${esc(cg.verdict && cg.verdict.band || '')}）</summary>
+        <div class="mp-bzcg-lunar">${esc(cg.lunar && cg.lunar.text || '')}</div>
+        <div class="mp-bzcg-ws">${cgCells}</div>
+        ${(cg.song && cg.song.text) ? `<div class="mp-bzcg-song">「${esc(cg.song.text)}」</div>` : ''}
+        ${(cg.song && cg.song.plain) ? `<div class="mp-bzcg-plain"><em>释义</em>${esc(cg.song.plain)}</div>` : ''}
+        ${cg.verdict && cg.verdict.text ? `<div class="mp-bzcg-band">${esc(cg.verdict.text)}</div>` : ''}
+        <div class="mp-bzcg-note">称骨为通行本口径的民俗参考，与上方四柱旺衰是两套独立口径，互不推导。</div>
+      </details>`;
+    })() : '';
     return pp.briefHTML(r) + `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>
       ${r.hourUnknown ? `<div class="pp-warn" role="note">时柱暂缺：只排年/月/日三柱，起运与交运按日估算。时柱按正午暂算，涉及时柱的结论仅供参考。</div>` : ''}
@@ -3297,6 +3327,7 @@
         ${(!r.palaces.minggong || !r.palaces.shengong) ? '<span class="pp-chip" title="命宫与身宫由生月与生时支合数定宫；时柱暂缺，这两宫不排">命宫·身宫 时柱暂缺不排</span>' : ''}
       </div>`) : ''}
       ${ssx}
+      ${cgHTML}
       <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}${(r.dayun.startAgeExact && Number.isInteger(r.dayun.startAgeExact.years))
         ? `　精确 ${r.dayun.startAgeExact.years}年${r.dayun.startAgeExact.months}月${r.dayun.startAgeExact.days}天${r.dayun.startAgeExact.hours}时（截断到日时；上面是四舍五入到月）` : ''}</div>
     </div>`;

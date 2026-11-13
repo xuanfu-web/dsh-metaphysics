@@ -866,7 +866,7 @@ function sendToComposer(text) {
  */
 function chartHTML(result) {
   const html = result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-  : result.kind === 'bazi' ? (PP.baziHTML(result.r) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))
+  : result.kind === 'bazi' ? (PP.baziHTML(result.r, { chenggu: result.chenggu }) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))
     : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
       : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
         : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
@@ -1266,7 +1266,14 @@ function App() {
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
       let shadowDiff = null;
       try { shadowDiff = PP.shadowTrack ? PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
-      // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend，确定性、无网络
+      // 八字结果里直接嵌人：同一份出生信息再排一次称骨与 trend，确定性、无网络。
+      // 时辰未知时不嵌称骨：称骨四柱缺时辰不可算，拿正午占位会编出一个假骨重。
+      let chenggu = null;
+      if (k === 'bazi' && !huV && Engine.buildChenggu) {
+        try {
+          chenggu = Engine.buildChenggu({ year: Number(dt.date.slice(0, 4)), month: Number(dt.date.slice(5, 7)), day: Number(dt.date.slice(8, 10)), hour: Number(dt.time.slice(0, 2)), minute: Number(dt.time.slice(3, 5)), lateZi: lateZiV });
+        } catch (e) { chenggu = null; }
+      }
       let trend = null;
       if (k === 'bazi') {
         try {
@@ -1301,7 +1308,7 @@ function App() {
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       // 生时校正要按「这张盘用的出生信息」反推，而不是表单此刻的值：用户改完没重排时
       // 两者可能不同，拿表单值算出来的候选时辰就贴到了另一张盘上。
-      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff,
+      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu,
         gender: genderV, address: addressV, trueSolar: tsV, lateZi: lateZiV });
       // 首帧：等 React 提交并绘制两帧后再记总时长，避免把「还没画出来」算进渲染
       const draw = (n) => {

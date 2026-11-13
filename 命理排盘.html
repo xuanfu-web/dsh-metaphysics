@@ -685,7 +685,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：177 个测试文件 / 10106 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：178 个测试文件 / 10121 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -33194,6 +33194,19 @@ window.__MP_VER = "0.75.0";
 .mp-cg-plain{margin-top:7px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
 .mp-cg-plain em,.mp-cg-band em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px;vertical-align:1px}
 .mp-cg-band{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
+/* 八字卡内嵌的折叠称骨：summary 一行低调，展开才见骨重/歌诀/释义 */
+.mp-bzcg{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.mp-bzcg summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none}
+.mp-bzcg summary::before{content:'▸ ';color:var(--lu)}
+.mp-bzcg[open] summary::before{content:'▾ '}
+.mp-bzcg-lunar{font-size:11px;color:var(--muted);margin-top:6px}
+.mp-bzcg-ws{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;font-size:12.5px;color:var(--ink2)}
+.mp-bzcg-ws b{color:var(--ink);font-weight:600}
+.mp-bzcg-song{margin-top:7px;padding:8px 11px;border-left:3px solid var(--quan);background:var(--band);border-radius:0 6px 6px 0;font-family:var(--kai,system-ui),serif;font-size:14px;line-height:1.9;color:var(--ink)}
+.mp-bzcg-plain{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
+.mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px}
+.mp-bzcg-band{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
+.mp-bzcg-note{margin-top:7px;font-size:11px;color:var(--muted)}
 .mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 @media print{.mp-cg{break-inside:avoid}}
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -35223,7 +35236,7 @@ window.__MP_VER = "0.75.0";
     </section>`;
   };
 
-  pp.baziHTML = function (r) {
+  pp.baziHTML = function (r, opt) {
     // 时辰未知时 pillars.hour 为 null：只画存在的柱，不能拿 null 去取 .stemTenGod
     const cols = [['year', '年柱'], ['month', '月柱'], ['day', '日柱'], ['hour', '时柱']]
       .filter(([k]) => r.pillars[k]);
@@ -35374,6 +35387,23 @@ window.__MP_VER = "0.75.0";
         ${ssGroups.map((g) => `<div class="pp-ssg"><span class="ssg-gt">${g.cat}</span><span class="ssg-gi">${g.items.map((i) => `<span class="pp-ssi ${i.luck || 'neutral'}" title="${esc(`${i.via}查${i.target} ｜ ${i.rule}`)}">${i.name}<em>${i.pillars.map((k) => SHORT[k] || '').join('')}</em></span>`).join('')}</span></div>`).join('')}
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>` : '';
+    // 附带称骨：同一份出生信息的民俗层延伸，默认折起不抢版面（用户展开才见）
+    const cgOpt = opt && opt.chenggu;
+    const cgHTML = cgOpt ? (() => {
+      const cg = cgOpt;
+      const cgCells = ['year', 'month', 'day', 'hour'].map((k) => {
+        const x = cg.weights && cg.weights[k] || { label: '' };
+        return `<span class="mp-bzcg-w">${esc(String(x.label).split(' ')[0])} <b>${esc(String(x.label).split(' ')[1] || '')}</b></span>`;
+      }).join('');
+      return `<details class="mp-bzcg"><summary>袁天罡称骨 · ${esc(cg.total && cg.total.label || '')}（${esc(cg.verdict && cg.verdict.band || '')}）</summary>
+        <div class="mp-bzcg-lunar">${esc(cg.lunar && cg.lunar.text || '')}</div>
+        <div class="mp-bzcg-ws">${cgCells}</div>
+        ${(cg.song && cg.song.text) ? `<div class="mp-bzcg-song">「${esc(cg.song.text)}」</div>` : ''}
+        ${(cg.song && cg.song.plain) ? `<div class="mp-bzcg-plain"><em>释义</em>${esc(cg.song.plain)}</div>` : ''}
+        ${cg.verdict && cg.verdict.text ? `<div class="mp-bzcg-band">${esc(cg.verdict.text)}</div>` : ''}
+        <div class="mp-bzcg-note">称骨为通行本口径的民俗参考，与上方四柱旺衰是两套独立口径，互不推导。</div>
+      </details>`;
+    })() : '';
     return pp.briefHTML(r) + `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>
       ${r.hourUnknown ? `<div class="pp-warn" role="note">时柱暂缺：只排年/月/日三柱，起运与交运按日估算。时柱按正午暂算，涉及时柱的结论仅供参考。</div>` : ''}
@@ -35404,6 +35434,7 @@ window.__MP_VER = "0.75.0";
         ${(!r.palaces.minggong || !r.palaces.shengong) ? '<span class="pp-chip" title="命宫与身宫由生月与生时支合数定宫；时柱暂缺，这两宫不排">命宫·身宫 时柱暂缺不排</span>' : ''}
       </div>`) : ''}
       ${ssx}
+      ${cgHTML}
       <div style="margin-top:8px;font-size:12px;color:var(--muted)">上一节 ${r.jieqi.previous.name} ${r.jieqi.previous.time}　下一节 ${r.jieqi.next.name} ${r.jieqi.next.time}　${r.dayun.rule}，${r.dayun.startAge.years}岁起运${(r.dayun.jiao && r.dayun.jiao.at) ? `（交运 ${r.dayun.jiao.at}，${r.dayun.jiao.frame}）` : ''}${(r.dayun.startAgeExact && Number.isInteger(r.dayun.startAgeExact.years))
         ? `　精确 ${r.dayun.startAgeExact.years}年${r.dayun.startAgeExact.months}月${r.dayun.startAgeExact.days}天${r.dayun.startAgeExact.hours}时（截断到日时；上面是四舍五入到月）` : ''}</div>
     </div>`;
@@ -37867,7 +37898,14 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
       let shadowDiff = null;
       try { shadowDiff = window.__PP.shadowTrack ? window.__PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
-      // 八字结果里直接嵌人生 K 线：同一份出生信息再排一次 trend（确定性、无网络）
+      // 八字结果里直接嵌人：同一份出生信息再排一次称骨与 trend（确定性、无网络）。
+      // 时辰未知时不嵌称骨：称骨四柱缺时辰不可算，拿正午占位会编出一个假骨重。
+      let chenggu = null;
+      if (tab === 'bazi' && !hourUnknown && window.Engine.buildChenggu) {
+        try {
+          chenggu = window.Engine.buildChenggu({ year: Number(date.slice(0, 4)), month: Number(date.slice(5, 7)), day: Number(date.slice(8, 10)), hour: Number(time.slice(0, 2)), minute: Number(time.slice(3, 5)), lateZi: args.lateZi !== false });
+        } catch (e) { chenggu = null; }
+      }
       let trend = null;
       if (tab === 'bazi') {
         try {
@@ -37887,7 +37925,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
       const chart0 = (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
-        : tab === 'bazi' ? (window.__PP.baziHTML(r) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
+        : tab === 'bazi' ? (window.__PP.baziHTML(r, { chenggu }) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
@@ -37916,7 +37954,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       pastMarks = {}; pastFit = null; rectOut = null;
       // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
       // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff,
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu,
         gender: args.gender || el('gender').value,
         address: typeof args.address === 'string' ? args.address : '',
         trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,

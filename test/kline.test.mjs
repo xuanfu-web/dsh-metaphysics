@@ -73,10 +73,10 @@ ok('旺衰边界时不给高低结论', (() => {
   const src = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
   // 嵌进八字页时关掉 K 线自带的人话方框：那一页最上面已经有八字本的那一个，
   // 两个「先说结论」会互相抢第一屏
-  ok('面板八字渲染拼接 K 线', /PP\.baziHTML\(result\.r\) \+ \(result\.trend \? PP\.trendHTML\(result\.trend, \{ brief: false \}\)/.test(src));
+  ok('面板八字渲染拼接 K 线', /PP\.baziHTML\(result\.r, \{ chenggu: result\.chenggu \}\) \+ \(result\.trend \? PP\.trendHTML\(result\.trend, \{ brief: false \}\)/.test(src));
   ok('面板八字会再算一次 trend', /system: 'trend'/.test(src));
   ok('趋势 tab 用 trendHTML', /result\.kind === 'trend' \? PP\.trendHTML/.test(src));
   const wsrc = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
-  ok('独立页八字也嵌 K 线', /baziHTML\(r\) \+ \(trend \? window\.__PP\.trendHTML\(trend, \{ brief: false \}\)/.test(wsrc));
+  ok('独立页八字也嵌 K 线', /baziHTML\(r, \{ chenggu \}\) \+ \(trend \? window\.__PP\.trendHTML\(trend, \{ brief: false \}\)/.test(wsrc));
   ok('独立页 trend tab 用 trendHTML', /tab === 'trend' \? window\.__PP\.trendHTML/.test(wsrc));
 }
