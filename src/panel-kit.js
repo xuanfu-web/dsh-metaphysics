@@ -1089,13 +1089,13 @@
 .mp-cg-plain{margin-top:7px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
 .mp-cg-plain em,.mp-cg-band em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px;vertical-align:1px}
 .mp-cg-band{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
-/* 八字卡内嵌的折叠称骨：summary 一行低调，展开才见骨重/歌诀/释义 */
-.mp-bzcg{margin-top:12px;border:1.5px solid var(--lu);border-radius:10px;padding:12px 14px;background:linear-gradient(135deg,color-mix(in srgb,var(--lu) 8%,var(--card)),var(--card) 55%);box-shadow:0 1px 6px color-mix(in srgb,var(--lu) 22%,transparent)}
-.mp-bzcg-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.mp-bzcg-h b{font-size:13.5px;color:var(--lu);font-weight:700;letter-spacing:.04em}
-.mp-bzcg-tag{font-style:normal;font-size:10px;color:var(--lu);border:1px solid var(--lu);border-radius:99px;padding:1px 7px;opacity:.85}
+/* 八字卡内嵌称骨：常开亮色卡，金色系压过周围的灰调盘面 */
+.mp-bzcg{margin-top:12px;border:2px solid color-mix(in srgb,var(--gold) 72%,var(--lu));border-radius:10px;padding:12px 14px;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 13%,var(--card)),var(--card) 58%);box-shadow:0 2px 10px color-mix(in srgb,var(--gold) 30%,transparent)}
+.mp-bzcg-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-direction:row}
+.mp-bzcg-h b{font-size:14px;color:var(--gold);font-weight:700;letter-spacing:.04em}
+.mp-bzcg-tag{font-style:normal;font-size:10px;color:var(--on-accent);border:none;background:color-mix(in srgb,var(--gold) 78%,var(--lu));border-radius:99px;padding:1px 8px}
 .mp-bzcg-hero{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
-.mp-bzcg-hero b{font-size:26px;color:var(--lu);font-weight:700;letter-spacing:.02em}
+.mp-bzcg-hero b{font-size:30px;color:var(--gold);font-weight:700;letter-spacing:.02em}
 .mp-bzcg-bandchip{font-style:normal;font-size:12px;font-weight:700;color:var(--on-accent);border-radius:99px;padding:3px 12px}
 .mp-bzcg-bandchip.band-top{background:linear-gradient(135deg,var(--cg-top-a),var(--cg-top-b))}
 .mp-bzcg-bandchip.band-good{background:linear-gradient(135deg,var(--cg-good-a),var(--cg-good-b))}
@@ -1104,10 +1104,10 @@
 .mp-bzcg-bandchip.band-low{background:linear-gradient(135deg,var(--cg-low-a),var(--cg-low-b))}
 .mp-bzcg-lunar{font-size:11px;color:var(--muted);margin-top:4px}
 .mp-bzcg-ws{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:5px;font-size:12.5px;color:var(--ink2)}
-.mp-bzcg-ws b{color:var(--lu);font-weight:700}
-.mp-bzcg-song{margin-top:8px;padding:8px 11px;border-left:3px solid var(--lu);background:color-mix(in srgb,var(--lu) 10%,var(--band));border-radius:0 6px 6px 0;font-family:var(--kai,system-ui),serif;font-size:14px;line-height:1.9;color:var(--ink)}
+.mp-bzcg-ws b{color:var(--gold);font-weight:700}
+.mp-bzcg-song{margin-top:8px;padding:8px 11px;border-left:3px solid var(--gold);background:color-mix(in srgb,var(--gold) 12%,var(--band));border-radius:0 6px 6px 0;font-family:var(--kai,system-ui),serif;font-size:14px;line-height:1.9;color:var(--ink)}
 .mp-bzcg-plain{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
-.mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--lu);border:1px solid var(--lu);border-radius:99px;padding:1px 7px;margin-right:6px;opacity:.85}
+.mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--gold);border:1px solid var(--gold);border-radius:99px;padding:1px 7px;margin-right:6px;opacity:.9}
 .mp-bzcg-band{margin-top:7px;font-size:12.5px;line-height:1.8;color:var(--ink);font-weight:500}
 .mp-bzcg-note{margin-top:7px;font-size:11px;color:var(--muted)}
 .mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
@@ -3300,7 +3300,7 @@
       }).join('');
       const bandCls = { '上上': 'band-top', '中上': 'band-good', '中平': 'band-mid', '中下': 'band-weak', '下下': 'band-low' }[cg.verdict && cg.verdict.band] || 'band-mid';
       return `<section class="mp-bzcg open" aria-label="袁天罡称骨">
-        <header class="mp-bzcg-h"><b>袁天罡称骨</b><i class="mp-bzcg-tag">民俗参考</i></header>
+        <div class="mp-bzcg-h"><b>袁天罡称骨</b><i class="mp-bzcg-tag">民俗参考</i></div>
         <div class="mp-bzcg-hero"><b>${esc(cg.total && cg.total.label || '')}</b><span class="mp-bzcg-bandchip ${bandCls}">${esc(cg.verdict && cg.verdict.band || '')}</span></div>
         <div class="mp-bzcg-lunar">${esc(cg.lunar && cg.lunar.text || '')}</div>
         <div class="mp-bzcg-ws">${cgCells}</div>
