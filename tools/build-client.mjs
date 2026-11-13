@@ -48,6 +48,11 @@ const CHART_STACK = [...new Set([
   ...BAZI_STACK,
   // 八字：内嵌人生 K 线 + 可开紫微交叉验证
   'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words',
+  // 八字卡里嵌的称骨：chart 块里的 buildChenggu 是从 __mods.chenggu 解构来的，
+  // 模块不在栈里就解构成 undefined，且 dn() 合并时 `k[pe]!==void 0` 会把它跳过——
+  // 结果是「面板一个称骨字都不出、单页正常」的静默失效（撤掉称骨独立入口后踩过）。
+  // 模块本体 17KB，进 chart 栈比让排八字时多拉一个独立块划算。
+  'chenggu',
   // 紫微：可开八字交叉验证（八字已在 BAZI_STACK 里）
   // 合盘：双方可能是八字或紫微，两套引擎 + 合盘模板
   'ziwei-hepan', 'hepan',

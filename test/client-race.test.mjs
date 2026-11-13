@@ -58,8 +58,9 @@ function awaitsGuarded(body, gate, writes) {
 const appRun = stripComments(bodyOf(APP, 'const run = async (kind, override, modeOverride, over) =>', '面板 run'));
 // 抠错体会让下面所有「每个 await 都被守住」变成空对空，先确认真的把整个函数抠下来了
 const countAwaits = (s) => (s.match(/await\s/g) || []).length;
+// 3 处：地址解析、按需补载称骨分块、以及原本就有的那一处
 ok('抠到的面板 run 是完整函数体', appRun.includes('catch (e)') && appRun.trimEnd().endsWith('}')
-  && countAwaits(appRun) === 2, `长度 ${appRun.length}，await ${countAwaits(appRun)} 处`);
+  && countAwaits(appRun) === 3, `长度 ${appRun.length}，await ${countAwaits(appRun)} 处`);
 const WRITES = ['setError(', 'setResult(', 'setHist(', 'setAskInvalid('];
 const leaks = awaitsGuarded(appRun, 'stale()', WRITES);
 ok('面板 run 的每个 await 之后都先判过期', leaks.length === 0, leaks.join(' ／ '));

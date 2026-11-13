@@ -14,7 +14,10 @@ ok('折叠段标注两套口径互不推导', pk.includes('两套独立口径，
 ok('summary 带骨重与分档', pk.includes('袁天罡称骨'));
 
 const app = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
-ok('面板只在八字且有时刻时嵌称骨', app.includes("if (k === 'bazi' && !huV && Engine.buildChenggu)"));
+ok('面板只在八字且有时刻时嵌称骨', app.includes("if (k === 'bazi' && !huV) {") && app.includes('if (Engine.buildChenggu) {'));
+// 分块加载下 chart 块不带 chenggu 子模块，buildChenggu 会解构成 undefined，
+// 且 dn() 合并时 `!==void 0` 守卫会静默跳过——必须显式补载，否则面板不出卡、单页正常。
+ok('缺 buildChenggu 时按需补载 chenggu 分块', /!Engine\.buildChenggu[\s\S]{0,160}await ensureEngine\('chenggu'\)/.test(app));
 ok('称骨失败静默不影响主盘', app.includes('catch (e) { chenggu = null; }'));
 ok('结果对象带 chenggu 字段', /setResult\(\{ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu,/.test(app));
 ok('面板渲染传称骨', app.includes('PP.baziHTML(result.r, { chenggu: result.chenggu })'));

@@ -23,6 +23,11 @@ ok('面板 tab 共 21 个（0.77.0 称骨撤独立入口并入八字）', tabs.l
 ok('每个 tab 都映射到分块', tabs.every((t) => CHUNK_OF_TAB[t]), tabs.filter((t) => !CHUNK_OF_TAB[t]).join(','));
 ok('分块文件名都是 client.<name>.js', Object.values(CHUNK_OF_TAB).every((f) => /^client\.[a-z]+\.js$/.test(f)));
 
+// 八字结果卡里的称骨是 chart 块的产物：chart 块里的 buildChenggu 从 __mods.chenggu 解构而来，
+// 模块不在栈里就解构成 undefined，而 dn() 合并时 `!== void 0` 会把它静默跳过——
+// 症状是「左侧插件面板一个称骨字都不出，单页（全量引擎）却正常」。这里钉死，别再把模块摘掉。
+ok('chart 块自带 chenggu 模块（八字卡内嵌称骨）', CHUNKS.chart.modules.includes('chenggu'), CHUNKS.chart.modules.join(','));
+
 // 分块体积上限只认 tools/check-bundle.mjs 一处。
 // 2026-11-07 之前这里另写死一条 232KB 硬线，和 CI 侧的 260KB 墙并存：bazi 涨到 231.2KB 时
 // 余量只剩 0.8KB，而引文库的原文／白话全在不打包的 citations-fuwen.js，进分块的只是定位字段与文案。
