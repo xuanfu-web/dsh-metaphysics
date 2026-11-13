@@ -2726,7 +2726,13 @@ function App() {
           title: '在浏览器打开 GitHub issue（报告已复制到剪贴板，粘进去即可）',
         }, '开 issue')),
       h('div', { className: 'mp-fb-b' },
-        '邮件 1129440028@qq.com　·　GitHub issues　·　微信群 dsh-metaphysics',
+        '有疑问？',
+        h('a', {
+          href: 'mailto:1129440028@qq.com?subject=' + encodeURIComponent('[反馈] 烛微命盘'),
+          style: { color: 'inherit' },
+          title: '点开直接写邮件，不用复制任何东西',
+        }, '1129440028@qq.com'),
+        '　·　GitHub issues　·　微信群 dsh-metaphysics',
         fbNote ? h('span', { className: 'mp-fb-note' }, '　' + fbNote) : null)),
     // 卦例抽屉：不占 tab——tab 是「排盘体系」，卦例是查看类入口，混进 TABS 会被当成要出生时辰的体系
     casesOpen ? h('div', {

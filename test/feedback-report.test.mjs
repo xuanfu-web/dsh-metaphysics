@@ -44,6 +44,8 @@ ok('反馈区有「复制反馈报告」按钮', appSrc.includes('复制反馈�
 ok('反馈区有「开 issue」按钮', appSrc.includes('开 issue'));
 ok('反馈区不设显眼的邮件按钮（邮箱只在底部小字，别催人反馈）',
   !appSrc.includes("'发邮件'") && !/openFeedbackMail/.test(appSrc));
+ok('底部邮箱是 mailto 链接且有「有疑问？」邀请语（可发现但不打扰）',
+  appSrc.includes('有疑问？') && /href: 'mailto:1129440028@qq\.com/.test(appSrc));
 ok('开 issue 前先复制报告（用户直接粘）',
   /const openFeedbackIssue = \(\) => \{[\s\S]{0,200}copyFeedbackReport\(\)/.test(appSrc));
 ok('issue 标题带体系名与「报错/使用问题」区分',
