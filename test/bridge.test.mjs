@@ -175,8 +175,8 @@ ok('独立页有存入卦例库与对错标记按钮',
   /data-act="case"/.test(web) && /data-act="hit"/.test(web) && /data-act="miss"/.test(web));
 ok('独立页对错标记走本机卦例库（复用 casesAdd）',
   /function caseMark[\s\S]{0,400}casesAdd/.test(web));
-ok('独立页有发邮件反馈入口（mailto）',
-  /data-act="mail"/.test(web) && /mailto:1129440028@qq\.com/.test(web));
+ok('独立页不设显眼的邮件按钮（反馈入口只留面板底部）',
+  !/data-act="mail"/.test(web) && !/mailFeedback/.test(web));
 ok('独立页复制走同一份包', /window\.Engine\.askPackages/.test(web));
 
 const build = read('tools/build-client.mjs');

@@ -37573,7 +37573,6 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存入卦例库</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
-      <button type="button" data-act="mail" title="打开邮件客户端，报告自动复制，粘进正文即可">发邮件反馈</button>
       <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）</span>
     </div>`;
   }
@@ -37613,17 +37612,6 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     setTimeout(() => { btn.textContent = idle; }, 1600);
   }
 
-  function mailFeedback() {
-    if (!last || !last.r) return;
-    const text = window.Engine.renderText ? window.Engine.renderText(last.r) : '';
-    if (text && navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).catch(() => { /* 复制失败也照常开邮件 */ });
-    }
-    const subject = encodeURIComponent('[反馈] 烛微命盘网页版 · ' + (last.tab || ''));
-    const body = encodeURIComponent('（盘面报告已复制到剪贴板，直接粘贴在这里）\n\n我遇到的情况：\n');
-    window.open('mailto:1129440028@qq.com?subject=' + subject + '&body=' + body, '_self');
-  }
-
   function onExportClick(e) {
     const b = e.target && e.target.closest ? e.target.closest('.exp [data-act]') : null;
     if (!b) return;
@@ -37633,7 +37621,6 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       caseMark(b, b.dataset.act);
       return;
     }
-    if (b.dataset.act === 'mail') { mailFeedback(); return; }
     if (b.dataset.act === 'link') {
       const pkg = bridgePackages();
       if (!pkg || !pkg.link) {

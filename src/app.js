@@ -1850,14 +1850,6 @@ function App() {
     }
   };
 
-  /** 发邮件：mailto 对正文长度有限制，只带主题与一句话提示，报告已在剪贴板里直接粘 */
-  const openFeedbackMail = () => {
-    try { copyFeedbackReport(); } catch (e) { /* 同上 */ }
-    const subject = encodeURIComponent('[反馈] ' + (TABS.find((t) => t.k === tab)?.label || tab) + (error ? '：报错' : '：使用问题'));
-    const body = encodeURIComponent('（反馈报告已复制到剪贴板，直接粘贴在这里）\n\n我遇到的情况：\n');
-    try { window.open('mailto:1129440028@qq.com?subject=' + subject + '&body=' + body, '_self'); } catch (e) { /* 忽略 */ }
-  };
-
   /** 导出 Markdown：盘面 + 解析（一页读懂 / 三张表 / 交叉验证） */
   const downloadReport = () => {
     if (!result || !result.r) return;
@@ -2732,12 +2724,7 @@ function App() {
           className: 'mp-btn ghost', style: { fontSize: 12, padding: '4px 10px', marginLeft: 6 },
           onClick: () => openFeedbackIssue(),
           title: '在浏览器打开 GitHub issue（报告已复制到剪贴板，粘进去即可）',
-        }, '开 issue'),
-        h('button', {
-          className: 'mp-btn ghost', style: { fontSize: 12, padding: '4px 10px', marginLeft: 6 },
-          onClick: () => openFeedbackMail(),
-          title: '打开邮件客户端（报告已复制到剪贴板，粘进正文即可）',
-        }, '发邮件')),
+        }, '开 issue')),
       h('div', { className: 'mp-fb-b' },
         '邮件 1129440028@qq.com　·　GitHub issues　·　微信群 dsh-metaphysics',
         fbNote ? h('span', { className: 'mp-fb-note' }, '　' + fbNote) : null)),
