@@ -9,7 +9,7 @@ ok('晚子时口径自带（与八字同源）', typeof cg.input.lateZi === 'boo
 
 const pk = fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8');
 ok('baziHTML 接受 opt.chenggu', /pp\.baziHTML = function \(r, opt\)/.test(pk));
-ok('称骨折叠段用 details 不抢版面', pk.includes('<details class="mp-bzcg">'));
+ok('称骨嵌入段显眼呈现（亮色块、默认展开、骨重大字）', pk.includes('class="mp-bzcg open"') && pk.includes('mp-bzcg-hero') && pk.includes('mp-bzcg-bandchip'));
 ok('折叠段标注两套口径互不推导', pk.includes('两套独立口径，互不推导'));
 ok('summary 带骨重与分档', pk.includes('袁天罡称骨'));
 

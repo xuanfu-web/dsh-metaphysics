@@ -55,6 +55,7 @@ ok('null 安全', PP.chengguHTML(null) === '');
 {
   const app = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
   const web = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
-  ok('面板接到 chengguHTML', /result\.kind === 'chenggu' \? PP\.chengguHTML/.test(app));
-  ok('独立页接到 chengguHTML', /tab === 'chenggu' \? window\.__PP\.chengguHTML/.test(web));
+  ok('面板不再挂独立称骨入口（0.77.0 并入八字卡）', !/result\.kind === 'chenggu' \? PP\.chengguHTML/.test(app));
+  ok('独立页不再挂独立称骨入口', !/tab === 'chenggu' \? window\.__PP\.chengguHTML/.test(web));
+  ok('渲染器 chengguHTML 保留（引擎级渲染仍可独立用）', true);
 }

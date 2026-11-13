@@ -416,7 +416,6 @@ function page() {
       <button class="tab" data-tab="almanac">黄历</button>
       <button class="tab" data-tab="convert">农历</button>
       <button class="tab" data-tab="zeri">择日</button>
-      <button class="tab" data-tab="chenggu">称骨</button>
       <button class="tab" data-tab="xiaoliuren">小六壬</button>
       <button class="tab" data-tab="star">星座</button>
       <button class="tab" data-tab="numerology">数字</button>

@@ -19,7 +19,7 @@ const reactStub = {
 
 const appSrc = read('src/app.js');
 const tabs = [...appSrc.matchAll(/\{ k: '([a-z]+)'/g)].map((m) => m[1]);
-ok('面板 tab 共 22 个', tabs.length === 22, String(tabs.length));
+ok('面板 tab 共 21 个（0.77.0 称骨撤独立入口并入八字）', tabs.length === 21, String(tabs.length));
 ok('每个 tab 都映射到分块', tabs.every((t) => CHUNK_OF_TAB[t]), tabs.filter((t) => !CHUNK_OF_TAB[t]).join(','));
 ok('分块文件名都是 client.<name>.js', Object.values(CHUNK_OF_TAB).every((f) => /^client\.[a-z]+\.js$/.test(f)));
 

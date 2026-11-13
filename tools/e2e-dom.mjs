@@ -46,7 +46,7 @@ const TABS = [
   { k: 'ziwei', name: '紫微' }, { k: 'bazi', name: '八字' }, { k: 'liuyao', name: '六爻' },
   { k: 'meihua', name: '梅花' }, { k: 'daliuren', name: '六壬' }, { k: 'qimen', name: '奇门' },
   { k: 'hepan', name: '合盘' }, { k: 'tarot', name: '塔罗' }, { k: 'almanac', name: '黄历' },
-  { k: 'convert', name: '农历' }, { k: 'zeri', name: '择日' }, { k: 'chenggu', name: '称骨' },
+  { k: 'convert', name: '农历' }, { k: 'zeri', name: '择日' },
   { k: 'xiaoliuren', name: '小六壬' }, { k: 'star', name: '星座' }, { k: 'numerology', name: '生命数字' },
   { k: 'mbti', name: '人格' }, { k: 'trend', name: '人生K线' }, { k: 'fengshui', name: '风水' },
   { k: 'name', name: '起名' },

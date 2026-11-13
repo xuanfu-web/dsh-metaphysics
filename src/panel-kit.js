@@ -20,6 +20,8 @@
        reduced-motion 时整体关停，见文件尾的全局 @media。 */
     --dur:150ms;--dur-fast:100ms;--ease:cubic-bezier(.32,.72,.24,1);
     --r-sm:6px;--r-md:10px;--r-lg:14px;
+    /* 称骨分档徽章五档色（0.77.0 嵌入段显眼化）：亮色渐变两端 */
+    --cg-top-a:#c9a227;--cg-top-b:#e6b84c;--cg-good-a:#2e7d5b;--cg-good-b:#4caf87;--cg-mid-a:#5b6b9d;--cg-mid-b:#7d8fc4;--cg-weak-a:#a1702d;--cg-weak-b:#c9924f;--cg-low-a:#8a4a4a;--cg-low-b:#b06a6a;
     --glow:0 0 0 1px rgba(var(--lu-rgb),.25),0 0 12px rgba(var(--lu-rgb),.12)}
 /* 变量与 .mp-it 共享 —— 「解析与详解」是 .pp 的兄弟节点、不在 .pp 内部，
    变量只挂在 .pp 上时它拿不到 --card/--muted/--red，头部底色会变透明、边框会退回黑色。 */
@@ -1088,17 +1090,25 @@
 .mp-cg-plain em,.mp-cg-band em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px;vertical-align:1px}
 .mp-cg-band{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
 /* 八字卡内嵌的折叠称骨：summary 一行低调，展开才见骨重/歌诀/释义 */
-.mp-bzcg{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
-.mp-bzcg summary{cursor:pointer;font-size:12px;color:var(--muted);list-style:none}
-.mp-bzcg summary::before{content:'▸ ';color:var(--lu)}
-.mp-bzcg[open] summary::before{content:'▾ '}
-.mp-bzcg-lunar{font-size:11px;color:var(--muted);margin-top:6px}
-.mp-bzcg-ws{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px;font-size:12.5px;color:var(--ink2)}
-.mp-bzcg-ws b{color:var(--ink);font-weight:600}
-.mp-bzcg-song{margin-top:7px;padding:8px 11px;border-left:3px solid var(--quan);background:var(--band);border-radius:0 6px 6px 0;font-family:var(--kai,system-ui),serif;font-size:14px;line-height:1.9;color:var(--ink)}
+.mp-bzcg{margin-top:12px;border:1.5px solid var(--lu);border-radius:10px;padding:12px 14px;background:linear-gradient(135deg,color-mix(in srgb,var(--lu) 8%,var(--card)),var(--card) 55%);box-shadow:0 1px 6px color-mix(in srgb,var(--lu) 22%,transparent)}
+.mp-bzcg-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mp-bzcg-h b{font-size:13.5px;color:var(--lu);font-weight:700;letter-spacing:.04em}
+.mp-bzcg-tag{font-style:normal;font-size:10px;color:var(--lu);border:1px solid var(--lu);border-radius:99px;padding:1px 7px;opacity:.85}
+.mp-bzcg-hero{display:flex;align-items:baseline;gap:10px;margin:2px 0 4px}
+.mp-bzcg-hero b{font-size:26px;color:var(--lu);font-weight:700;letter-spacing:.02em}
+.mp-bzcg-bandchip{font-style:normal;font-size:12px;font-weight:700;color:var(--on-accent);border-radius:99px;padding:3px 12px}
+.mp-bzcg-bandchip.band-top{background:linear-gradient(135deg,var(--cg-top-a),var(--cg-top-b))}
+.mp-bzcg-bandchip.band-good{background:linear-gradient(135deg,var(--cg-good-a),var(--cg-good-b))}
+.mp-bzcg-bandchip.band-mid{background:linear-gradient(135deg,var(--cg-mid-a),var(--cg-mid-b))}
+.mp-bzcg-bandchip.band-weak{background:linear-gradient(135deg,var(--cg-weak-a),var(--cg-weak-b))}
+.mp-bzcg-bandchip.band-low{background:linear-gradient(135deg,var(--cg-low-a),var(--cg-low-b))}
+.mp-bzcg-lunar{font-size:11px;color:var(--muted);margin-top:4px}
+.mp-bzcg-ws{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:5px;font-size:12.5px;color:var(--ink2)}
+.mp-bzcg-ws b{color:var(--lu);font-weight:700}
+.mp-bzcg-song{margin-top:8px;padding:8px 11px;border-left:3px solid var(--lu);background:color-mix(in srgb,var(--lu) 10%,var(--band));border-radius:0 6px 6px 0;font-family:var(--kai,system-ui),serif;font-size:14px;line-height:1.9;color:var(--ink)}
 .mp-bzcg-plain{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
-.mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px}
-.mp-bzcg-band{margin-top:6px;font-size:12px;line-height:1.8;color:var(--ink2)}
+.mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--lu);border:1px solid var(--lu);border-radius:99px;padding:1px 7px;margin-right:6px;opacity:.85}
+.mp-bzcg-band{margin-top:7px;font-size:12.5px;line-height:1.8;color:var(--ink);font-weight:500}
 .mp-bzcg-note{margin-top:7px;font-size:11px;color:var(--muted)}
 .mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 @media print{.mp-cg{break-inside:avoid}}
@@ -3280,7 +3290,7 @@
         ${ssGroups.map((g) => `<div class="pp-ssg"><span class="ssg-gt">${g.cat}</span><span class="ssg-gi">${g.items.map((i) => `<span class="pp-ssi ${i.luck || 'neutral'}" title="${esc(`${i.via}查${i.target} ｜ ${i.rule}`)}">${i.name}<em>${i.pillars.map((k) => SHORT[k] || '').join('')}</em></span>`).join('')}</span></div>`).join('')}
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>` : '';
-    // 附带称骨：同一份出生信息的民俗层延伸，默认折起不抢版面（用户展开才见）
+    // 附带称骨：同一份出生信息的民俗层延伸，显眼呈现（亮色块、默认展开、骨重大字）
     const cgOpt = opt && opt.chenggu;
     const cgHTML = cgOpt ? (() => {
       const cg = cgOpt;
@@ -3288,14 +3298,17 @@
         const x = cg.weights && cg.weights[k] || { label: '' };
         return `<span class="mp-bzcg-w">${esc(String(x.label).split(' ')[0])} <b>${esc(String(x.label).split(' ')[1] || '')}</b></span>`;
       }).join('');
-      return `<details class="mp-bzcg"><summary>袁天罡称骨 · ${esc(cg.total && cg.total.label || '')}（${esc(cg.verdict && cg.verdict.band || '')}）</summary>
+      const bandCls = { '上上': 'band-top', '中上': 'band-good', '中平': 'band-mid', '中下': 'band-weak', '下下': 'band-low' }[cg.verdict && cg.verdict.band] || 'band-mid';
+      return `<section class="mp-bzcg open" aria-label="袁天罡称骨">
+        <header class="mp-bzcg-h"><b>袁天罡称骨</b><i class="mp-bzcg-tag">民俗参考</i></header>
+        <div class="mp-bzcg-hero"><b>${esc(cg.total && cg.total.label || '')}</b><span class="mp-bzcg-bandchip ${bandCls}">${esc(cg.verdict && cg.verdict.band || '')}</span></div>
         <div class="mp-bzcg-lunar">${esc(cg.lunar && cg.lunar.text || '')}</div>
         <div class="mp-bzcg-ws">${cgCells}</div>
         ${(cg.song && cg.song.text) ? `<div class="mp-bzcg-song">「${esc(cg.song.text)}」</div>` : ''}
         ${(cg.song && cg.song.plain) ? `<div class="mp-bzcg-plain"><em>释义</em>${esc(cg.song.plain)}</div>` : ''}
         ${cg.verdict && cg.verdict.text ? `<div class="mp-bzcg-band">${esc(cg.verdict.text)}</div>` : ''}
         <div class="mp-bzcg-note">称骨为通行本口径的民俗参考，与上方四柱旺衰是两套独立口径，互不推导。</div>
-      </details>`;
+      </section>`;
     })() : '';
     return pp.briefHTML(r) + `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>

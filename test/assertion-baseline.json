@@ -135,7 +135,7 @@
       "fail": 0
     },
     "chenggu.test.mjs": {
-      "pass": 18,
+      "pass": 19,
       "fail": 0
     },
     "chunks.test.mjs": {
@@ -427,7 +427,7 @@
       "fail": 0
     },
     "profiles-store.test.mjs": {
-      "pass": 173,
+      "pass": 172,
       "fail": 0
     },
     "push-tag.test.mjs": {

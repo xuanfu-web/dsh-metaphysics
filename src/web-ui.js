@@ -173,7 +173,7 @@
   // ── 我的命盘（本机档案）────────────────────────────────────────
   // 存的是「输入」而不是结果，点卡回填 + 直接出盘。存储、清洗、卡片渲染都取自
   // panel-kit 那一份实现：宿主面板里存的档案，在这个单页里同样看得见、同样能一点出盘。
-  const PROF_TABS = ['bazi', 'ziwei', 'trend', 'chenggu'];
+  const PROF_TABS = ['bazi', 'ziwei', 'trend'];
   let profEditing = '';
   let profArmed = '';
   let profTip = '';
@@ -323,7 +323,7 @@
     liuyao: 'cast', meihua: 'cast', daliuren: 'cast', qimen: 'cast',
     tarot: 'none',
     almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
-    chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
+    trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
     mbti: 'none',
   constitution: 'none',
@@ -356,9 +356,7 @@
     tarot: '塔罗不看时间，只记录抽牌时刻与你的提问。',
     almanac: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。',
     zeri: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。',
-    chenggu: '称骨按农历年、月、日、时的骨重求和；时辰必填。',
-    xiaoliuren: '小六壬用农历月/日/时掐指，也可用三个随机数起课。',
-    star: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。',
+    xiaoliuren: '小六壬用农历月/日/时掐指，也可用三个随机数起课。',    star: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。',
     numerology: '生命数字按公历生日归约出生命路径数、生日数与态度数。',
     trend: '人生 K 线按大运与流年十神给逐年运势分，画成走势图。',
     fengshui: '风水看八宅命卦、大游年四吉四凶与流年九宫飞星；也可按坐向看门主灶倾向，或按运与坐向排玄空下卦盘。',
@@ -1059,7 +1057,6 @@
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
                       : tab === 'almanac' ? window.__PP.almanacHTML(r)
                       : tab === 'zeri' ? window.__PP.zeriHTML(r)
-                      : tab === 'chenggu' ? window.__PP.chengguHTML(r)
                         : tab === 'trend' ? window.__PP.trendHTML(r)
                           : tab === 'name' ? window.__PP.nameHTML(r)
                           : tab === 'mbti' ? window.__PP.mbtiHTML(r)
@@ -1134,7 +1131,7 @@
     }
   }
 
-  const QUICK = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
 
   // 窄屏下 tab 栏是单行横滑：切到靠后的 tab 时把它滚到可视区中间，
   // 否则点了「人格」页面变了、高亮却停在屏幕外，看着像没响应

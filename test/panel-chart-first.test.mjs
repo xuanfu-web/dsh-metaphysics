@@ -15,14 +15,14 @@ ok('有 chartHTML 分派函数', chart.startsWith('function chartHTML('), chart.
 ok('函数名以 HTML 结尾（html-sinks 的渲染器契约）', /function chartHTML\(/.test(app));
 
 const kinds = [...chart.matchAll(/result\.kind === '([a-z]+)'/g)].map((m) => m[1]);
-eq('覆盖 18 个体系分支（其余走 quickHTML 兜底）', kinds.length, 18);
+eq('覆盖 17 个体系分支（0.77.0 称骨分支撤除，其余走 quickHTML 兜底）', kinds.length, 17);
 eq('分支顺序与原分派一致',
   kinds.join(','),
-  'ziwei,bazi,meihua,daliuren,qimen,hepan,tarot,liuyao,chenggu,almanac,zeri,trend,name,mbti,constitution,wuyunliuqi,taiyi,fengshui');
+  'ziwei,bazi,meihua,daliuren,qimen,hepan,tarot,liuyao,almanac,zeri,trend,name,mbti,constitution,wuyunliuqi,taiyi,fengshui');
 
 const renderers = [...new Set([...chart.matchAll(/PP\.([a-zA-Z]+HTML)\(/g)].map((m) => m[1]))];
 // plainHTML 是「说人话」层，不是盘面渲染器，但它也叫 *HTML，会被同一个正则抓到，所以计 22。
-ok('渲染器去重后 22 个（18 体系 + trend/qimenFacts/ziweiHepan + quickHTML + plainHTML）', renderers.length === 22, renderers.join(','));
+ok('渲染器去重后 21 个（17 体系 + trend/qimenFacts/ziweiHepan + quickHTML + plainHTML；chengguHTML 引擎级保留不再接分支）', renderers.length === 21, renderers.join(','));
 ok('盘面函数只做分派，不掺技术块',
   !/perfHTML|revisionHTML|handleHTML|shadowHTML|traceHTML|caliberHTML/.test(chart),
   renderers.join(','));

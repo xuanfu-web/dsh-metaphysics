@@ -661,7 +661,6 @@ const TABS = [
   { k: 'almanac', label: '黄历', timeLabel: '', hint: '黄历按公历日期查农历、干支、宜忌、时辰吉凶、二十八宿与吉神方位；只做本地计算。' },
   { k: 'convert', label: '农历', timeLabel: '', hint: '公农历互转：公历生日可反查农历；只知道农历生日时，可转成公历再排盘。' },
   { k: 'zeri', label: '择日', timeLabel: '', hint: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。' },
-  { k: 'chenggu', label: '称骨', timeLabel: '出生时刻', hint: '称骨按农历年、月、日、时的骨重求和；时辰必填。' },
   { k: 'xiaoliuren', label: '小六壬', timeLabel: '起课时刻', hint: '小六壬用农历月/日/时掐指，也可用三个随机数起课。' },
   { k: 'star', label: '星座', timeLabel: '', hint: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。' },
   { k: 'numerology', label: '生命数字', timeLabel: '', hint: '生命数字按公历生日归约出生命路径数、生日数与态度数。' },
@@ -677,7 +676,7 @@ const TABS = [
 function pad(n) { return String(n).padStart(2, '0'); }
 
 // 速查类：不算完整命盘，主按钮统一叫「看结果」；与独立页（web-ui）保持同一套文案
-const QUICK_TABS = ['almanac', 'convert', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'constitution', 'wuyunliuqi', 'taiyi'];
+const QUICK_TABS = ['almanac', 'convert', 'zeri', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'constitution', 'wuyunliuqi', 'taiyi'];
 
 // ── 起卦快捷行（P3）────────────────────────────────────────────
 // 六个占卜体系一键起卦：点一下 = 切到该体系 + 用当前时刻起卦，走的是与主按钮
@@ -737,7 +736,7 @@ const TIME_KIND = {
   tarot: 'none',
   // 速查类：date=只用日期；birth=出生信息；cast=起课时刻
   almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
-  chenggu: 'birth', trend: 'birth', fengshui: 'birth', name: 'birth',
+  trend: 'birth', fengshui: 'birth', name: 'birth',
   xiaoliuren: 'cast',
   mbti: 'none',
   constitution: 'none',
@@ -866,14 +865,12 @@ function sendToComposer(text) {
  */
 function chartHTML(result) {
   const html = result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-  : result.kind === 'bazi' ? (PP.baziHTML(result.r, { chenggu: result.chenggu }) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))
-    : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
+  : result.kind === 'bazi' ? (PP.baziHTML(result.r, { chenggu: result.chenggu }) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))    : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
       : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
         : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
         : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
         : result.kind === 'tarot' ? PP.tarotHTML(result.r)
           : result.kind === 'liuyao' ? PP.liuyaoHTML(result.r)
-            : result.kind === 'chenggu' ? PP.chengguHTML(result.r)
               : result.kind === 'almanac' ? PP.almanacHTML(result.r)
               : result.kind === 'zeri' ? PP.zeriHTML(result.r)
               : result.kind === 'trend' ? PP.trendHTML(result.r)
@@ -1044,7 +1041,7 @@ function App() {
 
   const meta = TABS.find((t) => t.k === tab) || TABS[0];
   const isBirth = tab === 'bazi' || tab === 'ziwei' || tab === 'hepan'
-    || tab === 'chenggu' || tab === 'trend' || tab === 'fengshui' || tab === 'name';
+    || tab === 'trend' || tab === 'fengshui' || tab === 'name';
   const timeKind = kindOf(tab);
   const usesTimeInput = !(tab === 'meihua' && mhMode === 'number');
   // 人格问卷与日期无关：留着起卦日期/时刻只会让人以为要填生辰
@@ -2079,7 +2076,7 @@ function App() {
    * 存本机 localStorage，存的是输入（生日/时刻/性别/出生地），不是结果；
    * 合盘与占事类不入档（档案只描述一个人），所以只在单人体系下给「存入」条。
    */
-  const PROF_TABS = ['bazi', 'ziwei', 'trend', 'chenggu'];
+  const PROF_TABS = ['bazi', 'ziwei', 'trend'];
   const profFill = (p) => {
     setTab(p.kind);
     setDate(p.date);

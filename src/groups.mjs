@@ -21,7 +21,6 @@ export const GROUPS = [
       { k: 'hepan', label: '合盘', tip: '两人合不合' },
       { k: 'mbti', label: '人格', tip: '16 型问卷' },
       { k: 'constitution', label: '体质', tip: '九种体质' },
-      { k: 'chenggu', label: '称骨', tip: '生辰称命重' },
       { k: 'trend', label: '人生K', tip: '一生走势', wide: true },
     ],
   },

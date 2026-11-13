@@ -50,7 +50,7 @@ const CASES = [
   { name: '黄历', system: 'almanac', args: { datetime: '2026-11-02T10:00' }, render: 'almanacHTML', must: ['宜'] },
   { name: '择日·区间', system: 'zeri', args: { startDate: '2026-11-03', task: '开业', days: 10 }, render: 'zeriHTML' },
   { name: '择日·候选', system: 'zeri', args: { candidates: ['2026-12-01', '2026-12-08'], task: '嫁娶' }, render: 'zeriHTML' },
-  { name: '称骨', system: 'chenggu', args: { datetime: '1996-01-19T07:31' }, render: 'chengguHTML' },
+  { name: '称骨（引擎级渲染，入口已并入八字卡）', system: 'chenggu', args: { datetime: '1996-01-19T07:31' }, render: 'chengguHTML' },
   { name: '农历互转', system: 'convert', args: { mode: 'solar2lunar', datetime: '1996-01-19T07:31' }, render: 'quickHTML' },
   { name: '星座', system: 'star', args: { datetime: '1996-01-19T07:31' }, render: 'quickHTML' },
   { name: '生命数字', system: 'numerology', args: { datetime: '1996-01-19T07:31' }, render: 'quickHTML' },
