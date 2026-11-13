@@ -72,13 +72,14 @@ tr[hidden]{display:none}
 <body>
 <div class="wrap">
   <h1>公开对拍报告</h1>
-  <p class="sub">v0.73.0 · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
+  <p class="sub">v0.73.0 · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算；八字按五虎遁、五鼠遁与十神规则独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
 
   <div class="cards">
     <div class="card"><span>六爻卦例</span><b>128</b><small>成对 93 · 静卦 35 · 剔除 5</small></div>
     <div class="card"><span>紫微盘</span><b>312</b><small>34 条格局 · 10,608 条判定</small></div>
     <div class="card"><span>奇门时辰</span><b>20</b><small>20 × 9 宫 = 180 个宫位</small></div>
     <div class="card"><span>交运案例</span><b>12</b><small>取节 · 比例 · 闰日 · 真太阳时</small></div>
+    <div class="card"><span>八字样本</span><b>18</b><small>四柱 · 纳音 · 藏干 · 十神 · 旬空 · 顺逆</small></div>
     <div class="card"><span>不一致</span><b>0</b><small>剔除 5 条（理由见下表） · 未核 127 项（原表无起卦日，旬空不比对）</small></div>
   </div>
 
@@ -97,6 +98,7 @@ tr[hidden]{display:none}
       <button type="button" data-system-filter="紫微" aria-pressed="false">紫微</button>
       <button type="button" data-system-filter="奇门" aria-pressed="false">奇门</button>
       <button type="button" data-system-filter="交运" aria-pressed="false">交运</button>
+      <button type="button" data-system-filter="八字" aria-pressed="false">八字</button>
     </div>
     <input id="q" type="search" placeholder="搜索案例 / 格局 / 理由" aria-label="搜索对拍记录">
     <span id="shown" aria-live="polite"></span>
@@ -4399,6 +4401,168 @@ tr[hidden]{display:none}
       <td data-label="状态" class="status ok">一致</td>
       <td data-label="说明" class="reason">参照盘逐宫比对：四柱、局数、值符、值使、星门神与天盘干</td>
     </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1985-06-15T00:30｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">乙丑 壬午 乙酉 丙子｜海中金｜空午未</td>
+      <td data-label="引擎结果" class="mono">乙丑 壬午 乙酉 丙子｜海中金｜空午未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1985-06-15 00:30 晚子时换日）；年中、乙丑年</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2000-01-15T00:00｜女</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">己卯 丁丑 壬申 庚子｜城头土｜空戌亥</td>
+      <td data-label="引擎结果" class="mono">己卯 丁丑 壬申 庚子｜城头土｜空戌亥</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（2000-01-15 00:00 晚子时换日）；跨世纪、立春前属己卯年</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1984-03-15T23:30｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">甲子 丁卯 己酉 甲子｜海中金｜空寅卯</td>
+      <td data-label="引擎结果" class="mono">甲子 丁卯 己酉 甲子｜海中金｜空寅卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1984-03-15 23:30 晚子时换日）；晚子时换日（23:30 归次日）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1984-03-15T23:30｜男｜当晚子时</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">甲子 丁卯 戊申 壬子｜海中金｜空寅卯</td>
+      <td data-label="引擎结果" class="mono">甲子 丁卯 戊申 壬子｜海中金｜空寅卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1984-03-15 23:30 不换日）；晚子时不换日（同一时刻另一种口径）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1966-11-12T10:00｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">丙午 己亥 乙亥 辛巳｜天河水｜空申酉</td>
+      <td data-label="引擎结果" class="mono">丙午 己亥 乙亥 辛巳｜天河水｜空申酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1966-11-12 10:00 晚子时换日）；年内交运样本</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1975-06-15T12:00｜女</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">乙卯 壬午 壬辰 丙午｜大溪水｜空午未</td>
+      <td data-label="引擎结果" class="mono">乙卯 壬午 壬辰 丙午｜大溪水｜空午未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1975-06-15 12:00 晚子时换日）；夏至前后</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1901-01-15T08:00｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">庚子 己丑 癸巳 丙辰｜壁上土｜空午未</td>
+      <td data-label="引擎结果" class="mono">庚子 己丑 癸巳 丙辰｜壁上土｜空午未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1901-01-15 08:00 晚子时换日）；ΔT 近似区间最早期、庚子年</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2030-12-15T22:00｜女</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">庚戌 戊子 甲申 乙亥｜钗钏金｜空午未</td>
+      <td data-label="引擎结果" class="mono">庚戌 戊子 甲申 乙亥｜钗钏金｜空午未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（2030-12-15 22:00 晚子时换日）；未来日期（历法外推）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2025-12-15T23:59｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">乙巳 戊子 己未 甲子｜覆灯火｜空子丑</td>
+      <td data-label="引擎结果" class="mono">乙巳 戊子 己未 甲子｜覆灯火｜空子丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（2025-12-15 23:59 晚子时换日）；日末 + 晚子时</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1988-08-08T08:08｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">戊辰 庚申 乙未 庚辰｜大林木｜空辰巳</td>
+      <td data-label="引擎结果" class="mono">戊辰 庚申 乙未 庚辰｜大林木｜空辰巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1988-08-08 08:08 晚子时换日）；对称数字（只作便利记忆，不作依据）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1999-12-15T23:00｜女</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">己卯 丙子 壬寅 庚子｜城头土｜空辰巳</td>
+      <td data-label="引擎结果" class="mono">己卯 丙子 壬寅 庚子｜城头土｜空辰巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1999-12-15 23:00 晚子时换日）；晚子时整点</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2010-06-15T12:00｜女</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">庚寅 壬午 丙申 甲午｜松柏木｜空辰巳</td>
+      <td data-label="引擎结果" class="mono">庚寅 壬午 丙申 甲午｜松柏木｜空辰巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（2010-06-15 12:00 晚子时换日）；近节</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1955-01-15T22:00｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">甲午 丁丑 丙子 己亥｜沙中金｜空申酉</td>
+      <td data-label="引擎结果" class="mono">甲午 丁丑 丙子 己亥｜沙中金｜空申酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1955-01-15 22:00 晚子时换日）；早年样本</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1972-06-15T06:06｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">壬子 丙午 丁丑 癸卯｜桑柘木｜空申酉</td>
+      <td data-label="引擎结果" class="mono">壬子 丙午 丁丑 癸卯｜桑柘木｜空申酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1972-06-15 06:06 晚子时换日）；闰年六月</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2000-02-29T12:00｜女</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">庚辰 戊寅 丁巳 丙午｜白蜡金｜空子丑</td>
+      <td data-label="引擎结果" class="mono">庚辰 戊寅 丁巳 丙午｜白蜡金｜空子丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（2000-02-29 12:00 晚子时换日）；闰日出生（交运闰日退位另见交运表）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1996-01-15T07:31｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">乙亥 己丑 辛亥 壬辰｜山头火｜空寅卯</td>
+      <td data-label="引擎结果" class="mono">乙亥 己丑 辛亥 壬辰｜山头火｜空寅卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1996-01-15 07:31 晚子时换日）；真太阳时口径另算（本表只核柱）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2024-02-04T16:27｜女｜当晚子时</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">甲辰 丙寅 戊戌 庚申｜覆灯火｜空辰巳</td>
+      <td data-label="引擎结果" class="mono">癸卯 乙丑 戊戌 庚申｜金箔金｜空辰巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（2024-02-04 16:27 不换日）；2024 立春交节当天｜交界日：立春当天不比年柱，节令当天不比月柱（那由引擎的节气精算定）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1990-02-04T04:30｜男</td>
+      <td data-label="对拍项">四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆</td>
+      <td data-label="期望 / 来源" class="mono">庚午 戊寅 庚子 戊寅｜路旁土｜空辰巳</td>
+      <td data-label="引擎结果" class="mono">己巳 丁丑 庚子 戊寅｜大林木｜空辰巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">独立复算（1990-02-04 04:30 晚子时换日）；1990 立春交节当天｜交界日：立春当天不比年柱，节令当天不比月柱（那由引擎的节气精算定）</td>
+    </tr>
       </tbody>
     </table>
   </div>
@@ -4450,7 +4614,8 @@ tr[hidden]{display:none}
     六爻：<code>test/fixtures/classics.json</code>（成对 93 + 静卦 35；源 138 条中 5 条因原文动爻标记与变卦推导冲突被剔除，理由逐条列在上表）。<br>
     紫微：312 张扫描盘 × 34 条格局 = 10,608 条判定；独立谓词只读 <code>palaces[].stars</code> 与四化，不调用引擎的格局函数。<br>
     奇门：20 个时辰 × 9 宫 = 180 个宫位；参照盘来自 <code>test/fixtures/qimen-20.json</code>，逐宫核四柱、局数、值符、值使、星门神与天盘干。<br>
-    交运：出生 jd + 到相邻节令的真实天数 × 365.2422/3；核顺逆取节、比例、与 startAge 同源、闰日退位与真太阳时口径。尚未与第三方排盘软件批量对拍，样本为独立复算。
+    交运：出生 jd + 到相邻节令的真实天数 × 365.2422/3；核顺逆取节、比例、与 startAge 同源、闰日退位与真太阳时口径。尚未与第三方排盘软件批量对拍，样本为独立复算。<br>
+    八字：18 个样本，四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆六项由 <code>tools/verification.mjs</code> 里的 <code>recomputeBaziPillars()</code> 按五虎遁、五鼠遁、六十甲子、藏干与十神规则重推一边，再与引擎逐项比对——期望值不读 <code>engine/bazi.js</code> 的对应实现。样本日期全避开节令交界日，交界日只核日柱与时柱。<b>没核的</b>（不在这张表里，也不假装核过）：旺衰分值与格局取用（无唯一文本口径）、神煞吉凶、真太阳时的经度修正量、与第三方排盘软件的对拍。
   </div>
 </div>
 <script>

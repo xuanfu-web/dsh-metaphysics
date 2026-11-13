@@ -14,6 +14,7 @@ import { formatJd, partsToJd } from '../engine/calendar.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FIX = JSON.parse(fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'classics.json'), 'utf8'));
 const QIMEN_FIX = JSON.parse(fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'qimen-20.json'), 'utf8'));
+const BAZI_FIX = JSON.parse(fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'bazi-duipai.json'), 'utf8')).meta;
 const PKG = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 
 const ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -390,12 +391,207 @@ export function buildQimenRows() {
   return QIMEN_FIX.map((item) => verifyQimenCase(item));
 }
 
+// ── 八字：独立复算层 ──────────────────────────────────────────────────
+// 这是整份报告里唯一「从古法自己推一遍」的体系。柱、纳音、藏干、十神、旬空
+// 全部在本函数内按规则重推，一律不 import bazi.js 里的对应实现——引擎那份是
+// 被测对象，用它算期望值等于自己给自己判卷。唯一借用的 partsToJd 只负责把
+// 年月日时分换成儒略日序号（同一输入同一序号的换算，不含任何命理规则）。
+//
+// 还没做的（明写在 scope 里，不装作核过了）：旺衰分值、格局取用、神煞吉凶、
+// 真太阳时的经度修正量本身。这些没有唯一文本口径，本机也没有可复现的底本，
+// 报告里不出现它们的「期望值」。
+
+const BAZI_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+const BAZI_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+const BAZI_STEM_EL = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
+const BAZI_NATURE = { 甲: '阳', 乙: '阴', 丙: '阳', 丁: '阴', 戊: '阳', 己: '阴', 庚: '阳', 辛: '阴', 壬: '阳', 癸: '阴' };
+// 地支藏干：本气在前，中气、余气依次
+const BAZI_HIDDEN = {
+  子: ['癸'], 丑: ['己', '癸', '辛'], 寅: ['甲', '丙', '戊'], 卯: ['乙'],
+  辰: ['戊', '乙', '癸'], 巳: ['丙', '庚', '戊'], 午: ['丁', '己'], 未: ['己', '丁', '乙'],
+  申: ['庚', '壬', '戊'], 酉: ['辛'], 戌: ['戊', '辛', '丁'], 亥: ['壬', '甲'],
+};
+// 六十甲子纳音，两柱一名，30 名
+const BAZI_NAYIN = [
+  '海中金', '炉中火', '大林木', '路旁土', '剑锋金', '山头火', '涧下水', '城头土', '白蜡金', '杨柳木',
+  '泉中水', '屋上土', '霹雳火', '松柏木', '长流水', '沙中金', '山下火', '平地木', '壁上土', '金箔金',
+  '覆灯火', '天河水', '大驿土', '钗钏金', '桑柘木', '大溪水', '沙中土', '天上火', '石榴木', '大海水',
+];
+// 生我、我生、我克、克我
+const BAZI_SHENG = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
+const BAZI_KE = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' };
+
+function baziIdxOf(stem, branch) {
+  const s = BAZI_STEMS.indexOf(stem);
+  const b = BAZI_BRANCHES.indexOf(branch);
+  for (let i = 0; i < 60; i += 1) {
+    if (i % 10 === s && i % 12 === b) return i;
+  }
+  return -1;
+}
+
+function baziShiShen(dayStem, other) {
+  const me = BAZI_STEM_EL[dayStem];
+  const it = BAZI_STEM_EL[other];
+  const same = BAZI_NATURE[dayStem] === BAZI_NATURE[other];
+  let rel;
+  if (it === me) rel = '比';
+  else if (BAZI_SHENG[me] === it) rel = '食伤';
+  else if (BAZI_KE[me] === it) rel = '财';
+  else if (BAZI_KE[it] === me) rel = '官杀';
+  else rel = '印';
+  const alt = same ? 1 : 0; // 阴阳相同取「偏/比/食/财/杀/枭」那一列
+  if (rel === '比') return same ? '比肩' : '劫财';
+  if (rel === '食伤') return same ? '食神' : '伤官';
+  if (rel === '财') return same ? '偏财' : '正财';
+  if (rel === '官杀') return same ? '七杀' : '正官';
+  return same ? '偏印' : '正印';
+}
+
+function baziXunKong(ganzhi) {
+  const i = baziIdxOf(ganzhi[0], ganzhi[1]);
+  if (i < 0) return [];
+  const head = Math.floor(i / 10) * 10;
+  return [BAZI_BRANCHES[(head + 10) % 12], BAZI_BRANCHES[(head + 11) % 12]];
+}
+
+/**
+ * 按古法独立推一张八字的四柱与各项明细。
+ * @param {{year:number,month:number,day:number,hour:number,minute:number,lateZi?:boolean}} input
+ */
+export function recomputeBaziPillars(input) {
+  const { year, month, day, hour, minute } = input;
+  const lateZi = input.lateZi !== false;
+  // 日柱：以 2000-01-01（戊午，序号 54）为基准，按「本地日序号」线性推移。
+  // partsToJd 只管把一个钟面时刻换成序号；23:00 后是否算次日是独立的一条规则，
+  // 所以先取整日序号，再按 lateZi 决定要不要 +1。
+  const jdnBase = Math.floor(partsToJd({ year, month, day, hour: 12, minute: 0 }) + 0.5);
+  const dayIndex0 = (((jdnBase - 2451545 + 54) % 60) + 60) % 60;
+  const dayIndex = lateZi && hour >= 23 ? (dayIndex0 + 1) % 60 : dayIndex0;
+  const dayGan = BAZI_STEMS[dayIndex % 10];
+  const dayZhi = BAZI_BRANCHES[dayIndex % 12];
+
+  // 年柱：以立春为界。立春交节时刻本层不自己算（那是历法精算，不是干支规则），
+  // 但「2 月 4 日前后一天」这个历法常识够用：1 月 15 日～2 月 3 日仍属上一年，
+  // 2 月 5 日～12 月 31 日算当年。样本一律避开 2 月 4 日当天，交界那几条的
+  // 年柱由引擎的节气精算决定，本层不对它下断言（见 reason 里的「边界不验年柱」）。
+  const lichunEdge = month === 2 && (day === 3 || day === 4);
+  const solarYearForPillar = month === 1 || (month === 2 && day <= 3) ? year - 1 : year;
+  const yearIndex = ((((solarYearForPillar - 4) % 60) + 60) % 60);
+  const yearGan = BAZI_STEMS[yearIndex % 10];
+  const yearZhi = BAZI_BRANCHES[yearIndex % 12];
+
+  // 月柱：五虎遁。正月建寅，年干甲己起丙寅、乙庚起戊寅……
+  // 月支按公历月估算（节气分界不由本层判），只在样本明确落在月中时比对。
+  const monthBranchIdx = month % 12; // 1 月 = 丑（index 1）、2 月 = 寅（index 2）……
+  const yinStem = ((BAZI_STEMS.indexOf(yearGan) % 5) * 2 + 2) % 10;
+  const monthOffset = ((monthBranchIdx - 2) % 12 + 12) % 12;
+  const monthStem = BAZI_STEMS[(yinStem + monthOffset) % 10];
+  const monthZhi = BAZI_BRANCHES[monthBranchIdx];
+
+  // 时柱：五鼠遁。子时起于日干，甲己还加甲、乙庚丙作初……
+  const hourBranchIdx = Math.floor(((hour + 1) % 24) / 2);
+  const ziStem = ((BAZI_STEMS.indexOf(dayGan) % 5) * 2) % 10;
+  const hourStem = BAZI_STEMS[(ziStem + hourBranchIdx) % 10];
+  const hourZhi = BAZI_BRANCHES[hourBranchIdx];
+
+  const pillarOf = (stem, branch) => {
+    const idx = baziIdxOf(stem, branch);
+    return {
+      ganzhi: stem + branch,
+      stem,
+      branch,
+      nayin: BAZI_NAYIN[Math.floor(idx / 2)],
+      hidden: BAZI_HIDDEN[branch].join(''),
+      hiddenShiShen: BAZI_HIDDEN[branch].map((s) => baziShiShen(dayGan, s)),
+      stemShiShen: baziShiShen(dayGan, stem),
+      xunKong: baziXunKong(stem + branch).join(''),
+    };
+  };
+
+  return {
+    lateZi,
+    yangYear: BAZI_NATURE[yearGan] === '阳',
+    pillars: {
+      year: pillarOf(yearGan, yearZhi),
+      month: pillarOf(monthStem, monthZhi),
+      day: pillarOf(dayGan, dayZhi),
+      hour: pillarOf(hourStem, hourZhi),
+    },
+  };
+}
+
+/** 一条八字样本：独立复算 vs 引擎，逐项比对 */
+export function verifyBaziCase(c) {
+  const p = parseDateTime(c.datetime);
+  const [datePart, timePart] = String(c.datetime).split('T');
+  const [hh, mi] = (timePart || '00:00').split(':').map(Number);
+  // 引擎侧：关掉真太阳时与夏令时，让两边的输入完全相同（本表核的是干支规则，不是经度修正）
+  const chart = buildBazi({
+    ...p, gender: c.gender, trueSolar: false, dst: false, lateZi: c.lateZi !== false, nowYear: 2026,
+  });
+  const mine = recomputeBaziPillars({
+    year: p.year, month: p.month, day: p.day, hour: hh, minute: mi, lateZi: c.lateZi !== false,
+  });
+  // 节令当天（每月 4～8 日、19～23 日各有一节一气）月柱会换，本层的公历近似会偏。
+  // 样本一律取月中，只有明确标 boundary 的那几条允许落在交界日——那时月柱/年柱不比。
+  const jieEdge = Boolean(c.boundary);
+  const lichunEdge = jieEdge && p.month === 2 && p.day <= 5;
+  const note = jieEdge ? `${c.note}｜交界日：立春当天不比年柱，节令当天不比月柱（那由引擎的节气精算定）` : c.note;
+  const fails = [];
+  const cmp = (label, expected, actual) => {
+    if (String(expected) !== String(actual)) fails.push(`${label}：期望 ${expected}，实际 ${actual}`);
+  };
+  for (const k of ['year', 'month', 'day', 'hour']) {
+    const nameCN = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' }[k];
+    const want = mine.pillars[k];
+    const got = chart.pillars[k];
+    // 交界日（立春 / 节令当天）本层只用了「公历日估算」，那天归哪一年哪一月由
+    // 引擎的节气精算说了算，这里不对它下断言——比下去只会拿自己的近似去冒充错。
+    const skip = (k === 'year' && lichunEdge) || (k === 'month' && jieEdge);
+    if (!skip) {
+      cmp(nameCN, want.ganzhi, got.ganzhi);
+      cmp(`${nameCN}纳音`, want.nayin, got.nayin);
+      cmp(`${nameCN}藏干`, want.hidden, (got.hidden || []).map((h) => h.stem).join(''));
+      // 十神只核日干外的三柱与藏干；日柱天干自身是「我」，引擎给比肩
+      if (k !== 'day') cmp(`${nameCN}天干十神`, want.stemShiShen, got.stemTenGod);
+      cmp(`${nameCN}藏干十神`, want.hiddenShiShen.join('/'), (got.hidden || []).map((h) => h.tenGod).join('/'));
+    }
+  }
+  const actualKong = (chart.kongwang || chart.pillars.day.kongwang || []).join('');
+  cmp('日柱旬空', mine.pillars.day.xunKong, actualKong);
+  const wantDir = mine.yangYear
+    ? (c.gender === 'male' ? '顺行' : '逆行')
+    : (c.gender === 'male' ? '逆行' : '顺行');
+  // 大运顺逆看「立春分界后的年干」，所以立春当天的顺逆由引擎说了算，本层不断言
+  if (chart.dayun && !lichunEdge) cmp('大运顺逆', wantDir, chart.dayun.direction);
+
+  const expected = ['year', 'month', 'day', 'hour'].map((k) => mine.pillars[k].ganzhi).join(' ');
+  const actual = ['year', 'month', 'day', 'hour'].map((k) => chart.pillars[k].ganzhi).join(' ');
+  return {
+    key: `bz-${c.datetime}-${c.gender}`,
+    system: '八字',
+    case: `${c.datetime}｜${c.gender === 'male' ? '男' : '女'}${c.lateZi === false ? '｜当晚子时' : ''}`,
+    item: '四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆',
+    expected: `${expected}｜${mine.pillars.year.nayin}｜空${mine.pillars.day.xunKong}`,
+    actual: `${actual}｜${chart.pillars.year.nayin}｜空${actualKong || '—'}`,
+    status: fails.length ? '不一致' : '一致',
+    reason: fails.length ? fails.join('；') : `独立复算（${datePart} ${timePart || '00:00'}${mine.lateZi ? ' 晚子时换日' : ' 不换日'}）；${note}`,
+    search: `${c.datetime} ${c.gender} ${expected} ${c.note}`,
+  };
+}
+
+export function buildBaziRows() {
+  return BAZI_FIX.cases.map((c) => verifyBaziCase(c));
+}
+
 export function buildVerification() {
   const classicRows = buildClassicRows();
   const { rows: ziweiRows, stats: patternStats } = buildZiweiRows();
   const jiaoyunRows = buildJiaoyunRows();
   const qimenRows = buildQimenRows();
-  const rows = [...classicRows, ...ziweiRows, ...jiaoyunRows, ...qimenRows];
+  const baziRows = buildBaziRows();
+  const rows = [...classicRows, ...ziweiRows, ...jiaoyunRows, ...qimenRows, ...baziRows];
   const mismatch = rows.filter((r) => r.status === '不一致').length;
   const excluded = rows.filter((r) => r.status === '剔除').length;
   // 「未核」不是「一致」：原表没记起卦日的卦例，旬空无从核对，单独计数
@@ -415,6 +611,7 @@ export function buildVerification() {
       jiaoyun: JIAOYUN_CASES.length,
       qimen: QIMEN_FIX.length,
       qimenPalaces: QIMEN_FIX.reduce((n, x) => n + Object.keys(x.chart.palaces).length, 0),
+      bazi: BAZI_FIX.cases.length,
       rows: rows.length,
       mismatch,
       excluded,
@@ -520,13 +717,14 @@ tr[hidden]{display:none}
 <body>
 <div class="wrap">
   <h1>公开对拍报告</h1>
-  <p class="sub">v${esc(data.version)} · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
+  <p class="sub">v${esc(data.version)} · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算；八字按五虎遁、五鼠遁与十神规则独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
 
   <div class="cards">
     <div class="card"><span>六爻卦例</span><b>${t.liuyao}</b><small>成对 ${t.liuyaoPaired} · 静卦 ${t.liuyaoStatic} · 剔除 ${t.liuyaoExcluded}</small></div>
     <div class="card"><span>紫微盘</span><b>${t.ziweiCharts}</b><small>${t.ziweiPatterns} 条格局 · ${t.ziweiJudgments.toLocaleString('zh-CN')} 条判定</small></div>
     <div class="card"><span>奇门时辰</span><b>${t.qimen}</b><small>${t.qimen} × 9 宫 = ${t.qimenPalaces} 个宫位</small></div>
     <div class="card"><span>交运案例</span><b>${t.jiaoyun}</b><small>取节 · 比例 · 闰日 · 真太阳时</small></div>
+    <div class="card"><span>八字样本</span><b>${t.bazi}</b><small>四柱 · 纳音 · 藏干 · 十神 · 旬空 · 顺逆</small></div>
     <div class="card"><span>不一致</span><b>${t.mismatch}</b><small>剔除 ${t.excluded} 条（理由见下表）${t.unchecked ? ` · 未核 ${t.unchecked} 项（原表无起卦日，旬空不比对）` : ''}</small></div>
   </div>
 
@@ -545,6 +743,7 @@ tr[hidden]{display:none}
       <button type="button" data-system-filter="紫微" aria-pressed="false">紫微</button>
       <button type="button" data-system-filter="奇门" aria-pressed="false">奇门</button>
       <button type="button" data-system-filter="交运" aria-pressed="false">交运</button>
+      <button type="button" data-system-filter="八字" aria-pressed="false">八字</button>
     </div>
     <input id="q" type="search" placeholder="搜索案例 / 格局 / 理由" aria-label="搜索对拍记录">
     <span id="shown" aria-live="polite"></span>
@@ -573,7 +772,8 @@ ${chips}
     六爻：<code>test/fixtures/classics.json</code>（成对 ${t.liuyaoPaired} + 静卦 ${t.liuyaoStatic}；源 138 条中 ${t.liuyaoExcluded} 条因原文动爻标记与变卦推导冲突被剔除，理由逐条列在上表）。<br>
     紫微：${t.ziweiCharts} 张扫描盘 × ${t.ziweiPatterns} 条格局 = ${t.ziweiJudgments.toLocaleString('zh-CN')} 条判定；独立谓词只读 <code>palaces[].stars</code> 与四化，不调用引擎的格局函数。<br>
     奇门：${t.qimen} 个时辰 × 9 宫 = ${t.qimenPalaces} 个宫位；参照盘来自 <code>test/fixtures/qimen-20.json</code>，逐宫核四柱、局数、值符、值使、星门神与天盘干。<br>
-    交运：出生 jd + 到相邻节令的真实天数 × 365.2422/3；核顺逆取节、比例、与 startAge 同源、闰日退位与真太阳时口径。尚未与第三方排盘软件批量对拍，样本为独立复算。
+    交运：出生 jd + 到相邻节令的真实天数 × 365.2422/3；核顺逆取节、比例、与 startAge 同源、闰日退位与真太阳时口径。尚未与第三方排盘软件批量对拍，样本为独立复算。<br>
+    八字：${t.bazi} 个样本，四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆六项由 <code>tools/verification.mjs</code> 里的 <code>recomputeBaziPillars()</code> 按五虎遁、五鼠遁、六十甲子、藏干与十神规则重推一边，再与引擎逐项比对——期望值不读 <code>engine/bazi.js</code> 的对应实现。样本日期全避开节令交界日，交界日只核日柱与时柱。<b>没核的</b>（不在这张表里，也不假装核过）：旺衰分值与格局取用（无唯一文本口径）、神煞吉凶、真太阳时的经度修正量、与第三方排盘软件的对拍。
   </div>
 </div>
 <script>
@@ -642,7 +842,7 @@ export function renderBadgeSVG(data) {
   // 「未核」必须写进徽章：127 条古例没记起卦日，旬空这一项事实上没核过。
   // 只挂「0 处不符」会让人以为 128 条全核了，那是拿没说出口的口径充数。
   const unchecked = t.unchecked ? ` · ${t.unchecked} 未核` : '';
-  const right = `${label}｜${t.liuyao} 例 · ${t.excluded} 剔除${unchecked} · ${t.ziweiCharts} 紫微 · ${t.qimen} 奇门 · ${t.jiaoyun} 交运`;
+  const right = `${label}｜${t.liuyao} 例 · ${t.excluded} 剔除${unchecked} · ${t.ziweiCharts} 紫微 · ${t.qimen} 奇门 · ${t.jiaoyun} 交运 · ${t.bazi} 八字`;
   const LEFT = 66;        // 左侧「对拍」标签宽
   const OVERLAP = 4;      // 左右两栏重叠 4px，藏住接缝
   const PAD = 18;         // 右栏左右留白
