@@ -7,19 +7,17 @@ export const GROUPS = [
   {
     title: '问一件事', hint: '心里有一件具体的事，起一卦再决定',
     items: [
-      { k: 'liuyao', label: '六爻', tip: '摇六次问事' },
+      { k: 'liuyao', label: '六爻', tip: '问一件具体事，最接地气' },
       { k: 'tarot', label: '塔罗', tip: '抽牌看选择' },
       { k: 'meihua', label: '梅花', tip: '见闻起卦' },
-      { k: 'qimen', label: '奇门', tip: '看方位时机' },
-      { k: 'daliuren', label: '六壬', tip: '占事断来意' },
       { k: 'xiaoliuren', label: '小六壬', tip: '掐指一算' },
     ],
   },
   {
     title: '看一个人', hint: '看自己或身边人的性情与格局',
     items: [
-      { k: 'bazi', label: '八字', tip: '四柱看格局' },
-      { k: 'ziwei', label: '紫微', tip: '十二宫细看' },
+      { k: 'bazi', label: '八字', tip: '看这人一辈子的大盘' },
+      { k: 'ziwei', label: '紫微', tip: '分宫细看哪方面顺哪方面堵' },
       { k: 'hepan', label: '合盘', tip: '两人合不合' },
       { k: 'mbti', label: '人格', tip: '16 型问卷' },
       { k: 'constitution', label: '体质', tip: '九种体质' },
@@ -34,9 +32,16 @@ export const GROUPS = [
       { k: 'zeri', label: '择日', tip: '挑好日子' },
       { k: 'convert', label: '农历', tip: '公历农历' },
       { k: 'wuyunliuqi', label: '运气', tip: '一年大势' },
-      { k: 'taiyi', label: '太乙', tip: '积年推局' },
       { k: 'fengshui', label: '风水', tip: '房屋朝向' },
       { k: 'name', label: '起名', tip: '八字选字' },
+    ],
+  },
+  {
+    title: '古籍考据', hint: '古法三式与整年气运：偏研究向，日常咨询少用',
+    items: [
+      { k: 'qimen', label: '奇门', tip: '看方位时机' },
+      { k: 'daliuren', label: '六壬', tip: '占事断来意' },
+      { k: 'taiyi', label: '太乙', tip: '积年推局' },
     ],
   },
 ];

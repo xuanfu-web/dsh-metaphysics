@@ -13,14 +13,14 @@ const narrow = html.slice(html.indexOf('@media (max-width:640px)'), html.indexOf
 const tabList = [...html.matchAll(/<button class="tab" data-tab="([a-z]+)"/g)].map((m) => m[1]);
 const toolList = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="([a-z]+)"/g)].map((m) => m[1]);
 
-// ── ① 分组首屏：三组、每组一句白话 ──────────────────────────────
+// ── ① 分组首屏：四组、每组一句白话 ──────────────────────────────
 ok('首屏分组区存在', /<section class="start" id="start"/.test(html));
-eq('三个分组', (html.match(/class="tgroup"/g) || []).length, 3);
+eq('四个分组', (html.match(/class="tgroup"/g) || []).length, 4);
 {
   const heads = [...html.matchAll(/<div class="tgroup-head"><h2>([^<]+)<\/h2><p>([^<]+)<\/p><\/div>/g)].map((m) => m[1]);
-  eq('组名与顺序', heads.join(','), '问一件事,看一个人,查日子');
+  eq('组名与顺序', heads.join(','), '问一件事,看一个人,查日子,古籍考据');
   const hints = [...html.matchAll(/<div class="tgroup-head"><h2>[^<]+<\/h2><p>([^<]+)<\/p><\/div>/g)].map((m) => m[1]);
-  eq('每组都有一句白话提示', hints.length, 3);
+  eq('每组都有一句白话提示', hints.length, 4);
   ok('提示不是占位文案', hints.every((h) => h.length >= 8), hints.join(' / '));
 }
 
@@ -33,7 +33,7 @@ eq('分组刻意不收录星座与数字', tabList.filter((k) => !toolList.inclu
   const entries = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="[a-z]+"(?: title="[^"]*")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)];
   eq('20 项都带名称与白话说明', entries.length, 20);
   ok('白话说明不是空串', entries.every((m) => m[2].trim().length >= 4));
-  ok('六爻的白话说明在页面上', html.includes('<b>六爻</b><span>摇六次问事</span>'));
+  ok('六爻的白话说明在页面上', html.includes('<b>六爻</b><span>问一件具体事，最接地气</span>'));
 }
 
 // ── ③ 平铺回退：22 个 tab 原样保留，可一键切回 ──────────────────

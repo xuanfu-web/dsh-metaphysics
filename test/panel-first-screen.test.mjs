@@ -15,14 +15,16 @@ const pageBuild = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta
 const flat = GROUPS.flatMap((g) => g.items);
 const keys = flat.map((it) => it.k);
 
-// ── ① 分组数据：三组、20 项、顺序与文案 ─────────────────────────
-eq('分组数', GROUPS.length, 3);
-eq('组名与顺序', GROUPS.map((g) => g.title).join(','), '问一件事,看一个人,查日子');
+// ── ① 分组数据：四组、20 项、顺序与文案 ─────────────────────────
+eq('分组数', GROUPS.length, 4);
+eq('组名与顺序', GROUPS.map((g) => g.title).join(','), '问一件事,看一个人,查日子,古籍考据');
 ok('每组一句白话提示', GROUPS.every((g) => g.hint && g.hint.length >= 8), GROUPS.map((g) => g.hint).join(' / '));
 eq('入口共 20 项', flat.length, 20);
 eq('入口不重复', new Set(keys).size, 20);
 ok('每项都有名称与白话说明', flat.every((it) => it.label && it.tip && it.tip.length >= 4));
 ok('窄屏奇数项的「人生K」铺满整行', GROUPS[1].items.some((it) => it.k === 'trend' && it.wide === true));
+ok('主力体系排在各组最前（推荐序）', GROUPS[0].items[0].k === 'liuyao' && GROUPS[1].items[0].k === 'bazi' && GROUPS[1].items[1].k === 'ziwei');
+ok('考据向三式收进最后一组', GROUPS[3].items.map((i) => i.k).join(','), 'qimen,daliuren,taiyi');
 
 // ── ② 与平铺的 22 个 tab 一一对应 ───────────────────────────────
 const tabKeys = [...app.matchAll(/\{ k: '([a-z]+)', label: '/g)].map((m) => m[1]);
@@ -45,7 +47,7 @@ eq('页面生成 20 个入口', pageTools.length, 20);
 eq('页面入口顺序与数据一致', pageTools.map((t) => t.k).join(','), keys.join(','));
 eq('页面名称与数据一致', pageTools.map((t) => t.label).join(','), flat.map((it) => it.label).join(','));
 eq('页面白话与数据一致', pageTools.map((t) => t.tip).join(','), flat.map((it) => it.tip).join(','));
-ok('页面仍保留「还有 N 个」折叠按钮', (html.match(/class="tmore" aria-expanded="false"/g) || []).length === 3);
+ok('每组都有一个「还有 N 个」折叠按钮（不足 4 项的由 JS 隐藏）', (html.match(/class="tmore" aria-expanded="false"/g) || []).length === GROUPS.length);
 
 // ── ⑤ 面板首屏：分组卡片 / 最近用过 / 视图开关 ──────────────────
 ok('首屏容器与分组网格', /className: 'mp-start'/.test(app) && /className: 'mp-groups'/.test(app));
