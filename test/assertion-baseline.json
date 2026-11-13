@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 10091,
+  "total": 10106,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -103,7 +103,7 @@
       "fail": 0
     },
     "bridge.test.mjs": {
-      "pass": 88,
+      "pass": 91,
       "fail": 0
     },
     "bundle-budget.test.mjs": {
@@ -127,7 +127,7 @@
       "fail": 0
     },
     "cases-store.test.mjs": {
-      "pass": 63,
+      "pass": 73,
       "fail": 0
     },
     "chenggu.test.mjs": {
@@ -223,7 +223,7 @@
       "fail": 0
     },
     "feedback-report.test.mjs": {
-      "pass": 28,
+      "pass": 30,
       "fail": 0
     },
     "fengshui-tigua-zibai.test.mjs": {
