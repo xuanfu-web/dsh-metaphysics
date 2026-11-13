@@ -167,7 +167,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.73.0",factory(dt){
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
-/* 三视图切换（学文墨天机：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
+/* 三视图切换（三视图：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
    四化派（默认）：生年四化实心 + 大限/流年空心 + 自化 + 飞星链 chips；
    飞星派：每宫格内显示「宫干四化飞出」逐条（禄→某宫…），图例藏大限/流年四化；
    三合派：只看星曜庙旺与宫位结构，所有四化徽章（含生年）、自化、飞星链全部藏起。 */
@@ -200,7 +200,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.73.0",factory(dt){
 #ppm-sc-sanhe:checked~.pp-body .pp-zha,
 #ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
 #ppm-sc-sanhe:checked~.pp-flywrap{display:none}
-/* 自化箭头（学文墨天机）：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
+/* 自化箭头：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
    由左向右弧着落回这颗星——读成「这笔化飞出去又落回自己」。
    为什么必须放星名左边：放右边箭头就朝外，视觉上成了「从本宫飞出去」，意思正好反了。
    为什么 inline 在星名旁而不是绝对定位：宫格左侧会被满星曜的宫撞上（实测压住「紫微 庙」）。 */
@@ -212,7 +212,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.73.0",factory(dt){
 .pp-zha.ke{color:var(--ke)}.pp-zha.ji{color:var(--ji)}
 #ppm-sc-sihe:checked~.pp-flywrap{display:block}
 #ppm-sc-feixing:checked~.pp-flywrap{display:block}
-/* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
+/* 自化图例行：箭头颜色跟四化色走 */
 .pp-zhlegend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:4px}
 .pp-zhlegend i{font-style:normal;font-weight:600}
 .pp-zhlegend .z-lu{color:var(--lu)}.pp-zhlegend .z-quan{color:var(--quan)}
@@ -1516,7 +1516,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.73.0",factory(dt){
 /* 结果卡阴影分层：默认最轻，hover 时浮起一档（只对可交互的卡，避免整页抖动） */
 .pp{transition:box-shadow var(--dur) var(--ease)}
 
-/* —— 文墨式「显示设置」14 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
+/* —— 「显示设置」分组（group_fxp / group_4hb / group_3hp）——
    纯 CSS 显隐：勾了盘面立刻变，不重排盘、不进引擎、不进工具 schema。
    复选框必须是 .pp 的直接子元素，才能用 ~ 命中后面的 .pp-body / .pp-zhlegend。
    组1/组2 默认勾（:not(:checked) 才隐藏），组3 默认不勾（:checked 才增强，默认盘观感不变）。 */
@@ -1628,7 +1628,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.73.0",factory(dt){
       <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
       <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
       <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
-      <!-- 文墨式显示设置：14 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
+      <!-- 显示设置：14 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
            组1/组2 默认勾（观感与旧版一致），组3 默认不勾（纯增强）。不重排盘、不进引擎。 -->
       <input type="checkbox" id="ppm-d-ss" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-sbg" class="pp-r" checked>
@@ -1648,7 +1648,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.73.0",factory(dt){
       <input type="checkbox" id="ppm-d-njq" class="pp-r">
       <input type="checkbox" id="ppm-d-tjz" class="pp-r">
       <details class="pp-disp">
-        <summary>显示设置 · 17 项（学文墨天机）</summary>
+        <summary>显示设置 · 17 项</summary>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>

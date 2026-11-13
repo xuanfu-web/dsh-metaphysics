@@ -30,7 +30,7 @@ const out = PP.ziweiHTML(r);
 ok('三档 radio 齐全', ['ppm-ben', 'ppm-da', 'ppm-ln'].every((id) => out.includes(`id="${id}"`)));
 ok('三个 pp-body 齐全', ['ben', 'da', 'ln'].every((k) => out.includes(`pp-body ${k}`)));
 ok('含斗君文案', out.includes('子年斗君') && out.includes('流年斗君'));
-// 0.64.0 起自化由「虚下划线徽章」换成文墨天机式的彩色小箭头（贴在被化那颗星的星名后），
+// 0.64.0 起自化由「虚下划线徽章」换成彩色小箭头（贴在被化那颗星的星名后），
 // 断言跟着换：不再查 pp-m self / pp-zh，改查箭头本体与图例口径
 ok('含自化箭头标记', out.includes('pp-zha'), (out.match(/pp-zha/g) || []).length + ' 处');
 ok('自化与生年/大限/流年分层', /pp-zha (lu|quan|ke|ji)"/.test(out) && out.includes('箭头=自化'), out.match(/pp-zha [a-z]+"/)?.[0] || '缺类名');

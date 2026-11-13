@@ -1,4 +1,4 @@
-// 0.65.0 新增：文墨式「显示设置」16 项 —— 纯 CSS 显隐，不重排盘、不进引擎 schema。
+// 0.65.0 新增：「显示设置」16 项 —— 纯 CSS 显隐，不重排盘、不进引擎 schema。
 // 断言这 16 个开关结构完整、默认盘观感不变、目标元素真的可被 CSS 寻址。
 import fs from 'node:fs';
 import { compute } from '../engine/index.js';

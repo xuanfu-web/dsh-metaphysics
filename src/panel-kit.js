@@ -169,7 +169,7 @@
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
-/* 三视图切换（学文墨天机：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
+/* 三视图切换（三视图：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
    四化派（默认）：生年四化实心 + 大限/流年空心 + 自化 + 飞星链 chips；
    飞星派：每宫格内显示「宫干四化飞出」逐条（禄→某宫…），图例藏大限/流年四化；
    三合派：只看星曜庙旺与宫位结构，所有四化徽章（含生年）、自化、飞星链全部藏起。 */
@@ -202,7 +202,7 @@
 #ppm-sc-sanhe:checked~.pp-body .pp-zha,
 #ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
 #ppm-sc-sanhe:checked~.pp-flywrap{display:none}
-/* 自化箭头（学文墨天机）：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
+/* 自化箭头：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
    由左向右弧着落回这颗星——读成「这笔化飞出去又落回自己」。
    为什么必须放星名左边：放右边箭头就朝外，视觉上成了「从本宫飞出去」，意思正好反了。
    为什么 inline 在星名旁而不是绝对定位：宫格左侧会被满星曜的宫撞上（实测压住「紫微 庙」）。 */
@@ -214,7 +214,7 @@
 .pp-zha.ke{color:var(--ke)}.pp-zha.ji{color:var(--ji)}
 #ppm-sc-sihe:checked~.pp-flywrap{display:block}
 #ppm-sc-feixing:checked~.pp-flywrap{display:block}
-/* 自化图示（文墨式图例行）：箭头颜色跟四化色走 */
+/* 自化图例行：箭头颜色跟四化色走 */
 .pp-zhlegend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:4px}
 .pp-zhlegend i{font-style:normal;font-weight:600}
 .pp-zhlegend .z-lu{color:var(--lu)}.pp-zhlegend .z-quan{color:var(--quan)}
@@ -1518,7 +1518,7 @@
 /* 结果卡阴影分层：默认最轻，hover 时浮起一档（只对可交互的卡，避免整页抖动） */
 .pp{transition:box-shadow var(--dur) var(--ease)}
 
-/* —— 文墨式「显示设置」14 项（学文墨天机 group_fxp / group_4hb / group_3hp）——
+/* —— 「显示设置」分组（group_fxp / group_4hb / group_3hp）——
    纯 CSS 显隐：勾了盘面立刻变，不重排盘、不进引擎、不进工具 schema。
    复选框必须是 .pp 的直接子元素，才能用 ~ 命中后面的 .pp-body / .pp-zhlegend。
    组1/组2 默认勾（:not(:checked) 才隐藏），组3 默认不勾（:checked 才增强，默认盘观感不变）。 */
@@ -1667,7 +1667,7 @@
       // 所以读作「←这笔化飞回本宫」而不是「从这颗星飞出去」。放星名前是关键：
       // 放星名后箭头朝右，视觉上就成了「飞出本宫」，意思正好反了
       const zh = (selfHuaMap && selfHuaMap[s.name]) ? zhaMark(selfHuaMap[s.name], s.name) : '';
-      // 日系四吉星单独可寻址（文墨「显示三台八座恩光天贵」）；其余星 class 串一字不改
+      // 日系四吉星单独可寻址（「显示三台八座恩光天贵」开关）；其余星 class 串一字不改
       const extra = SBG.has(s.name) ? ' st-sbg' : '';
       // 顺序：自化箭头 → 星名 → 亮度灰字 → 四化色块。灰字紧贴星名变成一体，彩色实心框独立在末尾，
       // 避免两者字号差导致视觉叠压（试过 星名→四化→亮度，10px 字形会压住 8.5px 的框）
@@ -1731,7 +1731,7 @@
     </div>`;
   }
 
-  /* 自化箭头（文墨天机式）：自化的定义是「宫干化回本宫」，箭头从左侧弧进来、箭头尖顶住星名，
+  /* 自化箭头：自化的定义是「宫干化回本宫」，箭头从左侧弧进来、箭头尖顶住星名，
      读成「这笔化飞出去又落回本宫」，不是「从这颗星飞出去」。
      几何按 22×9 画：左侧起笔 → 弧线上行 → 右侧箭头尖落在星名左边缘。
      stroke 跟 currentColor 走，颜色由 .pp-zha.lu/.quan/.ke/.ji 决定。
@@ -1765,7 +1765,7 @@
     return `<div class="pp-fx">${esc(p.ganzhi)}宫干 ${items}</div>`;
   }
 
-  /* 运曜/流曜小字行（文墨天机「显示运曜和流曜」）：宫格内一行小字，形如「运禄巳 运羊午 …」。
+  /* 运曜/流曜小字行（「显示运曜和流曜」开关）：宫格内一行小字，形如「运禄巳 运羊午 …」。
      大限视图传该宫的 yunStars（{星名:地支}），流年视图传流X 键值对；默认隐藏，勾选 ppm-d-hs 才显示。
      返回空串时不占位（本命视图、无数据时不渲染）。 */
   function hsLineHTML(p, hsByBranch) {
@@ -1789,7 +1789,7 @@
   }
 
   /* 日干四化：取日柱天干，查十干四化表，四颗化星按本命落宫归堆。
-     口径：日干起四化（文墨飞星派「显示日干四化」）；表用 sihuaTableOf 的通行表
+     口径：日干起四化（「显示日干四化」）；表用 sihuaTableOf 的通行表
      这里无法直接调引擎内部表，改用宫干自化同源法——宫干 = 生年干那颗的四化已由
      mutagenMarks 体现，日干四化是另一层。实现：window.Engine 不暴露 sihuaTableOf，
      改从宫干四化反推——十二宫宫干覆盖十干（寅申两支各占两干），日干对应的宫干四化
@@ -1972,7 +1972,7 @@
       <input type="radio" name="ppm-sc" id="ppm-sc-sihe" class="pp-r" checked>
       <input type="radio" name="ppm-sc" id="ppm-sc-feixing" class="pp-r">
       <input type="radio" name="ppm-sc" id="ppm-sc-sanhe" class="pp-r">
-      <!-- 文墨式显示设置：14 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
+      <!-- 显示设置：14 个复选框必须与 .pp-body / .pp-zhlegend 同层（.pp 的直接子元素）。
            组1/组2 默认勾（观感与旧版一致），组3 默认不勾（纯增强）。不重排盘、不进引擎。 -->
       <input type="checkbox" id="ppm-d-ss" class="pp-r" checked>
       <input type="checkbox" id="ppm-d-sbg" class="pp-r" checked>
@@ -1992,7 +1992,7 @@
       <input type="checkbox" id="ppm-d-njq" class="pp-r">
       <input type="checkbox" id="ppm-d-tjz" class="pp-r">
       <details class="pp-disp">
-        <summary>显示设置 · 17 项（学文墨天机）</summary>
+        <summary>显示设置 · 17 项</summary>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
@@ -2093,7 +2093,7 @@
       ? starLine(mains)
       : `<span class="dt-empty">无主星</span><span class="dt-tri">　借对宫 <b>${borrowStars.length ? borrowStars.map((s) => s.name).join('、') : '亦无主星'}</b></span>`;
     const row = (k, v) => `<div class="dt-dr"><span class="dt-k">${k}</span><div class="dt-v">${v}</div></div>`;
-    // 太极点转换（文墨「显示太极点转换信息」）：以本宫为新命宫重布十二宫名。
+    // 太极点转换（「显示太极点转换信息」开关）：以本宫为新命宫重布十二宫名。
     // 宫序顺时针与本命同名序一致——新命宫=本宫，其后按本命十二宫顺序依次重排。
     const N = NAMES.length;
     const pivotOffset = fx(soulIdx - b); // 本宫在本命盘的宫名序
@@ -2129,7 +2129,7 @@
     body.querySelectorAll('.pp-cell[aria-expanded="true"]').forEach((c) => c.setAttribute('aria-expanded', 'false'));
   }
 
-  /* 三方四正连线（文墨天机式）：点击宫位后，把本宫—对宫—财帛—官禄四点连成虚线。
+  /* 三方四正连线：点击宫位后，把本宫—对宫—财帛—官禄四点连成虚线。
      实现是纯 SVG overlay：绝对定位在 .pp-body 里、pointer-events:none 不挡点击，
      线段端点由宫位格在 grid 上的行列号换算成百分比坐标，窗口缩放自动跟随。 */
   const SF_POS = { /* 与十二宫 POS 同构：地支 → [row, col]（1-based，含中宫 2/3） */ };
@@ -2138,7 +2138,7 @@
     const grid = body.querySelector('.pp-grid');
     if (!grid) return;
     const targets = [pi, (pi + 6) % 12, (pi + 4) % 12, (pi + 8) % 12];
-    /* 文墨式连线：线只走中宫，不穿周边宫位。
+    /* 三方四正连线：线只走中宫，不穿周边宫位。
        每个宫往中宫一侧的「边中点」取锚：上排宫取下边中点、下排宫取上边中点，
        左列宫取右边中点、右列宫取左边中点。中宫占 col 2~3 / row 2~3（即 25%~75%），
        锚点恰好落在中宫边界上，折线自然被中宫「接住」。 */
@@ -2149,7 +2149,7 @@
       /* 锚点 = 该宫「朝中宫的那条竖边」上的点：
          x 永远落在中宫边界（25 或 75），y 取该宫行的中心。
          这样线段从中宫边界出发，全部活动范围被限制在中宫矩形内，
-         不会横穿左右两侧的宫位（文墨的线也只在中间那块动）。 */
+         不会横穿左右两侧的宫位（参考盘的线也只在中间那块动）。 */
       // 左右两列宫：x 取中宫左右边界，y 取该宫行的中心（row 2/3 → y 37.5/62.5，都在中宫内）
       // 上排/下排的角宫（row 1/4）按所属左右列同样处理——y 可能越界，
       // 所以统一把 y 压回中宫范围（25~75 的 1/4、3/4 分位）。
@@ -2169,10 +2169,10 @@
       l.setAttribute("x2", x2); l.setAttribute("y2", y2);
       svg.appendChild(l);
     };
-    /* 文墨的三角/菱形画法：四个锚点首尾相连成闭环——
+    /* 三角/菱形画法：四个锚点首尾相连成闭环——
        本宫 → 对宫（对角线，过中心）→ 三合1 → 三合2 → 回本宫。
        两条对角交叉线 + 两条边线，落在中宫的形状就是一个斜菱形，
-       视觉上与文墨天机的三角形连线一致。 */
+       形成三角形闭环。 */
     mk(pts[0][0], pts[0][1], pts[1][0], pts[1][1]);
     mk(pts[1][0], pts[1][1], pts[2][0], pts[2][1]);
     mk(pts[2][0], pts[2][1], pts[3][0], pts[3][1]);

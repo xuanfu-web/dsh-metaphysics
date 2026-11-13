@@ -127,7 +127,7 @@ export const ZIWEI_SCHOOL_OPTIONS = Object.freeze({
   mingzhuSchool: ['soul-branch', 'year-branch'],
   zuoyaoSchool: ['minimal', 'full'],
   liunianSihua: ['year-stem', 'life-palace-stem'],
-  // 十干四化变体：default 表示各干用本插件原有通行表；其余按文墨变体名整表替换。
+  // 十干四化变体：default 表示各干用本插件原有通行表；其余按变体名整表替换。
   // 只列与 default 不同的那一档（default 之外全是「换掉某一干」的显式选择）。
   sihuaVariant: ['default', '廉破曲阳', '贪阴阳机', '阳武同阴', '阳武府同', '阳武府相',
     '阳武同相', '巨阳武昌', '梁紫府武', '梁紫相武', '破巨阳贪'],
@@ -247,10 +247,10 @@ const GENG_MUTAGEN = {
   GYWTX: { 太阳: '禄', 武曲: '权', 天同: '科', 天相: '忌' },
 };
 
-// 十干四化变体全表（文墨天机「十干四化」，2026-11 从 WMTJ-Pro64-2.5.26 的 App.swf 常量表挖出）。
-// 变体名一律取文墨原文四字，按「禄 权 科 忌」的顺序念，所以名字本身就是这张表：
+// 十干四化变体全表（十干四化变体全表）。
+// 变体名一律取口诀四字，按「禄 权 科 忌」的顺序念，所以名字本身就是这张表：
 // 「廉破曲阳」= 廉贞化禄、破军化权、文曲化科、太阳化忌。
-// 每干第一个是与本插件原有默认表完全一致的那一档，乙丙丁己四干文墨没有变体。
+// 每干第一个是与本插件原有默认表完全一致的那一档，乙丙丁己四干无通行变体。
 // 这张表和 gengYearSihua 不是一回事：gengYearSihua 只换生年四化里庚年那一支，
 // sihuaVariant 换的是整张十干四化表（生年、宫干自化、大限宫干、飞星、流年一起走）。
 export const SIHUA_VARIANTS = Object.freeze({
@@ -777,7 +777,7 @@ export function buildZiwei(input) {
     const xxPalace = palaces.find((p) => p.xiaoxian.age === xxAge);
     const dxPalace = palaces.find((p) => age >= p.daxian.start && age <= p.daxian.end);
     // 流年四化取干：默认按流年天干；liunianSihua: life-palace-stem 改按该年命宫
-    // 的宫干（文墨设置树里的「依据流年命宫天干」）。这两干各依不同的表：年干随年份走，
+    // 的宫干（「依据流年命宫天干」口径）。这两干各依不同的表：年干随年份走，
     // 命宫宫干由五虎遁从出生年干起，所以实测十二年会换掉十二次，不是只差个别年。
     // 取哪一干必须随盘回显，否则用户看不出四颗化星是被哪张表定的。
     const lnStemOf = (() => {
@@ -858,7 +858,7 @@ export function buildZiwei(input) {
     hourBranch,
     yearGanzhi: yearGanzhi.name,
     ...((() => {
-      // 非节气四柱（紫微斗数口径，文墨「显示非节气四柱」开关的数据源）：
+      // 非节气四柱（紫微斗数口径，「显示非节气四柱」开关的数据源）：
       // 紫微按农历排盘，年柱以正月初一换岁（lunarYear 已是此口径）、月柱按农历月配五虎遁；
       // 日柱、时柱与节气版完全一致（日时不受节气影响）。与八字（节气）四柱只在立春前后的
       // 出生者上年/月两柱有差异，正好给用户对照。
@@ -951,7 +951,7 @@ export function buildZiwei(input) {
     rules: {
       ziweiPlacement: '借数法：局数除日数取商，商数自寅宫顺行，借数奇逆偶顺',
       mutagen: '生年四化用中州派常用表；庚干可按流派切换（默认阳武阴同，另有同科阴忌、府科、府科相忌、同科相忌）',
-      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、命主 ${schools.mingzhuSchool}（soul-branch 按命宫地支 / year-branch 按生年年支）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为文墨变体整表替换）、截路空亡 ${schools.jieluSchool}（off 照常排 / zhongzhou 整组不排）、岁前十二神 ${schools.suipoSchool}（off 照常 / zhongzhou 大耗改岁破）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
+      schools: `流派开关：亮度 ${schools.brightnessSchool}、庚干四化 ${schools.gengYearSihua}、天马 ${schools.tianmaSchool}、天空 ${schools.tiankongSchool}、截空 ${schools.jiekongSchool}、魁钺 ${schools.kuiyueSchool}、天伤天使 ${schools.tianshiTianshang}、长生 ${schools.changshengSchool}、晚子时 ${schools.lateZishi}、身主 ${schools.shenzhuSchool}（common 子午皆火星 / verse 子铃午火）、命主 ${schools.mingzhuSchool}（soul-branch 按命宫地支 / year-branch 按生年年支）、杂曜 ${schools.zuoyaoSchool}（minimal 49 颗 / full 61 颗）、流年四化取干 ${schools.liunianSihua}（year-stem 按流年天干 / life-palace-stem 按流年命宫宫干）、十干四化 ${schools.sihuaVariant}（default 各干通行表，其余为变体表整表替换）、截路空亡 ${schools.jieluSchool}（off 照常排 / zhongzhou 整组不排）、岁前十二神 ${schools.suipoSchool}（off 照常 / zhongzhou 大耗改岁破）；庚干四化只作用于生年四化，sihuaVariant 换的是宫干自化、大限宫干、飞星与流年共用的那张表`,
       zuoyao: schools.zuoyaoSchool === 'full'
         ? `全表十二颗已安：生月 解神、天巫、天月、阴煞；生年干 天官、天福、天厨；生年支 蜚廉、天德、年解；命宫＋生年支 天才、身宫＋生年支 天寿。蜚廉与博士十二神的飞廉同名异星，年解与月解（解神）分列，天德与岁前十二神的天德同名异宫。`
         : `本盘按 49 颗的通行简盘安星，未排全表杂曜。开 zuoyaoSchool: "full" 追加十二颗：解神、天巫、天月、阴煞（生月）、天官、天福、天厨（生年干）、蜚廉、天德、年解（生年支）、天才（命宫＋生年支）、天寿（身宫＋生年支），每颗都带安星诀。`,
