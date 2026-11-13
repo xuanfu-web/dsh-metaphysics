@@ -26,7 +26,8 @@ ok('分块文件名都是 client.<name>.js', Object.values(CHUNK_OF_TAB).every((
 // 八字结果卡里的称骨是 chart 块的产物：chart 块里的 buildChenggu 从 __mods.chenggu 解构而来，
 // 模块不在栈里就解构成 undefined，而 dn() 合并时 `!== void 0` 会把它静默跳过——
 // 症状是「左侧插件面板一个称骨字都不出，单页（全量引擎）却正常」。这里钉死，别再把模块摘掉。
-ok('chart 块自带 chenggu 模块（八字卡内嵌称骨）', CHUNKS.chart.modules.includes('chenggu'), CHUNKS.chart.modules.join(','));
+ok('chart 块不带 chenggu（称骨走独立块按需补载）', !CHUNKS.chart.modules.includes('chenggu'), CHUNKS.chart.modules.join(','));
+ok('chenggu 块自带 almanac（buildChenggu 要 hourToBranch）', CHUNKS.chenggu.modules.includes('almanac'), CHUNKS.chenggu.modules.join(','));
 
 // 分块体积上限只认 tools/check-bundle.mjs 一处。
 // 2026-11-07 之前这里另写死一条 232KB 硬线，和 CI 侧的 260KB 墙并存：bazi 涨到 231.2KB 时

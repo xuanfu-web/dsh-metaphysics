@@ -1265,9 +1265,9 @@ function App() {
       try { shadowDiff = PP.shadowTrack ? PP.shadowTrack(r) : null; } catch (e) { shadowDiff = null; }
       // 八字结果里直接嵌人：同一份出生信息再排一次称骨与 trend，确定性、无网络。
       // 时辰未知时不嵌称骨：称骨四柱缺时辰不可算，拿正午占位会编出一个假骨重。
-      // 面板是分块加载：chart 块里的 buildChenggu 取自 chenggu 子模块，而子模块不在 chart 块里。
-      // 撤掉称骨独立入口后没人再触发它加载，Engine.buildChenggu 就是 undefined——
-      // 结果面板上一个称骨字都不出，单页（全量引擎）却正常。这里按需补一次。
+      // 面板是分块加载，而称骨不在 chart 块里：buildChenggu 要用 almanac 的 hourToBranch，
+      // chart 栈没这个模块，放进去只会在调用时炸（再被下面的 catch 吞成 null）。
+      // 称骨单独一块、自带 almanac，这里按需拉一次。
       let chenggu = null;
       if (k === 'bazi' && !huV) {
         if (!Engine.buildChenggu) {

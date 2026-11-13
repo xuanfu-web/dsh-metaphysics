@@ -48,11 +48,11 @@ const CHART_STACK = [...new Set([
   ...BAZI_STACK,
   // 八字：内嵌人生 K 线 + 可开紫微交叉验证
   'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words',
-  // 八字卡里嵌的称骨：chart 块里的 buildChenggu 是从 __mods.chenggu 解构来的，
-  // 模块不在栈里就解构成 undefined，且 dn() 合并时 `k[pe]!==void 0` 会把它跳过——
-  // 结果是「面板一个称骨字都不出、单页正常」的静默失效（撤掉称骨独立入口后踩过）。
-  // 模块本体 17KB，进 chart 栈比让排八字时多拉一个独立块划算。
-  'chenggu',
+  // 八字卡里嵌的称骨**不**进 chart 栈。它需要的 hourToBranch 来自 almanac 模块，
+  // 而 chart 栈里没有 almanac：模块塞进 chart 块只会解构成 undefined，
+  // 到运行时才炸 `M is not a function`，再被 app.js 那个 catch 吞成 chenggu=null，
+  // 表现是「面板一个称骨字都不出、单页却正常」。称骨走 client.chenggu.js 按需补载，
+  // 那个块自带 almanac，排八字时 ensureEngine('chenggu') 拉一次就够。
   // 紫微：可开八字交叉验证（八字已在 BAZI_STACK 里）
   // 合盘：双方可能是八字或紫微，两套引擎 + 合盘模板
   'ziwei-hepan', 'hepan',
