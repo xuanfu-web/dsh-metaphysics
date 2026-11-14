@@ -643,6 +643,39 @@ for (const t of TABS) {
   ok(errors.length === errsBefore, '单页 · 复制提问流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
   await p6.close();
 }
+// ── 八字结果卡的四块（称骨 / 婚姻 / 六面 / 一眼看）──────────────
+// 这四块都曾经「静默不渲染」：称骨当年缺分块模块，面板上既不报错也不出卡；
+// 婚姻与六面是新加的。页面不报错就只能靠 DOM 里到底有没有来守。
+{
+  const p7 = await ctx.newPage();
+  const e7 = [];
+  p7.on('pageerror', (e) => e7.push(String(e)));
+  await p7.goto('file:///' + pageFile.replace(/\\/g, '/'), { waitUntil: 'load' });
+  const t7 = p7.locator('[data-tab="bazi"]');
+  const n7 = await t7.count();
+  for (let i = 0; i < n7; i++) { const el = t7.nth(i); if (await el.isVisible()) { await el.click(); break; } }
+  await p7.locator('#date').fill('1990-05-12');
+  await p7.locator('#time').fill('14:30');
+  await p7.locator('#go').click();
+  await p7.waitForSelector('#out .pp-bz', { timeout: 8000 }).catch(() => {});
+  const got = await p7.evaluate(() => {
+    const h = (document.getElementById('out') || {}).innerHTML || '';
+    const one = document.querySelector('[aria-label="一眼看"]');
+    return {
+      bzcg: h.includes('mp-bzcg') && h.includes('袁天罡称骨'),
+      mar: h.includes('mp-mar'),
+      life: h.includes('mp-life'),
+      faces: (h.match(/data-face="/g) || []).length,
+      one: one ? one.textContent.trim() : '',
+    };
+  });
+  ok(got.bzcg, '单页 · 八字卡带称骨');
+  ok(got.mar, '单页 · 八字卡带婚姻');
+  ok(got.life && got.faces === 6, '单页 · 八字卡带人生六面（六张）', String(got.faces));
+  ok(/一眼看/.test(got.one) && got.one.length > 12, '单页 · 首屏「一眼看」有字', got.one.slice(0, 50));
+  ok(e7.length === 0, '单页 · 四块渲染无 JS 报错', e7.slice(0, 2).join(' | '));
+  await p7.close();
+}
 
 await browser.close();
 
