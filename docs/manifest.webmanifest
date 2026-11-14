@@ -1,0 +1,16 @@
+{
+  "name": "烛微命盘",
+  "short_name": "烛微",
+  "description": "八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗，全部本地计算。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#12110d",
+  "theme_color": "#12110d",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

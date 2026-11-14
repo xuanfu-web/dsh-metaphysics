@@ -392,6 +392,9 @@ function page() {
 <meta property="og:title" content="烛微命盘 · 二十二套体系，一个页面">
 <meta property="og:description" content="八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗。本地计算，不采集数据；口径怎么取、差异在哪里，都能逐字对照。">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
 <style>${CSS}.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 </style>
 <style>#mp-boot{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0f1115;color:#e8e8ea;font:14px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .28s}#mp-boot.out{opacity:0;pointer-events:none}#mp-boot .seal2{width:42px;height:42px;border-radius:9px;display:grid;place-items:center;background:var(--gold);color:var(--on-accent);font-size:21px;font-weight:700}#mp-boot b{font-size:15px;letter-spacing:.05em}#mp-boot i{font-style:normal;font-size:12px;opacity:.55}@media print{#mp-boot{display:none}}</style>
@@ -725,6 +728,7 @@ ${ui}
   setTimeout(drop, 6000);
 })();
 </script>
+<script>if ("serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname))) { addEventListener("load", function () { try { navigator.serviceWorker.register("./sw.js").catch(function () {}); } catch (e) {} }); }</script>
 </body>
 </html>
 `;

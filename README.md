@@ -55,6 +55,7 @@ Chinese metaphysics (玄学 / xuanxue) for [DeepSeek Harness](https://github.com
 订阅（`npm i dsh-metaphysics` 或 `dsh plugin add dsh-metaphysics`）之后，这份页面就在包里：
 
 - `node_modules/dsh-metaphysics/命理排盘.html` —— 复制到任意位置双击打开，或用浏览器「打开文件」；不需要装依赖、不需要起服务、不需要联网
+- 网页版（GitHub Pages）另带 `manifest.webmanifest` 与 `sw.js`：手机浏览器「添加到主屏幕」后是全屏应用而不是一个书签，断网也能打开。Service Worker 是**网络优先、断网回落缓存**——这个页面一天能发好几版，用 cache-first 会让手机上一直停在旧版。本地 `127.0.0.1` 与线上 `https` 都会注册，`file://` 打开的离线单页不注册。
 - 也可以用 `require.resolve('dsh-metaphysics/命理排盘.html')` 拿到绝对路径（`package.json` 的 `exports` 已登记）
 - 它是**同源生成物**：与侧栏面板、Agent 工具共用同一份 `engine/`，所以版本一致——包里是哪个版本，页面就是哪个版本
 - 与联网无关的部分全部本地算：历法、排盘、古籍摘句、对拍数据都在文件里；只有两处例外，点了才生效——典籍出处的外部链接、以及地理编码选「在线」时的 OpenStreetMap 查询
