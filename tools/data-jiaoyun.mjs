@@ -878,7 +878,7 @@ export const VENDOR_L0_CASES = [
     longitude: 130.97,
     dstMinutes: 0,
     variants: [{"trueSolar":false,"expectPillars":["癸亥","甲子","庚午","丁亥"],"pageLabel":"钟表时间"},{"trueSolar":true,"expectPillars":["癸亥","甲子","辛未","戊子"],"pageLabel":"真太阳时","expectTrueSolarText":"1983-12-08 23:21","expectOffsetMinutes":51}],
-    note: "页面：经度约 +43.9 分、均时差约 +7.0 分、按整分钟合计 +51 分 → 23:21。本插件 offsetMinutes=50.9、显示 23:20，差 1 分钟是「整分钟合计 vs 逐分钟」的显示口径，四柱两套全同",
+    note: "页面：经度 +43.9 分、均时差 +7.0 分（它用的是 9.87sin2B 那套近似式）、合计 +51 分 → 23:21。本插件按 Meeus 严格式推 EoT≈8.5 分、合计 +52.4 → 23:22——天文一侧是严格式对，页面偏小 1.5 分；两者同落子时，四柱全同",
   },
   {
     id: "l0-yuanzi-lichun",

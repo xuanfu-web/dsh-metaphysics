@@ -1,5 +1,6 @@
 import {
   toJDN, dayGanzhiIndex, ganzhiName, termInstantJd, formatJd, TERM_NAMES, partsToJd, jdToParts, deltaTSeconds,
+  equationOfTime,
 } from '../engine/calendar.js';
 
 import { ok } from './_harness.mjs';
@@ -76,3 +77,29 @@ ok('23:59:45 往回误差小于 1 分', Math.abs(partsToJd(lateNight) - midnight
 const afterMidnight = jdToParts(partsToJd({ year: 2024, month: 2, day: 11, hour: 0, minute: 0 }) + 30 / 86400);
 ok('次日 00:00:30 属 2 月 11 日', afterMidnight.day === 11 && afterMidnight.hour === 0 && afterMidnight.minute === 0,
   JSON.stringify(afterMidnight));
+
+// 均时差：这是天文量，不许用拟合式蒙。
+// 一把尺子是 Meeus《Astronomical Algorithms》例 28.a：1992-10-13 0h TD，E = +13m42.6s。
+// 出生时刻卡在时辰边界上时，30 秒的均时差误差足以把时柱推到隔壁，时柱一错，
+// 称骨、子女宫、晚运全跟着错——所以这条按秒钉，不按分钟松。
+const eot = (y, m, d) => equationOfTime(y, m, d) * 60; // 秒
+const nearSec = (label, got, want, tol) => ok(label, Math.abs(got - want) <= tol, `${got.toFixed(1)}s vs ${want}s（容差 ${tol}s）`);
+
+nearSec('均时差 1992-10-13 = Meeus 例 28.a（+13m42.6s）', eot(1992, 10, 13), 822.6, 2);
+nearSec('均时差 2026-11-03 近峰值 ≈ +16m25s', eot(2026, 11, 3), 985, 60);
+nearSec('均时差 2026-02-11 近谷值 ≈ -14m14s', eot(2026, 2, 11), -854, 60);
+ok('春季过零 2026-04-15 |EoT| < 30s', Math.abs(eot(2026, 4, 15)) < 30, `${eot(2026, 4, 15).toFixed(1)}s`);
+ok('秋季过零 2026-09-01 |EoT| < 30s', Math.abs(eot(2026, 9, 1)) < 30, `${eot(2026, 9, 1).toFixed(1)}s`);
+ok('冬季过零 2026-12-25 |EoT| < 30s', Math.abs(eot(2026, 12, 25)) < 30, `${eot(2026, 12, 25).toFixed(1)}s`);
+
+// 旧式 9.87sin2B-7.53cosB-1.5sinB 在 12 月初偏小 1.5 分（对拍站点的 1983-12-08 就是这么来的）。
+// 留一条「两者已经分开」的断言，防有人图省事把严格式换回近似式还当成等价重构。
+const approxEot = (y, m, d) => {
+  const n = toJDN(y, m, d) - toJDN(y, 1, 1) + 1;
+  const B = (2 * Math.PI * (n - 81)) / 364;
+  return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+};
+ok('严格式与旧近似式在 1983-12-08 相差 > 60s',
+  Math.abs(equationOfTime(1983, 12, 8) - approxEot(1983, 12, 8)) * 60 > 60,
+  `严格 ${(equationOfTime(1983, 12, 8) * 60).toFixed(1)}s vs 近似 ${(approxEot(1983, 12, 8) * 60).toFixed(1)}s`);
+

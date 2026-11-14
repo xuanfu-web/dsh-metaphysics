@@ -271,14 +271,13 @@ for (const c of VENDOR_L0_CASES) {
         [r.pillars.year.ganzhi, r.pillars.month.ganzhi].join(' '), v.expectYearMonth.join(' '));
     }
     if (v.expectTrueSolarText) {
-      // 页面按整分钟合计 +51 → 23:21；本机逐分钟 50.9 → 23:20。差 1 分钟是显示口径，四柱必须仍全同。
-      eq(`${c.id} 真太阳时显示与页面差 1 分钟`,
-        Math.round((day(r.solarTime.trueSolarText.slice(0, 10)) - day(v.expectTrueSolarText.slice(0, 10))) / DAY_MS) * 1440
-        + (parseInt(r.solarTime.trueSolarText.slice(11, 13), 10) * 60 + parseInt(r.solarTime.trueSolarText.slice(14, 16), 10))
-        - (parseInt(v.expectTrueSolarText.slice(11, 13), 10) * 60 + parseInt(v.expectTrueSolarText.slice(14, 16), 10)), -1);
-      ok(`${c.id} 校正分钟与页面 +51 相差 ≤0.2`,
-        Math.abs(r.solarTime.offsetMinutes - v.expectOffsetMinutes) <= 0.2,
-        `${r.solarTime.offsetMinutes} vs ${v.expectOffsetMinutes}`);
+      // 页面那条基准自己用的还是 9.87sin2B 那套近似均时差：本日它取 +7.0 分，合计 +51 → 23:21。
+      // 本机换 Meeus 严格式后 EoT≈8.5 分，合计 +52.4 → 23:22——天文一侧是本机对，页面偏小 1.5 分。
+      // 要紧的是四柱：两者都落在子时，戊子一柱不受影响。所以这里不再钉「差整 1 分钟」，
+      // 而是要求「同柱 + 偏差落在近似式误差带内」，并单独把 EoT 的天文精度钉在 calendar.test 里。
+      ok(`${c.id} 校正分钟与页面相差 ≤2 分钟（近似式误差带）`,
+        Math.abs(r.solarTime.offsetMinutes - v.expectOffsetMinutes) <= 2,
+        `${r.solarTime.offsetMinutes} vs 页面 ${v.expectOffsetMinutes}`);
     }
   }
   if (c.expectJie) {

@@ -246,11 +246,38 @@ export function partsToJd({ year, month, day, hour = 0, minute = 0 }) {
   return toJDN(year, month, day) - 0.5 + (hour * 60 + minute) / 1440;
 }
 
-/** 均时差（分钟）：真太阳时 = 平太阳时 + 经度差 + 均时差 */
+/** 均时差（分钟）：真太阳时 = 平太阳时 + 经度差 + 均时差
+ *
+ * 严格式，按 Meeus《Astronomical Algorithms》28.3 推：太阳视黄经由 VSOP87B 地球日心黄经
+ * 反推，补章动主项与光行差，再转视赤经，与太阳几何平黄经相减。
+ *
+ * 为什么不留那个 9.87sin2B-7.53cosB-1.5sinB 的通用近似式：它最大误差约 ±0.5 分（30 秒），
+ * 日常看盘无所谓，但出生时刻正好卡在时辰边界上时，30 秒足以把时柱推到隔壁——而时柱一动，
+ * 称骨、子女宫、晚运全跟着变。这一条不许「差不多」。
+ */
 export function equationOfTime(year, month, day) {
-  const n = toJDN(year, month, day) - toJDN(year, 1, 1) + 1;
-  const B = (2 * Math.PI * (n - 81)) / 364;
-  return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+  const RAD = Math.PI / 180;
+  const jd = toJDN(year, month, day) - 0.5; // toJDN 给的是当日正午，退到 0h UT
+  const T = (jd - 2451545) / 36525; // 儒略世纪
+  const tau = (jd - 2451545) / 365250; // 儒略千年——VSOP87 的时间参量单位，别混用
+  // 黄赤交角（度）：IAU 1980 平赤道倾角
+  const eps0 = 23.439291111 - 0.0130041667 * T - 1.6389e-7 * T * T + 5.0361e-7 * T * T * T;
+  // 章动黄经主项（角秒）：-17.20" sin Ω，Ω 为月球升交点平黄经
+  const omega = (125.04452 - 1934.136261 * T) * RAD;
+  const dPsi = (-17.20 * Math.sin(omega)) / 3600;
+  // 太阳视黄经：地球日心黄经 + 180°（J2000 参考系）→ 岁差推到当日平春分点
+  // → 章动主项 → 光行差（20.4898" / R，R≈1）
+  const theta0 = ((earthL(tau) * 180) / Math.PI + 180) % 360;
+  const prec = (5029.0966 * T + 1.11113 * T * T - 0.000006 * T * T * T) / 3600; // 度
+  const lambdaDeg = ((theta0 + prec + dPsi - 20.4898 / 3600) % 360 + 360) % 360;
+  const lambda = lambdaDeg * RAD;
+  const eps = eps0 * RAD;
+  const alpha = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) / RAD;
+  // 太阳几何平黄经（度）
+  const l0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+  let e = l0 - alpha;
+  e = (((e % 360) + 540) % 360) - 180; // 归一到 (-180, 180]
+  return e * 4; // 度 -> 分钟（1° = 4 分钟）
 }
 
 // 一次排盘要算 72 个节气（三年窗口），每次十多轮牛顿迭代 × VSOP87 105 项。

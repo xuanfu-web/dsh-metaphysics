@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 10124,
+  "total": 10130,
   "files": {
     "almanac-xiu.test.mjs": {
       "pass": 60,
@@ -55,7 +55,7 @@
       "fail": 0
     },
     "bazi-jiaoyun-backtest.test.mjs": {
-      "pass": 76,
+      "pass": 75,
       "fail": 0
     },
     "bazi-jiaoyun.test.mjs": {
@@ -115,7 +115,7 @@
       "fail": 0
     },
     "calendar.test.mjs": {
-      "pass": 20,
+      "pass": 27,
       "fail": 0
     },
     "caliber-diff.test.mjs": {
