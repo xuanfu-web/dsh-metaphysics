@@ -1,8 +1,13 @@
-## 未发布
+## 0.79.0（2026-11-14）
+
+> 让同一份结果在三种形态里都说得清：网页卡片、复制出来的文本、还有首次打开时那一两秒。
 
 - **文本版带六面**：`renderText()` 在文本盘面之后追加【婚姻】【人生六面】两段，复制结果与导出 `.md` 都带。网页版是卡片，文本版是同一份数据的文字（`lifeText()` 里 catch 兜住，某一层不可用不影响主文本）。新增 `test/life-text.test.mjs` 18 条（含「紫微盘不许带这两段」「不许出现 undefined / [object Object]」）。
 - **加载占位**：单页是 1.6MB 内联 JS，手机上首次打开要一两秒白屏。`tools/build-html.mjs` 在 body 首部生成一块纯 CSS 的「正在装配引擎」遮罩，四个内联脚本同步执行完后淡出（另有 6 秒兜底），不参与任何排盘逻辑。打印时隐藏。
 - **四块卡的 e2e**：`tools/e2e-dom.mjs` 新增 5 项，直接断言八字结果卡里 `.mp-bzcg` / `.mp-mar` / `.mp-life`（六张）/ `[aria-label="一眼看"]` 都在且无 JS 报错——这四块都出过「不报错也不渲染」的事故，只能靠 DOM 守。
+- **未发版项数改为注入计数**：`window.__MP_UNRELEASED` 原先注入整份 CHANGELOG 标题清单，配上面这节中文标题就撑破 client.js gzip 预算（114724 / 上限 114688）。两处消费点其实只读 `.length`，改为只注入项数，体积回落到 114682，以后 CHANGELOG 写多长都不再影响产物大小。
+- **面板渲染测试**：新增 `test/panel-life.test.mjs` 12 条，用 `vm` 加载 `src/panel-kit.js` 直接调 `PP.baziHTML(A, { marriage, life })`，断言两张卡都在、六面齐全、婚姻在六面之前、文案与 `buildMarriage().lines[0]` 同源、传 null 不出空壳。
+- **测试**：断言基线 10239 → **10269**（183 文件）；e2e-dom 153 → **158**、e2e-panel 150、smoke 300、standalone 40。
 
 ## 0.78.0（2026-11-14）
 
