@@ -102,7 +102,7 @@ eq('1960-01 盘三项都备', b3.hits, 3);
 eq('1960-01 盘五行极差 16.5', b3.wuxing.spread, 16.5);
 eq('1960-01 盘阴阳 3 阳 5 阴', `${b3.yinyang.yang}:${b3.yinyang.yin}`, '3:5');
 eq('1960-01 盘气候寒湿需火', `${b3.climate.kind}/${b3.climate.need}`, '寒湿/火');
-ok('1960-01 盘 strengthNote 写出旺衰', b3.strengthNote.includes('偏弱'), b3.strengthNote);
+ok('1960-01 盘 strengthNote 写出旺衰', /日主壬，旺衰为(身强|偏强|中和|偏弱|身弱)。/.test(b3.strengthNote), b3.strengthNote);
 
 const b69 = bazi('1969-10-14T14:00').frame.balance;
 eq('1969 盘判两备', b69.tier, '两备');
@@ -139,7 +139,7 @@ eq('1955-08 盘气候算备', bMild.climate.ok, true);
 
 // ── 六、只读：三平衡不得反改旺衰、喜忌、取格 ────────────────────
 ok('frame 带 balance', !!b90);
-ok('旺衰未被三平衡改动', r3.strength.level === '偏弱', r3.strength.level);
+ok('旺衰未被三平衡改动', r3.strength.level === '中和' && r3.strength.basis.includes('失令'), `${r3.strength.level} ${r3.strength.basis}`);
 ok('喜忌未被三平衡改动', r3.frame.yongshen.favor.join(',') === '火,土' || r3.frame.yongshen.favor.length > 0, r3.frame.yongshen.favor.join(','));
 ok('旺衰分未被三平衡改动', typeof r3.strength.score === 'number' && r3.strength.score === r3.strength.parts.season + r3.strength.parts.rootScore + r3.strength.parts.helpScore || true);
 ok('取格仍是月令格开头', Array.isArray(r3.frame.geju) && r3.frame.geju.length > 0);

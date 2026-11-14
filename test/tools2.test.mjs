@@ -49,7 +49,12 @@ ok('trend 周岁起运年 ≠ 交运年（用例本身要有区分度）', 1990 
 // 边界：旺衰落在换档阈值上时不强出顺位结论
 const tb = buildTrend({ year: 1988, month: 7, day: 1, hour: 0, minute: 30, gender: 'female', toAge: 40 });
 ok('trend 夏令时日期被校正', tb.meta.birth === '1988-06-30', tb.meta.birth);
-if (tb.meta.boundaryNote) ok('trend 边界时只给提示不给排序', tb.highlights.best.length === 0, tb.highlights);
+
+// 边界：三要素踩临界时不强出顺位结论。1960-02-12 19:40 男，得势临界（净帮扶 0.3）+ 弱根临界（通根 0.3）。
+// 原先这条挂在 1988-07-01 那盘上，旺衰改三要素判定后该盘不再踩临界，于是条件断言整条不再执行——换成真临界盘。
+const tb2 = buildTrend({ year: 1960, month: 2, day: 12, hour: 19, minute: 40, gender: 'male', toAge: 40 });
+ok('trend 临界盘带 boundaryNote', Boolean(tb2.meta.boundaryNote), tb2.meta.strength);
+ok('trend 边界时只给提示不给排序', tb2.highlights.best.length === 0 && tb2.highlights.worst.length === 0, tb2.highlights);
 
 const t100 = buildTrend({ year: 1990, month: 5, day: 12, hour: 14, minute: 30, gender: 'female' });
 eq('trend 默认算到 100 岁', t100.points.length, 100);

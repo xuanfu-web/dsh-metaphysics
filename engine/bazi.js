@@ -593,6 +593,7 @@ export function buildBazi(input) {
 
   let helpScore = 0;
   const helpers = [];
+  const helperRooted = [];
   const drainers = [];
   const virtualHelpers = [];
   for (const key of ['year', 'month', 'hour']) {
@@ -601,28 +602,76 @@ export function buildBazi(input) {
     if (el2 === me || GENERATES[el2] === me) {
       // 天干有根才出得上力；虚透（折根后不足 0.3）只按半力计
       const base = el2 === me ? 1 : 0.8;
-      if (rootedWeightOf(pillars, el2, factorInfo.factor) >= ROOT_EFFECTIVE_MIN) helpScore += base;
-      else { helpScore += base * 0.5; virtualHelpers.push(st); }
+      if (rootedWeightOf(pillars, el2, factorInfo.factor) >= ROOT_EFFECTIVE_MIN) {
+        helpScore += base;
+        helperRooted.push(st);
+      } else { helpScore += base * 0.5; virtualHelpers.push(st); }
       helpers.push(st);
     } else if (OVERCOMES[el2] === me) { helpScore -= 1; drainers.push(st); }
     else if (OVERCOMES[me] === el2) { helpScore -= 0.8; drainers.push(st); }
     else { helpScore -= 0.5; drainers.push(st); }
   }
 
+  // ── 旺衰：三要素离散判定为主判，量化分只作展示 ──────────────
+  // 依据《子平真诠·论强弱》「得时俱为旺论，失时便作衰看；四柱无根，得时为旺」。
+  // 旧版把月令权重、通根、天干帮扶压成一个连续分再切五档，档位宽度天然不均
+  // （117 个真实命例实测：身强档跨 4.4 分、中间三档各只跨 1~1.5 分，中位数还压在偏强边界）。
+  // 现在先判三个是非，再查真值表：档位由规则决定，分数只作展示。
+  const deLing = monthW >= 2;                      // 得令：月令为旺（同气）或相（生我）
+  const deDi = rootScore >= 1;                     // 得地：地支有真根（本气通根，或折根后仍够一档）
+  const diHalf = !deDi && rootScore > 0;           // 弱根：只有藏干余气，或折根后不足一档
+  // 得势：天干有能出根的帮扶，且帮扶之力不少于耗泄（净帮扶 >= 0）。
+  // 只透一个比劫却被财官食伤耗干净的不算势——这一条是 117 例实测里最关键的收紧：
+  // 只看「有没有帮扶天干」会让 26 例天干全耗的盘赖在身强档，身弱档则一例都出不来。
+  const deShi = helperRooted.length > 0 && helpScore >= 0;
+  const shiHalf = !deShi && (helperRooted.length > 0 || virtualHelpers.length > 0);
+
+  let level;
+  let basis;
+  if (deLing) {
+    // 得令即旺。月令当旺同气、或当令生我，四柱必有强根，不作身弱论。
+    // 唯一降档：天干重耗（净帮扶 ≤ -1.5）且无势，属「旺而不久」，降作偏强。
+    if (helpScore <= -1.5 && !deShi) { level = '偏强'; basis = '得令，但天干重耗、全无援手（旺而不久）'; }
+    else { level = '身强'; basis = '得令（月令当旺或生我）'; }
+  } else if (deDi && deShi) { level = '偏强'; basis = '失令，有强根且得势'; }
+  else if (deDi && shiHalf) { level = '中和'; basis = '失令，有强根但帮扶不敌耗泄'; }
+  else if (deDi) { level = '偏弱'; basis = '失令，有强根但无势'; }
+  else if (diHalf && deShi) { level = '中和'; basis = '失令，弱根而得势'; }
+  else if (diHalf && shiHalf) { level = '偏弱'; basis = '失令，弱根且帮扶不敌耗泄'; }
+  else if (diHalf) { level = '身弱'; basis = '失令，只有弱根、毫无帮扶'; }
+  else if (deShi) { level = '偏弱'; basis = '失令，无根而有势'; }
+  else { level = '身弱'; basis = '失令、无根、无势'; }
+
   const total = Math.round((monthW + rootScore + helpScore) * 10) / 10;
-  const level = total >= 4 ? '身强' : total >= 2.5 ? '偏强' : total >= 1.5 ? '中和' : total >= 0.5 ? '偏弱' : '身弱';
+
+  // 三要素临界：档位离相邻档只差一个是非判定时记一笔，运程那边据此不出排序结论。
+  // 只收真正的临界（通根/净帮扶差一点点），不把「失令」这种常态当临界——
+  // 61% 的盘都失令，若算临界，运程的排序几乎全被压掉。
+  const edges = [];
+  if (rootScore >= 0.75 && rootScore < 1.35) edges.push(`得地临界（通根 ${rootScore.toFixed(1)}，1.0 为得地门槛）`);
+  if (helperRooted.length > 0 && helpScore > -0.6 && helpScore < 0.6) edges.push(`得势临界（净帮扶 ${helpScore.toFixed(1)}，0 为得势门槛）`);
+  if (rootScore > 0 && rootScore < 0.4) edges.push(`弱根临界（通根 ${rootScore.toFixed(1)}）`);
+
   const structureText = factorInfo.notes.length ? `；合会折根：${factorInfo.notes.join('、')}` : '';
   const virtualText = virtualHelpers.length ? `；虚透${virtualHelpers.join('')}帮扶减半` : '';
   const strength = {
     level,
+    basis,
     score: total,
-    detail: `月令${monthBranch}${seasonEl}，日主${me}${monthWord}(${monthW})；通根${rootBranches.join('') || '无'}(${rootScore.toFixed(1)})；天干帮扶${helpers.join('') || '无'}／耗泄${drainers.join('') || '无'}(${helpScore.toFixed(1)})${structureText}${virtualText}`,
-    method: '月令权重 3/2/1/0.5/0 + 地支藏干通根（三会/三合/六合折根）+ 天干帮扶（虚透减半），量化后分档；属简化算法，非唯一流派',
+    detail: `月令${monthBranch}${seasonEl}，日主${me}${monthWord}：${deLing ? '得令' : '失令'}、${deDi ? '得强根' : diHalf ? '得弱根' : '无根'}（通根${rootBranches.join('') || '无'} ${rootScore.toFixed(1)}）、${deShi ? '得势' : shiHalf ? '帮扶不敌耗泄' : '无势'}（帮扶${helpers.join('') || '无'}／耗泄${drainers.join('') || '无'} 净${helpScore.toFixed(1)}）→ ${level}：${basis}${structureText}${virtualText}`,
+    method: '三要素离散判定（得令／得地／得势）为主判，量化分只作展示：月令当旺或生我即得令；地支有本气通根（折根后仍够一档）即得地；天干有根之助且净帮扶为正才算得势。判定顺序见 README「旺衰怎么定档」，依据《子平真诠》「得时俱为旺论，失时便作衰看」；属规则化口径，非唯一流派',
+    elements: {
+      ling: { ok: deLing, monthW, word: monthWord },
+      di: { ok: deDi, half: diHalf, rootScore: Math.round(rootScore * 10) / 10 },
+      shi: { ok: deShi, half: shiHalf, rooted: helperRooted, virtual: virtualHelpers },
+    },
+    edges,
     parts: {
       season: { branch: monthBranch, element: seasonEl, word: monthWord, weight: monthW },
       roots: rootBranches,
       rootScore: Math.round(rootScore * 10) / 10,
       helpers,
+      helperRooted,
       drainers,
       helpScore: Math.round(helpScore * 10) / 10,
       structure: factorInfo.notes,

@@ -370,11 +370,12 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 `;
 
 function page() {
+  // 注意：这里的 html 常量会在末尾统一做行尾归一（见函数末尾的 return）。
   const modules = MODULE_ORDER.map(buildModule).join('\n');
   const ui = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
   const core = fs.readFileSync(path.join(root, 'src', 'core.js'), 'utf8');
   const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
-  return `<!doctype html>
+  const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -710,6 +711,10 @@ ${ui}
 </body>
 </html>
 `;
+  // 行尾归一：源文件在 Linux（CI）是 LF，在 Windows 本地被 core.autocrlf 转成 CRLF，
+  // 读进来拼出的 html 就会差出上万个 \r，CI 的「仓库根的离线页与构建结果一致」必然红。
+  // 产物一律 LF，两个平台的构建结果才逐字节相同。
+  return html.replace(/\r\n/g, '\n');
 }
 
 export { page };

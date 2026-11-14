@@ -400,7 +400,11 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
 
   // 专旺：日主之气独旺，官杀、财星皆弱。
   // 成格＝旺神得月令（同类或印）且不见破；待定＝气势已成但月令不助；破格＝官杀逆势或财星耗旺。
-  if ((strength.level === '身强' || strength.level === '偏强') && mine + yin >= 5) {
+  // 前置是「同党 ≥5 分且不是失令无根」——不用 level 字符串：旺衰改三要素判定后，
+  // 一个失令但有强根、同党 8 分的盘会落在中和（帮扶不敌耗泄），它照样可能成专旺待定格。
+  const deLing = strength.elements ? strength.elements.ling.ok : false;
+  const deDi = strength.elements ? strength.elements.di.ok : false;
+  if ((deLing || deDi) && mine + yin >= 5) {
     const breaks = [];
     if (guan > 1.2) breaks.push(`官杀 ${guan} 分，逆旺势`);
     if (cai > 1.8) breaks.push(`财 ${cai} 分，耗旺气`);

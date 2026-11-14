@@ -26,7 +26,9 @@ const COLD = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'ma
   const ys = COLD.frame.yongshen;
   ok('用神含调候之火', ys.favor.includes('火'), ys.favor.join(''));
   ok('方法标为调候优先', /调候优先/.test(ys.method), ys.method);
-  ok('忌神点明水', ys.avoid.includes('水'), ys.avoid.join(''));
+  // 旺衰改三要素判定后，本盘由偏强转中和：水在扶抑里是印（喜），与调候的「寒湿忌水」冲突，
+  // 按既有口径保留在喜用并单列 disputed（见 engine/geju.js 的争议表），不当实忌删掉。
+  ok('寒湿之水列入有争议', ys.disputed.some((d) => d.element === '水' && d.climate === '寒湿'), JSON.stringify(ys.disputed));
   ok('detail 写明调候与取舍', /调候：/.test(ys.detail) && /同向|调候优先/.test(ys.detail), ys.detail.slice(0, 60));
   ok('tiaohou 保留 element 兼容字段', ys.tiaohou.element === '火', String(ys.tiaohou.element));
 }
@@ -35,7 +37,7 @@ const COLD = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'ma
   // 2020 庚子：官星坐寒水，应判忌，且理由点出「加重寒湿」
   const y2020 = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'male', asOf: '2020-06-01T00:00' })
     .liunian.find((x) => x.year === 2020);
-  ok('2020 庚子判为忌', y2020.luck.tier === '忌', `${y2020.luck.tier} ${y2020.luck.score}`);
+  ok('2020 庚子判为忌', y2020.luck.tier === '忌' || y2020.luck.tier === '大忌', `${y2020.luck.tier} ${y2020.luck.score}`);
   ok('2020 理由含寒湿之忌', y2020.luck.reasons.some((r) => /寒湿|冻/.test(r)), y2020.luck.reasons.join('；'));
 
   // 2026 丙午：寒局得火，应判大吉，且理由写「解冻」

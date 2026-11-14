@@ -101,7 +101,8 @@ ok('通关条 why 写明盘面依据', (() => {
 })());
 
 const R1996 = compute({ system: 'bazi', datetime: '1996-01-19T07:30', gender: 'male' });
-ok('未通的盘不选通关条', R1996.frame.yongshen.tongguan.level === '未通' && !R1996.classics.some((e) => e.id === 'dt-tongguan'));
+// 本盘在新旺衰口径下由「未通」变「为忌」：相战的通关行落在忌神上，结论仍是不出通关条。
+ok('未通的盘不选通关条', R1996.frame.yongshen.tongguan.level !== '可通关' && !R1996.classics.some((e) => e.id === 'dt-tongguan'), R1996.frame.yongshen.tongguan.level);
 ok('未通的盘仍保留泛论气候位', R1996.classics.some((e) => e.id === 'zp-qihou'));
 ok('未通的盘经典选条保持五条', R1996.classics.map((e) => e.id).join(',') === 'zp-cai,smt-piancai,dt-hannuan,zp-qihou,zp-bianhua');
 

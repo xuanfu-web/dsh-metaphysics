@@ -683,7 +683,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：178 个测试文件 / 10139 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：178 个测试文件 / 10140 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -6102,7 +6102,11 @@ function specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods) 
 
   // 专旺：日主之气独旺，官杀、财星皆弱。
   // 成格＝旺神得月令（同类或印）且不见破；待定＝气势已成但月令不助；破格＝官杀逆势或财星耗旺。
-  if ((strength.level === '身强' || strength.level === '偏强') && mine + yin >= 5) {
+  // 前置是「同党 ≥5 分且不是失令无根」——不用 level 字符串：旺衰改三要素判定后，
+  // 一个失令但有强根、同党 8 分的盘会落在中和（帮扶不敌耗泄），它照样可能成专旺待定格。
+  const deLing = strength.elements ? strength.elements.ling.ok : false;
+  const deDi = strength.elements ? strength.elements.di.ok : false;
+  if ((deLing || deDi) && mine + yin >= 5) {
     const breaks = [];
     if (guan > 1.2) breaks.push(`官杀 ${guan} 分，逆旺势`);
     if (cai > 1.8) breaks.push(`财 ${cai} 分，耗旺气`);
@@ -7388,6 +7392,7 @@ function buildBazi(input) {
 
   let helpScore = 0;
   const helpers = [];
+  const helperRooted = [];
   const drainers = [];
   const virtualHelpers = [];
   for (const key of ['year', 'month', 'hour']) {
@@ -7396,28 +7401,76 @@ function buildBazi(input) {
     if (el2 === me || GENERATES[el2] === me) {
       // 天干有根才出得上力；虚透（折根后不足 0.3）只按半力计
       const base = el2 === me ? 1 : 0.8;
-      if (rootedWeightOf(pillars, el2, factorInfo.factor) >= ROOT_EFFECTIVE_MIN) helpScore += base;
-      else { helpScore += base * 0.5; virtualHelpers.push(st); }
+      if (rootedWeightOf(pillars, el2, factorInfo.factor) >= ROOT_EFFECTIVE_MIN) {
+        helpScore += base;
+        helperRooted.push(st);
+      } else { helpScore += base * 0.5; virtualHelpers.push(st); }
       helpers.push(st);
     } else if (OVERCOMES[el2] === me) { helpScore -= 1; drainers.push(st); }
     else if (OVERCOMES[me] === el2) { helpScore -= 0.8; drainers.push(st); }
     else { helpScore -= 0.5; drainers.push(st); }
   }
 
+  // ── 旺衰：三要素离散判定为主判，量化分只作展示 ──────────────
+  // 依据《子平真诠·论强弱》「得时俱为旺论，失时便作衰看；四柱无根，得时为旺」。
+  // 旧版把月令权重、通根、天干帮扶压成一个连续分再切五档，档位宽度天然不均
+  // （117 个真实命例实测：身强档跨 4.4 分、中间三档各只跨 1~1.5 分，中位数还压在偏强边界）。
+  // 现在先判三个是非，再查真值表：档位由规则决定，分数只作展示。
+  const deLing = monthW >= 2;                      // 得令：月令为旺（同气）或相（生我）
+  const deDi = rootScore >= 1;                     // 得地：地支有真根（本气通根，或折根后仍够一档）
+  const diHalf = !deDi && rootScore > 0;           // 弱根：只有藏干余气，或折根后不足一档
+  // 得势：天干有能出根的帮扶，且帮扶之力不少于耗泄（净帮扶 >= 0）。
+  // 只透一个比劫却被财官食伤耗干净的不算势——这一条是 117 例实测里最关键的收紧：
+  // 只看「有没有帮扶天干」会让 26 例天干全耗的盘赖在身强档，身弱档则一例都出不来。
+  const deShi = helperRooted.length > 0 && helpScore >= 0;
+  const shiHalf = !deShi && (helperRooted.length > 0 || virtualHelpers.length > 0);
+
+  let level;
+  let basis;
+  if (deLing) {
+    // 得令即旺。月令当旺同气、或当令生我，四柱必有强根，不作身弱论。
+    // 唯一降档：天干重耗（净帮扶 ≤ -1.5）且无势，属「旺而不久」，降作偏强。
+    if (helpScore <= -1.5 && !deShi) { level = '偏强'; basis = '得令，但天干重耗、全无援手（旺而不久）'; }
+    else { level = '身强'; basis = '得令（月令当旺或生我）'; }
+  } else if (deDi && deShi) { level = '偏强'; basis = '失令，有强根且得势'; }
+  else if (deDi && shiHalf) { level = '中和'; basis = '失令，有强根但帮扶不敌耗泄'; }
+  else if (deDi) { level = '偏弱'; basis = '失令，有强根但无势'; }
+  else if (diHalf && deShi) { level = '中和'; basis = '失令，弱根而得势'; }
+  else if (diHalf && shiHalf) { level = '偏弱'; basis = '失令，弱根且帮扶不敌耗泄'; }
+  else if (diHalf) { level = '身弱'; basis = '失令，只有弱根、毫无帮扶'; }
+  else if (deShi) { level = '偏弱'; basis = '失令，无根而有势'; }
+  else { level = '身弱'; basis = '失令、无根、无势'; }
+
   const total = Math.round((monthW + rootScore + helpScore) * 10) / 10;
-  const level = total >= 4 ? '身强' : total >= 2.5 ? '偏强' : total >= 1.5 ? '中和' : total >= 0.5 ? '偏弱' : '身弱';
+
+  // 三要素临界：档位离相邻档只差一个是非判定时记一笔，运程那边据此不出排序结论。
+  // 只收真正的临界（通根/净帮扶差一点点），不把「失令」这种常态当临界——
+  // 61% 的盘都失令，若算临界，运程的排序几乎全被压掉。
+  const edges = [];
+  if (rootScore >= 0.75 && rootScore < 1.35) edges.push(`得地临界（通根 ${rootScore.toFixed(1)}，1.0 为得地门槛）`);
+  if (helperRooted.length > 0 && helpScore > -0.6 && helpScore < 0.6) edges.push(`得势临界（净帮扶 ${helpScore.toFixed(1)}，0 为得势门槛）`);
+  if (rootScore > 0 && rootScore < 0.4) edges.push(`弱根临界（通根 ${rootScore.toFixed(1)}）`);
+
   const structureText = factorInfo.notes.length ? `；合会折根：${factorInfo.notes.join('、')}` : '';
   const virtualText = virtualHelpers.length ? `；虚透${virtualHelpers.join('')}帮扶减半` : '';
   const strength = {
     level,
+    basis,
     score: total,
-    detail: `月令${monthBranch}${seasonEl}，日主${me}${monthWord}(${monthW})；通根${rootBranches.join('') || '无'}(${rootScore.toFixed(1)})；天干帮扶${helpers.join('') || '无'}／耗泄${drainers.join('') || '无'}(${helpScore.toFixed(1)})${structureText}${virtualText}`,
-    method: '月令权重 3/2/1/0.5/0 + 地支藏干通根（三会/三合/六合折根）+ 天干帮扶（虚透减半），量化后分档；属简化算法，非唯一流派',
+    detail: `月令${monthBranch}${seasonEl}，日主${me}${monthWord}：${deLing ? '得令' : '失令'}、${deDi ? '得强根' : diHalf ? '得弱根' : '无根'}（通根${rootBranches.join('') || '无'} ${rootScore.toFixed(1)}）、${deShi ? '得势' : shiHalf ? '帮扶不敌耗泄' : '无势'}（帮扶${helpers.join('') || '无'}／耗泄${drainers.join('') || '无'} 净${helpScore.toFixed(1)}）→ ${level}：${basis}${structureText}${virtualText}`,
+    method: '三要素离散判定（得令／得地／得势）为主判，量化分只作展示：月令当旺或生我即得令；地支有本气通根（折根后仍够一档）即得地；天干有根之助且净帮扶为正才算得势。判定顺序见 README「旺衰怎么定档」，依据《子平真诠》「得时俱为旺论，失时便作衰看」；属规则化口径，非唯一流派',
+    elements: {
+      ling: { ok: deLing, monthW, word: monthWord },
+      di: { ok: deDi, half: diHalf, rootScore: Math.round(rootScore * 10) / 10 },
+      shi: { ok: deShi, half: shiHalf, rooted: helperRooted, virtual: virtualHelpers },
+    },
+    edges,
     parts: {
       season: { branch: monthBranch, element: seasonEl, word: monthWord, weight: monthW },
       roots: rootBranches,
       rootScore: Math.round(rootScore * 10) / 10,
       helpers,
+      helperRooted,
       drainers,
       helpScore: Math.round(helpScore * 10) / 10,
       structure: factorInfo.notes,
@@ -13416,9 +13469,8 @@ const SHISHEN_NEUTRAL = {
 const FAVOR = { 身强: 'strong', 偏强: 'strong', 中和: 'neutral', 偏弱: 'weak', 身弱: 'weak' };
 const TABLE_OF = { strong: SHISHEN_STRONG, neutral: SHISHEN_NEUTRAL, weak: SHISHEN_WEAK };
 
-/** 旺衰分档的换档阈值：分数贴着阈值时，多一个干支就换表，整套符号翻转。 */
-const LEVEL_CUTS = [0.5, 1.5, 2.5, 4];
-const BOUNDARY_EPS = 0.3;
+// 版式说明：旺衰档位由 bazi.js 的得令／得地／得势三要素离散判定决定，不再按分数切阈值，
+// 所以这里不按「分数贴边」判临界，改读 bazi.js 给出的 strength.edges（三要素差一个是非的提示）。
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -13508,7 +13560,8 @@ function buildTrend(input) {
   const table = TABLE_OF[FAVOR[r.strength.level] || 'neutral'];
   const rawBound = 5 * Math.max(...Object.values(table).map(Math.abs));
   const scoreOf = (god) => table[god] ?? 0;
-  const boundary = LEVEL_CUTS.some((c) => Math.abs(r.strength.score - c) <= BOUNDARY_EPS);
+  const edges = Array.isArray(r.strength.edges) ? r.strength.edges : [];
+  const boundary = edges.length > 0;
 
   const birthYear = Number(String(r.solarTime.civilText).slice(0, 4));
   const segments = buildSegments(r.dayun.list, r.dayun.direction, birthYear, toAge);
@@ -13552,7 +13605,7 @@ function buildTrend(input) {
       birth: String(r.solarTime.civilText).slice(0, 10),
       gender,
       dayMaster: `${dayStem}（${r.dayMaster.yinYang}${r.dayMaster.element}）`,
-      strength: { level: r.strength.level, score: r.strength.score, boundary },
+      strength: { level: r.strength.level, score: r.strength.score, basis: r.strength.basis, edges, boundary },
       toAge,
       // 当前年份由调用方给（asOf）：引擎不读挂钟，同一条线在任意时刻复算都一致。
       // 没给就不写这个键，summary 那边据此省掉「你现在在第几步」。
@@ -13560,8 +13613,8 @@ function buildTrend(input) {
       ...(boundary
         ? {
           boundaryNote:
-            `旺衰分 ${r.strength.score} 正落在换档阈值附近（阈值 ${LEVEL_CUTS.join(' / ')}，容差 ${BOUNDARY_EPS}）：`
-            + '多一个同类干支或少一个就会换计分表，整套正负号随之翻转——因此这里不出「最好 / 最差年份」的排序结论。',
+            `这张盘的旺衰是${r.strength.level}（${r.strength.basis}），但三要素踩在临界上：${edges.join('；')}。`
+            + '换一个同类干支、或多一个通根，档位就会变，计分表整套正负号随之翻转——因此这里不出「最好 / 最差年份」的排序结论。',
         }
         : {}),
     },

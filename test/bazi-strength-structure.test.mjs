@@ -19,7 +19,7 @@ eq('无根的戊作虚透', st.parts.virtualHelpers, ['戊']);
 ok('detail 带合会折根', st.detail.includes('合会折根：亥子丑三会水'), st.detail);
 ok('detail 带虚透减半', st.detail.includes('虚透戊帮扶减半'), st.detail);
 ok('措辞是「按N成计」不是「折N成」', !st.detail.includes('根气折'), st.detail);
-ok('method 声明简化算法', st.method.includes('三会/三合/六合折根') && st.method.includes('虚透减半') && st.method.includes('非唯一流派'), st.method);
+ok('method 声明三要素离散判定', st.method.includes('得令／得地／得势') && st.method.includes('量化分只作展示') && st.method.includes('非唯一流派'), st.method);
 const ys = shape.frame.yongshen;
 ok('喜火土', ys.favor.includes('火') && ys.favor.includes('土'), ys.favor.join(''));
 ok('忌水木', ys.avoid.includes('水') && ys.avoid.includes('木'), ys.avoid.join(''));

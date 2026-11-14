@@ -32,9 +32,8 @@ const SHISHEN_NEUTRAL = {
 const FAVOR = { 身强: 'strong', 偏强: 'strong', 中和: 'neutral', 偏弱: 'weak', 身弱: 'weak' };
 const TABLE_OF = { strong: SHISHEN_STRONG, neutral: SHISHEN_NEUTRAL, weak: SHISHEN_WEAK };
 
-/** 旺衰分档的换档阈值：分数贴着阈值时，多一个干支就换表，整套符号翻转。 */
-const LEVEL_CUTS = [0.5, 1.5, 2.5, 4];
-const BOUNDARY_EPS = 0.3;
+// 版式说明：旺衰档位由 bazi.js 的得令／得地／得势三要素离散判定决定，不再按分数切阈值，
+// 所以这里不按「分数贴边」判临界，改读 bazi.js 给出的 strength.edges（三要素差一个是非的提示）。
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -124,7 +123,8 @@ export function buildTrend(input) {
   const table = TABLE_OF[FAVOR[r.strength.level] || 'neutral'];
   const rawBound = 5 * Math.max(...Object.values(table).map(Math.abs));
   const scoreOf = (god) => table[god] ?? 0;
-  const boundary = LEVEL_CUTS.some((c) => Math.abs(r.strength.score - c) <= BOUNDARY_EPS);
+  const edges = Array.isArray(r.strength.edges) ? r.strength.edges : [];
+  const boundary = edges.length > 0;
 
   const birthYear = Number(String(r.solarTime.civilText).slice(0, 4));
   const segments = buildSegments(r.dayun.list, r.dayun.direction, birthYear, toAge);
@@ -168,7 +168,7 @@ export function buildTrend(input) {
       birth: String(r.solarTime.civilText).slice(0, 10),
       gender,
       dayMaster: `${dayStem}（${r.dayMaster.yinYang}${r.dayMaster.element}）`,
-      strength: { level: r.strength.level, score: r.strength.score, boundary },
+      strength: { level: r.strength.level, score: r.strength.score, basis: r.strength.basis, edges, boundary },
       toAge,
       // 当前年份由调用方给（asOf）：引擎不读挂钟，同一条线在任意时刻复算都一致。
       // 没给就不写这个键，summary 那边据此省掉「你现在在第几步」。
@@ -176,8 +176,8 @@ export function buildTrend(input) {
       ...(boundary
         ? {
           boundaryNote:
-            `旺衰分 ${r.strength.score} 正落在换档阈值附近（阈值 ${LEVEL_CUTS.join(' / ')}，容差 ${BOUNDARY_EPS}）：`
-            + '多一个同类干支或少一个就会换计分表，整套正负号随之翻转——因此这里不出「最好 / 最差年份」的排序结论。',
+            `这张盘的旺衰是${r.strength.level}（${r.strength.basis}），但三要素踩在临界上：${edges.join('；')}。`
+            + '换一个同类干支、或多一个通根，档位就会变，计分表整套正负号随之翻转——因此这里不出「最好 / 最差年份」的排序结论。',
         }
         : {}),
     },
