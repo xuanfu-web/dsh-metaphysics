@@ -36,6 +36,7 @@ import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatV
 import { canonicalJson, fingerprintOf } from './fingerprint.js';
 import { buildTrend } from './trend.js';
 import { buildMarriage } from './marriage.js';
+import { buildFacets } from './facets.js';
 import { buildFengshui } from './fengshui.js';
 import { buildName } from './name.js';
 import { buildTrace, traceMarkdown, SYSTEM_LABEL } from './trace.js';
@@ -2209,7 +2210,7 @@ export { followup, askPrompt };
 export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText, crossSection };
 export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
-export { buildTrend, buildFengshui, buildName, buildMarriage };
+export { buildTrend, buildFengshui, buildName, buildMarriage, buildFacets };
 export { buildConstitution };
 export { buildWuyunliuqi };
 export { buildTaiyi };

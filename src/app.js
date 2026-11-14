@@ -865,7 +865,7 @@ function sendToComposer(text) {
  */
 function chartHTML(result) {
   const html = result.kind === 'ziwei' ? PP.ziweiHTML(result.r)
-  : result.kind === 'bazi' ? (PP.baziHTML(result.r, { chenggu: result.chenggu, marriage: result.marriage }) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))    : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
+  : result.kind === 'bazi' ? (PP.baziHTML(result.r, { chenggu: result.chenggu, marriage: result.marriage, life: result.life }) + (result.trend ? PP.trendHTML(result.trend, { brief: false }) : ''))    : result.kind === 'meihua' ? PP.meihuaHTML(result.r)
       : result.kind === 'daliuren' ? PP.daliurenHTML(result.r)
         : result.kind === 'qimen' ? (PP.qimenHTML(result.r) + PP.qimenFactsHTML(result.r))
         : result.kind === 'hepan' ? (result.r.chart === 'ziwei' ? PP.ziweiHepanHTML(result.r) : PP.hepanHTML(result.r))
@@ -1285,6 +1285,11 @@ function App() {
       if (k === 'bazi' && Engine.buildMarriage) {
         try { marriage = Engine.buildMarriage(r); } catch (e) { marriage = null; }
       }
+      // 人生六面：同一张盘，失败同样静默
+      let life = null;
+      if (k === 'bazi' && Engine.buildFacets) {
+        try { life = Engine.buildFacets(r); } catch (e) { life = null; }
+      }
       let trend = null;
       if (k === 'bazi') {
         try {
@@ -1319,7 +1324,7 @@ function App() {
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       // 生时校正要按「这张盘用的出生信息」反推，而不是表单此刻的值：用户改完没重排时
       // 两者可能不同，拿表单值算出来的候选时辰就贴到了另一张盘上。
-      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu, marriage,
+      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
         gender: genderV, address: addressV, trueSolar: tsV, lateZi: lateZiV });
       // 首帧：等 React 提交并绘制两帧后再记总时长，避免把「还没画出来」算进渲染
       const draw = (n) => {

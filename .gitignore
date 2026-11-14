@@ -41,3 +41,4 @@ tools/.autopublish-error
 .env.*
 .npmrc
 *.secret
+.tmp-*

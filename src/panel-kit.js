@@ -1122,6 +1122,18 @@
 .mp-mar-lines{margin:0;padding-left:18px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
 .mp-mar-b{margin-top:7px;font-size:11px;color:var(--muted)}
 .mp-mar-b summary{cursor:pointer}
+.mp-life{margin-top:12px;border:1px solid color-mix(in srgb,var(--ke) 40%,var(--line));border-radius:10px;padding:11px 13px;background:color-mix(in srgb,var(--ke) 5%,var(--band))}
+.mp-life-h{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-direction:row}
+.mp-life-h b{font-size:14px;color:var(--ke);font-weight:700;letter-spacing:.04em}
+.mp-life-tag{font-style:normal;font-size:11px;color:var(--muted)}
+.mp-life-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px;align-items:start}
+.mp-life-f{padding:8px 10px;border-radius:7px;background:var(--card);border:1px solid var(--hair)}
+.mp-life-f>b{display:block;font-size:12px;font-weight:700;color:var(--ke);margin-bottom:4px;letter-spacing:.06em}
+.mp-life-f p{margin:0 0 3px;font-size:12px;line-height:1.7;color:var(--ink2)}
+.mp-life-f p:last-child{margin-bottom:0}
+.mp-life-f p:first-of-type{color:var(--ink)}
+.mp-life-b{margin-top:7px;font-size:11px;color:var(--muted)}
+.mp-life-b summary{cursor:pointer}
 .mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 @media print{.mp-cg{break-inside:avoid}}
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -3316,6 +3328,27 @@
         <details class="mp-mar-b"><summary>依据与口径</summary><div>${esc(m.basis || '')}</div></details>
       </section>`;
     })() : '';
+    // 人生六面：事业 / 财运 / 学业 / 健康 / 子女 / 六亲。
+    // 六面同源同口径，分成六张小卡并排；每面只放三到四句，不再往下铺明细。
+    const lifeOpt = opt && opt.life;
+    const lifeHTML = lifeOpt ? (() => {
+      const L = lifeOpt;
+      const FACES = [
+        ['career', '事业', L.career],
+        ['wealth', '财运', L.wealth],
+        ['study', '学业', L.study],
+        ['health', '健康', L.health],
+        ['children', '子女', L.children],
+        ['kin', '六亲', L.kin],
+      ].filter((x) => x[2] && Array.isArray(x[2].lines) && x[2].lines.length);
+      if (!FACES.length) return '';
+      const card = (k, title, f) => `<div class="mp-life-f" data-face="${k}"><b>${esc(title)}</b>${f.lines.map((l) => `<p>${esc(l)}</p>`).join('')}</div>`;
+      return `<section class="mp-life" aria-label="人生六面">
+        <div class="mp-life-h"><b>人生六面</b><i class="mp-life-tag">事业 · 财运 · 学业 · 健康 · 子女 · 六亲</i></div>
+        <div class="mp-life-grid">${FACES.map(([k, t, f]) => card(k, t, f)).join('')}</div>
+        <details class="mp-life-b"><summary>口径</summary><div>六面共用同一套原料（十神权重、用神喜忌、大运流年），各自口径见每段末尾说明。属规则化读法，不是对具体事件的断言。</div></details>
+      </section>`;
+    })() : '';
     // 附带称骨：同一份出生信息的民俗层延伸，显眼呈现（亮色块、默认展开、骨重大字）
     const cgOpt = opt && opt.chenggu;
     const cgHTML = cgOpt ? (() => {
@@ -3347,6 +3380,7 @@
       ${sect('格局', gj)}
       ${sect('用神', ys)}
       ${marHTML}
+      ${lifeHTML}
       ${cliCard}
       ${(Array.isArray(r.classics) && r.classics.length) ? `<section class="mp-cl" aria-label="古籍原文">
         <div class="mp-cl-h"><b>古籍原文</b><span>照录通行本，释义为白话自撰</span></div>

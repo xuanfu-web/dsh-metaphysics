@@ -77,7 +77,7 @@ ok('面板排八字时算婚姻层', /if \(k === 'bazi' && Engine\.buildMarriage
 ok('面板渲染传 marriage', /PP\.baziHTML\(result\.r, \{ chenggu: result\.chenggu[,}]/.test(app));
 const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
 ok('单页排八字时算婚姻层', /if \(tab === 'bazi' && window\.Engine\.buildMarriage\)/.test(ui));
-ok('单页渲染传 marriage', /window\.__PP\.baziHTML\(r, \{ chenggu, marriage \}\)/.test(ui));
+ok('单页渲染传 marriage', /window\.__PP\.baziHTML\(r, \{ chenggu, marriage(, life)? \}\)/.test(ui));
 
 // ── 分块：marriage 必须进 chart 块，否则面板解构成 undefined 静默不出卡 ──
 const { CHUNKS } = await import('../tools/build-client.mjs');

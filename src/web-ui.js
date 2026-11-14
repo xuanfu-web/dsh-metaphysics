@@ -1034,6 +1034,10 @@
       if (tab === 'bazi' && window.Engine.buildMarriage) {
         try { marriage = window.Engine.buildMarriage(r); } catch (e) { marriage = null; }
       }
+      let life = null;
+      if (tab === 'bazi' && window.Engine.buildFacets) {
+        try { life = window.Engine.buildFacets(r); } catch (e) { life = null; }
+      }
       let trend = null;
       if (tab === 'bazi') {
         try {
@@ -1053,7 +1057,7 @@
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
       const chart0 = (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
-        : tab === 'bazi' ? (window.__PP.baziHTML(r, { chenggu, marriage }) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
+        : tab === 'bazi' ? (window.__PP.baziHTML(r, { chenggu, marriage, life }) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
@@ -1081,7 +1085,7 @@
       pastMarks = {}; pastFit = null; rectOut = null;
       // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
       // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage,
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
         gender: args.gender || el('gender').value,
         address: typeof args.address === 'string' ? args.address : '',
         trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,
