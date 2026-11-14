@@ -9,7 +9,7 @@ import { DIRECTIONS } from '../engine/interpret.js';
 import { unreleasedFromChangelog } from './unreleased.mjs';
 
 const unreleasedLine = () =>
-  `    window.__MP_UNRELEASED = ${JSON.stringify(unreleasedFromChangelog(path.join(root, 'CHANGELOG.md')))};`;
+  `    window.__MP_UNRELEASED = ${unreleasedFromChangelog(path.join(root, 'CHANGELOG.md')).length};`;
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',

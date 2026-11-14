@@ -628,7 +628,7 @@ class PanelGuard extends (React.Component || Object) {
         String((e && e.message) || e) + '\n\n' + stack),
       h('div', { className: 'mp-lbl' }, '环境：__PP ' + (typeof PP) + ' · Engine ' + (typeof window.Engine) + ' · React ' + (typeof React) + ' · 版本 ' + (typeof PP === 'object' && PP && (window.__MP_VER || '?'))
         // 版本号没动时，靠「未发版改动 N 项」判断这份产物新不新——报错的人不用先猜自己装的是哪一版
-        + ((window.__MP_UNRELEASED || []).length ? ' · 未发版改动 ' + window.__MP_UNRELEASED.length + ' 项' : '')),
+        + (window.__MP_UNRELEASED ? ' · 未发版改动 ' + window.__MP_UNRELEASED + ' 项' : '')),
     ));
   }
 }
@@ -1768,8 +1768,8 @@ function App() {
     L.push('');
     L.push('- 插件版本：v' + ver);
     {
-      const un = Array.isArray(window.__MP_UNRELEASED) ? window.__MP_UNRELEASED : [];
-      if (un.length) L.push('- 未发版改动：' + un.length + ' 项（版本号未变，说明这份产物比 v' + ver + ' 新）');
+      const un = Number(window.__MP_UNRELEASED) || 0;
+      if (un) L.push('- 未发版改动：' + un + ' 项（版本号未变，说明这份产物比 v' + ver + ' 新）');
     }
     const tabName = TABS.find((x) => x.k === tab)?.label || tab;
     L.push('- 体系：' + tabName + (tabName === tab ? '' : '（' + tab + '）'));

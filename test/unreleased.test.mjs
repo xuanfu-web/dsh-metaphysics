@@ -88,10 +88,10 @@ const BCLIENT = read('tools/build-client.mjs');
 ok('build-client 两个入口（全量包与正式入口）都注入清单',
   (BCLIENT.match(/\$\{unreleasedLine\(\)\}/g) || []).length === 2,
   String((BCLIENT.match(/\$\{unreleasedLine\(\)\}/g) || []).length));
-ok('client.js 里确有这份清单', /window\.__MP_UNRELEASED\s*=\s*\[/.test(CLIENT));
+ok('client.js 里确有未发版改动计数', /window\.__MP_UNRELEASED\s*=\s*\d+/.test(CLIENT));
 // 产物是压缩过的，等号两边没有空格——按压缩后的形态断言，别拿源码写法去比
 // 注入的是数组字面量（发版后清单为空也仍是 `[]`，所以只比到左括号）
-ok('注入的是 JSON 数组而不是手写字面量', /__MP_UNRELEASED\s*=\s*\[/.test(CLIENT));
+ok('注入的是算出来的项数而不是手写清单', /__MP_UNRELEASED\s*=\s*\d+/.test(CLIENT));
 const APP = read('src/app.js');
-ok('面板报错行带出未发版改动项数', /__MP_UNRELEASED \|\| \[\]\)\.length \? ' · 未发版改动 '/.test(APP));
+ok('面板报错行带出未发版改动项数', /__MP_UNRELEASED \? ' · 未发版改动 '/.test(APP));
 ok('没有未发版改动时报错行不多话（三元另一支是空串）', /' 项' : ''\)/.test(APP));
