@@ -1,0 +1,3410 @@
+{
+ "meta": {
+  "source": "https://github.com/ChenJiangxi/BaziQA",
+  "upstreamPath": "charts/bazi/",
+  "commit": "3bad3deaa5aa3a191c9c68b4d8b17f46decff45e",
+  "commitUrl": "https://github.com/ChenJiangxi/BaziQA/commit/3bad3deaa5aa3a191c9c68b4d8b17f46decff45e",
+  "upstreamEngine": "lunar-python 1.4.8",
+  "timeConvention": "stated（chart.datetime 取 time.clock.datetime，即原文钟表时间；本轮对拍让引擎自己扣夏令时）",
+  "scope": "只取 charts/bazi 下带 chart.datetime 与四柱的命例；竞赛题正文与答案不取",
+  "capturedAt": "2026-11-14T03:45:21.671Z",
+  "capture": "tools/capture-baziqa-pillars.mjs（api.github.com contents，base64 解码后校验 git blob sha1 与字节数）",
+  "files": [
+   {
+    "name": "contest8_2021.json",
+    "bytes": 46728,
+    "sha256": "e9fecb4c90c2592aa30927246d90529ecebdc151bb389b40847cb25a2fbecbec",
+    "blobSha": "620ece83932c0d6d8f435005d0910844d1d9030c"
+   },
+   {
+    "name": "contest8_2022.json",
+    "bytes": 40172,
+    "sha256": "c7e13430c3ccb30734391362e370decf0d83528ac80b7e6083ed7cf2faa7d623",
+    "blobSha": "c92c318fb5e1db42b58c5a4abe8b8c4576cb29b0"
+   },
+   {
+    "name": "contest8_2023.json",
+    "bytes": 41873,
+    "sha256": "36f70d2dd447ec0cb2bd28404dfa36bc2b7d329ee227408cdb02872a7dce6918",
+    "blobSha": "2b09339711a5cb54299a8fdd0631e1cb9359ff3d"
+   },
+   {
+    "name": "contest8_2024.json",
+    "bytes": 41028,
+    "sha256": "826e7627a934e9cad1ea118773bd1584fd9b423eaa4ec9fdd712de7a6a2b6e5f",
+    "blobSha": "1ab03e6cfa9031c847ad0dd05650cdb8b7398fb1"
+   },
+   {
+    "name": "contest8_2025.json",
+    "bytes": 41135,
+    "sha256": "e6e058f547ef8c83e891b86e64e4caf41a85fbb20fcff614c9674c360678df59",
+    "blobSha": "6f8d0502242bff3488e4d7d720de43f286273454"
+   },
+   {
+    "name": "contest8_2026.json",
+    "bytes": 41936,
+    "sha256": "4fc007c7ea0c8a4aad4c69fb927837553cc087952f68504b9aa841b07ac9f889",
+    "blobSha": "da94f378e1865dd40a1cc06ad9b01f2eb433e2de"
+   },
+   {
+    "name": "hkjfma_2010.json",
+    "bytes": 14453,
+    "sha256": "79e49cbd6133ed377e35a50be36f6eef63ca8bd8e29030a5e4dc627f395d121d",
+    "blobSha": "0d3dd23ea45db8daaf230de42155ae5d230b7ea7"
+   },
+   {
+    "name": "hkjfma_2011.json",
+    "bytes": 13612,
+    "sha256": "a7e61a7502d862e9e8e9c6e1bd40a6d47bb3fa7731207ea47ecd32198cf07756",
+    "blobSha": "0f9dcfe542e3cd1c1add8fbc42964a97c1dd2f7e"
+   },
+   {
+    "name": "hkjfma_2012.json",
+    "bytes": 14237,
+    "sha256": "e7da69d2253a31c2063b0b2225a087c0ed134a41338349c77719c75c8af5be6d",
+    "blobSha": "6d86cc28c1cb3571f08f1f6590c74f66e2eba51b"
+   },
+   {
+    "name": "hkjfma_2013.json",
+    "bytes": 20307,
+    "sha256": "9c480cf3012ff148bd4b2a2075e594843d72806c409f43db804fe99df58441fa",
+    "blobSha": "0b0319843a94a7e62fde6774ea7da9f43dc8f6ae"
+   },
+   {
+    "name": "hkjfma_2014.json",
+    "bytes": 35504,
+    "sha256": "e5af9691123801937f256ae5a60ee46a1869a710152839323f8975891e88ece6",
+    "blobSha": "fa04b1b72609dc082e328116e5d4c32fdf0a6e23"
+   },
+   {
+    "name": "hkjfma_2015.json",
+    "bytes": 34616,
+    "sha256": "283e40582a36c242903fa7ce17cf06132d9742738986effbfd727840fb974a6a",
+    "blobSha": "32597cf624e8bb06b8d774577658ff0e8a1eeff2"
+   },
+   {
+    "name": "hkjfma_2016.json",
+    "bytes": 35730,
+    "sha256": "109eb09c9d34f62982a7e24b32bb91014aa4d3b4e4f155bddcc46763f3012afc",
+    "blobSha": "1e1ad6559f17af882544e7cba17cc3860aa4ca43"
+   },
+   {
+    "name": "hkjfma_2017.json",
+    "bytes": 43285,
+    "sha256": "e40406d4b95c67054c0d0260b2543412e839ff27ba654567e45d7db1de2a882c",
+    "blobSha": "92a8ffe816f04c9fd0f02120eade8cb786ba3f34"
+   },
+   {
+    "name": "hkjfma_2018.json",
+    "bytes": 46060,
+    "sha256": "84e80d193c3ccc242421f7096659b22c3073d3f25c9d79b1678cf5fffe64890b",
+    "blobSha": "50e0b489c009bbe084c1124768319572019674ab"
+   },
+   {
+    "name": "hkjfma_2019.json",
+    "bytes": 39367,
+    "sha256": "f1e140566076cfd6a237baab720fa1ae8d60e2a29205bed7a394b22f53bf4aae",
+    "blobSha": "828ae76a4c14e1bb1265d659d4abe8f243a0704f"
+   },
+   {
+    "name": "hkjfma_2020.json",
+    "bytes": 44612,
+    "sha256": "b391e84ee515d5bc725cd94821eb98fe9e647313db018bd2b3c17a1e84816434",
+    "blobSha": "a98b7f9d45510c2c4a24dd64191937fc2cbd05d5"
+   }
+  ],
+  "stats": {
+   "charts": 117,
+   "withDst": 21,
+   "timezones": {
+    "Asia/Hong_Kong": 54,
+    "Asia/Kuala_Lumpur": 16,
+    "Asia/Shanghai": 20,
+    "Asia/Taipei": 14,
+    "Asia/Singapore": 3,
+    "null": 8,
+    "Asia/Tokyo": 1,
+    "Asia/Macau": 1
+   }
+  },
+  "caution": "上游 dst_minutes 来自其 Asia 时区库；本插件 engine/dst.js 的夏令时表只覆盖中国大陆时段，香港/台北/新加坡等地夏令时未必落在表内。对拍时凡 dstMinutes>0 且非中国大陆年份的命例，若时柱不同先查夏令时口径，不要直接判为排盘错误。"
+ },
+ "cases": [
+  {
+   "id": "female_19670827_P034",
+   "file": "contest8_2021.json",
+   "caseNo": "8b",
+   "gender": "female",
+   "clock": "1967-08-27 16:51",
+   "stated": "1967-08-27 15:51",
+   "trueSolar": "1967-08-27 15:25",
+   "trueSolarMinutes": -25.2,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "丁未",
+    "戊申",
+    "癸亥",
+    "庚申"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 0,
+    "after_days": 0,
+    "start_date": "1971-08-27",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "female_19750107_P030",
+   "file": "contest8_2021.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1975-01-07 10:00",
+   "stated": "1975-01-07 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲寅",
+    "丁丑",
+    "癸丑",
+    "丁巳"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 4,
+    "after_days": 10,
+    "start_date": "1975-05-17",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19841220_P027",
+   "file": "contest8_2021.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1984-12-20 18:00",
+   "stated": "1984-12-20 18:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲子",
+    "丙子",
+    "戊子",
+    "辛酉"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 6,
+    "after_days": 0,
+    "start_date": "1989-06-20",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19530127_P031",
+   "file": "contest8_2021.json",
+   "caseNo": "7",
+   "gender": "male",
+   "clock": "1953-01-27 06:00",
+   "stated": "1953-01-27 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬辰",
+    "癸丑",
+    "戊寅",
+    "乙卯"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 8,
+    "after_days": 20,
+    "start_date": "1955-10-17",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19540318_P025",
+   "file": "contest8_2021.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1954-03-18 16:00",
+   "stated": "1954-03-18 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲午",
+    "丁卯",
+    "癸酉",
+    "庚申"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 0,
+    "after_days": 0,
+    "start_date": "1960-03-18",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19700723_P029",
+   "file": "contest8_2021.json",
+   "caseNo": "5",
+   "gender": "male",
+   "clock": "1970-07-23 08:20",
+   "stated": "1970-07-23 08:20",
+   "trueSolar": "1970-07-23 08:19",
+   "trueSolarMinutes": -0.2,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚戌",
+    "癸未",
+    "甲辰",
+    "戊辰"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 3,
+    "after_days": 20,
+    "start_date": "1975-11-12",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19710910_P033",
+   "file": "contest8_2021.json",
+   "caseNo": "8a",
+   "gender": "male",
+   "clock": "1971-09-10 10:30",
+   "stated": "1971-09-10 10:30",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "广东潮汕",
+   "lon": 116.68,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛亥",
+    "丁酉",
+    "戊戌",
+    "丁巳"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 7,
+    "after_days": 0,
+    "start_date": "1972-04-10",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19770706_P028",
+   "file": "contest8_2021.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1977-07-06 14:00",
+   "stated": "1977-07-06 14:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "丁巳",
+    "丙午",
+    "甲子",
+    "辛未"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 10,
+    "after_months": 1,
+    "after_days": 20,
+    "start_date": "1987-08-26",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19831019_P026",
+   "file": "contest8_2021.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1983-10-19 09:58",
+   "stated": "1983-10-19 09:58",
+   "trueSolar": "1983-10-19 09:08",
+   "trueSolarMinutes": -49.6,
+   "place": "新加坡",
+   "lon": 103.82,
+   "timezone": "Asia/Singapore",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸亥",
+    "壬戌",
+    "庚辰",
+    "辛巳"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 5,
+    "after_days": 0,
+    "start_date": "1987-03-19",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19771026_P020",
+   "file": "contest8_2022.json",
+   "caseNo": "4",
+   "gender": "female",
+   "clock": "1977-10-26 11:10",
+   "stated": "1977-10-26 11:10",
+   "trueSolar": "1977-10-26 10:42",
+   "trueSolarMinutes": -27.1,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "丁巳",
+    "庚戌",
+    "丙辰",
+    "甲午"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 1,
+    "after_days": 10,
+    "start_date": "1981-12-06",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "female_19810526_P018",
+   "file": "contest8_2022.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1981-05-26 02:17",
+   "stated": "1981-05-26 02:17",
+   "trueSolar": "1981-05-26 01:57",
+   "trueSolarMinutes": -20,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛酉",
+    "癸巳",
+    "甲辰",
+    "乙丑"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 8,
+    "after_days": 0,
+    "start_date": "1985-01-26",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "female_19841209_P023",
+   "file": "contest8_2022.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1984-12-09 18:00",
+   "stated": "1984-12-09 18:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲子",
+    "丙子",
+    "丁丑",
+    "己酉"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 10,
+    "after_days": 0,
+    "start_date": "1985-10-09",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19900523_P019",
+   "file": "contest8_2022.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1990-05-23 17:30",
+   "stated": "1990-05-23 16:30",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 60,
+   "upstream": [
+    "庚午",
+    "辛巳",
+    "戊子",
+    "庚申"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 10,
+    "after_days": 10,
+    "start_date": "1996-04-02",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19740428_P017",
+   "file": "contest8_2022.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1974-04-28 16:40",
+   "stated": "1974-04-28 16:40",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "美国",
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "甲寅",
+    "戊辰",
+    "己亥",
+    "壬申"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 6,
+    "after_days": 10,
+    "start_date": "1976-11-07",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19810617_P024",
+   "file": "contest8_2022.json",
+   "caseNo": "8",
+   "gender": "male",
+   "clock": "1981-06-17 20:00",
+   "stated": "1981-06-17 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛酉",
+    "甲午",
+    "丙寅",
+    "戊戌"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 11,
+    "after_days": 0,
+    "start_date": "1985-05-17",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19831101_P022",
+   "file": "contest8_2022.json",
+   "caseNo": "6",
+   "gender": "male",
+   "clock": "1983-11-01 22:00",
+   "stated": "1983-11-01 22:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸亥",
+    "壬戌",
+    "癸巳",
+    "癸亥"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 11,
+    "after_days": 0,
+    "start_date": "1991-10-01",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19850629_P021",
+   "file": "contest8_2022.json",
+   "caseNo": "5",
+   "gender": "male",
+   "clock": "1985-06-29 18:32",
+   "stated": "1985-06-29 18:32",
+   "trueSolar": "1985-06-29 17:15",
+   "trueSolarMinutes": -76.3,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "乙丑",
+    "壬午",
+    "己亥",
+    "癸酉"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 10,
+    "after_days": 20,
+    "start_date": "1993-05-19",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19581027_P014",
+   "file": "contest8_2023.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1958-10-27 08:00",
+   "stated": "1958-10-27 08:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "戊戌",
+    "壬戌",
+    "丁丑",
+    "甲辰"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 0,
+    "after_days": 20,
+    "start_date": "1964-11-16",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19661018_P009",
+   "file": "contest8_2023.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1966-10-18 23:15",
+   "stated": "1966-10-18 23:15",
+   "trueSolar": "1966-10-18 23:06",
+   "trueSolarMinutes": -8.2,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙午",
+    "戊戌",
+    "辛亥",
+    "戊子"
+   ],
+   "dayMaster": "辛",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 3,
+    "after_days": 10,
+    "start_date": "1970-01-28",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19780405_P013",
+   "file": "contest8_2023.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1978-04-05 18:00",
+   "stated": "1978-04-05 18:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "戊午",
+    "丙辰",
+    "丁酉",
+    "己酉"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 1,
+    "after_days": 0,
+    "start_date": "1978-05-05",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_20020601_P015",
+   "file": "contest8_2023.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "2002-06-01 08:30",
+   "stated": "2002-06-01 08:30",
+   "trueSolar": "2002-06-01 08:09",
+   "trueSolarMinutes": -20.7,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬午",
+    "乙巳",
+    "庚子",
+    "庚辰"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 9,
+    "after_days": 10,
+    "start_date": "2011-03-11",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19560311_P012",
+   "file": "contest8_2023.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1956-03-11 10:00",
+   "stated": "1956-03-11 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙申",
+    "辛卯",
+    "丁丑",
+    "乙巳"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 3,
+    "after_days": 0,
+    "start_date": "1964-06-11",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19620806_P010",
+   "file": "contest8_2023.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1962-08-06 10:00",
+   "stated": "1962-08-06 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "壬寅",
+    "丁未",
+    "丙子",
+    "癸巳"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 7,
+    "after_days": 20,
+    "start_date": "1963-03-26",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19800711_P016",
+   "file": "contest8_2023.json",
+   "caseNo": "8",
+   "gender": "male",
+   "clock": "1980-07-11 10:00",
+   "stated": "1980-07-11 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚申",
+    "癸未",
+    "乙酉",
+    "辛巳"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 1,
+    "after_days": 10,
+    "start_date": "1989-08-21",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "male_19860424_P011",
+   "file": "contest8_2023.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1986-04-24 21:30",
+   "stated": "1986-04-24 21:30",
+   "trueSolar": "1986-04-24 20:18",
+   "trueSolarMinutes": -71.3,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙寅",
+    "壬辰",
+    "戊戌",
+    "癸亥"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 9,
+    "after_days": 0,
+    "start_date": "1990-01-24",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "chaozhou_male_19720108_P002",
+   "file": "contest8_2024.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1972-01-08 12:00",
+   "stated": "1972-01-08 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "广东潮汕",
+   "lon": 116.68,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛亥",
+    "辛丑",
+    "戊戌",
+    "戊午"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 7,
+    "after_days": 20,
+    "start_date": "1972-08-28",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19710412_P005",
+   "file": "contest8_2024.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1971-04-12 16:00",
+   "stated": "1971-04-12 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛亥",
+    "壬辰",
+    "丁卯",
+    "戊申"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 11,
+    "after_days": 10,
+    "start_date": "1979-03-22",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "female_19800921_P007",
+   "file": "contest8_2024.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1980-09-21 11:25",
+   "stated": "1980-09-21 11:25",
+   "trueSolar": "1980-09-21 10:49",
+   "trueSolarMinutes": -36,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚申",
+    "乙酉",
+    "丁酉",
+    "丙午"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 6,
+    "after_days": 20,
+    "start_date": "1985-04-10",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "female_19830326_P006",
+   "file": "contest8_2024.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1983-03-26 14:00",
+   "stated": "1983-03-26 14:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "北京",
+   "lon": 116.4,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸亥",
+    "乙卯",
+    "癸丑",
+    "己未"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 4,
+    "after_days": 10,
+    "start_date": "1986-08-05",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "female_19831028_P004",
+   "file": "contest8_2024.json",
+   "caseNo": "4",
+   "gender": "female",
+   "clock": "1983-10-28 02:00",
+   "stated": "1983-10-28 02:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸亥",
+    "壬戌",
+    "己丑",
+    "乙丑"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 9,
+    "after_days": 0,
+    "start_date": "1987-07-28",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "guangdong_female_19800824_P001",
+   "file": "contest8_2024.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1980-08-24 16:30",
+   "stated": "1980-08-24 16:30",
+   "trueSolar": "1980-08-24 16:00",
+   "trueSolarMinutes": -29.4,
+   "place": "广东",
+   "lon": 113.26,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚申",
+    "甲申",
+    "己巳",
+    "壬申"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 7,
+    "after_days": 20,
+    "start_date": "1986-04-13",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_19611230_P003",
+   "file": "contest8_2024.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1961-12-30 02:00",
+   "stated": "1961-12-30 02:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "辛丑",
+    "庚子",
+    "丁酉",
+    "辛丑"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 5,
+    "after_days": 20,
+    "start_date": "1969-06-19",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "male_20070131_P008",
+   "file": "contest8_2024.json",
+   "caseNo": "8",
+   "gender": "male",
+   "clock": "2007-01-31 09:00",
+   "stated": "2007-01-31 09:00",
+   "trueSolar": "2007-01-31 07:33",
+   "trueSolarMinutes": -86.2,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙戌",
+    "辛丑",
+    "乙丑",
+    "辛巳"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 4,
+    "after_days": 20,
+    "start_date": "2008-06-20",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "beijing_male_19700722_P008",
+   "file": "contest8_2025.json",
+   "caseNo": "8",
+   "gender": "male",
+   "clock": "1970-07-22 16:00",
+   "stated": "1970-07-22 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "北京",
+   "lon": 116.4,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚戌",
+    "癸未",
+    "癸卯",
+    "庚申"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 6,
+    "after_days": 10,
+    "start_date": "1976-02-01",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "guangdong_female_19511114_P001",
+   "file": "contest8_2025.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1951-11-14 10:00",
+   "stated": "1951-11-14 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "广东",
+   "lon": 113.26,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛卯",
+    "己亥",
+    "戊午",
+    "丁巳"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 11,
+    "after_days": 10,
+    "start_date": "1959-10-24",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "hongkong_female_19870705_P002",
+   "file": "contest8_2025.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1987-07-05 12:00",
+   "stated": "1987-07-05 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丁卯",
+    "丙午",
+    "乙卯",
+    "壬午"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 9,
+    "after_days": 20,
+    "start_date": "1988-04-25",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "malaysia_male_19730824_P006",
+   "file": "contest8_2025.json",
+   "caseNo": "6",
+   "gender": "male",
+   "clock": "1973-08-24 00:35",
+   "stated": "1973-08-24 00:35",
+   "trueSolar": "1973-08-23 23:48",
+   "trueSolarMinutes": -46.2,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸丑",
+    "庚申",
+    "壬辰",
+    "庚子"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 4,
+    "after_days": 0,
+    "start_date": "1978-12-24",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "malaysia_male_19880110_P005",
+   "file": "contest8_2025.json",
+   "caseNo": "5",
+   "gender": "male",
+   "clock": "1988-01-10 08:12",
+   "stated": "1988-01-10 08:12",
+   "trueSolar": "1988-01-10 06:52",
+   "trueSolarMinutes": -79.9,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "丁卯",
+    "癸丑",
+    "甲子",
+    "戊辰"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 3,
+    "after_days": 10,
+    "start_date": "1989-04-20",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "miyazaki_male_19830421_P003",
+   "file": "contest8_2025.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1983-04-21 06:30",
+   "stated": "1983-04-21 06:30",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "日本宫崎县",
+   "lon": 131.42,
+   "timezone": "Asia/Tokyo",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸亥",
+    "丙辰",
+    "己卯",
+    "丁卯"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 2,
+    "after_days": 10,
+    "start_date": "1988-07-01",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "singapore_male_19930408_P004",
+   "file": "contest8_2025.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1993-04-08 23:34",
+   "stated": "1993-04-08 23:34",
+   "trueSolar": "1993-04-08 22:27",
+   "trueSolarMinutes": -66.8,
+   "place": "新加坡",
+   "lon": 103.82,
+   "timezone": "Asia/Singapore",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸酉",
+    "丙辰",
+    "庚申",
+    "丙子"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 3,
+    "after_days": 10,
+    "start_date": "1994-07-18",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "taiwan_female_19880215_P007",
+   "file": "contest8_2025.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1988-02-15 16:50",
+   "stated": "1988-02-15 16:50",
+   "trueSolar": "1988-02-15 16:41",
+   "trueSolarMinutes": -8,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "戊辰",
+    "甲寅",
+    "庚子",
+    "甲申"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 7,
+    "after_days": 0,
+    "start_date": "1991-09-15",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2026_C1_male_19820612",
+   "file": "contest8_2026.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1982-06-12 06:50",
+   "stated": "1982-06-12 06:50",
+   "trueSolar": "1982-06-12 06:27",
+   "trueSolarMinutes": -22.7,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬戌",
+    "丙午",
+    "丙寅",
+    "辛卯"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 6,
+    "after_days": 0,
+    "start_date": "1990-12-12",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2026_C2_female_19810120",
+   "file": "contest8_2026.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1981-01-20 20:05",
+   "stated": "1981-01-20 20:05",
+   "trueSolar": "1981-01-20 19:31",
+   "trueSolarMinutes": -33.7,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚申",
+    "己丑",
+    "戊戌",
+    "壬戌"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 0,
+    "after_days": 10,
+    "start_date": "1986-01-30",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2026_C3_male_19560903",
+   "file": "contest8_2026.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1956-09-03 18:00",
+   "stated": "1956-09-03 18:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "丙申",
+    "丙申",
+    "癸酉",
+    "辛酉"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 5,
+    "after_days": 0,
+    "start_date": "1958-02-03",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2026_C4_male_19511105",
+   "file": "contest8_2026.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1951-11-05 05:30",
+   "stated": "1951-11-05 05:30",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "四川成都郊县",
+   "lon": 104.07,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛卯",
+    "戊戌",
+    "己酉",
+    "丁卯"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 11,
+    "after_days": 10,
+    "start_date": "1960-10-15",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2026_C5_male_19870626",
+   "file": "contest8_2026.json",
+   "caseNo": "5",
+   "gender": "male",
+   "clock": "1987-06-26 10:00",
+   "stated": "1987-06-26 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "河北农村",
+   "lon": 114.51,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 60,
+   "upstream": [
+    "丁卯",
+    "丙午",
+    "丙午",
+    "癸巳"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 7,
+    "after_days": 10,
+    "start_date": "1994-02-05",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2026_C6_female_19611104",
+   "file": "contest8_2026.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1961-11-04 10:00",
+   "stated": "1961-11-04 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛丑",
+    "戊戌",
+    "辛丑",
+    "癸巳"
+   ],
+   "dayMaster": "辛",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 2,
+    "after_days": 0,
+    "start_date": "1963-01-04",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2026_C7_female_19990814",
+   "file": "contest8_2026.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1999-08-14 15:30",
+   "stated": "1999-08-14 15:30",
+   "trueSolar": "1999-08-14 15:26",
+   "trueSolarMinutes": -3.8,
+   "place": "台湾高雄",
+   "lon": 120.3,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "己卯",
+    "壬申",
+    "戊戌",
+    "庚申"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 3,
+    "after_days": 0,
+    "start_date": "2007-11-14",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2026_C8_male_19811019",
+   "file": "contest8_2026.json",
+   "caseNo": "8",
+   "gender": "male",
+   "clock": "1981-10-19 22:00",
+   "stated": "1981-10-19 22:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "辛酉",
+    "戊戌",
+    "庚午",
+    "丁亥"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 8,
+    "after_days": 20,
+    "start_date": "1985-07-09",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2010_C1_female_19820927",
+   "file": "hkjfma_2010.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1982-09-27 16:00",
+   "stated": "1982-09-27 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬戌",
+    "己酉",
+    "癸丑",
+    "庚申"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 5,
+    "after_days": 10,
+    "start_date": "1989-03-09",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2010_C2_male_19601210",
+   "file": "hkjfma_2010.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1960-12-10 10:00",
+   "stated": "1960-12-10 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚子",
+    "戊子",
+    "壬申",
+    "乙巳"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 10,
+    "after_days": 0,
+    "start_date": "1969-10-10",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2010_C3_female_19620929",
+   "file": "hkjfma_2010.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1962-09-29 04:00",
+   "stated": "1962-09-29 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "壬寅",
+    "己酉",
+    "庚午",
+    "戊寅"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 10,
+    "after_days": 20,
+    "start_date": "1969-08-18",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2011_C1_male_19721102",
+   "file": "hkjfma_2011.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1972-11-02 10:00",
+   "stated": "1972-11-02 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆 唐山市",
+   "lon": 118.18,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬子",
+    "庚戌",
+    "丁酉",
+    "乙巳"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 9,
+    "after_days": 0,
+    "start_date": "1974-08-02",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2011_C2_male_19810908",
+   "file": "hkjfma_2011.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1981-09-08 20:00",
+   "stated": "1981-09-08 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛酉",
+    "丁酉",
+    "己丑",
+    "甲戌"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 3,
+    "after_days": 0,
+    "start_date": "1981-12-08",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2011_C3_male_19940828",
+   "file": "hkjfma_2011.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1994-08-28 02:00",
+   "stated": "1994-08-28 02:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲戌",
+    "壬申",
+    "丙戌",
+    "己丑"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 8,
+    "after_days": 10,
+    "start_date": "1998-05-08",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2012_C1_female_19791005",
+   "file": "hkjfma_2012.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1979-10-05 20:00",
+   "stated": "1979-10-05 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "己未",
+    "癸酉",
+    "乙巳",
+    "丙戌"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 1,
+    "after_days": 20,
+    "start_date": "1980-11-25",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2012_C2_female_19830628",
+   "file": "hkjfma_2012.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1983-06-28 08:00",
+   "stated": "1983-06-28 08:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "癸亥",
+    "戊午",
+    "丁亥",
+    "甲辰"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 2,
+    "after_days": 20,
+    "start_date": "1986-09-17",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2012_C3_male_19550325",
+   "file": "hkjfma_2012.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1955-03-25 04:00",
+   "stated": "1955-03-25 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "乙未",
+    "己卯",
+    "乙酉",
+    "戊寅"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 2,
+    "after_days": 0,
+    "start_date": "1961-05-25",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2013_C1_male_19680410",
+   "file": "hkjfma_2013.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1968-04-10 20:00",
+   "stated": "1968-04-10 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "戊申",
+    "丙辰",
+    "庚戌",
+    "丙戌"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 3,
+    "after_days": 20,
+    "start_date": "1976-07-30",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2013_C2_female_19721106",
+   "file": "hkjfma_2013.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1972-11-06 19:15",
+   "stated": "1972-11-06 19:15",
+   "trueSolar": "1972-11-06 19:07",
+   "trueSolarMinutes": -7.2,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬子",
+    "庚戌",
+    "辛丑",
+    "戊戌"
+   ],
+   "dayMaster": "辛",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 9,
+    "after_days": 10,
+    "start_date": "1982-08-16",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2013_C3_male_19720115",
+   "file": "hkjfma_2013.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1972-01-15 00:30",
+   "stated": "1972-01-15 00:30",
+   "trueSolar": "1972-01-14 23:58",
+   "trueSolarMinutes": -31.8,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛亥",
+    "辛丑",
+    "乙巳",
+    "丙子"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 9,
+    "after_days": 20,
+    "start_date": "1974-11-04",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2013_C4_female_19700814",
+   "file": "hkjfma_2013.json",
+   "caseNo": "4",
+   "gender": "female",
+   "clock": "1970-08-14 12:00",
+   "stated": null,
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚戌",
+    "甲申",
+    "丙寅",
+    null
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 1,
+    "after_days": 0,
+    "start_date": "1972-09-14",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2014_C1_male_19620825",
+   "file": "hkjfma_2014.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1962-08-25 06:00",
+   "stated": "1962-08-25 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬寅",
+    "戊申",
+    "乙未",
+    "己卯"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 9,
+    "after_days": 0,
+    "start_date": "1967-05-25",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2014_C2_male_19650305",
+   "file": "hkjfma_2014.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1965-03-05 09:35",
+   "stated": "1965-03-05 09:35",
+   "trueSolar": "1965-03-05 08:39",
+   "trueSolarMinutes": -55.4,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "乙巳",
+    "戊寅",
+    "戊午",
+    "丁巳"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 8,
+    "after_days": 10,
+    "start_date": "1974-11-15",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2014_C3_male_19791010",
+   "file": "hkjfma_2014.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1979-10-10 20:00",
+   "stated": "1979-10-10 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "己未",
+    "甲戌",
+    "庚戌",
+    "丙戌"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 6,
+    "after_days": 10,
+    "start_date": "1980-04-20",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2014_C4_female_19750926",
+   "file": "hkjfma_2014.json",
+   "caseNo": "4",
+   "gender": "female",
+   "clock": "1975-09-26 16:00",
+   "stated": "1975-09-26 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "乙卯",
+    "乙酉",
+    "乙亥",
+    "甲申"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 2,
+    "after_days": 10,
+    "start_date": "1979-12-06",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2014_C5_female_19920506",
+   "file": "hkjfma_2014.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1992-05-06 06:00",
+   "stated": "1992-05-06 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "澳门",
+   "lon": 113.54,
+   "timezone": "Asia/Macau",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬申",
+    "乙巳",
+    "壬午",
+    "癸卯"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 2,
+    "after_days": 20,
+    "start_date": "1992-07-26",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2014_C6_male_19740316",
+   "file": "hkjfma_2014.json",
+   "caseNo": "6",
+   "gender": "male",
+   "clock": "1974-03-16 11:29",
+   "stated": "1974-03-16 10:29",
+   "trueSolar": "1974-03-16 09:56",
+   "trueSolarMinutes": -32.7,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "甲寅",
+    "丁卯",
+    "丙辰",
+    "癸巳"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 8,
+    "after_days": 10,
+    "start_date": "1980-11-26",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2014_C7_female_19610710",
+   "file": "hkjfma_2014.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1961-07-10 06:00",
+   "stated": "1961-07-10 05:00",
+   "trueSolar": "1961-07-10 04:31",
+   "trueSolarMinutes": -28.4,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "辛丑",
+    "乙未",
+    "甲辰",
+    "丁卯"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 7,
+    "after_days": 10,
+    "start_date": "1971-02-20",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2015_C1_female_19571107",
+   "file": "hkjfma_2015.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1957-11-07 18:00",
+   "stated": "1957-11-07 18:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾台北",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "丁酉",
+    "庚戌",
+    "癸未",
+    "辛酉"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 1,
+    "after_days": 0,
+    "start_date": "1957-12-07",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2015_C2_female_19570104",
+   "file": "hkjfma_2015.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1957-01-04 12:00",
+   "stated": "1957-01-04 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙申",
+    "庚子",
+    "丙子",
+    "甲午"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 4,
+    "after_days": 0,
+    "start_date": "1966-05-04",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2015_C3_male_19640316",
+   "file": "hkjfma_2015.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1964-03-16 12:00",
+   "stated": "1964-03-16 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲辰",
+    "丁卯",
+    "甲子",
+    "庚午"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 6,
+    "after_days": 10,
+    "start_date": "1970-09-26",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2015_C4_male_19740813",
+   "file": "hkjfma_2015.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1974-08-13 20:00",
+   "stated": "1974-08-13 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "甲寅",
+    "壬申",
+    "丙戌",
+    "戊戌"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 6,
+    "after_days": 0,
+    "start_date": "1983-02-13",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2015_C5_male_19630813",
+   "file": "hkjfma_2015.json",
+   "caseNo": "5",
+   "gender": "male",
+   "clock": "1963-08-13 20:00",
+   "stated": "1963-08-13 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "癸卯",
+    "庚申",
+    "戊子",
+    "壬戌"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 9,
+    "after_days": 0,
+    "start_date": "1965-05-13",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2015_C6_female_19960310",
+   "file": "hkjfma_2015.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1996-03-10 08:00",
+   "stated": "1996-03-10 08:00",
+   "trueSolar": "1996-03-10 07:25",
+   "trueSolarMinutes": -34.1,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙子",
+    "辛卯",
+    "丙午",
+    "壬辰"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 6,
+    "after_days": 20,
+    "start_date": "1997-09-30",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2015_C7_female_19590906",
+   "file": "hkjfma_2015.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1959-09-06 22:00",
+   "stated": "1959-09-06 22:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "己亥",
+    "壬申",
+    "辛卯",
+    "己亥"
+   ],
+   "dayMaster": "辛",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 7,
+    "after_days": 10,
+    "start_date": "1960-04-16",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2016_C1_male_19520615",
+   "file": "hkjfma_2016.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1952-06-15 04:00",
+   "stated": "1952-06-15 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "壬辰",
+    "丙午",
+    "壬辰",
+    "壬寅"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 5,
+    "after_days": 10,
+    "start_date": "1959-11-25",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2016_C2_male_19750920",
+   "file": "hkjfma_2016.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1975-09-20 18:00",
+   "stated": "1975-09-20 17:00",
+   "trueSolar": "1975-09-20 16:43",
+   "trueSolarMinutes": -16.7,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "乙卯",
+    "乙酉",
+    "己巳",
+    "癸酉"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 0,
+    "after_days": 20,
+    "start_date": "1979-10-10",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2016_C3_female_19700605",
+   "file": "hkjfma_2016.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1970-06-05 04:00",
+   "stated": "1970-06-05 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚戌",
+    "辛巳",
+    "丙辰",
+    "庚寅"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 11,
+    "after_days": 20,
+    "start_date": "1980-05-25",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2016_C4_male_19630206",
+   "file": "hkjfma_2016.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1963-02-06 12:00",
+   "stated": "1963-02-06 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾台中",
+   "lon": 120.68,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸卯",
+    "甲寅",
+    "庚辰",
+    "壬午"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 6,
+    "after_days": 10,
+    "start_date": "1963-08-16",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2016_C5_male_19520226",
+   "file": "hkjfma_2016.json",
+   "caseNo": "5",
+   "gender": "male",
+   "clock": "1952-02-26 06:00",
+   "stated": "1952-02-26 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬辰",
+    "壬寅",
+    "壬寅",
+    "癸卯"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 10,
+    "after_days": 20,
+    "start_date": "1955-01-15",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2016_C6_male_19820530",
+   "file": "hkjfma_2016.json",
+   "caseNo": "6",
+   "gender": "male",
+   "clock": "1982-05-30 04:00",
+   "stated": "1982-05-30 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬戌",
+    "乙巳",
+    "癸丑",
+    "甲寅"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 4,
+    "after_days": 20,
+    "start_date": "1984-10-20",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2016_C7_female_19701005",
+   "file": "hkjfma_2016.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1970-10-05 20:00",
+   "stated": "1970-10-05 20:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "庚戌",
+    "乙酉",
+    "戊午",
+    "壬戌"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 1,
+    "after_days": 20,
+    "start_date": "1979-11-25",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2017_C1_male_19611005",
+   "file": "hkjfma_2017.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1961-10-05 20:05",
+   "stated": "1961-10-05 20:05",
+   "trueSolar": "1961-10-05 19:42",
+   "trueSolarMinutes": -22.9,
+   "place": "新加坡",
+   "lon": 103.82,
+   "timezone": "Asia/Singapore",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛丑",
+    "丁酉",
+    "辛未",
+    "戊戌"
+   ],
+   "dayMaster": "辛",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 2,
+    "after_days": 10,
+    "start_date": "1970-12-15",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2017_C2_male_19800625",
+   "file": "hkjfma_2017.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1980-06-25 23:20",
+   "stated": "1980-06-25 23:20",
+   "trueSolar": "1980-06-25 23:12",
+   "trueSolarMinutes": -7.3,
+   "place": "中国江苏",
+   "lon": 118.8,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚申",
+    "壬午",
+    "庚午",
+    "丙子"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 9,
+    "after_days": 20,
+    "start_date": "1984-04-14",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2017_C3_female_19610125",
+   "file": "hkjfma_2017.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1961-01-25 16:00",
+   "stated": "1961-01-25 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚子",
+    "己丑",
+    "戊午",
+    "庚申"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 7,
+    "after_days": 0,
+    "start_date": "1967-08-25",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2017_C4_male_19800812",
+   "file": "hkjfma_2017.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1980-08-12 02:00",
+   "stated": "1980-08-12 02:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚申",
+    "甲申",
+    "丁巳",
+    "辛丑"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 11,
+    "after_days": 0,
+    "start_date": "1989-07-12",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2017_C5_female_19800202",
+   "file": "hkjfma_2017.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1980-02-02 16:00",
+   "stated": "1980-02-02 16:00",
+   "trueSolar": "1980-02-02 15:23",
+   "trueSolarMinutes": -36.7,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "己未",
+    "丁丑",
+    "乙巳",
+    "甲申"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 9,
+    "after_days": 10,
+    "start_date": "1980-11-12",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2017_C6_male_19760515",
+   "file": "hkjfma_2017.json",
+   "caseNo": "6",
+   "gender": "male",
+   "clock": "1976-05-15 12:00",
+   "stated": "1976-05-15 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "丙辰",
+    "癸巳",
+    "丁卯",
+    "丙午"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 1,
+    "after_days": 20,
+    "start_date": "1983-07-05",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2017_C7a_female_19510124",
+   "file": "hkjfma_2017.json",
+   "caseNo": "7a",
+   "gender": "female",
+   "clock": "1951-01-24 00:30",
+   "stated": "1951-01-24 00:30",
+   "trueSolar": "1951-01-23 23:55",
+   "trueSolarMinutes": -34.6,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚寅",
+    "己丑",
+    "甲子",
+    "甲子"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 10,
+    "after_days": 0,
+    "start_date": "1956-11-24",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2017_C7b_female_19510124",
+   "file": "hkjfma_2017.json",
+   "caseNo": "7b",
+   "gender": "female",
+   "clock": "1951-01-24 23:30",
+   "stated": "1951-01-24 23:30",
+   "trueSolar": "1951-01-24 22:55",
+   "trueSolarMinutes": -34.9,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚寅",
+    "己丑",
+    "乙丑",
+    "丙子"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 1,
+    "after_days": 20,
+    "start_date": "1957-03-16",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2018_C1a_male_19941104",
+   "file": "hkjfma_2018.json",
+   "caseNo": "1a",
+   "gender": "male",
+   "clock": "1994-11-04 08:00",
+   "stated": "1994-11-04 08:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲戌",
+    "甲戌",
+    "甲午",
+    "戊辰"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 2,
+    "after_days": 10,
+    "start_date": "1996-01-14",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2018_C1b_female_19730607",
+   "file": "hkjfma_2018.json",
+   "caseNo": "1b",
+   "gender": "female",
+   "clock": "1973-06-07 06:00",
+   "stated": "1973-06-07 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "癸丑",
+    "戊午",
+    "甲戌",
+    "丁卯"
+   ],
+   "dayMaster": "甲",
+   "qiyun": {
+    "after_years": 10,
+    "after_months": 1,
+    "after_days": 10,
+    "start_date": "1983-07-17",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2018_C2_male_19720126",
+   "file": "hkjfma_2018.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1972-01-26 06:00",
+   "stated": "1972-01-26 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛亥",
+    "辛丑",
+    "丙辰",
+    "辛卯"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 6,
+    "after_days": 20,
+    "start_date": "1978-08-15",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2018_C3_male_19540205",
+   "file": "hkjfma_2018.json",
+   "caseNo": "3",
+   "gender": "male",
+   "clock": "1954-02-05 10:00",
+   "stated": "1954-02-05 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲午",
+    "丙寅",
+    "壬辰",
+    "乙巳"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 8,
+    "after_days": 0,
+    "start_date": "1963-10-05",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2018_C4_male_19600529",
+   "file": "hkjfma_2018.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1960-05-29 22:00",
+   "stated": "1960-05-29 22:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚子",
+    "辛巳",
+    "丁巳",
+    "辛亥"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 4,
+    "after_days": 10,
+    "start_date": "1962-10-09",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2018_C5_female_19401013",
+   "file": "hkjfma_2018.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1940-10-13 14:00",
+   "stated": "1940-10-13 14:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾",
+   "lon": 121.56,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "庚辰",
+    "丙戌",
+    "己丑",
+    "辛未"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 7,
+    "after_days": 10,
+    "start_date": "1942-05-23",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2018_C6_female_19930817",
+   "file": "hkjfma_2018.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1993-08-17 16:00",
+   "stated": "1993-08-17 16:00",
+   "trueSolar": "1993-08-17 15:32",
+   "trueSolarMinutes": -27.8,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸酉",
+    "庚申",
+    "庚午",
+    "甲申"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 1,
+    "after_days": 0,
+    "start_date": "2000-09-17",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2018_C7_female_19610325",
+   "file": "hkjfma_2018.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1961-03-25 12:00",
+   "stated": "1961-03-25 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "辛丑",
+    "辛卯",
+    "丁巳",
+    "丙午"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 7,
+    "after_days": 10,
+    "start_date": "1964-11-04",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2018_C8_female_19580416",
+   "file": "hkjfma_2018.json",
+   "caseNo": "8",
+   "gender": "female",
+   "clock": "1958-04-16 14:00",
+   "stated": "1958-04-16 14:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "戊戌",
+    "丙辰",
+    "癸亥",
+    "己未"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 7,
+    "after_days": 20,
+    "start_date": "1961-12-06",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2019_C1_male_19820123",
+   "file": "hkjfma_2019.json",
+   "caseNo": "1",
+   "gender": "male",
+   "clock": "1982-01-23 02:00",
+   "stated": "1982-01-23 02:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "台湾宜兰",
+   "lon": 121.75,
+   "timezone": "Asia/Taipei",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛酉",
+    "辛丑",
+    "丙午",
+    "己丑"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 8,
+    "after_days": 10,
+    "start_date": "1987-10-03",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2019_C2_male_19870710",
+   "file": "hkjfma_2019.json",
+   "caseNo": "2",
+   "gender": "male",
+   "clock": "1987-07-10 18:27",
+   "stated": "1987-07-10 18:27",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": null,
+   "lon": null,
+   "timezone": null,
+   "dstMinutes": 0,
+   "upstream": [
+    "丁卯",
+    "丁未",
+    "庚申",
+    "乙酉"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 11,
+    "after_days": 10,
+    "start_date": "1988-06-20",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2019_C3_female_19841228",
+   "file": "hkjfma_2019.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1984-12-28 08:00",
+   "stated": "1984-12-28 08:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "甲子",
+    "丙子",
+    "丙申",
+    "壬辰"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 7,
+    "after_months": 0,
+    "after_days": 10,
+    "start_date": "1992-01-07",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2019_C4_female_19710528",
+   "file": "hkjfma_2019.json",
+   "caseNo": "4",
+   "gender": "female",
+   "clock": "1971-05-28 02:30",
+   "stated": "1971-05-28 02:30",
+   "trueSolar": "1971-05-28 02:21",
+   "trueSolarMinutes": -8,
+   "place": "天津",
+   "lon": 117.2,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛亥",
+    "癸巳",
+    "癸丑",
+    "癸丑"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 2,
+    "after_days": 10,
+    "start_date": "1974-08-07",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2019_C5_female_19620826",
+   "file": "hkjfma_2019.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1962-08-26 04:00",
+   "stated": "1962-08-26 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "壬寅",
+    "戊申",
+    "丙申",
+    "庚寅"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 11,
+    "after_days": 10,
+    "start_date": "1968-08-05",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2019_C6_female_19770430",
+   "file": "hkjfma_2019.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1977-04-30 14:00",
+   "stated": "1977-04-30 14:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丁巳",
+    "甲辰",
+    "丁巳",
+    "丁未"
+   ],
+   "dayMaster": "丁",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 9,
+    "after_days": 10,
+    "start_date": "1979-02-09",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2019_C7_female_19860723",
+   "file": "hkjfma_2019.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1986-07-23 04:00",
+   "stated": "1986-07-23 04:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙寅",
+    "乙未",
+    "戊辰",
+    "甲寅"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 5,
+    "after_months": 1,
+    "after_days": 20,
+    "start_date": "1991-09-12",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2019_C8_female_19820127",
+   "file": "hkjfma_2019.json",
+   "caseNo": "8",
+   "gender": "female",
+   "clock": "1982-01-27 12:00",
+   "stated": "1982-01-27 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港 / 广东中山",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "辛酉",
+    "辛丑",
+    "庚戌",
+    "壬午"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 2,
+    "after_months": 8,
+    "after_days": 0,
+    "start_date": "1984-09-27",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2020_C1_female_19620404",
+   "file": "hkjfma_2020.json",
+   "caseNo": "1",
+   "gender": "female",
+   "clock": "1962-04-04 10:00",
+   "stated": "1962-04-04 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "壬寅",
+    "癸卯",
+    "壬申",
+    "乙巳"
+   ],
+   "dayMaster": "壬",
+   "qiyun": {
+    "after_years": 9,
+    "after_months": 8,
+    "after_days": 0,
+    "start_date": "1971-12-04",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2020_C2_female_19790301",
+   "file": "hkjfma_2020.json",
+   "caseNo": "2",
+   "gender": "female",
+   "clock": "1979-03-01 23:50",
+   "stated": "1979-03-01 23:50",
+   "trueSolar": "1979-03-01 23:10",
+   "trueSolarMinutes": -39.8,
+   "place": "广州",
+   "lon": 113.26,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "己未",
+    "丙寅",
+    "戊辰",
+    "壬子"
+   ],
+   "dayMaster": "戊",
+   "qiyun": {
+    "after_years": 1,
+    "after_months": 6,
+    "after_days": 10,
+    "start_date": "1980-09-11",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2020_C3_female_19850315",
+   "file": "hkjfma_2020.json",
+   "caseNo": "3",
+   "gender": "female",
+   "clock": "1985-03-15 12:00",
+   "stated": "1985-03-15 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "乙丑",
+    "己卯",
+    "癸丑",
+    "戊午"
+   ],
+   "dayMaster": "癸",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 10,
+    "after_days": 20,
+    "start_date": "1992-02-04",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2020_C4_male_19790721",
+   "file": "hkjfma_2020.json",
+   "caseNo": "4",
+   "gender": "male",
+   "clock": "1979-07-21 06:00",
+   "stated": "1979-07-21 06:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 60,
+   "upstream": [
+    "己未",
+    "辛未",
+    "己丑",
+    "丁卯"
+   ],
+   "dayMaster": "己",
+   "qiyun": {
+    "after_years": 4,
+    "after_months": 4,
+    "after_days": 20,
+    "start_date": "1983-12-11",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2020_C5_female_19860506",
+   "file": "hkjfma_2020.json",
+   "caseNo": "5",
+   "gender": "female",
+   "clock": "1986-05-06 12:00",
+   "stated": "1986-05-06 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "香港",
+   "lon": 114.17,
+   "timezone": "Asia/Hong_Kong",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙寅",
+    "癸巳",
+    "庚戌",
+    "壬午"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 0,
+    "after_months": 1,
+    "after_days": 10,
+    "start_date": "1986-06-16",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2020_C6_female_19620616",
+   "file": "hkjfma_2020.json",
+   "caseNo": "6",
+   "gender": "female",
+   "clock": "1962-06-16 14:00",
+   "stated": "1962-06-16 14:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "马来西亚",
+   "lon": 101.69,
+   "timezone": "Asia/Kuala_Lumpur",
+   "dstMinutes": 0,
+   "upstream": [
+    "壬寅",
+    "丙午",
+    "乙酉",
+    "癸未"
+   ],
+   "dayMaster": "乙",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 4,
+    "after_days": 10,
+    "start_date": "1965-10-26",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2020_C7_female_19931125",
+   "file": "hkjfma_2020.json",
+   "caseNo": "7",
+   "gender": "female",
+   "clock": "1993-11-25 16:00",
+   "stated": "1993-11-25 16:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国广西贵港市",
+   "lon": 109.6,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸酉",
+    "癸亥",
+    "庚戌",
+    "甲申"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 3,
+    "after_months": 11,
+    "after_days": 0,
+    "start_date": "1997-10-25",
+    "direction": "forward"
+   }
+  },
+  {
+   "id": "2020_C8a_male_19630626",
+   "file": "hkjfma_2020.json",
+   "caseNo": "8a",
+   "gender": "male",
+   "clock": "1963-06-26 12:00",
+   "stated": "1963-06-26 12:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "癸卯",
+    "戊午",
+    "庚子",
+    "壬午"
+   ],
+   "dayMaster": "庚",
+   "qiyun": {
+    "after_years": 6,
+    "after_months": 7,
+    "after_days": 0,
+    "start_date": "1970-01-26",
+    "direction": "backward"
+   }
+  },
+  {
+   "id": "2020_C8b_male_19760812",
+   "file": "hkjfma_2020.json",
+   "caseNo": "8b",
+   "gender": "male",
+   "clock": "1976-08-12 10:00",
+   "stated": "1976-08-12 10:00",
+   "trueSolar": null,
+   "trueSolarMinutes": null,
+   "place": "中国大陆",
+   "lon": null,
+   "timezone": "Asia/Shanghai",
+   "dstMinutes": 0,
+   "upstream": [
+    "丙辰",
+    "丙申",
+    "丙申",
+    "癸巳"
+   ],
+   "dayMaster": "丙",
+   "qiyun": {
+    "after_years": 8,
+    "after_months": 9,
+    "after_days": 20,
+    "start_date": "1985-06-01",
+    "direction": "forward"
+   }
+  }
+ ]
+}

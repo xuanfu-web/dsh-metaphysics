@@ -72,7 +72,7 @@ tr[hidden]{display:none}
 <body>
 <div class="wrap">
   <h1>公开对拍报告</h1>
-  <p class="sub">v0.76.0 · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算；八字按五虎遁、五鼠遁与十神规则独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
+  <p class="sub">v0.76.0 · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算；八字按五虎遁、五鼠遁与十神规则独立复算；另有 117 个真实命例的四柱与上游 lunar-python 对拍。报告与 <code>npm test</code> 共用同一份生成器。</p>
 
   <div class="cards">
     <div class="card"><span>六爻卦例</span><b>128</b><small>成对 93 · 静卦 35 · 剔除 5</small></div>
@@ -80,7 +80,8 @@ tr[hidden]{display:none}
     <div class="card"><span>奇门时辰</span><b>20</b><small>20 × 9 宫 = 180 个宫位</small></div>
     <div class="card"><span>交运案例</span><b>12</b><small>取节 · 比例 · 闰日 · 真太阳时</small></div>
     <div class="card"><span>八字样本</span><b>18</b><small>四柱 · 纳音 · 藏干 · 十神 · 旬空 · 顺逆</small></div>
-    <div class="card"><span>不一致</span><b>0</b><small>剔除 5 条（理由见下表） · 未核 127 项（原表无起卦日，旬空不比对）</small></div>
+    <div class="card"><span>真实命例</span><b>117</b><small>四柱对拍 · 上游 lunar-python · 剔除 1</small></div>
+    <div class="card"><span>不一致</span><b>0</b><small>剔除 6 条（理由见下表） · 未核 127 项（原表无起卦日，旬空不比对）</small></div>
   </div>
 
   <div class="controls" role="group" aria-label="筛选对拍结果">
@@ -4563,6 +4564,1059 @@ tr[hidden]{display:none}
       <td data-label="状态" class="status ok">一致</td>
       <td data-label="说明" class="reason">独立复算（1990-02-04 04:30 晚子时换日）；1990 立春交节当天｜交界日：立春当天不比年柱，节令当天不比月柱（那由引擎的节气精算定）</td>
     </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1967-08-27 16:51｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁未 戊申 癸亥 庚申</td>
+      <td data-label="引擎结果" class="mono">丁未 戊申 癸亥 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1975-01-07 10:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲寅 丁丑 癸丑 丁巳</td>
+      <td data-label="引擎结果" class="mono">甲寅 丁丑 癸丑 丁巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1984-12-20 18:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲子 丙子 戊子 辛酉</td>
+      <td data-label="引擎结果" class="mono">甲子 丙子 戊子 辛酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1953-01-27 06:00｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬辰 癸丑 戊寅 乙卯</td>
+      <td data-label="引擎结果" class="mono">壬辰 癸丑 戊寅 乙卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1954-03-18 16:00｜男｜中国大陆</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲午 丁卯 癸酉 庚申</td>
+      <td data-label="引擎结果" class="mono">甲午 丁卯 癸酉 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1970-07-23 08:20｜男｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚戌 癸未 甲辰 戊辰</td>
+      <td data-label="引擎结果" class="mono">庚戌 癸未 甲辰 戊辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1971-09-10 10:30｜男｜广东潮汕</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛亥 丁酉 戊戌 丁巳</td>
+      <td data-label="引擎结果" class="mono">辛亥 丁酉 戊戌 丁巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1977-07-06 14:00｜男｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁巳 丙午 甲子 辛未</td>
+      <td data-label="引擎结果" class="mono">丁巳 丙午 甲子 辛未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1983-10-19 09:58｜男｜新加坡</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸亥 壬戌 庚辰 辛巳</td>
+      <td data-label="引擎结果" class="mono">癸亥 壬戌 庚辰 辛巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1977-10-26 11:10｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁巳 庚戌 丙辰 甲午</td>
+      <td data-label="引擎结果" class="mono">丁巳 庚戌 丙辰 甲午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1981-05-26 02:17｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛酉 癸巳 甲辰 乙丑</td>
+      <td data-label="引擎结果" class="mono">辛酉 癸巳 甲辰 乙丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1984-12-09 18:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲子 丙子 丁丑 己酉</td>
+      <td data-label="引擎结果" class="mono">甲子 丙子 丁丑 己酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1990-05-23 17:30｜女｜中国大陆</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚午 辛巳 戊子 庚申</td>
+      <td data-label="引擎结果" class="mono">庚午 辛巳 戊子 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1974-04-28 16:40｜男｜美国</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲寅 戊辰 己亥 壬申</td>
+      <td data-label="引擎结果" class="mono">甲寅 戊辰 己亥 壬申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1981-06-17 20:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛酉 甲午 丙寅 戊戌</td>
+      <td data-label="引擎结果" class="mono">辛酉 甲午 丙寅 戊戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1983-11-01 22:00｜男｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸亥 壬戌 癸巳 癸亥</td>
+      <td data-label="引擎结果" class="mono">癸亥 壬戌 癸巳 癸亥</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1985-06-29 18:32｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">乙丑 壬午 己亥 癸酉</td>
+      <td data-label="引擎结果" class="mono">乙丑 壬午 己亥 癸酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1958-10-27 08:00｜女｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">戊戌 壬戌 丁丑 甲辰</td>
+      <td data-label="引擎结果" class="mono">戊戌 壬戌 丁丑 甲辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1966-10-18 23:15｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙午 戊戌 辛亥 戊子</td>
+      <td data-label="引擎结果" class="mono">丙午 戊戌 辛亥 戊子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1978-04-05 18:00｜女｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">戊午 丙辰 丁酉 己酉</td>
+      <td data-label="引擎结果" class="mono">戊午 丙辰 丁酉 己酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2002-06-01 08:30｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬午 乙巳 庚子 庚辰</td>
+      <td data-label="引擎结果" class="mono">壬午 乙巳 庚子 庚辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1956-03-11 10:00｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙申 辛卯 丁丑 乙巳</td>
+      <td data-label="引擎结果" class="mono">丙申 辛卯 丁丑 乙巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1962-08-06 10:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬寅 丁未 丙子 癸巳</td>
+      <td data-label="引擎结果" class="mono">壬寅 丁未 丙子 癸巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1980-07-11 10:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚申 癸未 乙酉 辛巳</td>
+      <td data-label="引擎结果" class="mono">庚申 癸未 乙酉 辛巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1986-04-24 21:30｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙寅 壬辰 戊戌 癸亥</td>
+      <td data-label="引擎结果" class="mono">丙寅 壬辰 戊戌 癸亥</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1972-01-08 12:00｜男｜广东潮汕</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛亥 辛丑 戊戌 戊午</td>
+      <td data-label="引擎结果" class="mono">辛亥 辛丑 戊戌 戊午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1971-04-12 16:00｜女｜中国</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛亥 壬辰 丁卯 戊申</td>
+      <td data-label="引擎结果" class="mono">辛亥 壬辰 丁卯 戊申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1980-09-21 11:25｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚申 乙酉 丁酉 丙午</td>
+      <td data-label="引擎结果" class="mono">庚申 乙酉 丁酉 丙午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1983-03-26 14:00｜女｜北京</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸亥 乙卯 癸丑 己未</td>
+      <td data-label="引擎结果" class="mono">癸亥 乙卯 癸丑 己未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1983-10-28 02:00｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸亥 壬戌 己丑 乙丑</td>
+      <td data-label="引擎结果" class="mono">癸亥 壬戌 己丑 乙丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1980-08-24 16:30｜女｜广东</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚申 甲申 己巳 壬申</td>
+      <td data-label="引擎结果" class="mono">庚申 甲申 己巳 壬申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1961-12-30 02:00｜男｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛丑 庚子 丁酉 辛丑</td>
+      <td data-label="引擎结果" class="mono">辛丑 庚子 丁酉 辛丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">2007-01-31 09:00｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙戌 辛丑 乙丑 辛巳</td>
+      <td data-label="引擎结果" class="mono">丙戌 辛丑 乙丑 辛巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1970-07-22 16:00｜男｜北京</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚戌 癸未 癸卯 庚申</td>
+      <td data-label="引擎结果" class="mono">庚戌 癸未 癸卯 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1951-11-14 10:00｜女｜广东</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛卯 己亥 戊午 丁巳</td>
+      <td data-label="引擎结果" class="mono">辛卯 己亥 戊午 丁巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1987-07-05 12:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁卯 丙午 乙卯 壬午</td>
+      <td data-label="引擎结果" class="mono">丁卯 丙午 乙卯 壬午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1973-08-24 00:35｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸丑 庚申 壬辰 庚子</td>
+      <td data-label="引擎结果" class="mono">癸丑 庚申 壬辰 庚子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1988-01-10 08:12｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁卯 癸丑 甲子 戊辰</td>
+      <td data-label="引擎结果" class="mono">丁卯 癸丑 甲子 戊辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1983-04-21 06:30｜男｜日本宫崎县</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸亥 丙辰 己卯 丁卯</td>
+      <td data-label="引擎结果" class="mono">癸亥 丙辰 己卯 丁卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1993-04-08 23:34｜男｜新加坡</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸酉 丙辰 庚申 丙子</td>
+      <td data-label="引擎结果" class="mono">癸酉 丙辰 庚申 丙子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1988-02-15 16:50｜女｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">戊辰 甲寅 庚子 甲申</td>
+      <td data-label="引擎结果" class="mono">戊辰 甲寅 庚子 甲申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1982-06-12 06:50｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬戌 丙午 丙寅 辛卯</td>
+      <td data-label="引擎结果" class="mono">壬戌 丙午 丙寅 辛卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1981-01-20 20:05｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚申 己丑 戊戌 壬戌</td>
+      <td data-label="引擎结果" class="mono">庚申 己丑 戊戌 壬戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1956-09-03 18:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙申 丙申 癸酉 辛酉</td>
+      <td data-label="引擎结果" class="mono">丙申 丙申 癸酉 辛酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1951-11-05 05:30｜男｜四川成都郊县</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛卯 戊戌 己酉 丁卯</td>
+      <td data-label="引擎结果" class="mono">辛卯 戊戌 己酉 丁卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1987-06-26 10:00｜男｜河北农村</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁卯 丙午 丙午 癸巳</td>
+      <td data-label="引擎结果" class="mono">丁卯 丙午 丙午 癸巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1961-11-04 10:00｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛丑 戊戌 辛丑 癸巳</td>
+      <td data-label="引擎结果" class="mono">辛丑 戊戌 辛丑 癸巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1999-08-14 15:30｜女｜台湾高雄</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己卯 壬申 戊戌 庚申</td>
+      <td data-label="引擎结果" class="mono">己卯 壬申 戊戌 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1981-10-19 22:00｜男｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛酉 戊戌 庚午 丁亥</td>
+      <td data-label="引擎结果" class="mono">辛酉 戊戌 庚午 丁亥</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1982-09-27 16:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬戌 己酉 癸丑 庚申</td>
+      <td data-label="引擎结果" class="mono">壬戌 己酉 癸丑 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1960-12-10 10:00｜男｜中国大陆</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚子 戊子 壬申 乙巳</td>
+      <td data-label="引擎结果" class="mono">庚子 戊子 壬申 乙巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1962-09-29 04:00｜女｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬寅 己酉 庚午 戊寅</td>
+      <td data-label="引擎结果" class="mono">壬寅 己酉 庚午 戊寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1972-11-02 10:00｜男｜中国大陆 唐山市</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬子 庚戌 丁酉 乙巳</td>
+      <td data-label="引擎结果" class="mono">壬子 庚戌 丁酉 乙巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1981-09-08 20:00｜男｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛酉 丁酉 己丑 甲戌</td>
+      <td data-label="引擎结果" class="mono">辛酉 丁酉 己丑 甲戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1994-08-28 02:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲戌 壬申 丙戌 己丑</td>
+      <td data-label="引擎结果" class="mono">甲戌 壬申 丙戌 己丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1979-10-05 20:00｜女｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己未 癸酉 乙巳 丙戌</td>
+      <td data-label="引擎结果" class="mono">己未 癸酉 乙巳 丙戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1983-06-28 08:00｜女｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸亥 戊午 丁亥 甲辰</td>
+      <td data-label="引擎结果" class="mono">癸亥 戊午 丁亥 甲辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1955-03-25 04:00｜男｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">乙未 己卯 乙酉 戊寅</td>
+      <td data-label="引擎结果" class="mono">乙未 己卯 乙酉 戊寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1968-04-10 20:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">戊申 丙辰 庚戌 丙戌</td>
+      <td data-label="引擎结果" class="mono">戊申 丙辰 庚戌 丙戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1972-11-06 19:15｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬子 庚戌 辛丑 戊戌</td>
+      <td data-label="引擎结果" class="mono">壬子 庚戌 辛丑 戊戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1972-01-15 00:30｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛亥 辛丑 乙巳 丙子</td>
+      <td data-label="引擎结果" class="mono">辛亥 辛丑 乙巳 丙子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1970-08-14 12:00｜女｜香港</td>
+      <td data-label="对拍项">四柱（上游缺时柱，比三柱）</td>
+      <td data-label="期望 / 来源" class="mono">庚戌 甲申 丙寅 —</td>
+      <td data-label="引擎结果" class="mono">庚戌 甲申 丙寅 甲午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游该案无时柱，只比年月日三柱</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1962-08-25 06:00｜男｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬寅 戊申 乙未 己卯</td>
+      <td data-label="引擎结果" class="mono">壬寅 戊申 乙未 己卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1965-03-05 09:35｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">乙巳 戊寅 戊午 丁巳</td>
+      <td data-label="引擎结果" class="mono">乙巳 戊寅 戊午 丁巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1979-10-10 20:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己未 甲戌 庚戌 丙戌</td>
+      <td data-label="引擎结果" class="mono">己未 甲戌 庚戌 丙戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1975-09-26 16:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">乙卯 乙酉 乙亥 甲申</td>
+      <td data-label="引擎结果" class="mono">乙卯 乙酉 乙亥 甲申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1992-05-06 06:00｜女｜澳门</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬申 乙巳 壬午 癸卯</td>
+      <td data-label="引擎结果" class="mono">壬申 乙巳 壬午 癸卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="剔除" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1974-03-16 11:29｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲寅 丁卯 丙辰 癸巳</td>
+      <td data-label="引擎结果" class="mono">甲寅 丁卯 丙辰 甲午</td>
+      <td data-label="状态" class="status skip">剔除</td>
+      <td data-label="说明" class="reason">上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）；时柱口径差异，非排盘错误</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1961-07-10 06:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛丑 乙未 甲辰 丁卯</td>
+      <td data-label="引擎结果" class="mono">辛丑 乙未 甲辰 丁卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1957-11-07 18:00｜女｜台湾台北</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁酉 庚戌 癸未 辛酉</td>
+      <td data-label="引擎结果" class="mono">丁酉 庚戌 癸未 辛酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1957-01-04 12:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙申 庚子 丙子 甲午</td>
+      <td data-label="引擎结果" class="mono">丙申 庚子 丙子 甲午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1964-03-16 12:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲辰 丁卯 甲子 庚午</td>
+      <td data-label="引擎结果" class="mono">甲辰 丁卯 甲子 庚午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1974-08-13 20:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲寅 壬申 丙戌 戊戌</td>
+      <td data-label="引擎结果" class="mono">甲寅 壬申 丙戌 戊戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1963-08-13 20:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸卯 庚申 戊子 壬戌</td>
+      <td data-label="引擎结果" class="mono">癸卯 庚申 戊子 壬戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1996-03-10 08:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙子 辛卯 丙午 壬辰</td>
+      <td data-label="引擎结果" class="mono">丙子 辛卯 丙午 壬辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1959-09-06 22:00｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己亥 壬申 辛卯 己亥</td>
+      <td data-label="引擎结果" class="mono">己亥 壬申 辛卯 己亥</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1952-06-15 04:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬辰 丙午 壬辰 壬寅</td>
+      <td data-label="引擎结果" class="mono">壬辰 丙午 壬辰 壬寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1975-09-20 18:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">乙卯 乙酉 己巳 癸酉</td>
+      <td data-label="引擎结果" class="mono">乙卯 乙酉 己巳 癸酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1970-06-05 04:00｜女｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚戌 辛巳 丙辰 庚寅</td>
+      <td data-label="引擎结果" class="mono">庚戌 辛巳 丙辰 庚寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1963-02-06 12:00｜男｜台湾台中</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸卯 甲寅 庚辰 壬午</td>
+      <td data-label="引擎结果" class="mono">癸卯 甲寅 庚辰 壬午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1952-02-26 06:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬辰 壬寅 壬寅 癸卯</td>
+      <td data-label="引擎结果" class="mono">壬辰 壬寅 壬寅 癸卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1982-05-30 04:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬戌 乙巳 癸丑 甲寅</td>
+      <td data-label="引擎结果" class="mono">壬戌 乙巳 癸丑 甲寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1970-10-05 20:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚戌 乙酉 戊午 壬戌</td>
+      <td data-label="引擎结果" class="mono">庚戌 乙酉 戊午 壬戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1961-10-05 20:05｜男｜新加坡</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛丑 丁酉 辛未 戊戌</td>
+      <td data-label="引擎结果" class="mono">辛丑 丁酉 辛未 戊戌</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1980-06-25 23:20｜男｜中国江苏</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚申 壬午 庚午 丙子</td>
+      <td data-label="引擎结果" class="mono">庚申 壬午 庚午 丙子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1961-01-25 16:00｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚子 己丑 戊午 庚申</td>
+      <td data-label="引擎结果" class="mono">庚子 己丑 戊午 庚申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1980-08-12 02:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚申 甲申 丁巳 辛丑</td>
+      <td data-label="引擎结果" class="mono">庚申 甲申 丁巳 辛丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1980-02-02 16:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己未 丁丑 乙巳 甲申</td>
+      <td data-label="引擎结果" class="mono">己未 丁丑 乙巳 甲申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1976-05-15 12:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙辰 癸巳 丁卯 丙午</td>
+      <td data-label="引擎结果" class="mono">丙辰 癸巳 丁卯 丙午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1951-01-24 00:30｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚寅 己丑 甲子 甲子</td>
+      <td data-label="引擎结果" class="mono">庚寅 己丑 甲子 甲子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1951-01-24 23:30｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚寅 己丑 乙丑 丙子</td>
+      <td data-label="引擎结果" class="mono">庚寅 己丑 乙丑 丙子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1994-11-04 08:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲戌 甲戌 甲午 戊辰</td>
+      <td data-label="引擎结果" class="mono">甲戌 甲戌 甲午 戊辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1973-06-07 06:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸丑 戊午 甲戌 丁卯</td>
+      <td data-label="引擎结果" class="mono">癸丑 戊午 甲戌 丁卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1972-01-26 06:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛亥 辛丑 丙辰 辛卯</td>
+      <td data-label="引擎结果" class="mono">辛亥 辛丑 丙辰 辛卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1954-02-05 10:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲午 丙寅 壬辰 乙巳</td>
+      <td data-label="引擎结果" class="mono">甲午 丙寅 壬辰 乙巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1960-05-29 22:00｜男｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚子 辛巳 丁巳 辛亥</td>
+      <td data-label="引擎结果" class="mono">庚子 辛巳 丁巳 辛亥</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1940-10-13 14:00｜女｜台湾</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">庚辰 丙戌 己丑 辛未</td>
+      <td data-label="引擎结果" class="mono">庚辰 丙戌 己丑 辛未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1993-08-17 16:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸酉 庚申 庚午 甲申</td>
+      <td data-label="引擎结果" class="mono">癸酉 庚申 庚午 甲申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1961-03-25 12:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛丑 辛卯 丁巳 丙午</td>
+      <td data-label="引擎结果" class="mono">辛丑 辛卯 丁巳 丙午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1958-04-16 14:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">戊戌 丙辰 癸亥 己未</td>
+      <td data-label="引擎结果" class="mono">戊戌 丙辰 癸亥 己未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1982-01-23 02:00｜男｜台湾宜兰</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛酉 辛丑 丙午 己丑</td>
+      <td data-label="引擎结果" class="mono">辛酉 辛丑 丙午 己丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1987-07-10 18:27｜男｜—</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁卯 丁未 庚申 乙酉</td>
+      <td data-label="引擎结果" class="mono">丁卯 丁未 庚申 乙酉</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1984-12-28 08:00｜女｜中国大陆</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">甲子 丙子 丙申 壬辰</td>
+      <td data-label="引擎结果" class="mono">甲子 丙子 丙申 壬辰</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1971-05-28 02:30｜女｜天津</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛亥 癸巳 癸丑 癸丑</td>
+      <td data-label="引擎结果" class="mono">辛亥 癸巳 癸丑 癸丑</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1962-08-26 04:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬寅 戊申 丙申 庚寅</td>
+      <td data-label="引擎结果" class="mono">壬寅 戊申 丙申 庚寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1977-04-30 14:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丁巳 甲辰 丁巳 丁未</td>
+      <td data-label="引擎结果" class="mono">丁巳 甲辰 丁巳 丁未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1986-07-23 04:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙寅 乙未 戊辰 甲寅</td>
+      <td data-label="引擎结果" class="mono">丙寅 乙未 戊辰 甲寅</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1982-01-27 12:00｜女｜香港 / 广东中山</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">辛酉 辛丑 庚戌 壬午</td>
+      <td data-label="引擎结果" class="mono">辛酉 辛丑 庚戌 壬午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1962-04-04 10:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬寅 癸卯 壬申 乙巳</td>
+      <td data-label="引擎结果" class="mono">壬寅 癸卯 壬申 乙巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1979-03-01 23:50｜女｜广州</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己未 丙寅 戊辰 壬子</td>
+      <td data-label="引擎结果" class="mono">己未 丙寅 戊辰 壬子</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1985-03-15 12:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">乙丑 己卯 癸丑 戊午</td>
+      <td data-label="引擎结果" class="mono">乙丑 己卯 癸丑 戊午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1979-07-21 06:00｜男｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">己未 辛未 己丑 丁卯</td>
+      <td data-label="引擎结果" class="mono">己未 辛未 己丑 丁卯</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8；上游记了 60 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1986-05-06 12:00｜女｜香港</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙寅 癸巳 庚戌 壬午</td>
+      <td data-label="引擎结果" class="mono">丙寅 癸巳 庚戌 壬午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1962-06-16 14:00｜女｜马来西亚</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">壬寅 丙午 乙酉 癸未</td>
+      <td data-label="引擎结果" class="mono">壬寅 丙午 乙酉 癸未</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1993-11-25 16:00｜女｜中国广西贵港市</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸酉 癸亥 庚戌 甲申</td>
+      <td data-label="引擎结果" class="mono">癸酉 癸亥 庚戌 甲申</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1963-06-26 12:00｜男｜中国大陆</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">癸卯 戊午 庚子 壬午</td>
+      <td data-label="引擎结果" class="mono">癸卯 戊午 庚子 壬午</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
+<tr data-status="一致" data-system="八字">
+      <td data-label="体系">八字</td>
+      <td data-label="案例" class="case">1976-08-12 10:00｜男｜中国大陆</td>
+      <td data-label="对拍项">四柱</td>
+      <td data-label="期望 / 来源" class="mono">丙辰 丙申 丙申 癸巳</td>
+      <td data-label="引擎结果" class="mono">丙辰 丙申 丙申 癸巳</td>
+      <td data-label="状态" class="status ok">一致</td>
+      <td data-label="说明" class="reason">外部基准 lunar-python 1.4.8</td>
+    </tr>
       </tbody>
     </table>
   </div>
@@ -4615,7 +5669,8 @@ tr[hidden]{display:none}
     紫微：312 张扫描盘 × 34 条格局 = 10,608 条判定；独立谓词只读 <code>palaces[].stars</code> 与四化，不调用引擎的格局函数。<br>
     奇门：20 个时辰 × 9 宫 = 180 个宫位；参照盘来自 <code>test/fixtures/qimen-20.json</code>，逐宫核四柱、局数、值符、值使、星门神与天盘干。<br>
     交运：出生 jd + 到相邻节令的真实天数 × 365.2422/3；核顺逆取节、比例、与 startAge 同源、闰日退位与真太阳时口径。尚未与第三方排盘软件批量对拍，样本为独立复算。<br>
-    八字：18 个样本，四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆六项由 <code>tools/verification.mjs</code> 里的 <code>recomputeBaziPillars()</code> 按五虎遁、五鼠遁、六十甲子、藏干与十神规则重推一边，再与引擎逐项比对——期望值不读 <code>engine/bazi.js</code> 的对应实现。样本日期全避开节令交界日，交界日只核日柱与时柱。<b>没核的</b>（不在这张表里，也不假装核过）：旺衰分值与格局取用（无唯一文本口径）、神煞吉凶、真太阳时的经度修正量、与第三方排盘软件的对拍。
+    八字：18 个样本，四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆六项由 <code>tools/verification.mjs</code> 里的 <code>recomputeBaziPillars()</code> 按五虎遁、五鼠遁、六十甲子、藏干与十神规则重推一边，再与引擎逐项比对——期望值不读 <code>engine/bazi.js</code> 的对应实现。样本日期全避开节令交界日，交界日只核日柱与时柱。<b>没核的</b>（不在这张表里，也不假装核过）：旺衰分值与格局取用（无唯一文本口径）、神煞吉凶。<br>
+    八字真实命例：117 个真实命例（<code>test/fixtures/baziqa-pillars.json</code>，取自 <a href="https://github.com/ChenJiangxi/BaziQA" rel="noopener">ChenJiangxi/BaziQA</a>，香港青年术数家协会「全球算命师大赛」2010–2026 参赛盘），四柱由上游 lunar-python 1.4.8 排定，本引擎按同一份原文钟表时间重排——这是本报告里唯一一处期望值不来自本仓的地方。116 例四柱全同；1 例剔除，理由是夏令时口径差异（本插件夏令时表只收中国大陆时段，1974 年香港那例该扣未扣，差在时柱）。上游该案无时柱的命例只比年月日三柱。同理<b>没核的</b>：旺衰与格局的优劣判定（竞赛题的人生事实题本仓不取，也就无从打分）。
   </div>
 </div>
 <script>

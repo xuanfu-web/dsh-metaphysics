@@ -2,7 +2,7 @@
 // 报告页、README 徽章与这里都调用同一个 buildVerification()；
 // 任何一条判定变了、报告忘记重建，或剔除项丢了理由，都会让这个文件变红。
 import fs from 'node:fs';
-import { buildVerification, renderVerificationHTML, renderBadgeSVG, badgeTextWidth, verifyClassicCase, verifyQimenCase, verifyBaziCase, recomputeBaziPillars } from '../tools/verification.mjs';
+import { buildVerification, renderVerificationHTML, renderBadgeSVG, badgeTextWidth, verifyClassicCase, verifyQimenCase, verifyBaziCase, recomputeBaziPillars, verifyBaziqaCase } from '../tools/verification.mjs';
 import { ok, eq } from './_harness.mjs';
 
 const data = buildVerification();
@@ -14,7 +14,7 @@ const read = (f) => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8')
 eq('卦例 128 条', t.liuyao, 128);
 eq('成对卦例 93 条', t.liuyaoPaired, 93);
 eq('静卦 35 条', t.liuyaoStatic, 35);
-eq('剔除 5 条', t.excluded, 5);
+eq('剔除 6 条（5 条卦例原文冲突 + 1 条夏令时口径）', t.excluded, 6);
 eq('紫微扫描盘 312 张', t.ziweiCharts, 312);
 eq('紫微格局 34 条', t.ziweiPatterns, 34);
 eq('紫微判定 10,608 条', t.ziweiJudgments, 10608);
@@ -22,7 +22,9 @@ eq('奇门时辰 20 个', t.qimen, 20);
 eq('奇门宫位 180 个', t.qimenPalaces, 180);
 eq('交运案例 12 个', t.jiaoyun, 12);
 eq('八字样本 18 个', t.bazi, 18);
-eq('报告总行数', t.rows, 495);
+eq('真实命例 117 个', t.baziqa, 117);
+eq('真实命例剔除 1 例（香港 1974 夏令时）', t.baziqaExcluded, 1);
+eq('报告总行数', t.rows, 612);
 eq('不一致 0 条', t.mismatch, 0);
 eq('格局判定不一致 0 条', t.patternMismatch, 0);
 ok('34 条格局每条至少命中一次', data.patternStats.length === 34 && data.patternStats.every((s) => s.hits > 0),
@@ -30,9 +32,9 @@ ok('34 条格局每条至少命中一次', data.patternStats.length === 34 && da
 ok('34 条格局没有不一致', data.patternStats.every((s) => s.mismatch === 0));
 
 const excluded = data.rows.filter((r) => r.status === '剔除');
-ok('剔除项都带理由', excluded.length === 5 && excluded.every((r) => r.reason && r.reason.length > 3),
+ok('剔除项都带理由', excluded.length === 6 && excluded.every((r) => r.reason && r.reason.length > 3),
   excluded.map((r) => r.reason).join('｜'));
-ok('一致行数为 128 + 312 + 20 + 12 + 18', data.rows.filter((r) => r.status === '一致').length === 490);
+ok('一致行数为 128 + 312 + 20 + 12 + 18 + 116', data.rows.filter((r) => r.status === '一致').length === 606);
 ok('奇门 20 行全部一致', data.rows.filter((r) => r.system === '奇门').every((r) => r.status === '一致'),
   data.rows.filter((r) => r.system === '奇门' && r.status !== '一致').map((r) => r.case).join('、'));
 
@@ -49,7 +51,7 @@ ok('徽章为 0 处不符的绿色', badge.includes('0 处不符') && badge.incl
 // 复算层必须真按规则推（拿已知盘对），校验器必须真的会红，而且交界日
 // 那几条不许把「本层算不准的项」悄悄算成一致。
 {
-  const bz = data.rows.filter((r) => r.system === '八字');
+  const bz = data.rows.filter((r) => r.system === '八字' && r.item.includes('纳音'));
   ok('八字 18 行全部一致', bz.length === 18 && bz.every((r) => r.status === '一致'),
     bz.filter((r) => r.status !== '一致').map((r) => `${r.case}：${r.reason}`).join('｜'));
   ok('八字行把六项都写在对拍项里',
@@ -81,7 +83,29 @@ ok('徽章为 0 处不符的绿色', badge.includes('0 处不符') && badge.incl
       `${shifted.actual} vs ${tamperedBazi.actual}`);
   }
 }
-ok('徽章披露 5 条剔除与 20 奇门', badge.includes('5 剔除') && badge.includes('20 奇门'), badge.match(/aria-label="[^"]+"/)?.[0]);
+// ── 八字真实命例：外部基准对拍不许恒真 ──────────────────────────────────
+// 这一组守的是「报了 117 例，其实只是把上游四柱同时写进 expected 与 actual」。
+// 判据：剔除那 1 例必须真是夏令时口径差异；篡改上游年柱必须立刻变红。
+{
+  const bq = data.rows.filter((r) => r.system === '八字' && !r.item.includes('纳音'));
+  ok('真实命例 117 行', bq.length === 117, String(bq.length));
+  ok('真实命例 116 一致 + 1 剔除',
+    bq.filter((r) => r.status === '一致').length === 116 && bq.filter((r) => r.status === '剔除').length === 1,
+    bq.filter((r) => r.status === '不一致').map((r) => `${r.case}：${r.reason}`).join('｜'));
+  const gap = bq.find((r) => r.status === '剔除');
+  ok('剔除那例的理由写明夏令时口径', Boolean(gap) && gap.reason.includes('夏令时'), gap && gap.reason);
+  ok('上游缺时柱的命例写明只比三柱', bq.some((r) => r.item.includes('比三柱')));
+  ok('真实命例的期望值是干支四柱', bq.every((r) => /^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥] /.test(r.expected)),
+    bq.find((r) => !/^[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥] /.test(r.expected))?.expected);
+
+  const source = JSON.parse(fs.readFileSync(new URL('./fixtures/baziqa-pillars.json', import.meta.url), 'utf8')).cases
+    .find((c) => c.upstream[3] != null && c.dstMinutes === 0);
+  const good = verifyBaziqaCase(source);
+  ok('真实命例基准本身一致', good.status === '一致', good.reason);
+  const badUp = { ...source, upstream: ['甲子', ...source.upstream.slice(1)] };
+  ok('改坏上游年柱会被抓到', verifyBaziqaCase(badUp).status === '不一致', verifyBaziqaCase(badUp).reason);
+}
+ok('徽章披露 6 条剔除与 20 奇门', badge.includes('6 剔除') && badge.includes('20 奇门'), badge.match(/aria-label="[^"]+"/)?.[0]);
 // 「0 处不符」不能替「127 条其实没核」兜着：旬空那一项没有起卦日就无从比对，
 // 徽章必须把这个口径写在脸上，否则等于拿没核过的项冒充核过了。
 ok('徽章标注 127 项未核', badge.includes('127 未核'), badge.match(/aria-label="[^"]+"/)?.[0]);

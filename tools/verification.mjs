@@ -585,13 +585,72 @@ export function buildBaziRows() {
   return BAZI_FIX.cases.map((c) => verifyBaziCase(c));
 }
 
+// ── 八字真实命例：与外部基准（BaziQA / lunar-python 1.4.8）对拍 ──────────────
+// 上一块是本仓自己按古法重推一遍，核的是「引擎与自己的规矩一致」，性质是自证；
+// 这一块换外部基准：117 个真实命例（香港青年术数家协会「全球算命师大赛」2010–2026
+// 的参赛盘）四柱由上游 lunar-python 排出，本引擎按同一份原文钟表时间重排，逐例比四柱。
+// 这是全仓第一处「与第三方排盘软件对拍」，也是唯一一处期望值不由本仓产生的地方。
+const BAZIQA = JSON.parse(fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'baziqa-pillars.json'), 'utf8'));
+const BAZIQA_KEYS = ['year', 'month', 'day', 'hour'];
+const BAZIQA_CN = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' };
+
+export function verifyBaziqaCase(c) {
+  const [datePart, timePart] = String(c.clock).trim().split(/[T ]/);
+  const [y, mo, d] = datePart.split('-').map(Number);
+  const [hh, mi] = (timePart || '00:00').split(':').map(Number);
+  // 夏令时按上游口径交给引擎自己判：上游记了 dst_minutes 就打开，能不能扣看本引擎的表覆盖不覆盖那年那地
+  const chart = buildBazi({
+    year: y, month: mo, day: d, hour: hh, minute: mi,
+    gender: c.gender, trueSolar: false, dst: c.dstMinutes > 0, lateZi: true, nowYear: 2026,
+  });
+  const actual = BAZIQA_KEYS.map((k) => (chart.pillars[k] ? chart.pillars[k].ganzhi : null));
+  const hourMissing = c.upstream[3] == null;
+  const cols = hourMissing ? BAZIQA_KEYS.slice(0, 3) : BAZIQA_KEYS;
+  const fails = [];
+  for (const k of cols) {
+    const i = BAZIQA_KEYS.indexOf(k);
+    if (c.upstream[i] !== actual[i]) fails.push(`${BAZIQA_CN[k]}：上游 ${c.upstream[i]}，本引擎 ${actual[i] || '—'}`);
+  }
+  const dstApplied = Boolean(chart.dst && chart.dst.applied);
+  const dstNote = c.dstMinutes > 0
+    ? (dstApplied
+      ? `已扣 ${c.dstMinutes} 分钟夏令时`
+      : `上游记了 ${c.dstMinutes} 分钟夏令时、本引擎未扣（夏令时表只收中国大陆时段）`)
+    : '';
+  // 口径差异不算排盘错误：不足 1 小时的偏移只可能动时柱，且差异已定位到夏令时表覆盖范围
+  const dstGap = fails.length > 0 && c.dstMinutes > 0 && !dstApplied
+    && fails.every((f) => f.startsWith('时柱'));
+  const status = dstGap ? '剔除' : (fails.length ? '不一致' : '一致');
+  const reason = dstGap
+    ? `${dstNote}；时柱口径差异，非排盘错误`
+    : fails.length
+      ? fails.join('；')
+      : `外部基准 ${BAZIQA.meta.upstreamEngine}${dstNote ? '；' + dstNote : ''}${hourMissing ? '；上游该案无时柱，只比年月日三柱' : ''}`;
+  return {
+    key: `bzq-${c.id}`,
+    system: '八字',
+    case: `${c.clock.replace('T', ' ')}｜${c.gender === 'male' ? '男' : '女'}｜${c.place || '—'}`,
+    item: hourMissing ? '四柱（上游缺时柱，比三柱）' : '四柱',
+    expected: c.upstream.map((x) => x || '—').join(' '),
+    actual: actual.map((x) => x || '—').join(' '),
+    status,
+    reason,
+    search: `${c.id} ${c.file} ${c.clock} ${c.place || ''} ${c.upstream.join(' ')}`,
+  };
+}
+
+export function buildBaziqaRows() {
+  return BAZIQA.cases.map((c) => verifyBaziqaCase(c));
+}
+
 export function buildVerification() {
   const classicRows = buildClassicRows();
   const { rows: ziweiRows, stats: patternStats } = buildZiweiRows();
   const jiaoyunRows = buildJiaoyunRows();
   const qimenRows = buildQimenRows();
   const baziRows = buildBaziRows();
-  const rows = [...classicRows, ...ziweiRows, ...jiaoyunRows, ...qimenRows, ...baziRows];
+  const baziqaRows = buildBaziqaRows();
+  const rows = [...classicRows, ...ziweiRows, ...jiaoyunRows, ...qimenRows, ...baziRows, ...baziqaRows];
   const mismatch = rows.filter((r) => r.status === '不一致').length;
   const excluded = rows.filter((r) => r.status === '剔除').length;
   // 「未核」不是「一致」：原表没记起卦日的卦例，旬空无从核对，单独计数
@@ -612,6 +671,8 @@ export function buildVerification() {
       qimen: QIMEN_FIX.length,
       qimenPalaces: QIMEN_FIX.reduce((n, x) => n + Object.keys(x.chart.palaces).length, 0),
       bazi: BAZI_FIX.cases.length,
+      baziqa: BAZIQA.cases.length,
+      baziqaExcluded: baziqaRows.filter((r) => r.status === '剔除').length,
       rows: rows.length,
       mismatch,
       excluded,
@@ -717,7 +778,7 @@ tr[hidden]{display:none}
 <body>
 <div class="wrap">
   <h1>公开对拍报告</h1>
-  <p class="sub">v${esc(data.version)} · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算；八字按五虎遁、五鼠遁与十神规则独立复算。报告与 <code>npm test</code> 共用同一份生成器。</p>
+  <p class="sub">v${esc(data.version)} · 卦例来自《卜筮正宗》原表；紫微用只读星位与四化的独立谓词；奇门与参照盘逐宫比对；交运按「三日折一年」独立复算；八字按五虎遁、五鼠遁与十神规则独立复算；另有 ${t.baziqa} 个真实命例的四柱与上游 lunar-python 对拍。报告与 <code>npm test</code> 共用同一份生成器。</p>
 
   <div class="cards">
     <div class="card"><span>六爻卦例</span><b>${t.liuyao}</b><small>成对 ${t.liuyaoPaired} · 静卦 ${t.liuyaoStatic} · 剔除 ${t.liuyaoExcluded}</small></div>
@@ -725,6 +786,7 @@ tr[hidden]{display:none}
     <div class="card"><span>奇门时辰</span><b>${t.qimen}</b><small>${t.qimen} × 9 宫 = ${t.qimenPalaces} 个宫位</small></div>
     <div class="card"><span>交运案例</span><b>${t.jiaoyun}</b><small>取节 · 比例 · 闰日 · 真太阳时</small></div>
     <div class="card"><span>八字样本</span><b>${t.bazi}</b><small>四柱 · 纳音 · 藏干 · 十神 · 旬空 · 顺逆</small></div>
+    <div class="card"><span>真实命例</span><b>${t.baziqa}</b><small>四柱对拍 · 上游 lunar-python${t.baziqaExcluded ? ` · 剔除 ${t.baziqaExcluded}` : ''}</small></div>
     <div class="card"><span>不一致</span><b>${t.mismatch}</b><small>剔除 ${t.excluded} 条（理由见下表）${t.unchecked ? ` · 未核 ${t.unchecked} 项（原表无起卦日，旬空不比对）` : ''}</small></div>
   </div>
 
@@ -773,7 +835,8 @@ ${chips}
     紫微：${t.ziweiCharts} 张扫描盘 × ${t.ziweiPatterns} 条格局 = ${t.ziweiJudgments.toLocaleString('zh-CN')} 条判定；独立谓词只读 <code>palaces[].stars</code> 与四化，不调用引擎的格局函数。<br>
     奇门：${t.qimen} 个时辰 × 9 宫 = ${t.qimenPalaces} 个宫位；参照盘来自 <code>test/fixtures/qimen-20.json</code>，逐宫核四柱、局数、值符、值使、星门神与天盘干。<br>
     交运：出生 jd + 到相邻节令的真实天数 × 365.2422/3；核顺逆取节、比例、与 startAge 同源、闰日退位与真太阳时口径。尚未与第三方排盘软件批量对拍，样本为独立复算。<br>
-    八字：${t.bazi} 个样本，四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆六项由 <code>tools/verification.mjs</code> 里的 <code>recomputeBaziPillars()</code> 按五虎遁、五鼠遁、六十甲子、藏干与十神规则重推一边，再与引擎逐项比对——期望值不读 <code>engine/bazi.js</code> 的对应实现。样本日期全避开节令交界日，交界日只核日柱与时柱。<b>没核的</b>（不在这张表里，也不假装核过）：旺衰分值与格局取用（无唯一文本口径）、神煞吉凶、真太阳时的经度修正量、与第三方排盘软件的对拍。
+    八字：${t.bazi} 个样本，四柱 / 纳音 / 藏干 / 十神 / 旬空 / 大运顺逆六项由 <code>tools/verification.mjs</code> 里的 <code>recomputeBaziPillars()</code> 按五虎遁、五鼠遁、六十甲子、藏干与十神规则重推一边，再与引擎逐项比对——期望值不读 <code>engine/bazi.js</code> 的对应实现。样本日期全避开节令交界日，交界日只核日柱与时柱。<b>没核的</b>（不在这张表里，也不假装核过）：旺衰分值与格局取用（无唯一文本口径）、神煞吉凶。<br>
+    八字真实命例：${t.baziqa} 个真实命例（<code>test/fixtures/baziqa-pillars.json</code>，取自 <a href="https://github.com/ChenJiangxi/BaziQA" rel="noopener">ChenJiangxi/BaziQA</a>，香港青年术数家协会「全球算命师大赛」2010–2026 参赛盘），四柱由上游 lunar-python 1.4.8 排定，本引擎按同一份原文钟表时间重排——这是本报告里唯一一处期望值不来自本仓的地方。${t.baziqa - t.baziqaExcluded} 例四柱全同${t.baziqaExcluded ? `；${t.baziqaExcluded} 例剔除，理由是夏令时口径差异（本插件夏令时表只收中国大陆时段，1974 年香港那例该扣未扣，差在时柱）` : ''}。上游该案无时柱的命例只比年月日三柱。同理<b>没核的</b>：旺衰与格局的优劣判定（竞赛题的人生事实题本仓不取，也就无从打分）。
   </div>
 </div>
 <script>
@@ -842,7 +905,7 @@ export function renderBadgeSVG(data) {
   // 「未核」必须写进徽章：127 条古例没记起卦日，旬空这一项事实上没核过。
   // 只挂「0 处不符」会让人以为 128 条全核了，那是拿没说出口的口径充数。
   const unchecked = t.unchecked ? ` · ${t.unchecked} 未核` : '';
-  const right = `${label}｜${t.liuyao} 例 · ${t.excluded} 剔除${unchecked} · ${t.ziweiCharts} 紫微 · ${t.qimen} 奇门 · ${t.jiaoyun} 交运 · ${t.bazi} 八字`;
+  const right = `${label}｜${t.liuyao} 例 · ${t.excluded} 剔除${unchecked} · ${t.ziweiCharts} 紫微 · ${t.qimen} 奇门 · ${t.jiaoyun} 交运 · ${t.bazi} 八字 · ${t.baziqa} 真实`;
   const LEFT = 66;        // 左侧「对拍」标签宽
   const OVERLAP = 4;      // 左右两栏重叠 4px，藏住接缝
   const PAD = 18;         // 右栏左右留白

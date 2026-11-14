@@ -1,3 +1,13 @@
+## 0.77.0（未发布）
+
+> 把「算不准的边界」往外推一截：天文量推到秒级，四柱第一次拿外部基准批量对拍，面板那个一直不出卡的称骨终于出卡。
+
+- **称骨卡在 DSH 面板不渲染（修复）**：撤掉称骨独立入口后，`client.chart.js` 里那份 `buildChenggu` 是从 `__mods.chenggu` 解构来的，而 `CHART_STACK` 不含该模块，运行时 `hourToBranch` 取到 undefined、抛错又被 `catch` 吞成 `null`，`baziHTML(r,{chenggu:null})` 就不插卡——单页（全量引擎）一直正常，只有面板分块链坏。改为回到 `client.chenggu.js` 按需补载（该块自带 `almanac`），并在 run 内 `if (!Engine.buildChenggu) await ensureEngine('chenggu')`。standalone/面板/桌面三条渲染链实测出卡。
+- **均时差换 Meeus 严格式**：`engine/calendar.js` 的 `equationOfTime()` 由 `9.87sin2B−7.53cosB−1.5sinB` 近似式（最大偏差 ±30 秒）换成 Meeus《Astronomical Algorithms》28.3 的 VSOP87 + 岁差 + 章动 + 光行差推法。与天文年历例 28.a（1992-10-13）对到 **0.3 秒**，2026 全年峰值/谷值/三个过零点均在 15 秒内。出生时刻卡时辰边界时，这 30 秒就足以把时柱推到隔壁。
+- **四柱首次与外部基准批量对拍**：新增 `test/fixtures/baziqa-pillars.json` 与 `tools/capture-baziqa-pillars.mjs`，取 [ChenJiangxi/BaziQA](https://github.com/ChenJiangxi/BaziQA) 全部 **117 个真实命例**（香港青年术数家协会「全球算命师大赛」2010–2026 参赛盘，上游 lunar-python 1.4.8 排盘），本引擎按同一份原文钟表时间重排。**116 例四柱全同（99.15%）**；1 例（1974 年香港，`dst_minutes=60`）因本插件夏令时表只收中国大陆时段、该扣未扣，差在时柱，按口径差异剔除并写明理由。这是公开对拍报告里**唯一一处期望值不来自本仓**的数据。
+- **公开对拍报告**：行数 495 → **612**，新增「真实命例」统计卡、`data-system-filter="八字"` 一并覆盖两类八字行、方法段写明外部基准与那 1 例剔除；徽章改为「… · 18 八字 · 117 真实」。报告测试新增 7 条（含「改坏上游年柱必须变红」）。
+- **测试**：断言基线 10124 → 10139；`test/calendar.test.mjs` 新增 7 条均时差钉点（含「严格式与旧近似式在 1983-12-08 相差 > 60 秒」，防有人换回近似式当等价重构）；`test/bazi-jiaoyun-backtest.test.mjs` 的真太阳时断言改为容差 2 分钟并注明近似式误差带。
+
 ## 0.76.0（2026-11-13）
 
 > 排八字附带称骨：同一份出生信息在盘面里直接多一层民俗参考，不用再单独去称骨页算一遍。
