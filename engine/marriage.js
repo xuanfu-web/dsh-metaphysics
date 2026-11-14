@@ -167,9 +167,13 @@ export function buildMarriage(chart, opts = {}) {
   const groups = (chart.frame && chart.frame.godStats && chart.frame.godStats.groups) || {};
   const bijie = Number(groups['比劫']) || 0;
   const shishang = Number(groups['食伤']) || 0;
+  const palaceChongOnce = Array.from(new Set(palaceChong));
   const types = [];
   if (palaceChong.length) {
     types.push({ key: 'bo', label: '关系有起伏型', why: `夫妻宫（日支${dayBranch}）在命局里就被冲（${palaceChong.join('、')}），亲密关系容易有反复，起得快也容易散` });
+  }
+  if (palaceChong.length >= 2) {
+    types.push({ key: 'duan', label: '多段型', why: `夫妻宫被 ${palaceChong.length} 处冲（${palaceChongOnce.join('、')}），一段关系很难一直稳到老，多是换人、换城市或两地分居` });
   }
   if (starLevel === '不见' || starLevel === '偏弱') {
     types.push({ key: 'wan', label: '晚成型', why: starLevel === '不见' ? '原局不见配偶星，姻缘多由大运流年引发，遇得偏晚' : `配偶星（${spouseGods.join('/')}）偏弱（${round1(starWeight)}），缘分来得慢，但一旦定下反而稳` });
@@ -219,20 +223,38 @@ export function buildMarriage(chart, opts = {}) {
       const reasons = [];
       let score = 0;
 
-      if (LIUHE[gz.branch] === dayBranch) { score += 2.5; reasons.push(`${gz.branch}与日支${dayBranch}六合，合入夫妻宫`); }
-      if (LIUCHONG[gz.branch] === dayBranch) { score += 1.5; reasons.push(`${gz.branch}冲日支${dayBranch}，主变动`); }
+      const heByYear = LIUHE[gz.branch] === dayBranch;
+      const chongByYear = LIUCHONG[gz.branch] === dayBranch;
+      if (heByYear) { score += 2.5; reasons.push(`${gz.branch}与日支${dayBranch}六合，合入夫妻宫`); }
+      if (chongByYear) { score += 1.5; reasons.push(`${gz.branch}冲日支${dayBranch}，主变动`); }
       const gzGod = tenGod(dayStem, gz.stem);
       if (spouseGods.includes(gzGod)) { score += 2; reasons.push(`流年天干${gz.stem}为${gzGod}，配偶星透出`); }
       if (hongluan && gz.branch === hongluan) { score += 1.5; reasons.push('红鸾到'); }
       if (tianxi && gz.branch === tianxi) { score += 1.2; reasons.push('天喜到'); }
 
       const dy = dayunList.find((d) => age >= d.startAge && age < d.startAge + 10);
+      let heByDy = false;
+      let chongByDy = false;
       if (dy) {
-        if (dy.branch === LIUHE[dayBranch]) { score += 0.8; reasons.push(`大运${dy.ganzhi}地支合夫妻宫`); }
-        if (dy.branch === LIUCHONG[dayBranch]) { score += 0.6; reasons.push(`大运${dy.ganzhi}地支冲夫妻宫`); }
+        if (dy.branch === LIUHE[dayBranch]) { heByDy = true; score += 0.8; reasons.push(`大运${dy.ganzhi}地支合夫妻宫`); }
+        if (dy.branch === LIUCHONG[dayBranch]) { chongByDy = true; score += 0.6; reasons.push(`大运${dy.ganzhi}地支冲夫妻宫`); }
         if (spouseGods.includes(dy.stemTenGod)) { score += 0.6; reasons.push(`大运走${dy.stemTenGod}`); }
       }
       if (starElement && favor.includes(starElement)) score += 0.4;
+
+      // 合冲同现的先后：古法「合处逢冲，成而复散」「冲中带合，动而能成」
+      let conflict = '';
+      if (heByYear && chongByDy) {
+        score *= 0.7;
+        conflict = 'he-chong';
+        reasons.push(`合处逢冲：${gz.branch}合进夫妻宫，但大运${dy.ganzhi}地支同时冲它，合上的东西容易被冲散`);
+      } else if (chongByYear && heByDy) {
+        conflict = 'chong-he';
+        reasons.push(`冲中带合：${gz.branch}冲夫妻宫是动象，大运${dy.ganzhi}又合回来，能成，但要有人拉一把`);
+      } else if (heByYear && !chongByYear && palaceChong.length) {
+        score *= 0.85;
+        reasons.push(`本命夫妻宫已逢冲（${palaceChongOnce.join('、')}），这一年的合更像暂时缓和`);
+      }
 
       if (score >= 2) {
         windows.push({
@@ -240,6 +262,7 @@ export function buildMarriage(chart, opts = {}) {
           dayun: dy ? dy.ganzhi : '', score: round1(score),
           kind: score >= 4 ? '最容易动' : score >= 3 ? '容易动' : '有动静',
           past: nowYear > 0 && year < nowYear,
+          conflict,
           reasons,
         });
       }
@@ -255,8 +278,30 @@ export function buildMarriage(chart, opts = {}) {
   for (const w of windows) { if (w.past && picked.filter((p) => p.past).length < 2) takeOne(w); }
   picked.sort((a, b) => a.year - b.year);
 
+  // 合先冲后：合入夫妻宫，但一两年内又逢冲——古法叫「合处逢冲」，成而复散，不宜当成定下来的年份
+  const chongYears = new Set();
+  if (Number.isInteger(birthYear)) {
+    for (let age = fromAge; age <= toAge + 2; age += 1) {
+      if (LIUCHONG[yearGanzhi(birthYear + age).branch] === dayBranch) chongYears.add(birthYear + age);
+    }
+  }
+  for (const w of picked) {
+    if (w.conflict) continue;
+    if (!w.reasons.some((r) => r.indexOf('六合') >= 0)) continue;
+    const soon = [w.year + 1, w.year + 2].find((y) => chongYears.has(y));
+    if (soon) w.afterChong = soon;
+  }
+  const afterChongOnes = picked.filter((w) => w.afterChong);
+
   // ── 六、要留意的 ───────────────────────────────────────────
   const risks = [];
+  if (afterChongOnes.length) {
+    const upcoming = afterChongOnes.filter((w) => !w.past);
+    const a = upcoming[0] || afterChongOnes[0];
+    risks.unshift(a.past
+      ? `${a.year} 那一年合过又逢冲（紧接着 ${a.afterChong}），合处逢冲、成而复散，回头看这类年份多是有缘无分`
+      : `${a.year} 那一年的合不牢：紧接着 ${a.afterChong} 就冲夫妻宫，合处逢冲、成而复散，真要定下来别拖过那一年`);
+  }
   if (palaceChong.length) risks.push(`夫妻宫逢冲（${palaceChong.join('、')}），关系里容易有聚少离多，或者一段接一段地换`);
   if (palaceSha.length) risks.push(`日柱带${palaceSha.join('、')}，交往阶段容易差一口气，往往不是不合适，是时机不对`);
   if (isMale && bijie >= 3) risks.push('比劫重，财星易被分夺：别把恋人晾着去忙别的，容易被别人接手');
@@ -303,6 +348,6 @@ export function buildMarriage(chart, opts = {}) {
     windows: picked,
     risks,
     lines,
-    basis: '规则化口径：配偶星取男财女官、夫妻宫取日支、动婚信号取流年合冲夫妻宫与配偶星透干、红鸾天喜至；特征按配偶星五行与柱位取象。属子平通行读法，不是唯一流派，也不是对具体某个人的断言。',
+    basis: '规则化口径：配偶星取男财女官、夫妻宫取日支、动婚信号取流年合冲夫妻宫与配偶星透干、红鸾天喜至，并按古法判先后（合处逢冲、冲中带合）；特征按配偶星五行与柱位取象。属子平通行读法，不是唯一流派，也不是对具体某个人的断言。',
   };
 }

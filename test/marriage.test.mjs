@@ -82,3 +82,54 @@ ok('单页渲染传 marriage', /window\.__PP\.baziHTML\(r, \{ chenggu, marriage(
 // ── 分块：marriage 必须进 chart 块，否则面板解构成 undefined 静默不出卡 ──
 const { CHUNKS } = await import('../tools/build-client.mjs');
 ok('chart 块带 marriage', CHUNKS.chart.modules.includes('marriage'), JSON.stringify(CHUNKS.chart.modules.slice(-8)));
+
+// ── 合处逢冲：合与冲撞在同一年，古法判先后 ──
+// 流年支合日支、大运支冲日支 → 合处逢冲，成而复散
+const mHeChong = buildMarriage(chart({ year: 1960, month: 5, day: 19, hour: 5, minute: 0, gender: 'female' }));
+const wHeChong = mHeChong.windows.filter((w) => w.conflict === 'he-chong');
+ok('流年合、大运冲判为合处逢冲', wHeChong.length >= 1, JSON.stringify(mHeChong.windows.map((w) => [w.year, w.conflict])));
+ok('合处逢冲写清是被大运冲散', wHeChong.length > 0 && wHeChong[0].reasons.some((r) => r.includes('合处逢冲') && r.includes('冲散')), wHeChong[0] && wHeChong[0].reasons.slice(-1)[0]);
+
+// 流年支冲日支、大运支合日支 → 冲中带合，动而能成
+const mChongHe = buildMarriage(chart({ year: 1962, month: 2, day: 11, hour: 5, minute: 0, gender: 'female' }));
+const wChongHe = mChongHe.windows.filter((w) => w.conflict === 'chong-he');
+ok('流年冲、大运合判为冲中带合', wChongHe.length >= 1, JSON.stringify(mChongHe.windows.map((w) => [w.year, w.conflict])));
+ok('冲中带合写清能动', wChongHe.length > 0 && wChongHe[0].reasons.some((r) => r.includes('冲中带合') && r.includes('能成')), wChongHe[0] && wChongHe[0].reasons.slice(-1)[0]);
+ok('两种冲突不会同时挂在同一个窗口上', mHeChong.windows.concat(mChongHe.windows).every((w) => w.conflict !== 'he-chong' || !w.reasons.some((r) => r.includes('冲中带合'))));
+
+// 合先冲后：今年合进夫妻宫，一两年内又逢冲
+const mAfter = buildMarriage(chart({ year: 1961, month: 8, day: 27, hour: 5, minute: 0, gender: 'female' }));
+const wAfter = mAfter.windows.filter((w) => w.afterChong);
+ok('合后一两年内逢冲记 afterChong', wAfter.length >= 1, JSON.stringify(mAfter.windows.map((w) => [w.year, w.afterChong])));
+ok('afterChong 紧跟在一两年内', wAfter.every((w) => w.afterChong === w.year + 1 || w.afterChong === w.year + 2));
+ok('afterChong 只落在没有冲突的窗口', wAfter.every((w) => !w.conflict));
+ok('合处逢冲提到要留意的那一年', mAfter.risks.some((r) => r.includes('合处逢冲')), mAfter.risks[0]);
+ok('过去的合后逢冲用回顾语气', mAfter.risks[0].includes('回头看') || mAfter.risks[0].includes('别拖过'), mAfter.risks[0]);
+ok('加了这句仍是五句人话', mAfter.lines.length >= 3 && mAfter.lines.length <= 5, String(mAfter.lines.length));
+
+// 夫妻宫被两处冲 → 多段型
+const mDuan = buildMarriage(chart({ year: 1960, month: 2, day: 11, hour: 23, minute: 0, gender: 'male' }));
+const duan = mDuan.types.filter((t) => t.key === 'duan');
+ok('两处冲夫妻宫判为多段型', duan.length === 1, JSON.stringify(mDuan.types.map((t) => t.key)));
+ok('多段型写明处数', duan.length > 0 && duan[0].why.includes('2 处'), duan[0] && duan[0].why);
+ok('同一个字重复冲只显示一次', duan.length > 0 && duan[0].why.split('子冲午').length - 1 === 1, duan[0] && duan[0].why);
+
+// 四个新分支不是死代码：扫一批真实盘必须都出现过
+const seen = { 'he-chong': 0, 'chong-he': 0, afterChong: 0, duan: 0 };
+for (let y = 1958; y <= 1966; y += 1) {
+  for (const h of [5, 11, 17, 23]) {
+    for (const g of ['male', 'female']) {
+      const mm = buildMarriage(chart({ year: y, month: 3, day: 12, hour: h, minute: 0, gender: g }));
+      if (mm.types.some((t) => t.key === 'duan')) seen.duan += 1;
+      for (const w of mm.windows) {
+        if (w.conflict === 'he-chong') seen['he-chong'] += 1;
+        if (w.conflict === 'chong-he') seen['chong-he'] += 1;
+        if (w.afterChong) seen.afterChong += 1;
+      }
+    }
+  }
+}
+ok('四个新分支在真实盘上都会出现', seen['he-chong'] + seen['chong-he'] > 0 && seen.afterChong > 0, JSON.stringify(seen));
+
+// 口径里写明判先后
+ok('basis 说明按古法判先后', mHeChong.basis.includes('合处逢冲') && mHeChong.basis.includes('冲中带合'), mHeChong.basis);
