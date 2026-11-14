@@ -1052,14 +1052,14 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(errors.length === errsBefore, '太乙 tab 全程无新增 JS 报错', errors.slice(errsBefore).join(' | '));
 }
 
-// ── 十三、未发版改动清单：面板运行时得真的拿得到 ────────────────
+// ── 十三、未发版改动项数：面板运行时得真的拿得到 ────────────────
 // client.js 里那行注入是构建期写进去的，源码断言看不到压缩后的形态；
 // 错误边界的环境行（版本号 + 未发版改动 N 项）全靠它，所以在真 React 里读一次。
+// 注入的是计数而不是清单：client.js 的 gzip 预算卡得很死，只搬两处消费点真正用到的数。
 {
-  const list = await page.evaluate(() => window.__MP_UNRELEASED);
-  // 只断言「是数组」：发版后这一段会被清空，届时这里应当是 []，不是 undefined
-  ok(Array.isArray(list), '面板运行时取得到未发版改动清单', JSON.stringify(list === undefined ? 'undefined' : list).slice(0, 140));
-  ok(list.every((t) => typeof t === 'string' && t.trim() === t && t.length > 0), '清单每条都是非空标题', list.join(' / ').slice(0, 140));
+  const env = await page.evaluate(() => ({ ver: window.__MP_VER, n: window.__MP_UNRELEASED }));
+  ok(typeof env.ver === 'string' && /^\d+\.\d+\.\d+/.test(env.ver), '面板运行时取得到版本号', String(env.ver));
+  ok(typeof env.n === 'number' && Number.isFinite(env.n) && env.n >= 0, '面板运行时取得到未发版改动项数', String(env.n));
 }
 
 // ── 十四、全程无 JS 报错 ───────────────────────────────────────
