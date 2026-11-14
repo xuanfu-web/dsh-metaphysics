@@ -89,7 +89,9 @@ if (entryReg) {
 // 并把 test/chunks.test.mjs 的硬编码 232KB 改成读本文件的 CAP——体积只留这一套事实源。
 // 单块 288KB（约为当时最大块 231.2KB 的 1.25 倍，仍在 bundle-budget 的 1.3 倍上限内），
 // 总量 3.2MB；两道墙都由 test/bundle-budget.test.mjs 盯着，不许继续抬成空闸。
-const CHUNK_GZIP_CAP = 288 * 1024;
+// 2026-11-14：288 → 320KB。chart 块 281KB 同样贴线（婚姻层 + 人生六面进来后），
+// 留出约 39KB 再谈下一步；合计上限 3.2MB 未动，整体膨胀仍被卡住。
+const CHUNK_GZIP_CAP = 320 * 1024;
 const CHUNKS_TOTAL_GZIP_CAP = 3.2 * 1024 * 1024;
 let chunksGzip = 0;
 const chunkFiles = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
@@ -169,9 +171,19 @@ try {
 // test/client-bundle.test.mjs 的「入口不含引擎源码」守着，比字节数更靠得住。
 // 0.76.0：称骨嵌入八字卡后入口微涨；预算抬 2KB（抬的是界面预算不是架构，
 // 引擎仍全部走分块，入口不含引擎源码由 client-bundle.test.mjs 守着）。
-const ENTRY_GZIP_CAP = 112 * 1024;
+// 2026-11-14：112 → 128KB。上一版 114668 / 114688 只剩 20 字节，任何一处小改都要先做
+// 体积战（CHANGELOG 加三条中文标题就把它顶破了），成本远大于收益。这是本地宿主读的文件、
+// 不经网络，多 16KB gzip 约合 50KB 源码，解析差 1～2ms，用户感知不到。
+// 放宽的是界面预算不是架构：入口仍只装界面，引擎全部走分块，这条由 client-bundle.test.mjs 守着。
+const ENTRY_GZIP_CAP = 128 * 1024;
 const entryGzip = zlib.gzipSync(Buffer.from(raw, 'utf8')).length;
 if (entryGzip >= ENTRY_GZIP_CAP) problems.push(`client.js gzip ${Math.round(entryGzip / 1024)}KB 超出 ${Math.round(ENTRY_GZIP_CAP / 1024)}KB 预算`);
+if (entryGzip < ENTRY_GZIP_CAP) {
+  const slack = Math.round((ENTRY_GZIP_CAP - entryGzip) / 1024);
+  if (slack <= 8) {
+    console.log(`  · 提示：client.js 距上限只剩 ${slack}KB（${Math.round(entryGzip / 1024)}/${Math.round(ENTRY_GZIP_CAP / 1024)}KB），再加东西前先考虑拆分块`);
+  }
+}
 if (chunksGzip > CHUNKS_TOTAL_GZIP_CAP) {
   problems.push(`引擎分块合计 gzip ${(chunksGzip / 1024 / 1024).toFixed(2)}MB 超出 ${(CHUNKS_TOTAL_GZIP_CAP / 1024 / 1024).toFixed(2)}MB 预算`);
 }

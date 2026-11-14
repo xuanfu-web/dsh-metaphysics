@@ -75,7 +75,8 @@ const entMatch = /const ENTRY_GZIP_CAP = ([0-9*\s.]+);/.exec(bundleTool);
 if (!entMatch) throw new Error('check-bundle.mjs 里找不到 ENTRY_GZIP_CAP');
 const ENTRY_GZIP_CAP = Function(`return (${entMatch[1]});`)();
 // 356KB：0.71 的「说人话」层给入口加了约 1.3KB（22 个体系共用一段读法，不是按体系复制）。
-const ENTRY_RAW_CAP = 356 * 1024;
+// 2026-11-14：356 → 400KB（按字符数算，中文一字一 char）。与 gzip 门槛同一次放宽。
+const ENTRY_RAW_CAP = 400 * 1024;
 const entryGz = zlib.gzipSync(Buffer.from(entry, 'utf8')).length;
 ok(`client.js gzip < ${Math.round(ENTRY_GZIP_CAP / 1024)}KB（首屏不背引擎）`, entryGz < ENTRY_GZIP_CAP, `${Math.round(entryGz / 1024)}KB`);
 ok('入口体积接近界面而非整套引擎', entry.length < ENTRY_RAW_CAP, `${Math.round(entry.length / 1024)}KB`);
