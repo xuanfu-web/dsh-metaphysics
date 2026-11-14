@@ -683,7 +683,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：181 个测试文件 / 10239 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：182 个测试文件 / 10257 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -32694,6 +32694,30 @@ function nameText(r) {
   ].filter(Boolean).join('\n');
 }
 
+/** 婚姻与人生六面：文本版。网页版是卡片，这里是给「复制 / 导出 .md / 喂给模型」用的同源文字 */
+function lifeText(result) {
+  if (!result || result.system !== 'bazi' || !result.pillars || !result.strength) return '';
+  const BR = String.fromCharCode(10);
+  const out = [];
+  try {
+    const m = buildMarriage(result);
+    if (m && Array.isArray(m.lines) && m.lines.length) {
+      const tags = (m.types || []).map((x) => x.label).filter(Boolean).join('、');
+      out.push('【婚姻】' + (tags ? tags + BR : BR) + m.lines.map((x) => '· ' + x).join(BR));
+    }
+  } catch (e) { /* 婚姻层不可用不影响主文本 */ }
+  try {
+    const f = buildFacets(result);
+    const rows = [];
+    for (const pair of [['career', '事业'], ['wealth', '财运'], ['study', '学业'], ['health', '健康'], ['children', '子女'], ['kin', '六亲']]) {
+      const face = f && f[pair[0]];
+      if (face && Array.isArray(face.lines) && face.lines.length) rows.push('· ' + pair[1] + '：' + face.lines.join(''));
+    }
+    if (rows.length) out.push('【人生六面】' + BR + rows.join(BR));
+  } catch (e) { /* 六面不可用不影响主文本 */ }
+  return out.join(BR + BR);
+}
+
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
@@ -32707,6 +32731,9 @@ function renderText(result) {
       .join(NL) + NL
     : '';
   const parts = [brief + base];
+  // 婚姻与六面排在文本盘面之后、技术信息之前：这一段是给不看网页的人的
+  const lifePart = lifeText(result);
+  if (lifePart) parts.push(lifePart);
   if (result.shadow && result.shadow.id) {
     const s = result.shadow;
     parts.push(`【影子盘】${s.id}（同参数同 ID；版本 ${s.version}）`

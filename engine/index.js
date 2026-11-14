@@ -2127,6 +2127,30 @@ function nameText(r) {
   ].filter(Boolean).join('\n');
 }
 
+/** 婚姻与人生六面：文本版。网页版是卡片，这里是给「复制 / 导出 .md / 喂给模型」用的同源文字 */
+function lifeText(result) {
+  if (!result || result.system !== 'bazi' || !result.pillars || !result.strength) return '';
+  const BR = String.fromCharCode(10);
+  const out = [];
+  try {
+    const m = buildMarriage(result);
+    if (m && Array.isArray(m.lines) && m.lines.length) {
+      const tags = (m.types || []).map((x) => x.label).filter(Boolean).join('、');
+      out.push('【婚姻】' + (tags ? tags + BR : BR) + m.lines.map((x) => '· ' + x).join(BR));
+    }
+  } catch (e) { /* 婚姻层不可用不影响主文本 */ }
+  try {
+    const f = buildFacets(result);
+    const rows = [];
+    for (const pair of [['career', '事业'], ['wealth', '财运'], ['study', '学业'], ['health', '健康'], ['children', '子女'], ['kin', '六亲']]) {
+      const face = f && f[pair[0]];
+      if (face && Array.isArray(face.lines) && face.lines.length) rows.push('· ' + pair[1] + '：' + face.lines.join(''));
+    }
+    if (rows.length) out.push('【人生六面】' + BR + rows.join(BR));
+  } catch (e) { /* 六面不可用不影响主文本 */ }
+  return out.join(BR + BR);
+}
+
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 export function renderText(result) {
   const base = result.summary ?? JSON.stringify(result, null, 2);
@@ -2140,6 +2164,9 @@ export function renderText(result) {
       .join(NL) + NL
     : '';
   const parts = [brief + base];
+  // 婚姻与六面排在文本盘面之后、技术信息之前：这一段是给不看网页的人的
+  const lifePart = lifeText(result);
+  if (lifePart) parts.push(lifePart);
   if (result.shadow && result.shadow.id) {
     const s = result.shadow;
     parts.push(`【影子盘】${s.id}（同参数同 ID；版本 ${s.version}）`
