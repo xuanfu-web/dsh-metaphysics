@@ -1029,6 +1029,11 @@
           chenggu = window.Engine.buildChenggu({ year: Number(date.slice(0, 4)), month: Number(date.slice(5, 7)), day: Number(date.slice(8, 10)), hour: Number(time.slice(0, 2)), minute: Number(time.slice(3, 5)), lateZi: args.lateZi !== false });
         } catch (e) { chenggu = null; }
       }
+      // 婚姻层：吃上面这张盘，不重排；失败不影响主结果
+      let marriage = null;
+      if (tab === 'bazi' && window.Engine.buildMarriage) {
+        try { marriage = window.Engine.buildMarriage(r); } catch (e) { marriage = null; }
+      }
       let trend = null;
       if (tab === 'bazi') {
         try {
@@ -1048,7 +1053,7 @@
         try { caliber = window.Engine.caliberCompare(args); } catch (e) { caliber = null; }
       }
       const chart0 = (tab === 'ziwei' ? window.__PP.ziweiHTML(r)
-        : tab === 'bazi' ? (window.__PP.baziHTML(r, { chenggu }) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
+        : tab === 'bazi' ? (window.__PP.baziHTML(r, { chenggu, marriage }) + (trend ? window.__PP.trendHTML(trend, { brief: false }) : ''))
           : tab === 'hepan' ? (r.chart === 'ziwei' ? window.__PP.ziweiHepanHTML(r) : window.__PP.hepanHTML(r))
             : tab === 'qimen' ? (window.__PP.qimenHTML(r) + window.__PP.qimenFactsHTML(r))
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
@@ -1076,7 +1081,7 @@
       pastMarks = {}; pastFit = null; rectOut = null;
       // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
       // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu,
+      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage,
         gender: args.gender || el('gender').value,
         address: typeof args.address === 'string' ? args.address : '',
         trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,

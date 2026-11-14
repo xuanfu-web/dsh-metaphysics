@@ -4,3 +4,7 @@
 # 上万个 \r，standalone.test 的「仓库根的离线页与构建结果一致」在 CI 上必红（本地反而绿）。
 命理排盘.html text eol=lf
 docs/index.html text eol=lf
+
+# 分块产物同理：chunks.test 要拿 client.*.js 与源码逐字节比对，被 CRLF 化就红。
+client.js text eol=lf
+client.*.js text eol=lf

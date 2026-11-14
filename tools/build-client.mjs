@@ -13,7 +13,7 @@ const unreleasedLine = () =>
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'structure', 'hehua', 'geju', 'bazi', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
+  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -47,7 +47,9 @@ const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', '
 const CHART_STACK = [...new Set([
   ...BAZI_STACK,
   // 八字：内嵌人生 K 线 + 可开紫微交叉验证
-  'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words',
+  // marriage：婚姻这一层（类型 / 对象取象 / 动婚年份）只服务八字卡，挂这里不进 BAZI_STACK，
+  // 免得 name 块白背一份。
+  'marriage', 'trend', 'ziwei-zuoyao', 'ziwei', 'ziwei-words',
   // 八字卡里嵌的称骨**不**进 chart 栈。它需要的 hourToBranch 来自 almanac 模块，
   // 而 chart 栈里没有 almanac：模块塞进 chart 块只会解构成 undefined，
   // 到运行时才炸 `M is not a function`，再被 app.js 那个 catch 吞成 chenggu=null，

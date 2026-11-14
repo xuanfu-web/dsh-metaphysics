@@ -1110,6 +1110,18 @@
 .mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--gold);border:1px solid var(--gold);border-radius:99px;padding:1px 7px;margin-right:6px;opacity:.9}
 .mp-bzcg-band{margin-top:7px;font-size:12.5px;line-height:1.8;color:var(--ink);font-weight:500}
 .mp-bzcg-note{margin-top:7px;font-size:11px;color:var(--muted)}
+/* 婚姻层：与称骨的金色区分开，用暖红；过去年份压暗，避免与「往后看」混在一起 */
+.mp-mar{margin-top:12px;border:1px solid color-mix(in srgb,var(--red) 42%,var(--line));border-radius:10px;padding:11px 13px;background:color-mix(in srgb,var(--red) 5%,var(--band))}
+.mp-mar-h{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-direction:row}
+.mp-mar-h b{font-size:14px;color:var(--red);font-weight:700;letter-spacing:.04em}
+.mp-mar-tag{font-style:normal;font-size:11px;font-weight:700;color:var(--on-accent);border-radius:99px;padding:2px 9px;background:color-mix(in srgb,var(--red) 76%,var(--lu))}
+.mp-mar-yrs{display:flex;flex-wrap:wrap;gap:6px;margin:7px 0 8px}
+.mp-mar-y{font-size:12px;padding:2px 9px;border:1px solid color-mix(in srgb,var(--red) 38%,var(--line));border-radius:99px;color:var(--ink)}
+.mp-mar-y em{font-style:normal;font-size:10.5px;color:var(--muted);margin-left:4px}
+.mp-mar-y.past{opacity:.5}
+.mp-mar-lines{margin:0;padding-left:18px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
+.mp-mar-b{margin-top:7px;font-size:11px;color:var(--muted)}
+.mp-mar-b summary{cursor:pointer}
 .mp-cg-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 @media print{.mp-cg{break-inside:avoid}}
 @media (max-width:640px){.mp-cg-w{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -3290,6 +3302,20 @@
         ${ssGroups.map((g) => `<div class="pp-ssg"><span class="ssg-gt">${g.cat}</span><span class="ssg-gi">${g.items.map((i) => `<span class="pp-ssi ${i.luck || 'neutral'}" title="${esc(`${i.via}查${i.target} ｜ ${i.rule}`)}">${i.name}<em>${i.pillars.map((k) => SHORT[k] || '').join('')}</em></span>`).join('')}</span></div>`).join('')}
         <div class="ssx-h" style="border-top:none;padding-top:4px;margin-top:4px">神煞只作参考，吉凶仍须看格局、旺衰与行运。</div>
       </div>` : '';
+    // 婚姻层：先给类型（一句话判据），再给年份胶囊，再给几句人话。
+    // 年份胶囊只作索引，理由挂在 title 里；过去年份压暗，跟「往后看」分开。
+    const marOpt = opt && opt.marriage;
+    const marHTML = marOpt ? (() => {
+      const m = marOpt;
+      const chips = (m.windows || []).map((w) =>
+        `<span class="mp-mar-y${w.past ? ' past' : ''}" title="${esc(`${w.ganzhi}年 · ${w.dayun ? w.dayun + '运 · ' : ''}${(w.reasons || []).join('；')}`)}">${w.year}<em>${w.age}岁·${w.kind}</em></span>`).join('');
+      return `<section class="mp-mar" aria-label="婚姻">
+        <div class="mp-mar-h"><b>婚姻</b><i class="mp-mar-tag">${esc((m.type && m.type.label) || '')}</i></div>
+        <div class="mp-mar-yrs">${chips || '<span class="pp-dim">20–45 岁未见明显动婚年份</span>'}</div>
+        <ol class="mp-mar-lines">${(m.lines || []).map((l) => `<li>${esc(l)}</li>`).join('')}</ol>
+        <details class="mp-mar-b"><summary>依据与口径</summary><div>${esc(m.basis || '')}</div></details>
+      </section>`;
+    })() : '';
     // 附带称骨：同一份出生信息的民俗层延伸，显眼呈现（亮色块、默认展开、骨重大字）
     const cgOpt = opt && opt.chenggu;
     const cgHTML = cgOpt ? (() => {
@@ -3320,6 +3346,7 @@
       ${anheHTML}
       ${sect('格局', gj)}
       ${sect('用神', ys)}
+      ${marHTML}
       ${cliCard}
       ${(Array.isArray(r.classics) && r.classics.length) ? `<section class="mp-cl" aria-label="古籍原文">
         <div class="mp-cl-h"><b>古籍原文</b><span>照录通行本，释义为白话自撰</span></div>

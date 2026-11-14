@@ -19,10 +19,10 @@ ok('面板只在八字且有时刻时嵌称骨', app.includes("if (k === 'bazi' 
 // 且 dn() 合并时 `!==void 0` 守卫会静默跳过——必须显式补载，否则面板不出卡、单页正常。
 ok('缺 buildChenggu 时按需补载 chenggu 分块', /!Engine\.buildChenggu[\s\S]{0,160}await ensureEngine\('chenggu'\)/.test(app));
 ok('称骨失败静默不影响主盘', app.includes('catch (e) { chenggu = null; }'));
-ok('结果对象带 chenggu 字段', /setResult\(\{ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu,/.test(app));
-ok('面板渲染传称骨', app.includes('PP.baziHTML(result.r, { chenggu: result.chenggu })'));
+ok('结果对象带 chenggu 字段', /setResult\(\{ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu[,}]/.test(app));
+ok('面板渲染传称骨', /PP\.baziHTML\(result\.r, \{ chenggu: result\.chenggu[,}]/.test(app));
 
 const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
 ok('单页同样只在八字且有时刻时嵌称骨', ui.includes("if (tab === 'bazi' && !hourUnknown && window.Engine.buildChenggu)"));
-ok('单页 last 保留 chenggu', /last = \{ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu,/.test(ui));
-ok('单页渲染传称骨', ui.includes('window.__PP.baziHTML(r, { chenggu })'));
+ok('单页 last 保留 chenggu', /last = \{ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu[,}]/.test(ui));
+ok('单页渲染传称骨', /window\.__PP\.baziHTML\(r, \{ chenggu[,}]/.test(ui));
