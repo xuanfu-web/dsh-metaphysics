@@ -244,7 +244,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .exp button{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer;
   transition:background .14s ease,border-color .14s ease,transform .14s ease}
 .exp button:hover{background:var(--panel2);border-color:var(--gold);transform:translateY(-1px)}
+/* 反馈入口保持「底部小字」形态：不做显眼按钮（这是早先定下的口径），只在提示行里给一个 mailto 文字链 */
 .exp .hint{font-size:13px;color:var(--dim)}
+.exp .hint a{color:var(--gold);text-decoration:none;border-bottom:1px dotted currentColor}
+.exp .hint a:hover{border-bottom-style:solid}
 
 /* 中屏：三列会把每格压到 130px 上下，标题与一行白话都放不下，改成一列铺开 */
 @media (min-width:641px) and (max-width:1000px){

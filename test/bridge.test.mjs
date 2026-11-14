@@ -177,6 +177,11 @@ ok('独立页对错标记走本机卦例库（复用 casesAdd）',
   /function caseMark[\s\S]{0,400}casesAdd/.test(web));
 ok('独立页不设显眼的邮件按钮（反馈入口只留面板底部）',
   !/data-act="mail"/.test(web) && !/mailFeedback/.test(web));
+ok('独立页在提示行给出反馈邮箱（底部小字，不做按钮）',
+  /class="hint">[\s\S]{0,300}?<a href="\$\{feedbackMail\(\)\}"/.test(web)
+  && /'mailto:1129440028@qq\.com'/.test(web));
+ok('反馈邮件预填版本与体系，用户只需写哪里不对',
+  /'版本：' \+ \(v \|\| '未知'\)/.test(web) && /'体系：' \+ \(\(last && last\.tab\) \|\| '无'\)/.test(web));
 ok('独立页复制走同一份包', /window\.Engine\.askPackages/.test(web));
 
 const build = read('tools/build-client.mjs');

@@ -723,6 +723,28 @@
 
   // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
   // 打印样式在 build-html.mjs 的 @media print 里（隐藏输入区与按钮，只留抬头与结果）。
+  /** 反馈邮箱：把版本、体系、输入预先写进正文，用户只需补「哪里不对」 */
+  function feedbackMail() {
+    const v = typeof window.__MP_VER === 'string' ? window.__MP_VER : '';
+    const input = [
+      (last && last.date) || '',
+      (last && last.time) || '',
+      (last && last.gender) || '',
+    ].filter(Boolean).join(' ');
+    const body = [
+      '版本：' + (v || '未知'),
+      '体系：' + ((last && last.tab) || '无'),
+      '输入：' + (input || '无'),
+      '',
+      '哪里不对 / 哪里没看懂：',
+      '',
+      '（截图可以直接贴在附件里）',
+    ].join('\n');
+    return 'mailto:1129440028@qq.com'
+      + '?subject=' + encodeURIComponent('[反馈] 烛微命盘' + (v ? ' v' + v : ''))
+      + '&body=' + encodeURIComponent(body);
+  }
+
   function exportBar() {
     return `<div class="exp no-print">
       <button type="button" data-act="pdf">存为 PDF</button>
@@ -733,7 +755,7 @@
       <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存入卦例库</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
-      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）</span>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、体系与输入，直接写哪里不对就行">1129440028@qq.com</a></span>
     </div>`;
   }
 

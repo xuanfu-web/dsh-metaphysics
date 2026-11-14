@@ -231,7 +231,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .exp button{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:inherit;font-size:14px;cursor:pointer;
   transition:background .14s ease,border-color .14s ease,transform .14s ease}
 .exp button:hover{background:var(--panel2);border-color:var(--gold);transform:translateY(-1px)}
+/* 反馈入口保持「底部小字」形态：不做显眼按钮（这是早先定下的口径），只在提示行里给一个 mailto 文字链 */
 .exp .hint{font-size:13px;color:var(--dim)}
+.exp .hint a{color:var(--gold);text-decoration:none;border-bottom:1px dotted currentColor}
+.exp .hint a:hover{border-bottom-style:solid}
 
 /* 中屏：三列会把每格压到 130px 上下，标题与一行白话都放不下，改成一列铺开 */
 @media (min-width:641px) and (max-width:1000px){
@@ -363,7 +366,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.79.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.79.0</span><span class="ver-note" title="本版之后又改了 1 项（版本号未变）：手机端反馈入口">另含 1 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -685,8 +688,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：183 个测试文件 / 10269 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    
+    <ul><li>测试：183 个测试文件 / 10271 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <h3>本版之后又改了什么（版本号未变）</h3>
+    <ul><li>手机端反馈入口</li></ul>
+    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -38540,6 +38545,28 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 
   // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
   // 打印样式在 build-html.mjs 的 @media print 里（隐藏输入区与按钮，只留抬头与结果）。
+  /** 反馈邮箱：把版本、体系、输入预先写进正文，用户只需补「哪里不对」 */
+  function feedbackMail() {
+    const v = typeof window.__MP_VER === 'string' ? window.__MP_VER : '';
+    const input = [
+      (last && last.date) || '',
+      (last && last.time) || '',
+      (last && last.gender) || '',
+    ].filter(Boolean).join(' ');
+    const body = [
+      '版本：' + (v || '未知'),
+      '体系：' + ((last && last.tab) || '无'),
+      '输入：' + (input || '无'),
+      '',
+      '哪里不对 / 哪里没看懂：',
+      '',
+      '（截图可以直接贴在附件里）',
+    ].join('\n');
+    return 'mailto:1129440028@qq.com'
+      + '?subject=' + encodeURIComponent('[反馈] 烛微命盘' + (v ? ' v' + v : ''))
+      + '&body=' + encodeURIComponent(body);
+  }
+
   function exportBar() {
     return `<div class="exp no-print">
       <button type="button" data-act="pdf">存为 PDF</button>
@@ -38550,7 +38577,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存入卦例库</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
-      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）</span>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、体系与输入，直接写哪里不对就行">1129440028@qq.com</a></span>
     </div>`;
   }
 
