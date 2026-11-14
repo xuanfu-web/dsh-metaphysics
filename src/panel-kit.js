@@ -3144,6 +3144,37 @@
     return r && r.brief ? pp.summaryHTML(r.brief) : '';
   };
 
+  /**
+   * 「一眼看」：一行搬运，不重新推导。
+   *
+   * 六面与婚姻各自成卡之后，首屏反而是最容易被滑过去的地方——一张盘七八块，
+   * 用户要的是先知道「这盘大概什么样、哪年该动」，再决定往下看哪一块。
+   * 这里所有词都取自已算好的字段（strength / career / wealth / marriage / health），
+   * 不再重算一遍，也不在这里下新的判断。
+   */
+  pp.oneLineHTML = function (r, opt) {
+    if (!r || !r.strength || !r.strength.level) return '';
+    const o = opt || {};
+    const life = o.life || null;
+    const mar = o.marriage || null;
+    const dm = r.dayMaster || {};
+    const mb = (r.pillars && r.pillars.month && r.pillars.month.branch) || '';
+    const head = `${dm.stem || ''}${dm.element || ''}${r.strength.level}${mb ? `，生${mb}月` : ''}`;
+    const bits = [];
+    const ct = life && life.career && life.career.type && life.career.type.label;
+    if (ct) bits.push(`事业偏${String(ct).split('、')[0]}`);
+    if (life && life.wealth && life.wealth.tier) {
+      const t = String(life.wealth.tier).split('（')[0];
+      bits.push(t === '平' ? '财平' : `财是${t}`);
+    }
+    const mt = mar && mar.types && mar.types[0];
+    if (mt && mt.label) bits.push(`婚缘${String(mt.label).replace(/型$/, '')}`);
+    const fw = mar && mar.windows ? mar.windows.filter((w) => !w.past)[0] : null;
+    if (fw) bits.push(`最可能动在 ${fw.year} 年（${fw.age}岁）`);
+    const body = bits.length ? `<b>一眼看</b>　${esc(head)}：${esc(bits.join('；'))}。` : `${esc(head)}。`;
+    return `<section aria-label="一眼看" style="margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--gold)"><p style="margin:0;line-height:1.65">${body}</p></section>`;
+  };
+
   pp.summaryHTML = function (b) {
     if (!b || !b.lead) return '';
     const secs = (b.sections || []).map((x) => `<div class="mp-br-sec"><b>${esc(x.h)}</b><p>${esc(x.t)}</p></div>`).join('');
@@ -3369,7 +3400,7 @@
         <div class="mp-bzcg-note">称骨为通行本口径的民俗参考，与上方四柱旺衰是两套独立口径，互不推导。</div>
       </section>`;
     })() : '';
-    return pp.briefHTML(r) + `<div class="pp" style="padding:12px">
+    return pp.briefHTML(r) + pp.oneLineHTML(r, opt) + `<div class="pp" style="padding:12px">
       <table class="pp-bz">${head}<tbody>${rows}</tbody></table>
       ${r.hourUnknown ? `<div class="pp-warn" role="note">时柱暂缺：只排年/月/日三柱，起运与交运按日估算。时柱按正午暂算，涉及时柱的结论仅供参考。</div>` : ''}
       <div class="pp-rel"><div><b>天干</b>${(r.relations && r.relations.stems.length) ? r.relations.stems.join(' · ') : '—'}</div>
