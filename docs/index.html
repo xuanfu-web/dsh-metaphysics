@@ -356,8 +356,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 }
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 </style>
+<style>#mp-boot{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0f1115;color:#e8e8ea;font:14px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .28s}#mp-boot.out{opacity:0;pointer-events:none}#mp-boot .seal2{width:42px;height:42px;border-radius:9px;display:grid;place-items:center;background:var(--gold);color:var(--on-accent);font-size:21px;font-weight:700}#mp-boot b{font-size:15px;letter-spacing:.05em}#mp-boot i{font-style:normal;font-size:12px;opacity:.55}@media print{#mp-boot{display:none}}</style>
 </head>
 <body>
+<div id="mp-boot" role="status" aria-live="polite"><span class="seal2" aria-hidden="true">微</span><b>烛微命盘</b><i>正在装配引擎，首次打开要一两秒…</i></div>
 <div class="wrap">
   <header>
     <div class="brand-row">
@@ -39612,6 +39614,18 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   });
 })();
 
+</script>
+<script>
+// 加载占位：上面四个脚本同步执行完，说明引擎已装配、界面已挂上，遮罩可以退了。
+// 只做「别让人对着白屏」这一件事，不参与任何排盘逻辑；出错也兜底退掉。
+(function () {
+  var b = document.getElementById("mp-boot");
+  if (!b) return;
+  var gone = false;
+  var drop = function () { if (gone) return; gone = true; b.classList.add("out"); setTimeout(function () { b.remove(); }, 320); };
+  try { drop(); } catch (e) { drop(); }
+  setTimeout(drop, 6000);
+})();
 </script>
 </body>
 </html>
