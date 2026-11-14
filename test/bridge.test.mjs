@@ -200,3 +200,19 @@ if (fs.existsSync(chunkFile)) {
 } else {
   ok('命盘分块存在（先跑 build-client）', false, chunkFile);
 }
+
+// ── 应验提示：命理是私事，所以只问不催、只说本地、留一个关掉的口子 ──
+const webSrc = read('src/web-ui.js');
+const appSrc = read('src/app.js');
+ok('单页有应验提示（nudge）', /function nudgeHTML\(\)/.test(webSrc) && /class="nudge no-print"/.test(webSrc));
+ok('提示写明不上传、不联网', /不上传、不联网/.test(webSrc));
+ok('提示写明愿意记就记，不记也能用', /愿意记就记，不记也能照常用/.test(webSrc));
+ok('单页提示带「不再提示」开关', /data-act="nudge-off"/.test(webSrc) && /dsh-metaphysics\/nudge-off/.test(webSrc));
+ok('关掉后写本地并移除这一行', /localStorage\.setItem\('dsh-metaphysics\/nudge-off', '1'\)/.test(webSrc) && /p\.remove\(\)/.test(webSrc));
+ok('导出条的点击选择器能命中 nudge 按钮', /closest\('\.exp \[data-act\], \.nudge \[data-act\]'\)/.test(webSrc));
+ok('关掉之后不再渲染（读同一个键）', /getItem\('dsh-metaphysics\/nudge-off'\) === '1'/.test(webSrc));
+ok('提示里不自动存盘（不碰 casesAdd）', !/nudgeHTML[\s\S]{0,600}casesAdd/.test(webSrc));
+ok('面板也有应验提示', /className: 'mp-nudge'/.test(appSrc) && /不上传、不联网/.test(appSrc));
+ok('面板「不再提示」用同一个键', /localStorage\.setItem\('dsh-metaphysics\/nudge-off', '1'\)/.test(appSrc));
+ok('面板提示也留了关掉的口子', /setNudgeOff\(true\)/.test(appSrc) && /nudgeOff/.test(appSrc));
+ok('两处提示文案同源（都说愿意记就记）', /愿意记就记/.test(appSrc));

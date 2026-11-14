@@ -248,6 +248,13 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .exp .hint{font-size:13px;color:var(--dim)}
 .exp .hint a{color:var(--gold);text-decoration:none;border-bottom:1px dotted currentColor}
 .exp .hint a:hover{border-bottom-style:solid}
+/* 应验标记的提示：自愿、可关，明写在本地。命理是私事，不催、不自动存 */
+.nudge{margin:12px 0 0;padding:10px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel);
+  color:var(--dim);font-size:13px;line-height:1.75;max-width:56em}
+.nudge b{color:var(--ink);font-weight:600}
+.nudge button{margin-left:8px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);background:transparent;
+  color:var(--dim);font-family:inherit;font-size:12px;cursor:pointer;transition:border-color .14s ease,color .14s ease}
+.nudge button:hover{border-color:var(--gold);color:var(--gold)}
 
 /* 中屏：三列会把每格压到 130px 上下，标题与一行白话都放不下，改成一列铺开 */
 @media (min-width:641px) and (max-width:1000px){

@@ -366,6 +366,10 @@ const CSS = `
 .mp-fb-t{font-size:12px;color:var(--dsw-alias-label-secondary);flex:1;min-width:180px}
 .mp-fb-b{margin-top:8px;font-size:11.5px;color:var(--dsw-alias-label-secondary);opacity:.85;line-height:1.7}
 .mp-fb-note{color:var(--dsw-alias-brand-primary)}
+/* 应验提示：低调一行，可关；说清只在本机，别给人「被收集」的感觉 */
+.mp-nudge{margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:1.75}
+.mp-nudge-x{margin-left:8px;padding:2px 8px;border-radius:6px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);font-family:inherit;font-size:11.5px;cursor:pointer}
+.mp-nudge-x:hover{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary)}
 .mp-verify-fit{font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.7;flex:1;min-width:0}
 .mp-rect-row{display:flex;gap:6px;margin-bottom:6px}
 .mp-rect-row .mp-input{flex:1;min-width:0}
@@ -947,6 +951,10 @@ function App() {
   // 奇门换局规则：chaibu 拆补 / chaoshen 超神接气 / zhirun 置闰（引擎三种取局口径）
   const [qimenRule, setQimenRule] = useState('chaibu');
   const [trueSolar, setTrueSolar] = useState(true);
+  // 应验提示：命理是私事，只问不催。点过「不再提示」就永远别再出现（也只存在本地）
+  const [nudgeOff, setNudgeOff] = useState(() => {
+    try { return window.localStorage.getItem('dsh-metaphysics/nudge-off') === '1'; } catch (e) { return false; }
+  });
   // 晚子时：23:00–23:59 出生时，日柱算次日还是当日（通用排盘规则里的一个可调口径）
   const [lateZi, setLateZi] = useState(true);
   const [qLateZi, setQLateZi] = useState('same-day');
@@ -2667,6 +2675,18 @@ function App() {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: saveToCases, title: '把这张盘的参数存进卦例库，日后可回填重排、标应验',
       }, caseSaved ? '已存入卦例库' : '存入卦例库')) : null,
+
+    // 应验提示：说清「只在本地」，给一个关掉的口子。不自动存盘、不催、不问第二遍
+    result && !nudgeOff ? h('p', { key: 'nudge', className: 'mp-nudge' },
+      '这张盘只在你自己这台设备上算，不上传、不联网。过些天回头想看看它准不准，先「存入卦例库」，之后在卦例库里标应验就行——愿意记就记，不记也能照常用。',
+      h('button', {
+        type: 'button', className: 'mp-nudge-x',
+        onClick: () => {
+          try { window.localStorage.setItem('dsh-metaphysics/nudge-off', '1'); } catch (e) { /* 存不了也照样收起 */ }
+          setNudgeOff(true);
+        },
+        title: '以后不再出现这行',
+      }, '不再提示')) : null,
 
     result ? h('div', { key: 'ask', className: 'mp-askbox', style: { flexWrap: 'wrap' } },
       h('input', {

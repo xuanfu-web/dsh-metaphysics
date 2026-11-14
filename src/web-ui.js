@@ -745,6 +745,17 @@
       + '&body=' + encodeURIComponent(body);
   }
 
+  /**
+   * 应验提示：命理是私事，所以只问不催——不自动存、不上传，点「不再提示」就永远别再出现。
+   * 存的是「别再提」这件事本身，也只在本地。
+   */
+  function nudgeHTML() {
+    let off = false;
+    try { off = window.localStorage.getItem('dsh-metaphysics/nudge-off') === '1'; } catch (e) { off = false; }
+    if (off) return '';
+    return `<p class="nudge no-print">这张盘只在你自己的设备上算，<b>不上传、不联网</b>。过些天回头想看看它准不准，上面「记准 / 记不准」点一下就行——愿意记就记，不记也能照常用。<button type="button" data-act="nudge-off" title="以后不再出现这行">不再提示</button></p>`;
+  }
+
   function exportBar() {
     return `<div class="exp no-print">
       <button type="button" data-act="pdf">存为 PDF</button>
@@ -756,7 +767,7 @@
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
       <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、体系与输入，直接写哪里不对就行">1129440028@qq.com</a></span>
-    </div>`;
+    </div>${nudgeHTML()}`;
   }
 
   /** 从 last 与表单拼卦例 entry：只存参数，不存盘面（与面板卦例库同构） */
@@ -795,8 +806,14 @@
   }
 
   function onExportClick(e) {
-    const b = e.target && e.target.closest ? e.target.closest('.exp [data-act]') : null;
+    const b = e.target && e.target.closest ? e.target.closest('.exp [data-act], .nudge [data-act]') : null;
     if (!b) return;
+    if (b.dataset.act === 'nudge-off') {
+      try { window.localStorage.setItem('dsh-metaphysics/nudge-off', '1'); } catch (err) { /* 存储被禁用也照样收起这一行 */ }
+      const p = b.closest('.nudge');
+      if (p) p.remove();
+      return;
+    }
     if (b.dataset.act === 'md') { downloadReport(); return; }
     if (b.dataset.act === 'png') { downloadCard(); return; }
     if (b.dataset.act === 'case' || b.dataset.act === 'hit' || b.dataset.act === 'miss') {
