@@ -62,6 +62,9 @@ export const FACTOR_WHITELIST = {
   liuyao: ['卦体格局', '世爻状态', '用神状态', '动爻作用'],
   qimen: ['用神落宫', '关键格局', '值符值使', '时效窗口'],
   tarot: ['核心牌', '主导元素', '关键牌位', '牌阵整体'],
+  daliuren: ['课体格局', '三传走势', '末传落点'],
+  meihua: ['体用关系', '过程互卦', '结果变卦'],
+  hepan: ['日主关系', '夫妻宫', '五行互补', '合冲计数'],
   _default: ['核心结论', '关键条件', '时间窗口'],
 };
 
@@ -72,6 +75,9 @@ const SCHOOL = {
   liuyao: '纳甲六爻、以月建日辰定旺衰',
   qimen: '时家转盘、拆补法起局',
   tarot: 'RWS 牌义、黄金黎明元素对应',
+  daliuren: '四课三传、以日干为我，九宗门取课体',
+  meihua: '体用生克为主、卦辞为辅',
+  hepan: '日柱为主、属相为表层、五行互补加权',
   _default: '本插件默认口径',
 };
 
@@ -1035,6 +1041,308 @@ function tarotAdapter(r, opts) {
 }
 
 /** 其他体系：不硬造判断，用 plainSummary 已有的 lead/advice 摆成最小信封 */
+// —— 大六壬：三传的走势与落点 ——
+// 只判两件事：末传这一宫对「我」（日干）是什么关系，以及三传一路是递生还是递克。
+// 课体名照原样给（贼克、重审这些是占课的门牌），但判断落在人话上。
+const LIUQIN_PLAIN = {
+  妻财: { good: 1, what: '钱与所得', move: '先把手里的账算清再谈下一步' },
+  子孙: { good: 1, what: '解忧与福德', move: '先卸掉一件压着的事' },
+  父母: { good: 1, what: '文书与答复', move: '等那份答复，别硬催' },
+  官鬼: { good: -1, what: '压力与管束', move: '先弄清谁在卡你、卡的哪条规矩' },
+  兄弟: { good: -1, what: '同辈与分利', move: '有人来分利，先把界线说明白' },
+};
+
+function daliurenAdapter(r, opts) {
+  const sc = r.sanChuan || {};
+  const chu = sc.chu || {};
+  const zhong = sc.zhong || {};
+  const mo = sc.mo || {};
+  const geJu = r.geJu || {};
+  const zhiOf = (c) => one(c.zhi) || '—';
+  const moQin = cleanState(mo.liuQin, '未归六亲');
+  const nature = LIUQIN_PLAIN[moQin] || { good: 0, what: '没归到六亲', move: '先回去看起点在哪' };
+  const kongTail = !!one(mo.xunKong);
+  const kongAny = [chu, zhong, mo].filter((c) => one(c.xunKong)).length;
+
+  // 三传五行：初→中、中→末 各算一次生克，连着两次同向才算「一路」
+  const e1 = branchEl(one(chu.zhi));
+  const e2 = branchEl(one(zhong.zhi));
+  const e3 = branchEl(one(mo.zhi));
+  const l1 = relation(e1, e2);
+  const l2 = relation(e2, e3);
+  const flowUp = (l1 === '生' || l1 === '被生') && (l2 === '生' || l2 === '被生');
+  const flowDown = (l1 === '克' || l1 === '被克') && (l2 === '克' || l2 === '被克');
+
+  let sum = nature.good;
+  if (flowUp) sum += 1;
+  if (flowDown) sum -= 1;
+  if (kongTail) sum = -1;
+  const direction = kongTail ? 'negative' : dirSum(sum);
+  const confidence = kongTail ? 'low' : Math.abs(sum) >= 2 ? 'high' : 'medium';
+
+  const headline = fitHeadline(
+    `事情起于${zhiOf(chu)}、经过${zhiOf(zhong)}、落在${zhiOf(mo)}；${kongTail ? '但末传落空，走到那步会改道' : `落点是${nature.what}`}`,
+    `${zhiOf(chu)}起、${zhiOf(zhong)}过、${zhiOf(mo)}落`,
+  );
+
+  const condition = kongTail || direction === 'mixed'
+    ? `若${nature.what}那一头先有回应，则这条路才走得下去`
+    : '';
+
+  const factors = [
+    {
+      id: 'f-geju', name: '课体格局',
+      state: `${cleanState(geJu.name, '未取到课体')}${one(geJu.detail) ? `·${one(geJu.detail)}` : ''}`,
+      impact: clampCn(kongAny ? `盘里有${kongAny}处落空，事情会空一段` : '课体本身没提示改道，按常规推', LIMITS.impact),
+      weight: 0.8, evidence_refs: ['ev-geju'],
+    },
+    {
+      id: 'f-flow', name: '三传走势',
+      state: `${zhiOf(chu)}→${zhiOf(zhong)}→${zhiOf(mo)}`,
+      impact: flowUp ? '一路递生，越往后越顺' : flowDown ? '一路递克，越往后越顶' : '中间会有反复，不会一次成',
+      weight: 0.9, evidence_refs: ['ev-flow'],
+    },
+    {
+      id: 'f-mo', name: '末传落点',
+      state: `${zhiOf(mo)}（${moQin}·${one(mo.jiangFull) || '—'}）`,
+      impact: kongTail ? '末传落空，走到那一步会改道' : `结果落在${nature.what}上`,
+      weight: 0.85, evidence_refs: ['ev-mo'],
+    },
+  ];
+
+  const evidence = [
+    ev('ev-geju', '课体', `${cleanState(geJu.name, '—')}｜${cleanState(geJu.detail, '—')}｜日${one(r.dayGanZhi)}时${one(r.hourZhi)}`),
+    ev('ev-flow', '三传', `初 ${zhiOf(chu)}｜中 ${zhiOf(zhong)}｜末 ${zhiOf(mo)}`),
+    ev('ev-mo', '末传', `${zhiOf(mo)}｜${moQin}｜${one(mo.jiangFull) || '—'}${kongTail ? '｜空亡' : ''}`),
+    ev('ev-yue', '月将', `${one(r.yueJiang && r.yueJiang.name)}（${one(r.yueJiang && r.yueJiang.zhi)}）｜贵人${one(r.guiren && r.guiren.zhi)}`),
+  ];
+
+  const timeline = [
+    {
+      window: `起手：${zhiOf(chu)}（${cleanState(chu.liuQin, '—')}·${one(chu.jiangFull) || '—'}）`,
+      pace: '中',
+      note: '这一步是事情的来处，先认出它',
+    },
+    {
+      window: `落点：${zhiOf(mo)}（${moQin}·${one(mo.jiangFull) || '—'}）`,
+      pace: kongTail ? '缓' : '中',
+      note: kongTail ? '落空，先把条件补齐' : `这步更接近结果：${nature.what}`,
+    },
+  ];
+
+  const advice = [
+    nature.move,
+    flowDown ? '中间已经连着两处相克，别把计划定死' : '按现在的走向，先推最小的那一步',
+  ];
+
+  return {
+    verdict: { headline, direction, confidence, condition },
+    factors, timeline, advice,
+    risk: (kongTail ? '末传落空，走到头会改道' : `${nature.what}这条线上别一次押满`),
+    evidence,
+    conflicts: [
+      { id: 'c-geju', topic: '课体命名', views: [
+        { school: '九宗门（贼克/比用/涉害）', stance: `${cleanState(geJu.name, '—')}·${cleanState(geJu.detail, '—')}` },
+        { school: '另有以课经总目取象', stance: '同一课在不同课经里叫法不同，取象重点也不同' },
+      ], note: '课体只提示事情形态，不直接给结果' },
+    ],
+  };
+}
+
+// —— 梅花：体用生克给方向，互卦看过程，变卦看结果 ——
+function meihuaAdapter(r, opts) {
+  const bu = r.bodyUse || {};
+  const ben = r.ben || {};
+  const hu = r.hu || {};
+  const bian = r.bian || {};
+  const bodyT = one(bu.body && bu.body.trigram) || '—';
+  const useT = one(bu.use && bu.use.trigram) || '—';
+  const relFull = cleanState(bu.relation, '关系未定');
+  // 引擎给的 relation 是整句（「体用比和，事顺而稳」「用克体（土克水），受阻受制」），
+  // 这里只取关系本身：判断和措辞都按这五种分，别拿整句去比对。
+  const relKey = /体克用/.test(relFull) ? '体克用'
+    : /用克体/.test(relFull) ? '用克体'
+      : /体生用/.test(relFull) ? '体生用'
+        : /用生体/.test(relFull) ? '用生体'
+          : /比和/.test(relFull) ? '比和' : '';
+  const relShort = relKey || (relFull.split(/[（(，,]/)[0] || '关系未定').trim();
+  const levelRaw = cleanState(bu.level, '平');
+  const good = /吉/.test(levelRaw) ? 1 : /凶/.test(levelRaw) ? -1 : 0;
+  const movingName = cleanState(r.movingName, '') || (r.moving ? `${r.moving}爻动` : '');
+  const bianSame = one(bian.upper) === one(ben.upper) || one(bian.upper) === one(ben.lower);
+
+  const direction = good > 0 ? 'positive' : good < 0 ? 'negative' : 'mixed';
+  // 变卦与本体同一边（上卦或下卦相同），说明走向没换道，判断更稳
+  const confidence = good === 0 ? 'low' : bianSame ? 'high' : 'medium';
+
+  const headline = fitHeadline(
+    `体${bodyT}、用${useT}，${relShort}；变卦落${one(bian.name) || '—'}`,
+    `${relShort}，方向按这个看`,
+  );
+  const condition = direction === 'mixed' || confidence === 'low'
+    ? `若${relShort === '体克用' ? '你先出手' : '对方那一步先动'}，则这件事才推得动`
+    : '';
+
+  const factors = [
+    {
+      id: 'f-tiyong', name: '体用关系',
+      state: `${relShort}（${bodyT}/${useT}）`,
+      impact: good > 0 ? '这件事在给你，推得动' : good < 0 ? '这件事在耗你，硬推更费' : '两边都不占，看动作',
+      weight: 0.9, evidence_refs: ['ev-tiyong'],
+    },
+    {
+      id: 'f-hu', name: '过程互卦',
+      state: one(hu.name) || '—',
+      impact: '中间这一段的样子，比结果更早出现在现实里',
+      weight: 0.7, evidence_refs: ['ev-hu'],
+    },
+    {
+      id: 'f-bian', name: '结果变卦',
+      state: `${one(ben.name) || '本卦'}→${one(bian.name) || '—'}${movingName ? `（${movingName}）` : ''}`,
+      impact: bianSame ? '变卦没换道，方向还是原来那个' : '变卦换了象，走到后面会转一手',
+      weight: 0.8, evidence_refs: ['ev-bian'],
+    },
+  ];
+
+  const evidence = [
+    ev('ev-tiyong', '体用', `${bodyT}体｜${useT}用｜${relFull}｜判${levelRaw}`),
+    ev('ev-hu', '互卦', one(hu.name) || '—'),
+    ev('ev-bian', '变卦', `${one(ben.name) || '—'} → ${one(bian.name) || '—'}｜${movingName || '无动爻'}`),
+    ev('ev-cuo', '错卦综卦', `错 ${one(r.cuo && r.cuo.name) || '—'}｜综 ${one(r.zong && r.zong.name) || '—'}`),
+  ];
+
+  const timeline = [
+    {
+      window: `过程：${one(hu.name) || '—'}`,
+      pace: '中',
+      note: '互卦这一段是事情中途的样子',
+    },
+    {
+      window: `走向：${one(bian.name) || '—'}`,
+      pace: good < 0 ? '缓' : '中',
+      note: bianSame ? '换爻不换道，方向不变' : '换了象，后面会转一手',
+    },
+  ];
+
+  // 体用四种关系各有各的说法：说反了比不说更糟，所以按关系分而不是只按吉凶分
+  const ADVICE_BY_REL = {
+    体克用: '主动权在你手上，先出手的那步别拖',
+    用克体: '这一路都在耗你，先别加码',
+    体生用: '你在往外给，先看清给的是不是必要的',
+    用生体: '对方在给你，接住就行，别自己先加码',
+    比和: '两边力量相当，靠动作分高下',
+  };
+  const advice = [
+    ADVICE_BY_REL[relKey] || '先换个角度重问一次，看答案稳不稳',
+    good > 0 ? '顺的那一头先动，别等条件齐' : '先把耗你的那一环找出来',
+  ];
+
+  return {
+    verdict: { headline, direction, confidence, condition },
+    factors, timeline, advice,
+    risk: good < 0 ? '这一路都在耗你，硬顶只会更慢' : '变卦换象之后，原来的路数要跟着改',
+    evidence,
+    conflicts: [
+      { id: 'c-quxiang', topic: '取象口径', views: [
+        { school: '体用生克', stance: `体${bodyT}、用${useT}：${relShort}` },
+        { school: '卦辞爻辞', stance: '同一卦按卦辞读，细节可以读出另一套' },
+      ], note: '本插件只取体用这一层，卦辞留着当旁证' },
+    ],
+  };
+}
+
+// —— 合盘：不判配不配，判「怎么相处、哪一块要谈」 ——
+function hepanAdapter(r, opts) {
+  const score = r.score || {};
+  const detail = r.detail || {};
+  const dims = Array.isArray(r.dimensions) ? r.dimensions : [];
+  const dimOf = (k) => dims.find((d) => d && d.key === k) || {};
+  const stem = dimOf('stem');
+  const gong = dimOf('gong');
+  const wx = dimOf('wuxing');
+  const tally = detail.tally || {};
+  const total = num(score.total, 0);
+  const goodN = num(tally.good, 0);
+  const badN = num(tally.bad, 0);
+  const a = r.a || {};
+  const b = r.b || {};
+  const aDm = cleanState(a.dayMaster, '—');
+  const bDm = cleanState(b.dayMaster, '—');
+
+  let sum = 0;
+  if (num(stem.score) > 0) sum += 1; else if (num(stem.score) < 0) sum -= 1;
+  if (num(gong.score) > 0) sum += 1; else if (num(gong.score) < 0) sum -= 1;
+  if (num(wx.score) >= 15) sum += 1; else if (num(wx.score) <= 0) sum -= 1;
+  if (goodN - badN >= 2) sum += 1; else if (badN > goodN) sum -= 1;
+  const direction = dirSum(sum);
+  const confidence = Math.abs(sum) >= 2 ? 'high' : Math.abs(sum) === 1 ? 'medium' : 'low';
+
+  const clashes = (detail.crossBranches || []).filter((c) => c && num(c.score) < 0);
+  const clashText = clashes.length ? `${one(clashes[0].a)}${one(clashes[0].b)}相冲` : '';
+  const levelRaw = cleanState(score.level, '平');
+
+  const headline = fitHeadline(
+    `${aDm}×${bDm}，${levelRaw}；${sum > 0 ? '互补点比冲突点多' : sum < 0 ? '要谈的地方比顺的地方多' : '顺与卡差不多'}`,
+    `${aDm}与${bDm}，看相处方式，不判成败`,
+  );
+  const condition = direction === 'mixed' || confidence === 'low'
+    ? `若${clashText || '那几处节奏差'}能先说开，则相处会顺得多`
+    : '';
+
+  const factors = [
+    {
+      id: 'f-stem', name: '日主关系',
+      state: `${aDm}×${bDm}（${num(stem.score)}）`,
+      impact: num(stem.score) < 0 ? '有一方压力感偏重，得把话说开' : '两边气场不顶，容易接上',
+      weight: 0.9, evidence_refs: ['ev-stem'],
+    },
+    {
+      id: 'f-gong', name: '夫妻宫',
+      state: `${cleanState(a.dayBranch, '—')}×${cleanState(b.dayBranch, '—')}（${num(gong.score)}）`,
+      impact: num(gong.score) > 0 ? '这一块天生有默契，省力' : '这一块没借助力，好坏看经营',
+      weight: 0.8, evidence_refs: ['ev-gong'],
+    },
+    {
+      id: 'f-wx', name: '五行互补',
+      state: `互补分 ${num(wx.score)}`,
+      impact: num(wx.score) >= 15 ? '一方缺的正是另一方多的，能补上' : '互补有限，得靠各自填',
+      weight: 0.85, evidence_refs: ['ev-wx'],
+    },
+    {
+      id: 'f-tally', name: '合冲计数',
+      state: `吉 ${goodN} · 凶 ${badN}`,
+      impact: clashText ? `${clashText}是最明显的一处` : '跨盘没见明显的冲',
+      weight: 0.7, evidence_refs: ['ev-tally'],
+    },
+  ];
+
+  const evidence = [
+    ev('ev-stem', '日主', `${aDm}｜${bDm}｜${cleanState(stem.text, '—')}`),
+    ev('ev-gong', '夫妻宫', `${cleanState(a.dayBranch, '—')}｜${cleanState(b.dayBranch, '—')}｜${cleanState(gong.text, '—')}`),
+    ev('ev-wx', '五行', `${cleanState(wx.text, '—')}｜互补分 ${num(wx.score)}`),
+    ev('ev-tally', '合冲', `${cleanState(tally.lean, '—')}｜吉 ${goodN} 凶 ${badN}｜总分 ${total}`),
+  ];
+
+  const timeline = [];
+  const advice = [
+    sum < 0 ? '先把最容易吵的那件事定个规矩' : '互补点用起来，别各做各的',
+    '一起看这张盘，别一个人看完拿去判断对方',
+  ];
+
+  return {
+    verdict: { headline, direction, confidence, condition },
+    factors, timeline, advice,
+    risk: clashText ? `${clashText}这块节奏相反，别用同一套要求` : '分数只是相对刻度，不是及格线',
+    evidence,
+    conflicts: [
+      { id: 'c-framing', topic: '取法口径', views: [
+        { school: '以日柱为主', stance: `${aDm}×${bDm}，夫妻宫看日支` },
+        { school: '以属相为主', stance: cleanState(detail.yearRelation && detail.yearRelation.label, '属相只影响表层') },
+      ], note: '传统合婚以日柱为主，属相只看表层印象' },
+    ],
+  };
+}
+
 function defaultAdapter(r, opts) {
   const brief = r.brief || {};
   const chips = (brief.chips || []).filter(Boolean).slice(0, 3);
@@ -1071,6 +1379,9 @@ export const ADAPTERS = {
   liuyao: liuyaoAdapter,
   qimen: qimenAdapter,
   tarot: tarotAdapter,
+  daliuren: daliurenAdapter,
+  meihua: meihuaAdapter,
+  hepan: hepanAdapter,
   _default: defaultAdapter,
 };
 
@@ -1167,6 +1478,9 @@ function chartLabel(r, system) {
   if (system === 'liuyao') return one(r.ben && r.ben.name) || '本卦';
   if (system === 'qimen') return `${one(r.ju)}｜${one(r.zhiFu && r.zhiFu.star)}值符`;
   if (system === 'tarot') return `${(r.cards || []).length} 张·${one(r.spread)}`;
+  if (system === 'daliuren') return `${one(r.dayGanZhi)}日 ${one(r.hourZhi)}时｜${one(r.geJu && r.geJu.name)}`;
+  if (system === 'meihua') return `${one(r.ben && r.ben.name)}→${one(r.bian && r.bian.name)}`;
+  if (system === 'hepan') return `${one(r.a && r.a.dayMaster)}×${one(r.b && r.b.dayMaster)}`;
   return one(r.summary).slice(0, 20) || system;
 }
 

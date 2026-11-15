@@ -1,7 +1,11 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 10394,
+  "total": 10575,
   "files": {
+    "adapters-extra.test.mjs": {
+      "pass": 77,
+      "fail": 0
+    },
     "almanac-xiu.test.mjs": {
       "pass": 60,
       "fail": 0
@@ -162,6 +166,10 @@
       "pass": 22,
       "fail": 0
     },
+    "compose.test.mjs": {
+      "pass": 63,
+      "fail": 0
+    },
     "constitution.test.mjs": {
       "pass": 89,
       "fail": 0
@@ -215,7 +223,7 @@
       "fail": 0
     },
     "envelope.test.mjs": {
-      "pass": 92,
+      "pass": 125,
       "fail": 0
     },
     "event-prompt.test.mjs": {
@@ -223,7 +231,7 @@
       "fail": 0
     },
     "evidence.test.mjs": {
-      "pass": 40,
+      "pass": 44,
       "fail": 0
     },
     "facets.test.mjs": {
@@ -423,7 +431,7 @@
       "fail": 0
     },
     "panel-chart-first.test.mjs": {
-      "pass": 33,
+      "pass": 36,
       "fail": 0
     },
     "panel-first-screen.test.mjs": {
@@ -439,7 +447,7 @@
       "fail": 0
     },
     "perf-instrumentation.test.mjs": {
-      "pass": 54,
+      "pass": 55,
       "fail": 0
     },
     "perf.test.mjs": {
