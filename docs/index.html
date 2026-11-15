@@ -478,10 +478,14 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <label class="field" id="for-gender">性别
       <select id="gender"><option value="female">女</option><option value="male">男</option></select>
     </label>
-    <div class="grp" id="for-bazi" style="display:none">
+    <!-- 出生地 / 真太阳时 / 联网：所有要「出生信息」的体系都用得上（八字、紫微、合盘、人生K线、风水、起名） -->
+    <div class="grp" id="for-solar" style="display:none">
       <label class="field">出生地<input id="addr" placeholder="如 河北石家庄 / 成都"></label>
       <label class="field check"><input id="ts" type="checkbox" checked> 真太阳时</label>
       <label class="field check" title="开启后会请求 OpenStreetMap"><input id="online" type="checkbox"> 联网精确到区县</label>
+    </div>
+    <!-- 晚子时换日与交叉验证是八字专属：紫微按自己的闰月/晚子时口径走，风水起名不看这两项 -->
+    <div class="grp" id="for-bazi" style="display:none">
       <label class="field check" title="23:00–23:59 出生时：勾选=按次日日柱起时柱（晚子时换日）；不勾=仍用当日日柱"><input id="latezi" type="checkbox" checked> 晚子时换日</label>
       <label class="field check" title="同一份出生信息再排另一套盘，并列对照"><input id="cross" type="checkbox"> 八字 × 紫微 交叉验证</label>
     </div>
@@ -41940,7 +41944,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     document.querySelectorAll('.tool').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     scrollTabIntoView(document.querySelector('.tab.on'));
-    el('for-bazi').style.display = birth ? '' : 'none';
+    // 出生信息块拆成两层：出生地/真太阳时/联网所有 birth 类都要；
+    // 晚子时换日与八字×紫微交叉验证只对八字有意义，别让选风水、起名的人也看到它们。
+    const solar = el('for-solar');
+    if (solar) solar.style.display = birth ? '' : 'none';
+    el('for-bazi').style.display = tab === 'bazi' ? '' : 'none';
     el('for-gender').style.display = birth ? '' : 'none';
     el('for-liuyao').style.display = tab === 'liuyao' ? '' : 'none';
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';

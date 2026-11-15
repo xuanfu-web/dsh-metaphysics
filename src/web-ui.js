@@ -1209,7 +1209,11 @@
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     document.querySelectorAll('.tool').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
     scrollTabIntoView(document.querySelector('.tab.on'));
-    el('for-bazi').style.display = birth ? '' : 'none';
+    // 出生信息块拆成两层：出生地/真太阳时/联网所有 birth 类都要；
+    // 晚子时换日与八字×紫微交叉验证只对八字有意义，别让选风水、起名的人也看到它们。
+    const solar = el('for-solar');
+    if (solar) solar.style.display = birth ? '' : 'none';
+    el('for-bazi').style.display = tab === 'bazi' ? '' : 'none';
     el('for-gender').style.display = birth ? '' : 'none';
     el('for-liuyao').style.display = tab === 'liuyao' ? '' : 'none';
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';

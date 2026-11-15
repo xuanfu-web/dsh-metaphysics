@@ -268,19 +268,21 @@ dev 段收进 `<details>` 仍留在 DOM 里，会被打印样式、存长图（`
 
 ## 6. 输入流程
 
-### P0-21 表单从 SYSTEM_PARAMS 生成
+### P0-21 表单按体系能力拆块（部分已落地）
 
-问题：单页表单写死 DOM（`build-html.mjs:472-551`），React 面板另有一套。加参数要改三处（`index.js` 的 `SYSTEM_PARAMS`、`buildProperties`、还有 HTML）。
+原计划写的「表单从 `SYSTEM_PARAMS` 生成」有个前提错误：这个仓库里**没有** `SYSTEM_PARAMS`（`engine/` `src/` `tools/` 全仓 grep 无此标识符）。参数校验散在各体系 `compute` 里，靠报错反推（`fengshui` 报「gender 必须是 male 或 female」、`name` 报「缺少名字：请给 givenName」）。所以生成式表单没有可读取的元数据源，先走拆块。
 
-目标：`SYSTEM_PARAMS` 补 `ui: { widget, label, hint, default, tier }`，单页与面板都从它生成。
+单页表单本来就是按体系分块显隐的（`for-liuyao / for-hepan / for-qimen / for-meihua / for-ask`，`web-ui.js:1214-1225`），粒度错在**一个块塞了多个体系的字段**：`for-bazi` 同时装了出生地、真太阳时、联网、晚子时换日、八字×紫微交叉验证，而它被 `birth` 一次全部打开——选风水、起名、人生 K 线的人也会看到「八字 × 紫微 交叉验证」。
 
-分批：先动 `dir / question / gender`，跑通再加 `latezi / truesolar`。
+已落地（0.82.0 第三批）：拆成 `for-solar`（出生地 / 真太阳时 / 联网，所有 birth 类都要）与 `for-bazi`（晚子时换日 / 交叉验证，只有八字要，`display` 跟 `tab === 'bazi'`）。实测五档：风水 → 有 solar、无 bazi 块；八字 → 全有；黄历 → 只有日期；塔罗 → 全无；合盘 → solar+gender，无 hourunknown。
+
+剩余：面板侧（`src/app.js`）本来就是按体系分支渲染（`671` 起体系元数据表、`1149` K 线、`1151` 合盘、`1166` 交叉验证只给八字/紫微），不需要跟着改。
 
 ### P0-22 起卦类与命盘类真分流
 
-现状：`TIME_KIND`（`app.js:737`）已分 cast / birth / date / none，`web-ui.js:333` 另有一份，但表单结构不变，只隐藏了 `for-hourunknown`。
+现状：`TIME_KIND`（`app.js:752`，单页在 `web-ui.js:333` 另有一份）已分 cast / birth / date / none，表单也按块显隐了，但**切换体系时不自查旧值**：从八字切到黄历，性别留在 DOM 里被带进参数；从奇门切到塔罗，日期同理。
 
-目标：选起卦体系 → 只剩「此刻起卦」和「指定时刻」二选一，不出现生辰与性别；选命盘类 → 不出现起卦行。切换时清掉不适用字段（现在会残留）。
+目标：切体系时清掉不适用字段（不是只 `display:none`），并在 `applyDateTime` 里按 `TIME_KIND` 决定「用示例 / 用此刻 / 不用」。已做「出生信息照抄上一次」的档案机制，要保证清空不影响档案。
 
 ### P0-23 校验与修正回显
 
