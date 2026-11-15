@@ -735,7 +735,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：193 个测试文件 / 10900 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：194 个测试文件 / 10933 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -41575,6 +41575,30 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   }
 
   // 上一次的卦象：改「所问之事 / 询问方向」时用它重出解读，不重摇一卦
+  //
+  // 这张对象以前是「谁想挂什么就挂什么」：算完先赋十来个字段，paint 里回填 it，
+  // paint 回来再回填 perf。加字段不留痕迹，读到没赋过值的字段只会得到 undefined，
+  // 而 paint 里的 undefined 不会报错，只会渲染出空白——错误被吃掉。
+  // 所以字段在这里一次声明（LAST_FIELDS 就是白名单），谁要加字段先加进表里。
+  // 分三类：结果（r/it/html/perf）、这一盘的输入（date/time/gender/address/
+  // trueSolar/lateZi）、附加块（trend/caliber/shadowDiff/chenggu/marriage/life）。
+  // 输入必须随盘存：档案/表单在排完之后还能改，只读表单会把生时校正贴到另一张盘上。
+  const LAST_FIELDS = [
+    'r', 'it', 'html', 'perf',
+    'tab', 'timed', 'date', 'time', 'gender', 'address', 'trueSolar', 'lateZi',
+    'trend', 'caliber', 'shadowDiff', 'chenggu', 'marriage', 'life'
+  ];
+  function makeLast(p) {
+    const o = {};
+    for (const k of LAST_FIELDS) {
+      if (p && Object.prototype.hasOwnProperty.call(p, k)) o[k] = p[k];
+      else if (k === 'it' || k === 'perf' || k === 'html' || k === 'r') o[k] = k === 'r' ? null : '';
+      else if (k === 'trueSolar' || k === 'lateZi') o[k] = true;
+      else if (k === 'timed') o[k] = false;
+      else o[k] = '';
+    }
+    return o;
+  }
   let last = null;
   /** 把当前盘 + 问题打包成问事提示并复制：方向映射到问事类型，时间默认已知（盘已起出） */
   function copyAskPrompt(btn) {
@@ -42144,11 +42168,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       pastMarks = {}; pastFit = null; rectOut = null;
       // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
       // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
+      last = makeLast({ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
         gender: args.gender || el('gender').value,
         address: typeof args.address === 'string' ? args.address : '',
         trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,
-        lateZi: typeof args.lateZi === 'boolean' ? args.lateZi : true };
+        lateZi: typeof args.lateZi === 'boolean' ? args.lateZi : true });
       const paintStart = mpNow();
       paint();
       // 历史在这里记：这是「排完一次盘」的唯一出口，带上盘号与这次用的表单值

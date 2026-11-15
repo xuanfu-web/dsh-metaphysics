@@ -24,5 +24,5 @@ ok('面板渲染传称骨', /PP\.baziHTML\(result\.r, \{ chenggu: result\.chengg
 
 const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
 ok('单页同样只在八字且有时刻时嵌称骨', ui.includes("if (tab === 'bazi' && !hourUnknown && window.Engine.buildChenggu)"));
-ok('单页 last 保留 chenggu', /last = \{ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu[,}]/.test(ui));
+ok('单页 last 保留 chenggu', /last = makeLast\(\{ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu[,}]/.test(ui));
 ok('单页渲染传称骨', /window\.__PP\.baziHTML\(r, \{ chenggu[,}]/.test(ui));

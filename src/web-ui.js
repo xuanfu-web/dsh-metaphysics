@@ -667,6 +667,30 @@
   }
 
   // 上一次的卦象：改「所问之事 / 询问方向」时用它重出解读，不重摇一卦
+  //
+  // 这张对象以前是「谁想挂什么就挂什么」：算完先赋十来个字段，paint 里回填 it，
+  // paint 回来再回填 perf。加字段不留痕迹，读到没赋过值的字段只会得到 undefined，
+  // 而 paint 里的 undefined 不会报错，只会渲染出空白——错误被吃掉。
+  // 所以字段在这里一次声明（LAST_FIELDS 就是白名单），谁要加字段先加进表里。
+  // 分三类：结果（r/it/html/perf）、这一盘的输入（date/time/gender/address/
+  // trueSolar/lateZi）、附加块（trend/caliber/shadowDiff/chenggu/marriage/life）。
+  // 输入必须随盘存：档案/表单在排完之后还能改，只读表单会把生时校正贴到另一张盘上。
+  const LAST_FIELDS = [
+    'r', 'it', 'html', 'perf',
+    'tab', 'timed', 'date', 'time', 'gender', 'address', 'trueSolar', 'lateZi',
+    'trend', 'caliber', 'shadowDiff', 'chenggu', 'marriage', 'life'
+  ];
+  function makeLast(p) {
+    const o = {};
+    for (const k of LAST_FIELDS) {
+      if (p && Object.prototype.hasOwnProperty.call(p, k)) o[k] = p[k];
+      else if (k === 'it' || k === 'perf' || k === 'html' || k === 'r') o[k] = k === 'r' ? null : '';
+      else if (k === 'trueSolar' || k === 'lateZi') o[k] = true;
+      else if (k === 'timed') o[k] = false;
+      else o[k] = '';
+    }
+    return o;
+  }
   let last = null;
   /** 把当前盘 + 问题打包成问事提示并复制：方向映射到问事类型，时间默认已知（盘已起出） */
   function copyAskPrompt(btn) {
@@ -1236,11 +1260,11 @@
       pastMarks = {}; pastFit = null; rectOut = null;
       // 生时校正要按「这张盘自己的输入」反推：档案/表单在排完之后还能改，
       // 只读 last.date 而性别、出生地读表单，候选时辰就会贴到另一张盘上
-      last = { r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
+      last = makeLast({ r, html, tab, date, time, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
         gender: args.gender || el('gender').value,
         address: typeof args.address === 'string' ? args.address : '',
         trueSolar: typeof args.trueSolar === 'boolean' ? args.trueSolar : true,
-        lateZi: typeof args.lateZi === 'boolean' ? args.lateZi : true };
+        lateZi: typeof args.lateZi === 'boolean' ? args.lateZi : true });
       const paintStart = mpNow();
       paint();
       // 历史在这里记：这是「排完一次盘」的唯一出口，带上盘号与这次用的表单值
