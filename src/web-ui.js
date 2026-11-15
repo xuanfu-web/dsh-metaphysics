@@ -808,25 +808,38 @@
 
   // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
   // 打印样式在 build-html.mjs 的 @media print 里（隐藏输入区与按钮，只留抬头与结果）。
-  /** 反馈邮箱：把版本、体系、输入预先写进正文，用户只需补「哪里不对」 */
+  /** 反馈分类：不在页面上摆按钮（入口只留一个「有疑问？」），写进邮件正文让用户打勾 */
+  const FB_KINDS = ['排错了', '看不懂', '建议', '其他'];
+
   function feedbackMail() {
     const v = typeof window.__MP_VER === 'string' ? window.__MP_VER : '';
+    const shortId = String((last && last.r && last.r.shortId) || '').replace(/^LY-/, '');
     const input = [
       (last && last.date) || '',
       (last && last.time) || '',
       (last && last.gender) || '',
     ].filter(Boolean).join(' ');
+    const ts = el('ts');
+    const lz = el('latezi');
+    const hu = el('hourunknown');
     const body = [
       '版本：' + (v || '未知'),
-      '体系：' + ((last && last.tab) || '无'),
+      '体系：' + ((last && (entryLabels()[last.tab] || last.tab)) || '无'),
+      '盘号：' + (shortId || '无'),
       '输入：' + (input || '无'),
+      '出生地：' + ((last && last.address) || '未填')
+        + (ts ? '（真太阳时 ' + (ts.checked ? '开' : '关') + '）' : ''),
+      '开关：晚子时换日 ' + (lz ? (lz.checked ? '开' : '关') : '—')
+        + '／时辰未知 ' + (hu && hu.checked ? '是' : '否'),
+      '',
+      '分类（留一个，其余删掉）：' + FB_KINDS.join(' / '),
       '',
       '哪里不对 / 哪里没看懂：',
       '',
       '（截图可以直接贴在附件里）',
     ].join('\n');
     return 'mailto:1129440028@qq.com'
-      + '?subject=' + encodeURIComponent('[反馈] 烛微命盘' + (v ? ' v' + v : ''))
+      + '?subject=' + encodeURIComponent('[反馈] 烛微命盘' + (v ? ' v' + v : '') + (shortId ? ' ' + shortId : ''))
       + '&body=' + encodeURIComponent(body);
   }
 
@@ -851,7 +864,7 @@
       <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存入卦例库</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
-      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、体系与输入，直接写哪里不对就行">1129440028@qq.com</a></span>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a></span>
     </div>${nudgeHTML()}`;
   }
 

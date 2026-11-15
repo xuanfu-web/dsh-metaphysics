@@ -181,7 +181,12 @@ ok('独立页在提示行给出反馈邮箱（底部小字，不做按钮）',
   /class="hint">[\s\S]{0,300}?<a href="\$\{feedbackMail\(\)\}"/.test(web)
   && /'mailto:1129440028@qq\.com'/.test(web));
 ok('反馈邮件预填版本与体系，用户只需写哪里不对',
-  /'版本：' \+ \(v \|\| '未知'\)/.test(web) && /'体系：' \+ \(\(last && last\.tab\) \|\| '无'\)/.test(web));
+  /'版本：' \+ \(v \|\| '未知'\)/.test(web) && /'体系：' \+ \(\(last && \(entryLabels\(\)\[last\.tab\] \|\| last\.tab\)\) \|\| '无'\)/.test(web));
+ok('反馈邮件还带盘号与开关（照着盘号就能复现那张盘）',
+  /'盘号：' \+ \(shortId \|\| '无'\)/.test(web) && /'开关：晚子时换日 '/.test(web)
+  && /replace\(\/\^LY-\/, ''\)/.test(web));
+ok('分类写进邮件正文让人打勾，不在页面上摆按钮',
+  /FB_KINDS\.join\(' \/ '\)/.test(web) && !/data-act="mail"/.test(web) && !/fb-kinds/.test(web));
 ok('独立页复制走同一份包', /window\.Engine\.askPackages/.test(web));
 
 const build = read('tools/build-client.mjs');
