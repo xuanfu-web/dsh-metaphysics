@@ -2024,12 +2024,23 @@ function shortErrId(msg) {
   return (h >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
 }
 
+// 有结论卡、没有正文 builder 的体系。这些体系不产「解析与详解」段落，但方向是算得出来的。
+const ENVELOPE_ONLY = ['hepan'];
+
 export function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const ask = askOf(opts);
   if (r.system === 'qimen') return withReportMeta(interpretQimen(r, opts), r, ask);
   const fn = BUILDERS[r.system];
-  if (!fn) return null;
+  if (!fn) {
+    // 合盘：有真盘面、有可判的方向（双方日主、夫妻宫、五行互补、合冲计数），
+    // 只是还没有一套「分维度逐段推演」的正文。硬塞一份空正文，首屏会多出一列列
+    // 空标题；只给结论卡，正文位置留给下面的合盘分数卡。
+    if (ENVELOPE_ONLY.indexOf(r.system) >= 0) {
+      return withReportMeta({ lead: '', dimensions: [], sections: [], outline: [], tables: [] }, r, ask);
+    }
+    return null;
+  }
   let body;
   try {
     body = fn(r, ask);

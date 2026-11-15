@@ -489,6 +489,12 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 
 维持 default 的四个是刻意不动：趋势是八字的下游产物、体质与 MBTI 同为自评问卷、五运六气与太乙的「主客算」本仓未收录——给它们编方向比留白更错。
 
+**合盘曾经算出来却不显示**：`interpret()` 里是 `const fn = BUILDERS[r.system]; if (!fn) return null;`，而合盘不在 `BUILDERS`——它拿到 null，`hepanAdapter` 算出的方向与因子永远没机会渲染。`test/adapters-extra.test.mjs` 直接调 `buildEnvelope` 是绿的，产品路径上却是死的：单测验的是「adapter 会不会算」，没验「结果有没有人渲染」。
+
+已加 `const ENVELOPE_ONLY = ['hepan'];` 白名单：没有正文 builder 的体系照样走 `withReportMeta`，返回一张「有结论卡、无正文段落」的 `it`（`sections/dimensions/outline/tables` 全空，渲染器各自按空处理，不会多出空标题）。实机合盘首屏现在是「丁火×癸水，中等偏顺；互补点比冲突点多 / 偏顺 / 把握 高」+ 四条因子（日主关系 / 夫妻宫 / 五行互补 / 合冲计数），下面才是分数卡。
+
+这条的教训：**测试绿不等于产品可见**。adapter 级断言只能证明「算得对」，证明不了「有人调它」；后者要靠 22 个体系逐个实机排一遍。
+
 ---
 
 ## 10. 实施顺序与闸
