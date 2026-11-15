@@ -85,3 +85,16 @@ ok('塔罗有知识卡时出处段出现', PP.interpretHTML(tarot.it, { folded: 
 
 ok('null 解析返回空串', PP.interpretHTML(null) === '');
 ok('空解析返回空串', PP.interpretHTML({ dimensions: [] }) === '');
+
+// ── 4. 锚点唯一：奇门自己有一段 key 就叫 facts，事实层块不能也叫 mp-sec-facts ──
+{
+  const q = PP.interpretHTML(qimen.it, { folded: false });
+  const ids = [...q.matchAll(/id="([a-z0-9-]+)"/g)].map((m) => m[1]);
+  eq('渲染结果里 id 不重复（奇门）', ids.filter((x, i) => ids.indexOf(x) !== i).join(','), '');
+  ok('事实层块用 mp-facts 做锚点', q.includes('id="mp-facts"'));
+  ok('正文角标指向 mp-facts', q.includes('href="#mp-facts"'));
+  ok('奇门自己的 facts 段仍占 mp-sec-facts', q.includes('id="mp-sec-facts"'));
+  const b = PP.interpretHTML(built.find((x) => x.tag === 'bazi').it, { folded: false });
+  const bIds = [...b.matchAll(/id="([a-z0-9-]+)"/g)].map((m) => m[1]);
+  eq('渲染结果里 id 不重复（八字）', bIds.filter((x, i) => bIds.indexOf(x) !== i).join(','), '');
+}

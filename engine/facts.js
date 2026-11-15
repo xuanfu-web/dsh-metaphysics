@@ -7,10 +7,20 @@
 // - 只读 r 与 env，不做计算、不抛异常：缺字段就跳过，宁可少一条事实，也不编。
 
 const one = (v) => (v === null || v === undefined ? '' : String(v).trim());
-const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+// Number(null) 是 0、Number('') 也是 0：不先挡掉空值，num() 会把「没有」变成「第 0」。
+const num = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+// 拼 value 时常有「这一项没有」的位置，会留下「｜｜」这种空段；清掉，别让事实看起来像坏数据。
+function tidy(v) {
+  return String(v).split('｜').map((x) => x.trim()).filter(Boolean).join('｜');
+}
 
 function add(list, id, label, value, group) {
-  let v = one(value);
+  let v = tidy(one(value));
   if (!v) return;
   // 事实是「指着说一句话」，不是段落：超长的裁掉，别让事实层变成第二个正文
   if (v.length > 160) v = `${v.slice(0, 158)}…`;
@@ -23,6 +33,17 @@ function genericFacts(r, env, list) {
   for (let i = 0; i < evs.length; i += 1) {
     const e = evs[i] || {};
     add(list, one(e.id) || `f-generic-${i + 1}`, one(e.label), one(e.detail), '盘面');
+  }
+}
+
+// 专用事实之后再并一次 evidence：同一个 id 以专用事实为准。
+function mergeEvidence(env, list) {
+  const evs = Array.isArray(env && env.evidence) ? env.evidence : [];
+  for (let i = 0; i < evs.length; i += 1) {
+    const e = evs[i] || {};
+    const id = one(e.id) || `f-ev-${i + 1}`;
+    if (list.some((x) => x.id === id)) continue;
+    add(list, id, one(e.label), one(e.detail), '盘面');
   }
 }
 
@@ -112,18 +133,153 @@ function baziFacts(r, env, list) {
   const ryTxt = [one(ry.activeElement), one(ry.active), rySeg === null ? '' : `第 ${rySeg} 日起`].filter(Boolean).join('｜');
   if (ryTxt) add(list, 'f-bazi-renyuan', '人元司令', ryTxt, '四柱');
 
-  // 兜底：把 envelope 的证据也并进来（同 id 的以专用事实为准，故先占位后去重）
-  const evs = Array.isArray(env && env.evidence) ? env.evidence : [];
-  for (let i = 0; i < evs.length; i += 1) {
-    const e = evs[i] || {};
-    const id = one(e.id) || `f-bazi-ev-${i + 1}`;
-    if (list.some((x) => x.id === id)) continue;
-    add(list, id, one(e.label), one(e.detail), '盘面');
-  }
+  // 兜底：把 envelope 的证据也并进来（同 id 的以专用事实为准）
+  mergeEvidence(env, list);
 }
 
-const BUILDERS = { bazi: baziFacts };
+// 紫微看的是「哪个宫坐了什么星」，所以事实按宫位组织：命宫、身宫、十四主星落宫、煞星落宫。
+// 四化单独立一组——它是紫微里最常被引用的判断入口，混在宫位里就不好引。
+function ziweiFacts(r, env, list) {
+  const palaces = Array.isArray(r.palaces) ? r.palaces : [];
+  const soul = r.soul || {};
+  const body = r.body || {};
+  const soulPalace = palaces.find((p) => p && p.isSoul) || {};
+  const soulStars = (Array.isArray(soulPalace.stars) ? soulPalace.stars : []).filter((s) => s && s.type === '主星');
+  const soulMain = soulStars.map((s) => `${one(s.name)}${one(s.brightness) ? `（${one(s.brightness)}）` : ''}${one(s.mutagen) ? `化${one(s.mutagen)}` : ''}`).join('、');
+  add(list, 'f-ziwei-soul', '命宫', [one(soul.branch), one(soul.ganzhi), soulMain || '无主星'].filter(Boolean).join('｜'), '宫位');
+  add(list, 'f-ziwei-body', '身宫', [one(body.branch), one(body.lands)].filter(Boolean).join('｜'), '宫位');
 
+  const bu = r.bureau || {};
+  add(list, 'f-ziwei-bureau', '五行局', [one(bu.name), num(bu.number) === null ? '' : `${num(bu.number)} 局`].filter(Boolean).join('｜'), '盘面');
+  add(list, 'f-ziwei-masters', '命主身主', [one(r.lifeMaster) ? `命主 ${one(r.lifeMaster)}` : '', one(r.bodyMaster) ? `身主 ${one(r.bodyMaster)}` : ''].filter(Boolean).join('｜'), '盘面');
+
+  const sihua = [];
+  for (let i = 0; i < palaces.length; i += 1) {
+    const p = palaces[i] || {};
+    const stars = Array.isArray(p.stars) ? p.stars : [];
+    for (let j = 0; j < stars.length; j += 1) {
+      if (stars[j] && stars[j].mutagen) sihua.push(`${one(stars[j].name)}化${one(stars[j].mutagen)}（${one(p.palace)}）`);
+    }
+  }
+  if (sihua.length) add(list, 'f-ziwei-sihua', '生年四化', sihua.join('、'), '四化');
+
+  const dist = [];
+  const sha = [];
+  for (let i = 0; i < palaces.length; i += 1) {
+    const p = palaces[i] || {};
+    const stars = Array.isArray(p.stars) ? p.stars : [];
+    const mains = stars.filter((s) => s && s.type === '主星').map((s) => one(s.name)).filter(Boolean);
+    if (mains.length) dist.push(`${one(p.palace)} ${mains.join('')}`);
+    const shas = stars.filter((s) => s && s.type === '煞星').map((s) => one(s.name)).filter(Boolean);
+    if (shas.length) sha.push(`${one(p.palace)} ${shas.join('')}`);
+  }
+  if (dist.length) add(list, 'f-ziwei-mainstars', '十四主星落宫', dist.join('｜'), '宫位');
+  if (sha.length) add(list, 'f-ziwei-sha', '煞星落宫', sha.join('｜'), '宫位');
+
+  const pats = Array.isArray(r.patterns) ? r.patterns : [];
+  const good = pats.filter((p) => p && p.tone === 'good').map((p) => `${one(p.name)}${p.status === 'broken' ? '（已破）' : ''}`);
+  const bad = pats.filter((p) => p && p.tone !== 'good').map((p) => one(p.name)).filter(Boolean);
+  if (good.length) add(list, 'f-ziwei-pattern-good', '吉格', good.join('、'), '格局');
+  if (bad.length) add(list, 'f-ziwei-pattern-bad', '需留意格局', bad.join('、'), '格局');
+
+  const age = num(r.liunian && r.liunian[0] && r.liunian[0].age);
+  const dxList = Array.isArray(r.daxianList) ? r.daxianList : [];
+  let dx = null;
+  if (age !== null) {
+    for (let i = 0; i < dxList.length; i += 1) {
+      const ages = dxList[i] && dxList[i].ages;
+      if (Array.isArray(ages) && age >= ages[0] && age <= ages[1]) dx = dxList[i];
+    }
+  }
+  if (!dx && dxList.length) dx = dxList[0];
+  if (dx) {
+    add(list, 'f-ziwei-daxian', '当前大限', [Array.isArray(dx.ages) ? `${dx.ages[0]}–${dx.ages[1]} 岁` : '', one(dx.palace), one(dx.ganzhi), (Array.isArray(dx.mutagen) ? dx.mutagen : []).join('、')].filter(Boolean).join('｜'), '大限');
+  }
+
+  const ln = Array.isArray(r.liunian) ? r.liunian[0] : null;
+  if (ln) {
+    const lp = ln.lifePalace || {};
+    add(list, 'f-ziwei-flow', '当前流年', [num(ln.age) === null ? '' : `${num(ln.age)} 岁`, one(ln.year), one(ln.ganzhi), one(lp.palace) ? `流年命宫 ${one(lp.palace)}` : ''].filter(Boolean).join('｜'), '流年');
+  }
+  const fh = (r.flow && r.flow.year && Array.isArray(r.flow.year.mutagenHits)) ? r.flow.year.mutagenHits : [];
+  if (fh.length) {
+    add(list, 'f-ziwei-flow-sihua', '流年四化', fh.map((h) => `${one(h.star)}化${one(h.type)}入${one(h.palace)}`).join('、'), '四化');
+  }
+
+  mergeEvidence(env, list);
+}
+
+// 六爻：一张盘就是六爻的阴阳与所纳干支，所以事实按「卦 → 爻 → 世应 → 日月」组织。
+// 用神依所问之事而定，引擎不预先指定，所以这里不编「用神是哪一爻」。
+function liuyaoFacts(r, env, list) {
+  const ben = r.ben || {};
+  const bian = r.bian || {};
+  const body = r.body || {};
+  const bBody = body.ben || {};
+  const lines = Array.isArray(ben.lines) ? ben.lines : [];
+  add(list, 'f-liuyao-hex', '本卦', [one(ben.name), one(ben.upper) && `${one(ben.upper)}上${one(ben.lower)}下`, one(ben.palace) && `${one(ben.palace)}（${one(ben.palaceElement)}）`].filter(Boolean).join('｜'), '卦');
+  if (one(bian.name)) add(list, 'f-liuyao-bian', '变卦', [one(bian.name), one(bian.palace) && `${one(bian.palace)}（${one(bian.palaceElement)}）`].filter(Boolean).join('｜'), '卦');
+  const chongHe = [bBody.chong ? '六冲' : '', bBody.he ? '六合' : ''].filter(Boolean).join('、');
+  if (chongHe) add(list, 'f-liuyao-chonghe', '卦体', [chongHe, Array.isArray(bBody.inner) ? `内卦 ${bBody.inner.join('')}` : '', Array.isArray(bBody.outer) ? `外卦 ${bBody.outer.join('')}` : ''].filter(Boolean).join('｜'), '卦');
+  const shi = num(ben.shi);
+  const ying = num(ben.ying);
+  const at = (n) => lines.find((l) => num(l.position) === n);
+  const shiL = at(shi);
+  const yingL = at(ying);
+  if (shiL || yingL) {
+    add(list, 'f-liuyao-shiying', '世应', [
+      shiL ? `世 ${one(shiL.name)}${one(shiL.liuqin)}（${one(shiL.ganzhi)}）` : '',
+      yingL ? `应 ${one(yingL.name)}${one(yingL.liuqin)}（${one(yingL.ganzhi)}）` : '',
+    ].filter(Boolean).join('｜'), '世应');
+  }
+  const moving = lines.filter((l) => l && l.moving);
+  if (moving.length) {
+    add(list, 'f-liuyao-moving', '动爻', moving.map((l) => `${one(l.name)}${one(l.liuqin)}化${one(l.liushen)}`).join('、'), '动爻');
+  }
+  const all = lines.map((l) => `${one(l.name)}${one(l.yinYang)}${one(l.liuqin)}${one(l.liushen)}`);
+  if (all.length) add(list, 'f-liuyao-liuqin', '六亲六神', all.join('｜'), '爻');
+  const gz = r.dayGanZhi || {};
+  const kong = Array.isArray(r.xunKong) ? r.xunKong.join('') : '';
+  add(list, 'f-liuyao-day', '日辰旬空', [one(gz.name) && `${one(gz.name)}日`, one(r.xunShou) ? `${one(r.xunShou)}旬` : '', kong ? `空亡 ${kong}` : ''].filter(Boolean).join('｜'), '日月');
+  const hs = r.hexStrength || {};
+  const linesS = Array.isArray(hs.lines) ? hs.lines : [];
+  const kongN = linesS.filter((x) => x && x.kong).length;
+  const dayE = hs.day || {};
+  if (linesS.length || one(dayE.branch)) {
+    add(list, 'f-liuyao-strength', '旺衰', [one(dayE.branch) && `日支 ${one(dayE.branch)}（${one(dayE.element)}）`, kongN ? `${kongN} 爻落空` : '', hs.month === null || hs.month === undefined ? '未给月建，只按日辰判' : ''].filter(Boolean).join('｜'), '旺衰');
+  }
+  mergeEvidence(env, list);
+}
+
+// 奇门：事实集中在「局、值符值使、九宫配置、刑墓空马」——这四样决定后面所有判断。
+function qimenFacts(r, env, list) {
+  const sz = r.siZhu || {};
+  add(list, 'f-qimen-sizhu', '四柱', [one(sz.year), one(sz.month), one(sz.day), one(sz.time)].filter(Boolean).join(' '), '盘面');
+  add(list, 'f-qimen-ju', '局', [one(r.ju), one(r.yuan), one(r.jieqi) ? `节气 ${one(r.jieqi)}` : '', one(r.juMethod)].filter(Boolean).join('｜'), '盘面');
+  const zf = r.zhiFu || {};
+  if (one(zf.star)) add(list, 'f-qimen-zhifu', '值符', [one(zf.star), num(zf.gong) === null ? '' : `${num(zf.gong)} 宫`, num(zf.yuanGong) === null ? '' : `原宫 ${num(zf.yuanGong)}`].filter(Boolean).join('｜'), '值符');
+  const zs = r.zhiShi || {};
+  if (one(zs.gate)) add(list, 'f-qimen-zhishi', '值使', [one(zs.gate), num(zs.gong) === null ? '' : `${num(zs.gong)} 宫`].filter(Boolean).join('｜'), '值使');
+  const palaces = Array.isArray(r.palaces) ? r.palaces : [];
+  const brief = palaces.filter((p) => p && num(p.palace) !== 5).map((p) => `${num(p.palace)}宫 ${one(p.star)}${one(p.gate)}${one(p.god)}`);
+  if (brief.length) add(list, 'f-qimen-palaces', '九宫配置', brief.join('｜'), '九宫');
+  const kw = Array.isArray(r.kongWang) ? r.kongWang.join('') : '';
+  const ma = r.ma || {};
+  add(list, 'f-qimen-kongma', '空亡马星', [kw ? `空亡 ${kw}` : '', one(ma.zhi) ? `马星 ${one(ma.zhi)}（${num(ma.gong)} 宫）` : ''].filter(Boolean).join('｜'), '九宫');
+  const cd = r.conditions || {};
+  const parts = [];
+  if (Array.isArray(cd.jiXing) && cd.jiXing.length) parts.push(`击刑 ${cd.jiXing.map((x) => `${num(x.palace)}宫${one(x.stem)}`).join('、')}`);
+  if (Array.isArray(cd.ruMu) && cd.ruMu.length) parts.push(`入墓 ${cd.ruMu.length} 处`);
+  if (Array.isArray(cd.liuYiRuMu) && cd.liuYiRuMu.length) parts.push(`六仪入墓 ${cd.liuYiRuMu.length} 处`);
+  if (parts.length) add(list, 'f-qimen-conditions', '刑墓', parts.join('｜'), '条件');
+  const st = r.states || {};
+  const gs = st.gate || {};
+  const seg = ['旺', '相', '休', '囚', '死'].filter((k) => Array.isArray(gs[k]) && gs[k].length).map((k) => `${k} ${gs[k].join('')}`);
+  if (seg.length) add(list, 'f-qimen-states', '门旺衰', seg.join('｜'), '旺衰');
+  mergeEvidence(env, list);
+}
+
+const BUILDERS = { bazi: baziFacts, ziwei: ziweiFacts, liuyao: liuyaoFacts, qimen: qimenFacts };
 export function buildFacts(r, env) {
   const list = [];
   if (!r || typeof r !== 'object') return list;
@@ -182,6 +338,44 @@ export const SECTION_REFS = {
     shensha: ['f-bazi-shensha-day', 'f-bazi-shensha-year', 'f-bazi-kongwang'],
     classics: ['f-bazi-geju'],
     quant: ['f-bazi-strength'],
+  },
+  // 紫微的段落是按「先看命身、再看格局、再看四化与流年」组织的，
+  // 所以 identity 引命身局主，palaces 引星曜落宫，四化与飞星各引四化事实。
+  ziwei: {
+    identity: ['f-ziwei-soul', 'f-ziwei-body', 'f-ziwei-bureau', 'f-ziwei-masters'],
+    palaces: ['f-ziwei-mainstars', 'f-ziwei-sha', 'f-ziwei-soul'],
+    'pattern-good': ['f-ziwei-pattern-good', 'f-ziwei-soul'],
+    'pattern-bad': ['f-ziwei-pattern-bad', 'f-ziwei-sha'],
+    advice: ['f-ziwei-soul', 'f-ziwei-sihua', 'f-ziwei-daxian'],
+    reasoning: ['f-ziwei-soul', 'f-ziwei-sihua', 'f-ziwei-daxian', 'f-ziwei-flow'],
+    timeline: ['f-ziwei-daxian', 'f-ziwei-flow'],
+    sihua: ['f-ziwei-sihua', 'f-ziwei-flow-sihua'],
+    fly: ['f-ziwei-sihua'],
+    flyComposite: ['f-ziwei-sihua', 'f-ziwei-daxian'],
+    flow: ['f-ziwei-flow', 'f-ziwei-flow-sihua', 'f-ziwei-daxian'],
+  },
+  // 六爻：卦辞爻辞引本卦与动爻，断卦引六亲世应与日辰。
+  liuyao: {
+    guaCi: ['f-liuyao-hex', 'f-liuyao-chonghe', 'f-liuyao-shiying'],
+    yaoCi: ['f-liuyao-moving', 'f-liuyao-hex'],
+    bianGua: ['f-liuyao-bian', 'f-liuyao-moving'],
+    jingText: ['f-liuyao-hex', 'f-liuyao-bian'],
+    scene: ['f-liuyao-hex', 'f-liuyao-day'],
+    liuqin: ['f-liuyao-liuqin', 'f-liuyao-shiying', 'f-liuyao-moving'],
+    body: ['f-liuyao-chonghe', 'f-liuyao-bian'],
+    hexStrength: ['f-liuyao-strength', 'f-liuyao-day'],
+  },
+  // 奇门：先局与值符值使定盘，再九宫配置与刑墓空马定凶吉落点。
+  qimen: {
+    facts: ['f-qimen-sizhu', 'f-qimen-ju'],
+    zhifu: ['f-qimen-zhifu'],
+    zhishi: ['f-qimen-zhishi'],
+    yongshen: ['f-qimen-sizhu', 'f-qimen-ju'],
+    relation: ['f-qimen-palaces'],
+    conditions: ['f-qimen-conditions'],
+    ganying: ['f-qimen-palaces', 'f-qimen-kongma'],
+    states: ['f-qimen-states'],
+    tendency: ['f-qimen-zhifu', 'f-qimen-zhishi', 'f-qimen-kongma'],
   },
 };
 

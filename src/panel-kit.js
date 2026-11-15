@@ -3843,9 +3843,11 @@
       if (!refs.length) return '';
       // 按编号升序：读者是顺着 [1][4][8] 往上看，不是按怎么算出来的顺序看
       const nums = refs.map((id) => factNo[id]).sort((a, b) => a - b);
-      return `<div class="mp-it-refs"><a href="#mp-sec-facts">${nums.map((n) => `[${n}]`).join('')}</a> 盘面事实</div>`;
+      // 锚点用 mp-facts 不用 mp-sec-facts：奇门自己有一段 key 就叫 facts，
+      // 两处同 id 会让目录跳到段上、正文角标指进一段没有事实行的容器。
+      return `<div class="mp-it-refs"><a href="#mp-facts">${nums.map((n) => `[${n}]`).join('')}</a> 盘面事实</div>`;
     };
-    const factsBlock = factList.length ? `<details class="mp-it-sec mp-it-facts" id="mp-sec-facts">
+    const factsBlock = factList.length ? `<details class="mp-it-sec mp-it-facts" id="mp-facts">
         <summary><span class="mp-it-sh">盘面事实</span><span class="mp-it-mnum">${factList.length} 条 · 正文里的 [n] 指这里</span></summary>
         <div class="mp-it-sub">${factList.map((f, i) => `<div class="fact-row"><em class="fact-no">[${i + 1}]</em>${f.group === f.label ? '' : `<em class="fact-g">${esc(f.group)}</em>`}<b>${esc(f.label)}</b><span>${esc(f.value)}</span></div>`).join('')}</div>
       </details>` : '';
