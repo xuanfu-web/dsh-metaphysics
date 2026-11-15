@@ -54,7 +54,7 @@ ok('issue 标题带体系名与「报错/使用问题」区分',
 // ── 四、复制失败有退路（旧宿主没有 clipboard API）────────────────────
 ok('优先用 navigator.clipboard', body !== '' && appSrc.includes('navigator.clipboard'));
 ok('没有 clipboard 时退回 execCommand', appSrc.includes('execCommand') && appSrc.includes("'copy'"));
-ok('复制失败会提示改走导出 .md', appSrc.includes('可改用「导出 .md」'));
+ok('复制失败会提示改走存 .md', appSrc.includes('可改用「存 .md」'));
 
 // ── 五、报告是纯文本 Markdown（能直接粘进 issue / 邮件）────────────
 ok('报告以 Markdown 标题开头', body.includes("'# 命理插件反馈'"));

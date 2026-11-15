@@ -757,7 +757,7 @@
     const row = (r) => `<div class="mp-verify-row"><span class="mp-verify-txt">${r.year} ${r.ganzhi} · ${r.theme}</span>
       <span class="mp-verify-btns">${[['yes', '准'], ['no', '不准'], ['unsure', '不确定']].map(([m, l]) =>
     `<button type="button" class="mp-chip${pastMarks[r.year] === m ? ' on' : ''}" data-pmark="${r.year}" data-mark="${m}">${l}</button>`).join('')}</span></div>`;
-    return `<div class="mp-verify"><div class="mp-verify-h">验前事 · 过去几年的信号（只读，不改盘）</div>
+    return `<div class="mp-verify"><div class="mp-verify-h">先核对过去几年：这盘说的事，对得上吗</div>
       ${rows.map(row).join('')}
       <div class="mp-verify-foot"><button type="button" class="mp-btn ghost" data-calfit="1">算贴合度</button>
       <span id="fitout" class="mp-verify-fit">${pastFit ? `命中 ${pastFit.yes}/${pastFit.answered}（${pastFit.level}）：${pastFit.advice}` : ''}</span></div></div>`;
@@ -770,8 +770,8 @@
         ${[['career', '事业变动'], ['wealth', '财运'], ['love', '感情'], ['move', '搬迁/出行'], ['health', '健康'], ['other', '其他']]
     .map(([v, l]) => `<option value="${v}"${ev.kind === v ? ' selected' : ''}>${l}</option>`).join('')}
       </select></div>`).join('');
-    return `<div class="mp-rect"><div class="mp-verify-h">生时校正 · 用过去的事反推时辰</div>${rows}
-      <button type="button" class="mp-btn ghost" data-rectify="1">计算候选时辰</button>
+    return `<div class="mp-rect"><div class="mp-verify-h">不确定几点出生？填几件过去的事，反推时辰</div>${rows}
+      <button type="button" class="mp-btn ghost" data-rectify="1">反推时辰</button>
       <div id="rectout">${rectOutHTML()}</div></div>`;
   }
 
@@ -806,7 +806,7 @@
     if (out) out.innerHTML = rectOutHTML();
   }
 
-  // 导出：走浏览器自带打印 → 另存为 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
+  // 导出：走浏览器自带打印 → 另存 PDF。不引第三方库，盘面是纯 DOM+CSS，打印保真度够。
   // 打印样式在 build-html.mjs 的 @media print 里（隐藏输入区与按钮，只留抬头与结果）。
   /** 反馈分类：不在页面上摆按钮（入口只留一个「有疑问？」），写进邮件正文让用户打勾 */
   const FB_KINDS = ['排错了', '看不懂', '建议', '其他'];
@@ -855,14 +855,16 @@
   }
 
   function exportBar() {
+    // 按钮统一「动词 + 对象」、四字以内：手机上这一排会折成两行，
+    // 「存长图」三个字，一行能并两个；原来六字写法把后面的按钮挤出屏幕。
     return `<div class="exp no-print">
-      <button type="button" data-act="reform" title="回到上面的条件，改完再排一次">改条件重排</button>
-      <button type="button" data-act="pdf">存为 PDF</button>
+      <button type="button" data-act="reform" title="回到上面的条件，改完再排一次">改条件</button>
+      <button type="button" data-act="pdf">存 PDF</button>
       <button type="button" data-act="print">打印</button>
-      <button type="button" data-act="md">导出 .md</button>
-      <button type="button" data-act="png">存为摘要长图</button>
-      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制深链</button>
-      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存入卦例库</button>
+      <button type="button" data-act="md">存 .md</button>
+      <button type="button" data-act="png">存长图</button>
+      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制链接</button>
+      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
       <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a></span>
@@ -941,11 +943,11 @@
     window.print();
   }
 
-  /** 存为摘要长图：Canvas 直出 PNG，零依赖；不支持时提示 */
+  /** 存长图：Canvas 直出 PNG，零依赖；不支持时提示 */
   function downloadCard() {
     if (!last || !last.r) return;
     const url = window.__PP.summaryCardPNG ? window.__PP.summaryCardPNG(last.r, last.it || null) : '';
-    if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存为 PDF」'); return; }
+    if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存 PDF」'); return; }
     const a = document.createElement('a');
     a.href = url;
     a.download = `烛微命盘摘要-${last.r.system}-${last.date || ''}.png`;

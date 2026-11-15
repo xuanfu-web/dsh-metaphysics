@@ -5126,7 +5126,7 @@
   /**
    * 生成「摘要卡」PNG（dataURL）。零依赖：用 Canvas 2D 画，不引第三方库、不做 DOM→SVG 截图。
    * 内容：标题 + 一页读懂五条 + 三张表里第一张的前 6 行 + 免责声明。
-   * 浏览器不支持 canvas 时返回空串，调用方据此禁用「存为长图」。
+   * 浏览器不支持 canvas 时返回空串，调用方据此禁用「存长图」。
    * @param {object} r compute 的结果
    * @param {object} it interpret 的结果（要 outline / tables）
    * @returns {string} data:image/png;base64,… 或 ''

@@ -1636,7 +1636,7 @@ function App() {
   /** 影子盘 ID 一键复制 */
   const copyShadowId = (btn) => copyTextTo(btn, btn.getAttribute('data-shadow-copy') || '', '复制 ID');
 
-  /** 排盘句柄一键复制：给助手追问同一张盘时直接粘贴 */
+  /** 盘号一键复制：给助手追问同一张盘时直接粘贴 */
   const copyHandle = (btn) => copyTextTo(btn, btn.getAttribute('data-handle-copy') || '', '复制句柄');
 
   /** 推导链整条复制：内容取自抽屉里的隐藏 textarea（与引擎 traceText 同源，不在这里重排） */
@@ -1661,7 +1661,7 @@ function App() {
   };
   const BRIDGE_KINDS = [
     ['full', '复制提问', '完整提问：盘面摘要 + 阅读层次 + 回答骨架，粘进任何对话窗都能用'],
-    ['brief', '复制精简', '一句话版：体系 + 排盘句柄 + 你的问题，够助手认出是哪张盘'],
+    ['brief', '复制精简', '一句话版：体系 + 盘号 + 你的问题，够助手认出是哪张盘'],
     ['structured', '复制参数', '结构化参数（JSON）：助手可直接照 args 调 compute，不必解析自然语言'],
     ['link', '复制深链', '深链：把这张盘的参数编进链接，打开即还原同一张盘（换台机器、发给朋友都行）'],
   ];
@@ -1671,7 +1671,7 @@ function App() {
     const text = kind === 'link' ? pkg.link : pkg[kind];
     if (!text) {
       setChatNote(kind === 'link'
-        ? '这张盘没拿到句柄（随机抽牌只复现参数、不复现牌面），深链做不出来；用「复制提问」那一档。'
+        ? '这张盘没拿到盘号（随机抽牌只复现参数、不复现牌面），深链做不出来；用「复制提问」那一档。'
         : '这一档暂时是空的，换一档试试。');
       return;
     }
@@ -1870,7 +1870,7 @@ function App() {
       L.push('```');
       if (result.r.handle) {
         L.push('');
-        L.push('排盘句柄（开发者可据此复现同一张盘）：`' + result.r.handle + '`');
+        L.push('盘号（可据此复现同一张盘）：`' + result.r.handle + '`');
       }
     } else {
       L.push('### 结果摘要');
@@ -1891,7 +1891,7 @@ function App() {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => { setFbCopied('已复制'); setFbNote('粘到 issue / 邮件 / 群里即可'); })
-          .catch(() => { setFbCopied('复制失败'); setFbNote('可改用「导出 .md」或手动选中'); });
+          .catch(() => { setFbCopied('复制失败'); setFbNote('可改用「存 .md」或手动选中'); });
       } else {
         // 旧宿主 / 非安全上下文没有 clipboard：退回到隐藏 textarea + execCommand
         const ta = document.createElement('textarea');
@@ -1902,11 +1902,11 @@ function App() {
         const okCopy = document.execCommand && document.execCommand('copy');
         ta.remove();
         setFbCopied(okCopy ? '已复制' : '复制失败');
-        setFbNote(okCopy ? '粘到 issue / 邮件 / 群里即可' : '可改用「导出 .md」或手动选中');
+        setFbNote(okCopy ? '粘到 issue / 邮件 / 群里即可' : '可改用「存 .md」或手动选中');
       }
     } catch (e) {
       setFbCopied('复制失败');
-      setFbNote('可改用「导出 .md」');
+      setFbNote('可改用「存 .md」');
     }
     setTimeout(() => { setFbCopied(''); setFbNote(''); }, 4000);
   };
@@ -1940,7 +1940,7 @@ function App() {
     }
   };
 
-  /** 存为摘要长图：Canvas 直出 PNG（一页读懂 + 首张表），零依赖 */
+  /** 存长图：Canvas 直出 PNG（一页读懂 + 首张表），零依赖 */
   const downloadCard = () => {
     if (!result || !result.r) return;
     try {
@@ -2721,11 +2721,11 @@ function App() {
       h('button', {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: downloadReport, title: '导出盘面 + 解析（含一页读懂、三张表）为 Markdown',
-      }, '导出 .md'),
+      }, '存 .md'),
       h('button', {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: downloadCard, title: '生成 PNG 摘要卡（一页读懂 + 首张表），适合直接分享',
-      }, '存为摘要长图'),
+      }, '存长图'),
       h('button', {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: saveToCases, title: '把这张盘的参数存进卦例库，日后可回填重排、标应验',
@@ -2773,7 +2773,7 @@ function App() {
 
     // 验前事：只读信号 + 用户自评，不改盘
     (result && result.kind === 'bazi' && result.r.past) ? h('div', { key: 'verify', className: 'mp-verify' },
-      h('div', { className: 'mp-verify-h' }, '验前事 · 过去几年的信号（只读，不改盘）'),
+      h('div', { className: 'mp-verify-h' }, '先核对过去几年：这盘说的事，对得上吗'),
       result.r.past.rows.map((row) => h('div', { key: row.year, className: 'mp-verify-row' },
         h('span', { className: 'mp-verify-txt' }, `${row.year} ${row.ganzhi} · ${row.theme}`),
         h('span', { className: 'mp-verify-btns' }, ['yes', 'no', 'unsure'].map((m) => h('button', {
@@ -2787,7 +2787,7 @@ function App() {
 
     // 生时校正：候选时辰 × 过去事件
     (result && result.kind === 'bazi') ? h('div', { key: 'rect', className: 'mp-rect' },
-      h('div', { className: 'mp-verify-h' }, '生时校正 · 用过去的事反推时辰'),
+      h('div', { className: 'mp-verify-h' }, '不确定几点出生？填几件过去的事，反推时辰'),
       rectEvents.map((ev, i) => h('div', { key: i, className: 'mp-rect-row' },
         h('input', {
           className: 'mp-input', type: 'number', min: 1900, max: 2100, value: ev.year,
