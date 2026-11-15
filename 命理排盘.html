@@ -35647,6 +35647,17 @@ window.__MP_VER = "0.81.0";
 /* 提示条是「宫位可点」的唯一说明，--faint 在浅色下只有 2.3:1，换 --muted 才读得清 */
 .pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--muted)}
 .pp-body{display:none}
+/* 盘口口径条（P1-16）：学派名由 radio 驱动，层与年份在渲染时写死 */
+.pp-cal{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:2px 2px 4px;line-height:1.5;flex-wrap:wrap}
+.pp-cal b{font-weight:600;color:var(--ink2)}
+.pp-cal .cal-sep{color:var(--faint)}
+.pp-cal .cal-sc::after{content:"四化派"}
+#ppm-sc-feixing:checked~.pp-body .pp-cal .cal-sc::after{content:"飞星派"}
+#ppm-sc-sanhe:checked~.pp-body .pp-cal .cal-sc::after{content:"三合派"}
+/* 切学派时盘面淡入一次：换了视角要有个着落，不然像点了没反应 */
+#ppm-sc-feixing:checked~.pp-body .pp-grid,
+#ppm-sc-sanhe:checked~.pp-body .pp-grid{animation:ppSchoolIn .3s ease-out}
+@keyframes ppSchoolIn{from{opacity:.55}to{opacity:1}}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
@@ -37513,7 +37524,15 @@ window.__MP_VER = "0.81.0";
       </div>`;
     };
 
-    const body = (id, m, kind) => `<div class="pp-body ${id}" data-view="${kind}" data-soul="${m}"><div class="pp-grid">${grid(m, kind)}${center(m, kind)}</div><div class="pp-detail"></div></div>`;
+    // 盘口口径条（P1-16）：学派名由 CSS 跟着 radio 换，层与年份跟视图走。
+    // 学派切换原先只有 tab 高亮，滚到盘中间就不知道自己看的是哪一派了
+    const calOf = (kind) => {
+      const layer = kind === 'da' ? `大限 ${dxPalace.ganzhi}` : kind === 'ln' && ln ? `流年 ${ln.ganzhi}` : '本命';
+      const yz = (sizhuOf(r) || '').split(' ')[0] || '';
+      return `<div class="pp-cal"><b class="cal-sc"></b><span class="cal-sep">·</span><span>${layer}</span>${yz ? `<span class="cal-sep">·</span><span>${r.input.year} ${yz}</span>` : ''}</div>`;
+    };
+    const body = (id, m, kind) => `<div class="pp-body ${id}" data-view="${kind}" data-soul="${m}">${calOf(kind)}<div class="pp-grid">${grid(m, kind)}${center(m, kind)}</div><div class="pp-detail"></div></div>`;
+
 
     const cq = r.changqu;
     const chips = cq ? `<div class="pp-chips">
