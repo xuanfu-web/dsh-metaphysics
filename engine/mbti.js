@@ -309,7 +309,10 @@ export function mbtiPaper() {
     scale: SCALE_SAY,
     total: QUESTIONS.length,
     dimensions: DIMENSIONS.map((d) => ({ key: d.key, name: d.name, left: d.left, right: d.right, leftSay: d.leftSay, rightSay: d.rightSay, note: d.note })),
-    questions: QUESTIONS.map((q, i) => ({ no: i + 1, id: q.id, dim: q.dim, text: q.text })),
+    // side 是这题「答高分算偏向哪一侧」，公开它不泄露任何答案：
+    // 没有它，前端连一份示例答卷都没法造——同维度正反题混在一起，
+    // 统一填 4 分会在维度内互相抵消，示例结果八个维度全平。
+    questions: QUESTIONS.map((q, i) => ({ no: i + 1, id: q.id, dim: q.dim, side: q.side, text: q.text })),
     note: '这是一份 MBTI 风格的问卷（不是官方 MBTI 量表）：每题按 1（完全不像我）到 5（很像我）打分，把 24 个分数按顺序交给 answers 即可出类型。题目只作自我参照，不适合用来评价别人的能力或做招聘、晋升等决定。',
   };
 }

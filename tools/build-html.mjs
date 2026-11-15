@@ -720,6 +720,7 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
       </div>
     </div>
     <button id="sample" class="go ghost" title="用固定示例盘看完整报告">看示例</button>
+    <button id="clear" class="go ghost" title="清掉现在填的条件与结果，回到初始状态">清空</button>
     <button id="go" class="go">排盘</button>
   </div>
 

@@ -856,6 +856,7 @@
 
   function exportBar() {
     return `<div class="exp no-print">
+      <button type="button" data-act="reform" title="回到上面的条件，改完再排一次">改条件重排</button>
       <button type="button" data-act="pdf">存为 PDF</button>
       <button type="button" data-act="print">打印</button>
       <button type="button" data-act="md">导出 .md</button>
@@ -914,6 +915,15 @@
     }
     if (b.dataset.act === 'md') { downloadReport(); return; }
     if (b.dataset.act === 'png') { downloadCard(); return; }
+    // 改条件重排：手机上看完结果要改日期，得一路滚回顶部找输入框；这一下直接带回去。
+    // 只滚动不改值——参数留着，用户可能只想动一项。
+    if (b.dataset.act === 'reform') {
+      const bar = document.querySelector('.bar');
+      if (bar && bar.scrollIntoView) bar.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      const d = el('date');
+      if (d && d.focus) d.focus({ preventScroll: true });
+      return;
+    }
     if (b.dataset.act === 'case' || b.dataset.act === 'hit' || b.dataset.act === 'miss') {
       caseMark(b, b.dataset.act);
       return;
@@ -1358,8 +1368,16 @@
     // 人格问卷自带「看结果」和「清空」：底部再放一个主按钮就是两个一样的入口
     const quizOn = tab === 'mbti' || tab === 'constitution';
     el('go').style.display = quizOn ? 'none' : '';
+    // 「看示例」在问卷下也留：第一次进来面对 24 / 45 道题，没有样例就不知道
+    // 这道题在问什么程度。问卷模式下它填一组示例答案并直接出结果。
     const sampleBtn = el('sample');
-    if (sampleBtn) sampleBtn.style.display = quizOn ? 'none' : '';
+    if (sampleBtn) {
+      sampleBtn.style.display = '';
+      sampleBtn.textContent = quizOn ? '填空答案' : '看示例';
+      sampleBtn.title = quizOn ? '把整份问卷按一组示例答案填好，直接看结果' : '用固定示例盘看完整报告';
+    }
+    const clearBtn = el('clear');
+    if (clearBtn) clearBtn.style.display = '';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
     applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
     ctxKind = k;
@@ -1548,6 +1566,42 @@
     csPage = 0;
     renderCs();
     if (last && last.tab === 'constitution') { last = null; el('out').replaceChildren(); }
+  }
+
+  /** 示例答案：多数取 4、夹杂 5/3/2，既有倾向又有噪音。
+   *  不用全 3（量表全 3 分八个维度都平，看不出人形），也不用全 5（那是假人）。 */
+  const SAMPLE_SCALE = [4, 4, 5, 3, 4, 4, 2, 4];
+  function sampleAnswers(total) {
+    const out = [];
+    for (let i = 0; i < total; i += 1) out.push(SAMPLE_SCALE[i % SAMPLE_SCALE.length]);
+    return out;
+  }
+
+  /** MBTI 示例：按每题的 side 造一份「挑得出人形」的答卷，落成 INFP。
+   *  统一给分会在维度内被正反题抵消（引擎按 side 正负计分），所以必须看 side 分侧给分。 */
+  const SAMPLE_MBTI = { EI: 'I', SN: 'N', TF: 'F', JP: 'P' };
+  function mbtiSampleAnswers(paper) {
+    const qs = (paper && paper.questions) || [];
+    if (!qs.length || qs[0].side == null) return sampleAnswers(mbAns.length);
+    return qs.map((q, i) => {
+      const mine = q.side === SAMPLE_MBTI[q.dim];
+      if (mine) return i % 5 === 0 ? 5 : 4;
+      return i % 7 === 0 ? 1 : 2;
+    });
+  }
+
+  /** 体质示例：气郁为主、气虚兼夹，其余低分——只出一个「全是 3 分」的平盘看不出主次。
+   *  选这两型是因为它们是最常见的一对，示例本身也得像一份真问卷。 */
+  const SAMPLE_CS_MAIN = 'qiyu';
+  const SAMPLE_CS_NEXT = 'qixu';
+  function csSampleAnswers(paper) {
+    const qs = (paper && paper.questions) || [];
+    if (!qs.length || qs[0].key == null) return sampleAnswers(csAns.length);
+    return qs.map((q, i) => {
+      if (q.key === SAMPLE_CS_MAIN) return i % 2 ? 4 : 5;
+      if (q.key === SAMPLE_CS_NEXT) return 4;
+      return i % 3 === 0 ? 3 : 2;
+    });
   }
 
   function csSubmit() {
@@ -1799,15 +1853,54 @@
       node.addEventListener('input', onManualEdit);
     });
     el('go').addEventListener('click', goCast);
-    // 看示例：填固定示例盘并切到八字，走与真实排盘完全相同的渲染路径
+    // 看示例：填固定示例盘并切到八字，走与真实排盘完全相同的渲染路径。
+    // 问卷下同一个按钮改叫「填空答案」：第一次进来面对 24 / 45 道题的人，
+    // 需要先看一份填好的卷子长什么样，而不是先读一整页题。
     const sampleBtn = el('sample');
     if (sampleBtn) sampleBtn.addEventListener('click', () => {
+      if (tab === 'constitution') {
+        csAns = csSampleAnswers(csPaper);
+        csPage = 0;
+        renderCs();
+        refreshCsMeta();
+        csSubmit();
+        return;
+      }
+      if (tab === 'mbti') {
+        mbAns = mbtiSampleAnswers(mbPaper);
+        mbPage = 0;
+        renderMbti();
+        refreshMbtiMeta();
+        mbSubmit();
+        return;
+      }
       setDateField('date', SAMPLE.date);
       el('time').value = SAMPLE.time;
       el('gender').value = 'male';
       el('addr').value = '河北石家庄';
       setTab('bazi');
       run();
+    });
+    // 清空：条件与结果一起回到初始态。只清结果不清条件，下一次点排盘还是同一张盘，
+    // 用户会以为按钮没生效。
+    const clearBtn = el('clear');
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      ['question', 'addr', 'paddr', 'p2addr', 'surname', 'givenname'].forEach((id) => {
+        const n = el(id);
+        if (n) n.value = '';
+      });
+      if (el('ts')) el('ts').checked = true;
+      if (el('latezi')) el('latezi').checked = true;
+      if (el('online')) el('online').checked = false;
+      if (el('cross')) el('cross').checked = false;
+      if (el('h3on')) { el('h3on').checked = false; const b = el('for-hepan3'); if (b) b.style.display = 'none'; }
+      csClear();
+      mbClear();
+      last = null;
+      el('out').replaceChildren();
+      el('tip').textContent = '';
+      applyDateTime(ctxKind);
+      el('date').focus({ preventScroll: true });
     });
     el('gender').addEventListener('change', run);
     // 换牌阵张数要重新抽牌（1/3/5 张是不同牌阵，不是同一组牌换个显示）
