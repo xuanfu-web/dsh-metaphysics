@@ -126,6 +126,15 @@ body.view-flat .start{display:none}
 .bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 14px;align-items:start;padding:18px 20px;margin-bottom:20px;
   background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 90%,var(--bg)));border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
 .grp{display:contents}
+/* 高级选项（P1-24）：独占一整行，收起时只占一行字高；展开后内部按 flex 排，不挤在 grid 的一列里 */
+.adv{grid-column:1/-1}
+.adv>summary{display:inline-flex;align-items:center;gap:6px;padding:2px 0;font-size:12.5px;letter-spacing:.03em;
+  color:var(--dim);cursor:pointer;list-style:none}
+.adv>summary::-webkit-details-marker{display:none}
+.adv>summary::before{content:'▸';font-size:10px;transition:transform .15s ease}
+.adv[open]>summary::before{transform:rotate(90deg)}
+.adv>summary:hover{color:var(--ink)}
+.adv>.grp{display:flex;flex-wrap:wrap;gap:12px 14px;margin-top:10px}
 .field{display:flex;flex-direction:column;gap:6px;font-size:12.5px;letter-spacing:.03em;color:var(--dim)}
 /* 固定宽度而非 min-width：输入控件的默认固有宽度（20 字符）会把 1180px 下的单行输入区挤到换行 */
 .field input,.field select{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:15px;font-family:inherit;outline:none;width:150px;
@@ -494,17 +503,25 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
     <label class="field" id="for-gender">性别
       <select id="gender"><option value="female">女</option><option value="male">男</option></select>
     </label>
-    <!-- 出生地 / 真太阳时 / 联网：所有要「出生信息」的体系都用得上（八字、紫微、合盘、人生K线、风水、起名） -->
+    <!-- 出生地 / 真太阳时：所有要「出生信息」的体系都用得上（八字、紫微、合盘、人生K线、风水、起名）。
+         这两个留在台面上：出生地填错，整张盘就是别人的人生。 -->
     <div class="grp" id="for-solar" style="display:none">
       <label class="field">出生地<input id="addr" placeholder="如 河北石家庄 / 成都"></label>
-      <label class="field check"><input id="ts" type="checkbox" checked> 真太阳时</label>
-      <label class="field check" title="开启后会请求 OpenStreetMap"><input id="online" type="checkbox"> 联网精确到区县</label>
+      <label class="field check" title="按时辰换算真太阳时：出生地经度差 + 均时差，必要时扣掉 1986–1991 的夏令时"><input id="ts" type="checkbox" checked> 真太阳时</label>
     </div>
     <!-- 晚子时换日与交叉验证是八字专属：紫微按自己的闰月/晚子时口径走，风水起名不看这两项 -->
     <div class="grp" id="for-bazi" style="display:none">
       <label class="field check" title="23:00–23:59 出生时：勾选=按次日日柱起时柱（晚子时换日）；不勾=仍用当日日柱"><input id="latezi" type="checkbox" checked> 晚子时换日</label>
-      <label class="field check" title="同一份出生信息再排另一套盘，并列对照"><input id="cross" type="checkbox"> 八字 × 紫微 交叉验证</label>
     </div>
+    <!-- 高级选项：不勾也能出正确结果，勾了只是多一层。
+         放在折叠里是为了首屏——手机竖屏这几个开关占掉两行，而九成人一次都不碰。 -->
+    <details class="adv" id="for-adv" style="display:none">
+      <summary>高级选项</summary>
+      <div class="grp">
+        <label class="field check" id="adv-online" title="开启后会请求 OpenStreetMap 反查区县：出生地只写到市时，区县会影响经度"><input id="online" type="checkbox"> 联网精确到区县</label>
+        <label class="field check" id="adv-cross" style="display:none" title="同一份出生信息再排另一套盘，并列对照"><input id="cross" type="checkbox"> 八字 × 紫微 交叉验证</label>
+      </div>
+    </details>
     <label class="field" id="for-liuyao" style="display:none">六爻<input id="lines" placeholder="9 7 8 8 7 6，空则随机"></label>
     <!-- 合盘：第二个人的出生信息；合盘方式决定用八字还是紫微两盘对照 -->
     <div class="grp" id="for-hepan" style="display:none">

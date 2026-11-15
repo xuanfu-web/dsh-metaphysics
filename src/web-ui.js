@@ -1313,6 +1313,13 @@
     const solar = el('for-solar');
     if (solar) solar.style.display = birth ? '' : 'none';
     el('for-bazi').style.display = tab === 'bazi' ? '' : 'none';
+    // 高级选项：整块只在「有出生信息或要交叉验证」时露；里面两项各自还按体系分
+    const adv = el('for-adv');
+    if (adv) adv.style.display = (birth || tab === 'bazi' || tab === 'ziwei') ? '' : 'none';
+    const advOnline = el('adv-online');
+    if (advOnline) advOnline.style.display = birth ? '' : 'none';
+    const advCross = el('adv-cross');
+    if (advCross) advCross.style.display = (tab === 'bazi' || tab === 'ziwei') ? '' : 'none';
     el('for-gender').style.display = birth ? '' : 'none';
     el('for-liuyao').style.display = tab === 'liuyao' ? '' : 'none';
     el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';
