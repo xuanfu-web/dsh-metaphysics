@@ -18,8 +18,8 @@ function load() {
 const C = load();
 
 // ── ① 段序 ────────────────────────────────────────────────────
-eq('用户段序：结论→盘面→盘号→时刻→解读→追问→附加',
-  C.USER_SEGS.join(','), 'head,body,chart,shortId,castAt,interpret,followup,extra');
+eq('用户段序：结论→盘面→盘号→时刻→真太阳时→解读→追问→附加',
+  C.USER_SEGS.join(','), 'head,body,chart,shortId,castAt,solar,interpret,followup,extra');
 eq('dev 段序：耗时在前、口径在最后',
   C.DEV_SECTIONS.join(','), 'perf,revision,handle,shadow,trace,caliber');
 ok('追问条不进 dev 段（它本来就给用户）', !C.DEV_SECTIONS.includes('followup'));

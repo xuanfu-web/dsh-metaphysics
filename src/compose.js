@@ -17,8 +17,8 @@
   // dev 专属段落，命名与 composeResult 的 parts 键一致
   const DEV_SECTIONS = ['perf', 'revision', 'handle', 'shadow', 'trace', 'caliber'];
 
-  // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 解读 → 追问 → 附加
-  const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'interpret', 'followup', 'extra'];
+  // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 真太阳时修正 → 解读 → 追问 → 附加
+  const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'solar', 'interpret', 'followup', 'extra'];
 
   /* 22 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
    *

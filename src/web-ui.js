@@ -627,6 +627,7 @@
       chart: last.html || '',
       shortId: window.__MPCompose.shortIdHTML(last.r.shortId),
       castAt: castAtHTML(last.tab, last.timed, last.date, last.time),
+      solar: window.__PP.solarLineHTML(last.r),
       interpret: window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true }),
       followup: followupBar(),
       extra: last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '',

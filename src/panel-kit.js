@@ -929,6 +929,16 @@
 /* 盘号：用户视图里唯一保留的复盘凭据。完整的影子盘（baseId / 指纹 / 同盘 diff）只在开发者视图出，
    这里只要一行小字，不能抢盘面和结论的视线。 */
 .mp-shortid{margin:6px 0 0;font-size:11.5px;line-height:1.6;color:var(--faint);letter-spacing:.02em;font-family:system-ui,sans-serif}
+/* 真太阳时修正：勾了开关、填了出生地之后，实际按几点起盘必须能看见——
+   时柱是四柱里最容易「差一小时换一个盘」的一柱，修正不透明就等于不可核对。 */
+.mp-solar{margin:6px 0 0;font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-solar b{color:var(--ink2);font-weight:600}
+.mp-solar span{color:var(--faint)}
+.mp-solar-dst{color:var(--env-warn);font-weight:600;margin-left:4px}
+.mp-solar-why{display:inline;margin-left:6px}
+.mp-solar-why>summary{cursor:pointer;list-style:none;color:var(--muted);border-bottom:1px dotted var(--line)}
+.mp-solar-why>summary::-webkit-details-marker{display:none}
+.mp-solar-why>div{margin-top:6px;padding:6px 9px;border-left:2px solid var(--line);font-size:11.5px;line-height:1.8;color:var(--muted)}
 .mp-shadow{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:9px 13px;font-family:system-ui,sans-serif}
 .mp-shadow-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mp-shadow-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
@@ -3804,6 +3814,32 @@
       <div class="mp-fu-a">${esc(fx.answer)}</div>
       ${ev}
     </div>`;
+  };
+
+  /**
+   * 真太阳时修正回显：修正了多少分钟、时柱最终按几点起，以及怎么算出来的。
+   * 只对真算了修正的盘出（offsetMinutes 为 0 或缺失就不出），不额外加噪音。
+   * 1986–1991 的夏令时校正也在这条链上——那段出生的人经常被排错一小时，
+   * 所以夏令时命中时主行直接点出来，不藏在折叠里。
+   */
+  pp.solarLineHTML = function (r) {
+    if (!r) return '';
+    const s = r.solarTime || {};
+    const raw = typeof s.offsetMinutes === 'number' ? s.offsetMinutes
+      : (typeof r.offsetMinutes === 'number' ? r.offsetMinutes : null);
+    if (raw == null || !raw) return '';
+    const txt = String(s.trueSolarText || r.trueSolarText || '');
+    // 时辰未知根本不排时柱，修正没有落点
+    if (/时辰未知/.test(txt)) return '';
+    const sign = raw > 0 ? '+' : '−';
+    const abs = (Math.round(Math.abs(raw) * 10) / 10).toFixed(1);
+    const when = /(\d{1,2}:\d{2})/.exec(txt);
+    const note = String(s.note || '');
+    const dst = /夏令时/.test(note) ? '<b class="mp-solar-dst">已扣夏令时 1 小时</b>' : '';
+    const why = note
+      ? `<details class="mp-solar-why"><summary>怎么算的</summary><div>${esc(note)}</div></details>`
+      : '';
+    return `<p class="mp-solar">真太阳时修正 <b>${sign}${abs} 分</b>${when ? `，时柱按 <b>${esc(when[1])}</b> 起` : ''}${dst}${why}<span>（勾掉「真太阳时」就按钟表时间排）</span></p>`;
   };
 
   /** 结论卡单独取用：调用方要把它放在整个结果卡的最顶上（盘面、工具条都排它后面） */

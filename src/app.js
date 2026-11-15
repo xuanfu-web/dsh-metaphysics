@@ -2701,6 +2701,7 @@ function App() {
           chart: chartHTML(result),
           shortId: window.__MPCompose ? window.__MPCompose.shortIdHTML(result.r.shortId) : '',
           castAt: castAtHTML(result),
+          solar: PP.solarLineHTML(result.r),
           interpret: PP.resultWithInterpret('', result.it, { folded: defaultFolded(), noHead: true, noBody: true }),
           revision: PP.revisionHTML(result.r.revision),
           handle: PP.handleHTML(result.r.handle),
