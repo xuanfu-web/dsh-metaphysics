@@ -718,5 +718,48 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 - **拼串留空段**：`[a, b, c].filter(Boolean).join('｜')` 里只要有一项本身是空字符串（不是 `false`/`undefined`），就会留下 `｜｜`。`tidy()` 统一按 `｜` 切开、去空、再拼，`add()` 里调一次。
 - **兜底 evidence 会带脏值**：六爻的 `ev-yong`（用神）在没给月建时 detail 就是「｜｜｜月建未取到｜日辰平」。`tidy()` 之后变「月建未取到｜日辰平」，测试断言七体系事实里不出现 `｜｜` / `undefined` / `NaN`。
 
+## 14. 0 号门禁：行尾与构建顺序（2026-11-15）
 
+### 14.1 195/196 的真因是行尾，不是漏构建
 
+任务书里那条「改完 CHANGELOG 要重建 client.js，否则 CI 隐藏红」的判断方向不对。实测：
+
+| 环境 | test-all | 三条红的内容 |
+| --- | --- | --- |
+| 主工作区 `aaa592c` | 196/196 | — |
+| 全新 worktree 同一 commit | 193/196 | verification / citations / badge 全部「字节相同内容不同」 |
+
+`docs/verification.html` 磁盘 375861 字节、索引 370146 字节、含 **5715 个 `\r\n`**。把 CRLF 转成 LF 后字符数正好 276066，等于生成器输出，该条立刻 PASS。四个文件全转 LF 后剩下唯一一条红是 `autopublish.test.mjs` 的 `.git/HEAD`（worktree 里 `.git` 是文件不是目录）。
+
+结论：**`.gitattributes` 只钉了 js/mjs/json/md，漏了 html 与 svg。** `core.autocrlf=true` 的机器一 checkout 就把产物转成 CRLF，而生成器写的是 LF。索引与 CI 一直干净，只有本机/新检出脏，于是同一 commit 在 A 机器绿、B 机器红。
+
+### 14.2 三件套
+
+1. **规则兜底**：`.gitattributes` 第一行 `* text=auto eol=lf`。逐个扩展名补的做法在一天之内漏了三次——html/svg、yml（git 自己在提交时警告）、webmanifest（全新 worktree 上被闸抓到 15 处 CRLF）。兜底才是不再漏。
+2. **`tools/check-eol.mjs`**：查产物本身（CRLF / BOM / U+2028），也查规则在不在——规则被删时第一条在本机仍然绿，只有换机器才炸，那种闸等于没有。39 条测试里有「临时把一处产物改成 CRLF，闸必须变红」。
+3. **`tools/build-all.mjs`**：把正确顺序写成脚本。`build-client → verification → citations → build-html → 拷 docs/index.html → 行尾闸 → 产物闸`。`npm run build:all` 只构建，`npm run gate` 连全闸一起跑。
+
+另外 `check-assertions --update` 现在会自己重建页面：页面里内嵌「N 个测试文件 / M 条断言」，读的就是这份基线，基线一改页面就陈旧。今天这一条又红过一次——和上午那次同一根因，只是换成我自己踩。要人记住「update 完还要 build」的方案已被证明会漏。
+
+### 14.3 本机还有一层
+
+`git ls-files --eol` 显示 86 个文件 `i/lf w/crlf`：索引干净、工作区脏。`git checkout -- .` 和 `git checkout-index -a -f` 都不会修——git 认为「CRLF 工作区 == LF 索引」等价，看起来恰好是「没有本地改动」。
+
+`tools/fix-eol-worktree.mjs` 按索引内容重写（先 dry，`--write` 才真写）。同时本机 `core.autocrlf` 改成 `input`（checkout 不转换、check-in 转 LF）——这是这台机器的设置，不进仓库。
+
+### 14.4 别改回去
+
+- `* text=auto eol=lf` 必须在第一行。删了它、只留逐个扩展名，等于回到「等下一次漏」。
+- `check-eol` 里那张 TARGETS 表要跟着产物一起长。新增任何「与生成器逐字节比对」的产物，都必须登记进去，否则闸看不见它。
+- `png/jpg/zip/pdf` 显式 `binary`：`text=auto` 靠 NUL 判断类型，而小图片可能整段没有 NUL、又恰好含 `0x0D 0x0A`，会被当文本（group 二维码那张被标成 `i/crlf`，长度与魔数目前都对得上，但那是碰巧）。
+- autopublish 的 `repairGit()` 在 worktree 里必须直接返回：`.git` 是文件时按目录补 HEAD/config 会写到「一个文件/HEAD」，必 ENOENT。这条红曾被当成「worktree 的正常噪声」，而它的代价是让人习惯「有几条红是正常的」。
+
+### 14.5 可复算验证
+
+```
+git worktree add ../mb-check <sha> && cd ../mb-check
+node tools/check-eol.mjs     # ✓ 9 个产物纯 LF
+node tools/test-all.mjs      # 198/198
+```
+
+`f5af482` 上跑过：`198/198`，用时 55.6s。同一条命令在 `aaa592c` 上是 193/196。
