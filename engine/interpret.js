@@ -1982,6 +1982,23 @@ const withReportMeta = (body, r, ask) => enrichPlain({
   ask,
 }, r, ask);
 
+/**
+ * 解析失败编号：同一句错误消息永远得到同一个 6 位串。
+ *
+ * 用户侧只看到「这段解读没生出来（编号 8KQ2Z1）」——栈和消息留在控制台。
+ * 用户把编号报过来，作者拿它能在日志里对上一条，不必让用户抄一屏报错。
+ * 纯函数：不读时间、不取随机，engine 里不许有环境依赖。
+ */
+function shortErrId(msg) {
+  const s = String(msg == null ? 'unknown' : msg);
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
+}
+
 export function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const ask = askOf(opts);
@@ -2005,6 +2022,7 @@ export function interpret(r, opts) {
       technique: TECHNIQUE[r.system] || '',
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
+      errorId: shortErrId(e && e.message),
       ask,
     };
   }

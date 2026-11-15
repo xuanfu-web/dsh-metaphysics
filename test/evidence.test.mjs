@@ -95,5 +95,9 @@ ok('builder 异常被兜住且带 error', !!failed && !!failed.error, failed && 
 const failText = interpretText(failed);
 ok('文本渲染标出解析失败', /解析生成失败/.test(failText), failText.split('\n')[0]);
 const failHtml = PP.interpretHTML(failed);
-ok('面板渲染出失败提示', /mp-it-err/.test(failHtml) && /解析生成失败/.test(failHtml));
+ok('面板渲染出失败提示', /mp-it-err/.test(failHtml) && /这次没生出来/.test(failHtml));
+ok('用户侧不出现技术性说法', !/解析生成失败/.test(failHtml) && !/⚠/.test(failHtml), failHtml.slice(0, 160));
+ok('失败提示带可报的编号', !!failed.errorId && new RegExp('编号 ' + failed.errorId).test(failHtml), String(failed.errorId));
+ok('用户视图不露错误原文', !failHtml.includes(failed.error), failed.error);
+ok('同一句错误永远同一个编号', interpret(bomb).errorId === failed.errorId);
 ok('失败提示里的错误被转义', !/<img/i.test(PP.interpretHTML({ ...failed, error: '<img src=x>' })));

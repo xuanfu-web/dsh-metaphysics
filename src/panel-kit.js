@@ -3711,7 +3711,10 @@
         ${answer}
         ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
-        ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
+        ${it.error ? `<div class="mp-it-err">这段解读这次没生出来，盘面数据本身是好的${it.errorId ? `（编号 ${esc(it.errorId)}，反馈时报它）` : ''}${
+          (window.__MPCompose && window.__MPCompose.devOn && window.__MPCompose.devOn())
+            ? `<details class="mp-it-errd"><summary>失败原因（只在开发者视图显示）</summary><code>${esc(it.error)}</code></details>`
+            : ''}</div>` : ''}
     ${guide}
     ${outline}
         ${toc}

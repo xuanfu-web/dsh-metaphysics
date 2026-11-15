@@ -40,20 +40,15 @@ ok('没命中时原样返回', /const body = end < 0 \? html :/.test(chart));
 // 盘面仍排在所有技术信息（性能/修订/句柄/影子/推导链）之前，这条底线不动。
 const iHead = app.indexOf('PP.envHeadHTML(result.it');
 ok('结果卡以结论卡开头（打开第一眼就是判断）', iHead > 0);
-const USER_ORDER = ['head', 'body', 'chart', 'shortId', 'castAt', 'interpret', 'followup', 'extra'];
+const USER_ORDER = ['head', 'body', 'chart', 'shortId', 'castAt', 'interpret'];
 const DEV_ORDER = ['revision', 'handle', 'shadow', 'trace', 'caliber', 'perf'];
-const compose = fs.readFileSync(new URL('../src/compose.js', import.meta.url), 'utf8');
 ok('盘面在 parts 里现算', /chart:\s*chartHTML\(result\)/.test(app));
 // 面板只传 12 段：追问条与导出条在面板里是独立 React 组件，不进这块 innerHTML
-for (const k of [...USER_ORDER.slice(0, 6), ...DEV_ORDER]) {
+for (const k of [...USER_ORDER, ...DEV_ORDER]) {
   ok('面板传了 ' + k, new RegExp('\\n\\s*' + k + ':').test(app));
 }
-const outLine = compose.match(/const out = \[([^\]]*)\]/);
-eq('用户序（结论→盘面→盘号→时刻→解读→追问→附加）',
-  (outLine ? outLine[1] : '').replace(/[\s]|p\./g, ''), USER_ORDER.join(','));
-const devLine = compose.match(/if \(dev\) out\.push\(([^)]*)\)/);
-eq('dev 序（耗时在后、口径最后）', (devLine ? devLine[1] : '').replace(/[\s]|p\./g, ''), DEV_ORDER.join(','));
-ok('导出条在最末（不参与 dev 分档）', /out\.push\(p\.exportBar\)/.test(compose));
+// 段序本身（含追问/附加的位置、五档差异）由 test/compose.test.mjs 用常量级断言钉住，
+// 这里只保证面板把该传的都传了——别在两个文件里各写一份顺序表，改一处就会有一边过时。
 ok('盘面已从 resultWithInterpret 拆出（第一参为空串）', /resultWithInterpret\('', result\.it/.test(app));
 ok('解读仍走 resultWithInterpret 入口', app.includes('PP.resultWithInterpret('));
 

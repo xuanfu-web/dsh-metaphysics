@@ -613,6 +613,8 @@
     try {
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
     } catch (e) { it = null; }
+    // 解析失败只在控制台留全文，用户侧看到的是「这段没生出来 + 编号」
+    if (it && it.error) console.warn('[metaphysics] 解读未生成 ' + (it.errorId || ''), it.error);
     // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节，保证与真实报告同一渲染路径
     if (it && last.r && last.r.cross && window.Engine.crossSection) {
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
@@ -634,7 +636,7 @@
       caliber: window.__PP.caliberHTML(last.caliber),
       perf: last.perf ? window.__PP.perfHTML(last.perf) : '',
       exportBar: exportBar(),
-    });
+    }, { system: last.r && last.r.system });
     last.it = it;
     const askNow = el('askq');
     if (askNow && askBefore) askNow.value = askBefore;
@@ -1831,6 +1833,12 @@
     document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => {
       if (needAsk(tab) && !el('question').value.trim() && el('question').focus) el('question').focus();
     }));
+    // 开发者视图的暗门：页头印章连点五下切换（或 URL 加 ?dev=1，或本机记着 mp.view）。
+    // 普通用户撞不到这五下，但要在别人机器上排障时不必先解释「加个参数」。
+    window.__MPRepaint = () => { if (last && last.r) paint(); };
+    if (window.__MPCompose && window.__MPCompose.bindDevSwitch) {
+      window.__MPCompose.bindDevSwitch(document.querySelector('.seal'));
+    }
     // C3 深链：带 #mp= 打开时先还原那张盘；没有就照旧是默认示例盘
     const deep = readDeepLink();
     setTab(deep ? deep.tab : 'ziwei');

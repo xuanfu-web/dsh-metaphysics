@@ -1,8 +1,16 @@
 // 结果拼接：段序与 dev 取舍都交给 __MPCompose（与独立页 src/web-ui.js 共用同一份），
 // 面板这边不再自己拼一遍。万一它没加载（宿主缓存了旧 client.js），退回「全段拼接」，不白屏。
-function composeOut(parts) {
-  if (window.__MPCompose && window.__MPCompose.composeResult) return window.__MPCompose.composeResult(parts);
+function composeOut(parts, system) {
+  if (window.__MPCompose && window.__MPCompose.composeResult) return window.__MPCompose.composeResult(parts, { system });
   return Object.keys(parts).map((k) => parts[k]).filter(Boolean).join('');
+}
+
+// 解析失败编号已经打过 warn 的那些（避免每次重渲染刷同一条）
+const warnedIt = new Set();
+
+// 开发者视图是否开着（与 compose 共用同一个开关）
+function devView() {
+  return !!(window.__MPCompose && window.__MPCompose.devOn && window.__MPCompose.devOn());
 }
 
 // ── 历史记录（localStorage，只存参数，最多 20 条） ──
@@ -970,6 +978,22 @@ function App() {
   const [askText, setAskText] = useState('');
   const [chatNote, setChatNote] = useState('');
   const [fx, setFx] = useState(null);
+  // 开发者视图的第三个入口：Ctrl+Shift+D。面板里没有页头印章可以连点，也不值得为用户视图
+  // 多放一枚按钮；组合键谁都不会误触，但要给别人排障时不用先教他「在地址栏加个参数」。
+  const [, setDevTick] = useState(0);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!e.ctrlKey || !e.shiftKey) return;
+      if (String(e.key || '').toLowerCase() !== 'd') return;
+      const C = window.__MPCompose;
+      if (!C || !C.setDev || !C.devOn) return;
+      e.preventDefault();
+      C.setDev(!C.devOn());
+      setDevTick((n) => n + 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   // 验前事 / 生时校正
   const [pastMarks, setPastMarks] = useState({});
   const [fit, setFit] = useState(null);
@@ -1037,6 +1061,14 @@ function App() {
   // 对话桥（输入条右侧的「命理·问」）读的是 LAST.q，这里跟着结果一起更新
   useEffect(() => {
     if (result && result.r) { LAST.r = result.r; LAST.q = packedQuestion(); LAST.it = result.it || null; }
+    // 解析失败只在控制台留全文，用户侧只看得到「这段没生出来 + 编号」；
+    // 按编号去重，免得每次重渲染都往控制台刷同一条。
+    const it = result && result.it;
+    if (it && it.error && !warnedIt.has(it.errorId || it.error)) {
+      if (warnedIt.size > 40) warnedIt.clear();
+      warnedIt.add(it.errorId || it.error);
+      console.warn('[metaphysics] 解读未生成 ' + (it.errorId || ''), it.error);
+    }
   }, [result, askText, question]);
   // 解析模块较长：窄屏默认收起、宽屏默认展开；用户手动切过就以他的选择为准
   const [foldPref, setFoldPref] = useState(null);
@@ -2659,6 +2691,7 @@ function App() {
       'aria-label': '排盘结果',
       'aria-live': 'polite',
       onClick: onFoldClick,
+
       dangerouslySetInnerHTML: { // html-sink:ok __html 由 composeOut 拼装，实参全是 *HTML() 渲染器的输出
         // 结论卡绝对最前（打开就看见判断）；其后才是盘面。句柄、影子盘、推导链、口径对照、耗时
         // 只在开发者视图出，用户视图里连生成都不生成——藏起来仍会被存长图与导出带出去。
@@ -2675,7 +2708,7 @@ function App() {
           trace: PP.traceHTML(result.r.trace, result.r.system, result.r.traceText),
           caliber: PP.caliberHTML(result.caliber),
           perf: PP.perfHTML(perf),
-        }),
+        }, result.r && result.r.system),
       },
     }) : null,
 
@@ -2719,7 +2752,10 @@ function App() {
         className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginLeft: 8 },
         onClick: askInChat, title: '把这张盘的摘要和你的问题一起发进 DSH 对话窗，由对话里的模型接着答',
       }, '问进对话'),
-      (COMPOSER.ref ? null : h('div', { key: 'bridgediag', className: 'mp-note', style: { marginTop: 6, fontSize: 11, flexBasis: '100%' } }, bridgeDiagText())),
+      // 桥接自检只给一句人话：真的点不出去时也有退路（复制提问）。诊断数字只在 dev 视图露。
+      (COMPOSER.ref ? null : h('div', { key: 'bridgediag', className: 'mp-note', style: { marginTop: 6, fontSize: 11, flexBasis: '100%' } },
+        '本机对话窗没接上：点「问进对话」会把提问复制到剪贴板，自己粘进对话窗就行。'
+        + (devView() ? '（' + bridgeDiagText() + '）' : ''))),
       chatNote ? h('div', { key: 'chatnote', className: 'mp-note', style: { marginTop: 6, fontSize: 12, flexBasis: '100%' } }, chatNote) : null) : null,
 
     // C3 桥替代：桥能用也留着——复制参数、发深链本身就是正经用法，不是只有桥坏掉才想起来

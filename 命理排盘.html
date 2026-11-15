@@ -29167,6 +29167,23 @@ const withReportMeta = (body, r, ask) => enrichPlain({
   ask,
 }, r, ask);
 
+/**
+ * 解析失败编号：同一句错误消息永远得到同一个 6 位串。
+ *
+ * 用户侧只看到「这段解读没生出来（编号 8KQ2Z1）」——栈和消息留在控制台。
+ * 用户把编号报过来，作者拿它能在日志里对上一条，不必让用户抄一屏报错。
+ * 纯函数：不读时间、不取随机，engine 里不许有环境依赖。
+ */
+function shortErrId(msg) {
+  const s = String(msg == null ? 'unknown' : msg);
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
+}
+
 function interpret(r, opts) {
   if (!isObj(r) || !r.system) return null;
   const ask = askOf(opts);
@@ -29190,6 +29207,7 @@ function interpret(r, opts) {
       technique: TECHNIQUE[r.system] || '',
       disclaimer: DISCLAIMER,
       error: String(e && e.message),
+      errorId: shortErrId(e && e.message),
       ask,
     };
   }
@@ -38523,7 +38541,10 @@ window.__MP_VER = "0.81.0";
         ${answer}
         ${plain}
         ${it.lead ? `<div class="mp-it-lead">${esc(it.lead)}</div>` : ''}
-        ${it.error ? `<div class="mp-it-err"><b>⚠ 解析生成失败</b>${esc(it.error)}——上方盘面数据本身可用</div>` : ''}
+        ${it.error ? `<div class="mp-it-err">这段解读这次没生出来，盘面数据本身是好的${it.errorId ? `（编号 ${esc(it.errorId)}，反馈时报它）` : ''}${
+          (window.__MPCompose && window.__MPCompose.devOn && window.__MPCompose.devOn())
+            ? `<details class="mp-it-errd"><summary>失败原因（只在开发者视图显示）</summary><code>${esc(it.error)}</code></details>`
+            : ''}</div>` : ''}
     ${guide}
     ${outline}
         ${toc}
@@ -39869,6 +39890,47 @@ window.__MP_VER = "0.81.0";
   // dev 专属段落，命名与 composeResult 的 parts 键一致
   const DEV_SECTIONS = ['perf', 'revision', 'handle', 'shadow', 'trace', 'caliber'];
 
+  // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 解读 → 追问 → 附加
+  const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'interpret', 'followup', 'extra'];
+
+  /* 22 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
+   *
+   * 分档的唯一依据：这份结果能不能被追问。
+   *   盘类 / 问事类 / 判定类——有流年、宫位、三传、局数可追，出追问条。
+   *   问卷类（MBTI、中医体质）——结果是量表分数，没有「哪一年」可问。
+   *   速查类（黄历、称骨、星座、数字、公农历）——查表结果，追问只能回「找不到」。
+   *
+   * hepan 归盘类而不是问事类：它是两人生辰的对照，能追到某一年的相处，但要先有双方数据。
+   * xiaoliuren 归问事类：时间起课或报数起课，一样有落宫可追。
+   */
+  const TIER = {
+    chart: ['bazi', 'ziwei', 'hepan', 'trend', 'fengshui', 'name'],
+    ask: ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren'],
+    judge: ['wuyunliuqi', 'taiyi', 'zeri'],
+    quiz: ['mbti', 'constitution'],
+    lookup: ['almanac', 'chenggu', 'star', 'numerology', 'convert'],
+  };
+
+  /* 档位不出的段。目前只有「追问」这一条。
+   *
+   * 起盘时刻不在这里管：那是输入语义的问题，`TIME_KIND`（app.js 里）已经分了三类，
+   * 塔罗 / 问卷根本没有时间字段，castAtHTML 自己会返回空串。同一件事不写两处，
+   * 否则以后加体系时两边会互相打架。
+   */
+  const TIER_SKIP = {
+    quiz: ['followup'],
+    lookup: ['followup'],
+  };
+
+  function tierOf(system) {
+    const s = String(system || '');
+    const keys = Object.keys(TIER);
+    for (let i = 0; i < keys.length; i++) {
+      if (TIER[keys[i]].indexOf(s) >= 0) return keys[i];
+    }
+    return 'chart';
+  }
+
   const store = () => {
     try { return window.localStorage || null; } catch (e) { return null; }
   };
@@ -39919,11 +39981,13 @@ window.__MP_VER = "0.81.0";
    */
   function composeResult(parts, opts) {
     const p = parts || {};
-    const dev = (opts && typeof opts.mode === 'string') ? opts.mode === 'dev' : devOn();
-    const out = [p.head, p.body, p.chart, p.shortId, p.castAt, p.interpret, p.followup, p.extra];
-    if (dev) out.push(p.revision, p.handle, p.shadow, p.trace, p.caliber, p.perf);
-    out.push(p.exportBar);
-    return out.filter(Boolean).join('');
+    const o = opts || {};
+    const dev = typeof o.mode === 'string' ? o.mode === 'dev' : devOn();
+    const skip = TIER_SKIP[tierOf(o.system)] || [];
+    const segs = USER_SEGS.filter((k) => skip.indexOf(k) < 0);
+    if (dev) segs.push(...DEV_SECTIONS);
+    segs.push('exportBar');
+    return segs.map((k) => p[k]).filter(Boolean).join('');
   }
 
   /**
@@ -39939,6 +40003,10 @@ window.__MP_VER = "0.81.0";
 
   window.__MPCompose = {
     DEV_SECTIONS: DEV_SECTIONS,
+    USER_SEGS: USER_SEGS,
+    TIER: TIER,
+    TIER_SKIP: TIER_SKIP,
+    tierOf: tierOf,
     devOn: devOn,
     setDev: setDev,
     bindDevSwitch: bindDevSwitch,
@@ -40566,6 +40634,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     try {
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
     } catch (e) { it = null; }
+    // 解析失败只在控制台留全文，用户侧看到的是「这段没生出来 + 编号」
+    if (it && it.error) console.warn('[metaphysics] 解读未生成 ' + (it.errorId || ''), it.error);
     // 交叉验证结果由 compute 挂在盘面对象上，这里补进解析分节，保证与真实报告同一渲染路径
     if (it && last.r && last.r.cross && window.Engine.crossSection) {
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
@@ -40587,7 +40657,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       caliber: window.__PP.caliberHTML(last.caliber),
       perf: last.perf ? window.__PP.perfHTML(last.perf) : '',
       exportBar: exportBar(),
-    });
+    }, { system: last.r && last.r.system });
     last.it = it;
     const askNow = el('askq');
     if (askNow && askBefore) askNow.value = askBefore;
@@ -41784,6 +41854,12 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => {
       if (needAsk(tab) && !el('question').value.trim() && el('question').focus) el('question').focus();
     }));
+    // 开发者视图的暗门：页头印章连点五下切换（或 URL 加 ?dev=1，或本机记着 mp.view）。
+    // 普通用户撞不到这五下，但要在别人机器上排障时不必先解释「加个参数」。
+    window.__MPRepaint = () => { if (last && last.r) paint(); };
+    if (window.__MPCompose && window.__MPCompose.bindDevSwitch) {
+      window.__MPCompose.bindDevSwitch(document.querySelector('.seal'));
+    }
     // C3 深链：带 #mp= 打开时先还原那张盘；没有就照旧是默认示例盘
     const deep = readDeepLink();
     setTab(deep ? deep.tab : 'ziwei');
