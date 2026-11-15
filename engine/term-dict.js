@@ -372,7 +372,7 @@ export const SYNONYM_GROUPS = {
   ],
   qimen: [
     ['值符', '直符', '值符星'],
-    ['值使', '直使', '值使门'],
+    ['值使', '直使', '值使门', '直使门'],
     ['用神', '用神宫', '所问之宫'],
     ['日干', '日干宫', '你这边'],
     ['时干', '时干宫', '事情那边'],
@@ -544,5 +544,9 @@ export function synonymKey(system, name) {
   if (ix.synMap.has(raw)) return ix.synMap.get(raw);
   const stripped = raw.replace(/[\s·、,，。.!！?？:：;；""''()（）【】\[\]]/g, '');
   if (ix.synMap.has(stripped)) return ix.synMap.get(stripped);
+  // 因素名常带一层类别后缀（「用神状态」「佛神格局」这类），剥掉再查一次同义词表：
+  // 否则同一件事会因为「加了两个字」而不被认成重复。
+  const trimmed = stripped.replace(/(状态|格局|作用|落点|强弱|宫位|牌位|整体|窗口|力量)$/u, '');
+  if (trimmed && trimmed !== stripped && ix.synMap.has(trimmed)) return ix.synMap.get(trimmed);
   return stripped;
 }

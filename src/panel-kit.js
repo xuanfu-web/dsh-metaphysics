@@ -580,9 +580,9 @@
 .mp-env-why summary::before{content:"＋ ";color:var(--red)}
 .mp-env-why[open] summary::before{content:"－ "}
 .mp-env-why-body{margin-top:6px;padding:8px 10px;background:var(--band);border-radius:8px}
-.mp-env-ev{font-size:12px;line-height:1.7;padding:3px 0}
-.mp-env-ev b{display:inline-block;min-width:64px;color:var(--muted);font-weight:600}
-.mp-env-ev span{color:var(--ink)}
+.mp-env-ev{display:flex;gap:9px;align-items:baseline;font-size:12px;line-height:1.7;padding:3px 0}
+.mp-env-ev b{flex:none;min-width:44px;color:var(--muted);font-weight:600}
+.mp-env-ev span{flex:1;min-width:0;color:var(--ink);word-break:break-word}
 .mp-env-tl{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .mp-env-tl-row{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:12.5px;padding:3px 0}
 .mp-env-tl-w{font-weight:600}
@@ -3599,7 +3599,7 @@
       : '';
 
     return `<div class="mp-env">
-      
+      <div class="mp-env-sec-h">关键几点</div>
       <div class="mp-env-f">${factors}</div>
       ${tl}${adv}${risk}${cf}
     </div>`;
@@ -3694,7 +3694,7 @@
         <p class="mp-guide-close">${esc(it.guide.closing)}</p>
       </div></details>` : '';
     // L1+L2：结论之后的「为什么」，逐条自带依据，不做整块折叠
-    const envBody = pp.envelopeHTML(pp.envFor(it, opt));
+    const envBody = opt && opt.noBody ? '' : pp.envelopeHTML(pp.envFor(it, opt));
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -3746,6 +3746,11 @@
    * opt.noHead = true 时不再自带结论卡——调用方已经把它提到结果卡最前面自己拼了，
    * 不这么拆就会出现两张结论卡，或者结论卡被压在「复制句柄」下面。
    */
+  /** L1 摘要单独取用：紧跟在结论卡后面。盘面是「过程」，不该插在结论与摘要中间 */
+  pp.envBodyHTML = function (it, opt) {
+    return pp.envelopeHTML(pp.envFor(it, opt));
+  };
+
   pp.resultWithInterpret = function (html, it, opt) {
     const head = opt && opt.noHead ? '' : pp.envHeadHTML(it, opt);
     return head + (html || '') + pp.interpretHTML(it, opt);

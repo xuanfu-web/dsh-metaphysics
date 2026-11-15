@@ -2654,7 +2654,8 @@ function App() {
       onClick: onFoldClick,
       dangerouslySetInnerHTML: {
         __html: PP.envHeadHTML(result.it, { folded: defaultFolded() })
-          + chartHTML(result) + castAtHTML(result) + PP.resultWithInterpret('', result.it, { folded: defaultFolded(), noHead: true })
+          + PP.envBodyHTML(result.it, { folded: defaultFolded() })
+          + chartHTML(result) + castAtHTML(result) + PP.resultWithInterpret('', result.it, { folded: defaultFolded(), noHead: true, noBody: true })
           // 结论卡绝对最前（打开就看见判断）；其后才是盘面，性能与修订这些技术信息再往后排
           + PP.perfHTML(perf) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
           + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.caliberHTML(result.caliber),

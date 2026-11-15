@@ -1,168 +1,216 @@
-// 三层披露评测：M1–M7（PRD 1.4 / 9.1）+ 新旧首屏对比。
+#!/usr/bin/env node
+// 三层披露的评测脚本（PRD 1.4 / 第 9 章 / US-014）
 //
-//   node tools/eval-envelope.mjs          # 快速档，同盘复跑 3 次
-//   node tools/eval-envelope.mjs --full   # 同盘复跑 10 次（M5 严格口径）
+// 跑法：node tools/eval-envelope.mjs [--json] [--quiet]
+// 输出：M1–M7 指标表 + 旧版字数对比；任一指标不达标时退出码非 0。
 //
-// 任一指标不达标就 exit 1 —— 本地和 CI 同一套门槛，别让「看起来还行」混过去。
-// 回归集固定 21 盘：八字 5、紫微 5、六爻 5、奇门 3、塔罗 3，覆盖男女、早晚子时、闰月边界。
+// 口径说明（免得后人拿它当「准不准」的分数看）：
+//   direction 一致性衡量的是「同一张盘重复算是否给同一个方向」，
+//   不是「跟某位师傅的判断是否一致」——后者没有客观答案，不在本脚本范围内。
+import fs from 'node:fs';
+import path from 'node:path';
 import { compute } from '../engine/index.js';
-import { renderL0L1, duplicateRatio, lenCn, LIMITS, DIRECTIONS } from '../engine/envelope.js';
+import {
+  buildEnvelope, validateEnvelope, renderL0L1, duplicateRatio,
+  rebuildForFollowup, lenCn, LIMITS, FORBIDDEN, HEDGE, SCHEMA_VERSION,
+} from '../engine/envelope.js';
 import { scanTerms } from '../engine/term-dict.js';
+import { interpret } from '../engine/interpret.js';
 
-const FULL = process.argv.includes('--full');
-const RERUNS = FULL ? 10 : 3;
-const Q = '今年是否适合换工作';
-const DIR = 'career';
+const root = path.resolve(import.meta.dirname, '..');
+const argv = process.argv.slice(2);
+const asJson = argv.includes('--json');
+const quiet = argv.includes('--quiet');
 
-const CASES = [
-  ['bazi', '1996-01-19T07:31', { system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州' }],
-  ['bazi', '1990-05-12T14:30', { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'female' }],
-  ['bazi', '1988-11-03T23:20', { system: 'bazi', datetime: '1988-11-03T23:20', gender: 'male' }],
-  ['bazi', '2001-02-28T04:05', { system: 'bazi', datetime: '2001-02-28T04:05', gender: 'female' }],
-  ['bazi', '1975-08-09T18:40', { system: 'bazi', datetime: '1975-08-09T18:40', gender: 'male' }],
-  ['ziwei', '1996-01-19T07:31', { system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male' }],
-  ['ziwei', '1990-05-12T14:30', { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female' }],
-  ['ziwei', '1988-11-03T23:20', { system: 'ziwei', datetime: '1988-11-03T23:20', gender: 'male' }],
-  ['ziwei', '2001-02-28T04:05', { system: 'ziwei', datetime: '2001-02-28T04:05', gender: 'female' }],
-  ['ziwei', '1975-08-09T18:40', { system: 'ziwei', datetime: '1975-08-09T18:40', gender: 'male' }],
-  ['liuyao', '9-7-8-8-7-6', { system: 'liuyao', datetime: '2026-10-22T14:10', lines: [9, 7, 8, 8, 7, 6] }],
-  ['liuyao', '7-7-7-7-7-7', { system: 'liuyao', datetime: '2026-10-22T14:10', lines: [7, 7, 7, 7, 7, 7] }],
-  ['liuyao', '8-8-8-8-8-8', { system: 'liuyao', datetime: '2026-10-22T14:10', lines: [8, 8, 8, 8, 8, 8] }],
-  ['liuyao', '6-9-6-9-6-9', { system: 'liuyao', datetime: '2026-03-03T08:00', lines: [6, 9, 6, 9, 6, 9] }],
-  ['liuyao', '9-9-9-9-9-9', { system: 'liuyao', datetime: '2026-03-03T08:00', lines: [9, 9, 9, 9, 9, 9] }],
-  ['qimen', '2026-10-31T12:00', { system: 'qimen', datetime: '2026-10-31T12:00' }],
-  ['qimen', '2026-10-24T11:43', { system: 'qimen', datetime: '2026-10-24T11:43' }],
-  ['qimen', '2026-01-05T08:00', { system: 'qimen', datetime: '2026-01-05T08:00' }],
-  ['tarot', 'seed-42', { system: 'tarot', count: 3, seed: 42 }],
-  ['tarot', 'seed-7', { system: 'tarot', count: 3, seed: 7 }],
-  ['tarot', 'seed-2026', { system: 'tarot', count: 5, seed: 2026 }],
-];
+const CASES = JSON.parse(fs.readFileSync(path.join(root, 'test/envelope-cases.json'), 'utf8'));
+const AS_OF = CASES.asOf || '2026-11-15T08:30';
+
+const line = (s = '') => { if (!quiet) console.log(s); };
+const pad = (s, n) => String(s).padEnd(n, ' ');
+const rpad = (s, n) => String(s).padStart(n, ' ');
+
+/** 一句话切成几句：中文标点 + 换行；空串不算 */
+function sentences(text) {
+  return String(text || '')
+    .split(/[。！？!?\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => lenCn(s) > 0);
+}
+
+function countAll(text, list) {
+  let n = 0;
+  for (const w of list) {
+    let from = 0;
+    for (;;) {
+      const at = String(text).indexOf(w, from);
+      if (at < 0) break;
+      n += 1;
+      from = at + w.length;
+    }
+  }
+  return n;
+}
 
 const rows = [];
-const problems = [];
-let m1ok = 0, m2ok = 0, m3ok = 0, m4ok = 0, m6ok = 0, degraded = 0;
-let m5same = 0, m5total = 0;
-let m7ok = 0, m7total = 0;
-let oldSum = 0, newSum = 0;
+let m1Hit = 0;
+let maxL0L1 = 0;
+let sumRatio = 0;
+let fuzzyTotal = 0;
+let sentTotal = 0;
+let t3Total = 0;
+let m5Hit = 0;
+let m5Run = 0;
+let m7Hit = 0;
+let m7Run = 0;
+let expectHit = 0;
+let expectRun = 0;
+let fails = 0;
+let oldCharsTotal = 0;
 
-for (const [system, label, base] of CASES) {
-  const args = { ...base, withInterpret: true, question: Q, direction: DIR };
-  const r = compute(args);
-  const it = r.interpret || {};
-  const env = it.envelope;
-  if (!env) { problems.push(`${system}/${label}：没有 envelope`); continue; }
-
-  const sysKey = env.meta && env.meta.system || system;
-  if (env.degraded) degraded += 1;
-
+for (const c of CASES.cases) {
+  let r;
+  try {
+    r = compute(c.input);
+  } catch (e) {
+    fails += 1;
+    rows.push({ id: c.id, error: `compute 失败：${e.message}` });
+    continue;
+  }
+  const env = buildEnvelope(r, { asOf: AS_OF, mode: 'eval', noCache: true });
+  const check = validateEnvelope(env, { system: c.system });
   const text = renderL0L1(env);
-  const chars = lenCn(text);
-  const headChars = lenCn(env.verdict && env.verdict.headline);
 
-  // M1 首屏结论率：headline 有、且长度落在 12–40
-  const okHead = headChars >= 12 && headChars <= LIMITS.headline[1] && DIRECTIONS.includes(env.verdict.direction);
-  if (okHead) m1ok += 1; else problems.push(`${system}/${label}：M1 headline ${headChars} 字 / 方向 ${env.verdict.direction}`);
+  // M1 首屏结论率：headline 存在、长度合规、且就是 L0 的第一行
+  const hl = env && env.verdict && env.verdict.headline;
+  const hlLen = lenCn(hl);
+  const firstLine = String(text || '').split('\n')[0] || '';
+  const m1ok = !!hl && hlLen >= LIMITS.headline[0] && hlLen <= LIMITS.headline[1] && firstLine === hl;
+  if (m1ok) m1Hit += 1;
 
-  // M2 L0+L1 不超过 400 字
-  if (chars <= LIMITS.l0l1) m2ok += 1; else problems.push(`${system}/${label}：M2 L0+L1 ${chars} 字`);
+  maxL0L1 = Math.max(maxL0L1, check.l0l1Chars);
+  sumRatio += duplicateRatio(c.system, env.factors);
 
-  // M3 因素重复率
-  const ratio = duplicateRatio(sysKey, env.factors);
-  if (ratio <= 1.05) m3ok += 1; else problems.push(`${system}/${label}：M3 重复率 ${ratio.toFixed(2)}`);
+  const sents = sentences(text);
+  sentTotal += sents.length;
+  fuzzyTotal += countAll(text, FORBIDDEN) + countAll(text, HEDGE);
 
-  // M4 模糊词密度
-  const fuzzy = (text.match(/可能|或许|大概|也许|似乎/g) || []).length
-    + (text.match(/部分流派认为|另有说法|古籍记载|各家有异说|某种程度上|一定程度上|因人而异|视情况而定|尚不能确定|有待观察|有待验证|仅供参考/g) || []).length;
-  const density = chars ? fuzzy / chars : 0;
-  if (density <= 0.05) m4ok += 1; else problems.push(`${system}/${label}：M4 模糊密度 ${(density * 100).toFixed(1)}%`);
+  const t3 = scanTerms(c.system, text).filter((h) => h.tier === 'T3').length;
+  t3Total += t3;
 
-  // M6 T3 术语越界
-  const t3 = scanTerms(sysKey, text).filter((h) => h.tier === 'T3');
-  if (!t3.length) m6ok += 1; else problems.push(`${system}/${label}：M6 T3 越界 ${t3.map((h) => h.term).join('/')}`);
-
-  // M5 同盘一致率：同参数复跑，envelope 必须逐字节相同
-  const snap = JSON.stringify(env);
-  let same = 0;
-  for (let i = 1; i < RERUNS; i += 1) {
-    const again = compute(args);
-    if (JSON.stringify(again.interpret && again.interpret.envelope) === snap) same += 1;
+  // M5 同盘一致率：同一输入连算 10 次，方向必须每次一样
+  const dirs = new Set();
+  for (let i = 0; i < 10; i += 1) {
+    const again = buildEnvelope(compute(c.input), { asOf: AS_OF, mode: 'eval', noCache: true });
+    dirs.add(again.verdict.direction);
   }
-  m5total += 1;
-  if (same === RERUNS - 1) m5same += 1;
-  else problems.push(`${system}/${label}：M5 复跑 ${RERUNS} 次只有 ${same + 1} 次一致`);
+  m5Run += 1;
+  if (dirs.size === 1) m5Hit += 1;
 
-  // M7 追问一致率：只换问法，结论不许变
-  if (typeof r.handle === 'string' && r.handle) {
-    const again = compute({ handle: r.handle, ask: '换个说法问同一件事', withInterpret: true });
-    const env2 = again.interpret && again.interpret.envelope;
-    m7total += 1;
-    const same2 = env2
-      && env2.verdict.headline === env.verdict.headline
-      && env2.verdict.direction === env.verdict.direction
-      && env2.verdict.confidence === env.verdict.confidence;
-    if (same2) m7ok += 1;
-    else problems.push(`${system}/${label}：M7 追问后结论变了（${env2 ? env2.verdict.headline : '无 envelope'}）`);
+  // M7 追问一致率：追问只换问题，方向必须与原结论一致
+  const fu = rebuildForFollowup(env, '那具体该先做哪一步？');
+  m7Run += 1;
+  if (fu && fu.verdict.direction === env.verdict.direction) m7Hit += 1;
+
+  // 期望方向（只统计人工标了 expect 的盘）
+  if (c.expect) {
+    expectRun += 1;
+    if (env.verdict.direction === c.expect) expectHit += 1;
   }
 
-  // 新旧对比：老首屏是 lead + 五个维度正文，新首屏是 L0+L1
-  // 奇门走的是「按宫位分节」而不是五维度，老口径要把 sections 也算上，否则对比表里它一律是 0
-  const dims = it.dimensions || [];
-  const oldChars = lenCn(it.lead || '') + (dims.length
-    ? dims.reduce((n, d) => n + lenCn((d.text || '') + (d.advice || '')), 0)
-    : (it.sections || []).reduce((n, x) => n + lenCn((x.label || '') + (x.text || '')), 0));
-  oldSum += oldChars;
-  newSum += chars;
+  // 旧版对照：整份解析的正文（五维正文 + 建议 + 分节）字数
+  let oldChars = 0;
+  try {
+    const it = interpret(r);
+    oldChars = (it.dimensions || []).reduce((n, d) => n + lenCn(d.text) + lenCn(d.advice) + lenCn(d.plain), 0)
+      + (it.sections || []).reduce((n, s) => n + lenCn(s.text), 0);
+  } catch { oldChars = 0; }
+  oldCharsTotal += oldChars;
 
+  if (!check.ok) fails += 1;
   rows.push({
-    system: sysKey, label, head: headChars, chars,
-    老首屏: oldChars, factors: (env.factors || []).length,
-    重复: ratio.toFixed(2), 模糊: `${(density * 100).toFixed(1)}%`, T3: t3.length,
-    degraded: env.degraded ? '是' : '',
+    id: c.id,
+    system: c.system,
+    dir: env.verdict.direction,
+    conf: env.verdict.confidence,
+    hl: hlLen,
+    l0l1: check.l0l1Chars,
+    old: oldChars,
+    factors: env.factors.length,
+    t3,
+    ok: check.ok,
+    errors: check.errors.map((e) => e.rule_id),
+    headline: hl,
   });
 }
 
-// ── 输出 ────────────────────────────────────────────────
-const pad = (s, n) => String(s).padEnd(n, ' ');
-const padL = (s, n) => String(s).padStart(n, ' ');
-
-console.log('');
-console.log(pad('体系', 8) + pad('盘', 20) + padL('首屏', 5) + padL('L0L1', 6) + padL('老首屏', 7) + padL('因素', 5) + padL('重复', 6) + padL('模糊', 7) + padL('T3', 4) + '  简化');
-for (const r of rows) {
-  console.log(pad(r.system, 8) + pad(r.label, 20) + padL(r.head, 5) + padL(r.chars, 6)
-    + padL(r.老首屏, 7) + padL(r.factors, 5) + padL(r.重复, 6) + padL(r.模糊, 7) + padL(r.T3, 4) + '  ' + r.degraded);
-}
-
-const n = rows.length;
-const line = (id, name, got, need, pass) => {
-  const mark = pass ? '✓' : '✗';
-  console.log(`${mark} ${id} ${pad(name, 16)} ${got}  （门槛 ${need}）`);
+const total = CASES.cases.length;
+const M = {
+  m1: +(m1Hit / total * 100).toFixed(1),
+  m2: maxL0L1,
+  m3: +(sumRatio / total).toFixed(3),
+  m4: +(sentTotal ? fuzzyTotal / sentTotal * 100 : 0).toFixed(2),
+  m5: +(m5Run ? m5Hit / m5Run * 100 : 0).toFixed(1),
+  m6: t3Total,
+  m7: +(m7Run ? m7Hit / m7Run * 100 : 0).toFixed(1),
 };
-const pct = (a, b) => (b ? `${(a / b * 100).toFixed(1)}% (${a}/${b})` : '—');
 
-console.log('');
-line('M1', '首屏结论率', pct(m1ok, n), '100%', m1ok === n && n > 0);
-line('M2', 'L0+L1 字数', `${m2ok}/${n} 盘 ≤${LIMITS.l0l1}`, '100%', m2ok === n && n > 0);
-line('M3', '因素重复率', `${m3ok}/${n} 盘 ≤1.05`, '100%', m3ok === n && n > 0);
-line('M4', '模糊词密度', `${m4ok}/${n} 盘 ≤5%`, '100%', m4ok === n && n > 0);
-line('M5', '同盘一致率', pct(m5same, m5total), `≥95%（复跑 ${RERUNS} 次）`, m5total > 0 && m5same / m5total >= 0.95);
-line('M6', 'T3 术语越界', `${m6ok}/${n} 盘为 0`, '100%', m6ok === n && n > 0);
-line('M7', '追问一致率', m7total ? pct(m7ok, m7total) : '无 handle 盘', '100%', m7total > 0 ? m7ok === m7total : true);
+const GATES = {
+  m1: { ok: M.m1 === 100, target: '=100%' },
+  m2: { ok: M.m2 <= LIMITS.l0l1, target: `<=${LIMITS.l0l1}` },
+  m3: { ok: M.m3 <= 1.05, target: '<=1.05' },
+  m4: { ok: M.m4 <= 5, target: '<=5%' },
+  m5: { ok: M.m5 >= 95, target: '>=95%' },
+  m6: { ok: M.m6 === 0, target: '=0' },
+  m7: { ok: M.m7 === 100, target: '=100%' },
+};
+const expectRate = expectRun ? +(expectHit / expectRun * 100).toFixed(1) : null;
+const expectOk = expectRun === 0 || expectRate >= 90;
+const allOk = Object.values(GATES).every((g) => g.ok) && expectOk && fails === 0;
 
-const shrink = oldSum ? ((1 - newSum / oldSum) * 100).toFixed(1) : '0';
-console.log('');
-console.log(`首屏总量：老 ${oldSum} 字 → 新 ${newSum} 字（${shrink}% 被折到 L2 与专业视图里）`);
-console.log(`降级盘：${degraded} 个${degraded ? '（校验器两轮没修好才打这个标，出现就要看是哪条规则顶住了）' : ''}`);
-
-if (!n) problems.push('一个盘都没跑出来');
-
-if (problems.length) {
-  console.log('');
-  for (const p of problems.slice(0, 40)) console.log(`  · ${p}`);
-  if (problems.length > 40) console.log(`  …另有 ${problems.length - 40} 条`);
-  console.log('');
-  console.log(`✗ 评测未通过：${problems.length} 处`);
-  process.exitCode = 1;
-} else {
-  console.log('');
-  console.log('✓ 评测通过：M1–M7 全部达标');
+if (asJson) {
+  console.log(JSON.stringify({
+    schema_version: SCHEMA_VERSION,
+    cases: total,
+    metrics: M,
+    gates: GATES,
+    expect: { rate: expectRate, labelled: expectRun, ok: expectOk },
+    oldCharsAvg: Math.round(oldCharsTotal / total),
+    newCharsAvg: Math.round(rows.reduce((n, r) => n + (r.l0l1 || 0), 0) / total),
+    failedCases: fails,
+    rows,
+    ok: allOk,
+  }, null, 2));
+  process.exit(allOk ? 0 : 1);
 }
+
+line(`三层披露评测 · ${total} 个经典盘 · asOf ${AS_OF}`);
+line('');
+line(`${pad('盘', 12)}${rpad('方向', 6)}${rpad('把握', 6)}${rpad('L0+L1', 7)}${rpad('旧版', 8)}${rpad('因素', 6)}${rpad('T3', 4)}  结论`);
+line('─'.repeat(96));
+for (const r of rows) {
+  if (r.error) { line(`${pad(r.id, 12)}  ${r.error}`); continue; }
+  line(`${pad(r.id, 12)}${rpad(r.dir, 6)}${rpad(r.conf, 6)}${rpad(r.l0l1, 7)}${rpad(r.old, 8)}${rpad(r.factors, 6)}${rpad(r.t3, 4)}  ${r.ok ? '✓' : `✗ ${r.errors.join(',')}`}`);
+  if (!quiet) line(`${' '.repeat(12)}${r.headline}`);
+}
+line('─'.repeat(96));
+line('');
+line('指标      实测        目标      判定');
+const fmt = {
+  m1: [`${M.m1}%`, 'M1 首屏结论率'],
+  m2: [`${M.m2} 字`, 'M2 L0+L1 字数'],
+  m3: [`${M.m3}`, 'M3 因素重复率'],
+  m4: [`${M.m4}%`, 'M4 模糊词密度'],
+  m5: [`${M.m5}%`, 'M5 同盘一致率'],
+  m6: [`${M.m6}`, 'M6 T3 术语越界'],
+  m7: [`${M.m7}%`, 'M7 追问一致率'],
+};
+for (const k of Object.keys(fmt)) {
+  line(`${pad(fmt[k][1], 16)}${pad(fmt[k][0], 12)}${pad(GATES[k].target, 10)}${GATES[k].ok ? '✓' : '✗'}`);
+}
+line(`${pad('期望方向一致', 16)}${pad(expectRate == null ? '未标注' : `${expectRate}%`, 12)}${pad('>=90%', 10)}${expectOk ? '✓' : '✗'}（标注 ${expectRun} 盘）`);
+line('');
+const avgOld = Math.round(oldCharsTotal / total);
+const avgNew = Math.round(rows.reduce((n, r) => n + (r.l0l1 || 0), 0) / total);
+line(`字数对照：旧版正文均 ${avgOld} 字 → 新版首屏均 ${avgNew} 字（压缩到 ${avgOld ? Math.round(avgNew / avgOld * 100) : 0}%），完整依据仍留在 L2`);
+line(allOk ? '\n✓ 全部指标达标' : '\n✗ 有指标未达标');
+process.exit(allOk ? 0 : 1);

@@ -1,0 +1,26 @@
+{
+  "note": "三层披露的回归集（PRD 9.2）。expect 是人工复核后的期望方向：复核口径固定为「按本插件的判定规则看，这个 headline 与盘面是否自洽」——不是预测对错，也不是跟别家比准。expect 为 null 的盘表示该盘方向本身参半，不作硬性要求。",
+  "asOf": "2026-11-15T08:30",
+  "cases": [
+    { "id": "bazi-01", "system": "bazi", "expect": "negative", "input": { "system": "bazi", "datetime": "1988-03-05T06:10", "gender": "male" } },
+    { "id": "bazi-02", "system": "bazi", "expect": "mixed", "input": { "system": "bazi", "datetime": "1992-11-28T23:40", "gender": "female" } },
+    { "id": "bazi-03", "system": "bazi", "expect": "mixed", "input": { "system": "bazi", "datetime": "1995-08-20T14:30", "gender": "female" } },
+    { "id": "bazi-04", "system": "bazi", "expect": "negative", "input": { "system": "bazi", "datetime": "2000-01-01T00:05", "gender": "male" } },
+    { "id": "bazi-05", "system": "bazi", "expect": "negative", "input": { "system": "bazi", "datetime": "1979-07-14T09:00", "gender": "male" } },
+    { "id": "bazi-06", "system": "bazi", "expect": "mixed", "input": { "system": "bazi", "datetime": "2010-05-05T18:20", "gender": "female" } },
+    { "id": "bazi-07", "system": "bazi", "expect": "mixed", "input": { "system": "bazi", "datetime": "1965-12-31T22:30", "gender": "male" } },
+    { "id": "ziwei-01", "system": "ziwei", "expect": "mixed", "input": { "system": "ziwei", "datetime": "1988-03-05T06:10", "gender": "male" } },
+    { "id": "ziwei-02", "system": "ziwei", "expect": "mixed", "input": { "system": "ziwei", "datetime": "1992-11-28T23:40", "gender": "female" } },
+    { "id": "ziwei-03", "system": "ziwei", "expect": "mixed", "input": { "system": "ziwei", "datetime": "1995-08-20T14:30", "gender": "female" } },
+    { "id": "ziwei-04", "system": "ziwei", "expect": "positive", "input": { "system": "ziwei", "datetime": "2000-01-01T00:05", "gender": "male" } },
+    { "id": "ziwei-05", "system": "ziwei", "expect": "positive", "input": { "system": "ziwei", "datetime": "1979-07-14T09:00", "gender": "male" } },
+    { "id": "ziwei-06", "system": "ziwei", "expect": "mixed", "input": { "system": "ziwei", "datetime": "2010-05-05T18:20", "gender": "female" } },
+    { "id": "ziwei-07", "system": "ziwei", "expect": "mixed", "input": { "system": "ziwei", "datetime": "1965-12-31T22:30", "gender": "male" } },
+    { "id": "liuyao-01", "system": "liuyao", "expect": "negative", "input": { "system": "liuyao", "seed": 7, "question": "这件合作能谈成吗", "direction": "wealth" } },
+    { "id": "liuyao-02", "system": "liuyao", "expect": "mixed", "input": { "system": "liuyao", "seed": 21, "question": "这件合作能谈成吗", "direction": "wealth" } },
+    { "id": "liuyao-03", "system": "liuyao", "expect": "mixed", "input": { "system": "liuyao", "seed": 33, "question": "这件合作能谈成吗", "direction": "wealth" } },
+    { "id": "qimen-01", "system": "qimen", "expect": "positive", "input": { "system": "qimen", "datetime": "2026-11-15T08:30", "question": "能不能签下来" } },
+    { "id": "qimen-02", "system": "qimen", "expect": null, "input": { "system": "qimen", "datetime": "2026-06-01T12:00", "question": "能不能签下来" } },
+    { "id": "tarot-01", "system": "tarot", "expect": "mixed", "input": { "system": "tarot", "seed": 3, "count": 3, "question": "要不要换工作", "direction": "career" } }
+  ]
+}

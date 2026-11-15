@@ -618,9 +618,10 @@
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
     el('out').innerHTML = window.__PP.envHeadHTML(it, { folded: defaultFolded() }) // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
+      + window.__PP.envBodyHTML(it, { folded: defaultFolded() })
       + (last.html || '')
       + castAtHTML(last.tab, last.timed, last.date, last.time)
-      + window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true })
+      + window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true })
       + window.__PP.revisionHTML(last.r.revision)
       + window.__PP.handleHTML(last.r.handle)
       + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)

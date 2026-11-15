@@ -945,7 +945,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
     };
   });
   ok(diag.envFirst, '结果卡第一块是结论卡', JSON.stringify(diag));
-  ok(diag.ttAt === 1, '塔罗牌面紧随结论卡', JSON.stringify(diag.kids));
+  ok(diag.envFirst && diag.ttAt >= 2, '塔罗牌面排在结论卡与关键几点之后（L0→L1→牌面）', JSON.stringify(diag.kids));
   ok(!!diag.first && !/mp-perf|mp-rev|mp-handle|mp-shadow|mp-trace|mp-cast-at|mp-caliber/.test(diag.first),
     '第一块不是技术信息行', JSON.stringify(diag.kids));
 }

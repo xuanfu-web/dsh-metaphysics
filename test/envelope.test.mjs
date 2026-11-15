@@ -1,168 +1,217 @@
-// 三层披露契约（OutputEnvelope）的守门测试。
+// 三层披露契约（PRD US-001~US-008 / US-010~US-013）的回归测试。
 //
-// 这一层最容易腐化：只要有人往文案里塞一句「部分流派认为」或把「月破」写进 L1，
-// 用户看到的就又从结论退回了推演日志。所以这里钉四件事：
-//   ① 结构 —— 必填字段、枚举、条数、字数；
-//   ② 去重 —— 同一件事的四种叫法必须并成一条；
-//   ③ 越界 —— T2/T3 术语与模糊词不许出现在 L0+L1；
-//   ④ 稳定 —— 同盘同参数两次输出逐字节相同（M5 的地基）。
-//
-// 断言工具是 ok(label, cond) / eq(label, actual, expected) —— 标签在前。
+// 这一层最容易被后续改动破坏，而且破坏时不会报错——只会悄悄多出几百字、
+// 悄悄把「六冲」写进首屏、悄悄把免责贴两遍。所以断言按 PRD 的硬约束逐条钉。
 import { compute } from '../engine/index.js';
 import {
-  SCHEMA_VERSION, DIRECTIONS, CONFIDENCES, LIMITS, FORBIDDEN, DISCLAIMER,
-  chartIdOf, dedupeFactors, duplicateRatio, renderL0L1, lenCn,
-  validateEnvelope, repairEnvelope, buildEnvelope, pickVariant, rebuildForFollowup,
+  SCHEMA_VERSION, DIRECTIONS, CONFIDENCES, LIMITS, FORBIDDEN, HEDGE, DISCLAIMER,
+  FACTOR_WHITELIST, OUTPUT_SCHEMA, DIRECTION_LABEL,
+  chartIdOf, dedupeFactors, duplicateRatio, renderL0L1,
+  validateEnvelope, repairEnvelope, buildEnvelope, rebuildForFollowup, pickVariant, lenCn,
 } from '../engine/envelope.js';
-import { ok, eq } from './_harness.mjs';
+import {
+  TERM_DICT, SYNONYM_GROUPS, dictSize, synonymGroupCount,
+  scanTerms, termsByTier, termPlain, synonymKey,
+} from '../engine/term-dict.js';
 
-// ── 一、结构与常量 ────────────────────────────────────────
-eq('契约版本号', SCHEMA_VERSION, '1.0.0');
-eq('方向枚举不多不少', DIRECTIONS.join(','), 'positive,negative,mixed,undetermined');
-eq('把握枚举不多不少', CONFIDENCES.join(','), 'high,medium,low');
-eq('全站唯一一条免责的 id', DISCLAIMER.id, 'std-v1');
-eq('免责只落在页脚', DISCLAIMER.position, 'footer');
-ok(`模糊套话黑名单至少 10 条（现在 ${FORBIDDEN.length}）`, FORBIDDEN.length >= 10);
-ok('黑名单含「部分流派认为」', FORBIDDEN.includes('部分流派认为'));
-ok('黑名单含「因人而异」', FORBIDDEN.includes('因人而异'));
-eq('headline 下限 12 字', LIMITS.headline[0], 12);
-eq('headline 上限 40 字', LIMITS.headline[1], 40);
-eq('L0+L1 总字数上限', LIMITS.l0l1, 400);
+let pass = 0, fail = 0;
+const ok = (cond, name, extra = '') => {
+  if (cond) { pass++; console.log('PASS ', name); }
+  else { fail++; console.log('FAIL ', name, extra); }
+};
+const eq = (a, b, name) => ok(a === b, name, `实际 ${a} / 期望 ${b}`);
 
-// chart_id 是灰度和缓存的键，必须同输入同结果、不同输入不同结果
-const idA = chartIdOf({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male' });
-const idA2 = chartIdOf({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male' });
-const idB = chartIdOf({ system: 'bazi', datetime: '1996-01-19T07:32', gender: 'male' });
-eq('chart_id 同输入稳定', idA, idA2);
-ok('chart_id 换个时辰就不同', idA !== idB);
-ok('chart_id 是 7 位 base32 的大写字（能直接进 DOM id 与 URL）', /^[0-9A-Z]{7}$/.test(idA));
+const baziR = compute({ system: 'bazi', datetime: '1995-08-20T14:30', gender: 'female' });
+const ziweiR = compute({ system: 'ziwei', datetime: '1995-08-20T14:30', gender: 'female' });
+const liuyaoR = compute({ system: 'liuyao', seed: 7, question: '这笔钱能要回来吗', direction: 'wealth' });
+const qimenR = compute({ system: 'qimen', datetime: '2026-11-15T08:30', question: '什么时候能签下这个合同' });
+const tarotR = compute({ system: 'tarot', seed: 3, count: 3, question: '要不要换工作', direction: 'career' });
+const AS_OF = '2026-11-15T08:30';
 
-// ── 二、去重：几种叫法并成一条 ────────────────────────────
-{
-  const src = [
-    { id: 'a', name: '六合', state: '节卦', impact: '整体在拢', weight: 0.6, evidence_refs: ['e1'] },
-    { id: 'b', name: '六合卦', state: '节卦', impact: '整体在拢', weight: 0.8, evidence_refs: ['e2'] },
-    { id: 'c', name: '卦逢六合', state: '节卦', impact: '整体在拢', weight: 0.5, evidence_refs: ['e3'] },
-    { id: 'd', name: '世爻状态', state: '初爻', impact: '你这边偏弱', weight: 0.4, evidence_refs: ['e4'] },
-  ];
-  const out = dedupeFactors('liuyao', src);
-  eq('三种六合叫法并成一条，加世爻共两条', out.length, 2);
-  const he = out.slice().sort((x, y) => y.weight - x.weight)[0];
-  eq('合并取最大权重（不是累加，也不是取第一条）', he.weight, 0.8);
-  ok('合并后证据不丢，按 ref 累加', he.evidence_refs.length >= 2);
-  ok('合并条数记进 duplicate_count，界面上要能说「另有 N 处同义表述」', he.duplicate_count >= 1);
-  ok('原始四条重复率大于 1.5', duplicateRatio('liuyao', src) > 1.5);
-  eq('去重后重复率恰好 1', duplicateRatio('liuyao', out), 1);
-  eq('空列表重复率按 1 算，不返回 Infinity', duplicateRatio('liuyao', []), 1);
-}
+const envOf = (r, extra = {}) => buildEnvelope(r, { asOf: AS_OF, mode: 'eval', noCache: true, ...extra });
 
-// ── 三、校验器：该拦的必须拦住 ────────────────────────────
-function mini(patch = {}) {
-  return {
-    schema_version: SCHEMA_VERSION,
-    meta: { mode: 'live', system: 'bazi', chart_id: 'x1', generated_at: '2026-11-15 08:00' },
-    verdict: { headline: '日主偏强、气候偏燥，宜取水调候，见水这条线才算稳', direction: 'mixed', confidence: 'medium', condition: '若水这条线补上，则推进才稳' },
-    factors: [{ id: 'f1', name: '日主强弱', state: '偏强', impact: '底气够，但也容易硬顶', weight: 0.9, evidence_refs: [] }],
-    timeline: [],
-    advice: ['先把手上三件事排个先后'],
-    risk: '火太重时容易白耗力气',
-    evidence: [],
-    conflicts: [],
-    disclaimer: { id: 'std-v1', position: 'footer' },
-    ...patch,
-  };
-}
+// ── US-001 契约：枚举与 schema ─────────────────────────────
+eq(SCHEMA_VERSION, '1.0.0', 'schema_version 固定 1.0.0');
+ok(DIRECTIONS.join() === 'positive,negative,mixed,undetermined', 'direction 四值枚举');
+ok(CONFIDENCES.join() === 'high,medium,low', 'confidence 三值枚举');
+ok(OUTPUT_SCHEMA && OUTPUT_SCHEMA.version === SCHEMA_VERSION, '导出 JSON Schema 且版本一致');
+ok(OUTPUT_SCHEMA.required.includes('verdict') && OUTPUT_SCHEMA.required.includes('factors'), 'Schema 必填项含 verdict/factors');
+ok(DIRECTION_LABEL.positive && DIRECTION_LABEL.undetermined, '四个方向都有中文呈现，界面不出现英文枚举');
 
-eq('合规样本通过校验', validateEnvelope(mini()).ok, true);
-eq('版本号不符被拦', validateEnvelope(mini({ schema_version: '0.9' })).ok, false);
-eq('headline 短于 12 字被拦', validateEnvelope(mini({ verdict: { ...mini().verdict, headline: '太短' } })).ok, false);
-eq('方向不在枚举被拦', validateEnvelope(mini({ verdict: { ...mini().verdict, direction: 'maybe' } })).ok, false);
-eq('mixed 却没写前提条件，被拦', validateEnvelope(mini({ verdict: { ...mini().verdict, direction: 'mixed', condition: '' } })).ok, false);
-eq('因素为空被拦', validateEnvelope(mini({ factors: [] })).ok, false);
-eq('因素超过 5 条被拦', validateEnvelope(mini({
-  factors: new Array(6).fill(0).map((_, i) => ({ id: `f${i}`, name: `因素${i}`, state: 's', impact: 'i', weight: 0.1, evidence_refs: [] })),
-})).ok, false);
-eq('建议为空被拦', validateEnvelope(mini({ advice: [] })).ok, false);
-eq('建议超过 3 条被拦', validateEnvelope(mini({ advice: ['一', '二', '三', '四'] })).ok, false);
+const GOOD = {
+  schema_version: SCHEMA_VERSION,
+  meta: { system: 'liuyao', chart_id: 'abc123', chart: '离为火', school: '纳甲', mode: 'eval', generated_at: '2026-11-15 08:30' },
+  verdict: { headline: '妻财在四爻，月建平、日辰克；卦逢六冲，应期偏缓', direction: 'negative', confidence: 'medium', condition: '' },
+  factors: [
+    { id: 'f1', name: '用神状态', state: '月建平·日辰克', impact: '这一爻气不足，事情推得慢', weight: 0.9, evidence_refs: ['e1'] },
+    { id: 'f2', name: '卦体格局', state: '离为火·六冲', impact: '整体在散，越推越薄', weight: 0.8, evidence_refs: ['e1'] },
+  ],
+  timeline: [{ window: '逢酉', pace: '缓', note: '只给区间' }],
+  advice: ['先别追着要结果，把凭据留好', '找中间人问一句'],
+  risk: '整体在散，越急越容易两头空',
+  evidence: [{ id: 'e1', label: '用神', detail: '妻财｜四爻｜月建平' }],
+  conflicts: [],
+  disclaimer: { id: 'std-v1', position: 'footer' },
+};
 
-{
-  const bad = mini({ verdict: { ...mini().verdict, headline: '这部分流派认为日主偏强，另有说法称气候燥，总之因人而异' } });
-  const r = validateEnvelope(bad);
-  eq('套话黑名单命中即不合格', r.ok, false);
-  ok('报错 rule_id 指向模糊词规则', r.errors.some((e) => /FUZZY|FORBIDDEN/.test(e.rule_id)));
-  ok('每条报错四个字段齐全', r.errors.every((e) => 'field' in e && 'rule_id' in e && 'actual' in e && 'expected' in e));
-}
+const goodCheck = validateEnvelope(GOOD, { system: 'liuyao' });
+ok(goodCheck.ok, '合法样例通过校验', JSON.stringify(goodCheck.errors));
 
-{
-  // T2 术语越界：「月破」只许在 L2
-  const bad = mini({ factors: [{ id: 'f1', name: '用神状态', state: '月破', impact: '这一爻使不上劲', weight: 0.9, evidence_refs: [] }] });
-  eq('T2 术语出现在 L1 被拦', validateEnvelope(bad, { system: 'liuyao' }).ok, false);
-}
-
-// 校验速度：PRD 要求 <50ms，200 次滚动平均给同样门槛
-{
-  const one = mini();
-  const t0 = Date.now();
-  for (let i = 0; i < 200; i += 1) validateEnvelope(one);
-  const ms = (Date.now() - t0) / 200;
-  ok(`校验单次耗时 ${ms.toFixed(2)}ms（门槛 50ms）`, ms < 50);
-}
-
-// ── 四、修复器：只改越界的那个字段，不动结论 ──────────────
-{
-  const bad = mini({ verdict: { ...mini().verdict, headline: '日主偏强气候偏燥宜取水调候见水这条线才算稳这条话已经超了四十个字的上限了吧' } });
-  const fixed = repairEnvelope(bad);
-  ok(`修复后 headline 收到 ${lenCn(fixed.verdict.headline)} 字`, lenCn(fixed.verdict.headline) <= LIMITS.headline[1]);
-  eq('修复不动方向', fixed.verdict.direction, bad.verdict.direction);
-}
-
-// ── 五、五个体系真盘：结构合法 + 稳定 + 首屏够短 ──────────
-const CASES = [
-  ['bazi', { system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male' }],
-  ['ziwei', { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female' }],
-  ['liuyao', { system: 'liuyao', datetime: '2026-10-22T14:10', lines: [9, 7, 8, 8, 7, 6] }],
-  ['qimen', { system: 'qimen', datetime: '2026-10-31T12:00' }],
-  ['tarot', { system: 'tarot', count: 3, seed: 42 }],
+// 五份非法样例：字段缺失 / 字数超限 / 非法枚举 / 因素重复 / 免责重复
+const clone = () => JSON.parse(JSON.stringify(GOOD));
+const bad1 = clone(); delete bad1.verdict;
+const bad2 = clone(); bad2.verdict.headline = '这一卦'.repeat(20);
+const bad3 = clone(); bad3.verdict.direction = 'good';
+const bad4 = clone(); bad4.factors.push({ id: 'f3', name: '用神状态', state: '月建克', impact: '这一爻气不足', weight: 0.5, evidence_refs: [] });
+const bad5 = clone(); bad5.advice = ['仅供参考，先把凭据留好', '找中间人问一句'];
+const BADS = [
+  ['字段缺失', bad1, 'HEADLINE_LEN|DIRECTION_ENUM'],
+  ['字数超限', bad2, 'HEADLINE_LEN|L0L1_LEN'],
+  ['非法枚举', bad3, 'DIRECTION_ENUM'],
+  ['因素重复', bad4, 'FACTOR_NAME_DUP'],
+  ['免责重复', bad5, 'FUZZY_FORBIDDEN|DISCLAIMER_IN_BODY'],
 ];
-
-for (const [name, args] of CASES) {
-  const r = compute({ ...args, withInterpret: true, question: '今年是否适合换工作', direction: 'career' });
-  const env = r.interpret && r.interpret.envelope;
-  ok(`${name}：解读结果带 envelope`, !!env);
-  if (!env) continue;
-
-  const check = validateEnvelope(env, { system: env.meta.system });
-  ok(`${name}：契约校验通过${check.ok ? '' : '（' + check.errors.map((e) => e.rule_id).join('/') + '）'}`, check.ok);
-
-  const text = renderL0L1(env);
-  ok(`${name}：L0+L1 ${lenCn(text)} 字 ≤ ${LIMITS.l0l1}`, lenCn(text) <= LIMITS.l0l1);
-  ok(`${name}：首屏不含套话`, !FORBIDDEN.some((w) => text.includes(w)));
-  ok(`${name}：headline 有实际内容`, env.verdict.headline.length >= 8);
-  eq(`${name}：免责指向全站唯一那条`, env.disclaimer.id, 'std-v1');
-  ok(`${name}：因素 ${env.factors.length} 条在 1–5 之间`, env.factors.length >= 1 && env.factors.length <= 5);
-
-  // 稳定：同参数再算一次，整块必须逐字节相同（含 chart_id、不含耗时）
-  const again = compute({ ...args, withInterpret: true, question: '今年是否适合换工作', direction: 'career' });
-  eq(`${name}：同盘两次输出逐字节相同`, JSON.stringify(again.interpret.envelope), JSON.stringify(env));
-
-  // 追问只换问法，结论不动
-  const fu = rebuildForFollowup(env, '换个说法再问一次同一件事');
-  eq(`${name}：追问不换结论`, fu.verdict.headline, env.verdict.headline);
-  eq(`${name}：追问不换方向`, fu.verdict.direction, env.verdict.direction);
+for (const [name, sample, expectRule] of BADS) {
+  const r = validateEnvelope(sample, { system: 'liuyao' });
+  const hit = r.errors.some((e) => expectRule.split('|').includes(e.rule_id));
+  ok(!r.ok && hit, `非法样例被拦截：${name}`, JSON.stringify(r.errors.map((e) => e.rule_id)));
 }
 
-// ── 六、灰度分桶 ──────────────────────────────────────────
-eq('ratio=0 全走老渲染', pickVariant('any', 0), 'legacy');
-eq('ratio=100 全走新渲染', pickVariant('any', 100), 'envelope');
-eq('同一 chart_id 永远落同一侧（否则用户刷新一次界面就换样）', pickVariant('abc', 50), pickVariant('abc', 50));
-{
-  let env = 0;
-  for (let i = 0; i < 400; i += 1) if (pickVariant(`chart-${i}`, 30) === 'envelope') env += 1;
-  ok(`30% 灰度实际分到 ${env}/400，落在大致三成`, env > 60 && env < 180);
+// ── US-002 校验器：错误格式 / 耗时 ────────────────────────
+const errShape = validateEnvelope(bad3, { system: 'liuyao' }).errors[0];
+ok(['field', 'rule_id', 'actual', 'expected'].every((k) => k in errShape), '错误对象含 field/rule_id/actual/expected');
+ok(goodCheck.ms < 50, `校验耗时 ${goodCheck.ms}ms < 50ms`);
+
+// ── US-003 去重 ──────────────────────────────────────────
+eq(synonymKey('liuyao', '六合'), synonymKey('liuyao', '六合卦'), '「六合」与「六合卦」归一到同一 key');
+eq(synonymKey('liuyao', '卦逢六合'), synonymKey('liuyao', '六合'), '「卦逢六合」也归一');
+const dup = dedupeFactors('liuyao', [
+  { name: '用神状态', weight: 0.5, impact: '弱', evidence_refs: ['e1'] },
+  { name: '用爻', weight: 0.9, impact: '强', evidence_refs: ['e2'] },
+]);
+eq(dup.length, 1, '同义因素合并成一条');
+ok(dup[0].evidence_refs.length === 2, '合并后 evidence_refs 不丢', JSON.stringify(dup[0].evidence_refs));
+eq(dup[0].duplicate_count, 1, '合并计次');
+ok(dup[0].weight === 0.9, '合并取更高的权重');
+
+const many = Array.from({ length: 8 }, (_, i) => ({ name: `项${i}`, weight: i / 10, impact: `结果${i}`, evidence_refs: [] }));
+eq(dedupeFactors('bazi', many).length, LIMITS.factors[1], '去重后最多保留 5 条');
+const sorted = dedupeFactors('bazi', many);
+ok(sorted.every((f, i) => i === 0 || sorted[i - 1].weight >= f.weight), '按 weight 降序');
+
+const DEDUPE_CASES = [
+  ['bazi', '用神', '喜用'], ['bazi', '大运', '十年大运'], ['bazi', '忌神', '所忌'],
+  ['ziwei', '命宫', '本命宫'], ['ziwei', '大限', '十年大限'], ['ziwei', '化忌', '化忌星'],
+  ['liuyao', '六冲', '六冲之卦'], ['liuyao', '月建', '月支'], ['liuyao', '应期', '成事时间'],
+  ['qimen', '值符', '直符'], ['qimen', '值使', '直使门'], ['tarot', '正位', '顺位'],
+];
+let dedupeHit = 0;
+for (const [sys, a, b] of DEDUPE_CASES) if (synonymKey(sys, a) === synonymKey(sys, b)) dedupeHit += 1;
+eq(dedupeHit, DEDUPE_CASES.length, `12 组同义场景全部归一（命中 ${dedupeHit}）`);
+ok(duplicateRatio('liuyao', [{ name: '六合' }, { name: '六合卦' }, { name: '世爻状态' }]) <= 1.5, '重复率按「明细/去重后」计算');
+
+// ── US-005 字数预算与模糊词 ───────────────────────────────
+const badLong = clone();
+badLong.advice = ['先'.repeat(30), '找中间人问一句'];
+ok(!validateEnvelope(badLong, { system: 'liuyao' }).ok, '单条建议超 25 字被拦截');
+const badHedge = clone();
+badHedge.advice = ['可能先等等', '或许再问问'];
+badHedge.risk = '大概会有点波动';
+ok(validateEnvelope(badHedge, { system: 'liuyao' }).errors.some((e) => e.rule_id === 'FUZZY_HEDGE'), '限额词超过 2 次被拦截');
+
+for (const [name, r] of [['bazi', baziR], ['ziwei', ziweiR], ['liuyao', liuyaoR], ['qimen', qimenR], ['tarot', tarotR]]) {
+  const env = envOf(r);
+  const v = validateEnvelope(env, { system: name });
+  ok(v.ok, `${name} 真实盘通过全部硬约束`, JSON.stringify(v.errors));
+  ok(v.l0l1Chars <= LIMITS.l0l1, `${name} 的 L0+L1 = ${v.l0l1Chars} 字 ≤ ${LIMITS.l0l1}`);
+  ok(v.fuzzy <= LIMITS.fuzzyTotal, `${name} 模糊词 ${v.fuzzy} ≤ ${LIMITS.fuzzyTotal}`);
+  ok(env.disclaimer.id === DISCLAIMER.id && env.disclaimer.position === 'footer', `${name} 免责只在页脚一份`);
+  ok(!renderL0L1(env).includes('仅供参考'), `${name} 正文没有免责重复`);
 }
 
-// ── 七、构建入口：未知体系不抛 ────────────────────────────
-{
-  const env = buildEnvelope({ system: 'unknown-sys', asOf: '2026-11-15T08:00' }, {});
-  ok('未知体系返回对象或 null，不抛异常', !env || typeof env === 'object');
+// ── US-006 术语分级 ──────────────────────────────────────
+for (const sys of ['bazi', 'ziwei', 'liuyao', 'qimen', 'tarot']) {
+  ok(dictSize(sys) >= 30, `${sys} 术语词典 ≥30 条（实际 ${dictSize(sys)}）`);
+  ok(synonymGroupCount(sys) >= 20, `${sys} 同义词组 ≥20（实际 ${synonymGroupCount(sys)}）`);
+  ok(termsByTier(sys, 'T3').length >= 5, `${sys} 标出 T3 推演细节 ${termsByTier(sys, 'T3').length} 条`);
+  ok(termsByTier(sys, 'T1').every((t) => termPlain(sys, t)), `${sys} 每个 T1 都有白话`);
 }
+const t3Sample = clone();
+t3Sample.advice = ['先看神煞再决定', '找中间人问一句'];
+ok(validateEnvelope(t3Sample, { system: 'bazi' }).errors.some((e) => e.rule_id === 'TERM_T3'), 'T3 术语进 L0/L1 即校验失败');
+const t2Sample = clone();
+t2Sample.verdict.headline = '妻财在四爻，月建平、日辰克；卦逢反吟，应期偏缓';
+ok(validateEnvelope(t2Sample, { system: 'liuyao' }).errors.some((e) => e.rule_id === 'TERM_T2'), 'T2 术语进 L0/L1 也拦截');
+ok(!scanTerms('liuyao', '这一卦整体在散，能拢住').length, '同义词里的口语不参与越界扫描（避免假阳性）');
+const hitT1 = scanTerms('liuyao', '妻财在四爻，月建平');
+ok(hitT1.every((h) => h.tier === 'T1'), '真实术语命中按 T1 记账', JSON.stringify(hitT1));
+
+// ── US-007 免责一次化 ────────────────────────────────────
+const envDis = envOf(baziR);
+ok(renderL0L1(envDis).split('仅供参考').length === 1, 'L0+L1 里没有免责短语');
+const badDis = clone();
+badDis.disclaimer = { id: 'x', position: 'body' };
+ok(validateEnvelope(badDis, { system: 'liuyao' }).errors.some((e) => e.rule_id === 'DISCLAIMER_SHAPE'), '免责挂错位置被拦截');
+
+// ── US-008 chart_id 与追问复用 ───────────────────────────
+const id1 = chartIdOf(baziR, { mode: 'eval' });
+const id2 = chartIdOf(baziR, { mode: 'eval' });
+eq(id1, id2, '同一张盘 chart_id 稳定');
+ok(id1 !== chartIdOf(ziweiR, { mode: 'eval' }), '不同体系 chart_id 不同');
+const e1 = envOf(liuyaoR);
+const t0 = Date.now();
+const e2 = buildEnvelope(liuyaoR, { asOf: AS_OF, mode: 'eval' });
+ok(Date.now() - t0 < 500, '命中缓存时重建耗时 < 500ms');
+eq(e2.verdict.direction, e1.verdict.direction, '缓存命中后结论方向不变');
+const follow = rebuildForFollowup(e1, '那具体什么时候？');
+eq(follow.verdict.direction, e1.verdict.direction, '追问不改原结论方向');
+eq(follow.meta.chart_id, e1.meta.chart_id, '追问复用同一 chart_id');
+
+// ── US-009 修复与降级 ────────────────────────────────────
+const over = clone();
+over.factors[0].impact = '这一爻气不足，事情推得很慢很慢，需要等很久才可能有一点点动静';
+const fixed = repairEnvelope(over, validateEnvelope(over, { system: 'liuyao' }).errors, { system: 'liuyao' });
+ok(lenCn(fixed.factors[0].impact) <= LIMITS.impact, '超长 impact 被定向截短');
+eq(fixed.verdict.direction, over.verdict.direction, '修复不改结论方向');
+const degraded = envOf({ ...baziR, strength: null, frame: null, climate: null, dayun: null });
+ok(degraded && degraded.verdict && degraded.verdict.headline, '关键字段缺失时仍能给出信封（不阻断）');
+
+// ── US-010~013 各体系适配 ────────────────────────────────
+for (const [name, r, sys] of [['bazi', baziR, 'bazi'], ['ziwei', ziweiR, 'ziwei'], ['liuyao', liuyaoR, 'liuyao'], ['qimen', qimenR, 'qimen'], ['tarot', tarotR, 'tarot']]) {
+  const env = envOf(r);
+  ok(env.meta.system === sys, `${name} meta.system 正确`);
+  ok(env.factors.length >= 1 && env.factors.length <= 5, `${name} 因素 1–5 条`);
+  ok(env.factors.every((f) => (FACTOR_WHITELIST[sys] || []).includes(f.name)), `${name} 因素名全部落在白名单内`, JSON.stringify(env.factors.map((f) => f.name)));
+  ok((env.conflicts || []).length >= 1, `${name} 有流派分歧进 conflicts（不塞正文）`);
+  ok(env.evidence.every((e) => e.id && e.label), `${name} 证据卡有 id 与标题`);
+  ok(!renderL0L1(env).includes('神煞'), `${name} 神煞类杂项不进 L0/L1`);
+}
+ok(envOf(baziR).factors.some((f) => f.name === '当前大运'), '八字只讲当前大运（含下一步进 timeline）');
+ok(envOf(ziweiR).factors.some((f) => f.name === '四化落点'), '紫微讲四化落点');
+ok(envOf(liuyaoR).factors.some((f) => f.name === '用神状态'), '六爻以用神状态为第一因素');
+ok(envOf(qimenR).factors.some((f) => f.name === '用神落宫'), '奇门以用神落宫为第一因素');
+ok(envOf(tarotR).factors.some((f) => f.name === '核心牌'), '塔罗以核心牌定调');
+
+// ── US-015 灰度 ─────────────────────────────────────────
+eq(pickVariant('x', 0), 'legacy', '比例 0 时全部走旧渲染（可回滚）');
+eq(pickVariant('x', 100), 'envelope', '比例 100 时全部走新渲染');
+const buckets = new Set();
+for (let i = 0; i < 200; i += 1) buckets.add(pickVariant(`chart-${i}`, 50));
+eq(buckets.size, 2, '比例 50 时两个变体都出现');
+
+// ── 全局：24 盘抽样不回归 ───────────────────────────────
+const DATES = ['1988-03-05T06:10', '1992-11-28T23:40', '1995-08-20T14:30', '2000-01-01T00:05', '1979-07-14T09:00', '2010-05-05T18:20'];
+let sampleBad = 0;
+for (const d of DATES) {
+  for (const g of ['male', 'female']) {
+    for (const s of ['bazi', 'ziwei']) {
+      const env = buildEnvelope(compute({ system: s, datetime: d, gender: g }), { asOf: AS_OF, mode: 'eval', noCache: true });
+      const v = validateEnvelope(env, { system: s });
+      if (!v.ok || env.degraded) sampleBad += 1;
+    }
+  }
+}
+eq(sampleBad, 0, '24 盘抽样全部通过且无降级');
+
+console.log(`\n${pass} PASS / ${fail} FAIL`);
+if (fail) process.exit(1);

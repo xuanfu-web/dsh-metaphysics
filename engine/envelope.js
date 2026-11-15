@@ -55,6 +55,7 @@ export const HEDGE = ['可能', '或许', '大概', '也许', '似乎'];
 export const DISCLAIMER_PHRASES = ['仅供参考', '不构成建议', '娱乐参考', '传统文化与娱乐'];
 
 /** 因素名白名单（PRD 7.2）：name 必须落在这里面 */
+export { STAR_NATURE };
 export const FACTOR_WHITELIST = {
   bazi: ['日主强弱', '格局', '用神', '当前大运', '下一步大运'],
   ziwei: ['命身格局', '四化落点', '当前大限', '关键宫位'],
@@ -649,6 +650,25 @@ function baziAdapter(r, opts) {
   };
 }
 
+// 十四主星的「一句话性质」。impact 这一栏要写结果、不写规则，灵不灵先不管，
+// 但「定调就在这两三颗上」这种话对用户是零信息——所以按星给一句能落地的话。
+const STAR_NATURE = {
+  紫微: '惯于拿主意，扛责任也扛压力',
+  天机: '脑子快、善谋划，容易想多',
+  太阳: '外放热心，付出常多于回报',
+  武曲: '认实效讲结果，不喜空话',
+  天同: '图安稳，能享受也容易松劲',
+  廉贞: '要强好胜，规矩和脾气都硬',
+  天府: '善守成，盘子越大越端得稳',
+  太阴: '细腻内敛，靠积累不靠冲',
+  贪狼: '兴趣广人缘好，容易分心',
+  巨门: '口才与是非同源，说话即战场',
+  天相: '讲配合，擅长在中间调停',
+  天梁: '有原则肯护人，也爱说教',
+  七杀: '敢闯，上手就不肯回头',
+  破军: '先破后立，推倒重来是常态',
+};
+
 function ziweiAdapter(r, opts) {
   const nowStr = nowIso(opts.asOf || r.asOf);
   // 年份只认 asOf（nowIso 已按它给串），拿不到就算 0，绝不在这里读系统时钟——
@@ -693,7 +713,7 @@ function ziweiAdapter(r, opts) {
   const factors = [
     {
       id: 'f-soul', name: '命身格局', state: `${soulBranch}·${starText}${soulBright ? `·${soulBright}` : ''}`,
-      impact: mainStars.length ? '定调就在这两三颗上，性格与路数同源' : '空宫借星，路数看对面那一宫',
+      impact: mainStars.length ? `${STAR_NATURE[mainStars[0]] || '性格偏稳，靠积累取胜'}，路数就照这个来` : '空宫借星，路数看对面那一宫',
       weight: 0.9, evidence_refs: ['ev-soul'],
     },
   ];
@@ -718,12 +738,12 @@ function ziweiAdapter(r, opts) {
     const cs = (career.stars || []).filter((s) => s && s.type === '主星').map((s) => one(s.name));
     factors.push({
       id: 'f-career', name: '关键宫位', state: `官禄${one(career.branch)}·${cs.join('') || '无正曜'}`,
-      impact: cs.length ? '职责与出路看这一宫，别只看命宫' : '这一宫空，出路多靠外部机会', weight: 0.65, evidence_refs: ['ev-career'],
+      impact: cs.length ? `${STAR_NATURE[cs[0]] || '出路顺其自然'}，出路往这边找` : '这一宫空，出路多靠外部机会', weight: 0.65, evidence_refs: ['ev-career'],
     });
   }
 
   const evidence = [
-    ev('ev-soul', '命身', `命宫 ${soulBranch}｜主星 ${starText}${soulBright ? `｜${soulBright}` : ''}｜身宫 ${bodyName}｜局 ${one(r.bureau && r.bureau.name)}`),
+    ev('ev-soul', '命身', `命宫 ${soulBranch}｜主星 ${starText}${soulBright ? `｜${soulBright}` : ''}｜身宫 ${bodyName}｜${one(r.bureau && r.bureau.name)}`),
   ];
   if (dx) evidence.push(ev('ev-daxian', '当前大限', `${dx.ages[0]}–${dx.ages[1]} 岁｜宫位 ${one(dx.palace)}｜${dx.ganzhi}｜四化 ${(dx.mutagen || []).join('、')}`));
   if (yHits.length) evidence.push(ev('ev-sihua', '流年四化', `${one(r.flow && r.flow.year && r.flow.year.ganzhi)}｜${yHits.map((h) => `${one(h.star)}化${one(h.type)}入${one(h.palace)}`).join('、')}`));
@@ -761,7 +781,9 @@ function liuyaoAdapter(r, opts) {
   const ben = r.ben || {};
   const yq = r.yingqi || {};
   const line = (ugs.lines || [])[0] || {};
-  const monthState = cleanState(line.monthState, '平');
+  const hasMonthState = /旺|相|休|囚|死/.test(one(line.monthState));
+  const monthState = hasMonthState ? one(line.monthState) : '未取到';
+  const monthPart = hasMonthState ? `月建${monthState}、` : '';
   const dayRelRaw = cleanState(line.dayRelation, '平').replace(/^日/, '');
   const dayRel = /生|扶|克|泄|耗|比和/.test(dayRelRaw) ? dayRelRaw : '平';
   const kong = line.kong === true || ug.missing === true;
@@ -785,14 +807,14 @@ function liuyaoAdapter(r, opts) {
   const triggerText = trigger ? `${one(trigger.branch)}` : '';
 
   const headline = fitHeadline(
-    `${one(ug.liuqin) || '用神'}在${posName}，月建${monthState}、日辰${dayRel}；${gzName}${bodyLabel === '常卦' ? '' : `属${bodyLabel}`}，应期${tempo}${triggerText ? `，先看${triggerText}` : ''}`,
-    `这卦用神是${one(ug.liuqin) || '所问之事'}，月建${monthState}，应期${tempo}`,
+    `${one(ug.liuqin) || '用神'}在${posName}，${monthPart}日辰${dayRel}；${gzName}${bodyLabel === '常卦' ? '' : `属${bodyLabel}`}，应期${tempo}${triggerText ? `，先看${triggerText}` : ''}`,
+    `这卦用神是${one(ug.liuqin) || '所问之事'}，${monthPart}日辰${dayRel}，应期${tempo}`,
   );
 
   const factors = [
     {
       id: 'f-yong', name: '用神状态', state: `月建${monthState}·日辰${dayRel}`,
-      impact: strongState ? '这一爻有底气，事情推得动' : '这一爻气不足，事情推得慢',
+      impact: strongState ? '这一爻有底气，事情推得动' : hasMonthState ? '这一爻气不足，事情推得慢' : '这一爻没拿到月令，只看日辰这一头',
       weight: 0.9, evidence_refs: ['ev-yong'],
     },
     {
@@ -857,9 +879,12 @@ function qimenAdapter(r, opts) {
   const sz = r.siZhu || {};
   const dayStem = one(sz.day).slice(0, 1);
   const timeStem = one(sz.time).slice(0, 1);
+  // 甲是旬首，奇门盘上不单独落宫：这句话不能写成「甲落—」，那读起来像数据坏了
+  const stemPhrase = (st, p) => (st === '甲' ? '甲不单独落宫' : `${st}落${palaceLabel(p)}`);
   const center = r.centerPalace || null;
   const allPal = center ? [...pal, center] : pal;
-  const findPal = (stem) => allPal.find((p) => one(p.diPan) === stem) || allPal.find((p) => one(p.tianPan) === stem) || null;
+  const findPalRaw = (stem) => allPal.find((p) => one(p.diPan) === stem) || allPal.find((p) => one(p.tianPan) === stem) || null;
+  const findPal = findPalRaw;
   const pA = findPal(dayStem);
   const pB = findPal(timeStem);
   const rel = pA && pB ? relation(one(pA.palaceElement), one(pB.palaceElement)) : '';
@@ -878,13 +903,13 @@ function qimenAdapter(r, opts) {
   const star = one(r.zhiFu && r.zhiFu.star);
 
   const headline = fitHeadline(
-    `${dayStem}落${palaceLabel(pA)}${gateA ? `·${gateA}` : ''}，${timeStem}落${palaceLabel(pB)}${gateB ? `·${gateB}` : ''}；${relText}${ju ? `，${ju}` : ''}`,
+    `${stemPhrase(dayStem, pA)}${gateA ? `·${gateA}` : ''}，${stemPhrase(timeStem, pB)}${gateB ? `·${gateB}` : ''}；${relText}${ju ? `，${ju}` : ''}`,
     `你这边落${palaceLabel(pA)}，事情落${palaceLabel(pB)}，${relText}`,
   );
 
   const factors = [
     {
-      id: 'f-luogong', name: '用神落宫', state: `${dayStem}在${palaceLabel(pA)}·${timeStem}在${palaceLabel(pB)}`,
+      id: 'f-luogong', name: '用神落宫', state: `${dayStem}在${palaceLabel(pA)}·${timeStem}在${timeStem === '甲' ? '不落宫' : palaceLabel(pB)}`,
       impact: relText, weight: 0.9, evidence_refs: ['ev-luogong'],
     },
   ];
