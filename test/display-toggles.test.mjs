@@ -143,5 +143,22 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
   ok(SRC.includes('纯 CSS 显隐'), 'CSS 段写明设计口径');
 }
 
+// ── 七、三档预设是开关集合的宏，不是第二套渲染 ──────────────────
+{
+  const P = PP.DISP_PRESETS;
+  const ALL = PP.DISP_ALL;
+  eq(ALL.length, 17, '17 项开关都登记进 DISP_ALL');
+  eq(new Set(ALL).size, 17, 'DISP_ALL 无重复');
+  eq(P.expert.length, 17, '专家 = 全开');
+  eq(P.std.length, 10, '标准 = 历来默认那 10 项');
+  ok(P.simple.every((id) => P.std.indexOf(id) >= 0), '简洁 ⊂ 标准');
+  ok(P.std.every((id) => P.expert.indexOf(id) >= 0), '标准 ⊂ 专家');
+  ok(P.simple.indexOf('ppm-d-hua') >= 0, '简洁仍保留四化');
+  ok(P.simple.indexOf('ppm-d-small') < 0, '简洁不显示小星');
+  ok(SRC.includes('显示设置 · 17 项'), 'details 标题写的项数与 DISP_ALL 一致');
+  ok(/data-pp-preset="simple"/.test(SRC) && /data-pp-preset="expert"/.test(SRC), '三个预设按钮都在');
+  ok(SRC.includes('预设是「开关集合的宏」') || SRC.includes('预设是开关集合的宏'), '源码写明预设不改渲染');
+}
+
 console.log(`${pass} PASS / ${fails.length} FAIL`);
 if (fails.length) { for (const f of fails) console.log('  FAIL ' + f); process.exit(1); }

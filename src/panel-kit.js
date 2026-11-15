@@ -1679,6 +1679,12 @@
 .pp-disp>summary::before{content:"▸";margin-right:6px;font-size:10px;color:var(--label)}
 .pp-disp[open]>summary::before{content:"▾"}
 .pp-disp-g{display:flex;flex-wrap:wrap;gap:2px 14px;padding:3px 12px 8px;border-top:1px dashed var(--hair)}
+/* 三档预设（P1-19）：预设只是开关集合的宏，不新增任何渲染逻辑 */
+.pp-preset{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 12px 1px;font-size:11.5px;color:var(--label)}
+.pp-preset span{letter-spacing:.06em}
+.pp-preset button{font:inherit;font-size:11.5px;padding:2px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink2);cursor:pointer;min-height:26px}
+.pp-preset button:hover{border-color:var(--lu)}
+.pp-preset button.on{background:var(--lu);color:var(--on-accent);border-color:var(--lu)}
 .pp-disp-g>span{width:100%;font-size:11px;color:var(--label);letter-spacing:.06em;margin-bottom:1px}
 .pp-disp label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink2);user-select:none;padding:2px 0;min-height:26px}
 .pp-disp-box{width:13px;height:13px;border:1px solid var(--line);border-radius:3px;background:var(--card);display:inline-block;flex:none}
@@ -2155,6 +2161,11 @@
       <input type="checkbox" id="ppm-d-tjz" class="pp-r">
       <details class="pp-disp">
         <summary>显示设置 · 17 项</summary>
+        <div class="pp-preset"><span>预设</span>
+          <button type="button" data-pp-preset="simple">简洁</button>
+          <button type="button" data-pp-preset="std" class="on">标准</button>
+          <button type="button" data-pp-preset="expert">专家</button>
+        </div>
         <div class="pp-disp-g"><span>飞星派显示</span>
           <label for="ppm-d-ss"><i class="pp-disp-box"></i>显示神煞</label>
           <label for="ppm-d-sbg"><i class="pp-disp-box"></i>三台八座恩光天贵</label>
@@ -2355,6 +2366,36 @@
   }
 
   // 全局委托：面板与独立页都不需要额外初始化，panel-kit 一加载就生效
+  // ── 显示设置三档预设（P1-19）─────────────────────────────────
+  // 预设是「开关集合的宏」：只批量拨 checkbox，不新增任何渲染分支。
+  // 简洁 = 只看主星辅星与四化；标准 = 历来默认那 10 项；专家 = 17 项全开。
+  const DISP_ALL = [
+    'ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu', 'ppm-d-rigan', 'ppm-d-njq', 'ppm-d-tjz',
+    'ppm-d-small', 'ppm-d-shen', 'ppm-d-hua', 'ppm-d-sf', 'ppm-d-laiyin',
+    'ppm-d-zha-bold', 'ppm-d-bad-ink', 'ppm-d-bold', 'ppm-d-hs',
+  ];
+  const DISP_PRESETS = {
+    simple: ['ppm-d-hua', 'ppm-d-shen'],
+    std: ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-sizhu', 'ppm-d-small', 'ppm-d-shen', 'ppm-d-hua', 'ppm-d-sf', 'ppm-d-laiyin'],
+    expert: DISP_ALL.slice(),
+  };
+  function applyDispPreset(name, root) {
+    const on = DISP_PRESETS[name];
+    if (!on || typeof document === 'undefined') return false;
+    const scope = root && root.querySelector ? root : document;
+    DISP_ALL.forEach((id) => {
+      const cb = scope.querySelector('#' + id);
+      if (cb) cb.checked = on.indexOf(id) >= 0;
+    });
+    scope.querySelectorAll('[data-pp-preset]').forEach((b) => {
+      b.classList.toggle('on', b.getAttribute('data-pp-preset') === name);
+    });
+    return true;
+  }
+  pp.DISP_PRESETS = DISP_PRESETS;
+  pp.DISP_ALL = DISP_ALL;
+  pp.applyDispPreset = applyDispPreset;
+
   function bindZiwei() {
     if (bindZiwei.done || typeof document === 'undefined' || !document.addEventListener) return;
     bindZiwei.done = true;
@@ -2387,6 +2428,11 @@
     };
     document.addEventListener('click', (e) => {
       const t = e.target;
+      const pbtn = t && t.closest ? t.closest('[data-pp-preset]') : null;
+      if (pbtn) {
+        applyDispPreset(pbtn.getAttribute('data-pp-preset'), pbtn.closest('.pp'));
+        return;
+      }
       if (t && t.closest && t.closest('[data-pp-close]')) {
         const body = t.closest('.pp-body');
         if (body) {
@@ -2407,6 +2453,13 @@
       if (!cell) return;
       e.preventDefault();
       toggle(cell);
+    });
+    // 手动拨任一开关 → 三档预设的高亮就不作数了，不能让人以为还在「标准」上
+    document.addEventListener('change', (e) => {
+      const t = e.target;
+      if (!t || !t.id || DISP_ALL.indexOf(t.id) < 0) return;
+      const root = t.closest ? t.closest('.pp') : null;
+      if (root) root.querySelectorAll('[data-pp-preset]').forEach((b) => b.classList.remove('on'));
     });
   }
   pp.bindZiwei = bindZiwei;
