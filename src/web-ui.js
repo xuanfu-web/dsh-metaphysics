@@ -706,11 +706,67 @@
     if (p && p.text) copyPlain(btn, p.text, '已复制问事提示');
   }
 
+  /**
+   * 重绘前的现场快照。
+   *
+   * paint 换掉整个 #out，DOM 里那些「用户拨出来的状态」会一起没：展开的折叠区合上、
+   * 手拨的显示开关回到 HTML 默认（改个询问方向，刚调好的简洁预设就复位成标准）、
+   * 滚动位置跳到结果区顶上。这些都是重绘的副作用，不是数据变化，所以要救回来。
+   *
+   * 只记三类，且都按 id 记（没 id 的走序号兜底）：折叠区 open、checkbox checked、
+   * 滚动位置。别的状态（输入框里的字）在 paint 里另有处理。
+   */
+  function snapViewState() {
+    const out = el('out');
+    if (!out) return null;
+    const det = [];
+    out.querySelectorAll('details').forEach((d, i) => {
+      if (d.open) det.push(d.id || ('#' + i));
+    });
+    const chk = [];
+    out.querySelectorAll('input[type=checkbox]').forEach((c) => {
+      if (c.checked && c.id) chk.push(c.id);
+    });
+    return { det, chk, y: window.scrollY || 0 };
+  }
+
+  function restoreViewState(s) {
+    if (!s) return;
+    const out = el('out');
+    if (!out) return;
+    out.querySelectorAll('details').forEach((d, i) => {
+      const key = d.id || ('#' + i);
+      d.open = s.det.indexOf(key) >= 0;
+    });
+    out.querySelectorAll('input[type=checkbox]').forEach((c) => {
+      if (c.id) c.checked = s.chk.indexOf(c.id) >= 0;
+    });
+    // 预设高亮跟着复选框走：手拨过就不是「标准」了，别让按钮亮着骗人
+    const PP2 = window.__PP;
+    if (PP2 && PP2.DISP_ALL) {
+      const on = PP2.DISP_ALL.filter((id) => {
+        const n = out.querySelector('#' + id);
+        return n && n.checked;
+      });
+      const presets = PP2.DISP_PRESETS || {};
+      let hit = '';
+      Object.keys(presets).forEach((k) => {
+        const set = presets[k];
+        if (set.length === on.length && set.every((id) => on.indexOf(id) >= 0)) hit = k;
+      });
+      out.querySelectorAll('[data-pp-preset]').forEach((b) => {
+        b.classList.toggle('on', !!hit && b.getAttribute('data-pp-preset') === hit);
+      });
+    }
+    if (s.y) window.scrollTo(0, s.y);
+  }
+
   /** 用缓存的卦象重新渲染：解读按当前的问题与方向重出，卦面本身不动 */
   function paint() {
     if (!last) return;
     // 重绘会换掉整个 #out：先记下追问框里的字，否则切方向 / 刷新推导链时用户刚打的问题会凭空消失
     const askBefore = el('askq') ? el('askq').value : '';
+    const viewState = snapViewState();
     let it = null;
     try {
       it = window.Engine.interpret ? window.Engine.interpret(last.r, askArgs()) : (last.r.interpret || null);
@@ -742,6 +798,7 @@
       exportBar: exportBar(),
     }, { system: last.r && last.r.system });
     last.it = it;
+    restoreViewState(viewState);
     const askNow = el('askq');
     if (askNow && askBefore) askNow.value = askBefore;
      // 问事体系的「复制问事提示」按钮：paint 重绘后重新挂一次（innerHTML 会清掉旧监听）

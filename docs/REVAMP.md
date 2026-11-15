@@ -356,23 +356,33 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 
 与 P0-01 同一刀，单列是因为它是所有不一致 bug 的根。先做这一步，后面所有条目只改一处。
 
-### P1-27 状态归并
+### P1-27 状态归并（已落地 · 15d020e）
 
-现状：`last` 上散挂 `r / html / tab / timed / date / time / perf / shadowDiff / caliber / it`。
+原状：`last` 上散挂十六个字段，「谁想挂什么就挂什么」——赋值处赋一批，`paint()` 里回填 `last.it`，`paint` 回来再回填 `last.perf`。没有白名单，所以「`last` 上有没有 `gender`」谁也说不准，读的时候只能 `last.gender || ''` 兜。
 
-目标：一个 `view = { chart, env, sections, dev, meta }`，渲染只读它。`paint()` 里「先记住 askq 再重绘」（`610-611`）这类补丁可以删掉。
+改法：`const LAST_FIELDS = ['r','it','html','perf','tab','timed','date','time','gender','address','trueSolar','lateZi','trend','caliber','shadowDiff','chenggu','marriage','life']`（18 个）+ `function makeLast(p)`，`hasOwnProperty` 判断而非真值（`false` 与空串不被默认值吃掉），表外键不挂载。赋值一句 `last = makeLast({...})`。
 
-### P1-28 局部重绘
+`test/last-shape.test.mjs` 33 条钉住：源码里每个 `last.xxx` 都必须在表里、表内无重复、赋值只走 `makeLast` 或 `null`、真跑验默认值与 `false` 不被吃。
 
-现状：切方向、刷新推导链都 `el('out').innerHTML = ...` 全量重建。
+没做成原计划的 `view = { chart, env, sections, dev, meta }` 五格结构：渲染层是「一堆 `*HTML()` 各自读 result」，改成一个 view 对象要把 twenty-odd 个渲染器签名全翻一遍，收益不如白名单直接。`paint()` 里「先记住 askq」那条补丁保留——它救的是输入框内容，不是 view 状态。
 
-目标：四个稳定容器 `#out-head / #out-chart / #out-body / #out-dev`，切方向只换 `#out-body`。React 侧 `chartHTML`（`870`）包 memo，key 用 `kind + shortId`。
+### P1-28 局部重绘（已落地，做法与原计划不同）
 
-### P1-29 反馈带上下文与分类
+原计划：切四个稳定容器（`#out-head / #out-chart / #out-body / #out-dev`），切方向只换 `#out-body`。
 
-现状：`feedbackMail:730` 已带版本、体系、输入，缺短盘 ID 与分类。
+实际做法：**不拆容器，改成重绘前后保存/恢复现场**。理由：拆容器要处理「每段重算后的事件监听重新挂载」（复制按钮、折叠区、导出条九颗按钮都在里面），漏挂一处就是点了没反应的哑按钮；而用户抱怨的其实只有三件事——折叠区合上、手拨的开关复位、滚动跳回顶上。
 
-目标：正文加短盘 ID、模式（用户 / 开发）、问题分类（排盘错 / 解读看不懂 / 界面 / 建议）。出生地截成「省·市」，不带详细地址。
+- `snapViewState()`：记打开的 `details`（有 id 用 id，没有用 `'#'+序号`）、勾上的 checkbox（只记有 id 的）、`scrollY`。
+- `restoreViewState(s)`：回填 `details.open` 与 `checked`；按 `PP.DISP_ALL` / `PP.DISP_PRESETS` 反推当前组合是否**完全匹配**某一档，只切 `.on` 高亮（不调 `applyDispPreset`，那会反向改 checkbox）；`if (s.y)` 才滚。
+- `paint()` 里快照在 `innerHTML` 赋值前、恢复在赋值后。
+
+**别改回去**：`restoreViewState` 不许调 `applyDispPreset`——那个函数是「拨开关 + 切高亮」，重绘后调它会拿预设覆盖用户手拨的组合。高亮只能跟着 checkbox 实际状态走。
+
+实测（ziwei）：点「简洁」→ 展开「方法与出处」→ 滚到 500 → 重绘 → 三项全保持；再手勾一个开关 → 重绘 → 三项保持、预设高亮清空（不亮着「简洁」骗人）。`test/view-state.test.mjs` 20 条。
+
+### P1-29 反馈带上下文与分类（已落地 · d191635）
+
+`feedbackMail()` 正文补齐盘号、出生地 + 真太阳时开关、晚子时换日与时辰未知两个开关；subject 变 `[反馈] 烛微命盘 vX 短盘号`。分类不做页面控件（入口只留底部一个「有疑问？」），改成正文里一行「分类（留一个，其余删掉）：排错了／看不懂／建议／其他」，收信这边按那行分拣。
 
 ### P1-30 卦例库回填应验
 
@@ -390,7 +400,7 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 
 ## 8. 文案
 
-### P0-32 加 tools/lint-copy.mjs
+### P0-32 加 tools/lint-copy.mjs（已落地 · ef2d060）
 
 已有：`engine/term-dict.js`（24KB 词表 + `scanTerms / termPlain / termsByTier`）。
 
@@ -599,9 +609,10 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 | P1-25 示例/清空/重排 | ✅ | 问卷下「填空答案」（按 `side`/`key` 造卷）、`#clear`、导出条首位「改条件重排」 |
 | P1-33 按钮四字以内 | ✅ | 导出条九项：改条件/存 PDF/打印/存 .md/存长图/复制链接/存卦例/记准/记不准 |
 | P1-34 内部词改写 | ✅ | 用户侧统一「盘号」；两处标题改成问句；dev 卡保留原名 |
-| P1-27 状态归并 | 待做 | `last` 上散挂九个字段 |
-| P1-28 局部重绘 | 待做 | 先看 P1-27 归并后还剩多少重绘 |
+| P1-27 状态归并 | ✅ | `LAST_FIELDS` 18 个 + `makeLast`，表外键不挂载 |
+| P1-28 局部重绘 | ✅ | `snapViewState` / `restoreViewState`：折叠区、手拨开关、滚动位置重绘后还在 |
 | P2-31 导出长图 | 待做 | `downloadCard` 已有摘要卡，长图没做 |
+| P0-32 文案闸 | ✅ | `tools/lint-copy.mjs` 四条规则 + 引用原文整份跳过 + `// copy-ok` 豁免 |
 
 **四条别改回去**：
 
@@ -610,7 +621,8 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 - 预设按钮的高亮要能被手动操作撤掉。拨了开关还亮着「标准」，比没有预设更误导。
 - 历史盘的「自动排」不记录。切 tab 顺手排出来的那版记进去，历史里一半是点过没排过的空条目。
 - `mbtiPaper()` 必须发布每题的 `side`。「填空答案」靠它给正反题相反的分；不发布就是八个维度全平，示例等于没示范。
+- `restoreViewState` 不许调 `applyDispPreset`。那个函数是「拨开关 + 切高亮」，重绘后拿它恢复会覆盖用户手拨的组合；高亮只能跟着 checkbox 实际状态反推。
 
-闸：`check-patterns` 91 文件、`lint-copy` 134 文件 + 自检 10 条、`check-html-sinks` 6 文件、`check-bundle` client.js 389KB / gzip 119KB（上限 128KB）· 引擎 18 块单块 ≤320KB、`check-assertions` 193 文件 10900 PASS、`test-all` 193/193 两遍（52.2 / 52.0s）、页面 1774.7KB 且 `docs/index.html` 已同步。
+闸：`check-patterns` 403 文件、`lint-copy` + 自检 10 条、`check-html-sinks` 6 文件、`check-bundle` client.taiyi 227728B / gzip 95622、`check-assertions` 195 文件 10953 PASS、`test-all` 195/195 三遍（52.1 / 50.9 / 51.5s）、页面 1777.5KB 且 `docs/index.html` 已同步。
 
 
