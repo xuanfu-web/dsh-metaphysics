@@ -5,6 +5,21 @@
 # 逐个补扩展名的做法本质是「等下一次漏」，兜底才是不再漏。
 * text=auto eol=lf
 
+# 二进制显式声明：`text=auto` 靠「有没有 NUL 字节」判断，而小图片可能整段没有 NUL、又恰好含
+# 0x0D 0x0A 序列，于是被当成文本（`git ls-files --eol` 会把 group 二维码 PNG 标成 i/crlf）。
+# 现在长度与魔数都对得上、没真坏，但这是「碰巧没坏」，不是保证。
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.pdf binary
+*.mp4 binary
+
 # 构建产物必须是 LF。
 # GitHub Actions 在 Linux 上构建，产物是纯 LF；Windows 本地 core.autocrlf=true 会把工作区
 # 里的文本文件 checkout 成 CRLF。两边不钉死的话，仓库里那份产物与 CI 的构建结果会差出
