@@ -29,7 +29,7 @@ export const TARGETS = [
   'docs/manifest.webmanifest',
 ];
 
-export const REQUIRED_ATTRS = ['*.html', '*.svg', '*.js', '*.mjs', '*.json', '*.md'];
+export const REQUIRED_ATTRS = ['*.html', '*.svg', '*.js', '*.mjs', '*.json', '*.md', '*.yml'];
 
 // 纯函数：喂文本，返回问题列表。测试靠它，不用造真文件。
 export function scanText(rel, text, bytes) {
