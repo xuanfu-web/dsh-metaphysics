@@ -115,8 +115,14 @@
 .pp-chip.broken{color:var(--quan);border-color:var(--quan);border-style:dashed}
 .pp-chip.neu{color:var(--muted);border-style:dashed}
 .pp-sec{margin-top:10px}
-/* 流月/流日/流时：一层层往外推的三级时间盘 */
-.pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif}
+/* 流月/流日/流时：一层层往外推的三级时间盘。
+   P1-18：默认整块不出现，勾哪个时间层出哪个——本命盘不需要月日时三行挡在下面。 */
+.pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif;display:none}
+#ppm-t-month:checked~.pp-flow,#ppm-t-day:checked~.pp-flow,#ppm-t-hour:checked~.pp-flow{display:block}
+.pp-flow .flow-row[data-t]{display:none}
+#ppm-t-month:checked~.pp-flow .flow-row[data-t="month"],
+#ppm-t-day:checked~.pp-flow .flow-row[data-t="day"],
+#ppm-t-hour:checked~.pp-flow .flow-row[data-t="hour"]{display:grid}
 .pp-flow .flow-row{display:grid;grid-template-columns:66px auto minmax(0,1fr);gap:0 10px;align-items:baseline;padding:6px 11px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.6}
 .pp-flow .flow-row:first-child{border-top:none;background:var(--band);font-size:12px;color:var(--muted)}
 .pp-flow .flow-row b{color:var(--red);font-weight:600;letter-spacing:.04em;white-space:nowrap}
@@ -184,6 +190,12 @@
 @keyframes ppSchoolIn{from{opacity:.55}to{opacity:1}}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
+/* 时间层 chips（P1-18）：勾上才亮，与上面三个互斥视图不是一回事 */
+.pp-time{border-top:none}
+.pp-time label{min-height:32px;padding:2px 13px;font-size:12px;color:var(--muted)}
+#ppm-t-month:checked~.pp-time label[for="ppm-t-month"],
+#ppm-t-day:checked~.pp-time label[for="ppm-t-day"],
+#ppm-t-hour:checked~.pp-time label[for="ppm-t-hour"]{background:var(--lu);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
 /* 三视图切换（三视图：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
@@ -2120,16 +2132,16 @@
       const muts = (p) => (p.mutagenHits || []).length
         ? p.mutagenHits.map((m) => `<i>${m.star}化${m.type}<em>→${m.palace || '未上盘'}</em></i>`).join('')
         : '<i class="dim">宫干无四化</i>';
-      const row = (label, p, note) =>
-        `<div class="flow-row"><b>${label}</b><span class="flow-p"><span class="flow-k">${p.ganzhi || '—'}　落${p.palace || '未上盘'}（${p.branch}）</span>${note ? `<em class="flow-same">${note}</em>` : ''}</span><span class="flow-m">${muts(p)}</span></div>`;
+      const row = (kind, label, p, note) =>
+        `<div class="flow-row" data-t="${kind}"><b>${label}</b><span class="flow-p"><span class="flow-k">${p.ganzhi || '—'}　落${p.palace || '未上盘'}（${p.branch}）</span>${note ? `<em class="flow-same">${note}</em>` : ''}</span><span class="flow-m">${muts(p)}</span></div>`;
       // 日数走满 12 宫就回到同宫，不说明会被当成算错
       const sameAsMonth = fl.day.branch === fl.month.branch;
       const sameNote = sameAsMonth ? '（日数走满一圈，故同宫）' : '';
       return `<div class="pp-flow">
         <div class="flow-row"><b>基准</b><span class="flow-p">${fl.asOf.solar}</span><span class="flow-m">农历 ${fl.asOf.lunar}　流年 ${fl.asOf.yearGanzhi}（斗君 ${fl.year.doujun}）</span></div>
-        ${row(`流月 ${fl.month.index} 月`, fl.month)}
-        ${row(`流日 ${fl.day.index} 日`, fl.day, sameNote)}
-        ${row(`流时 ${BR[fl.hour.hourIndex]}时`, fl.hour)}
+        ${row('month', `流月 ${fl.month.index} 月`, fl.month)}
+        ${row('day', `流日 ${fl.day.index} 日`, fl.day, sameNote)}
+        ${row('hour', `流时 ${BR[fl.hour.hourIndex]}时`, fl.hour)}
       </div>`;
     })() : '';
     pp._zw = r; // 详情面板用：点击宫位时从这里取完整宫数据
@@ -2159,6 +2171,9 @@
       <input type="checkbox" id="ppm-d-rigan" class="pp-r">
       <input type="checkbox" id="ppm-d-njq" class="pp-r">
       <input type="checkbox" id="ppm-d-tjz" class="pp-r">
+      <!-- 时间层（P1-18）：流月/流日/流时默认不出，勾哪个出哪个。
+           必须在 .pp-time 与 .pp-flow 之前——兄弟选择器只向后找 -->
+      ${fl ? '<input type="checkbox" id="ppm-t-month" class="pp-r"><input type="checkbox" id="ppm-t-day" class="pp-r"><input type="checkbox" id="ppm-t-hour" class="pp-r">' : ''}
       <details class="pp-disp">
         <summary>显示设置 · 17 项</summary>
         <div class="pp-preset"><span>预设</span>
@@ -2194,6 +2209,10 @@
         <label for="ppm-ben">本命</label><label for="ppm-da">大限</label><label for="ppm-ln">流年</label>
         <span class="pp-soon">点任一宫位看详情</span>
       </div>
+      ${fl ? `<div class="pp-modes pp-time">
+        <label for="ppm-t-month">＋流月</label><label for="ppm-t-day">＋流日</label><label for="ppm-t-hour">＋流时</label>
+        <span class="pp-soon">要落到这个月这几天，再往下一层</span>
+      </div>` : ''}
       <div class="pp-modes pp-schools">
         <label for="ppm-sc-sihe">四化</label><label for="ppm-sc-feixing">飞星</label><label for="ppm-sc-sanhe">三合</label>
       </div>
@@ -2217,7 +2236,8 @@
       })()}
       <div class="pp-zhlegend">自化图示　<span class="z-lu">${pp._zhaMark('禄', '本宫')}禄</span><span class="z-quan">${pp._zhaMark('权', '本宫')}权</span><span class="z-ke">${pp._zhaMark('科', '本宫')}科</span><span class="z-ji">${pp._zhaMark('忌', '本宫')}忌</span></div>
       <div class="pp-flywrap">${flyHTML}${flyCompositeHTML}</div>
-    </div>${flowHTML}${chips}${pats}${dxs}${lnHit}${zyHTML}`;
+      ${flowHTML}
+    </div>${chips}${pats}${dxs}${lnHit}${zyHTML}`;
   };
 
   // ── 宫位详情 ────────────────────────────────────────────────

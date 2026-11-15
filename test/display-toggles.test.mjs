@@ -160,5 +160,25 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
   ok(SRC.includes('预设是「开关集合的宏」') || SRC.includes('预设是开关集合的宏'), '源码写明预设不改渲染');
 }
 
+// ── 八、时间层 chips（P1-18）：默认不出，勾哪个出哪个 ────────────
+{
+  const html = PP.ziweiHTML(compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male' }));
+  const iM = html.indexOf('id="ppm-t-month"');
+  const iT = html.indexOf('class="pp-modes pp-time"');
+  const iF = html.indexOf('class="pp-flow"');
+  ok(iM > -1, '流月开关渲染出来了');
+  ok(iM < iT && iM < iF, '开关排在 .pp-time 与 .pp-flow 之前（兄弟选择器只向后找）');
+  eq((html.match(/class="pp-flow"/g) || []).length, 1, '流层表格只有一份');
+  eq((html.match(/data-t="/g) || []).length, 3, '月/日/时三行都带 data-t');
+  ok(/\.pp-flow\{[^}]*display:none/.test(SRC), 'CSS 里默认 display:none');
+  ok(/#ppm-t-month:checked~\.pp-flow/.test(SRC), '勾上才 display:block');
+  // 没有流层数据时整块（开关 + chips + 表格）都不该出现，不能留几个点了没反应的按钮
+  const noFlowR = compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male' });
+  delete noFlowR.flow;
+  const noFlow = PP.ziweiHTML(noFlowR);
+  ok(noFlow.indexOf('id="ppm-t-month"') < 0 && noFlow.indexOf('class="pp-flow"') < 0,
+    '没有流层数据时开关与表格都不渲染');
+}
+
 console.log(`${pass} PASS / ${fails.length} FAIL`);
 if (fails.length) { for (const f of fails) console.log('  FAIL ' + f); process.exit(1); }
