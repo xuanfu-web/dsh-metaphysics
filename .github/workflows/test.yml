@@ -37,5 +37,9 @@ jobs:
         run: node tools/check-html-sinks.mjs
       - name: 工程约定（engine 纯净性 / 日志 / var / 时间与随机源）
         run: node tools/check-patterns.mjs
+      - name: 文案闸（用户可见串不许有确定性断言与客服腔）
+        run: node tools/lint-copy.mjs
+      - name: 文案闸自检（故意写错的文案必须变红）
+        run: node tools/verify-lint-copy.mjs
       - name: 性能门槛（热路径 / 批量 / 解析 / 内存，慢机用 DSH_PERF_SCALE）
         run: node tools/check-perf.mjs

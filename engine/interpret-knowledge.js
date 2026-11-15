@@ -568,4 +568,4 @@ export const STATUS_LABEL = {
 };
 
 /** 知识卡区块底部那句统一声明：标签讲文本，效度不在此列 */
-export const KNOWLEDGE_DISCLAIMER = '以上标签只说明典籍文本的一致程度，不表示该技法经过验证；本插件不对任何技法的预测效度作保证。';
+export const KNOWLEDGE_DISCLAIMER = '以上标签只说明典籍文本的一致程度，不表示该技法经过验证；本插件不对任何技法的预测效度作保证。'; // copy-ok: 整句是否定句，说的正是「不作保证」
