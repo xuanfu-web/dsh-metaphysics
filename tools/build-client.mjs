@@ -13,7 +13,7 @@ const unreleasedLine = () =>
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'headline', 'index'];
+  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'facts', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'headline', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -22,7 +22,8 @@ export const MODULE_ORDER = ORDER;
 const COMMON = ['fail', 'bool', 'validate', 'datetime', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random', 'handle', 'bridge'];
 // limits 是能力边界清单，interpret 的结果里要带它，所以并进解释栈；漏了会静默变成 undefined
 // guide 放三层导读：interpret 的结果要带它，所以同样并进解释栈（漏了会静默 undefined）
-const INTERPRET = ['term-dict', 'envelope', 'interpret-data', 'interpret-knowledge', 'limits', 'guide', 'interpret-plain', 'citations', 'interpret'];
+// facts 是事实层：interpret 的段落靠 refsFor 挂引用，漏了就整块 undefined（不是降级，是直接抛）
+const INTERPRET = ['term-dict', 'envelope', 'facts', 'interpret-data', 'interpret-knowledge', 'limits', 'guide', 'interpret-plain', 'citations', 'interpret'];
 const ASK = ['followup'];
 // 问事解读提示：liuyao/meihua/daliuren/qimen/tarot/xiaoliuren 这六个问事体系要带，命盘类不带
 const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];

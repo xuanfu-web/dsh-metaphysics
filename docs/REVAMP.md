@@ -641,4 +641,68 @@ if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
 
 闸：`check-patterns` 403 文件、`lint-copy` + 自检 10 条、`check-html-sinks` 6 文件、`check-bundle` client.taiyi 227728B / gzip 95622、`check-assertions` 195 文件 10953 PASS、`test-all` 195/195 三遍（52.1 / 50.9 / 51.5s）、页面 1777.5KB 且 `docs/index.html` 已同步。
 
+---
+
+## 13. 2c：事实层与段落引用
+
+切片策略按体系推进，不按文件一路改到底。先做八字一个完整闭环（facts → refs → 渲染 → 页面上点得到），跑通再动紫微、六爻、奇门。理由：模板合同一旦定歪，四个主力一起返工。
+
+### 13.1 事实层（`engine/facts.js`）
+
+`buildFacts(r, env)` 返回 `{ id, label, value, group }[]`。八字的 19 条：
+
+| group | 事实 | id |
+|---|---|---|
+| 四柱 | 四柱 / 日主 / 人元司令 | `f-bazi-pillars` `f-bazi-daymaster` `f-bazi-renyuan` |
+| 旺衰 | 旺衰 / 五行分值 | `f-bazi-strength` `f-bazi-wuxing` |
+| 格局 | 格局 | `f-bazi-geju` |
+| 喜忌 | 喜忌 / 中神 | `f-bazi-yongshen` `f-bazi-neutral` |
+| 气候 | 气候 | `f-bazi-climate` |
+| 大运 | 当前大运 | `f-bazi-dayun` |
+| 流年 | 当前流年 | `f-bazi-liunian` |
+| 神煞 | 日柱 / 年柱 / 空亡 | `f-bazi-shensha-day` `f-bazi-shensha-year` `f-bazi-kongwang` |
+| 盘面 | envelope 的 evidence 兜底并入 | `ev-*` |
+
+三条实现约束：
+
+- **不写判断**。事实只写盘面上看到了什么（「身强｜5.5 分｜得令」），判断留在 adapter 与 interpret。`test/facts-only.test.mjs` 用词表挡住「建议你 / 一定能 / 注定 / 必然 / 偏顺 / 偏卡 / 把握」。
+- **超长截断到 160 字**。事实是「指着说一句话」，不裁就是第二个正文。
+- **异常返回 `[]`，绝不抛**。事实层是加法，抽不出来就不给，不能让排盘跟着坏。
+
+大运落位有个坑：按年龄比会差一步（2027 年才开始的大运被「42 岁」这个整数带进来，盘面上就写成「当前」了）。正确做法是拿 `fromDate`/`toDate` 与当前时刻比，解析不了才退回年龄法。
+
+### 13.2 段落引用
+
+`SECTION_REFS.bazi` 登记 25 段的 refs，`markSections(list, system)` 挂上去。规则：
+
+- 只能引用 `buildFacts` 真的会产出的 id，`test/facts-only.test.mjs` 逐条核对，指向空气就红；
+- 方法类段落（`caveats/limits/quant/checklist/todo/reasoning/checks/classics`）不挂——它们讲规则，不指向这张盘上的某条；
+- 宁可少挂，不挂「看起来相关」的。refs 是给用户回溯用的，挂错了比不挂更糟；
+- 缺事实的段落**不出角标**，不回退成自由文本。
+
+实测：八字 26 段中 20 段带引用（正文覆盖率 20/20），全体系跑下来 40 段带引用、零悬空。
+
+### 13.3 渲染
+
+- 每段标题行尾部挂 `[1][4][8]` 角标（`.mp-it-refs`，11px、`var(--faint)`、按编号升序），点了跳到文末「盘面事实」。
+- 「盘面事实」是独立折叠区（`#mp-sec-facts`），19 条按 group 分列，默认收起。它放正文段之后、方法折叠区之前——回查用，不抢视线。
+- 角标进标题行而不是段末另起一行：段末另起会多出 20 行 × 20px ≈ 400px 高度，视觉噪音比信息多。
+- `group === label` 时不重复显示（第一版「[1] 四柱 四柱 庚午 辛巳 丁丑 丁未」）。
+
+### 13.4 别改回去
+
+- `engine/facts.js` 必须进 `build-client.mjs` 的 `INTERPRET` 数组，不只是 `ORDER`。分块是自包含的，`INTERPRET` 漏了就是每个分块里 `refsFor is not a function` 直接抛——不是降级，是崩。这个坑已经踩过一次（`yijing-text` / `security` 两个测试报的是 client 分块里的栈）。
+- 事实的 `id` 一旦被 refs 引用就成了契约。改 id 要同步改 `SECTION_REFS`，否则测试红。
+
+### 13.5 进度
+
+| 体系 | 事实层 | 段落引用 | 渲染 | 闸 |
+|---|---|---|---|---|
+| 八字 | ✅ 19 条 | ✅ 25 段登记 / 20 段落挂 | ✅ | ✅ |
+| 紫微 / 六爻 / 奇门 | 待做（走 evidence 兜底） | 待做 | 共用渲染 | — |
+| 其余 18 个 | 待做（简化 facts-only，字段级模板） | 待做 | 共用渲染 | — |
+
+闸：`check-assertions` 196 文件 10993 条、`test-all` 196/196、页面 1790.1KB 并同步 docs、client gzip 122817（上限 128000，余量 5.2KB——**继续加文案前先处理体积**）。
+
+
 

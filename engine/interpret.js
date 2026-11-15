@@ -24,6 +24,7 @@ import { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } from './baz
 import { bodyLabels, yongshenOf } from './liuyao.js';
 // 三层披露的契约层：把「结论」单独抽成一个机读结构，正文再怎么长也不影响首屏
 import { buildEnvelope } from './envelope.js';
+import { buildFacts, refsFor } from './facts.js';
 
 // ── 固定五维度 ────────────────────────────────────────────
 export const DIMENSIONS = [
@@ -1964,48 +1965,65 @@ const confidenceOf = (dim) => {
  */
 const METHOD_KEYS = ['caveats', 'limits', 'quant', 'checklist', 'todo', 'reasoning', 'checks', 'classics'];
 const TEXT_KEYS = ['jingText', 'guaCi', 'yaoCi'];
-function markSections(list) {
+function markSections(list, system) {
   return list.map((s) => {
     const key = String((s && s.key) || '');
-    if (METHOD_KEYS.indexOf(key) >= 0) return { ...s, kind: 'method' };
-    if (TEXT_KEYS.indexOf(key) >= 0) return { ...s, kind: 'text' };
-    return s;
+    let out = s;
+    if (METHOD_KEYS.indexOf(key) >= 0) out = { ...out, kind: 'method' };
+    else if (TEXT_KEYS.indexOf(key) >= 0) out = { ...out, kind: 'text' };
+    // 正文段落挂事实引用：用户点一下能看见这句话是从盘面哪几条推出来的。
+    // 方法类不挂——它讲的是规则，不是这张盘。
+    if (out && out.kind !== 'method') {
+      const refs = refsFor(system, key);
+      if (refs) out = { ...out, refs };
+    }
+    return out;
   });
 }
 
-const withReportMeta = (body, r, ask) => enrichPlain({
+const withReportMeta = (body, r, ask) => {
   // 信封先算：它是首屏唯一必需的东西，一旦算失败要能降级而不是整块消失
-  envelope: (() => {
-    try {
-      return buildEnvelope(r, {
-        system: r.system,
-        asOf: r.asOf,
-        mode: 'live',
-        question: ask && (ask.text || ask.raw) || '',
-      });
-    } catch (e) {
-      return null;
-    }
-  })(),
-  ...body,
-  moduleType: MODULE_TYPE[r.system] || 'natal',
-  system: r.system,
-  // 没有判断可下的体系靠这张事实卡开场：结论卡的位置留给它，不然首屏仍是一屏表格
-  factHead: r.factHead || null,
-  systemLabel: SYSTEM_LABEL[r.system] || r.system,
-  title: '解析与详解',
-  dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
-  sections: markSections(body.sections || []),
-  outline: body.outline || [],
-  tables: body.tables || [],
-  technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
-  disclaimer: body.disclaimer || DISCLAIMER,
-  // 能力边界走公共收尾，奇门那条支路也能带上（它不经过正文组装）
-  limits: body.limits || limitsFor(r.system),
-  // 三层导读：静态内容，放结果里由两套 UI 各自决定怎么折叠，不在引擎里拼 HTML
-  guide: GUIDE,
-  ask,
-}, r, ask);
+  let env = null;
+  try {
+    env = buildEnvelope(r, {
+      system: r.system,
+      asOf: r.asOf,
+      mode: 'live',
+      question: ask && (ask.text || ask.raw) || '',
+    });
+  } catch (e) {
+    env = null;
+  }
+  // 事实层：段落用 refs 引它，缺了就是一段没有依据的断言
+  let facts = [];
+  try {
+    facts = buildFacts(r, env);
+  } catch (e) {
+    facts = [];
+  }
+  return enrichPlain({
+    envelope: env,
+    facts,
+    ...body,
+    moduleType: MODULE_TYPE[r.system] || 'natal',
+    system: r.system,
+    // 没有判断可下的体系靠这张事实卡开场：结论卡的位置留给它，不然首屏仍是一屏表格
+    factHead: r.factHead || null,
+    systemLabel: SYSTEM_LABEL[r.system] || r.system,
+    title: '解析与详解',
+    dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
+    sections: markSections(body.sections || [], r.system),
+    outline: body.outline || [],
+    tables: body.tables || [],
+    technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
+    disclaimer: body.disclaimer || DISCLAIMER,
+    // 能力边界走公共收尾，奇门那条支路也能带上（它不经过正文组装）
+    limits: body.limits || limitsFor(r.system),
+    // 三层导读：静态内容，放结果里由两套 UI 各自决定怎么折叠，不在引擎里拼 HTML
+    guide: GUIDE,
+    ask,
+  }, r, ask);
+};
 
 /**
  * 解析失败编号：同一句错误消息永远得到同一个 6 位串。

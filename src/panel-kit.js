@@ -847,6 +847,21 @@
 .mp-it-p:last-child{margin-bottom:0}
 /* 方法与出处：方法类段落合成一个折叠区，默认收起。summary 里只报段数与用途，不报字数 */
 .mp-it-method{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
+/* 盘面事实：正文角标 [n] 指到这里。清单本身折叠——它是回查用的，不是正文 */
+.mp-it-facts{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
+.mp-it-facts>summary{cursor:pointer;list-style:none;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+.mp-it-facts>summary::-webkit-details-marker{display:none}
+.mp-it-facts>summary::after{content:'▾';color:var(--faint);font-size:10px}
+.mp-it-facts[open]>summary::after{content:'▴'}
+.mp-it-facts .mp-it-sub{margin-top:8px;margin-bottom:0}
+.fact-row{display:flex;gap:6px;align-items:baseline;font-size:12px;line-height:1.85;color:var(--muted)}
+.fact-row .fact-no{font-style:normal;font-family:system-ui,sans-serif;color:var(--faint);min-width:22px;flex:none}
+.fact-row .fact-g{font-style:normal;color:var(--faint);min-width:30px;flex:none}
+.fact-row b{color:var(--ink2);font-weight:500;flex:none}
+.fact-row span{color:var(--muted);word-break:break-word}
+.mp-it-refs{display:inline;margin-left:8px;font-size:11px;color:var(--faint);font-family:system-ui,sans-serif;font-weight:400;white-space:nowrap}
+.mp-it-refs a{color:var(--faint);text-decoration:none;border-bottom:1px dotted var(--line);letter-spacing:.02em}
+.mp-it-refs a:hover{color:var(--ink2)}
 .mp-it-method>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .mp-it-method>summary::-webkit-details-marker{display:none}
 .mp-it-method>summary::after{content:'展开';font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
@@ -3818,14 +3833,30 @@
     // 出处卡片全部收进文末「方法与出处」：五维正文只留结论与建议。
     // 实测出处卡是最大膨胀源（八字 3798 字、六爻 2525 字），而那五维真正的话只有 300–600 字。
     const knowAll = (it.dimensions || []).reduce((acc, d) => acc.concat((d.knowledge || []).map((k) => ({ ...k, dimLabel: d.label }))), []);
+    // 事实层：正文每段挂一个 [n]，指到文末的「盘面事实」清单。
+    // 角标只认真的存在的事实——命中不到就不出角标，宁可少给，也不让读者点到空气。
+    const factList = Array.isArray(it.facts) ? it.facts : [];
+    const factNo = {};
+    for (let i = 0; i < factList.length; i += 1) factNo[factList[i].id] = i + 1;
+    const refChip = (s) => {
+      const refs = Array.isArray(s.refs) ? s.refs.filter((id) => factNo[id]) : [];
+      if (!refs.length) return '';
+      // 按编号升序：读者是顺着 [1][4][8] 往上看，不是按怎么算出来的顺序看
+      const nums = refs.map((id) => factNo[id]).sort((a, b) => a - b);
+      return `<div class="mp-it-refs"><a href="#mp-sec-facts">${nums.map((n) => `[${n}]`).join('')}</a> 盘面事实</div>`;
+    };
+    const factsBlock = factList.length ? `<details class="mp-it-sec mp-it-facts" id="mp-sec-facts">
+        <summary><span class="mp-it-sh">盘面事实</span><span class="mp-it-mnum">${factList.length} 条 · 正文里的 [n] 指这里</span></summary>
+        <div class="mp-it-sub">${factList.map((f, i) => `<div class="fact-row"><em class="fact-no">[${i + 1}]</em>${f.group === f.label ? '' : `<em class="fact-g">${esc(f.group)}</em>`}<b>${esc(f.label)}</b><span>${esc(f.value)}</span></div>`).join('')}</div>
+      </details>` : '';
     const secOne = (s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
-        <div class="mp-it-sh">${esc(s.label)}</div>
+        <div class="mp-it-sh">${esc(s.label)}${refChip(s)}</div>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
     // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。
-    const secs = secList.length || knowAll.length
-      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${(methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
+    const secs = secList.length || knowAll.length || factList.length
+      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${factsBlock}${(methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
         <summary><span class="mp-it-sh">方法与出处</span><span class="mp-it-mnum">${methodSecs.length ? `${methodSecs.length} 段` : ''}${methodSecs.length && knowAll.length ? ' · ' : ''}${knowAll.length ? `依据 ${knowAll.length} 条` : ''} · 怎么算的、哪里没算、口径分歧</span></summary>
         ${knowAll.length ? `<div class="mp-it-sub" id="mp-sec-know"><div class="mp-it-sh">依据与出处</div>${knowAll.map((k) => `<div class="know-row"><span class="know-status ${esc(k.status)}">${esc(k.statusLabel)}</span><span class="know-body"><em class="know-dim">${esc(k.dimLabel)}</em><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
         ${methodSecs.map((s) => `<div class="mp-it-sub"><div class="mp-it-sh">${esc(s.label)}</div><div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div></div>`).join('')}

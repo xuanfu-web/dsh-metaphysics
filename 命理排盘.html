@@ -735,7 +735,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：195 个测试文件 / 10960 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：196 个测试文件 / 10993 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -27543,6 +27543,204 @@ const OUTPUT_SCHEMA = {
 return { STAR_NATURE, SCHEMA_VERSION, DIRECTIONS, CONFIDENCES, DIRECTION_LABEL, DISCLAIMER, LIMITS, FORBIDDEN, HEDGE, DISCLAIMER_PHRASES, FACTOR_WHITELIST, lenCn, chartIdOf, dedupeFactors, duplicateRatio, renderL0L1, countPhrase, validateEnvelope, repairEnvelope, ADAPTERS, buildEnvelope, rebuildForFollowup, pickVariant, OUTPUT_SCHEMA };
 })();
 
+__mods.facts = (function () {
+// 事实层：把盘面上「能指着说」的条目抽成一条条事实。
+//
+// 约定
+// - id 形如 `f-bazi-strength`，全局唯一；正文段落用 refs 引它。
+// - value 是一句短事实，只写盘面上看到了什么，不写判断。
+// - group 只用于分组展示（四柱 / 旺衰 / 格局 / 喜忌 / 大运 / 流年 / 神煞 / 气候 / 盘面）。
+// - 只读 r 与 env，不做计算、不抛异常：缺字段就跳过，宁可少一条事实，也不编。
+
+const one = (v) => (v === null || v === undefined ? '' : String(v).trim());
+const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+
+function add(list, id, label, value, group) {
+  let v = one(value);
+  if (!v) return;
+  // 事实是「指着说一句话」，不是段落：超长的裁掉，别让事实层变成第二个正文
+  if (v.length > 160) v = `${v.slice(0, 158)}…`;
+  list.push({ id, label: one(label), value: v, group: one(group) || '盘面' });
+}
+
+// 通用兜底：任何体系都用 envelope 已经算出来的证据，至少保证「有事实可引」。
+function genericFacts(r, env, list) {
+  const evs = Array.isArray(env && env.evidence) ? env.evidence : [];
+  for (let i = 0; i < evs.length; i += 1) {
+    const e = evs[i] || {};
+    add(list, one(e.id) || `f-generic-${i + 1}`, one(e.label), one(e.detail), '盘面');
+  }
+}
+
+function baziFacts(r, env, list) {
+  const p = r.pillars || {};
+  const gz = (x) => one(x && x.ganzhi);
+  const four = [gz(p.year), gz(p.month), gz(p.day), gz(p.hour)].filter(Boolean);
+  if (four.length) add(list, 'f-bazi-pillars', '四柱', four.join(' '), '四柱');
+
+  const dm = r.dayMaster || {};
+  const dmTxt = [one(dm.stem) + one(dm.element), one(dm.yinYang)].filter(Boolean).join('·');
+  if (dmTxt) add(list, 'f-bazi-daymaster', '日主', dmTxt, '四柱');
+
+  const st = r.strength || {};
+  const score = num(st.score);
+  const stTxt = [one(st.level), score === null ? '' : `${score} 分`, one(st.basis)].filter(Boolean).join('｜');
+  if (stTxt) add(list, 'f-bazi-strength', '旺衰', stTxt, '旺衰');
+
+  const frame = r.frame || {};
+  if (one(frame.primaryName)) add(list, 'f-bazi-geju', '格局', one(frame.primaryName), '格局');
+
+  const ys = frame.yongshen || {};
+  const favor = Array.isArray(ys.favor) ? ys.favor : [];
+  const avoid = Array.isArray(ys.avoid) ? ys.avoid : [];
+  if (favor.length || avoid.length) {
+    add(list, 'f-bazi-yongshen', '喜忌', [favor.length ? `喜 ${favor.join('、')}` : '', avoid.length ? `忌 ${avoid.join('、')}` : '', one(ys.method)].filter(Boolean).join('｜'), '喜忌');
+  }
+  const neutral = Array.isArray(ys.neutral) ? ys.neutral : [];
+  if (neutral.length) {
+    add(list, 'f-bazi-neutral', '中神', neutral.map((n) => `${one(n.element)}（${one(n.role)} ${num(n.weight) === null ? '' : num(n.weight)} 分）`).join('、'), '喜忌');
+  }
+
+  const cli = r.climate || {};
+  const cliKind = one(cli.kind);
+  const cliLabel = one(cli.label);
+  const cliNeed = one(cli.need && cli.need.element);
+  if (cliKind || cliLabel) {
+    add(list, 'f-bazi-climate', '气候', [cliKind, cliLabel === cliKind ? '' : cliLabel, cliNeed ? `宜${cliNeed}` : ''].filter(Boolean).join('｜'), '气候');
+  }
+
+  const wx = r.wuxing || {};
+  const wxTxt = Object.keys(wx).filter((k) => num(wx[k]) !== null).map((k) => `${k} ${num(wx[k])}`).join(' ');
+  if (wxTxt) add(list, 'f-bazi-wuxing', '五行分值', wxTxt, '旺衰');
+
+  const list1 = Array.isArray(r.dayun && r.dayun.list) ? r.dayun.list : [];
+  let d0 = list1.length ? list1[0] : null;
+  // 按日期落位，不按年龄推：交运时刻精确到分钟，用年龄比会差出一步（2027 年才开始的大运
+  // 被 42 岁这个整数带进来，盘面上就写成「当前」了）。日期解析不了才退回年龄法。
+  const stamp = (s) => Date.parse(String(s || '').replace(' ', 'T'));
+  const nowMs = Date.now();
+  let hit = null;
+  for (let i = 0; i < list1.length; i += 1) {
+    const from = stamp(list1[i].fromDate);
+    const to = stamp(list1[i].toDate);
+    if (Number.isFinite(from) && Number.isFinite(to) && nowMs >= from && nowMs < to) { hit = list1[i]; break; }
+  }
+  if (hit) d0 = hit;
+  else {
+    const curAge = num(r.liunian && r.liunian[0] && r.liunian[0].age);
+    if (curAge !== null) {
+      for (let i = 0; i < list1.length; i += 1) {
+        if (num(list1[i].startAge) !== null && num(list1[i].startAge) <= curAge) d0 = list1[i];
+      }
+    }
+  }
+  if (d0) {
+    add(list, 'f-bazi-dayun', '当前大运', [one(d0.ganzhi), num(d0.startAge) === null ? '' : `${num(d0.startAge)} 岁起`, one(d0.fromDate), one(d0.toDate) ? `至 ${one(d0.toDate)}` : ''].filter(Boolean).join('｜'), '大运');
+  }
+
+  const ln = Array.isArray(r.liunian) ? r.liunian[0] : null;
+  if (ln) {
+    add(list, 'f-bazi-liunian', '当前流年', [num(ln.age) === null ? '' : `${num(ln.age)} 岁`, one(ln.ganzhi), one(ln.year)].filter(Boolean).join('｜'), '流年');
+  }
+
+  const daySh = Array.isArray(p.day && p.day.shensha) ? p.day.shensha : [];
+  if (daySh.length) add(list, 'f-bazi-shensha-day', '日柱神煞', daySh.join('、'), '神煞');
+  const yearSh = Array.isArray(p.year && p.year.shensha) ? p.year.shensha : [];
+  if (yearSh.length) add(list, 'f-bazi-shensha-year', '年柱神煞', yearSh.join('、'), '神煞');
+
+  const kwTxt = Array.isArray(r.kongwang)
+    ? r.kongwang.map(one).filter(Boolean).join('、')
+    : '';
+  if (kwTxt) add(list, 'f-bazi-kongwang', '空亡', kwTxt, '神煞');
+
+  const ry = r.renyuan || {};
+  const rySeg = ry.segment && typeof ry.segment === 'object' ? num(ry.segment.start) : num(ry.segment);
+  const ryTxt = [one(ry.activeElement), one(ry.active), rySeg === null ? '' : `第 ${rySeg} 日起`].filter(Boolean).join('｜');
+  if (ryTxt) add(list, 'f-bazi-renyuan', '人元司令', ryTxt, '四柱');
+
+  // 兜底：把 envelope 的证据也并进来（同 id 的以专用事实为准，故先占位后去重）
+  const evs = Array.isArray(env && env.evidence) ? env.evidence : [];
+  for (let i = 0; i < evs.length; i += 1) {
+    const e = evs[i] || {};
+    const id = one(e.id) || `f-bazi-ev-${i + 1}`;
+    if (list.some((x) => x.id === id)) continue;
+    add(list, id, one(e.label), one(e.detail), '盘面');
+  }
+}
+
+const BUILDERS = { bazi: baziFacts };
+
+function buildFacts(r, env) {
+  const list = [];
+  if (!r || typeof r !== 'object') return list;
+  const sys = one(r.system);
+  const e = env && typeof env === 'object' ? env : (r.envelope && typeof r.envelope === 'object' ? r.envelope : {});
+  try {
+    (BUILDERS[sys] || genericFacts)(r, e, list);
+  } catch (err) {
+    // 事实层是加法：抽不出就不给，绝不让排盘跟着坏
+    return [];
+  }
+  return list;
+}
+
+function factById(list, id) {
+  const key = one(id);
+  if (!key || !Array.isArray(list)) return null;
+  for (let i = 0; i < list.length; i += 1) {
+    if (list[i] && list[i].id === key) return list[i];
+  }
+  return null;
+}
+
+const FACT_SYSTEMS = Object.keys(BUILDERS);
+
+// ── 段落 → 事实的引用表 ──
+//
+// 每段的 refs 只写「这一段用到了哪几条盘面事实」。规则：
+// - 只能引用 buildFacts 真的会产出的 id，测试会逐条核对；
+// - 方法类段落（怎么算的、哪里没算、口径分歧）不挂 refs——它们讲的是规则，不是这张盘；
+// - 宁可少挂，不要挂「看起来相关」的：refs 是给用户回溯用的，挂错了比不挂更糟。
+const SECTION_REFS = {
+  bazi: {
+    cross: ['f-bazi-yongshen', 'f-bazi-dayun', 'f-bazi-wuxing', 'f-bazi-geju'],
+    framework: ['f-bazi-pillars', 'f-bazi-daymaster', 'f-bazi-strength', 'f-bazi-wuxing'],
+    portrait: ['f-bazi-daymaster', 'f-bazi-strength', 'f-bazi-geju'],
+    reasoning: ['f-bazi-strength', 'f-bazi-yongshen', 'f-bazi-geju', 'f-bazi-dayun', 'f-bazi-liunian'],
+    renyuan: ['f-bazi-renyuan', 'f-bazi-pillars'],
+    timeline: ['f-bazi-dayun', 'f-bazi-liunian'],
+    years: ['f-bazi-liunian'],
+    advice: ['f-bazi-yongshen', 'f-bazi-climate'],
+    suiyun: ['f-bazi-liunian'],
+    checks: ['f-bazi-yongshen', 'f-bazi-wuxing', 'f-bazi-climate', 'f-bazi-dayun', 'f-bazi-liunian'],
+    yongshen: ['f-bazi-yongshen'],
+    climate: ['f-bazi-climate'],
+    qiongtong: ['f-bazi-climate', 'f-bazi-yongshen'],
+    palaces: ['f-bazi-pillars'],
+    geju: ['f-bazi-geju'],
+    bingyao: ['f-bazi-geju'],
+    xianshen: ['f-bazi-geju'],
+    structure: ['f-bazi-geju', 'f-bazi-pillars'],
+    anhe: ['f-bazi-pillars'],
+    hehua: ['f-bazi-pillars'],
+    caiku: ['f-bazi-wuxing', 'f-bazi-yongshen'],
+    balance: ['f-bazi-wuxing', 'f-bazi-strength'],
+    shensha: ['f-bazi-shensha-day', 'f-bazi-shensha-year', 'f-bazi-kongwang'],
+    classics: ['f-bazi-geju'],
+    quant: ['f-bazi-strength'],
+  },
+};
+
+function refsFor(system, key) {
+  const table = SECTION_REFS[one(system)];
+  if (!table) return null;
+  const r = table[one(key)];
+  return Array.isArray(r) && r.length ? r.slice() : null;
+}
+
+return { buildFacts, factById, FACT_SYSTEMS, SECTION_REFS, refsFor };
+})();
+
 __mods.interpret = (function () {
 // 解析与详解模块
 // 输入：任一体系的排盘结果（compute 的返回值）
@@ -27563,6 +27761,7 @@ const { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } = (__mods['b
 const { bodyLabels, yongshenOf } = (__mods.liuyao || {});
 // 三层披露的契约层：把「结论」单独抽成一个机读结构，正文再怎么长也不影响首屏
 const { buildEnvelope } = (__mods.envelope || {});
+const { buildFacts, refsFor } = (__mods.facts || {});
 
 // ── 固定五维度 ────────────────────────────────────────────
 const DIMENSIONS = [
@@ -29503,48 +29702,65 @@ const confidenceOf = (dim) => {
  */
 const METHOD_KEYS = ['caveats', 'limits', 'quant', 'checklist', 'todo', 'reasoning', 'checks', 'classics'];
 const TEXT_KEYS = ['jingText', 'guaCi', 'yaoCi'];
-function markSections(list) {
+function markSections(list, system) {
   return list.map((s) => {
     const key = String((s && s.key) || '');
-    if (METHOD_KEYS.indexOf(key) >= 0) return { ...s, kind: 'method' };
-    if (TEXT_KEYS.indexOf(key) >= 0) return { ...s, kind: 'text' };
-    return s;
+    let out = s;
+    if (METHOD_KEYS.indexOf(key) >= 0) out = { ...out, kind: 'method' };
+    else if (TEXT_KEYS.indexOf(key) >= 0) out = { ...out, kind: 'text' };
+    // 正文段落挂事实引用：用户点一下能看见这句话是从盘面哪几条推出来的。
+    // 方法类不挂——它讲的是规则，不是这张盘。
+    if (out && out.kind !== 'method') {
+      const refs = refsFor(system, key);
+      if (refs) out = { ...out, refs };
+    }
+    return out;
   });
 }
 
-const withReportMeta = (body, r, ask) => enrichPlain({
+const withReportMeta = (body, r, ask) => {
   // 信封先算：它是首屏唯一必需的东西，一旦算失败要能降级而不是整块消失
-  envelope: (() => {
-    try {
-      return buildEnvelope(r, {
-        system: r.system,
-        asOf: r.asOf,
-        mode: 'live',
-        question: ask && (ask.text || ask.raw) || '',
-      });
-    } catch (e) {
-      return null;
-    }
-  })(),
-  ...body,
-  moduleType: MODULE_TYPE[r.system] || 'natal',
-  system: r.system,
-  // 没有判断可下的体系靠这张事实卡开场：结论卡的位置留给它，不然首屏仍是一屏表格
-  factHead: r.factHead || null,
-  systemLabel: SYSTEM_LABEL[r.system] || r.system,
-  title: '解析与详解',
-  dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
-  sections: markSections(body.sections || []),
-  outline: body.outline || [],
-  tables: body.tables || [],
-  technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
-  disclaimer: body.disclaimer || DISCLAIMER,
-  // 能力边界走公共收尾，奇门那条支路也能带上（它不经过正文组装）
-  limits: body.limits || limitsFor(r.system),
-  // 三层导读：静态内容，放结果里由两套 UI 各自决定怎么折叠，不在引擎里拼 HTML
-  guide: GUIDE,
-  ask,
-}, r, ask);
+  let env = null;
+  try {
+    env = buildEnvelope(r, {
+      system: r.system,
+      asOf: r.asOf,
+      mode: 'live',
+      question: ask && (ask.text || ask.raw) || '',
+    });
+  } catch (e) {
+    env = null;
+  }
+  // 事实层：段落用 refs 引它，缺了就是一段没有依据的断言
+  let facts = [];
+  try {
+    facts = buildFacts(r, env);
+  } catch (e) {
+    facts = [];
+  }
+  return enrichPlain({
+    envelope: env,
+    facts,
+    ...body,
+    moduleType: MODULE_TYPE[r.system] || 'natal',
+    system: r.system,
+    // 没有判断可下的体系靠这张事实卡开场：结论卡的位置留给它，不然首屏仍是一屏表格
+    factHead: r.factHead || null,
+    systemLabel: SYSTEM_LABEL[r.system] || r.system,
+    title: '解析与详解',
+    dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
+    sections: markSections(body.sections || [], r.system),
+    outline: body.outline || [],
+    tables: body.tables || [],
+    technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,
+    disclaimer: body.disclaimer || DISCLAIMER,
+    // 能力边界走公共收尾，奇门那条支路也能带上（它不经过正文组装）
+    limits: body.limits || limitsFor(r.system),
+    // 三层导读：静态内容，放结果里由两套 UI 各自决定怎么折叠，不在引擎里拼 HTML
+    guide: GUIDE,
+    ask,
+  }, r, ask);
+};
 
 /**
  * 解析失败编号：同一句错误消息永远得到同一个 6 位串。
@@ -36370,6 +36586,21 @@ window.__MP_VER = "0.81.0";
 .mp-it-p:last-child{margin-bottom:0}
 /* 方法与出处：方法类段落合成一个折叠区，默认收起。summary 里只报段数与用途，不报字数 */
 .mp-it-method{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
+/* 盘面事实：正文角标 [n] 指到这里。清单本身折叠——它是回查用的，不是正文 */
+.mp-it-facts{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
+.mp-it-facts>summary{cursor:pointer;list-style:none;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+.mp-it-facts>summary::-webkit-details-marker{display:none}
+.mp-it-facts>summary::after{content:'▾';color:var(--faint);font-size:10px}
+.mp-it-facts[open]>summary::after{content:'▴'}
+.mp-it-facts .mp-it-sub{margin-top:8px;margin-bottom:0}
+.fact-row{display:flex;gap:6px;align-items:baseline;font-size:12px;line-height:1.85;color:var(--muted)}
+.fact-row .fact-no{font-style:normal;font-family:system-ui,sans-serif;color:var(--faint);min-width:22px;flex:none}
+.fact-row .fact-g{font-style:normal;color:var(--faint);min-width:30px;flex:none}
+.fact-row b{color:var(--ink2);font-weight:500;flex:none}
+.fact-row span{color:var(--muted);word-break:break-word}
+.mp-it-refs{display:inline;margin-left:8px;font-size:11px;color:var(--faint);font-family:system-ui,sans-serif;font-weight:400;white-space:nowrap}
+.mp-it-refs a{color:var(--faint);text-decoration:none;border-bottom:1px dotted var(--line);letter-spacing:.02em}
+.mp-it-refs a:hover{color:var(--ink2)}
 .mp-it-method>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .mp-it-method>summary::-webkit-details-marker{display:none}
 .mp-it-method>summary::after{content:'展开';font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
@@ -39341,14 +39572,30 @@ window.__MP_VER = "0.81.0";
     // 出处卡片全部收进文末「方法与出处」：五维正文只留结论与建议。
     // 实测出处卡是最大膨胀源（八字 3798 字、六爻 2525 字），而那五维真正的话只有 300–600 字。
     const knowAll = (it.dimensions || []).reduce((acc, d) => acc.concat((d.knowledge || []).map((k) => ({ ...k, dimLabel: d.label }))), []);
+    // 事实层：正文每段挂一个 [n]，指到文末的「盘面事实」清单。
+    // 角标只认真的存在的事实——命中不到就不出角标，宁可少给，也不让读者点到空气。
+    const factList = Array.isArray(it.facts) ? it.facts : [];
+    const factNo = {};
+    for (let i = 0; i < factList.length; i += 1) factNo[factList[i].id] = i + 1;
+    const refChip = (s) => {
+      const refs = Array.isArray(s.refs) ? s.refs.filter((id) => factNo[id]) : [];
+      if (!refs.length) return '';
+      // 按编号升序：读者是顺着 [1][4][8] 往上看，不是按怎么算出来的顺序看
+      const nums = refs.map((id) => factNo[id]).sort((a, b) => a - b);
+      return `<div class="mp-it-refs"><a href="#mp-sec-facts">${nums.map((n) => `[${n}]`).join('')}</a> 盘面事实</div>`;
+    };
+    const factsBlock = factList.length ? `<details class="mp-it-sec mp-it-facts" id="mp-sec-facts">
+        <summary><span class="mp-it-sh">盘面事实</span><span class="mp-it-mnum">${factList.length} 条 · 正文里的 [n] 指这里</span></summary>
+        <div class="mp-it-sub">${factList.map((f, i) => `<div class="fact-row"><em class="fact-no">[${i + 1}]</em>${f.group === f.label ? '' : `<em class="fact-g">${esc(f.group)}</em>`}<b>${esc(f.label)}</b><span>${esc(f.value)}</span></div>`).join('')}</div>
+      </details>` : '';
     const secOne = (s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
-        <div class="mp-it-sh">${esc(s.label)}</div>
+        <div class="mp-it-sh">${esc(s.label)}${refChip(s)}</div>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
     // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。
-    const secs = secList.length || knowAll.length
-      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${(methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
+    const secs = secList.length || knowAll.length || factList.length
+      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${factsBlock}${(methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
         <summary><span class="mp-it-sh">方法与出处</span><span class="mp-it-mnum">${methodSecs.length ? `${methodSecs.length} 段` : ''}${methodSecs.length && knowAll.length ? ' · ' : ''}${knowAll.length ? `依据 ${knowAll.length} 条` : ''} · 怎么算的、哪里没算、口径分歧</span></summary>
         ${knowAll.length ? `<div class="mp-it-sub" id="mp-sec-know"><div class="mp-it-sh">依据与出处</div>${knowAll.map((k) => `<div class="know-row"><span class="know-status ${esc(k.status)}">${esc(k.statusLabel)}</span><span class="know-body"><em class="know-dim">${esc(k.dimLabel)}</em><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
         ${methodSecs.map((s) => `<div class="mp-it-sub"><div class="mp-it-sh">${esc(s.label)}</div><div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div></div>`).join('')}
