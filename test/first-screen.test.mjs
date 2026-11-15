@@ -46,17 +46,27 @@ ok('视图选择单独记忆', /const VIEW_KEY = 'mp\.first\.view'/.test(ui));
 ok('切换视图时写入记忆', /storeSet\(VIEW_KEY, b\.dataset\.view\)/.test(ui));
 ok('启动时恢复上次的视图', /applyView\(storeGet\(VIEW_KEY\) === 'flat' \? 'flat' : 'group'\)/.test(ui));
 
-// ── ④ 最近用过：最多 3 条，只在用户动手时记 ────────────────────
+// ── ④ 最近排过的盘：留最近 6 次，只在真排完一次时记 ──────────────
 ok('最近用过的存储键', /const RECENT_KEY = 'mp\.recent\.tabs'/.test(ui));
-ok('最多记 3 条', /const RECENT_MAX = 3/.test(ui) && /slice\(0, RECENT_MAX\)/.test(ui));
-ok('写入时按上限截断', /function recordRecent\(t\)[\s\S]{0,220}list\.slice\(0, RECENT_MAX\)/.test(ui));
-ok('重复入口提到最前而不是记两条', /filter\(\(x\) => x && x\.tab && x\.tab !== t\)/.test(ui));
-ok('点入口时记录', /function activate\(next\) \{[\s\S]{0,160}recordRecent\(next\)/.test(ui));
-ok('点主按钮起卦/排盘时也记录', /function goCast\(\) \{\s*recordRecent\(tab\);/.test(ui));
-ok('人格问卷答够提交时记录', /mbAnswered\(\) < MBTI_MIN\) \{ mbNudge\(\); return; \}\s*recordRecent\('mbti'\)/.test(ui));
+ok('留最近 6 条', /const RECENT_MAX = 6/.test(ui) && /slice\(0, RECENT_MAX\)/.test(ui));
+ok('写入时按上限截断', /function recordRecent\(t, r\)[\s\S]{0,900}slice\(0, RECENT_MAX\)/.test(ui));
+ok('同一张盘不重复记（体系 + 盘号 + 输入摘相同即视作同一条）',
+  /x\.tab === t && x\.shortId === item\.shortId && argSummary\(x\.args\) === argSummary\(item\.args\)/.test(ui));
+ok('切 tab 不算用过（不然历史里全是点过没排过的空条目）',
+  !/function activate\(next\) \{[\s\S]{0,160}recordRecent/.test(ui));
+ok('排完一次才记，且带盘号', /paint\(\);\s*\/\/ 历史在这里记[\s\S]{0,120}if \(keepRecent\) recordRecent\(startTab, r\)/.test(ui));
+ok('切 tab 顺带自动排的那次不记（那不是用户要的那次）',
+  /else run\(\{ record: false \}\)/.test(ui) && /run\(\{ record: false \}\);\s*return true;/.test(ui));
+ok('问卷不进历史（答案只在内存里，恢复不回来）',
+  /if \(t === 'mbti' \|\| t === 'constitution'\) return;/.test(ui));
+ok('记录里存这次的表单值', /const args = collectArgs\(\)/.test(ui) && /const item = \{ tab: t, at: Date\.now\(\), args, shortId \}/.test(ui));
+ok('盘号剥掉 LY- 前缀（与结果页显示一致）', /replace\(\/\^LY-\/, ''\)/.test(ui));
+ok('点回来是按那次的条件再排一遍，不是只切 tab',
+  /setTab\(x\.tab\);\s*applyArgs\(x\.args\);\s*run\(\);/.test(ui));
+ok('单条可删', /className = 'rc-del'/.test(ui) && /y\.tab === x\.tab && y\.at === x\.at/.test(ui));
 // C3 深链：启动改成「先读链接、没有再排默认盘」；仍然不能在初始化时写最近记录
 ok('启动时先看深链再排盘', /const deep = readDeepLink\(\);\s*setTab\(deep \? deep\.tab : 'ziwei'\)/.test(ui));
-const bootBlock = (ui.match(/const deep = readDeepLink\(\);[\s\S]*?Promise\.resolve\(run\(\)\)/) || [''])[0];
+const bootBlock = (ui.match(/const deep = readDeepLink\(\);[\s\S]*?Promise\.resolve\(run\(\{ record: false \}\)\)/) || [''])[0];
 ok('首屏初始化不写最近记录', !!bootBlock && !/recordRecent/.test(bootBlock), bootBlock.length ? bootBlock.slice(0, 60) : '没找到启动块');
 ok('没有记录时整行隐藏', /row\.hidden = list\.length === 0/.test(ui));
 ok('隐藏要显式写样式（display:flex 会盖掉 [hidden]）', /\.recent\[hidden\]\{display:none\}/.test(html));
@@ -65,7 +75,7 @@ ok('存储里的 tab 先过白名单（不直接当选择器）', /labels\[x\.ta
 // ── ⑤ 存储不可用要降级，不能把页面搞坏 ─────────────────────────
 ok('读存储失败返回空', /function storeGet\(key\) \{\s*try \{/.test(ui) && /catch \(e\) \{ return null; \}/.test(ui));
 ok('写存储失败静默降级', /function storeSet\(key, val\) \{\s*try \{/.test(ui) && /catch \(e\) \{ \/\* 存不了不影响使用 \*\/ \}/.test(ui));
-ok('最近用过的名称走文本节点，不拼 HTML', /b\.appendChild\(document\.createTextNode\(labels\[x\.tab\]\)\)/.test(ui));
+ok('最近用过的名称走文本节点，不拼 HTML', /nm\.textContent = labels\[x\.tab\]/.test(ui));
 
 // ── ⑥ 每组先露 4 个，其余折起来（宽窄屏同一口径） ───────────────
 ok('每组只露前 4 个（全局规则）', /\.tgroup:not\(\.open\) \.ttools>\.tool:nth-child\(n\+5\)\{display:none\}/.test(html));

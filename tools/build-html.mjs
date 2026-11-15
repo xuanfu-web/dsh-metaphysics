@@ -86,6 +86,19 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:border-color .14s ease,background .14s ease}
 .rc:hover{border-color:var(--gold);background:var(--panel)}
 .rc i{font-style:normal;font-size:11.5px;color:var(--dim)}
+/* 历史盘条目（P2-20）：一行两段字 + 一个删除按钮，比胶囊能多放一行「排的是什么」 */
+.rc-item{display:flex;align-items:stretch;border-radius:12px;border:1px solid var(--line);
+  background:color-mix(in srgb,var(--panel) 72%,transparent);overflow:hidden;
+  transition:border-color .14s ease,background .14s ease}
+.rc-item:hover{border-color:var(--gold)}
+.rc-main{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:5px 11px 6px;
+  border:0;background:none;color:var(--ink);font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.rc-main b{font-weight:600}
+.rc-main span{font-size:11.5px;color:var(--dim)}
+.rc-main i{font-style:normal;font-size:10.5px;color:var(--faint)}
+.rc-del{width:26px;border:0;border-left:1px solid var(--line);background:none;color:var(--faint);
+  font:inherit;font-size:15px;line-height:1;cursor:pointer}
+.rc-del:hover{color:var(--red);background:var(--panel)}
 .groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:12px}
 .tgroup{padding:14px 14px 12px;border:1px solid var(--line);border-radius:14px;
   background:linear-gradient(180deg,var(--panel),color-mix(in srgb,var(--panel) 88%,var(--bg)));box-shadow:var(--shadow)}
@@ -293,6 +306,8 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .tool span{font-size:11px}
   .tool.wide{grid-column:1/-1}
   .rc{min-height:36px}
+  .rc-main{min-height:40px}
+  .rc-del{width:34px}
   /* 22 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;

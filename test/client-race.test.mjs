@@ -86,7 +86,7 @@ ok('首屏不再写死预热 bazi', !/ensureEngine\(['"]bazi['"]\)/.test(bootBod
 ok('默认盘仍是 ziwei', bootBody.includes("run('ziwei')"));
 
 // ── ④ 独立页 run()：唯一的 await 之后先判代次与 tab ──
-const uiRun = stripComments(bodyOf(UI, 'async function run() {', '独立页 run'));
+const uiRun = stripComments(bodyOf(UI, 'async function run(opts) {', '独立页 run'));
 ok('抠到的独立页 run 是完整函数体', uiRun.trimEnd().endsWith('}') && countAwaits(uiRun) === 1,
   `长度 ${uiRun.length}，await ${countAwaits(uiRun)} 处`);
 const uiLeaks = awaitsGuarded(uiRun, 'runSeq', ["el('out').innerHTML"]);

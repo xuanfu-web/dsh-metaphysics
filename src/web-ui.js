@@ -101,7 +101,45 @@
   // 只记「点过哪个入口」，不存任何输入内容；读写失败（隐私模式、禁用存储）就降级成不记。
   const RECENT_KEY = 'mp.recent.tabs';
   const VIEW_KEY = 'mp.first.view';
-  const RECENT_MAX = 3;
+  const RECENT_MAX = 6;
+
+  /** 收集这次排盘的输入：按控件 id 存，表单新增字段自动带上，不用维护白名单 */
+  function collectArgs() {
+    const out = {};
+    document.querySelectorAll('.bar input, .bar select, .bar textarea').forEach((n) => {
+      if (!n.id) return;
+      if (n.type === 'checkbox') { if (n.checked) out[n.id] = true; return; }
+      const v = String(n.value == null ? '' : n.value);
+      if (v) out[n.id] = v.slice(0, 120);
+    });
+    return out;
+  }
+
+  /** 把一条历史记录写回表单：写了几个字段就返几，0 表示这条是旧格式、只有 tab 名 */
+  function applyArgs(args) {
+    if (!args) return 0;
+    let hit = 0;
+    Object.keys(args).forEach((id) => {
+      const n = document.getElementById(id);
+      if (!n) return;
+      if (n.type === 'checkbox') n.checked = !!args[id];
+      else n.value = String(args[id]);
+      hit += 1;
+    });
+    return hit;
+  }
+
+  /** 一行话说明这次排的是什么：命盘看时间，问事看所问，起名看名字 */
+  function argSummary(args) {
+    if (!args) return '';
+    const d = args.date || '';
+    const t = args.time || '';
+    if (d && t) return `${d} ${t}`;
+    if (d) return d;
+    if (args.question) return String(args.question).replace(/\s+/g, ' ').slice(0, 16);
+    if (args.givenname) return `${args.surname || ''}${args.givenname}`;
+    return '';
+  }
 
   function storeGet(key) {
     try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
@@ -136,38 +174,79 @@
     const list = (storeGet(RECENT_KEY) || []).filter((x) => x && labels[x.tab]).slice(0, RECENT_MAX);
     box.replaceChildren();
     list.forEach((x) => {
+      const item = document.createElement('div');
+      item.className = 'rc-item';
+
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'rc';
+      b.className = 'rc-main';
       b.dataset.tab = x.tab;
-      b.appendChild(document.createTextNode(labels[x.tab]));
+      const nm = document.createElement('b');
+      nm.textContent = labels[x.tab];
+      b.appendChild(nm);
+      const sub = [argSummary(x.args), x.shortId ? `盘号 ${x.shortId}` : ''].filter(Boolean).join(' · ');
+      if (sub) {
+        const s = document.createElement('span');
+        s.textContent = sub;
+        b.appendChild(s);
+      }
       const when = dayLabel(x.at);
       if (when) {
         const i = document.createElement('i');
         i.textContent = when;
         b.appendChild(i);
       }
-      b.addEventListener('click', () => activate(x.tab));
-      box.appendChild(b);
+      // 点回来不是「切到那个 tab」而是「按那次的条件再排一遍」：
+      // 只切 tab 的话表单还停在上一次的输入上，点开看到的不是那条记录对应的盘
+      b.addEventListener('click', () => {
+        setTab(x.tab);
+        applyArgs(x.args);
+        run();
+      });
+      item.appendChild(b);
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'rc-del';
+      del.title = '删掉这条';
+      del.setAttribute('aria-label', '删掉这条');
+      del.textContent = '×';
+      del.addEventListener('click', () => {
+        storeSet(RECENT_KEY, (storeGet(RECENT_KEY) || []).filter((y) => !(y && y.tab === x.tab && y.at === x.at)));
+        renderRecent();
+      });
+      item.appendChild(del);
+      box.appendChild(item);
     });
     row.hidden = list.length === 0;
   }
 
-  function recordRecent(t) {
+  /**
+   * 排完一次盘才记一条——切 tab 不算用过（那样历史里全是点过没排过的空条目）。
+   * 问卷（人格/体质）不进历史：答案只在内存里，恢复不回来；存半份答案比不存更误导。
+   */
+  function recordRecent(t, r) {
     if (!entryLabels()[t]) return;
-    const list = (storeGet(RECENT_KEY) || []).filter((x) => x && x.tab && x.tab !== t);
-    list.unshift({ tab: t, at: Date.now() });
-    storeSet(RECENT_KEY, list.slice(0, RECENT_MAX));
+    if (t === 'mbti' || t === 'constitution') return;
+    const args = collectArgs();
+    // 盘号剥掉 LY- 前缀再存：和结果页上的显示一致，用户嘴里的盘号就是那六位
+    const shortId = String((r && r.shortId) || '').replace(/^LY-/, '');
+    const item = { tab: t, at: Date.now(), args, shortId };
+    // 表单字段太多时宁可只留体系名：localStorage 满了会整条静默存不进去
+    if (JSON.stringify(item).length > 3000) item.args = {};
+    const list = (storeGet(RECENT_KEY) || []).filter((x) => x && x.tab);
+    const rest = list.filter((x) => !(x.tab === t && x.shortId === item.shortId && argSummary(x.args) === argSummary(item.args)));
+    rest.unshift(item);
+    storeSet(RECENT_KEY, rest.slice(0, RECENT_MAX));
     renderRecent();
   }
 
   /** 点入口：切 tab + 立刻算；人格问卷例外，答够 12 题才出结果 */
   function activate(next) {
     setTab(next);
-    recordRecent(next);
     if (next === 'mbti') mbEnter();
     else if (next === 'constitution') csEnter();
-    else run();
+    else run({ record: false });
   }
 
   // ── 我的命盘（本机档案）────────────────────────────────────────
@@ -201,7 +280,6 @@
     }
     profName = '';
     setTab(p.kind);
-    recordRecent(p.kind);
     const puts = [['date', p.date], ['time', p.hourUnknown ? '' : p.time], ['gender', p.gender], ['addr', p.address]];
     for (const pair of puts) {
       const node = el(pair[0]);
@@ -217,7 +295,7 @@
     if (lzBox) lzBox.checked = p.lateZi !== false;
     // 把这次回填当成「用户填的」：否则切走再切回出生类体系时会被上一次的自动值顶掉
     onManualEdit();
-    run();
+    run({ record: false });
     return true;
   }
 
@@ -867,7 +945,9 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
 
-  async function run() {
+  async function run(opts) {
+    // 切 tab / 恢复档案 / 开页面自动排的那一版不进历史：那不是用户要的那次
+    const keepRecent = !(opts && opts.record === false);
     const runStart = mpNow();
     const myRun = ++runSeq;
     const startTab = tab;
@@ -1138,6 +1218,8 @@
         lateZi: typeof args.lateZi === 'boolean' ? args.lateZi : true };
       const paintStart = mpNow();
       paint();
+      // 历史在这里记：这是「排完一次盘」的唯一出口，带上盘号与这次用的表单值
+      if (keepRecent) recordRecent(startTab, r);
       // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
       const renderMs = mpNow() - paintStart;
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
@@ -1161,7 +1243,6 @@
    * 「此刻」按钮据此取消。
    */
   function goCast() {
-    recordRecent(tab);
     // 人格问卷没有时间可补：先看答够没有，再走同一套计算
     if (tab === 'mbti') { mbSubmit(); return; }
     if (tab === 'constitution') { csSubmit(); return; }
@@ -1451,7 +1532,6 @@
 
   function csSubmit() {
     if (csAnswered() < CS_MIN) { csNudge(); return; }
-    recordRecent('constitution');
     run();
   }
 
@@ -1617,7 +1697,6 @@
 
   function mbSubmit() {
     if (mbAnswered() < MBTI_MIN) { mbNudge(); return; }
-    recordRecent('mbti');
     run();
   }
 
@@ -1708,7 +1787,6 @@
       el('gender').value = 'male';
       el('addr').value = '河北石家庄';
       setTab('bazi');
-      recordRecent('bazi');
       run();
     });
     el('gender').addEventListener('change', run);
@@ -1855,6 +1933,6 @@
   // 勾「时辰未知」当场收起时刻框：不让人以为还要填个点
   if (el('hourunknown')) el('hourunknown').addEventListener('change', syncMhMode);
     if (deep) fillDeepForm(deep.form);
-    Promise.resolve(run()).then(() => { if (deep) deepNote(deep); });
+    Promise.resolve(run({ record: false })).then(() => { if (deep) deepNote(deep); });
   });
 })();
