@@ -412,3 +412,31 @@ dev 段收进 `<details>` 仍留在 DOM 里，会被打印样式、存长图（`
 1. 收敛渲染路径的 diff 不小，要不要单独打一版只含这个的 0.82.0，其它往后放。
 2. 术语就地 tooltip（原清单 M3-6）建议砍：22 体系 × 30 条词，tooltip 会把手机屏占满，`term-dict` 已在正文里做「术语当场翻人话」，重复做一层反而打架。
 3. 第二批 2c 的范围：全 22 体系改完按周算。8 个判定类先做，其余维持 default。
+
+---
+
+## 12. 进度
+
+### 第一批（0.82.0-wip）已落地
+
+分支 `feat/revamp-p0-split-path`，起点 `main` = a6b696e（v0.81.0）。
+提交：`7edcf41` 结果拼接收成一条路径 + 视图分层 / `fd3a59a` 源码与 mjs/md 钉 LF / `d98be6a` 开发者视图三通道 + 解读失败降级。
+
+| 条目 | 状态 | 落点 |
+|---|---|---|
+| P0-01 结果页收敛成七块 | ✅ | `src/compose.js` 的 `USER_SEGS` |
+| P0-02 dev 通道三入口一条状态 | ✅ | `?dev=1` / 本机 `mp.view` / 单页页头印章连点五下 · 面板 `Ctrl+Shift+D` |
+| P0-03 用户视图只留短盘 ID | ✅ | `engine/index.js` 无条件生成 `r.shortId`，`compose.js` 的 `shortIdHTML` |
+| P0-04 耗时与自检异常进日志 | ✅ | `perfHTML` 只进 dev；失败提示带 6 位 `errorId`；`console.warn` 去重 |
+| P0-05 模块分五档 | ✅ | `compose.js` 的 `TIER` / `TIER_SKIP` / `tierOf` |
+| P1-26 收敛渲染路径 | ✅ | 面板与单页都只调 `composeResult`，段序不再各写一遍 |
+| P1-27 状态归并 | 未做 | 归第四批 |
+| P1-28 局部重绘 | 未做 | 归第四批 |
+
+两个实现决定记在这里，免得以后有人改回去：
+
+- `TIER_SKIP` 只跳 `followup`，不跳 `castAt`。起盘时刻归 `TIME_KIND`（`src/app.js:744`）管，同一件事不写两处。
+- 盘号（`shortId`）进 `engine/diff.js:12` 的 `IGNORE_KEYS`。换口径、换版本必然换号，那是另一次排盘，不该算成「盘面动了一处」。
+
+闸：`check-patterns` 90 文件、`check-assertions` 184 文件 10434 PASS、`check-bundle` client.js 377KB / gzip 115KB（上限 128KB）、`check-html-sinks` 6 文件、`check-perf` 29 项、`test-all` 185/185（50.5s）。
+
