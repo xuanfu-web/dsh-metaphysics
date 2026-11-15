@@ -63,13 +63,17 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
 .pp-center .ct-t2{font-size:12.5px;color:var(--ink)}
 .pp-center .ct-t3{font-size:14px;letter-spacing:.35em;margin:6px 0;font-weight:600}
 .pp-center .ct-t4{font-size:12.5px;color:var(--muted)}
-.pp-stars{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 6px;font-size:13px;line-height:1.6;min-height:36px}
+/* 盘面字号四级（P1-15）：主星 > 辅曜 > 杂曜神煞 > 年龄长生，一处改全盘生效。
+   竖屏段另有一套值覆盖，见「竖屏」块的 .pp-grid。 */
+.pp-grid{--zw-l1:13px;--zw-l2:11.5px;--zw-l3:10.5px;--zw-l4:9.5px;--zw-l5:12px}
+.pp-stars{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 6px;font-size:var(--zw-l2);line-height:1.6;min-height:36px}
 .pp-st{white-space:nowrap}
-.pp-st.main{font-weight:700;font-size:13px;letter-spacing:.04em;text-shadow:0 0 .5px currentColor}
-.pp-st.good{color:var(--lu)}
-.pp-st.bad{color:var(--ji)}
+.pp-st.main{font-weight:700;font-size:var(--zw-l1);letter-spacing:.04em;text-shadow:0 0 .5px currentColor}
+.pp-st.good{color:var(--lu);font-size:var(--zw-l2);font-weight:500}
+.pp-st.bad{color:var(--ji);font-size:var(--zw-l2);font-weight:500}
 .pp-st.bad::before{content:"·";font-weight:900;margin-right:1px}
-.pp-st.aux{color:var(--muted);font-size:11.5px}
+.pp-st.aux{color:var(--muted);font-size:var(--zw-l2)}
+.pp-st.minor{color:var(--faint);font-size:var(--zw-l3)}
 .pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:var(--on-accent);margin-left:1px;vertical-align:1px}
 .pp-m.lu{background:var(--lu)}.pp-m.quan{background:var(--quan)}.pp-m.ke{background:var(--ke)}.pp-m.ji{background:var(--ji)}
 /* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
@@ -85,8 +89,8 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
 .pp-b.good{color:var(--br-good)}
 .pp-b.mid{color:var(--muted)}
 .pp-b.bad{color:var(--br-bad)}
-.pp-ages{margin-top:2px;font-size:12px;color:var(--muted);letter-spacing:.02em}
-.pp-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:4px;font-size:12px;color:var(--muted)}
+.pp-ages{margin-top:2px;font-size:var(--zw-l4);color:var(--faint);letter-spacing:.02em}
+.pp-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:4px;font-size:var(--zw-l4);color:var(--muted)}
 .pp-foot .ft-l{display:flex;flex-direction:column;gap:0;line-height:1.5}
 .pp-foot .ft-l .ft-dx{color:var(--ink)}
 .pp-foot .ft-r{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.5}
@@ -256,6 +260,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
 .pp-detail .dt-st.good{color:var(--lu)}
 .pp-detail .dt-st.bad{color:var(--ji)}
 .pp-detail .dt-st.aux{color:var(--muted)}
+.pp-detail .dt-st.minor{color:var(--faint);font-size:11.5px}
 .pp-detail .dt-st .dt-br{font-style:normal;font-size:11.5px;color:var(--muted);margin-left:3px}
 .pp-detail .dt-st .dt-br.good{color:var(--br-good)}
 .pp-detail .dt-st .dt-br.bad{color:var(--br-bad)}
@@ -1427,7 +1432,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
   .pp-modes label{padding:6px 16px}
   .pp-soon{margin-left:0;padding:6px 10px;width:100%;border-top:1px solid var(--line)}
   /* 紫微：竖屏保持 4×4 宫盘（宫位相对位置是三合/对宫的核心，不可丢），宫内改竖向紧凑排版 */
-  .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0}
+  .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0;--zw-l1:11px;--zw-l2:9.5px;--zw-l3:8.5px;--zw-l4:8.5px}
   .pp-cell{min-height:0;padding:3px 2px 4px;border-radius:0}
   .pp-center{grid-column:2/4;grid-row:2/4;order:0;border-radius:0;padding:5px 3px;gap:2px}
   .pp-center .ct-t1{font-size:12px;margin-bottom:2px;letter-spacing:.02em}
@@ -1435,14 +1440,15 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
   .pp-center .ct-t3{font-size:10.5px;letter-spacing:.16em;margin:2px 0}
   .pp-center .ct-t4{font-size:9px;line-height:1.45}
   .pp-center .pp-legend{font-size:8.5px;gap:4px;margin-top:3px;flex-wrap:wrap;line-height:1.4}
-  /* 星曜竖排堆叠：主星在上粗体，辅星小字，四化彩色标 */
-  .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;font-size:11px;line-height:1.4;min-height:0}
-  .pp-st.main{font-size:11px}
-  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9.5px}
+  /* 星曜竖排堆叠：字号走四级变量，竖屏压小一档 */
+  .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;line-height:1.4;min-height:0}
+  .pp-st.main{font-size:var(--zw-l1)}
+  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:var(--zw-l2)}
+  .pp-st.minor{font-size:var(--zw-l3)}
   .pp-m{font-size:8.5px;padding:0 1px;vertical-align:0}
   .pp-b{font-size:10px;margin-left:3px;opacity:.9}
-  .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
-  .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
+  .pp-ages{font-size:var(--zw-l4);line-height:1.45;margin-top:2px;word-break:break-all}
+  .pp-foot{font-size:var(--zw-l4);line-height:1.4;gap:2px}
   .pp-foot .ft-pn{font-size:11px}
   /* 详情面板：竖屏下要接得住 4×4 网格之外的全部信息 */
   .pp-detail{padding:9px 10px 11px}
@@ -1696,7 +1702,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
 /* 太极点转换信息：详情面板「太极转换」行，默认隐藏，勾 ppm-d-tjz 才显示 */
 #ppm-d-tjz:not(:checked)~.pp-body .pp-detail .dt-taiji{display:none}
 /* 组2 四化派显示（默认全勾，取消才隐藏） */
-#ppm-d-small:not(:checked)~.pp-body .pp-st.aux{display:none}
+#ppm-d-small:not(:checked)~.pp-body .pp-st.aux,#ppm-d-small:not(:checked)~.pp-body .pp-st.minor{display:none}
 #ppm-d-shen:not(:checked)~.pp-body .pp-shen::after{display:none}
 #ppm-d-hua:not(:checked)~.pp-body .pp-m{display:none}
 #ppm-d-sf:not(:checked)~.pp-body .pp-cell.pp-tri{background:var(--bg)}
@@ -1707,7 +1713,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
 #ppm-d-bad-ink:checked~.pp-body .pp-st.bad{color:var(--ink)}
 #ppm-d-bad-ink:checked~.pp-body .pp-st.bad::before{content:none}
 #ppm-d-bold:checked~.pp-body .pp-st.main,#ppm-d-bold:checked~.pp-body .pp-st.good{font-weight:700}
-`,n=window.__PP=window.__PP||{};n.CSS=s;const z={主星:"main",吉星:"good",煞星:"bad",辅星:"aux",杂曜:"aux"},H={禄:"lu",权:"quan",科:"ke",忌:"ji"},ae=new Set(["三台","八座","恩光","天贵"]),oe={庙:"good",旺:"good",得:"mid",利:"mid",平:"mid",不:"bad",陷:"bad"},ce={巳:[1,1],午:[1,2],未:[1,3],申:[1,4],辰:[2,1],酉:[2,4],卯:[3,1],戌:[3,4],寅:[4,1],丑:[4,2],子:[4,3],亥:[4,4]},le={乾:[1,1,1],兑:[1,1,0],离:[1,0,1],震:[1,0,0],巽:[0,1,1],坎:[0,1,0],艮:[0,0,1],坤:[0,0,0]},xe=["初爻","二爻","三爻","四爻","五爻","上爻"],t=e=>String(e??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"),ye=(e,i,o)=>{const b=Math.round(43),v=e?`<rect x="0" y="${2.5}" width="104" height="7" rx="${1.6}" fill="currentColor"/>`:`<rect x="0" y="${2.5}" width="${b}" height="7" rx="${1.6}" fill="currentColor"/><rect x="${b+18}" y="${2.5}" width="${104-b-18}" height="7" rx="${1.6}" fill="currentColor"/>`;return`<svg class="mp-hex${i?" hex-on":""}${o?" "+o:""}" viewBox="0 0 104 12" preserveAspectRatio="none" aria-hidden="true" focusable="false">${v}</svg>`},U={木:"M6 1.6V10.8M6 5.2 2.6 2.2M6 7.4 9.4 4.4",火:"M6 1.4C7.6 3.6 9.2 5.4 9.2 7.6A3.2 3.2 0 0 1 2.8 7.6C2.8 5.4 4.4 3.6 6 1.4Z",土:"M1.6 9.6h8.8M6 2.4v7.2M3.4 5.6h5.2",金:"M6 1.2 10.6 6 6 10.8 1.4 6Z",水:"M1.4 7.2C2.9 4.2 4.5 10.2 6 7.2 7.5 4.2 9.1 10.2 10.6 7.2"},ve=e=>{const i=U[e];return i?`<svg class="mp-wxi" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="${i}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`:""},ee=e=>`<svg class="mp-trig" viewBox="0 0 14 10" aria-hidden="true" focusable="false">${(le[e]||[0,0,0]).slice().reverse().map((l,r)=>{const c=r*4;return l?`<rect x="0" y="${c}" width="14" height="2" rx="0.6" fill="currentColor"/>`:`<rect x="0" y="${c}" width="5.6" height="2" rx="0.6" fill="currentColor"/><rect x="8.4" y="${c}" width="5.6" height="2" rx="0.6" fill="currentColor"/>`}).join("")}</svg>`;n._hexBar=ye,n._wxIcon=ve,n._triGlyph=ee;function D(e,i,o){return!e||!e.length?"":e.map(l=>{const r=z[l.type]||"aux",c=l.mutagen?`<i class="pp-m ${H[l.mutagen]}">${l.mutagen}</i>`:"",d=i&&i[l.name],m=d?`<i class="pp-m view ${H[d]}">${d}</i>`:"",u=l.brightness?`<em class="pp-b ${oe[l.brightness]||"mid"}">${l.brightness}</em>`:"",b=l.inTemple?'<em class="pp-b good">庙</em>':"",v=o&&o[l.name]?xa(o[l.name],l.name):"",w=ae.has(l.name)?" st-sbg":"";return`<span class="pp-st ${r}${w}">${v}${l.name}${u}${b}${c}${m}</span>`}).join("")}function B(e){const i=[];for(let o=0;o<6;o++)i.push(e+o*12);return i.join(",")}const Z=["命宫","兄弟","夫妻","子女","财帛","疾厄","迁移","交友","官禄","田宅","福德","父母"],K=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"],ne=e=>(e%12+12)%12,$e=(e,i)=>e!==i&&[ne(i+4),ne(i+8),ne(i+6)].includes(e);function je(e,i,o,l,r,c,d,m){const u=ce[e.branch]||[1,1],b=K.indexOf(e.branch),v=["pp-cell"];b===i?v.push("pp-soul"):$e(b,i)&&v.push("pp-tri"),e.isBody&&v.push("pp-shen"),m&&e.branch===m&&v.push("pp-laiyin"),u[0]===4&&v.push("pp-lastrow"),u[1]===4&&v.push("pp-lastcol");const w=e.shensha||{},$=Z[ne(i-b)];let _="";if(b===i&&l){const q=O=>(z[O.type]||"")==="main";if(!(e.stars||[]).some(q)){const O=l.find(F=>K.indexOf(F.branch)===ne(b+6)),Q=O?(O.stars||[]).filter(q):[];Q.length&&(_=`<div class="pp-borrow" title="命宫无主星，借对宫（迁移宫）主星">借 ${Q.map(F=>F.name).join(" ")}</div>`)}}return`<div class="${v.join(" ")}" data-pi="${b}" data-view="${o}" role="button" tabindex="0" aria-expanded="false" style="grid-row:${u[0]};grid-column:${u[1]}">
+`,n=window.__PP=window.__PP||{};n.CSS=s;const z={主星:"main",吉星:"good",煞星:"bad",辅星:"aux",杂曜:"minor"},H={禄:"lu",权:"quan",科:"ke",忌:"ji"},ae=new Set(["三台","八座","恩光","天贵"]),oe={庙:"good",旺:"good",得:"mid",利:"mid",平:"mid",不:"bad",陷:"bad"},ce={巳:[1,1],午:[1,2],未:[1,3],申:[1,4],辰:[2,1],酉:[2,4],卯:[3,1],戌:[3,4],寅:[4,1],丑:[4,2],子:[4,3],亥:[4,4]},le={乾:[1,1,1],兑:[1,1,0],离:[1,0,1],震:[1,0,0],巽:[0,1,1],坎:[0,1,0],艮:[0,0,1],坤:[0,0,0]},xe=["初爻","二爻","三爻","四爻","五爻","上爻"],t=e=>String(e??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"),ye=(e,i,o)=>{const b=Math.round(43),v=e?`<rect x="0" y="${2.5}" width="104" height="7" rx="${1.6}" fill="currentColor"/>`:`<rect x="0" y="${2.5}" width="${b}" height="7" rx="${1.6}" fill="currentColor"/><rect x="${b+18}" y="${2.5}" width="${104-b-18}" height="7" rx="${1.6}" fill="currentColor"/>`;return`<svg class="mp-hex${i?" hex-on":""}${o?" "+o:""}" viewBox="0 0 104 12" preserveAspectRatio="none" aria-hidden="true" focusable="false">${v}</svg>`},U={木:"M6 1.6V10.8M6 5.2 2.6 2.2M6 7.4 9.4 4.4",火:"M6 1.4C7.6 3.6 9.2 5.4 9.2 7.6A3.2 3.2 0 0 1 2.8 7.6C2.8 5.4 4.4 3.6 6 1.4Z",土:"M1.6 9.6h8.8M6 2.4v7.2M3.4 5.6h5.2",金:"M6 1.2 10.6 6 6 10.8 1.4 6Z",水:"M1.4 7.2C2.9 4.2 4.5 10.2 6 7.2 7.5 4.2 9.1 10.2 10.6 7.2"},ve=e=>{const i=U[e];return i?`<svg class="mp-wxi" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="${i}" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>`:""},ee=e=>`<svg class="mp-trig" viewBox="0 0 14 10" aria-hidden="true" focusable="false">${(le[e]||[0,0,0]).slice().reverse().map((l,r)=>{const c=r*4;return l?`<rect x="0" y="${c}" width="14" height="2" rx="0.6" fill="currentColor"/>`:`<rect x="0" y="${c}" width="5.6" height="2" rx="0.6" fill="currentColor"/><rect x="8.4" y="${c}" width="5.6" height="2" rx="0.6" fill="currentColor"/>`}).join("")}</svg>`;n._hexBar=ye,n._wxIcon=ve,n._triGlyph=ee;function D(e,i,o){return!e||!e.length?"":e.map(l=>{const r=z[l.type]||"aux",c=l.mutagen?`<i class="pp-m ${H[l.mutagen]}">${l.mutagen}</i>`:"",d=i&&i[l.name],m=d?`<i class="pp-m view ${H[d]}">${d}</i>`:"",u=l.brightness?`<em class="pp-b ${oe[l.brightness]||"mid"}">${l.brightness}</em>`:"",b=l.inTemple?'<em class="pp-b good">庙</em>':"",v=o&&o[l.name]?xa(o[l.name],l.name):"",w=ae.has(l.name)?" st-sbg":"";return`<span class="pp-st ${r}${w}">${v}${l.name}${u}${b}${c}${m}</span>`}).join("")}function B(e){const i=[];for(let o=0;o<6;o++)i.push(e+o*12);return i.join(",")}const Z=["命宫","兄弟","夫妻","子女","财帛","疾厄","迁移","交友","官禄","田宅","福德","父母"],K=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"],ne=e=>(e%12+12)%12,$e=(e,i)=>e!==i&&[ne(i+4),ne(i+8),ne(i+6)].includes(e);function je(e,i,o,l,r,c,d,m){const u=ce[e.branch]||[1,1],b=K.indexOf(e.branch),v=["pp-cell"];b===i?v.push("pp-soul"):$e(b,i)&&v.push("pp-tri"),e.isBody&&v.push("pp-shen"),m&&e.branch===m&&v.push("pp-laiyin"),u[0]===4&&v.push("pp-lastrow"),u[1]===4&&v.push("pp-lastcol");const w=e.shensha||{},$=Z[ne(i-b)];let _="";if(b===i&&l){const q=O=>(z[O.type]||"")==="main";if(!(e.stars||[]).some(q)){const O=l.find(F=>K.indexOf(F.branch)===ne(b+6)),Q=O?(O.stars||[]).filter(q):[];Q.length&&(_=`<div class="pp-borrow" title="命宫无主星，借对宫（迁移宫）主星">借 ${Q.map(F=>F.name).join(" ")}</div>`)}}return`<div class="${v.join(" ")}" data-pi="${b}" data-view="${o}" role="button" tabindex="0" aria-expanded="false" style="grid-row:${u[0]};grid-column:${u[1]}">
       <div class="pp-stars">${D(e.stars,r,We(e))}</div>
       ${_}
       <div class="pp-ages">${B(e.xiaoxian.age)}</div>

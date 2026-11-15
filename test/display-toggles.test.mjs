@@ -100,6 +100,9 @@ const INPUT_ORDER = ['ppm-d-ss', 'ppm-d-sbg', 'ppm-d-zha', 'ppm-d-ages', 'ppm-d-
   }
   // 三方四正开关要同时关掉底纹、联动底色和虚线，不能只藏一条
   eq((SRC.match(/#ppm-d-sf:not\(:checked\)~/g) || []).length, 3, '三方四正开关同时关三处');
+  // 杂曜单独一档（minor）之后，「显示小星」这一条规则必须同时盖住 aux 与 minor，
+  // 否则关了小星盘上还留一层杂曜
+  ok(/#ppm-d-small:not\(:checked\)~[^}]*\.pp-st\.minor[^}]*\{/.test(SRC), '显示小星同时藏杂曜');
 }
 
 // ── 五b、日干四化行：真实数据渲染正确（借 daxianList 宫干四化表） ──

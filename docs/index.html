@@ -35541,13 +35541,17 @@ window.__MP_VER = "0.81.0";
 .pp-center .ct-t2{font-size:12.5px;color:var(--ink)}
 .pp-center .ct-t3{font-size:14px;letter-spacing:.35em;margin:6px 0;font-weight:600}
 .pp-center .ct-t4{font-size:12.5px;color:var(--muted)}
-.pp-stars{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 6px;font-size:13px;line-height:1.6;min-height:36px}
+/* 盘面字号四级（P1-15）：主星 > 辅曜 > 杂曜神煞 > 年龄长生，一处改全盘生效。
+   竖屏段另有一套值覆盖，见「竖屏」块的 .pp-grid。 */
+.pp-grid{--zw-l1:13px;--zw-l2:11.5px;--zw-l3:10.5px;--zw-l4:9.5px;--zw-l5:12px}
+.pp-stars{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 6px;font-size:var(--zw-l2);line-height:1.6;min-height:36px}
 .pp-st{white-space:nowrap}
-.pp-st.main{font-weight:700;font-size:13px;letter-spacing:.04em;text-shadow:0 0 .5px currentColor}
-.pp-st.good{color:var(--lu)}
-.pp-st.bad{color:var(--ji)}
+.pp-st.main{font-weight:700;font-size:var(--zw-l1);letter-spacing:.04em;text-shadow:0 0 .5px currentColor}
+.pp-st.good{color:var(--lu);font-size:var(--zw-l2);font-weight:500}
+.pp-st.bad{color:var(--ji);font-size:var(--zw-l2);font-weight:500}
 .pp-st.bad::before{content:"·";font-weight:900;margin-right:1px}
-.pp-st.aux{color:var(--muted);font-size:11.5px}
+.pp-st.aux{color:var(--muted);font-size:var(--zw-l2)}
+.pp-st.minor{color:var(--faint);font-size:var(--zw-l3)}
 .pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:var(--on-accent);margin-left:1px;vertical-align:1px}
 .pp-m.lu{background:var(--lu)}.pp-m.quan{background:var(--quan)}.pp-m.ke{background:var(--ke)}.pp-m.ji{background:var(--ji)}
 /* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
@@ -35563,8 +35567,8 @@ window.__MP_VER = "0.81.0";
 .pp-b.good{color:var(--br-good)}
 .pp-b.mid{color:var(--muted)}
 .pp-b.bad{color:var(--br-bad)}
-.pp-ages{margin-top:2px;font-size:12px;color:var(--muted);letter-spacing:.02em}
-.pp-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:4px;font-size:12px;color:var(--muted)}
+.pp-ages{margin-top:2px;font-size:var(--zw-l4);color:var(--faint);letter-spacing:.02em}
+.pp-foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:4px;font-size:var(--zw-l4);color:var(--muted)}
 .pp-foot .ft-l{display:flex;flex-direction:column;gap:0;line-height:1.5}
 .pp-foot .ft-l .ft-dx{color:var(--ink)}
 .pp-foot .ft-r{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.5}
@@ -35734,6 +35738,7 @@ window.__MP_VER = "0.81.0";
 .pp-detail .dt-st.good{color:var(--lu)}
 .pp-detail .dt-st.bad{color:var(--ji)}
 .pp-detail .dt-st.aux{color:var(--muted)}
+.pp-detail .dt-st.minor{color:var(--faint);font-size:11.5px}
 .pp-detail .dt-st .dt-br{font-style:normal;font-size:11.5px;color:var(--muted);margin-left:3px}
 .pp-detail .dt-st .dt-br.good{color:var(--br-good)}
 .pp-detail .dt-st .dt-br.bad{color:var(--br-bad)}
@@ -36905,7 +36910,7 @@ window.__MP_VER = "0.81.0";
   .pp-modes label{padding:6px 16px}
   .pp-soon{margin-left:0;padding:6px 10px;width:100%;border-top:1px solid var(--line)}
   /* 紫微：竖屏保持 4×4 宫盘（宫位相对位置是三合/对宫的核心，不可丢），宫内改竖向紧凑排版 */
-  .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0}
+  .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0;--zw-l1:11px;--zw-l2:9.5px;--zw-l3:8.5px;--zw-l4:8.5px}
   .pp-cell{min-height:0;padding:3px 2px 4px;border-radius:0}
   .pp-center{grid-column:2/4;grid-row:2/4;order:0;border-radius:0;padding:5px 3px;gap:2px}
   .pp-center .ct-t1{font-size:12px;margin-bottom:2px;letter-spacing:.02em}
@@ -36913,14 +36918,15 @@ window.__MP_VER = "0.81.0";
   .pp-center .ct-t3{font-size:10.5px;letter-spacing:.16em;margin:2px 0}
   .pp-center .ct-t4{font-size:9px;line-height:1.45}
   .pp-center .pp-legend{font-size:8.5px;gap:4px;margin-top:3px;flex-wrap:wrap;line-height:1.4}
-  /* 星曜竖排堆叠：主星在上粗体，辅星小字，四化彩色标 */
-  .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;font-size:11px;line-height:1.4;min-height:0}
-  .pp-st.main{font-size:11px}
-  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9.5px}
+  /* 星曜竖排堆叠：字号走四级变量，竖屏压小一档 */
+  .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;line-height:1.4;min-height:0}
+  .pp-st.main{font-size:var(--zw-l1)}
+  .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:var(--zw-l2)}
+  .pp-st.minor{font-size:var(--zw-l3)}
   .pp-m{font-size:8.5px;padding:0 1px;vertical-align:0}
   .pp-b{font-size:10px;margin-left:3px;opacity:.9}
-  .pp-ages{font-size:8.5px;line-height:1.45;margin-top:2px;word-break:break-all}
-  .pp-foot{font-size:8.5px;line-height:1.4;gap:2px}
+  .pp-ages{font-size:var(--zw-l4);line-height:1.45;margin-top:2px;word-break:break-all}
+  .pp-foot{font-size:var(--zw-l4);line-height:1.4;gap:2px}
   .pp-foot .ft-pn{font-size:11px}
   /* 详情面板：竖屏下要接得住 4×4 网格之外的全部信息 */
   .pp-detail{padding:9px 10px 11px}
@@ -37174,7 +37180,7 @@ window.__MP_VER = "0.81.0";
 /* 太极点转换信息：详情面板「太极转换」行，默认隐藏，勾 ppm-d-tjz 才显示 */
 #ppm-d-tjz:not(:checked)~.pp-body .pp-detail .dt-taiji{display:none}
 /* 组2 四化派显示（默认全勾，取消才隐藏） */
-#ppm-d-small:not(:checked)~.pp-body .pp-st.aux{display:none}
+#ppm-d-small:not(:checked)~.pp-body .pp-st.aux,#ppm-d-small:not(:checked)~.pp-body .pp-st.minor{display:none}
 #ppm-d-shen:not(:checked)~.pp-body .pp-shen::after{display:none}
 #ppm-d-hua:not(:checked)~.pp-body .pp-m{display:none}
 #ppm-d-sf:not(:checked)~.pp-body .pp-cell.pp-tri{background:var(--bg)}
@@ -37189,7 +37195,10 @@ window.__MP_VER = "0.81.0";
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
 
-  const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'aux' };
+  // P1-15：杂曜与辅曜分开一档——盘面四级字号（主星 > 辅曜 > 杂曜 > 年龄长生），
+  // 之前 辅星/杂曜 都是 aux，四级里只有两级，杂曜和辅曜一样黑一样大，满盘糊成一片
+  const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'minor' };
+
   const MUT = { 禄: 'lu', 权: 'quan', 科: 'ke', 忌: 'ji' };
   // 「显示三台八座恩光天贵」专用：这四颗是日系吉星，引擎给它们 type='吉星'，
   // 与其它吉星共用 .pp-st.good。只给这四颗追加 st-sbg 供 CSS 单独显隐；
