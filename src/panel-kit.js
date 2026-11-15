@@ -5155,6 +5155,17 @@
         return out.length ? out : [''];
       };
       // 量高度：标题区 + 五条摘要（每条最多两行）+ 表（6 行）+ 页脚
+      // 结论块：这张卡会被单独转发出去，对方第一眼看到的必须是一句人话，
+      // 而不是「命宫身宫」这种技术要点。三个来源依次兜底：信封结论 → brief → 事实型头卡。
+      const env = (it && it.envelope) || null;
+      const v = (env && env.verdict) || null;
+      const headText = String((v && v.headline) || (r && r.brief && r.brief.headline) || (r && r.factHead && r.factHead.headline) || '').trim();
+      const subText = String((r && r.brief && r.brief.lead) || (v && v.condition) || (r && r.factHead && r.factHead.note) || '').trim();
+      ctx.font = font(22, true);
+      const headLines = headText ? wrap(headText, W - PAD * 2).slice(0, 3) : [];
+      ctx.font = font(14);
+      const subLines = subText ? wrap(subText, W - PAD * 2).slice(0, 2) : [];
+      const headH = headLines.length ? 26 + headLines.length * 32 + (subLines.length ? 8 + subLines.length * 24 : 0) + 16 : 0;
       ctx.font = font(15);
       let bodyH = 0;
       const outlineBlocks = outline.map((o) => {
@@ -5165,7 +5176,7 @@
       const table = tables[0] || null;
       const tableRows = table ? table.rows.slice(0, 6) : [];
       const tableH = table ? 54 + tableRows.length * 34 : 0;
-      const H = 150 + bodyH + (outlineBlocks.length ? 34 : 0) + tableH + 120;
+      const H = 150 + headH + bodyH + (outlineBlocks.length ? 34 : 0) + tableH + 120;
 
       canvas.width = W;
       canvas.height = H;
@@ -5185,6 +5196,25 @@
       const meta = [r && r.input && r.input.datetime ? `出生/起局：${r.input.datetime}` : '', '本地计算 · 可复现'].filter(Boolean).join('　');
       ctx.fillText(meta, PAD, y);
       y += 34;
+
+      if (headLines.length) {
+        ctx.fillStyle = 'rgb(31,111,63)';
+        ctx.font = font(15, true);
+        ctx.fillText('结论', PAD, y);
+        y += 26;
+        ctx.fillStyle = 'rgb(27,27,27)';
+        ctx.font = font(22, true);
+        headLines.forEach((text, i) => ctx.fillText(text, PAD, y + i * 32));
+        y += headLines.length * 32;
+        if (subLines.length) {
+          y += 8;
+          ctx.fillStyle = 'rgb(111,106,96)';
+          ctx.font = font(14);
+          subLines.forEach((text, i) => ctx.fillText(text, PAD, y + i * 24));
+          y += subLines.length * 24;
+        }
+        y += 16;
+      }
 
       if (outlineBlocks.length) {
         ctx.fillStyle = 'rgb(31,111,63)';

@@ -103,6 +103,24 @@ const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male
   ok('长图画了一页读懂与摘要', drawn.some((t) => t.includes('一页读懂')) && drawn.some((t) => t.includes('摘要')));
   ok('长图画了首张表', drawn.some((t) => t.includes('大运表')), drawn.join('|').slice(0, 60));
   ok('长图带免责声明', drawn.some((t) => t.includes('不构成医疗')));
+  // 结论块：这张卡会被单独转发，对方第一眼得看到一句人话，而不是先看宫位表
+  ok('长图有结论块', drawn.some((t) => t === '结论'));
+  ok('长图画出信封结论原文', drawn.some((t) => t.includes('身强') || t.includes('命宫')), drawn.join('|').slice(0, 80));
+  ok('结论排在一页读懂之前', drawn.indexOf('结论') < drawn.indexOf('一页读懂'));
+  // 无信封、无 brief 的体系走事实型头卡兜底，同样要有一句头条
+  const drawn2 = [];
+  const ctx2 = { ...ctx, fillText: (t) => { drawn2.push(String(t)); } };
+  const canvas2 = { width: 0, height: 0, getContext: () => ctx2, toDataURL: () => 'data:image/png;base64,T2' };
+  const sb2 = { window: {}, console, document: { createElement: (tag) => (tag === 'canvas' ? canvas2 : {}) } };
+  vm.runInNewContext(read('src/panel-kit.js'), sb2, { filename: 'panel-kit.js' });
+  sb2.window.__PP.summaryCardPNG(
+    { system: 'almanac', factHead: { kicker: '当日一览', headline: '农历丙午年十月初七，值神勾陈', facts: [], note: '' } },
+    { outline: [], tables: [], systemLabel: '黄历' }
+  );
+  ok('无信封时用头卡头条兜底', drawn2.some((t) => t.includes('丙午年')), drawn2.join('|').slice(0, 60));
+  const headsBefore = drawn2.filter((t) => t === '结论').length;
+  sb2.window.__PP.summaryCardPNG({ system: 'x' }, null);
+  ok('什么都没有时不出结论块也不炸', drawn2.filter((t) => t === '结论').length === headsBefore);
   // 没有 document 时必须安全返回空串
   const noDoc = { window: {}, console };
   vm.runInNewContext(read('src/panel-kit.js'), noDoc, { filename: 'panel-kit.js' });
