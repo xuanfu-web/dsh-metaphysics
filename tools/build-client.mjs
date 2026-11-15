@@ -239,6 +239,8 @@ export function assemble(tail) {
   const body = tail ?? readSrc('app.js');
   const core = readSrc('core.js');
   const kit = readSrc('panel-kit.js');
+  // 结果拼接的唯一入口：与正式入口共用同一份
+  const compose = readSrc('compose.js');
   const pkg = readPkg();
   return `// 由 tools/build-client.mjs 生成，请勿手改。
 window.__ModuleLoader__.load({
@@ -259,6 +261,7 @@ ${ORDER.map(buildModule).join('\n')}
 ${unreleasedLine()}
 ${core}
 ${kit}
+${compose}
 ${body}
   },
 });
@@ -270,6 +273,8 @@ export function assembleEntry(tail) {
   const body = tail ?? readSrc('app.js');
   const core = readSrc('core.js');
   const kit = readSrc('panel-kit.js');
+  // 结果拼接的唯一入口：与独立页（tools/build-html.mjs 的 page）共用同一份
+  const compose = readSrc('compose.js');
   const lazy = readSrc('engine-lazy.js');
   const pkg = readPkg();
   return `// 由 tools/build-client.mjs 生成，请勿手改。
@@ -290,6 +295,7 @@ ${unreleasedLine()}
 ${lazy}
 ${core}
 ${kit}
+${compose}
 ${body}
   },
 });

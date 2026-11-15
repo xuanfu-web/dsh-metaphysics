@@ -959,6 +959,9 @@ const IGNORE_KEYS = new Set([
   'handle', 'handleError',
   // 一句话改参的回显：换口径时它必然不同（等于另一次请求），不是盘面差异
   'revision',
+  // 盘号（0.82.0 起用户视图唯一保留的复盘凭据）：它是「参数 + 版本」的摘要，
+  // 换口径 / 换版本必然变号——那是另一次排盘，不是盘面动了一处。
+  'shortId', 'shadow', 'shadowError',
   // 顶部「人话总结」是从盘面派生出来的叙述，不是盘面本身：换一档口径，
   // 它必然跟着改写（句子会重排），但要看的是星位、日柱这些有没有动。
   'brief', 'briefError',
@@ -33454,13 +33457,14 @@ ${r.summary}`;
       r.traceError = String((e && e.message) || e);
     }
   }
-  // 影子盘 ID：同一组归一化参数 + 同一版本 → 同一个短 ID；显式要时才挂，避免默认输出变长
-  if (bool(args.shadow)) {
-    try {
-      r.shadow = chartFingerprint(args, { result: r, version: args.shadowVersion });
-    } catch (e) {
-      r.shadow = { error: String((e && e.message) || e) };
-    }
+  // 盘号：同一组归一化参数 + 同一版本 → 同一个短 ID。默认就给——用户侧靠它回看与反馈；
+  // 完整的影子盘（baseId / 指纹 / 与上次同盘 diff）仍然只在显式要时才挂，避免默认输出变长。
+  try {
+    const fp = chartFingerprint(args, { result: r, version: args.shadowVersion });
+    if (fp && fp.id) r.shortId = fp.id;
+    if (bool(args.shadow)) r.shadow = fp;
+  } catch (e) {
+    if (bool(args.shadow)) r.shadow = { error: String((e && e.message) || e) };
   }
   // 排盘句柄：把这张盘的参数压成短串；下一次追问传 handle + 增量即可，不必重报出生信息
   try {
@@ -35712,6 +35716,9 @@ window.__MP_VER = "0.81.0";
 }
 /* 影子盘：ID + 版本 + 与上次同盘（同 baseId）的自动比对。
    ID 用等宽字体、可一键复制；比对默认只在版本变化或真有字段变化时展开。 */
+/* 盘号：用户视图里唯一保留的复盘凭据。完整的影子盘（baseId / 指纹 / 同盘 diff）只在开发者视图出，
+   这里只要一行小字，不能抢盘面和结论的视线。 */
+.mp-shortid{margin:6px 0 0;font-size:11.5px;line-height:1.6;color:var(--faint);letter-spacing:.02em;font-family:system-ui,sans-serif}
 .mp-shadow{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:9px 13px;font-family:system-ui,sans-serif}
 .mp-shadow-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mp-shadow-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}
@@ -39843,6 +39850,104 @@ window.__MP_VER = "0.81.0";
 
 
 
+/* 结果拼接的唯一入口：单页（src/web-ui.js）与宿主面板（src/app.js）都调这里。
+ *
+ * 以前两边各拼一遍——单页拼十五段、面板拼十二段，顺序还不一样（单页多追问条、
+ * 验前事、生时校正、导出条，面板把它们拆成独立组件）。每加一块卡就要改两处，
+ * 漏一处就是「面板有、单页没有」，0.76 的称骨卡、0.68 的婚姻卡都栽在这上面。
+ *
+ * 用户视图只出：结论卡 → 盘面 → 盘号 → 起盘时刻 → 解读 → 追问 → 验前事/生时校正 → 导出
+ * dev 视图再追加：性能 / 修订回显 / 句柄 / 影子盘 / 推导链 / 口径对照
+ *
+ * 白名单之外的东西**不生成**，而不是用 CSS 藏起来。收起只是视觉上的，
+ * 存在 DOM 里就还会被 @media print、存为长图、导出 .md 带出去。
+ */
+(function () {
+  // dev 视图偏好存这里；与历史盘、本机档案分开放，清缓存时互不牵连
+  const KEY = 'mp.view';
+
+  // dev 专属段落，命名与 composeResult 的 parts 键一致
+  const DEV_SECTIONS = ['perf', 'revision', 'handle', 'shadow', 'trace', 'caliber'];
+
+  const store = () => {
+    try { return window.localStorage || null; } catch (e) { return null; }
+  };
+
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /** dev 视图是否开启：?dev=1 优先（便于发给作者复现），其次 localStorage，默认用户视图 */
+  function devOn() {
+    try {
+      const loc = window.location || {};
+      const m = /(?:^|[?&#])dev=([^&]*)/.exec(String((loc.search || '') + (loc.hash || '')));
+      if (m) return m[1] !== '0' && m[1] !== 'false';
+      const s = store();
+      return !!(s && s.getItem(KEY) === 'dev');
+    } catch (e) { return false; }
+  }
+
+  function setDev(on) {
+    const s = store();
+    if (s) { try { s.setItem(KEY, on ? 'dev' : 'user'); } catch (e) { /* 存不了就只这次生效 */ } }
+    return !!on;
+  }
+
+  /**
+   * 页脚印章连点五下切换视图。给作者用的暗门：普通用户撞不到，
+   * 但要在用户机器上排障时又不必记事——URL 加 ?dev=1 也行。
+   */
+  function bindDevSwitch(node) {
+    if (!node || node.__mpDevBound) return;
+    node.__mpDevBound = true;
+    let n = 0, t = 0;
+    node.addEventListener('click', () => {
+      const now = Date.now();
+      n = now - t > 1200 ? 1 : n + 1;
+      t = now;
+      if (n < 5) return;
+      n = 0;
+      const on = setDev(!devOn());
+      node.title = on ? '已切到开发者视图（再点五下切回）' : '';
+      if (typeof window.__MPRepaint === 'function') window.__MPRepaint();
+    });
+  }
+
+  /**
+   * 拼装。parts 里是已经算好的各段 HTML，这里只决定取哪些、按什么顺序——
+   * 渲染仍是各个 *HTML() 的事，本条函数不碰任何未转义文本。
+   */
+  function composeResult(parts, opts) {
+    const p = parts || {};
+    const dev = (opts && typeof opts.mode === 'string') ? opts.mode === 'dev' : devOn();
+    const out = [p.head, p.body, p.chart, p.shortId, p.castAt, p.interpret, p.followup, p.extra];
+    if (dev) out.push(p.revision, p.handle, p.shadow, p.trace, p.caliber, p.perf);
+    out.push(p.exportBar);
+    return out.filter(Boolean).join('');
+  }
+
+  /**
+   * 盘号：同一组参数 + 同一版本得到同一个短串。用户侧唯一保留的复盘凭据——
+   * 完整的指纹、baseId、与上次同盘 diff 都只在 dev 出。
+   */
+  function shortIdHTML(id) {
+    const s = typeof id === 'string' ? id.replace(/^LY-/, '') : '';
+    if (!s) return '';
+    return '<p class="mp-shortid" title="同一组参数、同一版本算出来是同一个编号；回看或反馈时报它就行">盘号 '
+      + esc(s) + '</p>';
+  }
+
+  window.__MPCompose = {
+    DEV_SECTIONS: DEV_SECTIONS,
+    devOn: devOn,
+    setDev: setDev,
+    bindDevSwitch: bindDevSwitch,
+    composeResult: composeResult,
+    shortIdHTML: shortIdHTML,
+    esc: esc,
+  };
+})();
+
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: window.__PP.CSS }));
 </script>
 <script>
@@ -40465,27 +40570,27 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (it && last.r && last.r.cross && window.Engine.crossSection) {
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
-    el('out').innerHTML = window.__PP.envHeadHTML(it, { folded: defaultFolded() }) // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
-      + window.__PP.envBodyHTML(it, { folded: defaultFolded() })
-      + (last.html || '')
-      + castAtHTML(last.tab, last.timed, last.date, last.time)
-      + window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true })
-      + window.__PP.revisionHTML(last.r.revision)
-      + window.__PP.handleHTML(last.r.handle)
-      + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)
-      + window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText)
-      + window.__PP.caliberHTML(last.caliber)
-      + followupBar()
-      + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
-      + exportBar();
+    // 段序与取舍交给 __MPCompose：与宿主面板共用同一份，不再各自拼一遍
+    el('out').innerHTML = window.__MPCompose.composeResult({ // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
+      head: window.__PP.envHeadHTML(it, { folded: defaultFolded() }),
+      body: window.__PP.envBodyHTML(it, { folded: defaultFolded() }),
+      chart: last.html || '',
+      shortId: window.__MPCompose.shortIdHTML(last.r.shortId),
+      castAt: castAtHTML(last.tab, last.timed, last.date, last.time),
+      interpret: window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true }),
+      followup: followupBar(),
+      extra: last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '',
+      revision: window.__PP.revisionHTML(last.r.revision),
+      handle: window.__PP.handleHTML(last.r.handle),
+      shadow: window.__PP.shadowHTML(last.r.shadow, last.shadowDiff),
+      trace: window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText),
+      caliber: window.__PP.caliberHTML(last.caliber),
+      perf: last.perf ? window.__PP.perfHTML(last.perf) : '',
+      exportBar: exportBar(),
+    });
     last.it = it;
     const askNow = el('askq');
     if (askNow && askBefore) askNow.value = askBefore;
-    // 耗时行跟盘走：方向切换等重绘会把 innerHTML 整个换掉，不在这里补一次就会丢
-    if (last.perf) {
-      const perfHtml = window.__PP.perfHTML(last.perf);
-      if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
-    }
      // 问事体系的「复制问事提示」按钮：paint 重绘后重新挂一次（innerHTML 会清掉旧监听）
     const askBtn = el('out').querySelector('.mp-askcopy');
     if (askBtn) askBtn.addEventListener('click', () => copyAskPrompt(askBtn));
@@ -40985,8 +41090,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
       const renderMs = mpNow() - paintStart;
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
-      const perfHtml = window.__PP.perfHTML(last.perf);
-      if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
+      // 耗时行已经是 composeResult 的一个 parts 键，只有 dev 视图才会被拼进去；
+      // 用户视图里连生成都不生成（不再用 insertAdjacentHTML 事后补插——那会把技术行
+      // 塞进用户视图，且打印/导出时跟着走）。dev 视图下重绘一次让它出现。
+      if (window.__MPCompose.devOn()) paint();
     } catch (e) {
       last = null;
       // 错误文案里会带出用户输入的原文（如非法的 datetime），只能走 textContent，不能拼进 innerHTML

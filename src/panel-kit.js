@@ -904,6 +904,9 @@
 }
 /* 影子盘：ID + 版本 + 与上次同盘（同 baseId）的自动比对。
    ID 用等宽字体、可一键复制；比对默认只在版本变化或真有字段变化时展开。 */
+/* 盘号：用户视图里唯一保留的复盘凭据。完整的影子盘（baseId / 指纹 / 同盘 diff）只在开发者视图出，
+   这里只要一行小字，不能抢盘面和结论的视线。 */
+.mp-shortid{margin:6px 0 0;font-size:11.5px;line-height:1.6;color:var(--faint);letter-spacing:.02em;font-family:system-ui,sans-serif}
 .mp-shadow{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:9px 13px;font-family:system-ui,sans-serif}
 .mp-shadow-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mp-shadow-title{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ke)}

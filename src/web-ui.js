@@ -617,27 +617,27 @@
     if (it && last.r && last.r.cross && window.Engine.crossSection) {
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
-    el('out').innerHTML = window.__PP.envHeadHTML(it, { folded: defaultFolded() }) // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
-      + window.__PP.envBodyHTML(it, { folded: defaultFolded() })
-      + (last.html || '')
-      + castAtHTML(last.tab, last.timed, last.date, last.time)
-      + window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true })
-      + window.__PP.revisionHTML(last.r.revision)
-      + window.__PP.handleHTML(last.r.handle)
-      + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)
-      + window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText)
-      + window.__PP.caliberHTML(last.caliber)
-      + followupBar()
-      + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')
-      + exportBar();
+    // 段序与取舍交给 __MPCompose：与宿主面板共用同一份，不再各自拼一遍
+    el('out').innerHTML = window.__MPCompose.composeResult({ // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
+      head: window.__PP.envHeadHTML(it, { folded: defaultFolded() }),
+      body: window.__PP.envBodyHTML(it, { folded: defaultFolded() }),
+      chart: last.html || '',
+      shortId: window.__MPCompose.shortIdHTML(last.r.shortId),
+      castAt: castAtHTML(last.tab, last.timed, last.date, last.time),
+      interpret: window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true }),
+      followup: followupBar(),
+      extra: last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '',
+      revision: window.__PP.revisionHTML(last.r.revision),
+      handle: window.__PP.handleHTML(last.r.handle),
+      shadow: window.__PP.shadowHTML(last.r.shadow, last.shadowDiff),
+      trace: window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText),
+      caliber: window.__PP.caliberHTML(last.caliber),
+      perf: last.perf ? window.__PP.perfHTML(last.perf) : '',
+      exportBar: exportBar(),
+    });
     last.it = it;
     const askNow = el('askq');
     if (askNow && askBefore) askNow.value = askBefore;
-    // 耗时行跟盘走：方向切换等重绘会把 innerHTML 整个换掉，不在这里补一次就会丢
-    if (last.perf) {
-      const perfHtml = window.__PP.perfHTML(last.perf);
-      if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
-    }
      // 问事体系的「复制问事提示」按钮：paint 重绘后重新挂一次（innerHTML 会清掉旧监听）
     const askBtn = el('out').querySelector('.mp-askcopy');
     if (askBtn) askBtn.addEventListener('click', () => copyAskPrompt(askBtn));
@@ -1137,8 +1137,10 @@
       // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
       const renderMs = mpNow() - paintStart;
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
-      const perfHtml = window.__PP.perfHTML(last.perf);
-      if (perfHtml) el('out').insertAdjacentHTML('beforeend', perfHtml);
+      // 耗时行已经是 composeResult 的一个 parts 键，只有 dev 视图才会被拼进去；
+      // 用户视图里连生成都不生成（不再用 insertAdjacentHTML 事后补插——那会把技术行
+      // 塞进用户视图，且打印/导出时跟着走）。dev 视图下重绘一次让它出现。
+      if (window.__MPCompose.devOn()) paint();
     } catch (e) {
       last = null;
       // 错误文案里会带出用户输入的原文（如非法的 datetime），只能走 textContent，不能拼进 innerHTML

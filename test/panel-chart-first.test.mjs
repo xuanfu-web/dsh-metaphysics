@@ -40,32 +40,28 @@ ok('没命中时原样返回', /const body = end < 0 \? html :/.test(chart));
 // 盘面仍排在所有技术信息（性能/修订/句柄/影子/推导链）之前，这条底线不动。
 const iHead = app.indexOf('PP.envHeadHTML(result.it');
 ok('结果卡以结论卡开头（打开第一眼就是判断）', iHead > 0);
-const iHtml = app.indexOf('+ chartHTML(result)', iHead);
-ok('盘面紧跟在结论卡之后', iHtml > iHead);
-const order = [
-  ['结论', iHead],
-  ['盘面', iHtml],
-  ['起卦时刻 castAtHTML', app.indexOf('castAtHTML(result)', iHtml)],
-  ['解读 resultWithInterpret', app.indexOf("PP.resultWithInterpret('', result.it", iHtml)],
-  ['性能 perf', app.indexOf('PP.perfHTML(perf)', iHtml)],
-  ['修订 revision', app.indexOf('PP.revisionHTML(result.r.revision)', iHtml)],
-  ['句柄 handle', app.indexOf('PP.handleHTML(result.r.handle)', iHtml)],
-  ['影子盘 shadow', app.indexOf('PP.shadowHTML(result.r.shadow', iHtml)],
-  ['推导链 trace', app.indexOf('PP.traceHTML(result.r.trace', iHtml)],
-  ['口径对照 caliber', app.indexOf('PP.caliberHTML(result.caliber)', iHtml)],
-];
-for (let i = 1; i < order.length; i++) {
-  ok(order[i][0] + ' 排在前一块之后', order[i][1] > order[i - 1][1] && order[i][1] > 0,
-    order[i - 1][0] + '@' + order[i - 1][1] + ' → ' + order[i][0] + '@' + order[i][1]);
+const USER_ORDER = ['head', 'body', 'chart', 'shortId', 'castAt', 'interpret', 'followup', 'extra'];
+const DEV_ORDER = ['revision', 'handle', 'shadow', 'trace', 'caliber', 'perf'];
+const compose = fs.readFileSync(new URL('../src/compose.js', import.meta.url), 'utf8');
+ok('盘面在 parts 里现算', /chart:\s*chartHTML\(result\)/.test(app));
+// 面板只传 12 段：追问条与导出条在面板里是独立 React 组件，不进这块 innerHTML
+for (const k of [...USER_ORDER.slice(0, 6), ...DEV_ORDER]) {
+  ok('面板传了 ' + k, new RegExp('\\n\\s*' + k + ':').test(app));
 }
+const outLine = compose.match(/const out = \[([^\]]*)\]/);
+eq('用户序（结论→盘面→盘号→时刻→解读→追问→附加）',
+  (outLine ? outLine[1] : '').replace(/[\s]|p\./g, ''), USER_ORDER.join(','));
+const devLine = compose.match(/if \(dev\) out\.push\(([^)]*)\)/);
+eq('dev 序（耗时在后、口径最后）', (devLine ? devLine[1] : '').replace(/[\s]|p\./g, ''), DEV_ORDER.join(','));
+ok('导出条在最末（不参与 dev 分档）', /out\.push\(p\.exportBar\)/.test(compose));
 ok('盘面已从 resultWithInterpret 拆出（第一参为空串）', /resultWithInterpret\('', result\.it/.test(app));
 ok('解读仍走 resultWithInterpret 入口', app.includes('PP.resultWithInterpret('));
 
 // ── ③ 每块只出现一次 ──────────────────────────────────────────
 fn: {
   const n = (pat) => (app.match(new RegExp(pat, 'g')) || []).length;
-  eq('chartHTML 调用一次', n('\\+ chartHTML\\(result\\)'), 1);
-  eq('perf 一处', n('PP\\.perfHTML\\(perf\\)'), 1);
+  eq('chartHTML 只在一处被调用', n(': chartHTML\\(result\\)'), 1);
+  eq('perf 一处', n('perf: PP\\.perfHTML\\(perf\\)'), 1);
   eq('trace 一处', n('PP\\.traceHTML\\(result\\.r\\.trace'), 1);
 
 // ── 结果卡「说人话」层 ─────────────────────────────────────────────

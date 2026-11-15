@@ -1,3 +1,10 @@
+// 结果拼接：段序与 dev 取舍都交给 __MPCompose（与独立页 src/web-ui.js 共用同一份），
+// 面板这边不再自己拼一遍。万一它没加载（宿主缓存了旧 client.js），退回「全段拼接」，不白屏。
+function composeOut(parts) {
+  if (window.__MPCompose && window.__MPCompose.composeResult) return window.__MPCompose.composeResult(parts);
+  return Object.keys(parts).map((k) => parts[k]).filter(Boolean).join('');
+}
+
 // ── 历史记录（localStorage，只存参数，最多 20 条） ──
 const HIST_KEY = 'dsh-metaphysics/history-v1';
 function loadHistory() {
@@ -2652,13 +2659,23 @@ function App() {
       'aria-label': '排盘结果',
       'aria-live': 'polite',
       onClick: onFoldClick,
-      dangerouslySetInnerHTML: {
-        __html: PP.envHeadHTML(result.it, { folded: defaultFolded() })
-          + PP.envBodyHTML(result.it, { folded: defaultFolded() })
-          + chartHTML(result) + castAtHTML(result) + PP.resultWithInterpret('', result.it, { folded: defaultFolded(), noHead: true, noBody: true })
-          // 结论卡绝对最前（打开就看见判断）；其后才是盘面，性能与修订这些技术信息再往后排
-          + PP.perfHTML(perf) + PP.revisionHTML(result.r.revision) + PP.handleHTML(result.r.handle) + PP.shadowHTML(result.r.shadow, result.shadowDiff)
-          + PP.traceHTML(result.r.trace, result.r.system, result.r.traceText) + PP.caliberHTML(result.caliber),
+      dangerouslySetInnerHTML: { // html-sink:ok __html 由 composeOut 拼装，实参全是 *HTML() 渲染器的输出
+        // 结论卡绝对最前（打开就看见判断）；其后才是盘面。句柄、影子盘、推导链、口径对照、耗时
+        // 只在开发者视图出，用户视图里连生成都不生成——藏起来仍会被存长图与导出带出去。
+        __html: composeOut({ // html-sink:ok 拼装入口，实参全是 *HTML() 渲染器的输出，本函数只排序与取舍
+          head: PP.envHeadHTML(result.it, { folded: defaultFolded() }),
+          body: PP.envBodyHTML(result.it, { folded: defaultFolded() }),
+          chart: chartHTML(result),
+          shortId: window.__MPCompose ? window.__MPCompose.shortIdHTML(result.r.shortId) : '',
+          castAt: castAtHTML(result),
+          interpret: PP.resultWithInterpret('', result.it, { folded: defaultFolded(), noHead: true, noBody: true }),
+          revision: PP.revisionHTML(result.r.revision),
+          handle: PP.handleHTML(result.r.handle),
+          shadow: PP.shadowHTML(result.r.shadow, result.shadowDiff),
+          trace: PP.traceHTML(result.r.trace, result.r.system, result.r.traceText),
+          caliber: PP.caliberHTML(result.caliber),
+          perf: PP.perfHTML(perf),
+        }),
       },
     }) : null,
 

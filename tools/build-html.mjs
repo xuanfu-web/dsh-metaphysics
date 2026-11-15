@@ -385,6 +385,8 @@ function page() {
   const ui = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
   const core = fs.readFileSync(path.join(root, 'src', 'core.js'), 'utf8');
   const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
+  // 结果拼接的唯一入口：与宿主面板（tools/build-client.mjs 的 assembleEntry）共用同一份
+  const compose = fs.readFileSync(path.join(root, 'src', 'compose.js'), 'utf8');
   const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -718,6 +720,7 @@ ${core}
 </script>
 <script>
 ${kit}
+${compose}
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: window.__PP.CSS }));
 </script>
 <script>

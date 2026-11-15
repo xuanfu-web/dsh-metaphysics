@@ -1022,13 +1022,14 @@ ${r.summary}`;
       r.traceError = String((e && e.message) || e);
     }
   }
-  // 影子盘 ID：同一组归一化参数 + 同一版本 → 同一个短 ID；显式要时才挂，避免默认输出变长
-  if (bool(args.shadow)) {
-    try {
-      r.shadow = chartFingerprint(args, { result: r, version: args.shadowVersion });
-    } catch (e) {
-      r.shadow = { error: String((e && e.message) || e) };
-    }
+  // 盘号：同一组归一化参数 + 同一版本 → 同一个短 ID。默认就给——用户侧靠它回看与反馈；
+  // 完整的影子盘（baseId / 指纹 / 与上次同盘 diff）仍然只在显式要时才挂，避免默认输出变长。
+  try {
+    const fp = chartFingerprint(args, { result: r, version: args.shadowVersion });
+    if (fp && fp.id) r.shortId = fp.id;
+    if (bool(args.shadow)) r.shadow = fp;
+  } catch (e) {
+    if (bool(args.shadow)) r.shadow = { error: String((e && e.message) || e) };
   }
   // 排盘句柄：把这张盘的参数压成短串；下一次追问传 handle + 增量即可，不必重报出生信息
   try {

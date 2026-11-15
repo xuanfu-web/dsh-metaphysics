@@ -120,11 +120,10 @@ ok('独立页量排盘耗时', UI.includes('const computeMs ='));
 ok('独立页量渲染耗时', UI.includes('const renderMs ='));
 ok('独立页把耗时行存进结果状态', UI.includes('last.perf = { computeMs, renderMs'));
 ok('独立页显示耗时行', UI.includes('window.__PP.perfHTML(last.perf)'));
-const paintBody = UI.slice(UI.indexOf('function paint() {'), UI.indexOf('/** 追问区'));
-ok('独立页重绘后仍补回耗时行',
-  paintBody.includes('perfHTML(last.perf)') && paintBody.includes("insertAdjacentHTML('beforeend', perfHtml)"),
-  paintBody.slice(-200));
-ok('独立页把耗时行放进结果区', UI.includes("el('out').insertAdjacentHTML('beforeend', perfHtml)"));
+ok('独立页把耗时行传进 composeResult 的 parts', UI.includes('perf: last.perf ?'));
+ok('独立页不再事后补插耗时行（那会塞进用户视图）',
+  !/insertAdjacentHTML\('beforeend', perfHtml\)/.test(UI));
+ok('独立页只在 dev 视图补一次重绘', /if \(window\.__MPCompose\.devOn\(\)\) paint\(\)/.test(UI));
 
 // ── 本地回显，不上报 ──
 for (const [name, src] of [['app.js', APP], ['web-ui.js', UI], ['engine-lazy.js', LAZY]]) {
