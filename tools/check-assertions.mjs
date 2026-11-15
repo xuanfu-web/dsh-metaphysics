@@ -7,7 +7,7 @@
 // 用法：
 //   node tools/check-assertions.mjs            # 对比基线（CI 用）
 //   node tools/check-assertions.mjs --update   # 断言数确实要减少时，显式重建基线
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync, existsSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -47,6 +47,24 @@ if (update) {
   };
   writeFileSync(baselinePath, `${JSON.stringify(doc, null, 2)}\n`, 'utf8');
   console.log(`✓ 已重建基线：${files.length} 个文件，共 ${total} 条 PASS`);
+
+  // 页面里内嵌「N 个测试文件 / M 条断言」（build-html 读的正是这份基线）。
+  // 基线一改，已经构建好的命理排盘.html 与 docs/index.html 就陈旧了，
+  // standalone.test 会比出「字节相同内容不同」——2026-11-15 就是这么又红了一次。
+  // 与其让人记住「update 完还要 build」，不如让 update 自己把页面刷掉。
+  const root = path.resolve(import.meta.dirname, '..');
+  const built = spawnSync(process.execPath, ['tools/build-html.mjs'], { cwd: root, encoding: 'utf8' });
+  if (built.status !== 0) {
+    console.error('✗ 基线更新后重建页面失败：');
+    console.error(built.stderr || built.stdout);
+    process.exit(1);
+  }
+  const pagePath = path.join(root, '命理排盘.html');
+  const docsPath = path.join(root, 'docs', 'index.html');
+  if (existsSync(pagePath) && existsSync(path.dirname(docsPath))) {
+    copyFileSync(pagePath, docsPath);
+    console.log('✓ 页面已同步重建：命理排盘.html → docs/index.html（内嵌的测试数/断言数跟着基线走）');
+  }
   process.exit(0);
 }
 
