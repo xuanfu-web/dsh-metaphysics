@@ -177,6 +177,11 @@ function repairGit() {
   const head = path.join(root, '.git', 'HEAD');
   const cfg = path.join(root, '.git', 'config');
   if (!fs.existsSync(path.join(root, '.git'))) return false;
+  // `git worktree` 建出来的副本里 .git 是个文件（内容 `gitdir: <路径>`），元数据在
+  // <主仓库>/.git/worktrees/<名字>/ 下。这里按目录去补 HEAD/config 会写到
+  // 「一个文件/HEAD」这种不存在的路径上，直接 ENOENT 把 dry-run 打成失败——
+  // 结果是每次在 worktree 里验「换机器是否还绿」都带一条与代码无关的红。
+  if (!fs.statSync(path.join(root, '.git')).isDirectory()) return false;
   if (!fs.existsSync(head)) {
     fs.writeFileSync(head, 'ref: refs/heads/main\n');
     log('修复 .git/HEAD');
