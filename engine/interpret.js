@@ -1905,6 +1905,7 @@ function enrichPlain(result, r, ask) {
   if (caveatLine) {
     secs.push({
       key: 'caveats',
+      kind: 'method',
       label: '这套规则有多稳',
       text: `下列分歧属文本层：各书写法不同，引擎总得取一派，所以本插件取了一派并在此标明。先列你这张盘踩到的，再列本体系其余通行的。\n\n${caveatLine}\n\n这是「文本层」的分歧，不是谁对谁错的判定：同一现象各派解释路径不同，本插件不替它们裁决，也不据此声称哪一种说法更准。`,
     });
@@ -1913,6 +1914,7 @@ function enrichPlain(result, r, ask) {
   if (todos.length) {
     secs.push({
       key: 'todo',
+      kind: 'method',
       label: '尚未实现（不猜）',
       text: todos.map((k) => `· ${k.gist}${k.note ? `——${k.note}` : ''}`).join('\n'),
     });
@@ -1950,6 +1952,27 @@ const confidenceOf = (dim) => {
   return n >= 3 ? '强' : n >= 2 ? '中' : '弱';
 };
 
+/**
+ * 段落性质分三类，由两套 UI 决定怎么摆：
+ *   read   —— 读盘内容（这一节在讲你/这件事），正文里逐段展开
+ *   text   —— 经文原文（卦辞、爻辞），用户会主动找，留在正文
+ *   method —— 怎么算的：看盘顺序、交叉校验、量化口径、未纳入、复核清单、出处与分歧
+ *
+ * 依据是实测：八个主力体系里 method 段落占推演层 15%–51%（奇门 1082/2120），
+ * 而它们回答的是「这结论可靠吗」而不是「我该怎么办」——挤在正文里，正文就被
+ * 方法论淹没。合成一个「方法与出处」折叠区，正文立刻瘦一半，且不删任何内容。
+ */
+const METHOD_KEYS = ['caveats', 'limits', 'quant', 'checklist', 'todo', 'reasoning', 'checks', 'classics'];
+const TEXT_KEYS = ['jingText', 'guaCi', 'yaoCi'];
+function markSections(list) {
+  return list.map((s) => {
+    const key = String((s && s.key) || '');
+    if (METHOD_KEYS.indexOf(key) >= 0) return { ...s, kind: 'method' };
+    if (TEXT_KEYS.indexOf(key) >= 0) return { ...s, kind: 'text' };
+    return s;
+  });
+}
+
 const withReportMeta = (body, r, ask) => enrichPlain({
   // 信封先算：它是首屏唯一必需的东西，一旦算失败要能降级而不是整块消失
   envelope: (() => {
@@ -1972,7 +1995,7 @@ const withReportMeta = (body, r, ask) => enrichPlain({
   systemLabel: SYSTEM_LABEL[r.system] || r.system,
   title: '解析与详解',
   dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),
-  sections: body.sections || [],
+  sections: markSections(body.sections || []),
   outline: body.outline || [],
   tables: body.tables || [],
   technique: TECHNIQUE[r.system] || SYSTEM_LABEL[r.system] || r.system,

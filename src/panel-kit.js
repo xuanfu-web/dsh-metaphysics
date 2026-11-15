@@ -811,6 +811,22 @@
 /* 长节按行分段：一行一段，行内**加粗**只强化术语，不引入其它标记 */
 .mp-it-p{margin:0 0 5px}
 .mp-it-p:last-child{margin-bottom:0}
+/* 方法与出处：方法类段落合成一个折叠区，默认收起。summary 里只报段数与用途，不报字数 */
+.mp-it-method{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
+.mp-it-method>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mp-it-method>summary::-webkit-details-marker{display:none}
+.mp-it-method>summary::after{content:'展开';font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-it-method[open]>summary::after{content:'收起'}
+.mp-it-method[open]>summary{margin-bottom:8px}
+.mp-it-mnum{font-size:11.5px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-it-sub{margin-bottom:9px;padding-left:8px;border-left:2px solid var(--line)}
+.mp-it-sub .mp-it-sh{font-size:12px;color:var(--ink2);font-weight:600}
+.mp-it-sub .mp-it-stext{font-size:12px;line-height:1.85;color:var(--muted)}
+/* 五维正文只留出处入口，卡片本体在文末折叠区 */
+.mp-it-knowref{margin-top:7px;font-size:11.5px;font-family:system-ui,sans-serif}
+.mp-it-knowref a{color:var(--muted);text-decoration:none;border-bottom:1px dashed var(--line)}
+.know-flag{margin-left:8px;color:var(--quan);font-size:11px}
+.know-dim{font-style:normal;color:var(--muted);font-size:11px;margin-right:6px;font-family:system-ui,sans-serif}
 .mp-it-p b{color:var(--ink);font-weight:700;letter-spacing:.02em}
 /* 一页读懂：报告顶部五条结论 */
 .mp-outline{margin:12px 16px 0;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px}
@@ -3639,24 +3655,24 @@
     const hasBody = (it.dimensions && it.dimensions.length) || (it.sections && it.sections.length);
     if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
-    // 效度声明只挂一次：放在最后一个带知识卡的维度下面，逐维重复反而会被跳过不看
-    let lastKnowAt = -1;
-    (it.dimensions || []).forEach((d, i) => { if (d.knowledge && d.knowledge.length) lastKnowAt = i; });
     const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
       <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}${d.confidence ? `<span class="mp-it-conf c-${esc(d.confidence)}">置信度 ${esc(d.confidence)}</span>` : ''}</div>
       ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
       ${(d.evidence && d.evidence.length) ? `<details class="mp-it-ev"><summary>依据 · ${esc(d.evidence.length)} 条盘面事实</summary><div class="mp-it-ev-body">${d.evidence.map((x) => `<span class="mp-it-ev-item">${esc(x)}</span>`).join('')}<span class="mp-it-ev-tech">技法：${esc(it.technique || it.systemLabel || '')}</span></div></details>` : ''}
-      ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-know">${d.knowledge.map((k) => `<div class="know-row"><span class="know-status ${k.status}">${esc(k.statusLabel)}</span><span class="know-body"><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${i === lastKnowAt && it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
+      ${(d.knowledge && d.knowledge.length) ? `<div class="mp-it-knowref"><a href="#mp-sec-know">依据与出处 ${d.knowledge.length} 条 →</a>${d.knowledge.some((k) => k.status !== 'settled') ? '<span class="know-flag">本维有异说或待核实</span>' : ''}</div>` : ''}
       ${d.advice ? `<div class="mp-it-adv"><b>建议</b>${esc(d.advice)}</div>` : ''}
     </div>`).join('');
     // 一页读懂：报告顶部五条结论（整体/事业/财富/感情/节奏）
     const outline = (it.outline && it.outline.length)
       ? `<div class="mp-outline"><div class="mp-outline-h">一页读懂</div>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
       : '';
-    // 目录：点击跳到对应分节（面板内锚点；打印时隐藏）
-    const toc = (it.sections && it.sections.length)
-      ? `<nav class="mp-toc" aria-label="报告目录">${it.sections.map((s) => `<a href="#mp-sec-${esc(s.key)}">${esc(s.label)}</a>`).join('')}</nav>`
+    // 目录：点击跳到对应分节（面板内锚点；打印时隐藏）。方法类段落合成一项，别让目录里全是「未纳入」
+    const secList = it.sections || [];
+    const bodySecs = secList.filter((s) => s.kind !== 'method');
+    const methodSecs = secList.filter((s) => s.kind === 'method');
+    const toc = secList.length
+      ? `<nav class="mp-toc" aria-label="报告目录">${bodySecs.map((s) => `<a href="#mp-sec-${esc(s.key)}">${esc(s.label)}</a>`).join('')}${methodSecs.length ? '<a href="#mp-sec-method">方法与出处</a>' : ''}</nav>`
       : '';
     // 三张表：大运 / 流年 / 触发事件（数据由引擎给出，这里只渲染）
     const tables = (it.tables && it.tables.length)
@@ -3673,11 +3689,21 @@
       .split('\n')
       .map((line) => `<div class="mp-it-p">${esc(line).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')}</div>`)
       .join('');
-    const secs = (it.sections && it.sections.length)
-      ? `<div class="mp-it-secs">${it.sections.map((s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
+    // 出处卡片全部收进文末「方法与出处」：五维正文只留结论与建议。
+    // 实测出处卡是最大膨胀源（八字 3798 字、六爻 2525 字），而那五维真正的话只有 300–600 字。
+    const knowAll = (it.dimensions || []).reduce((acc, d) => acc.concat((d.knowledge || []).map((k) => ({ ...k, dimLabel: d.label }))), []);
+    const secOne = (s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
         <div class="mp-it-sh">${esc(s.label)}</div>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
-      </div>`).join('')}</div>`
+      </div>`;
+    // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
+    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。
+    const secs = secList.length || knowAll.length
+      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${(methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
+        <summary><span class="mp-it-sh">方法与出处</span><span class="mp-it-mnum">${methodSecs.length ? `${methodSecs.length} 段` : ''}${methodSecs.length && knowAll.length ? ' · ' : ''}${knowAll.length ? `依据 ${knowAll.length} 条` : ''} · 怎么算的、哪里没算、口径分歧</span></summary>
+        ${knowAll.length ? `<div class="mp-it-sub" id="mp-sec-know"><div class="mp-it-sh">依据与出处</div>${knowAll.map((k) => `<div class="know-row"><span class="know-status ${esc(k.status)}">${esc(k.statusLabel)}</span><span class="know-body"><em class="know-dim">${esc(k.dimLabel)}</em><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
+        ${methodSecs.map((s) => `<div class="mp-it-sub"><div class="mp-it-sh">${esc(s.label)}</div><div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div></div>`).join('')}
+      </details>` : ''}</div>`
       : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
     // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
