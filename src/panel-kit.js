@@ -8,7 +8,7 @@
   /* 水墨风：宣纸白为底、淡墨分层；米黄系整体降饱和，纸感靠 --band 的微暖留一点 */
   --bg:#f4f2ec;--card:#fdfdfb;--band:#f7f5ef;--hover:#eeece5;--hover2:#e6e4dc;
   --tri:#eef0ea;--soul:#f7ece9;--sel:#f5efe9;--link:#f0efe9;
-  --red:#a02c26;--red-rgb:160,44,38;--lu:#3d5a52;--lu-rgb:61,90,82;
+  --red:#a02c26;--red-rgb:160,44,38;--env-good:var(--env-good);--env-warn:var(--env-warn);--env-alt:var(--env-alt);--lu:#3d5a52;--lu-rgb:61,90,82;
   --quan:#6e5a2e;--quan-rgb:110,90,46;--ke:#3a5568;--ke-rgb:58,85,104;--ji:#a02c26;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:var(--on-accent);--wx-metal:#8a6b1f;
   --tg-bi:#4e5d6b;--tg-shi:#55685c;--tg-cai:#6e5a2e;--tg-guan:#8a4a42;--tg-yin:#5d5570;
@@ -36,7 +36,7 @@
     /* 暗色水墨：墨底宣纸灰字，降暖提灰 */
     --bg:#131311;--card:#1f1f1c;--band:#26261f;--hover:#2c2c26;--hover2:#35352c;
     --tri:#2a2e28;--soul:#332521;--sel:#322d27;--link:#2c2b25;
-    --red:#e08a7a;--red-rgb:224,138,122;--lu:#8fb8a8;--lu-rgb:143,184,168;
+    --red:#e08a7a;--red-rgb:224,138,122;--env-good:#6dc79a;--env-warn:#e0a860;--env-alt:#9aa2ea;--lu:#8fb8a8;--lu-rgb:143,184,168;
     --quan:#c9a96a;--quan-rgb:201,169,106;--ke:#8aadc0;--ke-rgb:138,173,192;--ji:#e08a7a;
     --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
     --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0;
@@ -549,6 +549,58 @@
 .mp-tt-ta{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
 .mp-tt-ta:focus{border-color:var(--red)}
 
+/* —— 三层披露：结论卡 / 因素卡 —— */
+/* L0 独立在报告之外，所以自带一套卡片外观，不依赖 .mp-it 的边框 */
+.mp-env-head{padding:15px 17px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif}
+.mp-env-kicker{font-size:11px;letter-spacing:.18em;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-env-hl{margin:7px 0 0;font-size:17px;font-weight:700;line-height:1.6}
+.mp-env-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:9px;font-size:12px;font-family:system-ui,sans-serif}
+.mp-env-dir{padding:2px 9px;border-radius:999px;border:1px solid currentColor;line-height:1.7}
+.mp-env-dir.t-good{color:var(--env-good)}
+.mp-env-dir.t-watch{color:var(--env-warn)}
+.mp-env-dir.t-alt{color:var(--env-alt)}
+.mp-env-dir.t-plain{color:var(--muted)}
+.mp-env-conf{color:var(--muted)}
+.mp-env-deg{color:var(--env-warn)}
+.mp-env-cond{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.7;color:var(--muted)}
+.mp-env{margin:0 0 14px}
+.mp-env-sec-h{font-size:12px;letter-spacing:.1em;color:var(--muted);font-family:system-ui,sans-serif;margin:0 0 8px}
+.mp-env-f-row{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.mp-env-f-row:first-child{border-top:none}
+.mp-env-f-no{flex:none;width:20px;height:20px;border-radius:50%;background:var(--band);color:var(--muted);font-size:11px;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.mp-env-f-main{flex:1;min-width:0}
+.mp-env-f-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
+.mp-env-f-top b{font-size:13.5px}
+.mp-env-f-state{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-env-dup{font-size:11px;color:var(--muted);opacity:.8}
+.mp-env-f-impact{margin-top:3px;font-size:13px;line-height:1.75}
+.mp-env-why{margin-top:5px}
+.mp-env-why summary{font-size:11.5px;color:var(--muted);cursor:pointer;font-family:system-ui,sans-serif;list-style:none}
+.mp-env-why summary::-webkit-details-marker{display:none}
+.mp-env-why summary::before{content:"＋ ";color:var(--red)}
+.mp-env-why[open] summary::before{content:"－ "}
+.mp-env-why-body{margin-top:6px;padding:8px 10px;background:var(--band);border-radius:8px}
+.mp-env-ev{font-size:12px;line-height:1.7;padding:3px 0}
+.mp-env-ev b{display:inline-block;min-width:64px;color:var(--muted);font-weight:600}
+.mp-env-ev span{color:var(--ink)}
+.mp-env-tl{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.mp-env-tl-row{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:12.5px;padding:3px 0}
+.mp-env-tl-w{font-weight:600}
+.mp-env-tl-p{padding:1px 7px;border-radius:999px;background:var(--band);color:var(--muted);font-size:11px;font-family:system-ui,sans-serif}
+.mp-env-tl-n{color:var(--muted)}
+.mp-env-adv{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.mp-env-adv b{font-size:12px;letter-spacing:.08em;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-env-adv ol{margin:6px 0 0;padding-left:20px;font-size:13px;line-height:1.8}
+.mp-env-risk{margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--band);font-size:12.5px;line-height:1.7}
+.mp-env-risk b{margin-right:6px;color:var(--env-warn)}
+.mp-env-cf{margin-top:10px}
+.mp-env-cf summary{font-size:11.5px;color:var(--muted);cursor:pointer;font-family:system-ui,sans-serif}
+.mp-env-cf-body{margin-top:7px}
+.mp-env-cf-item{padding:7px 0;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.7}
+.mp-env-cf-item b{display:block;margin-bottom:3px}
+.mp-env-cf-view{padding:2px 0;color:var(--muted)}
+.mp-env-cf-view span{display:inline-block;min-width:96px;color:var(--ink)}
+.mp-env-cf-item em{display:block;margin-top:4px;font-style:normal;color:var(--muted);font-size:12px}
 /* —— 解析与详解 —— */
 /* 变量由上面的 .pp,.mp-it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
    自引用会让变量变成 guaranteed-invalid，反而把继承值也挡掉了（--card 因此彻底失效）。 */
@@ -3456,6 +3508,103 @@
     </div>`;
   }).join('')}</div>`;
 
+  // ── 三层披露：L0 结论卡（首屏第一眼）/ L1 因素与建议 / L2 逐条为什么 ──
+  // 契约层给的是机读字段，这里只负责摆位置：结论在上、依据收在每一条自己的「为什么」里，
+  // 不做成一个大折叠块——那样等于又回到「先收起，想看自己翻」的老路上。
+  const ENV_DIR = { positive: ['偏顺', 'good'], negative: ['偏卡', 'watch'], mixed: ['两头都有', 'alt'], undetermined: ['暂难定向', 'plain'] };
+  const ENV_CONF = { high: '高', medium: '中', low: '低' };
+  const ENV_EL = { 木: '木', 火: '火', 土: '土', 金: '金', 水: '水' };
+
+  /**
+   * 灰度开关。默认全量走新渲染；?env=0 一键退回老渲染（出事时把 URL 参数一加就能救），
+   * localStorage['mp-env-ratio'] 存 0–100 的比例做分流。都读不到就按 100。
+   */
+  pp.envRatio = function () {
+    try {
+      if (typeof location !== "undefined" && location.search) {
+        const m = /[?&]env=(\d{1,3})/.exec(location.search);
+        if (m) return Math.max(0, Math.min(100, Number(m[1])));
+      }
+      if (typeof localStorage !== "undefined") {
+        const ls = localStorage.getItem("mp-env-ratio");
+        if (ls !== null && ls !== "") return Math.max(0, Math.min(100, Number(ls)));
+      }
+    } catch (e) { /* 隐私模式或非浏览器环境读不到，按默认全量 */ }
+    return 100;
+  };
+
+  /** 这一张盘这一眼到底走新渲染还是老渲染；opt.envelope === false 可强制关掉 */
+  pp.envFor = function (it, opt) {
+    const env = it && it.envelope;
+    if (!env) return null;
+    if (opt && opt.envelope === false) return null;
+    const ratio = pp.envRatio();
+    if (ratio >= 100) return env;
+    if (ratio <= 0) return null;
+    const E = (typeof window !== "undefined" && (window.Engine || (window.__PP && window.__PP.Engine))) || null;
+    if (E && typeof E.pickVariant === "function") {
+      return E.pickVariant(env.meta && env.meta.chart_id, ratio) === "envelope" ? env : null;
+    }
+    return env;
+  };
+  /** L0：只放结论。放在盘面之前，任何人打开第一眼看到的就是它 */
+  pp.envelopeHeadHTML = function (env) {
+    if (!env || !env.verdict || !env.verdict.headline) return '';
+    const v = env.verdict;
+    const [dl, dtone] = ENV_DIR[v.direction] || ENV_DIR.undetermined;
+    return `<div class="mp-env-head">
+      <div class="mp-env-kicker">结论</div>
+      <div class="mp-env-hl">${esc(v.headline)}</div>
+      <div class="mp-env-row">
+        <span class="mp-env-dir t-${dtone}">${esc(dl)}</span>
+        <span class="mp-env-conf">把握 ${esc(ENV_CONF[v.confidence] || '中')}</span>
+        ${env.degraded ? '<span class="mp-env-deg">已简化</span>' : ''}
+      </div>
+      ${v.condition ? `<div class="mp-env-cond">${esc(v.condition)}</div>` : ''}
+    </div>`;
+  };
+
+  /** L1+L2：因素逐条带自己的「为什么」，底部才是流派说明 */
+  pp.envelopeHTML = function (env) {
+    if (!env || !Array.isArray(env.factors) || !env.factors.length) return '';
+    const evById = new Map((env.evidence || []).map((e) => [e.id, e]));
+    const factors = env.factors.map((f, i) => {
+      const refs = (f.evidence_refs || []).map((id) => evById.get(id)).filter(Boolean);
+      const why = refs.length
+        ? `<details class="mp-env-why"><summary>为什么</summary><div class="mp-env-why-body">${refs.map((e) => `<div class="mp-env-ev"><b>${esc(e.label)}</b><span>${esc(e.detail)}</span></div>`).join('')}</div></details>`
+        : '';
+      const dup = f.duplicate_count ? `<span class="mp-env-dup">另有 ${f.duplicate_count} 处同义表述已并入</span>` : '';
+      return `<div class="mp-env-f-row">
+        <div class="mp-env-f-no">${i + 1}</div>
+        <div class="mp-env-f-main">
+          <div class="mp-env-f-top"><b>${esc(f.name)}</b><span class="mp-env-f-state">${esc(f.state)}</span>${dup}</div>
+          <div class="mp-env-f-impact">${esc(f.impact)}</div>
+          ${why}
+        </div>
+      </div>`;
+    }).join('');
+
+    const tl = (env.timeline || []).length
+      ? `<div class="mp-env-tl">${env.timeline.map((t) => `<div class="mp-env-tl-row"><span class="mp-env-tl-w">${esc(t.window)}</span>${t.pace ? `<span class="mp-env-tl-p">${esc(t.pace)}</span>` : ''}${t.note ? `<span class="mp-env-tl-n">${esc(t.note)}</span>` : ''}</div>`).join('')}</div>`
+      : '';
+
+    const adv = (env.advice || []).length
+      ? `<div class="mp-env-adv"><b>怎么做</b><ol>${env.advice.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></div>`
+      : '';
+
+    const risk = env.risk ? `<div class="mp-env-risk"><b>留意</b>${esc(env.risk)}</div>` : '';
+
+    const cf = (env.conflicts || []).length
+      ? `<details class="mp-env-cf"><summary>流派说明（${env.conflicts.length} 条）</summary><div class="mp-env-cf-body">${env.conflicts.map((c) => `<div class="mp-env-cf-item"><b>${esc(c.topic)}</b>${(c.views || []).map((v) => `<div class="mp-env-cf-view"><span>${esc(v.school)}</span>${esc(v.stance)}</div>`).join('')}${c.note ? `<em>${esc(c.note)}</em>` : ''}</div>`).join('')}</div></details>`
+      : '';
+
+    return `<div class="mp-env">
+      
+      <div class="mp-env-f">${factors}</div>
+      ${tl}${adv}${risk}${cf}
+    </div>`;
+  };
+
   /**
    * @param {object} it interpret() 的结果
    * @param {object} [opt] { folded 是否收起 } —— 桌面默认展开、竖屏默认收起由调用方按视口决定
@@ -3544,6 +3693,8 @@
         <div class="mp-guide-parts"><b>${esc(it.guide.parts.title)}</b><ul>${(it.guide.parts.rows || []).map((r) => `<li><span>${esc(r[0])}</span>${esc(r[1])}</li>`).join('')}</ul><p>${esc(it.guide.parts.tail)}</p></div>
         <p class="mp-guide-close">${esc(it.guide.closing)}</p>
       </div></details>` : '';
+    // L1+L2：结论之后的「为什么」，逐条自带依据，不做整块折叠
+    const envBody = pp.envelopeHTML(pp.envFor(it, opt));
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -3551,6 +3702,7 @@
         <span class="mp-it-hint">${folded ? '点击展开' : '点击收起'}</span>
       </button>
       <div class="mp-it-wrap">
+        ${envBody}
         ${askCopy}
         ${askLine}
         ${answer}
@@ -3584,9 +3736,19 @@
     </div>`;
   };
 
-  /** 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态） */
+  /** 结论卡单独取用：调用方要把它放在整个结果卡的最顶上（盘面、工具条都排它后面） */
+  pp.envHeadHTML = function (it, opt) {
+    return pp.envelopeHeadHTML(pp.envFor(it, opt));
+  };
+
+  /**
+   * 结果 + 解析一并渲染；opt 透传给 interpretHTML（折叠初始状态）。
+   * opt.noHead = true 时不再自带结论卡——调用方已经把它提到结果卡最前面自己拼了，
+   * 不这么拆就会出现两张结论卡，或者结论卡被压在「复制句柄」下面。
+   */
   pp.resultWithInterpret = function (html, it, opt) {
-    return (html || '') + pp.interpretHTML(it, opt);
+    const head = opt && opt.noHead ? '' : pp.envHeadHTML(it, opt);
+    return head + (html || '') + pp.interpretHTML(it, opt);
   };
 
   /**

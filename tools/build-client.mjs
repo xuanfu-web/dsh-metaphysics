@@ -13,7 +13,7 @@ const unreleasedLine = () =>
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
+  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -22,7 +22,7 @@ export const MODULE_ORDER = ORDER;
 const COMMON = ['fail', 'bool', 'validate', 'datetime', 'diff', 'fingerprint', 'lru', 'vsop-earth', 'calendar', 'lunar', 'geo', 'dst', 'nayin', 'sanhe', 'random', 'handle', 'bridge'];
 // limits 是能力边界清单，interpret 的结果里要带它，所以并进解释栈；漏了会静默变成 undefined
 // guide 放三层导读：interpret 的结果要带它，所以同样并进解释栈（漏了会静默 undefined）
-const INTERPRET = ['interpret-data', 'interpret-knowledge', 'limits', 'guide', 'interpret-plain', 'citations', 'interpret'];
+const INTERPRET = ['term-dict', 'envelope', 'interpret-data', 'interpret-knowledge', 'limits', 'guide', 'interpret-plain', 'citations', 'interpret'];
 const ASK = ['followup'];
 // 问事解读提示：liuyao/meihua/daliuren/qimen/tarot/xiaoliuren 这六个问事体系要带，命盘类不带
 const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
@@ -203,6 +203,15 @@ export function buildModule(name) {
   let code = fs.readFileSync(file, 'utf8');
   const exported = new Set();
 
+  // 转出语句 `export { a, b } from './m.js'`：先降级成 import 交给下面统一处理，
+  // 同时把名字登记进导出集合（否则 __mods.x 里拿不到它）。不先降级的话，
+  // 兜底的 export 规则只吃掉花括号，会留下 ` from './m.js'` 变成语法错。
+  code = code.replace(/^export\s*\{([^{}]*)\}\s*from\s*'\.\/([a-z-]+)\.js';?/gm, (_m, names, dep) => {
+    for (const n of names.split(',').map((x) => x.trim()).filter(Boolean)) {
+      exported.add(n.split(/\s+as\s+/).pop().trim());
+    }
+    return `import { ${names} } from './${dep}.js';`;
+  });
   code = code.replace(
     /^import\s*\{([\s\S]*?)\}\s*from\s*'\.\/([a-z-]+)\.js';?/gm,
     // 缺失模块给空对象：分块只带本组用到的模块，统一入口对其它体系的引用必须能安全落空

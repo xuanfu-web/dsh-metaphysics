@@ -101,7 +101,15 @@ ok(openHTML.includes('it-ask') && openHTML.includes('问题：') && openHTML.inc
 ok(!PP.interpretHTML(bz, {}).includes('it-ask'), '命盘类不渲染回显行');
 ok(PP.interpretHTML(it6, { folded: true }).includes('it-ask'), '收起时回显行仍在结构内（展开即可见）');
 ok(openHTML.includes('it-focus') && openHTML.includes('最贴近你的问题'), '聚焦维度带「最贴近你的问题」标记');
-ok(PP.resultWithInterpret('<hr>', it6, { folded: true }).startsWith('<hr>'), 'resultWithInterpret 保留盘面在前');
+// 三层披露把结论卡提到最前（PRD：首屏第一元素是 verdict），盘面紧随其后 —— 这条原来断言 startsWith('<hr>')，
+// 那等于钉死「盘面必须第一」，与结论先行相冲。现在钉的是「结论在前、盘面仍在」这两件都要真。
+{
+  const rwi = PP.resultWithInterpret('<hr>', it6, { folded: true });
+  const HEAD = '<div class="mp-env-head">';
+  const headAt = rwi.indexOf(HEAD), chartAt = rwi.indexOf('<hr>');
+  ok(headAt === 0, '结论卡在报告最前（首屏第一元素）');
+  ok(chartAt > headAt && chartAt > 0, '盘面仍完整保留，位置在结论卡之后');
+}
 ok(PP.interpretHTML(null) === '' && PP.interpretHTML({ dimensions: [] }) === '', '空解析不渲染模块');
 ok(!/undefined|NaN|\[object/.test(openHTML), '面板输出无 undefined / NaN');
 

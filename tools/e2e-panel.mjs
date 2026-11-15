@@ -933,11 +933,19 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
       cardCls: card ? String(card.className) : null,
       kids: card ? [...card.children].slice(0, 4).map((x) => String(x.className || x.tagName)) : [],
       first: el ? String(el.className || el.tagName) : null,
-      ttFirst: !!(el && el.classList && (el.classList.contains('mp-tt-card') || el.querySelector('.mp-tt-card'))),
+      envFirst: !!(el && el.classList && el.classList.contains('mp-env-head')),
+      ttAt: (() => {
+        const kids = card ? [...card.children] : [];
+        for (let i = 0; i < kids.length; i += 1) {
+          if (kids[i].classList.contains('mp-tt-card') || kids[i].querySelector('.mp-tt-card')) return i;
+        }
+        return -1;
+      })(),
       ttAnywhere: !!(card && card.querySelector('.mp-tt-card')),
     };
   });
-  ok(diag.ttFirst, '结果卡第一块就是塔罗牌面', JSON.stringify(diag));
+  ok(diag.envFirst, '结果卡第一块是结论卡', JSON.stringify(diag));
+  ok(diag.ttAt === 1, '塔罗牌面紧随结论卡', JSON.stringify(diag.kids));
   ok(!!diag.first && !/mp-perf|mp-rev|mp-handle|mp-shadow|mp-trace|mp-cast-at|mp-caliber/.test(diag.first),
     '第一块不是技术信息行', JSON.stringify(diag.kids));
 }

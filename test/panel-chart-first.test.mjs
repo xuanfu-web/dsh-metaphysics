@@ -35,10 +35,15 @@ ok('按开头是不是 mp-br 方框来判断', chart.includes("html.startsWith('
 ok('剥下来的段接到盘面之后', /const body = end < 0 \? html : html\.slice\(end \+ 10\);/.test(chart), chart.slice(-260));
 ok('没命中时原样返回', /const body = end < 0 \? html :/.test(chart));
 
-// ── ② 结果卡拼接顺序 ──────────────────────────────────────────
-const iHtml = app.indexOf('__html: chartHTML(result)');
-ok('结果卡以盘面开头', iHtml > 0);
+// ── ② 结果卡拼接顺序：结论 → 盘面 → 时刻 → 解读 → 技术信息 ───────────
+// 三层披露上线后，「第一块」从盘面换成了结论卡：盘面是这张盘的样子，结论才是用户来要的东西。
+// 盘面仍排在所有技术信息（性能/修订/句柄/影子/推导链）之前，这条底线不动。
+const iHead = app.indexOf('PP.envHeadHTML(result.it');
+ok('结果卡以结论卡开头（打开第一眼就是判断）', iHead > 0);
+const iHtml = app.indexOf('+ chartHTML(result)', iHead);
+ok('盘面紧跟在结论卡之后', iHtml > iHead);
 const order = [
+  ['结论', iHead],
   ['盘面', iHtml],
   ['起卦时刻 castAtHTML', app.indexOf('castAtHTML(result)', iHtml)],
   ['解读 resultWithInterpret', app.indexOf("PP.resultWithInterpret('', result.it", iHtml)],
@@ -59,7 +64,7 @@ ok('解读仍走 resultWithInterpret 入口', app.includes('PP.resultWithInterpr
 // ── ③ 每块只出现一次 ──────────────────────────────────────────
 fn: {
   const n = (pat) => (app.match(new RegExp(pat, 'g')) || []).length;
-  eq('chartHTML 调用一次', n('__html: chartHTML\\(result\\)'), 1);
+  eq('chartHTML 调用一次', n('\\+ chartHTML\\(result\\)'), 1);
   eq('perf 一处', n('PP\\.perfHTML\\(perf\\)'), 1);
   eq('trace 一处', n('PP\\.traceHTML\\(result\\.r\\.trace'), 1);
 

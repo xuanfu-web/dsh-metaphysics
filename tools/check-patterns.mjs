@@ -40,7 +40,9 @@ for (const f of filesIn('engine')) {
   lines.forEach((line, i) => {
     const n = i + 1;
     const commentOnly = /^\s*(\/\/|\*)/.test(line);
-    if (/\b(document|window|localStorage|sessionStorage)\b/.test(line)) add(rel, n, 'engine 不得引用浏览器 API');
+    // 只认「取值」形态：window.X、document.X、typeof window、x = window。
+    // 原先是裸 \bwindow\b，把 PRD 契约里 timeline 的 window 字段（{ window: '…' }）全判成浏览器 API。
+    if (/\b(document|localStorage|sessionStorage)\s*[.\[]|\bwindow\s*[.\[]|typeof\s+(window|document|localStorage)\b|=\s*\b(window|document)\b/.test(line)) add(rel, n, 'engine 不得引用浏览器 API');
     if (/\bprocess\.(env|argv|cwd|exit)\b/.test(line)) add(rel, n, 'engine 不得引用 Node process');
     if (/\brequire\(/.test(line)) add(rel, n, 'engine 是 ESM，不得用 require');
     if (/\bconsole\./.test(line)) add(rel, n, 'engine 不得输出日志');

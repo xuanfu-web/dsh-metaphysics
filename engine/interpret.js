@@ -22,6 +22,8 @@ import {
 import { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } from './bazi-words.js';
 // 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
 import { bodyLabels, yongshenOf } from './liuyao.js';
+// 三层披露的契约层：把「结论」单独抽成一个机读结构，正文再怎么长也不影响首屏
+import { buildEnvelope } from './envelope.js';
 
 // ── 固定五维度 ────────────────────────────────────────────
 export const DIMENSIONS = [
@@ -1949,6 +1951,19 @@ const confidenceOf = (dim) => {
 };
 
 const withReportMeta = (body, r, ask) => enrichPlain({
+  // 信封先算：它是首屏唯一必需的东西，一旦算失败要能降级而不是整块消失
+  envelope: (() => {
+    try {
+      return buildEnvelope(r, {
+        system: r.system,
+        asOf: r.asOf,
+        mode: 'live',
+        question: ask && (ask.text || ask.raw) || '',
+      });
+    } catch (e) {
+      return null;
+    }
+  })(),
   ...body,
   moduleType: MODULE_TYPE[r.system] || 'natal',
   system: r.system,

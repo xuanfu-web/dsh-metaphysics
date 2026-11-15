@@ -617,12 +617,14 @@
     if (it && last.r && last.r.cross && window.Engine.crossSection) {
       it.sections = [...(it.sections || []), window.Engine.crossSection(last.r.cross)];
     }
-    el('out').innerHTML = castAtHTML(last.tab, last.timed, last.date, last.time)
+    el('out').innerHTML = window.__PP.envHeadHTML(it, { folded: defaultFolded() }) // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
+      + (last.html || '')
+      + castAtHTML(last.tab, last.timed, last.date, last.time)
+      + window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true })
       + window.__PP.revisionHTML(last.r.revision)
       + window.__PP.handleHTML(last.r.handle)
       + window.__PP.shadowHTML(last.r.shadow, last.shadowDiff)
       + window.__PP.traceHTML(last.r.trace, last.r.system, last.r.traceText)
-      + window.__PP.resultWithInterpret(last.html, it, { folded: defaultFolded() })
       + window.__PP.caliberHTML(last.caliber)
       + followupBar()
       + (last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '')

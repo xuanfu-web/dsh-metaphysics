@@ -45,6 +45,7 @@ import { assertCivil, MIN_YEAR, MAX_YEAR } from './validate.js';
 import { parseDateTime, daysInMonth } from './datetime.js';
 
 export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
+export { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION } from './envelope.js';
 export { parseDateTime };
 
 const pad = (n) => String(n).padStart(2, '0');
