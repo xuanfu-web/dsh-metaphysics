@@ -71,10 +71,12 @@ const PP = sandboxWindow.__PP;
   eq((html.match(/class="mp-guide"/g) || []).length, 1, '导读只渲染一次');
   ok(/<details class="mp-guide">/.test(html), '默认收起（details 不带 open）');
   ok(html.includes('数 / 象 / 辞'), '标题旁点明三层');
-  // 位置：必须在「一页读懂」之前 —— 结论先入眼就没人再看导读
+  // 位置：必须在「一页读懂」之后。
+  // 导读教的是「怎么读这张盘」，速览给的是「这张盘说什么」——教程不能挡在结论前面。
+  // 0.82.0 之前它排在速览表前头，用户得先跳过一段方法论才看到自己的五条结论。
   const gi = html.indexOf('mp-guide');
   const oi = html.indexOf('mp-outline');
-  ok(gi >= 0 && (oi < 0 || gi < oi), '导读排在结论之前');
+  ok(gi >= 0 && oi >= 0 && oi < gi, '导读排在速览之后');
   // 内容全转义，不引入注入面
   ok(!/<script/i.test(html) && !/onerror=/i.test(html), '渲染结果不含脚本或事件属性');
   // 收起时内容仍在 DOM 里（用户点开即可读，不需要再请求）

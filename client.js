@@ -559,6 +559,12 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
 .mp-env-dir.t-alt{color:var(--env-alt)}
 .mp-env-dir.t-plain{color:var(--muted)}
 .mp-env-conf{color:var(--muted)}
+/* 把握的口径：点开才展开，但一定能问到。手机上 title 不显示，所以用 details 而不是 tooltip */
+.mp-env-confq{display:inline-block}
+.mp-env-confq>summary{cursor:pointer;list-style:none}
+.mp-env-confq>summary::-webkit-details-marker{display:none}
+.mp-env-confq>summary::after{content:' ?';color:var(--muted);font-size:11px}
+.mp-env-confq-body{margin-top:8px;padding:8px 10px;border-left:2px solid var(--line);font-size:12px;line-height:1.8;color:var(--muted);max-width:34em}
 .mp-env-deg{color:var(--env-warn)}
 .mp-env-cond{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.7;color:var(--muted)}
 .mp-env{margin:0 0 14px}
@@ -2135,12 +2141,15 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
         <div class="mp-cross-cell"><b>紫微</b><span>${t(i.ziwei||"—")}</span></div>
       </div>
       ${i.note?`<div class="mp-cross-note">${t(i.note)}</div>`:""}
-    </div>`}).join("")}</div>`,na={positive:["偏顺","good"],negative:["偏卡","watch"],mixed:["两头都有","alt"],undetermined:["暂难定向","plain"]},Jt={high:"高",medium:"中",low:"低"},Xt={木:"木",火:"火",土:"土",金:"金",水:"水"};n.envRatio=function(){try{if(typeof location<"u"&&location.search){const e=/[?&]env=(\d{1,3})/.exec(location.search);if(e)return Math.max(0,Math.min(100,Number(e[1])))}if(typeof localStorage<"u"){const e=localStorage.getItem("mp-env-ratio");if(e!==null&&e!=="")return Math.max(0,Math.min(100,Number(e)))}}catch{}return 100},n.envFor=function(e,i){const o=e&&e.envelope;if(!o||i&&i.envelope===!1)return null;const l=n.envRatio();if(l>=100)return o;if(l<=0)return null;const r=typeof window<"u"&&(window.Engine||window.__PP&&window.__PP.Engine)||null;return r&&typeof r.pickVariant=="function"?r.pickVariant(o.meta&&o.meta.chart_id,l)==="envelope"?o:null:o},n.envelopeHeadHTML=function(e){if(!e||!e.verdict||!e.verdict.headline)return"";const i=e.verdict,[o,l]=na[i.direction]||na.undetermined;return`<div class="mp-env-head">
+    </div>`}).join("")}</div>`,na={positive:["偏顺","good"],negative:["偏卡","watch"],mixed:["两头都有","alt"],undetermined:["暂难定向","plain"]},Jt={high:"高",medium:"中",low:"低"},Xt={木:"木",火:"火",土:"土",金:"金",水:"水"};n.envRatio=function(){try{if(typeof location<"u"&&location.search){const e=/[?&]env=(\d{1,3})/.exec(location.search);if(e)return Math.max(0,Math.min(100,Number(e[1])))}if(typeof localStorage<"u"){const e=localStorage.getItem("mp-env-ratio");if(e!==null&&e!=="")return Math.max(0,Math.min(100,Number(e)))}}catch{}return 100},n.envFor=function(e,i){const o=e&&e.envelope;if(!o||i&&i.envelope===!1)return null;const l=n.envRatio();if(l>=100)return o;if(l<=0)return null;const r=typeof window<"u"&&(window.Engine||window.__PP&&window.__PP.Engine)||null;return r&&typeof r.pickVariant=="function"?r.pickVariant(o.meta&&o.meta.chart_id,l)==="envelope"?o:null:o},n.envelopeHeadHTML=function(e){if(!e||!e.verdict||!e.verdict.headline)return"";const i=e.verdict,[o,l]=na[i.direction]||na.undetermined,r=(e.evidence||[]).length,c=(e.factors||[]).length,d=(e.conflicts||[]).length,m=`按 ${r} 条盘面事实、${c} 条关键因素推出来的${d?`；其中 ${d} 处各家有分歧，已在文末标明`:""}。把握说的是这套规则推得有多一致，不是这件事实际发生的概率。`;return`<div class="mp-env-head">
       <div class="mp-env-kicker">结论</div>
       <div class="mp-env-hl">${t(i.headline)}</div>
       <div class="mp-env-row">
         <span class="mp-env-dir t-${l}">${t(o)}</span>
-        <span class="mp-env-conf">把握 ${t(Jt[i.confidence]||"中")}</span>
+        <details class="mp-env-confq">
+          <summary class="mp-env-conf">把握 ${t(Jt[i.confidence]||"中")}</summary>
+          <div class="mp-env-confq-body">${t(m)}</div>
+        </details>
         ${e.degraded?'<span class="mp-env-deg">已简化</span>':""}
       </div>
       ${i.condition?`<div class="mp-env-cond">${t(i.condition)}</div>`:""}
@@ -2156,7 +2165,7 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
       <div class="mp-env-f">${o}</div>
       ${l}${r}${c}${d}
     </div>`},n.interpretHTML=function(e,i){if(!e||!(e.dimensions&&e.dimensions.length||e.sections&&e.sections.length)&&!e.error&&!e.answer)return"";const l=!!(i&&i.folded),r=(e.dimensions||[]).map((f,j)=>`<div class="mp-it-dim${f.focused?" focus":""}">
-      <div class="mp-it-dh"><span class="mp-it-dno">${j+1}</span><span class="mp-it-dlabel">${t(f.label)}</span>${f.focused?'<span class="mp-it-focus">最贴近你的问题</span>':""}${f.confidence?`<span class="mp-it-conf c-${t(f.confidence)}">置信度 ${t(f.confidence)}</span>`:""}</div>
+      <div class="mp-it-dh"><span class="mp-it-dno">${j+1}</span><span class="mp-it-dlabel">${t(f.label)}</span>${f.focused?'<span class="mp-it-focus">最贴近你的问题</span>':""}${f.confidence?`<span class="mp-it-conf c-${t(f.confidence)}" title="这一维推演的稳定程度，不是这件事发生的概率">把握 ${t(f.confidence)}</span>`:""}</div>
       ${f.plain?`<div class="mp-it-dplain">${t(f.plain)}</div>`:""}
       <div class="mp-it-dtext">${t(f.text)}</div>
       ${f.evidence&&f.evidence.length?`<details class="mp-it-ev"><summary>依据 · ${t(f.evidence.length)} 条盘面事实</summary><div class="mp-it-ev-body">${f.evidence.map(M=>`<span class="mp-it-ev-item">${t(M)}</span>`).join("")}<span class="mp-it-ev-tech">技法：${t(e.technique||e.systemLabel||"")}</span></div></details>`:""}
@@ -2198,12 +2207,12 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.81.0",factory(ut){
         ${R}
         ${e.lead?`<div class="mp-it-lead">${t(e.lead)}</div>`:""}
         ${e.error?`<div class="mp-it-err">这段解读这次没生出来，盘面数据本身是好的${e.errorId?`（编号 ${t(e.errorId)}，反馈时报它）`:""}${window.__MPCompose&&window.__MPCompose.devOn&&window.__MPCompose.devOn()?`<details class="mp-it-errd"><summary>失败原因（只在开发者视图显示）</summary><code>${t(e.error)}</code></details>`:""}</div>`:""}
-    ${J}
-    ${c}
+        ${c}
         ${b}
         <div class="mp-it-body">${r}</div>
         ${q}
         ${v}
+        ${J}
         ${T}
         ${G}
         ${y}

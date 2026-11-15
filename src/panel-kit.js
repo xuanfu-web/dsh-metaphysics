@@ -561,6 +561,12 @@
 .mp-env-dir.t-alt{color:var(--env-alt)}
 .mp-env-dir.t-plain{color:var(--muted)}
 .mp-env-conf{color:var(--muted)}
+/* 把握的口径：点开才展开，但一定能问到。手机上 title 不显示，所以用 details 而不是 tooltip */
+.mp-env-confq{display:inline-block}
+.mp-env-confq>summary{cursor:pointer;list-style:none}
+.mp-env-confq>summary::-webkit-details-marker{display:none}
+.mp-env-confq>summary::after{content:' ?';color:var(--muted);font-size:11px}
+.mp-env-confq-body{margin-top:8px;padding:8px 10px;border-left:2px solid var(--line);font-size:12px;line-height:1.8;color:var(--muted);max-width:34em}
 .mp-env-deg{color:var(--env-warn)}
 .mp-env-cond{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.5px;line-height:1.7;color:var(--muted)}
 .mp-env{margin:0 0 14px}
@@ -3592,12 +3598,21 @@
     if (!env || !env.verdict || !env.verdict.headline) return '';
     const v = env.verdict;
     const [dl, dtone] = ENV_DIR[v.direction] || ENV_DIR.undetermined;
+    // 「把握 中」单独摆着没人知道是什么的把握：点开说清它是「规则推演的一致度」，
+    // 不是「这件事实际发生的概率」。这两件事混为一谈，命理就变成了许愿。
+    const evN = (env.evidence || []).length;
+    const fN = (env.factors || []).length;
+    const cfN = (env.conflicts || []).length;
+    const confWhy = `按 ${evN} 条盘面事实、${fN} 条关键因素推出来的${cfN ? `；其中 ${cfN} 处各家有分歧，已在文末标明` : ''}。把握说的是这套规则推得有多一致，不是这件事实际发生的概率。`;
     return `<div class="mp-env-head">
       <div class="mp-env-kicker">结论</div>
       <div class="mp-env-hl">${esc(v.headline)}</div>
       <div class="mp-env-row">
         <span class="mp-env-dir t-${dtone}">${esc(dl)}</span>
-        <span class="mp-env-conf">把握 ${esc(ENV_CONF[v.confidence] || '中')}</span>
+        <details class="mp-env-confq">
+          <summary class="mp-env-conf">把握 ${esc(ENV_CONF[v.confidence] || '中')}</summary>
+          <div class="mp-env-confq-body">${esc(confWhy)}</div>
+        </details>
         ${env.degraded ? '<span class="mp-env-deg">已简化</span>' : ''}
       </div>
       ${v.condition ? `<div class="mp-env-cond">${esc(v.condition)}</div>` : ''}
@@ -3656,7 +3671,7 @@
     if (!hasBody && !it.error && !it.answer) return '';
     const folded = !!(opt && opt.folded);
     const dims = (it.dimensions || []).map((d, i) => `<div class="mp-it-dim${d.focused ? ' focus' : ''}">
-      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}${d.confidence ? `<span class="mp-it-conf c-${esc(d.confidence)}">置信度 ${esc(d.confidence)}</span>` : ''}</div>
+      <div class="mp-it-dh"><span class="mp-it-dno">${i + 1}</span><span class="mp-it-dlabel">${esc(d.label)}</span>${d.focused ? '<span class="mp-it-focus">最贴近你的问题</span>' : ''}${d.confidence ? `<span class="mp-it-conf c-${esc(d.confidence)}" title="这一维推演的稳定程度，不是这件事发生的概率">把握 ${esc(d.confidence)}</span>` : ''}</div>
       ${d.plain ? `<div class="mp-it-dplain">${esc(d.plain)}</div>` : ''}
       <div class="mp-it-dtext">${esc(d.text)}</div>
       ${(d.evidence && d.evidence.length) ? `<details class="mp-it-ev"><summary>依据 · ${esc(d.evidence.length)} 条盘面事实</summary><div class="mp-it-ev-body">${d.evidence.map((x) => `<span class="mp-it-ev-item">${esc(x)}</span>`).join('')}<span class="mp-it-ev-tech">技法：${esc(it.technique || it.systemLabel || '')}</span></div></details>` : ''}
@@ -3745,6 +3760,8 @@
       </div></details>` : '';
     // L1+L2：结论之后的「为什么」，逐条自带依据，不做整块折叠
     const envBody = opt && opt.noBody ? '' : pp.envelopeHTML(pp.envFor(it, opt));
+    // 顺序按「看结论 → 看速览 → 看分维 → 看深究 → 最后才是导读与方法」：
+    // 三层导读（guide）原先排在速览表前面，用户要先滑过一个折叠块才看到表，挪到深究之后。
     return `<div class="mp-it${folded ? ' folded' : ''}">
       <button type="button" class="mp-it-head" aria-expanded="${folded ? 'false' : 'true'}">
         <span class="mp-it-arrow" aria-hidden="true">▾</span>
@@ -3762,12 +3779,12 @@
           (window.__MPCompose && window.__MPCompose.devOn && window.__MPCompose.devOn())
             ? `<details class="mp-it-errd"><summary>失败原因（只在开发者视图显示）</summary><code>${esc(it.error)}</code></details>`
             : ''}</div>` : ''}
-    ${guide}
-    ${outline}
+        ${outline}
         ${toc}
         <div class="mp-it-body">${dims}</div>
         ${secs}
         ${tables}
+        ${guide}
         ${fu}
         ${gloss}
         ${limits}
