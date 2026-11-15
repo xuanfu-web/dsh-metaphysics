@@ -1967,6 +1967,8 @@ const withReportMeta = (body, r, ask) => enrichPlain({
   ...body,
   moduleType: MODULE_TYPE[r.system] || 'natal',
   system: r.system,
+  // 没有判断可下的体系靠这张事实卡开场：结论卡的位置留给它，不然首屏仍是一屏表格
+  factHead: r.factHead || null,
   systemLabel: SYSTEM_LABEL[r.system] || r.system,
   title: '解析与详解',
   dimensions: (body.dimensions || []).map((d) => ({ ...d, confidence: d.confidence || confidenceOf(d) })),

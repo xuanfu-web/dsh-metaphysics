@@ -2696,7 +2696,7 @@ function App() {
         // 结论卡绝对最前（打开就看见判断）；其后才是盘面。句柄、影子盘、推导链、口径对照、耗时
         // 只在开发者视图出，用户视图里连生成都不生成——藏起来仍会被存长图与导出带出去。
         __html: composeOut({ // html-sink:ok 拼装入口，实参全是 *HTML() 渲染器的输出，本函数只排序与取舍
-          head: PP.envHeadHTML(result.it, { folded: defaultFolded() }),
+          head: PP.envHeadHTML(result.it, { folded: defaultFolded() }) || PP.factHeadHTML(result.r && result.r.factHead),
           body: PP.envBodyHTML(result.it, { folded: defaultFolded() }),
           chart: chartHTML(result),
           shortId: window.__MPCompose ? window.__MPCompose.shortIdHTML(result.r.shortId) : '',

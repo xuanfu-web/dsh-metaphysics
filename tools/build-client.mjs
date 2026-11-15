@@ -13,7 +13,7 @@ const unreleasedLine = () =>
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'index'];
+  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'headline', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -28,7 +28,8 @@ const ASK = ['followup'];
 const EVENT_PROMPT = ['qimen-prompt', 'event-prompt'];
 // 顶部人话总结：凡是要调 compute 的块都得带。漏了的块不报错，只会在结果里
 // 静默留一个 briefError（分块里 plainSummary 是 undefined）——第一屏直接消失。
-const BRIEF = ['plain-summary'];
+// headline 同理：没有 brief 的 10 个体系靠它出事实型头卡，漏了就是一张空白的顶。
+const BRIEF = ['plain-summary', 'headline'];
 // 八字栈：命盘类四 tab 的公共底子（紫微与合盘也是在它之上补模块，见 CHART_STACK）
 // 顶部人话总结：只有八字与紫微有，所以挂在这条栈上，不塞进 INTERPRET
 const BAZI_STACK = [...COMMON, 'shensha', 'tiaohou', 'qiongtong', 'structure', 'hehua', 'geju', 'bazi', 'bazi-words', 'classics', ...BRIEF, ...INTERPRET];

@@ -362,13 +362,23 @@ dev 段收进 `<details>` 仍留在 DOM 里，会被打印样式、存长图（`
 
 ## 9. 体系覆盖总账
 
+改版前：
+
 | 状态 | 体系 | 数量 |
 |---|---|---|
 | 真 adapter（direction / confidence 由盘面算，factors 带真 evidence） | 八字、紫微、六爻、奇门、塔罗 | 5 |
 | 有 brief 但落 defaultAdapter | 大六壬、梅花、合盘、趋势、体质、五运六气、太乙 | 7 |
 | 连 brief 都没有，不出结论卡 | 黄历、择日、称骨、小六壬、星座、数字、MBTI、风水、起名、公农历 | 10 |
 
-改造后：5 现成 + 3 补 adapter + 10 换头卡 + 4 归档（趋势/体质/五运六气/太乙维持现状，归判定类与问卷类）。
+改版后（第二批 2a/2b 落地后实测）：
+
+| 状态 | 体系 | 数量 |
+|---|---|---|
+| 真 adapter | 八字、紫微、六爻、奇门、塔罗、**大六壬、梅花、合盘** | 8 |
+| 事实型头卡（无 direction / confidence，只摊盘面事实） | 黄历、择日、称骨、小六壬、星座、数字、MBTI、风水、起名、公农历 | 10 |
+| 维持 defaultAdapter（有 brief，不另造判断） | 趋势、体质、五运六气、太乙 | 4 |
+
+维持 default 的四个是刻意不动：趋势是八字的下游产物、体质与 MBTI 同为自评问卷、五运六气与太乙的「主客算」本仓未收录——给它们编方向比留白更错。
 
 ---
 
@@ -386,13 +396,13 @@ dev 段收进 `<details>` 仍留在 DOM 里，会被打印样式、存长图（`
 
 ### 第二批 事实层
 
-**2a 补三个 adapter**（半天到一天）
-闸：`facts-only.test.mjs` 覆盖 8 个判定类；断言大六壬排盘后 `verdict.direction` 不恒为 `mixed`。
+**2a 补三个 adapter**（已落地）
+闸：大六壬、梅花、合盘三份真盘全部通过 `validateEnvelope`、不 degraded、`direction` 随盘变。落成 `test/adapters-extra.test.mjs`（77 条），比原计划更狠：把「空亡必 low + 必给条件句」「递生递克」「五种体用关系各自的建议」「三正三负」「不出现必配必离」都钉死了。
 
-**2b 十个换头卡**（一天）
-闸：`headline.test.mjs` 断言这 10 个体系的渲染结果不含 `把握`、`置信度`、`direction`、`mixed`，且每类头条非空。
+**2b 十个换头卡**（已落地）
+闸：`test/headline.test.mjs`（125 条）——10 个体系各一张卡、facts 1–3 条、键 ≤6 字、不含 `把握/置信/偏顺/偏卡/direction`、同一函数换日期头条会变、有 brief 的体系不再叠卡、缺数据返回 null 不给空壳。
 
-**2c 主力去重与章节改造**（最大头）
+**2c 主力去重与章节改造**（最大头，未做）
 `interpret.js` 137KB 的 sections 逐段改成引用事实层。按周算，和 adapter 是两件独立的事，不混批。
 
 ### 第三批 改序
@@ -439,4 +449,22 @@ dev 段收进 `<details>` 仍留在 DOM 里，会被打印样式、存长图（`
 - 盘号（`shortId`）进 `engine/diff.js:12` 的 `IGNORE_KEYS`。换口径、换版本必然换号，那是另一次排盘，不该算成「盘面动了一处」。
 
 闸：`check-patterns` 90 文件、`check-assertions` 184 文件 10434 PASS、`check-bundle` client.js 377KB / gzip 115KB（上限 128KB）、`check-html-sinks` 6 文件、`check-perf` 29 项、`test-all` 185/185（50.5s）。
+
+### 第二批（0.82.0-wip）2a + 2b 已落地，2c 未做
+
+| 条目 | 状态 | 落点 |
+|---|---|---|
+| P0-06a 三个 adapter | ✅ | `engine/envelope.js` 的 `daliurenAdapter` / `meihuaAdapter` / `hepanAdapter`，注册进 `ADAPTERS` |
+| P0-06b 白名单与口径 | ✅ | `FACTOR_WHITELIST` 加三组因子名；`SCHOOL` 加三条取用口径 |
+| P0-06c 十个事实型头卡 | ✅ | `engine/headline.js` 的 `factHeadline(r)` + `src/panel-kit.js` 的 `factHeadHTML` |
+| P1-36 两套头卡共用视觉 | ✅ | `factHeadHTML` 直接复用 `summaryHTML` 的 `mp-br` 版式，零新 CSS |
+| P0-06 剩余：主力去重 | 未做 | 2c，`engine/interpret.js` 的 sections 逐段改成引用事实层 |
+
+三个实现决定，同样别改回去：
+
+- 头卡只在**没有 brief** 时生成（`engine/index.js` 的 `if (r && !r.brief)`）。有信封的体系再用头卡就是同一份结论说两遍。
+- 头卡**绝不产出** `direction` / `confidence`。黄历没有顺不顺，称骨没有把握，硬造就是假的。
+- 头条的内容必须**随盘变**，这是测试钉死的一条（`test/headline.test.mjs` 第 ③ 组）。写死活字串的头卡等于装饰。
+
+闸：`check-patterns` 394 文件、`check-assertions` 187 文件 10700 PASS、`check-bundle` 各块 220–228KB / gzip 92–95KB、`check-html-sinks` 6 文件、`test-all` 187/187 三遍（51.1 / 51.5 / 52.2s）、页面 1753.4KB 且 `docs/index.html` 已同步。
 

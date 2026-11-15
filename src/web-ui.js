@@ -621,7 +621,8 @@
     }
     // 段序与取舍交给 __MPCompose：与宿主面板共用同一份，不再各自拼一遍
     el('out').innerHTML = window.__MPCompose.composeResult({ // html-sink:ok 拼装入口，以下每段都出自 *HTML() 渲染器或已转义文本
-      head: window.__PP.envHeadHTML(it, { folded: defaultFolded() }),
+      // 黄历、择日、称骨这类没有解读信封（连 it 都是 null），位置交给事实型头卡
+      head: window.__PP.envHeadHTML(it, { folded: defaultFolded() }) || window.__PP.factHeadHTML(last.r && last.r.factHead),
       body: window.__PP.envBodyHTML(it, { folded: defaultFolded() }),
       chart: last.html || '',
       shortId: window.__MPCompose.shortIdHTML(last.r.shortId),

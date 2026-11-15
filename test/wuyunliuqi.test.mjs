@@ -160,7 +160,8 @@ ok('独立页结果分派', /tab === 'wuyunliuqi' \? window\.__PP\.wuyunliuqiHTM
 ok('独立页快捷入口含它', /'constitution', 'wuyunliuqi', 'taiyi'\]/.test(UI));
 ok('分组卡片含它', /k: 'wuyunliuqi', label: '运气'/.test(GROUPS));
 ok('离线页有 tab 按钮', /data-tab="wuyunliuqi">运气</.test(HTML));
-ok('分块顺序在 index 之前', BC.indexOf("'wuyunliuqi'") > 0 && BC.indexOf("'wuyunliuqi'") < BC.indexOf("'plain-summary', 'index'"));
+ok('分块顺序在 index 之前', BC.indexOf("'wuyunliuqi'") > 0 && BC.indexOf("'wuyunliuqi'") < BC.indexOf("'index']"));
+
 ok('分块表有它', /wuyunliuqi: \{ tabs: \['wuyunliuqi'\]/.test(BC));
 
 // ── 十二、渲染层 ─────────────────────────────────────────────

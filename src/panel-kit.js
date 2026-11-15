@@ -3196,7 +3196,10 @@
    * 绝不让一块空方框留在页面上。各盘渲染时只写 pp.briefHTML(r)，不再各自判一次。
    */
   pp.briefHTML = function (r) {
-    return r && r.brief ? pp.summaryHTML(r.brief) : '';
+    if (!r) return '';
+    if (r.brief) return pp.summaryHTML(r.brief);
+    // 没有 brief 的体系给事实型头卡；两者都没有就留空，绝不留一块空方框
+    return pp.factHeadHTML(r.factHead);
   };
 
   /**
@@ -3246,6 +3249,24 @@
       ${adv}
       ${b.caveat ? `<p class="mp-br-cav">※ ${esc(b.caveat)}</p>` : ''}
       ${b.footer ? `<p class="mp-br-foot">${esc(b.footer)}</p>` : ''}
+    </section>`;
+  };
+
+  /**
+   * 事实型头卡：给没有判断可下的体系（黄历、择日、称骨、小六壬、星座、数字、人格、风水、起名、农历）。
+   *
+   * 与 summaryHTML 共用 mp-br 那一套版式——同一屏里两套卡片样式会让人以为它们是两种东西，
+   * 实际都是「上面那句话是这份结果的入口」。差别只在字段：这里没有 advice、没有方向，
+   * 只有头条 + 两三条盘面事实 + 一条注意。
+   */
+  pp.factHeadHTML = function (h) {
+    if (!h || !h.headline) return '';
+    const secs = (h.facts || []).map((x) => `<div class="mp-br-sec"><b>${esc(x.k)}</b><p>${esc(x.v)}</p></div>`).join('');
+    return `<section class="mp-br mp-fh" aria-label="先说结论">
+      <div class="mp-br-h"><b>${esc(h.kicker || '一览')}</b></div>
+      <p class="mp-br-lead">${esc(h.headline)}</p>
+      ${secs}
+      ${h.note ? `<p class="mp-br-cav">※ ${esc(h.note)}</p>` : ''}
     </section>`;
   };
 
@@ -3744,7 +3765,11 @@
 
   /** 结论卡单独取用：调用方要把它放在整个结果卡的最顶上（盘面、工具条都排它后面） */
   pp.envHeadHTML = function (it, opt) {
-    return pp.envelopeHeadHTML(pp.envFor(it, opt));
+    const env = pp.envFor(it, opt);
+    const html = env ? pp.envelopeHeadHTML(env) : '';
+    if (html) return html;
+    // 黄历、择日、称骨这类没有方向可判的体系没有信封，位置给事实型头卡
+    return pp.factHeadHTML(it && it.factHead);
   };
 
   /**

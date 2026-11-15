@@ -854,6 +854,14 @@ export function compute(input = {}) {
       if (brief) r.brief = brief;
     } catch (e) { r.briefError = String((e && e.message) || e); }
   }
+  // 没有判断可下的 10 个体系（黄历、择日、称骨、小六壬、星座、数字、人格、风水、起名、农历）
+  // 不编 direction，只把盘面事实摊成一句话。取不到就不给卡，失败也只记一笔。
+  if (r && !r.brief) {
+    try {
+      const head = factHeadline(r);
+      if (head) r.factHead = head;
+    } catch (e) { r.factHeadError = String((e && e.message) || e); }
+  }
   if (revision) r.revision = revision;
   if (r && r.system === 'bazi') {
     r.classics = classicsFor(r);
@@ -2251,6 +2259,7 @@ export { askLink, parseAskLink, formOf, restNote, askPackages };
 // （本仓 esbuild 不接受 `export {} from`，先静态 import 再 export）
 import { buildEventPrompt, ASK_KINDS } from './event-prompt.js';
 import { plainSummary } from './plain-summary.js';
+import { factHeadline } from './headline.js';
 export { buildEventPrompt, ASK_KINDS };
 
 
