@@ -186,10 +186,14 @@ function fitHeadline(text, fallback) {
 export function chartIdOf(r, opts = {}) {
   const system = one((r && r.system) || opts.system || 'unknown');
   const input = (r && r.input) || r || {};
+  // 出生类体系把年月日时放在 input.civil 里（真太阳时校正后的钟面值），平铺的旧口径也认。
+  // 只读顶层的话两张不同生日的盘会算出同一个 id，缓存随之串盘——结论卡挂在上一张盘上。
+  const civ = (input && input.civil) || {};
+  const pick = (k) => (input[k] != null ? input[k] : civ[k]);
   const key = [
     system,
-    input.year, input.month, input.day, input.hour, input.minute,
-    input.gender, input.datetime, input.leapMonth,
+    pick('year'), pick('month'), pick('day'), pick('hour'), pick('minute'),
+    pick('gender'), pick('datetime'), pick('leapMonth'),
     (r && r.seed) != null ? r.seed : '',
     (r && r.cast && Array.isArray(r.cast.lines)) ? r.cast.lines.join('') : '',
     one(opts.question || (r && r.question) || ''),
@@ -588,7 +592,11 @@ function baziAdapter(r, opts) {
   const direction = cur ? dirSum(sum) : 'undetermined';
   const confidence = cur ? confOf(sum) : 'low';
 
-  const needEl = one(cl.need && cl.need.element) || favor[0] || '';
+  // 调候只在 priority 判到「调候优先」时才配当取用方向。气候幅度没到失衡时，
+  // 它要的元素（湿滞→丙火）常与扶抑喜忌正好相反，直接拿去写 headline 就会出现
+  // 「宜取火」和用神行「忌火」并排的死结——用户只会更糊涂。
+  const softClimate = !!(cl.need && one(cl.need.element) && cl.priority !== '调候优先');
+  const needEl = softClimate ? (favor[0] || '') : (one(cl.need && cl.need.element) || favor[0] || '');
   const climateKind = one(cl.kind) || '气候平和';
   const curGz = cur ? one(cur.ganzhi) : '当前';
   const tail = sum > 0 ? '助力，可往前推一步' : sum < 0 ? '偏耗，先守住再图进' : '一助一耗，边做边看条件';
@@ -637,7 +645,7 @@ function baziAdapter(r, opts) {
   if (next) timeline.push({ window: `${one(next.fromDate).slice(0, 10)} 起`, pace: '换挡', note: `换${one(next.ganzhi)}运，前后半年先收口` });
 
   const advice = [
-    `盯住${needEl || favor[0] || '平衡'}这个方向，别反着加${one(cl.avoidElement) || avoid[0] || '同类'}`,
+    `盯住${needEl || favor[0] || '平衡'}这个方向，别反着加${softClimate ? (avoid[0] || '同类') : (one(cl.avoidElement) || avoid[0] || '同类')}`,
     '把手上三件事排个先后，别同时推',
   ];
   if (next) advice.push(`换 ${one(next.ganzhi)} 运前半年先收尾，别接太重的活`);
@@ -645,13 +653,15 @@ function baziAdapter(r, opts) {
   return {
     verdict: { headline, direction, confidence, condition: direction === 'mixed' || confidence === 'low' ? `若${needEl || favor[0] || '平衡'}这条线能补上，则推进才稳` : '' },
     factors, timeline, advice,
-    risk: `${one(cl.avoidElement) || avoid[0] || '同类'}太重时容易白耗力气`,
+    risk: `${softClimate ? (avoid[0] || '同类') : (one(cl.avoidElement) || avoid[0] || '同类')}太重时容易白耗力气`,
     evidence,
     conflicts: [
       { id: 'c-quming', topic: '用神取法', views: [
-        { school: '调候优先', stance: `先按${climateKind}补气候，取 ${needEl || '—'}` },
+        { school: '调候优先', stance: `先按${climateKind}补气候，取 ${one(cl.need && cl.need.element) || '—'}` },
         { school: '扶抑为主', stance: `按强弱补泄，取 ${favor.join('') || '—'}` },
-      ], note: '两条路结论相同时最稳；相冲时本插件以调候为先，再拿扶抑校验' },
+      ], note: softClimate
+        ? '两条路在本盘不同向；气候幅度没到失衡，本插件仍以扶抑为先，调候只作环境偏好'
+        : '两条路结论相同时最稳；相冲时本插件以调候为先，再拿扶抑校验' },
     ],
   };
 }

@@ -16,3 +16,14 @@ client.*.js text eol=lf
 *.mjs text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+
+# 2026-11-15：*.html 与 *.svg 原来漏在外面。产物里除 index.html 与命理排盘.html 之外还有
+# docs/verification.html、docs/citations.html、docs/assets/verification-badge.svg，
+# 它们的测试断言是「磁盘内容 === 生成器输出」的逐字节/逐字符比较。core.autocrlf=true 的机器
+# 一 checkout 就把这些文件转成 CRLF，比生成器的 LF 多出行数个字符，在别人机器/CI/新 worktree 上必红
+# （本地主工作区因为刚被生成器写过，是 LF，所以看不到）。2026-11-15 就是这样把一次 195/196
+# 误判成「漏最后重建」，实际差 5715 个字符 = 5715 行。
+*.html text eol=lf
+*.svg text eol=lf
+*.css text eol=lf
+*.txt text eol=lf

@@ -475,7 +475,9 @@ function baziInterpret(r) {
         const th = ys.tiaohou && ys.tiaohou.need ? ys.tiaohou : null;
         if (th) {
           out.push(th.clash
-            ? `调候要${th.need.stem}${th.need.element}，扶抑不在喜用里：两套取法有分歧，本盘按调候优先——寒暖失衡时，再补强弱也难受。`
+            ? (th.priority === '调候优先'
+              ? `调候要${th.need.stem}${th.need.element}，扶抑不在喜用里：两套取法有分歧，本盘按调候优先——寒暖失衡时，再补强弱也难受。`
+              : `调候倾向${th.need.stem}${th.need.element}，扶抑喜忌里没有它：两派有分歧，但这一盘气候幅度没到失衡，仍按扶抑取用，${th.need.element}只作环境偏好。`)
             : `调候要${th.need.stem}${th.need.element}，与扶抑用神同向：取用上不打架，${th.need.element}相关的行业与环境优先。`);
         }
         return out.join('　');
@@ -490,8 +492,12 @@ function baziInterpret(r) {
     ...(cli ? [{
       key: 'climate', label: '寒暖燥湿',
       text: `${cli.narration}${cli.need
-        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}${disputed.some((d) => d.element === cli.avoidElement) ? '（有争议：该行在扶抑中为喜，见用神节）' : ''}；${cli.clash ? '与扶抑冲突，本盘以调候为先' : disputed.some((d) => d.element === cli.avoidElement) ? '调候所忌在扶抑里为喜，两说并存' : '与扶抑同向'}`
+        ? `调候取${cli.need.stem}${cli.need.element}，忌${cli.avoidElement}${disputed.some((d) => d.element === cli.avoidElement) ? '（有争议：该行在扶抑中为喜，见用神节）' : ''}；${cli.clash ? (cli.priority === '调候优先' ? '与扶抑冲突，本盘以调候为先' : '与扶抑不同向，但气候幅度未到失衡，本盘仍以扶抑为先') : disputed.some((d) => d.element === cli.avoidElement) ? '调候所忌在扶抑里为喜，两说并存' : '与扶抑同向'}`
         : '气候平和，调候不作主取'}。`,
+    }] : []),
+    ...(ys.tactics ? [{
+      key: 'tactics', label: '取用手法',
+      text: `${ys.tactics.name}：${ys.tactics.tip}。要注意${ys.tactics.caveat}。判据——${ys.tactics.basis}。`,
     }] : []),
     ...(ys.qt ? [{
       key: 'qiongtong', label: '穷通宝鉴',

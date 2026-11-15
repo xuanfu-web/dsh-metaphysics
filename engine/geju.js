@@ -664,10 +664,74 @@ export function xianshenOf({ dayStem, wuxing = {}, pillars = {}, yongshen = {} }
   };
 }
 
+// ── 取用手法（组合层）───────────────────────────────────────
+// 扶抑只回答「往哪边走省力」，不回答「官杀压身时该硬制还是该化」。
+// 这两条路对同一张盘给的是相反建议：食神制杀是「身扛得住才用」，杀印相生是
+// 「身扛不住才用」。只按局里真有的十神分量判一条出来；缺项就不给，不乱并列。
+const r1 = (x) => Math.round((Number(x) || 0) * 10) / 10;
+export function tacticsOf({ strength = {}, gods = {} } = {}) {
+  const g = (gods && (gods.groups || gods)) || {};
+  const yin = r1(g.印);
+  const sha = r1(g.官杀);
+  const shi = r1(g.食伤);
+  const cai = r1(g.财);
+  const bi = r1(g.比劫);
+  const help = r1(bi + yin);
+  const drain = r1(shi + cai + sha);
+  const level = strength.level || '';
+  // 中和盘不按标签硬分强弱，按十神净帮扶定倾斜方向——这是能摆出来复算的判据
+  const lean = /身强|偏强/.test(level) ? 'strong'
+    : /身弱|偏弱/.test(level) ? 'weak'
+      : help >= drain ? 'strong' : 'weak';
+  const basis = `帮扶（比劫${bi}+印${yin}）${help} 对 耗泄（食伤${shi}+财${cai}+官杀${sha}）${drain}；` +
+    (level ? `旺衰判「${level}」，` : '') + `取向按${lean === 'weak' ? '偏耗' : '偏帮'}看`;
+
+  let out = null;
+  if (sha >= 0.9 && lean === 'weak') {
+    out = yin >= 0.5
+      ? {
+        key: 'sha-yin', name: '杀印相生', use: '印',
+        tip: `官杀 ${sha} 压身、局中印 ${yin} 能化：把压力换成名分与靠山，比硬碰省力`,
+        caveat: '印要有实体（师承、资质、体系里的位置），虚名不算',
+      }
+      : {
+        key: 'shi-sha', name: '食伤制杀（局中无印可化）', use: '食伤',
+        tip: `官杀 ${sha} 压身而印近零，只能拿食伤 ${shi} 去硬制——制得住，但吃的是自己的力气`,
+        caveat: '硬制耗身，能补印就别长期硬碰；制杀要留余地，别把话说满',
+      };
+  } else if (sha >= 0.9 && lean === 'strong') {
+    out = shi >= 0.6
+      ? {
+        key: 'shi-sha', name: '食神制杀', use: '食伤',
+        tip: `身能扛、官杀 ${sha} 旺，食伤 ${shi} 制之有馀：压力可以转成产出`,
+        caveat: '制过头就成了伤官见官，位子越高越要收口',
+      }
+      : {
+        key: 'cai-guan', name: '财生官杀（无食伤可制）', use: '财',
+        tip: `官杀 ${sha} 旺而食伤只有 ${shi}：走财生官的路，用资源换位置`,
+        caveat: '财去生杀也耗身，别拿超出承受范围的资源去换',
+      };
+  } else if (shi >= 1.8 && lean === 'weak' && yin >= 0.5) {
+    out = {
+      key: 'shang-yin', name: '伤官配印', use: '印',
+      tip: `食伤 ${shi} 泄身过头，印 ${yin} 把它收住：才华要有出处才落得住`,
+      caveat: '印压太重会闷，别净用规矩管自己',
+    };
+  } else if (cai >= 0.9 && lean === 'weak' && bi >= 1) {
+    out = {
+      key: 'bi-cai', name: '比劫帮身任财', use: '比劫',
+      tip: `财 ${cai} 在前、身不够担，靠比劫 ${bi} 结伴一起扛，别一个人吃下`,
+      caveat: '比劫同时分账，合作先把规矩讲死',
+    };
+  }
+  if (!out) return null;
+  return { ...out, lean, basis, note: '按局中十神分量定一条取用手法，不并列两说；分量不到就不给' };
+}
+
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
 
 
-function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
+function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods = null) {
   const roles = elementRoles(dayStem);
   const me = roles.me;
   const weak = strength.level === '身弱' || strength.level === '偏弱';
@@ -723,6 +787,8 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     .map((el) => ({ element: el, role: roleName(el), verb: ROLE_VERB[roleName(el)], weight: weightOf(el) }));
   const neutralTenGods = Array.from(new Set(neutral.flatMap((n) => expand[n.role] || [])));
   const tongguan = tongguanOf(favor, avoid, wuxing);
+  // 取用手法：官杀压身时「硬制还是化」的分野，见 tacticsOf
+  const tactics = gods ? tacticsOf({ strength, gods }) : null;
 
   const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
   const disputedText = disputed
@@ -736,7 +802,11 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
       : '',
     disputed.length ? `有争议：${disputedText}。` : '',
     !weak && !strong ? '身中和，先取调候与通关，喜忌随大运流年动态变化。' : '',
-    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}${disputed.some((d) => d.element === climate.avoidElement) ? '（有争议）' : ''}` : '，气候平和'}。`,
+    `调候：${climate.label}（${(climate.evidence || []).join('、')}）${climate.need
+      ? (climate.priority === '调候优先'
+        ? `，取${climate.need.stem}${climate.need.element}，忌${climate.avoidElement}${disputed.some((d) => d.element === climate.avoidElement) ? '（有争议）' : ''}`
+        : `，倾向${climate.need.stem}${climate.need.element}（幅度未到失衡，不作主取），忌${climate.avoidElement}亦从扶抑`)
+      : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
     tongguan
       ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
@@ -747,8 +817,13 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
             ? `${tongguan.bridge} ${tongguan.weight} 分但此行为忌，通关力打折`
             : `未见${tongguan.bridge}，关未通`}（只作结构提示，不据此断吉凶）。`
       : '',
+    tactics ? `取用手法：${tactics.name}——${tactics.tip}（${tactics.caveat}）。判据：${tactics.basis}。` : '',
     arb.text,
-    arb.clash ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。' : '',
+    arb.clash
+      ? (climate.priority === '调候优先'
+        ? '取舍：本盘按「调候优先、扶抑次之」取用；若你更认同扶抑派，可把调候当环境偏好，强弱判断不受影响。'
+        : `取舍：调候倾向${climate.need.stem}${climate.need.element}，扶抑喜忌里没有它；但这一盘气候幅度未到失衡，本盘以扶抑为主，只把${climate.need.element}当环境偏好——两种读法都站得住，分歧记在这里。`)
+      : '',
   ].filter(Boolean).join('');
 
   return {
@@ -769,6 +844,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = []) {
     climate,
     qt,
     tongguan,
+    tactics,
     detail,
   };
 }
@@ -1066,7 +1142,7 @@ export function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxi
   }
   const special = specialPatterns(pillars, dayStem, monthBranch, strength, wuxing, gods);
   const geju = [month, ...special];
-  const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing, Object.values(pillars).map((p) => p.branch));
+  const yongshen = yongshenOf(dayStem, monthBranch, strength, wuxing, Object.values(pillars).map((p) => p.branch), gods);
   // 病药：只读标注，复用上面的喜忌，不改结论
   const bingyao = bingyaoOf({ dayStem, strength, wuxing, yongshen, geju });
   // 闲神：只读标注

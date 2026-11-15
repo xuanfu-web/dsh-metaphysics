@@ -178,7 +178,7 @@ export function judgeClimate({ monthBranch, dayStem, wuxing = {}, branches = [] 
   ].filter(Boolean);
 
   const priority = Math.abs(temp) >= 1.2 || Math.abs(damp) >= 1.2 ? '调候优先' : '扶抑为主';
-  const narration = buildNarration({ kind, monthBranch, dayElement, need, temp, damp, fire, water });
+  const narration = buildNarration({ kind, monthBranch, dayElement, need, temp, damp, fire, water, priority });
 
   return {
     kind,
@@ -198,7 +198,7 @@ export function judgeClimate({ monthBranch, dayStem, wuxing = {}, branches = [] 
   };
 }
 
-function buildNarration({ kind, monthBranch, dayElement, need, fire, water }) {
+function buildNarration({ kind, monthBranch, dayElement, need, fire, water, priority }) {
   const feel = (DAY_FEEL[kind] || DAY_FEEL.平和)[dayElement] || '';
   const season = SEASON_NAME[monthBranch] || '';
   const head = `${season ? season : ''}${monthBranch}月出生，全局火${fire}、水${water}，这一盘的气候是「${KIND_NAME[kind] || kind}」`;
@@ -207,6 +207,11 @@ function buildNarration({ kind, monthBranch, dayElement, need, fire, water }) {
   }
   // 「不该再多的是什么」按 NEED 的忌神填，不按档名猜：猜「寒→水、其它→火」时，
   // 湿滞（忌水、取丙火）会念成「要的不是更多的火，而是丙火」。
+  // 但只有 priority 真判到「调候优先」才敢说「这一局要的就是它」：否则用神行写着
+  // 「忌火」，正文却说「最需要火」，同一份输出自相矛盾，用户只能来问到底补不补。
+  if (priority !== '调候优先') {
+    return `${head}。${feel}。气候上偏${need.element}（${need.why}），但寒暖燥湿的幅度没到要优先处理，${need.stem}${need.element}只作环境偏好，取用仍按扶抑走。`;
+  }
   return `${head}。${feel}。所以这一局要的不是更多的${need.avoid}，而是${need.stem}${need.element}——${need.why}。`;
 }
 
@@ -218,6 +223,16 @@ export function arbitrate(climate, favors = [], avoids = []) {
   const inAvoid = avoids.includes(needEl);
   const same = inFavor && !inAvoid;
   if (same) return { clash: false, text: `调候要${climate.need.stem}${needEl}，扶抑也以${needEl}为喜——两套取法同向，不必取舍。` };
+  // 裁决措辞必须由 priority 派生。气候幅度未到失衡时（priority='扶抑为主'），
+  // geju 的 method 写「扶抑为主 + 调候校验」，若这里仍断言「本盘按调候优先取X」，
+  // 同一份输出就出现两套相反的裁决——已被真实用户问过「到底该补哪个」。
+  if (climate.priority !== '调候优先') {
+    return {
+      clash: true,
+      soft: true,
+      text: `调候倾向${climate.need.stem}${needEl}（${climate.need.why}），扶抑却把${needEl}列为${inAvoid ? '忌' : '闲'}；但这一盘寒暖燥湿的幅度没到失衡，取用仍以扶抑为主，${needEl}只作环境偏好——两派分歧摆在这里，不必强行统一。`,
+    };
+  }
   return {
     clash: true,
     text: `调候要${climate.need.stem}${needEl}，扶抑却把${needEl}列为${inAvoid ? '忌' : '闲'}；两者不一致，本盘按调候优先取${needEl}，扶抑次之——因为寒暖失衡时，再补强弱也难受。`,
@@ -229,7 +244,9 @@ export function climateText(climate) {
   if (!climate) return '';
   const ev = (climate.evidence || []).join('、');
   const arb = climate.need
-    ? `调候取${climate.need.stem}${climate.need.element}（${climate.need.why}），忌${climate.avoidElement}。`
+    ? (climate.priority === '调候优先'
+      ? `调候取${climate.need.stem}${climate.need.element}（${climate.need.why}），忌${climate.avoidElement}。`
+      : `调候偏好${climate.need.stem}${climate.need.element}（${climate.need.why}），幅度未到失衡，此处不作主取。`)
     : '气候平和，调候不作主取。';
   return `${climate.label}（${ev}）。${climate.narration}${arb}${climate.priority === '调候优先' ? ' 本盘调候优先于扶抑。' : ''}`;
 }
