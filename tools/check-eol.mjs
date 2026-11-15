@@ -31,6 +31,17 @@ export const TARGETS = [
 
 export const REQUIRED_ATTRS = ['*.html', '*.svg', '*.js', '*.mjs', '*.json', '*.md', '*.yml'];
 
+// 兜底规则 `* text=auto eol=lf` 必须在。没有它就只能靠逐个扩展名补，
+// 而 2026-11-15 一天里就漏了三次（html/svg、yml、webmanifest）。
+export function hasGlobalRule(attrText) {
+  return String(attrText).split('\n').some((line) => {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) return false;
+    const parts = t.split(/\s+/);
+    return parts[0] === '*' && parts.includes('eol=lf');
+  });
+}
+
 // 纯函数：喂文本，返回问题列表。测试靠它，不用造真文件。
 export function scanText(rel, text, bytes) {
   const problems = [];
@@ -71,7 +82,11 @@ export function checkAll(root) {
   if (!fs.existsSync(attrPath)) {
     problems.push('.gitattributes 不存在——新 checkout 会按本机 core.autocrlf 决定行尾');
   } else {
-    for (const pat of missingAttrs(fs.readFileSync(attrPath, 'utf8'))) {
+    const attrText = fs.readFileSync(attrPath, 'utf8');
+    if (!hasGlobalRule(attrText)) {
+      problems.push('.gitattributes 缺少兜底规则「* text=auto eol=lf」——没有它就得逐个扩展名补，漏一个就是一次换机器才炸的差异');
+    }
+    for (const pat of missingAttrs(attrText)) {
       problems.push(`.gitattributes 缺少「${pat} text eol=lf」——这类文件在 autocrlf=true 的机器上会被 checkout 成 CRLF`);
     }
   }

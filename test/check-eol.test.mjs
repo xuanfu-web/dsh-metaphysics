@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { ok, eq } from './_harness.mjs';
-import { TARGETS, REQUIRED_ATTRS, scanText, missingAttrs, checkAll } from '../tools/check-eol.mjs';
+import { TARGETS, REQUIRED_ATTRS, scanText, missingAttrs, hasGlobalRule, checkAll } from '../tools/check-eol.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -45,6 +45,13 @@ eq('缺 *.svg 会被点名', missingAttrs(goodAttr.replace('*.svg text eol=lf\n'
 eq('写了规则但没 eol=lf 也算缺', missingAttrs(goodAttr.replace('*.html text eol=lf', '*.html text')).join(','), '*.html');
 eq('注释行里的规则不算数', missingAttrs('# *.html text eol=lf\n').length, REQUIRED_ATTRS.length);
 eq('换行符为 CRLF 的 .gitattributes 也能解析', missingAttrs(goodAttr.replace(/\n/g, '\r\n')).length, 0);
+
+// 兜底规则：一天里漏了三次（html/svg、yml、webmanifest），逐个补扩展名等于等下一次漏
+ok('认得出兜底规则 * text=auto eol=lf', hasGlobalRule('* text=auto eol=lf\n'));
+ok('认得出 * text eol=lf 写法', hasGlobalRule('* text eol=lf\n'));
+ok('只有 * text=auto（缺 eol=lf）不算', !hasGlobalRule('* text=auto\n'));
+ok('注释里的兜底规则不算数', !hasGlobalRule('# * text=auto eol=lf\n'));
+eq('真仓库有兜底规则', hasGlobalRule(fs.readFileSync(path.join(root, '.gitattributes'), 'utf8')), true);
 
 // ---- 三、真仓库：产物清单与规则 ----
 ok('登记表含 verification.html', TARGETS.includes('docs/verification.html'));
