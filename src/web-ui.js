@@ -1166,7 +1166,11 @@
     if (tab === 'mbti') { mbSubmit(); return; }
     if (tab === 'constitution') { csSubmit(); return; }
     const k = kindOf(tab);
-    if (k !== 'none' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
+    // 只有起卦类（六爻/奇门/塔罗/梅花/小六壬…）才「没手动填就取当下」——
+    // 起卦问的是此刻的场，补当下是对的。
+    // 命盘类（八字/紫微/合盘）与日期类（黄历/择日/农历）不能这样补：
+    // 页面上明明写着 1990-05-12，点一下排盘却按今天算，用户看到的和排到的不是一个东西。
+    if (k === 'cast' && usesTimeInput() && !manual[k]) fillDateTime(nowParts());
     run();
   }
 

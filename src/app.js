@@ -1570,7 +1570,9 @@ function App() {
       run(tab);
       return;
     }
-    if (timeKind !== 'none' && !manual[timeKind]) {
+    // 只有起卦类补当下；命盘类与日期类按表单里显示的值算，
+    // 否则「写 1990-05-12、点一下排成今天」——看到的和排到的不是一个东西
+    if (timeKind === 'cast' && !manual[timeKind]) {
       const t = nowParts();
       setDate(t.date);
       setTime(t.time);
