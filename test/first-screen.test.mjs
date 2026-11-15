@@ -61,6 +61,10 @@ ok('问卷不进历史（答案只在内存里，恢复不回来）',
   /if \(t === 'mbti' \|\| t === 'constitution'\) return;/.test(ui));
 ok('记录里存这次的表单值', /const args = collectArgs\(\)/.test(ui) && /const item = \{ tab: t, at: Date\.now\(\), args, shortId \}/.test(ui));
 ok('盘号剥掉 LY- 前缀（与结果页显示一致）', /replace\(\/\^LY-\/, ''\)/.test(ui));
+// 只收当前体系看得见的控件：否则切到黄历后，历史条目里还带着上一次排八字的性别与出生地
+ok('收集表单值只收可见控件', /if \(!n\.getClientRects\(\)\.length\) return;/.test(ui));
+ok('可见性判定在读值之前',
+  ui.indexOf('if (!n.getClientRects().length) return;') < ui.indexOf('out[n.id] = v.slice(0, 120)'));
 ok('点回来是按那次的条件再排一遍，不是只切 tab',
   /setTab\(x\.tab\);\s*applyArgs\(x\.args\);\s*run\(\);/.test(ui));
 ok('单条可删', /className = 'rc-del'/.test(ui) && /y\.tab === x\.tab && y\.at === x\.at/.test(ui));

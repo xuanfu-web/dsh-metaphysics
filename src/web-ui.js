@@ -103,11 +103,20 @@
   const VIEW_KEY = 'mp.first.view';
   const RECENT_MAX = 6;
 
-  /** 收集这次排盘的输入：按控件 id 存，表单新增字段自动带上，不用维护白名单 */
+  /**
+   * 收集这次排盘的输入：按控件 id 存，表单新增字段自动带上，不用维护白名单。
+   *
+   * 只收**当前体系看得见**的控件。切到黄历后再点「存卦例」，DOM 里还留着上一次
+   * 排八字填的性别、出生地、晚子时换日——不收这道闸，深链和历史条目里就会带着
+   * 一堆这张盘根本没用过的参数，回填时还会把别的体系的输入改掉。
+   * 可见性用 getClientRects()：`.grp` 是 display:contents（自身没有盒子，
+   * offsetParent 靠不住），父级 display:none 时子树一个矩形都拿不到。
+   */
   function collectArgs() {
     const out = {};
     document.querySelectorAll('.bar input, .bar select, .bar textarea').forEach((n) => {
       if (!n.id) return;
+      if (!n.getClientRects().length) return;
       if (n.type === 'checkbox') { if (n.checked) out[n.id] = true; return; }
       const v = String(n.value == null ? '' : n.value);
       if (v) out[n.id] = v.slice(0, 120);

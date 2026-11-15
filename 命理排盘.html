@@ -735,7 +735,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：195 个测试文件 / 10958 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：195 个测试文件 / 10960 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -41041,11 +41041,20 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   const VIEW_KEY = 'mp.first.view';
   const RECENT_MAX = 6;
 
-  /** 收集这次排盘的输入：按控件 id 存，表单新增字段自动带上，不用维护白名单 */
+  /**
+   * 收集这次排盘的输入：按控件 id 存，表单新增字段自动带上，不用维护白名单。
+   *
+   * 只收**当前体系看得见**的控件。切到黄历后再点「存卦例」，DOM 里还留着上一次
+   * 排八字填的性别、出生地、晚子时换日——不收这道闸，深链和历史条目里就会带着
+   * 一堆这张盘根本没用过的参数，回填时还会把别的体系的输入改掉。
+   * 可见性用 getClientRects()：`.grp` 是 display:contents（自身没有盒子，
+   * offsetParent 靠不住），父级 display:none 时子树一个矩形都拿不到。
+   */
   function collectArgs() {
     const out = {};
     document.querySelectorAll('.bar input, .bar select, .bar textarea').forEach((n) => {
       if (!n.id) return;
+      if (!n.getClientRects().length) return;
       if (n.type === 'checkbox') { if (n.checked) out[n.id] = true; return; }
       const v = String(n.value == null ? '' : n.value);
       if (v) out[n.id] = v.slice(0, 120);
