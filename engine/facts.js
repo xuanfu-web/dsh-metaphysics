@@ -279,7 +279,69 @@ function qimenFacts(r, env, list) {
   mergeEvidence(env, list);
 }
 
-const BUILDERS = { bazi: baziFacts, ziwei: ziweiFacts, liuyao: liuyaoFacts, qimen: qimenFacts };
+// 塔罗：事实是「哪张牌落在哪个位置、正逆如何」——解读全靠这个，牌义本身不算事实。
+function tarotFacts(r, env, list) {
+  const cards = Array.isArray(r.cards) ? r.cards : [];
+  if (one(r.spread)) add(list, 'f-tarot-spread', '牌阵', one(r.spread), '牌阵');
+  if (cards.length) {
+    add(list, 'f-tarot-cards', '牌位', cards.map((c) => `${one(c.position)} ${one(c.name)}${c.orientation ? `（${one(c.orientation)}）` : ''}`).join('｜'), '牌位');
+  }
+  const rev = cards.filter((c) => c && c.upright === false);
+  if (cards.length) add(list, 'f-tarot-orient', '正逆', [`共 ${cards.length} 张`, `${cards.length - rev.length} 正`, `${rev.length} 逆`].filter(Boolean).join('｜'), '牌位');
+  const suits = [];
+  for (let i = 0; i < cards.length; i += 1) {
+    const c = cards[i] || {};
+    if (one(c.suit)) suits.push(`${one(c.suit)}（${one(c.element)}）`);
+  }
+  if (suits.length) add(list, 'f-tarot-suits', '花色元素', suits.join('、'), '牌位');
+  if (one(r.castAt)) add(list, 'f-tarot-cast', '抽牌时刻', one(r.castAt), '盘面');
+  mergeEvidence(env, list);
+}
+
+// 大六壬：四课三传是这张盘的全部结构，事实就照这四样摆，不掺判断。
+function daliurenFacts(r, env, list) {
+  add(list, 'f-daliuren-day', '日辰', [one(r.dayGanZhi), one(r.hourZhi) ? `${one(r.hourZhi)}时` : '', one(r.dayNight)].filter(Boolean).join('｜'), '日辰');
+  const yj = r.yueJiang || {};
+  const gr = r.guiren || {};
+  add(list, 'f-daliuren-yuejiang', '月将贵人', [one(yj.name) ? `月将 ${one(yj.name)}（${one(yj.zhi)}）` : '', one(gr.zhi) ? `贵人 ${one(gr.zhi)}${gr.reverse ? '（逆行）' : '（顺行）'}` : ''].filter(Boolean).join('｜'), '盘面');
+  const sike = Array.isArray(r.siKe) ? r.siKe : [];
+  if (sike.length) {
+    add(list, 'f-daliuren-sike', '四课', sike.map((k) => `${num(k.position)} ${one(k.shang)}/${one(k.xia)} ${one(k.jiangFull)} ${one(k.relation)}`).join('｜'), '四课');
+  }
+  const sc = r.sanChuan || {};
+  const tri = ['chu', 'zhong', 'mo'].map((k) => sc[k]).filter(Boolean);
+  if (tri.length) {
+    add(list, 'f-daliuren-sanchuan', '三传', tri.map((t) => `${one(t.position)} ${one(t.zhi)} ${one(t.liuQin)} ${one(t.jiangFull)}${t.xunKong ? '（空亡）' : ''}`).join('｜'), '三传');
+  }
+  const gj = r.geJu || {};
+  if (one(gj.name)) add(list, 'f-daliuren-geju', '课体', [one(gj.name), one(gj.detail)].filter(Boolean).join('｜'), '课体');
+  const ss = Array.isArray(r.shensha) ? r.shensha : [];
+  if (ss.length) add(list, 'f-daliuren-shensha', '神煞', ss.map((s) => `${one(s.name)}${one(s.branch)}`).join('、'), '神煞');
+  mergeEvidence(env, list);
+}
+
+// 梅花：体用是判断轴心，卦象是过程与结果，事实按这四块摆。
+function meihuaFacts(r, env, list) {
+  const ben = r.ben || {};
+  const hu = r.hu || {};
+  const bian = r.bian || {};
+  add(list, 'f-meihua-ben', '本卦', [one(ben.name), one(ben.upper) && `${one(ben.upper)}上${one(ben.lower)}下`, one(ben.element)].filter(Boolean).join('｜'), '卦象');
+  if (one(hu.name)) add(list, 'f-meihua-hu', '互卦', [one(hu.name), one(hu.element)].filter(Boolean).join('｜'), '卦象');
+  if (one(bian.name)) add(list, 'f-meihua-bian', '变卦', [one(bian.name), one(bian.element)].filter(Boolean).join('｜'), '卦象');
+  const bu = r.bodyUse || {};
+  const bd = bu.body || {};
+  const us = bu.use || {};
+  if (one(bd.trigram) || one(us.trigram)) {
+    add(list, 'f-meihua-tiyong', '体用', [`体 ${one(bd.trigram)}（${one(bd.element)}）`, `用 ${one(us.trigram)}（${one(us.element)}）`, one(bu.relation), one(bu.level)].filter(Boolean).join('｜'), '体用');
+  }
+  if (num(r.moving) !== null) add(list, 'f-meihua-moving', '动爻', [one(r.movingName) || `${num(r.moving)} 爻`, one(r.source)].filter(Boolean).join('｜'), '卦象');
+  mergeEvidence(env, list);
+}
+
+const BUILDERS = {
+  bazi: baziFacts, ziwei: ziweiFacts, liuyao: liuyaoFacts, qimen: qimenFacts,
+  tarot: tarotFacts, daliuren: daliurenFacts, meihua: meihuaFacts,
+};
 export function buildFacts(r, env) {
   const list = [];
   if (!r || typeof r !== 'object') return list;
@@ -376,6 +438,26 @@ export const SECTION_REFS = {
     ganying: ['f-qimen-palaces', 'f-qimen-kongma'],
     states: ['f-qimen-states'],
     tendency: ['f-qimen-zhifu', 'f-qimen-zhishi', 'f-qimen-kongma'],
+  },
+  // 塔罗：叙述引牌位，结构引正逆与花色。牌义解释是推演，不进事实层。
+  tarot: {
+    narrative: ['f-tarot-cards', 'f-tarot-spread'],
+    structure: ['f-tarot-orient', 'f-tarot-suits'],
+  },
+  // 大六壬：断事看三传，取课看课体，四课是来由。
+  daliuren: {
+    sanChuan: ['f-daliuren-sanchuan', 'f-daliuren-geju'],
+    geju: ['f-daliuren-geju', 'f-daliuren-yuejiang', 'f-daliuren-sike'],
+  },
+  // 梅花：卦辞引本卦，体用引生克，互变引过程与结果。
+  meihua: {
+    guaCi: ['f-meihua-ben', 'f-meihua-moving'],
+    tiYong: ['f-meihua-tiyong', 'f-meihua-ben'],
+    yaoCi: ['f-meihua-moving', 'f-meihua-ben'],
+    huGua: ['f-meihua-hu'],
+    bianGua: ['f-meihua-bian', 'f-meihua-tiyong'],
+    jingText: ['f-meihua-ben', 'f-meihua-bian'],
+    scene: ['f-meihua-tiyong', 'f-meihua-moving'],
   },
 };
 

@@ -172,3 +172,32 @@ ok('奇门正文段落覆盖率 ≥ 75%', qmWithRefs.length / Math.max(1, qmSect
   `${qmWithRefs.length}/${qmSections.length}`);
 eq('七体系事实里都不出现空段（｜｜）', [bFacts, zFacts, lFacts, qFacts].some((arr) => arr.some((f) => /｜｜|^｜|｜$/.test(f.value))), false);
 eq('七体系事实里都不出现 undefined/NaN', [bFacts, zFacts, lFacts, qFacts].some((arr) => arr.some((f) => /undefined|NaN/.test(f.value))), false);
+
+// ── 八、塔罗 / 大六壬 / 梅花：有正文的次要体系，简化事实层 ──
+const EXTRA = [
+  ['tarot', { system: 'tarot', question: '该不该搬走', spread: 'three', seed: 7 },
+    [['f-tarot-cards', /（正位）|（逆位）/], ['f-tarot-orient', /逆/], ['f-tarot-suits', /（土）|（风）|（火）|（水）/]], 2],
+  ['daliuren', { system: 'daliuren', datetime: '2026-11-15T10:00', question: '事情几时成' },
+    [['f-daliuren-day', /癸巳|日/], ['f-daliuren-sike', /比和|上生下|下贼上|生/], ['f-daliuren-sanchuan', /初传/], ['f-daliuren-geju', /贼克|重审|课体|名/]], 2],
+  ['meihua', { system: 'meihua', datetime: '2026-11-15T10:00', question: '要不要回老家' },
+    [['f-meihua-ben', /上.+下/], ['f-meihua-tiyong', /体/], ['f-meihua-moving', /爻/]], 7],
+];
+for (const [sys, args, checks, minSections] of EXTRA) {
+  let it = null;
+  try { it = interpret(compute(args)); } catch (e) { it = null; }
+  ok(`${sys} 能出解析结果`, !!it);
+  if (!it) continue;
+  const fl = it.facts || [];
+  ok(`${sys} 事实层走专用 builder（≥8 条，不是只剩兜底）`, fl.filter((f) => /^f-/.test(f.id)).length >= 5,
+    `${fl.filter((f) => /^f-/.test(f.id)).length} 条专用`);
+  for (const [id, re] of checks) {
+    const v = String((fl.find((f) => f.id === id) || {}).value || '');
+    ok(`${sys}/${id} 有内容且形状对`, re.test(v), v);
+  }
+  const body = (it.sections || []).filter((s) => s.kind !== 'method');
+  ok(`${sys} 登记表已建（≥${minSections} 段）`, Object.keys(SECTION_REFS[sys] || {}).length >= minSections,
+    String(Object.keys(SECTION_REFS[sys] || {}).length));
+  ok(`${sys} 正文段落覆盖率 ≥ 75%`, body.filter((s) => s.refs && s.refs.length).length / Math.max(1, body.length) >= 0.75,
+    `${body.filter((s) => s.refs && s.refs.length).length}/${body.length}`);
+  eq(`${sys} 事实里没有空段与脏值`, fl.some((f) => /｜｜|^｜|｜$|undefined|NaN|\[object/.test(f.value)), false);
+}
