@@ -8,3 +8,11 @@ docs/index.html text eol=lf
 # 分块产物同理：chunks.test 要拿 client.*.js 与源码逐字节比对，被 CRLF 化就红。
 client.js text eol=lf
 client.*.js text eol=lf
+
+# 源码与被内联进产物的模块也要 LF：src/ 下的文件会被 build-html 原样塞进单页，
+# tools/ 与 engine/ 的文本断言类测试（按字符偏移定位、按行匹配）也假定 LF。
+# 不钉死的话 checkout 成 CRLF 会让这些断言在另一台机器上位置全错。
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
