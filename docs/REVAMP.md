@@ -850,3 +850,27 @@ node tools/build-all.mjs --gate    # 201/201、11224 断言、27s
 
 **已知遗留**：`onProfClick` 的 `del` 分支没联动 `defaultChart`，删掉默认盘对应的档案后，顶部条按 `profilesLoad()` 为空自然收起，但 `defaultChart` 条目还在（不影响使用，下次置顶会覆盖）。修的时候别把 `profApply` 的显式排盘顺手删了。
 
+### 15.9 面板（React 版）怎么改的
+
+单页那套只能照搬思路，代码一行都共用不了：面板的输入散在十几个 `useState` 里，没有
+`collectArgs()` 这种「现成的一份参数快照」。
+
+**缓存键**：对喂给 `Engine.compute` 的那份 `args` 直接求哈希
+（`hash36(RESULT_SCHEMA|JSON.stringify(args))`）。试过拼表单指纹，必漏字段——只要有一个
+state 没进指纹，两个不同的盘就会撞同一个键。
+
+**只读**：不逐个给控件传 `disabled`。面板有几十个受控控件，漏一个就穿帮。改成在 `useEffect`
+里对 `.mp-panel` 整树扫一遍，`select/checkbox/radio/button` 用 `disabled`、其余用 `readOnly`
+（`readOnly` 不改 `.value`，缓存键与参数快照都不会漂）。追问框 `.mp-askbox` 在结果区，
+必须 `closest()` 放过，否则问完一轮就没法再问。
+
+**「修改参数」**：`result && !editMode` 时才渲染，点击只 `setEditMode(true)`，不调 run——
+和单页同一条铁律：EDITING 不是重排的信号。
+
+**自检**：`window.__MPStats = { computeHits, cacheHits }`。面板没有可加载的 React 宿主，
+静态断言只能守结构，能不能真的命中缓存要靠这两个计数实机读出来。
+
+**与「不自动排盘」的取舍**：面板打开仍会自动出一张紫微盘——它是侧栏工具，打开就该有东西看。
+但那次 `run` 现在先查缓存，命中就不算重算（任务书禁的是「加载默认盘时重新计算」，不是
+「打开时有结果」）。这不冲突，记在 ledger 待办里。
+

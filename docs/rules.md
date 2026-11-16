@@ -106,3 +106,20 @@ git 执行钩子一定经过 sh，所以装 `.git/hooks/pre-commit` 的后果不
     node tools/preflight.mjs --full   推送前（build-all --gate）
 
 sh 正常的机器照常 `node tools/hooks-install.mjs`，钩子只是 `exec preflight` 的薄壳，闸门逻辑只有一份。
+
+---
+
+## R-010 改了输入区的可编辑性，e2e 要跟着解锁
+
+- type: rules
+- status: active
+- since: 2026-11-16
+
+A4 之后面板和单页都是「出盘即只读」，改参数得先点「修改参数」。Playwright 遇到
+`element is not editable` 不报错，它重试 59 次再抛 TimeoutError —— 看起来像页面卡死，
+实际是产品行为变了、测试没跟上。
+
+所以 `tools/e2e-panel.mjs` 里凡是要填表的地方，前一行都先叫一次 `unlockParams()`
+（按钮不存在就是 no-op，成本 120ms）。改任何「控件什么时候能改」的逻辑，跑一遍 e2e：
+
+    node tools/e2e-panel.mjs      # 期望 151 通过 0 失败
