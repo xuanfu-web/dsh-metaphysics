@@ -15,7 +15,7 @@ const num = (name) => {
 };
 const CAP = num('CHUNK_GZIP_CAP');
 const TOTAL_CAP = num('CHUNKS_TOTAL_GZIP_CAP');
-ok('闸按单块预算判超', tool.includes('gz > CHUNK_GZIP_CAP') && tool.includes('超出单块预算'));
+ok('闸按单块硬顶判超', tool.includes('gzKb > CHUNK_GZIP_CAP') && tool.includes('超出单块预算'));
 ok('闸按合计预算判超', tool.includes('chunksGzip > CHUNKS_TOTAL_GZIP_CAP'));
 ok('成功行回报分块体积（漂移看得见）', tool.includes('chunksGzip / 1024 / 1024'));
 
@@ -38,3 +38,33 @@ for (const f of files) {
 ok('合计在预算内', total <= TOTAL_CAP, `gzip ${(total / 1024 / 1024).toFixed(2)}MB / 上限 ${(TOTAL_CAP / 1024 / 1024).toFixed(2)}MB`);
 // 预算不许为了「让它过」而被抬到没意义的高度：留三成余量足够吸收正常波动
 ok('单块预算没有被抬成空闸', max * 1.3 >= CAP, `最大块 ${maxFile} ${(max / 1024).toFixed(0)}KB，上限 ${(CAP / 1024).toFixed(0)}KB`);
+
+// ── 每块独立预算（tools/chunk-budget.json）───────────────
+// 一道统一墙不够：分块各自有加载与体积约束，chart 这种四 tab 合并块天生最大，
+// 用同一个数去卡它，其余块就形同没卡。
+const budgetPath = path.join(root, 'tools', 'chunk-budget.json');
+ok('每块预算表在仓库里', fs.existsSync(budgetPath));
+const budget = JSON.parse(fs.readFileSync(budgetPath, 'utf8'));
+const caps = budget.caps || {};
+ok('预算表覆盖全部分块且不多不少',
+  Object.keys(caps).sort().join(',') === Object.keys(CHUNKS).sort().join(','),
+  `表里 ${Object.keys(caps).length} 块 / CHUNKS 声明 ${Object.keys(CHUNKS).length} 块`);
+ok('闸逐块比对，不是只比硬顶',
+  tool.includes('gzKb > capKb') && tool.includes('超出本块预算'));
+ok('缺预算算失败（不能靠漏写绕过）', tool.includes('没有独立预算'));
+ok('预算只能由 --update-budget 写', tool.includes('--update-budget') && tool.includes('已重建每块预算'));
+ok('预算带上生成日期', /^\d{4}-\d{2}-\d{2}$/.test(String(budget.updatedAt || '')), String(budget.updatedAt));
+
+for (const f of files) {
+  const name = f.replace(/^client\./, '').replace(/\.js$/, '');
+  const gzKb = zlib.gzipSync(fs.readFileSync(path.join(root, f))).length / 1024;
+  const capKb = caps[name];
+  ok(`${name} 在本块预算内`, typeof capKb === 'number' && gzKb <= capKb,
+    `${gzKb.toFixed(1)}KB / 预算 ${capKb}KB`);
+  ok(`${name} 预算没超过硬顶`, typeof capKb === 'number' && capKb * 1024 <= CAP,
+    `${capKb}KB / 硬顶 ${(CAP / 1024).toFixed(0)}KB`);
+}
+const capValues = Object.values(caps).filter((n) => typeof n === 'number');
+ok('各块预算不是拿同一个数糊上去',
+  new Set(capValues).size >= Math.floor(capValues.length * 0.7),
+  `${capValues.length} 块里只有 ${new Set(capValues).size} 个不同值`);

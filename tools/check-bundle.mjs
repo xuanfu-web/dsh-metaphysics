@@ -91,8 +91,23 @@ if (entryReg) {
 // 总量 3.2MB；两道墙都由 test/bundle-budget.test.mjs 盯着，不许继续抬成空闸。
 // 2026-11-14：288 → 320KB。chart 块 281KB 同样贴线（婚姻层 + 人生六面进来后），
 // 留出约 39KB 再谈下一步；合计上限 3.2MB 未动，整体膨胀仍被卡住。
-const CHUNK_GZIP_CAP = 320 * 1024;
+// 2026-11-16：320 → 360KB。chart 块（八字/紫微/合盘/趋势四 tab 合并）已经 310KB，
+// 贴线到只剩 10KB，正文改写一动就爆。抬到 360 只是留出正常增长空间，不是解绑：
+// 真正逐块卡体积的是 tools/chunk-budget.json（每块一份独立上限，按现状 +8% 生成），
+// CHUNK_GZIP_CAP 退化成「任何块都不许超过的硬顶」。
+const CHUNK_GZIP_CAP = 360 * 1024;
 const CHUNKS_TOTAL_GZIP_CAP = 3.2 * 1024 * 1024;
+
+// 每块独立预算：分块各自有加载与体积约束，不能只有一道统一墙。
+const BUDGET_FILE = path.join(root, "tools", "chunk-budget.json");
+const UPDATE_BUDGET = process.argv.includes("--update-budget");
+let chunkCaps = {};
+try {
+  chunkCaps = (JSON.parse(fs.readFileSync(BUDGET_FILE, "utf8")) || {}).caps || {};
+} catch (e) {
+  chunkCaps = {};
+}
+const nextCaps = {};
 let chunksGzip = 0;
 const chunkFiles = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
 const expected = Object.keys(CHUNKS).map((n) => `client.${n}.js`).sort();
@@ -107,7 +122,15 @@ for (const name of Object.keys(CHUNKS)) {
   const code = fs.readFileSync(full, 'utf8');
   const gz = zlib.gzipSync(Buffer.from(code, 'utf8')).length;
   chunksGzip += gz;
-  if (gz > CHUNK_GZIP_CAP) problems.push(`${file} gzip ${Math.round(gz / 1024)}KB 超出单块预算 ${Math.round(CHUNK_GZIP_CAP / 1024)}KB`);
+  const gzKb = gz / 1024;
+  nextCaps[name] = Math.ceil(gzKb * 1.08);
+  if (gzKb > CHUNK_GZIP_CAP) problems.push(`${file} gzip ${Math.round(gzKb)}KB 超出单块预算 ${Math.round(CHUNK_GZIP_CAP / 1024)}KB`);
+  const capKb = chunkCaps[name];
+  if (capKb === undefined) {
+    problems.push(`${file} 没有独立预算（跑 node tools/check-bundle.mjs --update-budget 生成）`);
+  } else if (gzKb > capKb) {
+    problems.push(`${file} gzip ${gzKb.toFixed(1)}KB 超出本块预算 ${capKb}KB（先把内容挪出这一块，别直接抬预算）`);
+  }
   checkSyntax(code, file);
   checkChars(code, file);
   const reg = registrationOf(code, file);
@@ -207,11 +230,26 @@ for (const name of ORDER) {
   }
 }
 
+// ---- 6.5 每块预算的基线：只由 --update-budget 写，日常跑只读 ----
+if (UPDATE_BUDGET) {
+  const data = {
+    _doc: "每个引擎分块的 gzip 上限（KB）。按当时产物 +8% 自动生成，只增不减要有理由；改内容后重跑 node tools/check-bundle.mjs --update-budget。",
+    updatedAt: new Date().toISOString().slice(0, 10),
+    caps: Object.fromEntries(Object.keys(nextCaps).sort().map((k) => [k, nextCaps[k]])),
+  };
+  fs.writeFileSync(BUDGET_FILE, JSON.stringify(data, null, 2) + "\n");
+  console.log(`✓ 已重建每块预算：${Object.keys(data.caps).length} 块（${BUDGET_FILE}）`);
+  if (problems.length) {
+    for (const p of problems) console.log(`  · 仍存在的问题：${p}`);
+  }
+  process.exit(0);
+}
+
 if (problems.length) {
   console.error(`✗ 产物自检未通过（${problems.length} 处）：`);
   for (const p of problems) console.error(`  - ${p}`);
   process.exit(1);
 }
 console.log(`✓ 产物自检通过：client.js ${(Buffer.byteLength(raw, 'utf8') / 1024).toFixed(0)}KB / gzip ${Math.round(entryGzip / 1024)}KB`
-  + ` / 引擎分块 ${chunkFiles.length} 个（gzip 合计 ${(chunksGzip / 1024 / 1024).toFixed(2)}MB，单块上限 ${Math.round(CHUNK_GZIP_CAP / 1024)}KB）`
+  + ` / 引擎分块 ${chunkFiles.length} 个（gzip 合计 ${(chunksGzip / 1024 / 1024).toFixed(2)}MB，单块硬顶 ${Math.round(CHUNK_GZIP_CAP / 1024)}KB / 每块预算 ${Object.keys(chunkCaps).length} 份）`
   + ` / 逐模块编译 ${starts.length} 个 / 宿主形态可执行 / 与源码一致`);
