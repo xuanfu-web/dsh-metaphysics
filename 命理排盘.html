@@ -22851,6 +22851,45 @@ const LIUQIN_SAY = {
   子孙: '出力、产出、把事办成的那股劲',
 };
 
+// 一句话里要塞两三个六亲时用短译，长译会把首屏撑长
+const LIUQIN_SHORT = {
+  官鬼: '压力职位',
+  兄弟: '同辈竞争',
+  父母: '文书流程',
+  妻财: '资源',
+  子孙: '出力产出',
+};
+
+// 十神 → 生活里对应的是什么事。八字那一段要说到「哪一柱、哪个字」，
+// 只说「月令本气是劫财」等于把术语抛回给用户，必须当场翻。
+const TEN_SAY = {
+  比肩: '自己人、同辈',
+  劫财: '分账、竞争',
+  食神: '手艺、产出',
+  伤官: '表达、不服管',
+  正财: '固定收入、要守住的东西',
+  偏财: '机会财、外面的资源',
+  正官: '规矩、职位',
+  七杀: '压力、硬约束',
+  正印: '靠山、文书与长辈',
+  偏印: '非常规的门路',
+};
+
+// 同一张表压短一档，给「天干里 X 是什么」这种并列句用——
+// 一句话里塞三组长解释会把首屏撑爆，短译刚好够读懂。
+const TEN_SHORT = {
+  比肩: '同辈自立',
+  劫财: '同辈分账',
+  食神: '手艺产出',
+  伤官: '表达不服管',
+  正财: '固定收入',
+  偏财: '机会财',
+  正官: '规矩职位',
+  七杀: '硬压力',
+  正印: '靠山文书',
+  偏印: '偏门门路',
+};
+
 /**
  * 用神 → 一句白话。
  * 只说「用神落在哪、有没有动、要不要往深处找」，不替人断成败。
@@ -23052,13 +23091,13 @@ function buildPlain(r, ask, ctx = {}) {
     const favor = join(ys.favor);
     const avoid = join(ys.avoid);
     const dis = Array.isArray(ys.disputed) && ys.disputed.length
-      ? `有一点要说明：${ys.disputed.map((d) => d.element).join('、')}在扶抑里算${ys.disputed.map((d) => d.favorRole).join('、')}（能${ys.disputed.map((d) => d.favorVerb).join('、')}），按调候看又偏忌（${ys.disputed.map((d) => `${d.climate}盘忌${d.element}`).join('、')}），两派说法不一；实际用在什么时候，看季节和环境取舍，不必当成绝对的好或坏。`
+      ? `有一处两派说法不一：${ys.disputed.map((d) => d.element).join('、')}在扶抑里算${ys.disputed.map((d) => d.favorRole).join('、')}（能${ys.disputed.map((d) => d.favorVerb).join('、')}），按调候又偏忌，用在什么时候看季节取舍。`
       : '';
     const strength = STRENGTH_PLAIN[st.level] || '力量偏中性';
     const tiaohou = ys.tiaohou && ys.tiaohou.note ? `另外，${ys.tiaohou.note}，所以「暖一点、亮一点」的环境通常更舒服。` : '';
     const sy = (r.liunian || []).find((l) => l.suiyun && Array.isArray(l.suiyun.signals) && l.suiyun.signals.length);
     const syPlain = sy
-      ? `再往后看，${sy.year} 年${sy.ganzhi}是${sy.suiyun.signals.map((x) => x.type).join('、')}——传统上把它当作「变化感强一点」的提示，既不是好消息也不是坏消息，遇上时多留个心眼就好。`
+      ? `往后看，${sy.year} 年${sy.ganzhi}是${sy.suiyun.signals.map((x) => x.type).join('、')}——变化感强一点，不是好坏，遇事多留个心眼。`
       : '';
     // 临界：档位是几个是非判定的组合，不是一条刻度。踩线时两档都说得通，
     // 不说清这一点，用户会把「中和」当成精确结论去跟人争。
@@ -23074,7 +23113,31 @@ function buildPlain(r, ask, ctx = {}) {
           ? '格局那边写着「成格」——这是说结构走得顺，不是保证富贵。'
           : '')
       : '';
+    // 落到盘面具体位置：身强身弱不是一句评语，得说清是哪几处撑起来的、
+    // 又是哪几处在往外耗。只拼能对回四柱的东西（月令本气、通根地支、耗泄天干），
+    // 拼不出来就整段不出，不硬凑。
+    const pil = r.pillars || {};
+    const posPlain = (() => {
+      const order = ['year', 'month', 'day', 'hour'];
+      const mp = pil.month || {};
+      const ben = Array.isArray(mp.hidden) ? mp.hidden.find((h) => h.role === '本气') : null;
+      const roots = st.parts && Array.isArray(st.parts.roots) ? st.parts.roots : [];
+      const drains = order
+        .filter((k) => k !== 'day')
+        .map((k) => pil[k])
+        .filter((p) => p && /财|官|杀|食|伤/.test(p.stemTenGod || ''))
+        .map((p) => `${p.stem}（${TEN_SHORT[p.stemTenGod] || ''}）`);
+      const bits = [];
+      if (mp.branch && ben && ben.tenGod) {
+        bits.push(`月令${mp.branch}本气是${ben.tenGod}（${TEN_SHORT[ben.tenGod] || ''}）`);
+      }
+      if (roots.length >= 2) bits.push(`地支${roots.join('、')}是根`);
+      if (drains.length) bits.push(`往外耗的在${drains.join('、')}`);
+      if (!bits.length) return '';
+      return `说到具体位置：${bits.join('，')}。`;
+    })();
     return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
+      posPlain +
       `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
       dis + psPlain + bd + tiaohou + syPlain;
   }
@@ -23084,20 +23147,64 @@ function buildPlain(r, ask, ctx = {}) {
     // 只挑忌这一条白话：它最能说「你反复在哪几件事上使劲」
     // 上面「先答所问」已经报过忌链与飞化的原句，这里换个说法只讲感受，避免同一句念两遍
     const feltChain = ji && ji.steps.length
-      ? '你身上有个绕不开的规律：几件事是连着转的，一件卡住，后面就跟着慢下来。'
+      ? '你身上有个绕不开的规律：几件事连着转，一件卡住后面就慢。'
       : '';
     const fc = r.flyComposite;
     const hub = fc && Array.isArray(fc.targets) ? fc.targets.find((t) => t.count >= 2) : null;
     const feltComposite = !fc || !Array.isArray(fc.targets)
       ? ''
       : hub
-        ? `再往深一层，四股力最后也压在「${String(hub.palace).replace(/宫$/, '')}」上——几个方面的劲都往这儿聚。`
+        ? `再深一层，四股力都压在「${String(hub.palace).replace(/宫$/, '')}」上。`
         : '再往深一层，四股的力没有全挤到一处，这几件事之间牵连不深。';
     const focus = body.lands
       ? `真正让你上心的，多半是「${body.lands}」这件事，做别的总会分心。`
       : '';
+    // 落到盘面具体位置：命宫坐什么星、亮不亮，三方四正哪几宫给力，煞星压在哪。
+    // 紫微的白话原来说的全是「你与环境怎么互动」，用户对着盘面找不到对应行；
+    // 这里只拼能一眼对回宫位的东西，拼不出来整段不出。
+    const zpos = (() => {
+      const ps = Array.isArray(r.palaces) ? r.palaces : [];
+      if (!ps.length) return '';
+      const soulP = ps.find((p) => p.isSoul) || {};
+      const mains = (soulP.stars || []).filter((x) => x.type === '主星');
+      const bits = [];
+      if (mains.length) {
+        const bright = mains.map((x) => x.brightness || '');
+        const allXian = bright.length === mains.length && bright.every((b) => b === '陷');
+        const allStrong = bright.length === mains.length && bright.every((b) => b === '庙' || b === '旺');
+        bits.push(
+          `命宫${s(soulP.branch)}位坐${mains.map((x) => x.name).join('、')}` +
+            (allXian
+              ? '，两颗都落「陷」——起点偏费劲，得靠自己一点点挣'
+              : allStrong
+                ? '，庙旺，底子是有的'
+                : ''),
+        );
+      } else {
+        bits.push(`命宫${s(soulP.branch)}位是空宫，格局得看对宫怎么给`);
+      }
+      const trio = ['官禄', '财帛', '迁移'].map((n) => {
+        const p = ps.find((x) => x.palace === n) || {};
+        const m = (p.stars || [])
+          .filter((x) => x.type === '主星')
+          .map((x) => x.name + (x.brightness || ''));
+        return `${n}宫${m.length ? m.join('、') : '空宫'}`;
+      });
+      bits.push(`三方四正看：${trio.join('，')}`);
+      const SHA = ['擎羊', '陀罗', '火星', '铃星', '地空', '地劫'];
+      const spots = ps
+        .map((p) => ({
+          palace: String(p.palace || '').replace(/宫$/, ''),
+          hit: (p.stars || []).filter((x) => SHA.includes(x.name)).map((x) => x.name),
+        }))
+        .filter((x) => x.hit.length)
+        .map((x) => `${x.palace}宫${x.hit.join('')}`);
+      if (spots.length) bits.push(`煞星落在${spots.slice(0, 3).join('、')}，这几处容易突然起波澜`);
+      return `说到具体位置：${bits.join('；')}。`;
+    })();
     return [
       `紫微讲的是「你与环境怎么互动」，不是谁好谁坏——同一件事换个环境、换个人配合，结果就不一样。`,
+      zpos,
       focus,
       feltChain,
       feltComposite,
@@ -23108,8 +23215,42 @@ function buildPlain(r, ask, ctx = {}) {
     const moving = (r.cast && r.cast.movingPositions) || [];
     const labels = (r.body && Array.isArray(r.body.labels)) ? r.body.labels : [];
     const plainBody = bodyPlainOf(labels);
+    // 落到盘面具体位置：世应各在哪一爻、动爻化什么、空亡与反吟压在哪一半。
+    // 六爻的盘就是六行爻，只说「有动爻说明还有转圜」，用户找不到是哪一行。
+    const lpos = (() => {
+      const lines = (r.hexStrength && Array.isArray(r.hexStrength.lines)) ? r.hexStrength.lines : [];
+      if (!lines.length) return '';
+      const bits = [];
+      const shi = lines.find((x) => x.shi);
+      const ying = lines.find((x) => x.ying);
+      const say = (x) => `${x.name}${x.liuqin ? x.liuqin + '（' + s(LIUQIN_SHORT[x.liuqin], '') + '）' : ''}`;
+      if (shi && ying) bits.push(`世爻在${say(shi)}，应爻在${say(ying)}`);
+      else if (shi) bits.push(`世爻在${say(shi)}`);
+      const jt = (r.jinTuiPower && Array.isArray(r.jinTuiPower.lines)) ? r.jinTuiPower.lines : [];
+      const mv = lines
+        .filter((x) => x.moving)
+        .map((x) => {
+          const t = jt.find((j) => j.position === x.position);
+          return `${x.name}${x.liuqin || ''}在动` + (t ? `，${t.from}→${t.to}算化${t.type}` : '');
+        });
+      if (mv.length) bits.push(mv.join('，'));
+      const kong = lines.filter((x) => x.kong).map((x) => x.name);
+      if (kong.length) bits.push(`${kong.join('、')}落空亡，先别当真`);
+      const fy = r.body || {};
+      const echo = [];
+      if (fy.fuYin && (fy.fuYin.inner || fy.fuYin.outer)) {
+        echo.push(`${fy.fuYin.inner ? '内卦' : '外卦'}伏吟（原地重复）`);
+      }
+      if (fy.fanYin && (fy.fanYin.inner || fy.fanYin.outer)) {
+        echo.push(`${fy.fanYin.inner ? '内卦' : '外卦'}反吟（来回反复）`);
+      }
+      if (echo.length) bits.push(echo.join('、'));
+      if (!bits.length) return '';
+      return `说到具体位置：${bits.join('；')}。`;
+    })();
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
+      lpos +
       `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${yingqiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
   }
   if (r.system === 'qimen') {
@@ -23122,11 +23263,38 @@ function buildPlain(r, ask, ctx = {}) {
     if ((cond.ruMu || []).length || (cond.liuYiRuMu || []).length) marks.push('一处落墓的干');
     const zf = (r.zhiFu && r.zhiFu.star) || '';
     const zs = (r.zhiShi && r.zhiShi.gate) || '';
+    // 落到盘面具体位置：日干（你）与时干（这件事）各落哪一宫、坐什么星门，
+    // 值符值使在哪，十干应克有没有撞上。奇门盘就是九宫，不点名宫位等于没说。
+    const qpos = (() => {
+      const ps = Array.isArray(r.palaces) ? r.palaces : [];
+      if (!ps.length) return '';
+      const sz = r.siZhu || {};
+      const dStem = String(sz.day || '').charAt(0);
+      const tStem = String(sz.time || '').charAt(0);
+      const byStem = (v) => (v ? ps.find((p) => p.diPan === v) : null);
+      // 宫位说「七宫」不说「7宫」：全篇已经是「阴遁三局」这种中文数，混排读着别扭
+      const CN = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九' };
+      const gong = (n) => `${CN[Number(n)] || n}宫`;
+      const bits = [];
+      const dz = byStem(dStem);
+      const tz = byStem(tStem);
+      if (dz) bits.push(`你（日干${dStem}）落${gong(dz.palace)}，坐${s(dz.star, '—')}${s(dz.gate, '')}`);
+      if (tz) bits.push(`这件事（时干${tStem}）落${gong(tz.palace)}，坐${s(tz.star, '—')}${s(tz.gate, '')}`);
+      if (r.zhiFu && r.zhiFu.gong) bits.push(`值符落${gong(r.zhiFu.gong)}`);
+      if (r.zhiShi && r.zhiShi.gong) bits.push(`值使落${gong(r.zhiShi.gong)}`);
+      const ying = ps
+        .filter((p) => p.ganYing && p.ganYing.name)
+        .slice(0, 2)
+        .map((p) => `${gong(p.palace)}「${p.ganYing.name}」`);
+      if (ying.length) bits.push(`十干应克撞上${ying.join('、')}`);
+      if (!bits.length) return '';
+      return `说到具体位置：${bits.join('；')}。`;
+    })();
     return `这一局看的是「你和这件事，现在各自站在什么位置」。全盘是${s(r.ju, '这一局')}，主事的星是${s(zf, '—')}，当差的门是${s(zs, '—')}——它们定的是这局的调子，不是好坏判决。` +
+      qpos +
       (gateOn.length ? `眼下气最足的是${gateOn.join('、')}这一路，` : '') +
       (gateOff.length ? `最弱的是${gateOff.join('、')}，走它会更费劲。` : '') +
-      (marks.length ? `盘面上还有：${marks.join('、')}；这几处说明有些条件没到位，硬推容易白耗。` : '') +
-      `能动的只有一件事：把「你这边」和「事情那边」的宫位对上，两边隔得越远，越需要中间人、流程或时间。`;
+      (marks.length ? `盘面上还有：${marks.join('、')}；这几处说明有些条件没到位，硬推容易白耗。` : '');
   }
   if (r.system === 'tarot') {
     const cs = Array.isArray(r.cards) ? r.cards : [];
