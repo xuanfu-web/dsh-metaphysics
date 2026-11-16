@@ -34,6 +34,7 @@
 | M1–M7 度量闸（22 体系固定样本，接进 `build-all --gate`） | 提交 `81dd845`；`tools/metrics.mjs` 实测 `M1 1 / M2 最大 246 字 / M3 8/8 / M4 8/8 / M5 1 / M6 8/8 / M7 1`；`test/metrics.test.mjs` |
 | 说人话层补齐奇门 / 塔罗 / 大六壬 / 梅花 / 合盘（原来只有八字 / 紫微 / 六爻有，其余静默少一块） | 提交 `25ca516`；`test/plain-five.test.mjs` 51 条；8099 实机五体系 `.mp-it-plain` 全部出现；`e2e-panel` 151 通过 0 失败 |
 | 面板打开即出盘、不做「打开不自动排」（决策，理由见 `docs/REVAMP.md` 15.9 末段） | `e2e-panel.mjs:249` 断言「面板打开即排默认盘（紫微）」`bootResult > 4000`；缓存命中不算重算，`window.__MPStats.cacheHits` 可验 |
+| 22 体系实机巡检（21 个 tab 逐个出盘）+ 修三个真 bug：起名缺名 / 报数起课缺数不置灰、错误文案是接口口吻、农历转公历把状态卡在 CALCULATING | 提交 `677f042`；`test/required-fields.test.mjs` 29 条；全闸 205/205、11391 断言 |
 
 ## 二、待办
 
