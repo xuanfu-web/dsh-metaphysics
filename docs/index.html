@@ -762,7 +762,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：206 个测试文件 / 11406 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：207 个测试文件 / 11464 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>本版之后又改了什么（版本号未变）</h3>
     <ul><li>「最需要火」与「忌土火」不再并排</li><li>气候档名漏了两档（顺手修）</li><li>调候与《穷通宝鉴》不再各说各的</li><li>格成不真 ≠ 命不好</li><li>取用补上组合层：官杀该制还是该化</li><li>临界档位自己说出来</li><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
     <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
@@ -23271,13 +23271,17 @@ function buildPlain(r, ask, ctx = {}) {
       const sz = r.siZhu || {};
       const dStem = String(sz.day || '').charAt(0);
       const tStem = String(sz.time || '').charAt(0);
+      // 甲在奇门里不落地（遁于六仪）：日干或时干是甲时，按它所在旬的旬首仪定位。
+      // 不处理这一步，「你落哪宫」会静默消失，只剩「这件事落哪宫」。
+      const YI = { 子: '戊', 戌: '己', 申: '庚', 午: '辛', 辰: '壬', 寅: '癸' };
+      const locate = (st, gz) => (st && st !== '甲' ? st : YI[String(gz || '').charAt(1)] || '');
       const byStem = (v) => (v ? ps.find((p) => p.diPan === v) : null);
       // 宫位说「七宫」不说「7宫」：全篇已经是「阴遁三局」这种中文数，混排读着别扭
       const CN = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九' };
       const gong = (n) => `${CN[Number(n)] || n}宫`;
       const bits = [];
-      const dz = byStem(dStem);
-      const tz = byStem(tStem);
+      const dz = byStem(locate(dStem, sz.day));
+      const tz = byStem(locate(tStem, sz.time));
       if (dz) bits.push(`你（日干${dStem}）落${gong(dz.palace)}，坐${s(dz.star, '—')}${s(dz.gate, '')}`);
       if (tz) bits.push(`这件事（时干${tStem}）落${gong(tz.palace)}，坐${s(tz.star, '—')}${s(tz.gate, '')}`);
       if (r.zhiFu && r.zhiFu.gong) bits.push(`值符落${gong(r.zhiFu.gong)}`);

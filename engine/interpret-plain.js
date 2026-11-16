@@ -472,13 +472,17 @@ export function buildPlain(r, ask, ctx = {}) {
       const sz = r.siZhu || {};
       const dStem = String(sz.day || '').charAt(0);
       const tStem = String(sz.time || '').charAt(0);
+      // 甲在奇门里不落地（遁于六仪）：日干或时干是甲时，按它所在旬的旬首仪定位。
+      // 不处理这一步，「你落哪宫」会静默消失，只剩「这件事落哪宫」。
+      const YI = { 子: '戊', 戌: '己', 申: '庚', 午: '辛', 辰: '壬', 寅: '癸' };
+      const locate = (st, gz) => (st && st !== '甲' ? st : YI[String(gz || '').charAt(1)] || '');
       const byStem = (v) => (v ? ps.find((p) => p.diPan === v) : null);
       // 宫位说「七宫」不说「7宫」：全篇已经是「阴遁三局」这种中文数，混排读着别扭
       const CN = { 1: '一', 2: '二', 3: '三', 4: '四', 5: '五', 6: '六', 7: '七', 8: '八', 9: '九' };
       const gong = (n) => `${CN[Number(n)] || n}宫`;
       const bits = [];
-      const dz = byStem(dStem);
-      const tz = byStem(tStem);
+      const dz = byStem(locate(dStem, sz.day));
+      const tz = byStem(locate(tStem, sz.time));
       if (dz) bits.push(`你（日干${dStem}）落${gong(dz.palace)}，坐${s(dz.star, '—')}${s(dz.gate, '')}`);
       if (tz) bits.push(`这件事（时干${tStem}）落${gong(tz.palace)}，坐${s(tz.star, '—')}${s(tz.gate, '')}`);
       if (r.zhiFu && r.zhiFu.gong) bits.push(`值符落${gong(r.zhiFu.gong)}`);

@@ -55,6 +55,14 @@ for (const [name, args, mustSay] of SAY) {
   ok('奇门点出值使门', p.includes(r.zhiShi.gate));
   ok('奇门点出局数', p.includes(r.ju));
 }
+// 甲在奇门里不落地（遁于六仪）：日干或时干是甲，得按旬首仪定位，
+// 否则「你落哪宫 / 这件事落哪宫」会静默少一句。甲午日就是这种盘。
+{
+  const r = compute({ system: 'qimen', datetime: '2026-11-16T22:40' });
+  const p = buildPlain(r, {}, {});
+  ok('奇门日柱甲午仍点出「你」的宫位', /你（日干甲）落[一二三四五六七八九]宫/.test(p), p.slice(0, 100));
+  ok('奇门日柱甲午仍点出「这件事」的宫位', /这件事（时干.）落[一二三四五六七八九]宫/.test(p), p.slice(0, 140));
+}
 {
   const r = compute({ system: 'tarot', spread: 'three', seed: 20261115 });
   const p = buildPlain(r, {}, {});
