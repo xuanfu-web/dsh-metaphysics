@@ -261,9 +261,23 @@ export function buildPlain(r, ask, ctx = {}) {
     const syPlain = sy
       ? `再往后看，${sy.year} 年${sy.ganzhi}是${sy.suiyun.signals.map((x) => x.type).join('、')}——传统上把它当作「变化感强一点」的提示，既不是好消息也不是坏消息，遇上时多留个心眼就好。`
       : '';
+    // 临界：档位是几个是非判定的组合，不是一条刻度。踩线时两档都说得通，
+    // 不说清这一点，用户会把「中和」当成精确结论去跟人争。
+    const bd = st.boundary && st.boundary.near && st.boundary.nearest
+      ? `顺带说一句：你这个档位是踩在线上的（${st.boundary.nearest.by}），换个算法就可能是「${st.boundary.nearest.to}」。别拿档位当标签，它只说明力气够不够用。`
+      : '';
+    // 格成不真 ≠ 命不好：不成格说的是贵格模板没套上，不是人过得差
+    const ps = r.frame && r.frame.patternScore;
+    const psPlain = ps
+      ? (ps.grade === '不成格'
+        ? '格局那边可能写着「不成格」——那说的是「按教科书的贵格模板没套上」，不是说你命差。成格分低只代表这条路不当主角，路还在别处。'
+        : ps.grade === '成格'
+          ? '格局那边写着「成格」——这是说结构走得顺，不是保证富贵。'
+          : '')
+      : '';
     return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
       `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
-      dis + tiaohou + syPlain;
+      dis + psPlain + bd + tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
     const body = r.body || {};

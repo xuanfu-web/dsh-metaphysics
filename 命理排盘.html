@@ -420,7 +420,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.82.0</span><span class="ver-note" title="本版之后又改了 7 项（版本号未变）：说人话层落到盘面位置；补上「所以呢」那一层；强弱的判档修了；单页问事类永远出不了盘（修）；出盘后问事层被锁死（修，两条链都有）；e2e 深链用例一直是错的（修）；两套渲染链有了检查清单">另含 7 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.82.0</span><span class="ver-note" title="本版之后又改了 10 项（版本号未变）：格成不真 ≠ 命不好；取用补上组合层：官杀该制还是该化；临界档位自己说出来；说人话层落到盘面位置；补上「所以呢」那一层；强弱的判档修了；单页问事类永远出不了盘（修）；出盘后问事层被锁死（修，两条链都有）；e2e 深链用例一直是错的（修）；两套渲染链有了检查清单">另含 10 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -764,7 +764,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>工程验证</h3>
     <ul><li>测试：206 个测试文件 / 11406 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>本版之后又改了什么（版本号未变）</h3>
-    <ul><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
+    <ul><li>格成不真 ≠ 命不好</li><li>取用补上组合层：官杀该制还是该化</li><li>临界档位自己说出来</li><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
     <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -6017,6 +6017,18 @@ const WEAK_PENALTY = 20;
 const PATTERN_PASS = 60;
 const OUTER_PATTERNS = ['建禄格', '阳刃格', '月刃格', '月劫格'];
 
+// 「成格分」量的是格局标不标准，不是人过得好不好。两层必须分开说。
+// 贵格标准（这一层）校的是结构像不像教科书的成格模板：透干、通根、被不被合、用神虚不虚；
+// 人生判断（另一层）看的是这张盘对日主有没有实际帮助：用神能不能用、行运顺不顺。
+// 用户看到「不成格」就自我否定，是把前一层当成了后一层——所以每一处出现 grade 的地方都要带这句。
+const PATTERN_LAYERS = {
+  school: '校的是结构像不像课里的成格模板：透干、通根、有没有被合、用神虚不虚。',
+  life: '看的是这张盘对日主有没有实际帮助：用神能不能用、行运顺不顺——与成格分不是一件事。',
+  pass: '过 60 分线作成格论：说明这条结构走得顺、位置感强。它量的是结构不是结果——富贵与否不在这张分表上。',
+  fail: '不及 60 分线作不成格论：这只说明「按贵格模板没套上」，不是命差。成格分低只代表这条路不当主角，不代表没有路——大运、行业与自己的选择都在评分之外。',
+  outer: '本格属外格（建禄／羊刃／月劫），课里不按正八格计分，也就谈不上「成不成格」；不要拿评分当人生结论。',
+};
+
 /** 天干五合：找与 stem 相合的另一干（合而不化也算） */
 function stemHeWith(stem, pillars) {
   for (const key of ['year', 'month', 'day', 'hour']) {
@@ -6080,6 +6092,8 @@ function patternScoreOf(pattern, pillars, dayStem, monthBranch, wuxing = {}) {
       score: null,
       pass: null,
       grade: null,
+      layers: { school: PATTERN_LAYERS.school, life: PATTERN_LAYERS.life },
+      verdict: PATTERN_LAYERS.outer,
       threshold: PATTERN_PASS,
       detail: `${pattern.name}属外格（建禄/羊刃/月劫），课程不按正八格的透干档位计成格分，故不套 −30 / −20。`,
       method: '只评正八格月令格；建禄/羊刃/月劫属外格，不评分',
@@ -6132,6 +6146,9 @@ function patternScoreOf(pattern, pillars, dayStem, monthBranch, wuxing = {}) {
     score,
     pass,
     grade: pass ? '成格' : '不成格',
+    // 两层分开说：grade 是贵格标准的结论，verdict 才是给人看的那句判断
+    layers: { school: PATTERN_LAYERS.school, life: PATTERN_LAYERS.life },
+    verdict: pass ? PATTERN_LAYERS.pass : PATTERN_LAYERS.fail,
     threshold: PATTERN_PASS,
     detail,
     method: '基础分按取格档位（专气透 90 / 本气透 70 / 中气透 50 / 余气透 20 / 同五行透 5 / 会支取用 60 / 月令不透 40）；透干被合 −30、用神太弱 −20；60 分及格。只读标注，不改取格与既有三态。',
@@ -6533,6 +6550,57 @@ function tacticsOf({ strength = {}, gods = {} } = {}) {
 
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
 
+// ── 组合层：制杀 / 化杀 ─────────────────────────────────────
+// 扶抑只按强弱给 favor/avoid，一遇官杀压身就把整路官杀写成「忌」；
+// 而 tactics 那边又说「杀印相生，用官杀换名分」——同一份输出里两句话打架，
+// 用户按「忌官杀」去躲，等于把最值钱的那条路躲掉了。
+// 这里按局中真有的十神分量，把每一路拆成「可化／可制／纯忌／优先补」分别标注。
+// 只出文字与标注，不动 favor/avoid 数组：行运评分读的是那两个数组，
+// 动了会连带改每一年的吉凶档位，那是另一件事，不在这层解决。
+function combinationOf({ tactics = null, gods = null } = {}) {
+  if (!tactics) return null;
+  const g = (gods && (gods.groups || gods)) || {};
+  const rr = (x) => Math.round((Number(x) || 0) * 10) / 10;
+  const sha = rr(g.官杀);
+  const yin = rr(g.印);
+  const shi = rr(g.食伤);
+  const cai = rr(g.财);
+  const bi = rr(g.比劫);
+  const rows = [];
+  const push = (role, action, note) => rows.push({ role, action, note });
+  if (tactics.key === 'sha-yin') {
+    push('官杀', '可化', `官杀 ${sha} 压身，但局中印 ${yin} 接得住：这一路不算纯忌，是「压力换名分」的原料——怕的是无印硬顶。`);
+    push('印', '用（枢纽）', `印是本盘的关键（${yin} 分）：师承、资质、体系里的位置都算，虚名不算。`);
+    push('食伤', '慎用', `食伤 ${shi} 分：身已偏弱，再泄只会更虚，制杀不是本盘首选路。`);
+  } else if (tactics.key === 'shi-sha' && tactics.lean === 'weak') {
+    push('官杀', '忌（无可化之路）', `官杀 ${sha} 压身、印又近零（${yin}）：没有印可化，只能硬顶。`);
+    push('食伤', '短期可用·长期耗身', `食伤 ${shi} 是当下唯一制得住官杀的力，吃的是自己的力气：制得住不等于该长期这么打，能补印就先补印。`);
+    push('印', '优先补', '局里没有现成的印，运里来印（读书、拜师、进有规矩的体系）比硬扛省力。');
+  } else if (tactics.key === 'shi-sha' && tactics.lean === 'strong') {
+    push('官杀', '可用（贵气）', `官杀 ${sha} 是贵气来源，身扛得住就不算忌。`);
+    push('食伤', '用（制杀）', `食伤 ${shi} 制得住：压力可以转成产出，注意别制过头成伤官见官。`);
+  } else if (tactics.key === 'cai-guan') {
+    push('财', '用（生官）', `财 ${cai} 生官：用资源换位置，方向对。`);
+    push('官杀', '可用（可担）', `官杀 ${sha} 走得通，前提是量入为出。`);
+    push('食伤', '偏轻', `食伤 ${shi} 不足以制杀，别指望靠嘴硬顶。`);
+  } else if (tactics.key === 'shang-yin') {
+    push('食伤', '已过', `食伤 ${shi} 泄得太多，才华要找出口，也要收口。`);
+    push('印', '用（收）', `印 ${yin} 把泄出去的收住：有出处才落得住。`);
+  } else if (tactics.key === 'bi-cai') {
+    push('财', '可用（需分担）', `财 ${cai} 在前、身不够担，别一个人吃下。`);
+    push('比劫', '用（合力）', `比劫 ${bi} 能一起扛，但同时也分账，合作先把规矩讲死。`);
+  }
+  if (!rows.length) return null;
+  return {
+    key: tactics.key,
+    name: tactics.name,
+    useRole: tactics.use,
+    rows,
+    summary: `按组合看：${rows.map((r) => `${r.role} ${r.action}`).join('、')}。这条路的前提是「${tactics.caveat}」。`,
+    note: '组合层只标注每一路该怎么算，不改 favor/avoid 数组——行运评分仍按扶抑口径算，免得一句话连带改掉每一年的吉凶档位。',
+  };
+}
+
 
 function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods = null) {
   const roles = elementRoles(dayStem);
@@ -6592,6 +6660,8 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
   const tongguan = tongguanOf(favor, avoid, wuxing);
   // 取用手法：官杀压身时「硬制还是化」的分野，见 tacticsOf
   const tactics = gods ? tacticsOf({ strength, gods }) : null;
+  // 组合层：把每一路拆成可化／可制／纯忌，见 combinationOf
+  const combination = combinationOf({ tactics, gods });
 
   const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
   const disputedText = disputed
@@ -6621,6 +6691,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
             : `未见${tongguan.bridge}，关未通`}（只作结构提示，不据此断吉凶）。`
       : '',
     tactics ? `取用手法：${tactics.name}——${tactics.tip}（${tactics.caveat}）。判据：${tactics.basis}。` : '',
+    combination ? `组合取舍：${combination.summary}` : '',
     arb.text,
     arb.clash
       ? (climate.priority === '调候优先'
@@ -6648,6 +6719,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
     qt,
     tongguan,
     tactics,
+    combination,
     detail,
   };
 }
@@ -6974,7 +7046,7 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   };
 }
 
-return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, tacticsOf, scoreLuck, caiKuOf, balanceOf, analyzeBaziFrame };
+return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, tacticsOf, combinationOf, scoreLuck, caiKuOf, balanceOf, analyzeBaziFrame };
 })();
 
 __mods.bazi = (function () {
@@ -7348,6 +7420,71 @@ function renyuanOf(monthBranch, birthJdn, termJd) {
  * 排四柱八字
  * @param {object} input { year,month,day,hour,minute, gender:'male'|'female', longitude?, lateZi?:boolean, trueSolar?:boolean }
  */
+// ── 旺衰档位：真值表单独成函数 ────────────────────────────────
+// 抽出来不是为了好看：临界提示要「翻一个条件再判一次」，同一张真值表
+// 写在两处早晚会漂。判定只有这一份，compute 与 boundaryOf 都调它。
+function levelOf(e) {
+  const { deLing, deDi, diHalf, deShi, shiHalf, helpScore } = e;
+  if (deLing) {
+    // 得令即旺。唯一降档：天干重耗（净帮扶 ≤ -1.5）且无势，属「旺而不久」。
+    if (helpScore <= -1.5 && !deShi) return { level: '偏强', basis: '得令，但天干重耗、全无援手（旺而不久）' };
+    return { level: '身强', basis: '得令（月令当旺或生我）' };
+  }
+  if (deDi && deShi) return { level: '偏强', basis: '失令，有强根且得势' };
+  if (deDi && shiHalf) return { level: '中和', basis: '失令，有强根但帮扶不敌耗泄' };
+  if (deDi) return { level: '偏弱', basis: '失令，有强根但无势' };
+  if (diHalf && deShi) return { level: '中和', basis: '失令，弱根而得势' };
+  if (diHalf && shiHalf) return { level: '偏弱', basis: '失令，弱根且帮扶不敌耗泄' };
+  if (diHalf) return { level: '身弱', basis: '失令，只有弱根、毫无帮扶' };
+  if (deShi) return { level: '偏弱', basis: '失令，无根而有势' };
+  return { level: '身弱', basis: '失令、无根、无势' };
+}
+
+// ── 档位临界 ────────────────────────────────────────────────
+// 档位是几个「是非判定」的组合结果，不是一条连续刻度切出来的，
+// 所以「2.1 分」和「差 0.3 翻档」说的不是同一件事：分数只作展示（见 score）。
+// 这里反过来算：把某个门槛翻过去，档位会变成哪一档、差多少。
+// 差值取门槛上的实数距（通根 1.0 / 净帮扶 0 / 得令降档阈值 −1.5），
+// 不拿 score 相减——那样算出来的「差」没有门槛含义。
+const BOUNDARY_NEAR = 0.5;
+function boundaryOf(e, level) {
+  const rs = Number(e.rootScore) || 0;
+  const hs = Number(e.helpScore) || 0;
+  const rooted = Array.isArray(e.helperRooted) ? e.helperRooted : [];
+  const near = [];
+  const add = (key, flip, cond, gap, by) => {
+    if (!cond) return;
+    const alt = levelOf({ ...e, ...flip });
+    if (!alt.level || alt.level === level) return;
+    near.push({ key, from: level, to: alt.level, toBasis: alt.basis, gap: Math.round(Math.abs(gap) * 10) / 10, by });
+  };
+  // 得地门槛：通根 1.0（本气通根，或折根后仍够一档）
+  add('di-up', { deDi: true, diHalf: false }, !e.deDi && rs >= 0.65,
+    1 - rs, `通根再加 ${(1 - rs).toFixed(1)} 就到得地门槛，现在 ${rs.toFixed(1)}（门槛 1.0）`);
+  add('di-down', { deDi: false, diHalf: rs > 0 }, e.deDi && rs - 1 < 0.4,
+    rs - 1, `通根只比门槛多 ${(rs - 1).toFixed(1)}，现在 ${rs.toFixed(1)}（门槛 1.0），折掉这一点就翻档`);
+  // 得势门槛：有能出根的帮扶，且净帮扶 ≥ 0
+  add('shi-up', { deShi: true, shiHalf: false }, rooted.length > 0 && !e.deShi && hs > -1,
+    0 - hs, `净帮扶再加 ${(0 - hs).toFixed(1)} 就到得势门槛，现在 ${hs.toFixed(1)}（门槛 0）`);
+  add('shi-down', { deShi: false, shiHalf: true }, e.deShi && hs < 0.9,
+    hs, `净帮扶只比门槛多 ${hs.toFixed(1)}（门槛 0），再耗一点就翻档`);
+  // 得令降档阈值：净帮扶 −1.5
+  add('ling-down', { helpScore: -1.6, deShi: false }, e.deLing && !e.deShi && hs > -1.5 && hs < -0.9,
+    hs + 1.5, `净帮扶再耗 ${(hs + 1.5).toFixed(1)} 就降到偏强，现在 ${hs.toFixed(1)}（阈值 −1.5）`);
+  near.sort((a, b) => a.gap - b.gap);
+  const nearest = near.length && near[0].gap <= BOUNDARY_NEAR ? near[0] : null;
+  return {
+    near: !!nearest,
+    level,
+    candidates: near,
+    nearest,
+    plain: nearest
+      ? `这一档踩在线上：离「${nearest.to}」只差 ${nearest.gap.toFixed(1)}——${nearest.by}。相邻两档都说得通，别把档位当定论。`
+      : '',
+    note: '档位由得令／得地／得势三个是非判定，分数（score）只作展示、不是切档刻度；差值按门槛上的实数距计算',
+  };
+}
+
 function buildBazi(input) {
   assertCivil(input);
   let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
@@ -7602,21 +7739,10 @@ function buildBazi(input) {
   const deShi = helperRooted.length > 0 && helpScore >= 0;
   const shiHalf = !deShi && (helperRooted.length > 0 || virtualHelpers.length > 0);
 
-  let level;
-  let basis;
-  if (deLing) {
-    // 得令即旺。月令当旺同气、或当令生我，四柱必有强根，不作身弱论。
-    // 唯一降档：天干重耗（净帮扶 ≤ -1.5）且无势，属「旺而不久」，降作偏强。
-    if (helpScore <= -1.5 && !deShi) { level = '偏强'; basis = '得令，但天干重耗、全无援手（旺而不久）'; }
-    else { level = '身强'; basis = '得令（月令当旺或生我）'; }
-  } else if (deDi && deShi) { level = '偏强'; basis = '失令，有强根且得势'; }
-  else if (deDi && shiHalf) { level = '中和'; basis = '失令，有强根但帮扶不敌耗泄'; }
-  else if (deDi) { level = '偏弱'; basis = '失令，有强根但无势'; }
-  else if (diHalf && deShi) { level = '中和'; basis = '失令，弱根而得势'; }
-  else if (diHalf && shiHalf) { level = '偏弱'; basis = '失令，弱根且帮扶不敌耗泄'; }
-  else if (diHalf) { level = '身弱'; basis = '失令，只有弱根、毫无帮扶'; }
-  else if (deShi) { level = '偏弱'; basis = '失令，无根而有势'; }
-  else { level = '身弱'; basis = '失令、无根、无势'; }
+  // 档位由 levelOf() 的同一张真值表判——临界分析要拿它反复重判，
+  // 所以判定只留一份，不在 compute 里再写一遍。
+  const judges = { deLing, deDi, diHalf, deShi, shiHalf, helpScore, rootScore, helperRooted };
+  const { level, basis } = levelOf(judges);
 
   const total = Math.round((monthW + rootScore + helpScore) * 10) / 10;
 
@@ -7627,6 +7753,11 @@ function buildBazi(input) {
   if (rootScore >= 0.75 && rootScore < 1.35) edges.push(`得地临界（通根 ${rootScore.toFixed(1)}，1.0 为得地门槛）`);
   if (helperRooted.length > 0 && helpScore > -0.6 && helpScore < 0.6) edges.push(`得势临界（净帮扶 ${helpScore.toFixed(1)}，0 为得势门槛）`);
   if (rootScore > 0 && rootScore < 0.4) edges.push(`弱根临界（通根 ${rootScore.toFixed(1)}）`);
+
+  // 档位临界（另算一套，不并入 edges）：edges 是给运程压排序用的「三要素差一点点」，
+  // boundary 是给解读与面板用的「这一档离隔壁档差多少」。两者口径不同，不合并——
+  // 合了以后 trend 那边会拿到一堆它不该管的文案。
+  const boundary = boundaryOf(judges, level);
 
   const structureText = factorInfo.notes.length ? `；合会折根：${factorInfo.notes.join('、')}` : '';
   const virtualText = virtualHelpers.length ? `；虚透${virtualHelpers.join('')}帮扶减半` : '';
@@ -7642,6 +7773,7 @@ function buildBazi(input) {
       shi: { ok: deShi, half: shiHalf, rooted: helperRooted, virtual: virtualHelpers },
     },
     edges,
+    boundary,
     parts: {
       season: { branch: monthBranch, element: seasonEl, word: monthWord, weight: monthW },
       roots: rootBranches,
@@ -22851,9 +22983,23 @@ function buildPlain(r, ask, ctx = {}) {
     const syPlain = sy
       ? `再往后看，${sy.year} 年${sy.ganzhi}是${sy.suiyun.signals.map((x) => x.type).join('、')}——传统上把它当作「变化感强一点」的提示，既不是好消息也不是坏消息，遇上时多留个心眼就好。`
       : '';
+    // 临界：档位是几个是非判定的组合，不是一条刻度。踩线时两档都说得通，
+    // 不说清这一点，用户会把「中和」当成精确结论去跟人争。
+    const bd = st.boundary && st.boundary.near && st.boundary.nearest
+      ? `顺带说一句：你这个档位是踩在线上的（${st.boundary.nearest.by}），换个算法就可能是「${st.boundary.nearest.to}」。别拿档位当标签，它只说明力气够不够用。`
+      : '';
+    // 格成不真 ≠ 命不好：不成格说的是贵格模板没套上，不是人过得差
+    const ps = r.frame && r.frame.patternScore;
+    const psPlain = ps
+      ? (ps.grade === '不成格'
+        ? '格局那边可能写着「不成格」——那说的是「按教科书的贵格模板没套上」，不是说你命差。成格分低只代表这条路不当主角，路还在别处。'
+        : ps.grade === '成格'
+          ? '格局那边写着「成格」——这是说结构走得顺，不是保证富贵。'
+          : '')
+      : '';
     return `你的命局属于「${s(st.level, '中性')}」：${strength}。` +
       `${favor ? `能补${favor}的环境（行业、方位、作息、相处的人）会让你省力；${avoid ? `而${avoid}偏重的场合容易空耗，能绕就绕。` : ''}` : ''}` +
-      dis + tiaohou + syPlain;
+      dis + psPlain + bd + tiaohou + syPlain;
   }
   if (r.system === 'ziwei') {
     const body = r.body || {};
@@ -28563,11 +28709,11 @@ function baziInterpret(r) {
     .sort((a, b) => (Number(groups[b]) || 0) - (Number(groups[a]) || 0));
 
   const frameworkText = [
-    `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。`,
+    `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。${st.boundary && st.boundary.near ? `\n**档位临界**：${st.boundary.plain}` : ''}`,
     `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${neutral.length ? `（${join(neutral.map((n) => n.element))} 近零，按中性偏忌看）` : ''}${frameToneOf(level, favorRolesByWeight)}`,
     `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
       ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
-      : ''}${frame.patternScore && frame.patternScore.applicable ? `。成格评分 ${frame.patternScore.score}/100（${frame.patternScore.grade}）` : ''}。`,
+      : ''}${frame.patternScore && frame.patternScore.applicable ? `。成格评分 ${frame.patternScore.score}/100（${frame.patternScore.grade}）——${frame.patternScore.pass ? '说的是这条路走得顺，别当成富贵的判词' : '这是贵格标准的结论，不是命差的结论（见格局依据）'}` : ''}。`,
   ].join('\n');
 
   const portraitText = [
@@ -28716,7 +28862,10 @@ function baziInterpret(r) {
     }] : []),
     ...(ys.tactics ? [{
       key: 'tactics', label: '取用手法',
-      text: `${ys.tactics.name}：${ys.tactics.tip}。要注意${ys.tactics.caveat}。判据——${ys.tactics.basis}。`,
+      text: `${ys.tactics.name}：${ys.tactics.tip}。要注意${ys.tactics.caveat}。判据——${ys.tactics.basis}。`
+        + (ys.combination
+          ? `\n组合取舍（官杀该制还是该化，按局中十神分量定）：${ys.combination.rows.map((r) => `${r.role}——${r.action}：${r.note}`).join('　')}\n口径：${ys.combination.note}`
+          : ''),
     }] : []),
     ...(ys.qt ? [{
       key: 'qiongtong', label: '穷通宝鉴',
@@ -28738,7 +28887,12 @@ function baziInterpret(r) {
       key: 'geju', label: '格局依据',
       text: ((Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
         `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局')
-        + (frame.patternScore ? `\n成格评分：${frame.patternScore.detail}` : ''),
+        + (frame.patternScore
+          ? `\n成格评分：${frame.patternScore.detail}`
+            + (frame.patternScore.layers
+              ? `\n两层分开看——贵格标准：${frame.patternScore.layers.school}\n人生判断：${frame.patternScore.layers.life}\n结论：${frame.patternScore.verdict}`
+              : '')
+          : ''),
     },
     ...(frame.bingyao ? [{
       key: 'bingyao', label: '病药',
@@ -39832,6 +39986,12 @@ window.__MP_VER = "0.82.0";
     const fr = r.frame || {};
     const tierCls = (t) => (t === '大吉' || t === '吉' ? 'ok' : t === '大忌' || t === '忌' ? 'warn' : '');
     const sect = (title, body) => (body ? `<div class="pp-sec"><div class="pp-sec-h">${title}</div>${body}</div>` : '');
+    // 成格分是「贵格标准」那一层，不是人生判断——面板必须把这句话放在分数旁边，
+    // 否则看到「不成格 20/100」的人会直接当成「命差」。
+    const psc = fr.patternScore;
+    const pscHTML = psc
+      ? `<div class="pp-tl pp-dim" title="${esc(psc.detail || '')}">成格分 ${psc.grade ? `${esc(psc.grade)}　${psc.score}/100` : '外格不评分'}　${esc(psc.verdict || '')}</div>`
+      : '';
     const gj = fr.geju && fr.geju.length ? `
       <div class="pp-tl">${fr.primary ? `主格 <b>${esc(fr.primary.name)}</b>　${esc(fr.primary.evidence)}` : ''}</div>
       <div class="pp-chips">${fr.geju.map((g) => {
@@ -39839,7 +39999,7 @@ window.__MP_VER = "0.82.0";
         const pending = g.status === '待定' || g.status === '假从';
         const title = `${g.evidence || ''}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`;
         return `<span class="pp-chip ${broke ? 'broken' : pending ? 'warn' : ''}" title="${esc(title)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}${g.status ? `·${esc(g.status)}` : ''}</i></span>`;
-      }).join('')}</div>` : '';
+      }).join('')}</div>${pscHTML}` : '';
     const ysnChips = (() => {
       const neu = Array.isArray(fr.yongshen && fr.yongshen.neutral) ? fr.yongshen.neutral : [];
       const neuGods = new Set((fr.yongshen && fr.yongshen.neutralTenGods) || []);
@@ -39853,6 +40013,12 @@ window.__MP_VER = "0.82.0";
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${ysnChips}</div>
       ${(fr.yongshen.disputed || []).length
         ? `<div class="pp-tl pp-dim">有争议：${fr.yongshen.disputed.map((d) => `${esc(d.element)}（扶抑为${esc(d.favorRole)}·${esc(d.favorVerb)}，${esc(d.climate)}盘调候忌${esc(d.element)}）`).join('、')}　保留在喜用，不列入忌</div>`
+        : ''}
+      ${fr.yongshen.combination
+        ? `<div class="pp-tl">组合取舍（官杀该制还是该化）</div><div class="pp-chips">${fr.yongshen.combination.rows.map((r) => {
+          const cls = /忌|慎用|耗身/.test(r.action) ? 'warn' : /^(用|可化|可用)/.test(r.action) ? 'ok' : 'neu';
+          return `<span class="pp-chip ${cls}" title="${esc(r.note)}">${esc(r.role)} ${esc(r.action)}</span>`;
+        }).join('')}</div>`
         : ''}
       <div class="pp-tl pp-dim">${esc(fr.yongshen.detail)}</div>` : '';
     const cli = r.climate || (fr.yongshen && fr.yongshen.climate) || null;
@@ -39896,7 +40062,10 @@ window.__MP_VER = "0.82.0";
     const sySrc = syc ? `<div class="pp-dim pp-sy-src" title="${esc(syc.plain || '')}">《${esc(syc.bookName || '')}·${esc(syc.chapter || '')}》「${esc(syc.quote || '')}」</div>` : '';
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
       `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${(x.type.startsWith('流年') || x.type.startsWith('大运')) && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
-    const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
+    const bdChip = r.strength && r.strength.boundary && r.strength.boundary.near && r.strength.boundary.nearest
+      ? `<span class="pp-chip warn" title="${esc(r.strength.boundary.plain || '')}">临界·离${esc(r.strength.boundary.nearest.to)} ${r.strength.boundary.nearest.gap} 分</span>`
+      : '';
+    const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}${bdChip}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
     // 八大地支结构：只读标注，与上面旺衰分并列。算出来却没人看得见等于没做，所以面板必须给这一行。
     const bs = r.strength && r.strength.branchStructure;
     const structHTML = bs ? (() => {

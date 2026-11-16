@@ -2,7 +2,7 @@
 // 这两件事的由来：真实用户拿着「插件说最需要火、用神行又说忌火」来问到底补不补。
 // 所以这里既验组合取用只给一条，也验同一条输出里不会出现两套相反的取用裁决。
 import { buildBazi } from '../engine/bazi.js';
-import { tacticsOf } from '../engine/geju.js';
+import { tacticsOf, combinationOf } from '../engine/geju.js';
 import { judgeClimate, arbitrate, climateText } from '../engine/tiaohou.js';
 import { chartIdOf, buildEnvelope } from '../engine/envelope.js';
 
@@ -91,6 +91,34 @@ console.log('\n[真该调候优先的盘，原措辞要保住]');
   const arb2 = arbitrate(cold, ['金', '水'], ['土', '火']);
   ok('该盘 arbitrate 保留「按调候优先取」', /本盘按调候优先取/.test(arb2.text), arb2.text.slice(0, 26));
   ok('该盘不标 soft', arb2.soft !== true);
+}
+
+console.log('\n[组合层：每一路该怎么算（制杀 / 化杀）]');
+{
+  const noYin = G({ 官杀: 1.2, 食伤: 2.0, 财: 1.0, 比劫: 2.0, 印: 0 });
+  const c1 = combinationOf({ tactics: T('偏弱', noYin.groups), gods: noYin });
+  ok('无印可化：食伤标「短期可用·长期耗身」', !!c1 && c1.rows.some((r) => r.role === '食伤' && /短期可用/.test(r.action)),
+    c1 && c1.rows.map((r) => `${r.role}${r.action}`).join('、'));
+  ok('无印可化：印标「优先补」而不是「用」', !!c1 && c1.rows.some((r) => r.role === '印' && r.action === '优先补'));
+  ok('无印可化：官杀标忌', !!c1 && c1.rows.some((r) => r.role === '官杀' && /忌/.test(r.action)));
+
+  const withYin = G({ 官杀: 1.2, 食伤: 1.0, 财: 1.0, 比劫: 1.0, 印: 1.0 });
+  const c2 = combinationOf({ tactics: T('偏弱', withYin.groups), gods: withYin });
+  ok('杀印相生：官杀标「可化」，不再整体算忌', !!c2 && c2.rows.some((r) => r.role === '官杀' && r.action === '可化'),
+    c2 && c2.rows.map((r) => `${r.role}${r.action}`).join('、'));
+  ok('杀印相生：食伤标「慎用」', !!c2 && c2.rows.some((r) => r.role === '食伤' && r.action === '慎用'));
+  ok('没有取用手法时组合层返回 null（不硬编）', combinationOf({ tactics: null, gods: G({}) }) === null);
+
+  // 接进 yongshen：壬水未月那张盘正是「不成格 + 无印可化」，组合层必须把话说圆
+  const r = buildBazi(REAL);
+  const ys = r.frame.yongshen;
+  ok('壬水盘 yongshen 带 combination', !!ys.combination);
+  ok('壬水盘组合层点出「印 优先补」',
+    !!ys.combination && ys.combination.rows.some((x) => x.role === '印' && x.action === '优先补'),
+    ys.combination && ys.combination.rows.map((x) => `${x.role}${x.action}`).join('、'));
+  ok('组合层不改 favor / avoid（行运评分口径不动）',
+    Array.isArray(ys.favor) && Array.isArray(ys.avoid) && ys.favor.length === 3, ys.favor.join(''));
+  ok('组合层有「不改数组」的口径说明', !!ys.combination && /不改 favor/.test(ys.combination.note));
 }
 
 console.log('\n[chart_id：不同盘不能撞同一个 id，缓存不能串盘]');

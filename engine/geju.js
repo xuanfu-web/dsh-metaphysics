@@ -214,6 +214,18 @@ const WEAK_PENALTY = 20;
 const PATTERN_PASS = 60;
 const OUTER_PATTERNS = ['建禄格', '阳刃格', '月刃格', '月劫格'];
 
+// 「成格分」量的是格局标不标准，不是人过得好不好。两层必须分开说。
+// 贵格标准（这一层）校的是结构像不像教科书的成格模板：透干、通根、被不被合、用神虚不虚；
+// 人生判断（另一层）看的是这张盘对日主有没有实际帮助：用神能不能用、行运顺不顺。
+// 用户看到「不成格」就自我否定，是把前一层当成了后一层——所以每一处出现 grade 的地方都要带这句。
+const PATTERN_LAYERS = {
+  school: '校的是结构像不像课里的成格模板：透干、通根、有没有被合、用神虚不虚。',
+  life: '看的是这张盘对日主有没有实际帮助：用神能不能用、行运顺不顺——与成格分不是一件事。',
+  pass: '过 60 分线作成格论：说明这条结构走得顺、位置感强。它量的是结构不是结果——富贵与否不在这张分表上。',
+  fail: '不及 60 分线作不成格论：这只说明「按贵格模板没套上」，不是命差。成格分低只代表这条路不当主角，不代表没有路——大运、行业与自己的选择都在评分之外。',
+  outer: '本格属外格（建禄／羊刃／月劫），课里不按正八格计分，也就谈不上「成不成格」；不要拿评分当人生结论。',
+};
+
 /** 天干五合：找与 stem 相合的另一干（合而不化也算） */
 function stemHeWith(stem, pillars) {
   for (const key of ['year', 'month', 'day', 'hour']) {
@@ -277,6 +289,8 @@ export function patternScoreOf(pattern, pillars, dayStem, monthBranch, wuxing = 
       score: null,
       pass: null,
       grade: null,
+      layers: { school: PATTERN_LAYERS.school, life: PATTERN_LAYERS.life },
+      verdict: PATTERN_LAYERS.outer,
       threshold: PATTERN_PASS,
       detail: `${pattern.name}属外格（建禄/羊刃/月劫），课程不按正八格的透干档位计成格分，故不套 −30 / −20。`,
       method: '只评正八格月令格；建禄/羊刃/月劫属外格，不评分',
@@ -329,6 +343,9 @@ export function patternScoreOf(pattern, pillars, dayStem, monthBranch, wuxing = 
     score,
     pass,
     grade: pass ? '成格' : '不成格',
+    // 两层分开说：grade 是贵格标准的结论，verdict 才是给人看的那句判断
+    layers: { school: PATTERN_LAYERS.school, life: PATTERN_LAYERS.life },
+    verdict: pass ? PATTERN_LAYERS.pass : PATTERN_LAYERS.fail,
     threshold: PATTERN_PASS,
     detail,
     method: '基础分按取格档位（专气透 90 / 本气透 70 / 中气透 50 / 余气透 20 / 同五行透 5 / 会支取用 60 / 月令不透 40）；透干被合 −30、用神太弱 −20；60 分及格。只读标注，不改取格与既有三态。',
@@ -730,6 +747,57 @@ export function tacticsOf({ strength = {}, gods = {} } = {}) {
 
 // ── 用神 / 喜忌 ──────────────────────────────────────────────
 
+// ── 组合层：制杀 / 化杀 ─────────────────────────────────────
+// 扶抑只按强弱给 favor/avoid，一遇官杀压身就把整路官杀写成「忌」；
+// 而 tactics 那边又说「杀印相生，用官杀换名分」——同一份输出里两句话打架，
+// 用户按「忌官杀」去躲，等于把最值钱的那条路躲掉了。
+// 这里按局中真有的十神分量，把每一路拆成「可化／可制／纯忌／优先补」分别标注。
+// 只出文字与标注，不动 favor/avoid 数组：行运评分读的是那两个数组，
+// 动了会连带改每一年的吉凶档位，那是另一件事，不在这层解决。
+export function combinationOf({ tactics = null, gods = null } = {}) {
+  if (!tactics) return null;
+  const g = (gods && (gods.groups || gods)) || {};
+  const rr = (x) => Math.round((Number(x) || 0) * 10) / 10;
+  const sha = rr(g.官杀);
+  const yin = rr(g.印);
+  const shi = rr(g.食伤);
+  const cai = rr(g.财);
+  const bi = rr(g.比劫);
+  const rows = [];
+  const push = (role, action, note) => rows.push({ role, action, note });
+  if (tactics.key === 'sha-yin') {
+    push('官杀', '可化', `官杀 ${sha} 压身，但局中印 ${yin} 接得住：这一路不算纯忌，是「压力换名分」的原料——怕的是无印硬顶。`);
+    push('印', '用（枢纽）', `印是本盘的关键（${yin} 分）：师承、资质、体系里的位置都算，虚名不算。`);
+    push('食伤', '慎用', `食伤 ${shi} 分：身已偏弱，再泄只会更虚，制杀不是本盘首选路。`);
+  } else if (tactics.key === 'shi-sha' && tactics.lean === 'weak') {
+    push('官杀', '忌（无可化之路）', `官杀 ${sha} 压身、印又近零（${yin}）：没有印可化，只能硬顶。`);
+    push('食伤', '短期可用·长期耗身', `食伤 ${shi} 是当下唯一制得住官杀的力，吃的是自己的力气：制得住不等于该长期这么打，能补印就先补印。`);
+    push('印', '优先补', '局里没有现成的印，运里来印（读书、拜师、进有规矩的体系）比硬扛省力。');
+  } else if (tactics.key === 'shi-sha' && tactics.lean === 'strong') {
+    push('官杀', '可用（贵气）', `官杀 ${sha} 是贵气来源，身扛得住就不算忌。`);
+    push('食伤', '用（制杀）', `食伤 ${shi} 制得住：压力可以转成产出，注意别制过头成伤官见官。`);
+  } else if (tactics.key === 'cai-guan') {
+    push('财', '用（生官）', `财 ${cai} 生官：用资源换位置，方向对。`);
+    push('官杀', '可用（可担）', `官杀 ${sha} 走得通，前提是量入为出。`);
+    push('食伤', '偏轻', `食伤 ${shi} 不足以制杀，别指望靠嘴硬顶。`);
+  } else if (tactics.key === 'shang-yin') {
+    push('食伤', '已过', `食伤 ${shi} 泄得太多，才华要找出口，也要收口。`);
+    push('印', '用（收）', `印 ${yin} 把泄出去的收住：有出处才落得住。`);
+  } else if (tactics.key === 'bi-cai') {
+    push('财', '可用（需分担）', `财 ${cai} 在前、身不够担，别一个人吃下。`);
+    push('比劫', '用（合力）', `比劫 ${bi} 能一起扛，但同时也分账，合作先把规矩讲死。`);
+  }
+  if (!rows.length) return null;
+  return {
+    key: tactics.key,
+    name: tactics.name,
+    useRole: tactics.use,
+    rows,
+    summary: `按组合看：${rows.map((r) => `${r.role} ${r.action}`).join('、')}。这条路的前提是「${tactics.caveat}」。`,
+    note: '组合层只标注每一路该怎么算，不改 favor/avoid 数组——行运评分仍按扶抑口径算，免得一句话连带改掉每一年的吉凶档位。',
+  };
+}
+
 
 function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods = null) {
   const roles = elementRoles(dayStem);
@@ -789,6 +857,8 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
   const tongguan = tongguanOf(favor, avoid, wuxing);
   // 取用手法：官杀压身时「硬制还是化」的分野，见 tacticsOf
   const tactics = gods ? tacticsOf({ strength, gods }) : null;
+  // 组合层：把每一路拆成可化／可制／纯忌，见 combinationOf
+  const combination = combinationOf({ tactics, gods });
 
   const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
   const disputedText = disputed
@@ -818,6 +888,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
             : `未见${tongguan.bridge}，关未通`}（只作结构提示，不据此断吉凶）。`
       : '',
     tactics ? `取用手法：${tactics.name}——${tactics.tip}（${tactics.caveat}）。判据：${tactics.basis}。` : '',
+    combination ? `组合取舍：${combination.summary}` : '',
     arb.text,
     arb.clash
       ? (climate.priority === '调候优先'
@@ -845,6 +916,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
     qt,
     tongguan,
     tactics,
+    combination,
     detail,
   };
 }

@@ -1,7 +1,7 @@
 // 八字旺衰 · 合会折根与虚透减半。
 // 起因：亥月戊寅日、年子时丑这一型，旧算法把丑中己土、寅中戊土当足根，天干己土当实帮，
 // 得出「偏强」并忌土；亥子丑会水、寅亥合木后，土根实际被局吸走，应偏弱、喜火土。
-import { compute } from '../engine/index.js';
+import { compute, interpret } from '../engine/index.js';
 import { ok, eq } from './_harness.mjs';
 
 const bazi = (datetime, extra = {}) => compute({ system: 'bazi', datetime, gender: 'male', trueSolar: false, ...extra });
@@ -77,3 +77,31 @@ for (let y = 1960; y <= 2019; y += 3) {
 }
 eq('五档都会出现', ['身强', '偏强', '中和', '偏弱', '身弱'].filter((k) => count[k] > 0).length, 5);
 ok('没有一档超过四成', Object.values(count).every((n) => n / total <= 0.4), JSON.stringify(count));
+
+// ── 六、临界档位：踩在线上的盘要自己说出来 ─────────────────────
+// 档位是三要素的是非判定，不是连续分数切档，所以「2.1 显示中和」这种话本身不解释
+// 为什么不是偏强。近线时把「离翻档差多少、往哪边翻」讲清楚，争议才不会落到用户头上。
+{
+  const near = bazi('1996-07-14T06:00', { address: '广州' });
+  const b = near.strength.boundary;
+  eq('临界盘档位仍是中和', near.strength.level, '中和');
+  ok('临界盘 near=true', b && b.near === true, JSON.stringify(b && b.near));
+  ok('临界盘给出往哪档翻', !!b.nearest && !!b.nearest.to && b.nearest.to !== near.strength.level, b.nearest && b.nearest.to);
+  ok('临界盘给出差距且不超过阈值', !!b.nearest && b.nearest.gap <= 0.5, b.nearest && String(b.nearest.gap));
+  ok('临界盘说明是哪个门槛卡的', !!b.nearest && typeof b.nearest.by === 'string' && b.nearest.by.length > 4, b.nearest && b.nearest.by);
+  ok('plain 说「别把档位当定论」', /别把档位当定论/.test(b.plain || ''), b.plain);
+
+  const it = interpret(near, { system: 'bazi', datetime: '1996-07-14T06:00', gender: 'male', trueSolar: false, address: '广州' });
+  ok('临界盘解读里有「档位临界」一栏', (it.sections || []).some((s) => /档位临界/.test(s.text || '')));
+  ok('临界盘解读不给断言式结论',
+    !(it.sections || []).some((s) => /档位临界/.test(s.text || '') && /一定|必然|注定/.test(s.text.split('档位临界')[1] || '')));
+}
+
+{
+  // 离边界远的盘不能也发提示，否则「临界」两字就贬值了
+  const far = bazi('1990-05-12T14:30');
+  ok('离边界远的盘 near=false', far.strength.boundary && far.strength.boundary.near === false, JSON.stringify(far.strength.boundary && far.strength.boundary.near));
+  ok('离边界远不出 nearest', far.strength.boundary && far.strength.boundary.nearest === null);
+  const it = interpret(far, { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', trueSolar: false });
+  ok('离边界远解读不提「档位临界」', !(it.sections || []).some((s) => /档位临界/.test(s.text || '')));
+}

@@ -372,6 +372,71 @@ export function renyuanOf(monthBranch, birthJdn, termJd) {
  * 排四柱八字
  * @param {object} input { year,month,day,hour,minute, gender:'male'|'female', longitude?, lateZi?:boolean, trueSolar?:boolean }
  */
+// ── 旺衰档位：真值表单独成函数 ────────────────────────────────
+// 抽出来不是为了好看：临界提示要「翻一个条件再判一次」，同一张真值表
+// 写在两处早晚会漂。判定只有这一份，compute 与 boundaryOf 都调它。
+function levelOf(e) {
+  const { deLing, deDi, diHalf, deShi, shiHalf, helpScore } = e;
+  if (deLing) {
+    // 得令即旺。唯一降档：天干重耗（净帮扶 ≤ -1.5）且无势，属「旺而不久」。
+    if (helpScore <= -1.5 && !deShi) return { level: '偏强', basis: '得令，但天干重耗、全无援手（旺而不久）' };
+    return { level: '身强', basis: '得令（月令当旺或生我）' };
+  }
+  if (deDi && deShi) return { level: '偏强', basis: '失令，有强根且得势' };
+  if (deDi && shiHalf) return { level: '中和', basis: '失令，有强根但帮扶不敌耗泄' };
+  if (deDi) return { level: '偏弱', basis: '失令，有强根但无势' };
+  if (diHalf && deShi) return { level: '中和', basis: '失令，弱根而得势' };
+  if (diHalf && shiHalf) return { level: '偏弱', basis: '失令，弱根且帮扶不敌耗泄' };
+  if (diHalf) return { level: '身弱', basis: '失令，只有弱根、毫无帮扶' };
+  if (deShi) return { level: '偏弱', basis: '失令，无根而有势' };
+  return { level: '身弱', basis: '失令、无根、无势' };
+}
+
+// ── 档位临界 ────────────────────────────────────────────────
+// 档位是几个「是非判定」的组合结果，不是一条连续刻度切出来的，
+// 所以「2.1 分」和「差 0.3 翻档」说的不是同一件事：分数只作展示（见 score）。
+// 这里反过来算：把某个门槛翻过去，档位会变成哪一档、差多少。
+// 差值取门槛上的实数距（通根 1.0 / 净帮扶 0 / 得令降档阈值 −1.5），
+// 不拿 score 相减——那样算出来的「差」没有门槛含义。
+const BOUNDARY_NEAR = 0.5;
+function boundaryOf(e, level) {
+  const rs = Number(e.rootScore) || 0;
+  const hs = Number(e.helpScore) || 0;
+  const rooted = Array.isArray(e.helperRooted) ? e.helperRooted : [];
+  const near = [];
+  const add = (key, flip, cond, gap, by) => {
+    if (!cond) return;
+    const alt = levelOf({ ...e, ...flip });
+    if (!alt.level || alt.level === level) return;
+    near.push({ key, from: level, to: alt.level, toBasis: alt.basis, gap: Math.round(Math.abs(gap) * 10) / 10, by });
+  };
+  // 得地门槛：通根 1.0（本气通根，或折根后仍够一档）
+  add('di-up', { deDi: true, diHalf: false }, !e.deDi && rs >= 0.65,
+    1 - rs, `通根再加 ${(1 - rs).toFixed(1)} 就到得地门槛，现在 ${rs.toFixed(1)}（门槛 1.0）`);
+  add('di-down', { deDi: false, diHalf: rs > 0 }, e.deDi && rs - 1 < 0.4,
+    rs - 1, `通根只比门槛多 ${(rs - 1).toFixed(1)}，现在 ${rs.toFixed(1)}（门槛 1.0），折掉这一点就翻档`);
+  // 得势门槛：有能出根的帮扶，且净帮扶 ≥ 0
+  add('shi-up', { deShi: true, shiHalf: false }, rooted.length > 0 && !e.deShi && hs > -1,
+    0 - hs, `净帮扶再加 ${(0 - hs).toFixed(1)} 就到得势门槛，现在 ${hs.toFixed(1)}（门槛 0）`);
+  add('shi-down', { deShi: false, shiHalf: true }, e.deShi && hs < 0.9,
+    hs, `净帮扶只比门槛多 ${hs.toFixed(1)}（门槛 0），再耗一点就翻档`);
+  // 得令降档阈值：净帮扶 −1.5
+  add('ling-down', { helpScore: -1.6, deShi: false }, e.deLing && !e.deShi && hs > -1.5 && hs < -0.9,
+    hs + 1.5, `净帮扶再耗 ${(hs + 1.5).toFixed(1)} 就降到偏强，现在 ${hs.toFixed(1)}（阈值 −1.5）`);
+  near.sort((a, b) => a.gap - b.gap);
+  const nearest = near.length && near[0].gap <= BOUNDARY_NEAR ? near[0] : null;
+  return {
+    near: !!nearest,
+    level,
+    candidates: near,
+    nearest,
+    plain: nearest
+      ? `这一档踩在线上：离「${nearest.to}」只差 ${nearest.gap.toFixed(1)}——${nearest.by}。相邻两档都说得通，别把档位当定论。`
+      : '',
+    note: '档位由得令／得地／得势三个是非判定，分数（score）只作展示、不是切档刻度；差值按门槛上的实数距计算',
+  };
+}
+
 export function buildBazi(input) {
   assertCivil(input);
   let { year, month, day, hour = 0, minute = 0, gender = 'male' } = input;
@@ -626,21 +691,10 @@ export function buildBazi(input) {
   const deShi = helperRooted.length > 0 && helpScore >= 0;
   const shiHalf = !deShi && (helperRooted.length > 0 || virtualHelpers.length > 0);
 
-  let level;
-  let basis;
-  if (deLing) {
-    // 得令即旺。月令当旺同气、或当令生我，四柱必有强根，不作身弱论。
-    // 唯一降档：天干重耗（净帮扶 ≤ -1.5）且无势，属「旺而不久」，降作偏强。
-    if (helpScore <= -1.5 && !deShi) { level = '偏强'; basis = '得令，但天干重耗、全无援手（旺而不久）'; }
-    else { level = '身强'; basis = '得令（月令当旺或生我）'; }
-  } else if (deDi && deShi) { level = '偏强'; basis = '失令，有强根且得势'; }
-  else if (deDi && shiHalf) { level = '中和'; basis = '失令，有强根但帮扶不敌耗泄'; }
-  else if (deDi) { level = '偏弱'; basis = '失令，有强根但无势'; }
-  else if (diHalf && deShi) { level = '中和'; basis = '失令，弱根而得势'; }
-  else if (diHalf && shiHalf) { level = '偏弱'; basis = '失令，弱根且帮扶不敌耗泄'; }
-  else if (diHalf) { level = '身弱'; basis = '失令，只有弱根、毫无帮扶'; }
-  else if (deShi) { level = '偏弱'; basis = '失令，无根而有势'; }
-  else { level = '身弱'; basis = '失令、无根、无势'; }
+  // 档位由 levelOf() 的同一张真值表判——临界分析要拿它反复重判，
+  // 所以判定只留一份，不在 compute 里再写一遍。
+  const judges = { deLing, deDi, diHalf, deShi, shiHalf, helpScore, rootScore, helperRooted };
+  const { level, basis } = levelOf(judges);
 
   const total = Math.round((monthW + rootScore + helpScore) * 10) / 10;
 
@@ -651,6 +705,11 @@ export function buildBazi(input) {
   if (rootScore >= 0.75 && rootScore < 1.35) edges.push(`得地临界（通根 ${rootScore.toFixed(1)}，1.0 为得地门槛）`);
   if (helperRooted.length > 0 && helpScore > -0.6 && helpScore < 0.6) edges.push(`得势临界（净帮扶 ${helpScore.toFixed(1)}，0 为得势门槛）`);
   if (rootScore > 0 && rootScore < 0.4) edges.push(`弱根临界（通根 ${rootScore.toFixed(1)}）`);
+
+  // 档位临界（另算一套，不并入 edges）：edges 是给运程压排序用的「三要素差一点点」，
+  // boundary 是给解读与面板用的「这一档离隔壁档差多少」。两者口径不同，不合并——
+  // 合了以后 trend 那边会拿到一堆它不该管的文案。
+  const boundary = boundaryOf(judges, level);
 
   const structureText = factorInfo.notes.length ? `；合会折根：${factorInfo.notes.join('、')}` : '';
   const virtualText = virtualHelpers.length ? `；虚透${virtualHelpers.join('')}帮扶减半` : '';
@@ -666,6 +725,7 @@ export function buildBazi(input) {
       shi: { ok: deShi, half: shiHalf, rooted: helperRooted, virtual: virtualHelpers },
     },
     edges,
+    boundary,
     parts: {
       season: { branch: monthBranch, element: seasonEl, word: monthWord, weight: monthW },
       roots: rootBranches,

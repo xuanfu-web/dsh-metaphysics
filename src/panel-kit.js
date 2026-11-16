@@ -3478,6 +3478,12 @@
     const fr = r.frame || {};
     const tierCls = (t) => (t === '大吉' || t === '吉' ? 'ok' : t === '大忌' || t === '忌' ? 'warn' : '');
     const sect = (title, body) => (body ? `<div class="pp-sec"><div class="pp-sec-h">${title}</div>${body}</div>` : '');
+    // 成格分是「贵格标准」那一层，不是人生判断——面板必须把这句话放在分数旁边，
+    // 否则看到「不成格 20/100」的人会直接当成「命差」。
+    const psc = fr.patternScore;
+    const pscHTML = psc
+      ? `<div class="pp-tl pp-dim" title="${esc(psc.detail || '')}">成格分 ${psc.grade ? `${esc(psc.grade)}　${psc.score}/100` : '外格不评分'}　${esc(psc.verdict || '')}</div>`
+      : '';
     const gj = fr.geju && fr.geju.length ? `
       <div class="pp-tl">${fr.primary ? `主格 <b>${esc(fr.primary.name)}</b>　${esc(fr.primary.evidence)}` : ''}</div>
       <div class="pp-chips">${fr.geju.map((g) => {
@@ -3485,7 +3491,7 @@
         const pending = g.status === '待定' || g.status === '假从';
         const title = `${g.evidence || ''}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`;
         return `<span class="pp-chip ${broke ? 'broken' : pending ? 'warn' : ''}" title="${esc(title)}">${esc(g.name)}<i class="pp-drel">${esc(g.kind)}${g.status ? `·${esc(g.status)}` : ''}</i></span>`;
-      }).join('')}</div>` : '';
+      }).join('')}</div>${pscHTML}` : '';
     const ysnChips = (() => {
       const neu = Array.isArray(fr.yongshen && fr.yongshen.neutral) ? fr.yongshen.neutral : [];
       const neuGods = new Set((fr.yongshen && fr.yongshen.neutralTenGods) || []);
@@ -3499,6 +3505,12 @@
       <div class="pp-chips">${fr.yongshen.favorTenGods.map((t) => `<span class="pp-chip ok">${esc(t)}</span>`).join('')}${ysnChips}</div>
       ${(fr.yongshen.disputed || []).length
         ? `<div class="pp-tl pp-dim">有争议：${fr.yongshen.disputed.map((d) => `${esc(d.element)}（扶抑为${esc(d.favorRole)}·${esc(d.favorVerb)}，${esc(d.climate)}盘调候忌${esc(d.element)}）`).join('、')}　保留在喜用，不列入忌</div>`
+        : ''}
+      ${fr.yongshen.combination
+        ? `<div class="pp-tl">组合取舍（官杀该制还是该化）</div><div class="pp-chips">${fr.yongshen.combination.rows.map((r) => {
+          const cls = /忌|慎用|耗身/.test(r.action) ? 'warn' : /^(用|可化|可用)/.test(r.action) ? 'ok' : 'neu';
+          return `<span class="pp-chip ${cls}" title="${esc(r.note)}">${esc(r.role)} ${esc(r.action)}</span>`;
+        }).join('')}</div>`
         : ''}
       <div class="pp-tl pp-dim">${esc(fr.yongshen.detail)}</div>` : '';
     const cli = r.climate || (fr.yongshen && fr.yongshen.climate) || null;
@@ -3542,7 +3554,10 @@
     const sySrc = syc ? `<div class="pp-dim pp-sy-src" title="${esc(syc.plain || '')}">《${esc(syc.bookName || '')}·${esc(syc.chapter || '')}》「${esc(syc.quote || '')}」</div>` : '';
     const syRow = sy.length ? `<div class="pp-tl pp-dim">岁运提示（只标干支变动，不判吉凶）</div><div class="pp-chips">${sy.map((l) =>
       `<span class="pp-chip" title="${esc(`${l.suiyun.signals.map((x) => x.detail).join('；')}｜${l.suiyun.note || ''}`)}">${l.year} ${esc(l.suiyun.signals.map((x) => `${x.type}${(x.type.startsWith('流年') || x.type.startsWith('大运')) && x.target ? `·${x.target}` : ''}`).join('/'))}</span>`).join('')}</div>${sySrc}` : '';
-    const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
+    const bdChip = r.strength && r.strength.boundary && r.strength.boundary.near && r.strength.boundary.nearest
+      ? `<span class="pp-chip warn" title="${esc(r.strength.boundary.plain || '')}">临界·离${esc(r.strength.boundary.nearest.to)} ${r.strength.boundary.nearest.gap} 分</span>`
+      : '';
+    const str = r.strength ? `<div class="pp-str">日主强弱：<b>${r.strength.level}</b>${r.strength.score}${bdChip}　<span class="pp-dim">${r.strength.detail}</span></div>` : '';
     // 八大地支结构：只读标注，与上面旺衰分并列。算出来却没人看得见等于没做，所以面板必须给这一行。
     const bs = r.strength && r.strength.branchStructure;
     const structHTML = bs ? (() => {

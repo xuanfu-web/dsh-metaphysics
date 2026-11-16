@@ -155,6 +155,28 @@ const W = { 木: 3, 火: 2, 土: 2, 金: 1, 水: 2 };
   ok('解读含成格评分', !!sec && sec.text.includes('成格评分'), sec && sec.text);
   ok('解读写明 70/100', !!sec && sec.text.includes('70/100'), sec && sec.text);
   ok('解读仍保留偏印格依据', !!sec && sec.text.includes('偏印格') && sec.text.includes('本气甲'), sec && sec.text);
+  ok('解读把「贵格标准」与「人生判断」分成两层',
+    !!sec && sec.text.includes('两层分开看') && sec.text.includes('贵格标准') && sec.text.includes('人生判断'), sec && sec.text);
+}
+
+{
+  // 格成不真 ≠ 命不好：评分只能回答「结构像不像模板」，不能回答「人过得好不好」。
+  // 这两句是给人看的核心判断，缺了它「不成格 20/100」会被读成「命差」。
+  const ok2018 = bazi('2018-02-13T10:00').frame.patternScore;
+  ok('成格盘 verdict 说明分数只量结构、不量结果', /富贵与否不在这张分表上/.test(ok2018.verdict || ''), ok2018.verdict);
+  ok('成格盘给两层措辞', !!ok2018.layers && typeof ok2018.layers.school === 'string' && typeof ok2018.layers.life === 'string');
+
+  const ren = bazi('1996-07-14T06:00', { address: '广州' }).frame.patternScore;
+  eq('壬水未月盘不成格', ren.grade, '不成格');
+  ok('不成格 verdict 明确写「不是命差」', /不是命差/.test(ren.verdict || ''), ren.verdict);
+  ok('不成格 verdict 不再断言「有格无用」之类的结论', !/无用|废格|破败/.test(ren.verdict || ''), ren.verdict);
+
+  const outer = bazi('1990-05-12T14:30').frame.patternScore;
+  ok('外格 verdict 说明「谈不上成不成格」', /谈不上「成不成格」/.test(outer.verdict || ''), outer.verdict);
+
+  // 说人话层也要有这句，否则只有展开细节的人才看得到
+  const plain = bazi('1996-07-14T06:00', { address: '广州', withInterpret: true }).interpret.plain;
+  ok('说人话层解释「不成格」不等于命差', /不成格/.test(plain) && /不是说你命差/.test(plain), plain.slice(0, 40));
 }
 
 console.log('\n===== 成格评分 =====');

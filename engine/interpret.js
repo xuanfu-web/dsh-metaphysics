@@ -344,11 +344,11 @@ function baziInterpret(r) {
     .sort((a, b) => (Number(groups[b]) || 0) - (Number(groups[a]) || 0));
 
   const frameworkText = [
-    `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。`,
+    `**日主**：${dm.stem}${dm.element}（${dm.yinYang}${dm.element}）${season ? `生于${season.branch}月，日主在月令「${season.word}」` : ''}，命局${level}（${pick(st, 'score', '—')} 分）${stemP ? `——${stemP.image}之象` : ''}。${st.boundary && st.boundary.near ? `\n**档位临界**：${st.boundary.plain}` : ''}`,
     `**用神**：喜${join(favor) || '—'}（${join(ys.favorRoles || []) || '—'}），忌${join(avoid) || '—'}（${join(ys.avoidRoles || []) || '—'}）。${neutral.length ? `（${join(neutral.map((n) => n.element))} 近零，按中性偏忌看）` : ''}${frameToneOf(level, favorRolesByWeight)}`,
     `**格局**：${primary}（${pick(frame.primary, 'evidence', '')}）${(Array.isArray(frame.geju) ? frame.geju : []).filter((g) => g.name && g.name !== primary).length
       ? `，另有${frame.geju.map((g) => g.name).filter((n) => n && n !== primary).join('、')}`
-      : ''}${frame.patternScore && frame.patternScore.applicable ? `。成格评分 ${frame.patternScore.score}/100（${frame.patternScore.grade}）` : ''}。`,
+      : ''}${frame.patternScore && frame.patternScore.applicable ? `。成格评分 ${frame.patternScore.score}/100（${frame.patternScore.grade}）——${frame.patternScore.pass ? '说的是这条路走得顺，别当成富贵的判词' : '这是贵格标准的结论，不是命差的结论（见格局依据）'}` : ''}。`,
   ].join('\n');
 
   const portraitText = [
@@ -497,7 +497,10 @@ function baziInterpret(r) {
     }] : []),
     ...(ys.tactics ? [{
       key: 'tactics', label: '取用手法',
-      text: `${ys.tactics.name}：${ys.tactics.tip}。要注意${ys.tactics.caveat}。判据——${ys.tactics.basis}。`,
+      text: `${ys.tactics.name}：${ys.tactics.tip}。要注意${ys.tactics.caveat}。判据——${ys.tactics.basis}。`
+        + (ys.combination
+          ? `\n组合取舍（官杀该制还是该化，按局中十神分量定）：${ys.combination.rows.map((r) => `${r.role}——${r.action}：${r.note}`).join('　')}\n口径：${ys.combination.note}`
+          : ''),
     }] : []),
     ...(ys.qt ? [{
       key: 'qiongtong', label: '穷通宝鉴',
@@ -519,7 +522,12 @@ function baziInterpret(r) {
       key: 'geju', label: '格局依据',
       text: ((Array.isArray(frame.geju) ? frame.geju : []).map((g) =>
         `${g.name}（${g.kind}${g.status ? `·${g.status}` : ''}）：${g.evidence}${Array.isArray(g.breaks) && g.breaks.length ? `；破：${g.breaks.join('；')}` : ''}`).join('；') || '未取到格局')
-        + (frame.patternScore ? `\n成格评分：${frame.patternScore.detail}` : ''),
+        + (frame.patternScore
+          ? `\n成格评分：${frame.patternScore.detail}`
+            + (frame.patternScore.layers
+              ? `\n两层分开看——贵格标准：${frame.patternScore.layers.school}\n人生判断：${frame.patternScore.layers.life}\n结论：${frame.patternScore.verdict}`
+              : '')
+          : ''),
     },
     ...(frame.bingyao ? [{
       key: 'bingyao', label: '病药',
