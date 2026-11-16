@@ -42,6 +42,16 @@ const FUSHEN_PLAIN = {
   飞伏未知: '飞伏关系看不全，这一层先不下判断。',
 };
 
+// 六亲 → 生活里对应的是什么事。大六壬与合盘的「人话」全靠这张表，
+// 不翻的话用户看到「末传 父母」只会以为是家里人，实际它多指文书与答复。
+const LIUQIN_SAY = {
+  官鬼: '压力、职位、管着你的人和事',
+  兄弟: '同辈、分利、竞争',
+  父母: '文书、答复、流程与长辈',
+  妻财: '钱、资源、能支配的东西',
+  子孙: '出力、产出、把事办成的那股劲',
+};
+
 /**
  * 用神 → 一句白话。
  * 只说「用神落在哪、有没有动、要不要往深处找」，不替人断成败。
@@ -288,6 +298,70 @@ export function buildPlain(r, ask, ctx = {}) {
     return `${s(ben.name, '这一卦')}讲的是一个「${moving.length ? '正在动、还会变' : '暂时不动、先看清'}」的局面——` +
       `${moving.length ? '有动爻，说明事情还有转圜空间，不是死局。' : '六爻安静，说明当下更该观察而不是硬推。'}` +
       `${plainBody}${usePlainOf(r.useGod, r.fushenAccess)}${useStrengthPlain(r.useGodStrength)}${jinTuiPlain(r)}${yingqiPlain(r)}${hexStrengthPlain(r.hexStrength)}`;
+  }
+  if (r.system === 'qimen') {
+    const st = r.states || {};
+    const gateOn = (st.gate && st.gate.旺) || [];
+    const gateOff = (st.gate && st.gate.死) || [];
+    const cond = r.conditions || {};
+    const marks = [];
+    if ((cond.jiXing || []).length) marks.push(`${cond.jiXing.length} 处击刑`);
+    if ((cond.ruMu || []).length || (cond.liuYiRuMu || []).length) marks.push('一处落墓的干');
+    const zf = (r.zhiFu && r.zhiFu.star) || '';
+    const zs = (r.zhiShi && r.zhiShi.gate) || '';
+    return `这一局看的是「你和这件事，现在各自站在什么位置」。全盘是${s(r.ju, '这一局')}，主事的星是${s(zf, '—')}，当差的门是${s(zs, '—')}——它们定的是这局的调子，不是好坏判决。` +
+      (gateOn.length ? `眼下气最足的是${gateOn.join('、')}这一路，` : '') +
+      (gateOff.length ? `最弱的是${gateOff.join('、')}，走它会更费劲。` : '') +
+      (marks.length ? `盘面上还有：${marks.join('、')}；这几处说明有些条件没到位，硬推容易白耗。` : '') +
+      `能动的只有一件事：把「你这边」和「事情那边」的宫位对上，两边隔得越远，越需要中间人、流程或时间。`;
+  }
+  if (r.system === 'tarot') {
+    const cs = Array.isArray(r.cards) ? r.cards : [];
+    if (!cs.length) return '';
+    const say = (c) => (Array.isArray(c.keywords) && c.keywords.length ? c.keywords.slice(0, 2).join('、') : s(c.core, ''));
+    const mark = (c) => `「${s(c.name, '—')}」${s(c.orientation, '')}`;
+    const now = cs.find((c) => /现在|当下/.test(String(c.position))) || cs[Math.floor(cs.length / 2)] || cs[0];
+    const head = cs.length === 1
+      ? `这张牌是${mark(cs[0])}，说的是${s(say(cs[0]), '一件事的底色')}。`
+      : `${cs.length} 张牌不是在给 ${cs.length} 个答案，是同一条线上的几个点：` +
+        cs.map((c) => `${s(c.position, '')}${mark(c)}，${s(say(c), '')}`).join('；') + '。';
+    return `${head}最值得先看的是${s(now.position, '当下')}这张——过去改不了，往后还没到，能动的只有眼前这一步。`;
+  }
+  if (r.system === 'daliuren') {
+    const sc = r.sanChuan || {};
+    if (!sc.chu || !sc.mo) return '';
+    const g = r.geJu || {};
+    const sayOf = (x) => `${s(x.zhi, '—')}（${s(LIUQIN_SAY[x.liuQin], s(x.liuQin, '—'))}）`;
+    return `这一课看的是事情怎么走到这一步。三传是三步：起手在${sayOf(sc.chu)}，` +
+      (sc.zhong ? `中间经过${sayOf(sc.zhong)}，` : '') +
+      `落点在${sayOf(sc.mo)}。` +
+      `课体是「${s(g.name, '—')}」${g.detail ? `（${g.detail}）` : ''}，说的是这盘推演的走法，不是吉凶。` +
+      `三步不是三个答案，是一条路：起手这一处动了，落点才会跟着变。`;
+  }
+  if (r.system === 'meihua') {
+    const bu = r.bodyUse || {};
+    const body = bu.body || {};
+    const use = bu.use || {};
+    return `本卦「${s(r.ben && r.ben.name, '—')}」说的是现在这个样子` +
+      (r.bian && r.bian.name ? `，动在${s(r.movingName, '其中一爻')}，之后会走成「${r.bian.name}」` : '') + '。' +
+      (body.element && use.element
+        ? `用体用看：体是${s(body.trigram, '—')}（${s(body.element, '—')}），代表你；用是${s(use.trigram, '—')}（${s(use.element, '—')}），代表这件事——${s(bu.relation, '两边关系看体用生克')}。`
+        : '') +
+      (r.hu && r.hu.name ? `中间的转折看互卦「${r.hu.name}」。` : '') +
+      `梅花给的是方向，不是几号、多少钱；要落地得你自己补一步具体动作。`;
+  }
+  if (r.system === 'hepan') {
+    const A = r.a || {};
+    const B = r.b || {};
+    const sc = r.score || {};
+    const dims = Array.isArray(r.dimensions) ? r.dimensions : [];
+    if (!A.dayMaster || !B.dayMaster) return '';
+    const tone = (d) => (Number(d.score) > 0 ? '偏顺' : Number(d.score) < 0 ? '偏紧' : '中性');
+    return `你们是${s(A.dayMaster, '一方')}与${s(B.dayMaster, '另一方')}，盘面整体给的是「${s(sc.level, '—')}」` +
+      (sc.total != null ? `（${sc.total}/100，这只是相对刻度，不是及格线）` : '') + '。' +
+      (dims.length ? `三处分开看：${dims.map((d) => `${s(d.label, '')}${tone(d)}`).join('、')}。` : '') +
+      `某处偏紧不等于不合适，它说的是这里需要多花一次解释；某处偏顺也不用当成凭据。` +
+      `合盘讲的是相处方式与互补点，不判合不合；现实里怎么说话、谁先让一步，分量比这张盘重。`;
   }
   return '';
 }
