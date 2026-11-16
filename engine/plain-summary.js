@@ -181,7 +181,8 @@ function baziSummary(r) {
     const pre = POS_LABEL[k] || '';
     if (p.stemTenGod) {
       present.push(p.stemTenGod);
-      noteGod(p.stemTenGod, `${pre}干`);
+      // 日干就是日主本人：写成「比肩在日干」等于说「自己就在自己身上」，是废话
+      if (k !== 'day') noteGod(p.stemTenGod, `${pre}干`);
     }
     for (const h of (p.hidden || [])) {
       if (!h || !h.tenGod) continue;
