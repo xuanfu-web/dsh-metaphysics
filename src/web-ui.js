@@ -731,6 +731,10 @@
     const locked = flowState === FLOW.LOCKED;
     bar.classList.toggle('is-locked', locked);
     bar.querySelectorAll('input, select, textarea').forEach((n) => {
+      // 问事层里只有「所问之事」和「询问方向」不算排盘参数：改它们只重绘解读，不动盘面。
+      // 跟着参数一起锁死，出盘以后就再也改不了问法、方向选择器也点不动，等于白做。
+      // 牌阵（#tcount）决定抽几张牌，仍然是参数，继续锁。
+      if (n.id === 'question' || n.id === 'direction') { n.disabled = false; n.readOnly = false; return; }
       const tag = n.tagName;
       if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
       else n.readOnly = locked;
@@ -2403,8 +2407,15 @@
     seg('#fsmode button', (v) => { fsMode = v; });
     seg('#nnmode button', (v) => { nnMode = v; });
     seg('#convertmode button', (v) => { convMode = v; syncQuick(); onParamChange(); });
-    ['ztask', 'zdays', 'zsheng', 'zcand', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'fsoffset', 'fsdate', 'fstime', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
-      .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', onParamChange); });
+    ['ztask', 'zdays', 'zsheng', 'zcand', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'fsoffset', 'fsdate', 'fstime', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm', 'upper', 'lower']
+      .forEach((id) => {
+        const n = el(id);
+        if (!n) return;
+        n.addEventListener('change', onParamChange);
+        // 文本框在失焦之前不派发 change：只挂 change 时，用户填完最后一个必填数字、
+        // 直接去点主按钮，发现按钮还是灰的（梅花数字起卦的上下卦数就是这么漏的）。
+        if (n.tagName === 'INPUT') n.addEventListener('input', onParamChange);
+      });
     // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');
     const mClose = el('method-close');
@@ -2413,6 +2424,14 @@
     if (mClose && mSec) mClose.addEventListener('click', () => { mSec.hidden = true; });
     // 改问题或方向：只重出解读，不重摇一卦（不算重新排盘，卦还是那一卦）
     el('question').addEventListener('change', () => { if (needAsk(tab) && last) { paint(); castKey = paramKey(); } });
+    // 第一次填「所问之事」时必须重算按钮能不能点。
+    // 原来只挂了 change，而那条回调只在已出结果时才动——于是填完问题按钮还是灰的，
+    // 提示还写着「还差：所问之事」，塔罗/六爻/梅花/奇门全卡在第一步。
+    // 已经出过结果时不走 refreshFlow：改问题只重绘解读，不该把结果标成「参数已变更」。
+    el('question').addEventListener('input', () => {
+      if (flowState === FLOW.LOCKED || flowState === FLOW.CALC) return;
+      refreshFlow();
+    });
     // 改方向：只重出解读、不重摇一卦；六爻推导链按新方向重算用神相关层
     el('direction').addEventListener('change', () => {
       if (!needAsk(tab)) return;

@@ -144,6 +144,18 @@ async function openTab(k) {
   return clickVisible();
 }
 
+/**
+ * 出盘后参数区是只读的（任务书 1.3：只能从「修改参数」回到 EDITING）。
+ * 测试里凡是要改参数，先走这里；非锁定态点它没有副作用。
+ */
+async function unlock(p = page) {
+  const b = p.locator('#edit');
+  if (!(await b.count())) return;
+  if (!(await b.isEnabled())) return;
+  await b.click().catch(() => {});
+  await p.waitForTimeout(120);
+}
+
 /** 填该 tab 必填的表单项（只填可见的） */
 async function fillRequired(k) {
   const set = async (id, v) => {
@@ -218,6 +230,10 @@ for (const t of TABS) {
     const box = page.locator('#hourunknown');
     ok(await box.count() > 0, '八字 · 有「时辰未知」勾选');
     if (await box.count()) {
+      // 出盘后参数区是只读的（任务书 1.3：只能从「修改参数」回到 EDITING）。
+      // 不点它就去 check，会撞上 disabled 的 checkbox——这一段此前一直红在这里。
+      await page.locator('#edit').click();
+      await page.waitForTimeout(200);
       await box.check({ force: true });
       await page.locator('#go').click({ force: true });
       await page.waitForFunction(() => {
@@ -227,6 +243,9 @@ for (const t of TABS) {
       const txt = await page.evaluate(() => document.getElementById('out').innerHTML);
       ok(txt.includes('时柱暂缺'), '八字 · 勾选后结果注明时柱暂缺');
       ok(!/12:00/.test(txt), '八字 · 三柱结果不含 12:00');
+      // 又出过一次盘，参数区重新锁上：取消勾选同样要先回到 EDITING
+      await page.locator('#edit').click();
+      await page.waitForTimeout(200);
       await box.uncheck({ force: true });
     }
 
@@ -241,14 +260,17 @@ for (const t of TABS) {
       await page.waitForTimeout(500);
       const first = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
       ok(first.length > 20, '八字 · 生时校正给出候选时辰', first.slice(0, 40));
+      await unlock();
       await page.locator('#date').fill('1985-06-15');
       await page.locator('#go').click({ force: true });
       await page.waitForTimeout(800);
       const after = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
       ok(after === '', '八字 · 换一张盘后旧的候选时辰不残留', after.slice(0, 40));
+      await unlock();
       await page.locator('#date').fill('1990-05-12');
 
       // 出生地也是这张盘的输入：排完之后只改表单、不重排，候选时辰不能跟着换
+      await unlock();
       await page.locator('#addr').fill('');
       await page.locator('#go').click({ force: true });
       await page.waitForSelector('#out .pp-bz', { timeout: 8000 }).catch(() => {});
@@ -256,12 +278,14 @@ for (const t of TABS) {
       await rectBtn.click();
       await page.waitForTimeout(500);
       const beforeAddr = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
+      await unlock();
       await page.locator('#addr').fill('河北石家庄');
       await rectBtn.click();
       await page.waitForTimeout(500);
       const afterAddr = await page.evaluate(() => ((document.getElementById('rectout') || {}).textContent || '').trim());
       ok(beforeAddr.length > 20 && afterAddr === beforeAddr,
         '八字 · 改出生地不重排时候选时辰仍按这张盘的输入', afterAddr.slice(0, 40));
+      await unlock();
       await page.locator('#addr').fill('');
     }
   }
@@ -271,18 +295,21 @@ for (const t of TABS) {
 {
   ok(await openTab('trend'), '人生K线 · 能切到 tab');
   await page.waitForTimeout(400);
+  await unlock();
   await page.locator('#date').fill('1991-08-08');
   await page.locator('#time').fill('08:10');
   await page.locator('#addr').fill('');
   await page.locator('#go').click({ force: true });
   await page.waitForTimeout(1200);
   const kNoAddr = await page.evaluate(() => (document.getElementById('out') || {}).innerText || '');
+  await unlock();
   await page.locator('#addr').fill('河北石家庄');
   await page.locator('#go').click({ force: true });
   await page.waitForTimeout(1200);
   const kAddr = await page.evaluate(() => (document.getElementById('out') || {}).innerText || '');
   ok(kNoAddr.length > 200 && kAddr !== kNoAddr,
     '人生K线 · 出生地进入真太阳时（同一时刻换地址结果不同）', kAddr.slice(0, 40));
+  await unlock();
   await page.locator('#addr').fill('');
   ok(await openTab('bazi'), '单页 · 能切回八字');
 }
@@ -290,7 +317,14 @@ for (const t of TABS) {
 // 深链：直接带 #mp=... 打开，落地应自动切 tab 并出结果
 {
   errors.length = 0;
-  const deep = 'file:///' + pageFile.replace(/\\/g, '/') + '#mp=' + encodeURIComponent(JSON.stringify({ system: 'liuyao', datetime: '2026-11-01T22:10', lines: [9, 7, 8, 8, 7, 6], question: '深链能不能落地' }));
+  // 链接必须是引擎自己生成的 #mp=<句柄>&q=…。这里以前手写 #mp=<encodeURIComponent(JSON)>，
+  // 而解析器认的是带校验位的句柄、不是 JSON —— 那条链接从来没生效过，
+  // 测试只看 out 长度够不够，就一直跟着烂（0.82.0 巡检时才发现）。
+  const deep = await page.evaluate(() => window.Engine.askLink(
+    { system: 'liuyao', datetime: '2026-11-01T22:10', lines: [9, 7, 8, 8, 7, 6] },
+    { question: '深链能不能落地', base: location.href.split('#')[0] },
+  ));
+  ok(/^file:.*#mp=mc1\./.test(deep), '深链 · 能生成带句柄的链接', String(deep).slice(-40));
   const p2 = await ctx.newPage();
   const errs2 = [];
   p2.on('pageerror', (e) => errs2.push(e.message));
@@ -298,6 +332,13 @@ for (const t of TABS) {
   await p2.waitForTimeout(1200);
   const out = await p2.evaluate(() => (document.getElementById('out') || {}).innerHTML || '');
   ok(out.length > 500, '深链 · 自动出结果', String(out.length));
+  const landed = await p2.evaluate(() => ({
+    tab: [...document.querySelectorAll('.tab.on')].map((x) => x.textContent.trim()).join(','),
+    txt: (document.getElementById('out') || {}).innerText || '',
+  }));
+  ok(landed.tab === '六爻', '深链 · 落到对应体系', landed.tab);
+  ok(/已按链接还原/.test(landed.txt) && landed.txt.includes('深链能不能落地'),
+    '深链 · 还原提示写明这张盘与问题', landed.txt.slice(0, 40));
   ok(!errs2.length, '深链 · 无 JS 报错', errs2.slice(0, 2).join(' | '));
   await p2.close();
 }
@@ -505,6 +546,7 @@ for (const t of TABS) {
   ok(afterEdit.length === 1 && afterEdit[0].label === '单页阿测', '单页 · 不改称呼直接更新，称呼不被体系名顶掉', JSON.stringify(afterEdit[0] || {}).slice(0, 60));
 
   // 换一张盘，再点卡：表单回填 + 出的是同一张盘
+  await unlock(p5);
   await p5.fill('#date', '1990-12-01');
   await p5.locator('#go').click();
   await p5.waitForTimeout(1500);
@@ -536,6 +578,7 @@ for (const t of TABS) {
   ok((await bz()) === saved, '单页 · 删档案不动已经排出来的盘');
 
   // 档案没存出生地：载入 / 改名都得清掉表单里上一张盘的地址，否则真太阳时按别人的地方算
+  await unlock(p5);
   await p5.fill('#date', '1975-07-07');
   await p5.fill('#time', '09:09');
   await p5.fill('#addr', '');
@@ -550,11 +593,13 @@ for (const t of TABS) {
     try { return (JSON.parse(localStorage.getItem('dsh-metaphysics/profiles-v1') || '[]')[0] || {}).address; } catch (e) { return 'x'; }
   });
   ok(storedNoAddr === '', '单页 · 空出生地按空字符串存', String(storedNoAddr));
+  await unlock(p5);
   await p5.fill('#addr', '四川成都');
   await noAddrCard.locator('.mp-prof-use').click();
   await p5.waitForTimeout(1200);
   const addrAfterUse = await p5.inputValue('#addr');
   ok(addrAfterUse === '', '单页 · 载入无出生地档案会清掉残留地址', addrAfterUse);
+  await unlock(p5);
   await p5.fill('#addr', '四川成都');
   await noAddrCard.locator('[data-mp-prof="edit"]').dispatchEvent('click');
   await p5.waitForTimeout(200);
