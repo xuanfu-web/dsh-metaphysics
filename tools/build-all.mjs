@@ -11,6 +11,7 @@
 // 顺序（改这里之前先读上面那段）：
 //   build-client → verification → citations → build-html → 拷 docs/index.html
 //   → check-eol（行尾）→ check-bundle（产物与源码一致）
+//   --gate 追加：check-verification / html-sinks / patterns / lint-copy / perf / metrics(M1–M7) / assertions / tests
 //
 // 用法：
 //   node tools/build-all.mjs          只构建 + 拷副本 + 两道产物闸
@@ -61,6 +62,8 @@ if (gate) {
   run('lint-copy', ['tools/lint-copy.mjs']);
   run('verify-lint-copy', ['tools/verify-lint-copy.mjs']);
   run('check-perf', ['tools/check-perf.mjs']);
+  // M1–M7：PRD 1.4 的七项量化验收。0.4s，比人眼扫一遍便宜。
+  run('metrics（M1–M7）', ['tools/metrics.mjs']);
   run('check-assertions', ['tools/check-assertions.mjs']);
   run('verify-tests-can-fail', ['tools/verify-tests-can-fail.mjs']);
   run('test-all', ['tools/test-all.mjs']);

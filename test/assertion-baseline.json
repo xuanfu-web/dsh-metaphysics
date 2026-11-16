@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 11295,
+  "total": 11310,
   "files": {
     "adapters-extra.test.mjs": {
       "pass": 77,
@@ -452,6 +452,10 @@
     },
     "meta-fold.test.mjs": {
       "pass": 44,
+      "fail": 0
+    },
+    "metrics.test.mjs": {
+      "pass": 15,
       "fail": 0
     },
     "name-surname-lib.test.mjs": {
