@@ -103,3 +103,8 @@ ok('有取消默认按钮', /off\.textContent = '取消默认'/.test(bar));
 ok('读缓存没命中不显示条', /paintDefaultBar\(hit \? p : null\)/.test(restore));
 ok('__MPFlow 导出缓存键与默认盘自检', /cacheKey: chartKeyOf/.test(src) &&
   /restoreDefault,/.test(src) && /defaultGet,/.test(src));
+
+// ── 七、删档案联动 ──────────────────────────────────────────
+ok('删掉默认盘那张档案时一并清掉 defaultChart',
+  /ev\.action === 'del'[\s\S]{0,900}PP\.profilesRemove\(ev\.id\);[\s\S]{0,400}if \(d0 && d0\.profileId === ev\.id\) \{[\s\S]{0,120}defaultSet\(null\);[\s\S]{0,80}paintDefaultBar\(null\);/.test(src));
+ok('删档案不动缓存条目与页面上这张盘', !/action === 'del'[\s\S]{0,900}cacheWrite/.test(src));

@@ -496,6 +496,13 @@
       // 删除点两次才算：第一次只把按钮变成「确认删除」，误触不会丢档案
       if (profArmed !== ev.id) { profArmed = ev.id; profTip = ''; renderProfiles(); return; }
       PP.profilesRemove(ev.id);
+      // 删掉的正好是默认盘：那条记录指向的档案已经没了，留着只会让下次启动找不到人。
+      // 缓存条目和页面上这张盘都不动——档案是「输入」，盘是「结果」。
+      const d0 = defaultGet();
+      if (d0 && d0.profileId === ev.id) {
+        defaultSet(null);
+        paintDefaultBar(null);
+      }
       if (profEditing === ev.id) { profEditing = ''; profName = ''; }
       profArmed = '';
       profTip = '已从本机删除这张档案卡（不影响已经排出来的盘）。';
