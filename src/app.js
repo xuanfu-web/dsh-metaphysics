@@ -240,6 +240,10 @@ const CSS = `
 .mp-textarea:hover{border-color:color-mix(in srgb,var(--dsw-alias-border-l1) 45%,var(--dsw-alias-brand-primary))}
 .mp-textarea:focus{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-brand-primary) 18%,transparent)}
 .mp-textarea.invalid{border-color:var(--dsw-alias-state-error-primary)}
+/* 出盘后参数区只读：值还在、看得见，只是不能随手改——要改先点「修改参数」。
+   缩进用的是面板自己那一套网格，这里只压视觉，不动布局。 */
+.mp-panel.mp-locked .mp-input,.mp-panel.mp-locked .mp-textarea{opacity:.62;cursor:default}
+.mp-panel.mp-locked .mp-input:hover,.mp-panel.mp-locked .mp-textarea:hover{border-color:var(--dsw-alias-border-l1)}
 /* ── 人格问卷：4 题一页，1–5 单选；题面与刻度说明都来自引擎 ── */
 .mp-quiz-wrap{grid-column:1 / -1;display:flex;flex-direction:column;gap:6px}
 .mp-quiz-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -730,6 +734,58 @@ function storeGet(key) {
 function storeSet(key, val) {
   try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
 }
+
+// ── 面板侧的结果缓存（与独立页同一套口径，键的算法不同）────────────
+// 键直接对「喂给引擎的那个 args」求哈希。面板的输入散在十几个 state 里，
+// 拼表单指纹一定会漏字段（漏一个就串盘）；args 本来就是计算的输入，哈希它最准。
+// 条目存整份 result（含 it / trend / caliber 等），命中就 setResult 直出，不重算。
+const RESULT_KEY = 'mp.panel.result.v1';
+const RESULT_SCHEMA = 1;
+const RESULT_MAX = 6;
+const RESULT_ITEM_MAX = 500000;
+
+// 自检计数：实机验「同参数不重算」不必靠猜，控制台读 window.__MPStats 即可。
+// 只记次数，不记任何输入内容。
+const STATS = { computeHits: 0, cacheHits: 0 };
+if (typeof window !== 'undefined') window.__MPStats = STATS;
+
+function hash36(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
+}
+
+function resultCacheMap() {
+  const m = storeGet(RESULT_KEY);
+  return m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+}
+
+function resultCacheRead(key) {
+  if (!key) return null;
+  const rec = resultCacheMap()[key];
+  return rec && rec.result && rec.result.r ? rec : null;
+}
+
+function resultCacheWrite(key, rec) {
+  if (!key || !rec) return;
+  try {
+    if (JSON.stringify(rec).length > RESULT_ITEM_MAX) return;
+    const map = resultCacheMap();
+    map[key] = rec;
+    const keys = Object.keys(map);
+    if (keys.length > RESULT_MAX) {
+      keys
+        .sort((a, b) => (map[a].at || 0) - (map[b].at || 0))
+        .slice(0, keys.length - RESULT_MAX)
+        .forEach((k) => { delete map[k]; });
+    }
+    storeSet(RESULT_KEY, map);
+  } catch (e) { /* 写不进就不缓存，不影响这次排盘 */ }
+}
+
 function dayLabel(ts) {
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return '';
@@ -1029,11 +1085,31 @@ function App() {
   const [onlineGeo, setOnlineGeo] = useState(false);
   const [lines, setLines] = useState('');
   const [result, setResult] = useState(null);
+  // 出盘后输入区锁住，想改要点「修改参数」。面板是 React，不去挨个改受控组件的
+  // disabled（几十个控件、漏一个就漏一个），而是在锁定态变化时统一扫一遍输入区，
+  // readOnly/disabled 只挡交互、不改 value，缓存键和参数快照都不会因此漂移。
+  const [editMode, setEditMode] = useState(false);
   // 反馈入口的两处瞬时状态：复制结果提示、附加说明（4 秒后自动清空）
   const [fbCopied, setFbCopied] = useState('');
   const [fbNote, setFbNote] = useState('');
   // 首屏耗时：引擎取块、排盘、首帧（rAF 两次）三段实测；只在本机显示
   const [perf, setPerf] = useState(null);
+  // 出盘后锁住参数区，想改先点「修改参数」。做法是渲染后扫一遍输入控件加
+  // readOnly/disabled（不改 React props，几十个受控控件逐个传 disabled 必漏），
+  // 值不受影响，所以缓存键与参数快照都不会因此漂移。
+  // 追问框 .mp-askbox 是看盘时用的，不在参数区，必须放过。
+  useEffect(() => {
+    const panel = document.querySelector('.mp-panel');
+    if (!panel) return;
+    const locked = !!result && !editMode;
+    panel.classList.toggle('mp-locked', locked);
+    panel.querySelectorAll('input, select, textarea').forEach((n) => {
+      if (n.closest('.mp-askbox')) return;
+      const tag = n.tagName;
+      if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
+      else n.readOnly = locked;
+    });
+  }, [result, editMode, tab]);
   const [hist, setHist] = useState(() => loadHistory());
   // 首屏视图与「最近用过」：与独立页同一套存储键，分组视图下隐藏平铺 tab 条
   const [view, setView] = useState(() => (storeGet(VIEW_KEY) === 'flat' ? 'flat' : 'group'));
@@ -1302,9 +1378,24 @@ function App() {
           if (changing !== '') args.changing = Number(changing);
         }
       }
-      const computeStart = mpNow();
       // 「现在走到第几步」要有当前日期；引擎不读挂钟，由界面以 asOf 传入
       if (k === 'trend' && !args.asOf && Core.todayStamp) args.asOf = Core.todayStamp();
+      // 同参数重复点「排盘」直接读缓存：不重算、不重复记历史。
+      // asOf 已经补上再求键——趋势盘每天「现在」不同，隔天自然不命中。
+      const cacheKey = hash36(`${RESULT_SCHEMA}|${JSON.stringify(args)}`);
+      const hit = resultCacheRead(cacheKey);
+      if (hit && hit.result && hit.result.kind === k) {
+        if (stale()) return;
+        STATS.cacheHits++;
+        setResult(hit.result);
+        setEditMode(false);
+        setPerf({ engineMs, computeMs: 0, cached: true, totalMs: mpNow() - runStart, renderMs: null });
+        setFx(null); setFit(null); setPastMarks({}); setRectRes(null);
+        setError(''); setCopied('');
+        return;
+      }
+      const computeStart = mpNow();
+      STATS.computeHits++;
       const r = Engine.compute(args);
       const computeMs = mpNow() - computeStart;
       // 影子盘：先与本地上一张同 baseId 的盘比对，再存档；失败不影响主结果
@@ -1371,8 +1462,12 @@ function App() {
       const timed = kindOf(k) === 'cast' && (k !== 'meihua' || mh === 'time');
       // 生时校正要按「这张盘用的出生信息」反推，而不是表单此刻的值：用户改完没重排时
       // 两者可能不同，拿表单值算出来的候选时辰就贴到了另一张盘上。
-      setResult({ kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
-        gender: genderV, address: addressV, trueSolar: tsV, lateZi: lateZiV });
+      const resObj = { kind: k, r, it, at: dt, timed, trend, caliber, shadowDiff, chenggu, marriage, life,
+        gender: genderV, address: addressV, trueSolar: tsV, lateZi: lateZiV };
+      setResult(resObj);
+      setEditMode(false);
+      // 存的是「排出来的整份结果」，不是输入：读缓存要能一步直出，不再碰引擎
+      resultCacheWrite(cacheKey, { result: resObj, at: Date.now() });
       // 首帧：等 React 提交并绘制两帧后再记总时长，避免把「还没画出来」算进渲染
       const draw = (n) => {
         if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => (n > 1 ? draw(n - 1) : commitPerf()));
@@ -2637,6 +2732,11 @@ function App() {
           className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginRight: 8 },
           onClick: openSample, title: '用固定示例盘看完整报告（不改动你已填的数据）',
         }, '看示例'),
+        result && !editMode ? h('button', {
+          className: 'mp-btn ghost', style: { fontSize: 12, padding: '5px 12px', marginRight: 8 },
+          onClick: () => setEditMode(true),
+          title: '出盘后参数区是只读的：点这里解锁，改完再点排盘更新结果',
+        }, '修改参数') : null,
         h('button', { className: 'mp-btn', onClick: go, title: '时间仍为自动时，点它会取当下再起卦' },
           tab === 'tarot' ? '抽牌'
             : tab === 'bazi' || tab === 'ziwei' ? '排盘'
