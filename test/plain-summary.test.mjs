@@ -23,7 +23,7 @@ const SHE = { system: 'bazi', datetime: '1996-12-14T08:00', gender: 'female', ad
   ok(!!b && !!b.lead, '生成了总结');
   ok(/乙木/.test(b.lead), '总纲点到日主');
   ok(/火/.test(b.lead), '总纲点出最需要的五行（这一盘寒湿需火）');
-  eq(b.sections.length, 3, '三段：底色 / 感情 / 卡点');
+  eq(b.sections.length, 4, '四段：底色 / 感情 / 卡点 / 所以呢（落点与时间）');
   ok(b.sections.every((s) => s.h && s.t.length >= 15), '每段都有标题且不是一句话敷衍');
   ok(b.advice.length >= 2, '至少两条可执行建议');
   ok(b.advice.every((a) => a.length >= 8), '建议不是空话');
@@ -31,6 +31,10 @@ const SHE = { system: 'bazi', datetime: '1996-12-14T08:00', gender: 'female', ad
   ok(/时柱暂缺/.test(b.caveat) && /七成/.test(b.caveat), '补充说明讲清「只有六个字、约七成信息」');
   ok(/官杀/.test(b.sections[1].t), '女命感情看官杀');
   ok(/配偶宫|日支/.test(b.sections[1].t), '感情落到配偶宫这一处');
+  // 第四段是「所以呢」：必须落到盘上的具体一格，再给时间窗
+  ok(/落在[年月日时][干支]/.test(b.sections[3].t), '第四段把压力落到具体柱位（年/月/日/时 + 干或支）');
+  ok(/年/.test(b.sections[3].t) && /(变动|动往|感受)/.test(b.sections[3].t), '第四段给出时间窗，且措辞留在「感受/变动」这一档');
+  ok(!/一定|必然|注定/.test(b.sections[3].t), '第四段不下定论');
 }
 
 // ── 二、男命取财星，不能套用女命说法 ─────────────────────
@@ -69,10 +73,13 @@ const SHE = { system: 'bazi', datetime: '1996-12-14T08:00', gender: 'female', ad
 {
   const r = compute({ system: 'ziwei', datetime: '1996-12-14T08:00', gender: 'female', address: '安徽池州' });
   const b = r.brief;
-  ok(!!b && b.sections.length === 3, '紫微也出三段');
+  ok(!!b && b.sections.length === 4, '紫微也出四段（末段是所以呢：大限宫 + 化忌落宫）');
   ok(b.chips.some((c) => /命宫在/.test(c)), '标签标出命宫位置');
   ok(b.lead.includes(r.soul.branch), '总纲里的命宫支与盘面一致');
   ok(/夫妻宫/.test(b.sections[1].t), '感情落到夫妻宫');
+  // 紫微的落点是宫位：大限宫要说清是哪一宫、多少岁到多少岁
+  ok(/大限走.{1,4}宫/.test(b.sections[3].t) && /\d+–\d+ 岁/.test(b.sections[3].t), '第四段标出当前大限宫与起止岁数');
+  ok(/化忌最后落在.{1,4}宫/.test(b.sections[3].t), '第四段标出化忌的落宫');
   const all = JSON.stringify(b);
   eq((all.match(/一定会|必然|注定|肯定会/g) || []).length, 0, '紫微总结同样不下断语');
 }

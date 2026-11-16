@@ -83,6 +83,32 @@ const MONTH_SEASON = {
   申: '初秋', 酉: '仲秋', 戌: '深秋', 亥: '初冬', 子: '仲冬', 丑: '隆冬',
 };
 
+// 柱位 → 生活里的领域。
+// 只说「官杀偏重」，用户对不上盘；说了「落在月干、时支本气」，他能自己指到那一格去。
+const POS_LABEL = { year: '年', month: '月', day: '日', hour: '时' };
+const POS_FIELD = {
+  year: '长辈、家世与你早年的环境',
+  month: '工作、同龄人，以及你成年后站的位置',
+  day: '你自己，还有最亲近的那个人',
+  hour: '晚辈、下属，以及晚年怎么安排',
+};
+
+// 紫微十二宫 → 人话。化忌落宫、大限落宫都要靠它才对得上「具体哪件事」。
+const PALACE_PLAIN = {
+  命宫: '你自己',
+  兄弟: '同辈与手足',
+  夫妻: '伴侣与最亲的关系',
+  子女: '晚辈、学生与你亲手做出来的东西',
+  财帛: '钱和手上的资源',
+  疾厄: '身体与情绪',
+  迁移: '外面的机会、出门在外的处境',
+  交友: '朋友、同事与人脉',
+  官禄: '工作与位置',
+  田宅: '家、房子与积蓄',
+  福德: '心情、享受，和你真正放松的地方',
+  父母: '长辈、上级与文书往来',
+};
+
 /** 取日支（配偶宫）与年/月/时支之间的破、冲、合、害 */
 function branchLinks(relations, dayBranch) {
   const out = { po: [], chong: [], he: [] };
@@ -124,25 +150,53 @@ function baziSummary(r) {
     if (ck.opened) return `财有库（${ck.store}），库门也开了，但财本身不算厚：有得有失，别指望一次翻身。`;
     return `财有库（${ck.store}），门还关着：不是没有，是要等对的时间或对的选择把它引出来。`;
   })();
+  // 强、弱、中和三档各说各的。
+  // 原来只认「身弱」二字，偏弱被当成身强，于是打出「整体偏弱……所以撑得住」
+  // 这种自相矛盾的句子；「不是极旺也不是极弱」也是原句里就带着的错位。
+  const lv = String((r.strength && r.strength.level) || '中和');
+  const strengthSay = /弱/.test(lv)
+    ? '底子偏薄，很多事要靠外部条件配合，硬扛不如借力'
+    : /强/.test(lv)
+      ? '撑得住，关键是别把力气用在错的地方'
+      : '力量比较匀，选对圈子比一个人使劲重要';
   const lead = `${dm.stem || ''}${dm.element || ''}日主，生在${season}${month.branch || ''}月：${climateWord}。`
     + `${needEl ? `最需要的是${needEl}${cl.need && cl.need.why ? `——${cl.need.why}` : ''}。` : ''}`
-    + `整体${r.strength ? r.strength.level : '中和'}，不是极旺也不是极弱，所以${r.strength && r.strength.level === '身弱' ? '很多事要靠外部条件配合，硬扛不如借力' : '撑得住，关键是别把力气用在错的地方'}。`
+    + `整体${lv}，所以${strengthSay}。`
     + caiKuLine;
 
   // ── 底色：十神权重前两位 ──
   const top2 = topGods.slice(0, 2).map(([k]) => k);
-  // 具体到哪一个十神：优先取盘上真出现的那个（天干 + 藏干本气），
-  // 否则「食伤偏重」会把伤官说成食神——两者的人话差得远。
+  // 具体到哪一个十神（天干 + 全部藏干），并记住它落在哪一柱。
+  // 两个用途：一是「食伤偏重」不能把伤官说成食神，两者人话差得远；
+  // 二是要回答「落在我盘面哪一格」——不落到柱位，用户看完还是不知道该往哪儿对号。
+  const godWhere = {};
+  const noteGod = (g, where) => {
+    if (!g) return;
+    const arr = godWhere[g] || (godWhere[g] = []);
+    if (!arr.includes(where)) arr.push(where);
+  };
   const present = [];
-  for (const p of Object.values(P)) {
+  for (const [k, p] of Object.entries(P)) {
     if (!p) continue;
-    if (p.stemTenGod) present.push(p.stemTenGod);
-    if (p.hidden && p.hidden[0] && p.hidden[0].tenGod) present.push(p.hidden[0].tenGod);
+    const pre = POS_LABEL[k] || '';
+    if (p.stemTenGod) {
+      present.push(p.stemTenGod);
+      noteGod(p.stemTenGod, `${pre}干`);
+    }
+    for (const h of (p.hidden || [])) {
+      if (!h || !h.tenGod) continue;
+      present.push(h.tenGod);
+      // 本气是这一支的主体，说「日支」就够；中气余气必须标出来，
+      // 否则读者自己去数藏干会对不上。
+      noteGod(h.tenGod, `${pre}支${h.role === '本气' || !h.role ? '' : h.role}`);
+    }
   }
   const godSentences = top2.map((g) => {
     const inner = { 印: ['正印', '偏印'], 官杀: ['正官', '七杀'], 食伤: ['食神', '伤官'], 财: ['正财', '偏财'], 比劫: ['比肩', '劫财'] }[g] || [];
     const hit = inner.find((x) => present.includes(x)) || inner[0];
-    return hit && GOD_PLAIN[hit] ? `${g}偏重：${GOD_PLAIN[hit]}。` : '';
+    if (!hit || !GOD_PLAIN[hit]) return '';
+    const spot = (godWhere[hit] || []).slice(0, 2).join('、');
+    return `${g}偏重：${GOD_PLAIN[hit]}${spot ? `（${hit}在${spot}）` : ''}。`;
   }).filter(Boolean);
   const basics = `${godSentences.join('')}${godNames.length ? '' : ''}` +
     (top2.includes('印') ? '想得多是你的默认状态，好处是稳，代价是慢和累。' : '');
@@ -172,6 +226,46 @@ function baziSummary(r) {
   if (gejuNames.includes('伤官见官')) stucks.push('盘里有「伤官见官」的组合：既想要稳定，又忍不了对方的毛病，这是同一件事的两面。');
   if (top2.includes('印') && !top2.includes('财')) stucks.push('印重而财轻：想得多、落得少；越焦虑越容易继续想。');
   if (!stucks.length) stucks.push('这一盘没有特别尖锐的冲克，卡点更多在「节奏」上——什么时候该动，什么时候该停。');
+
+  // ── 所以呢：这份压力落在哪一柱、什么时候最明显 ──
+  // 前三段回答「是什么」，这一段回答「往哪儿对号、什么时候」。
+  // 只用盘上已有的柱位与流年档，不新增判断口径；措辞守「变动感 / 感受更明显」，
+  // 不写「一定」「必」，也不替用户断事。
+  const placed = [];
+  const guanSpots = ['正官', '七杀']
+    .map((g) => ({ g, at: godWhere[g] || [] }))
+    .filter((x) => x.at.length);
+  const fieldOf = (where) => POS_FIELD[({ 年: 'year', 月: 'month', 日: 'day', 时: 'hour' })[String(where)[0]]] || '';
+  // 官杀有落点、还要分轻重：一片只有 0.5 分的七杀也叫「压在身上的劲」就说过头了，
+  // 用户照着去找压力源只会找错。
+  const guanW = Number((((r.frame || {}).godStats || {}).groups || {}).官杀 || 0);
+  if (guanSpots.length && guanW >= 1.5) {
+    const first = guanSpots[0];
+    placed.push(`压在你身上的那股劲是${first.g}，落在${first.at.slice(0, 3).join('、')}：对应的是${fieldOf(first.at[0])}这一头，紧张感多半从这里起。`);
+  } else if (guanSpots.length) {
+    const first = guanSpots[0];
+    placed.push(`盘上有${first.g}（落在${first.at.slice(0, 3).join('、')}），但分量不重：偶尔紧一下，压不住你。`);
+  } else {
+    placed.push('官杀（外部的管束与竞争）在盘上没有落脚处：很少有人真能压住你，更多时候是你自己定的标准在推你走。');
+  }
+  const lns = (Array.isArray(r.liunian) ? r.liunian : []).filter((x) => x && x.year);
+  const sigYear = lns.find((x) => x.suiyun && Array.isArray(x.suiyun.signals) && x.suiyun.signals.length);
+  const heavyYear = lns.filter((x) => x.luck && /忌/.test(String(x.luck.tier)))
+    .sort((a, b) => Math.abs(Number(b.luck.score) || 0) - Math.abs(Number(a.luck.score) || 0))[0];
+  if (sigYear) {
+    const types = uniq(sigYear.suiyun.signals.map((s) => s.type).filter(Boolean));
+    placed.push(`${sigYear.year} 年${sigYear.ganzhi}与盘上某一柱重复${types.length ? `（${types.join('、')}）` : ''}——传统上只把它当「这一年会动」的提示，动往哪边要看你当时怎么选。`);
+  }
+  if (heavyYear && (!sigYear || heavyYear.year !== sigYear.year)) {
+    const why = (heavyYear.luck.reasons && heavyYear.luck.reasons[0]) || '';
+    placed.push(`${heavyYear.year} 年${heavyYear.ganzhi}在岁运上是最重的一档${why ? `（${why}）` : ''}——那种「怎么使劲都不太顺」的感受，最容易在这时候冒出来。`);
+  } else if (heavyYear && sigYear && heavyYear.year === sigYear.year) {
+    placed.push(`而这一年岁运本来也偏重，两件事叠在一起，感受会比平常集中。`);
+  }
+  if (!sigYear && !heavyYear) placed.push('往后几年没有特别集中的变动信号，属于「慢慢走」的一段。');
+  const soWhat = guanSpots.length && guanW >= 1.5
+    ? '所以这一盘的关键不是「能不能扛」，是先分清哪件事真值得你紧张：分不清的时候，就按上面那一柱对应的场景去找。'
+    : '所以真正的对手是自己定的标准：把标准拆小，比再加一把劲管用。';
 
   // ── 建议 ──
   const advice = [];
@@ -203,6 +297,7 @@ function baziSummary(r) {
       { h: '你的底色', t: basics || '结构比较均衡，没有一边倒的偏重。' },
       { h: '感情这件事', t: loveBits.join('') },
       { h: '最容易卡住的地方', t: stucks.join('') },
+      { h: '所以呢：这件事落在哪、什么时候最明显', t: placed.join('') + soWhat },
     ],
     advice,
     caveat: r.hourUnknown
@@ -232,6 +327,36 @@ function ziweiSummary(r) {
   const loveMain = loveStars.filter((s) => s.type === '主星');
   const loveSha = loveStars.filter((s) => s.type === '煞星');
 
+  // ── 所以呢：这十年力气往哪儿使、卡在哪 ──
+  // 紫微的「落点」是宫位不是柱位。说完「命宫酉空宫」，用户还是不知道该盯哪儿；
+  // 把当前大限宫和化忌的终点宫指出来，他就能对着十二宫自己去看。
+  const asYear = (r.asOf && r.asOf.year) || 0;
+  const lns = Array.isArray(r.liunian) ? r.liunian.filter((x) => x && x.year) : [];
+  const lnCur = lns.find((x) => x.year === asYear) || lns[0] || null;
+  const dxCur = (lnCur && lnCur.daxian) || null;
+  const dxFull = (dxCur && Array.isArray(r.daxianList))
+    ? r.daxianList.find((d) => d && d.palace === dxCur.palace) || null
+    : null;
+  const jiSteps = (r.flyChains && r.flyChains['忌'] && Array.isArray(r.flyChains['忌'].steps))
+    ? r.flyChains['忌'].steps : [];
+  const jiEnd = jiSteps.length ? jiSteps[jiSteps.length - 1].to : '';
+  const palName = (p) => (!p ? '' : /宫$/.test(String(p)) ? String(p) : `${p}宫`);
+  const soBits = [];
+  if (dxCur && dxCur.palace) {
+    const ages = (dxFull && Array.isArray(dxFull.ages)) ? `（${dxFull.ages[0]}–${dxFull.ages[1]} 岁）` : '';
+    // mainStars 是大限这一组的主星清单（含三方），写「坐」会让人以为是本宫独坐，改用「主星是」
+    const stars = (dxFull && Array.isArray(dxFull.mainStars) && dxFull.mainStars.length)
+      ? `，主星是${dxFull.mainStars.join('、')}` : '';
+    soBits.push(`眼下这步大限走${palName(dxCur.palace)}${ages}${stars}：`
+      + `${PALACE_PLAIN[dxCur.palace] ? `这十年真正在推的是${PALACE_PLAIN[dxCur.palace]}这件事` : '这十年是主战场'}。`);
+  }
+  if (lnCur && lnCur.year) {
+    const lp = lnCur.lifePalace && lnCur.lifePalace.palace ? lnCur.lifePalace.palace : '';
+    if (lp) soBits.push(`拿 ${lnCur.year} 年（${lnCur.ganzhi || ''}）来说，流年命宫落在${palName(lp)}：这一年的动静会先在这一格上显形。`);
+  }
+  if (jiEnd) soBits.push(`化忌最后落在${palName(jiEnd)}——你反复使劲、也最容易觉得不够的地方，就是${PALACE_PLAIN[jiEnd] || jiEnd}。`);
+  soBits.push('别处松一点不影响大局；这一处一旦卡住，整张盘都跟着沉。');
+
   return {
     system: 'ziwei',
     title: '先看这一张：这张盘大致在说什么',
@@ -245,6 +370,7 @@ function ziweiSummary(r) {
         + `${loveSha.length ? `同宫还有${loveSha.map((s) => s.name).join('、')}——关系里容易起摩擦，来得快也去得快。` : '没有明显的煞星同宫，关系相对平顺。'}` },
       { h: '最容易卡住的地方', t: `${broken.length ? `被冲破的格局有${broken.join('、')}——结构还在，但成色打折；冲不等于毁，说的是它不如完好时那么顶用。` : '主要格局没有明显被冲破。'}`
         + `${bad.length ? `另有${bad.join('、')}这类忌格，只描述结构，不作吉凶断。` : ''}` },
+      { h: '所以呢：这十年力气往哪儿使、卡在哪', t: soBits.join('') },
     ],
     advice: [
       `命宫主星${mainStars.length ? `是${mainStars.map((s) => s.name).join('、')}，顺它的长处在做事，比硬改性格省力` : '不显，先靠环境和习惯替自己定节奏'}。`,
