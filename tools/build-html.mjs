@@ -196,6 +196,12 @@ body.view-flat .start{display:none}
 .flow-note{margin-top:8px;font-size:12.5px;line-height:1.7;color:var(--dim);border-left:2px solid var(--gold);padding-left:8px}
 /* 出生信息共用提示：整行铺开，它不是某个字段的说明而是这一整块的说明 */
 .share-note{grid-column:1/-1;margin:0 0 2px;font-size:12px;line-height:1.7;color:var(--dim)}
+/* 默认盘条：设过就点名当前是哪张，读缓存直出时出现在档案卡下面 */
+.cur-chart{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 2px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-size:12.5px;color:var(--ink)}
+.cur-txt{flex:1;min-width:0}
+.cur-off{border:1px solid var(--line);background:transparent;color:var(--dim);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer}
+.cur-off:hover{color:var(--ink);background:var(--panel)}
+.cur-chart[hidden]{display:none}
 .go.ghost{grid-column:3;background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;margin-right:8px;box-shadow:none;transform:none}
 .go.ghost:hover{background:var(--panel2);color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -479,6 +485,7 @@ function page() {
   <!-- 我的命盘（本机档案）：卡片列表 + 存入条，渲染与存储都取自 panel-kit，
        样式在 PP.CSS 里；放在入口之上——回来第一件事通常是接着排上次那个人。 -->
   <div id="profwrap"></div>
+  <div class="cur-chart" id="cur-chart" hidden></div>
 
   <!-- 首屏分组：同一批入口按「想干什么」重排，点击走 web-ui 的 setTab；平铺视图下整块收起 -->
   <section class="start" id="start" aria-label="选择要算的事">

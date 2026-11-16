@@ -157,6 +157,113 @@
     try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
   }
 
+  // ── 排盘结果的本机缓存（任务书 A 线 1.2④ / 1.4）─────────────────
+  // 两套键各管一件事：
+  //   chartKeyOf() —— 全表单参数，管「同参数再点一次排盘」；
+  //   defaultChart —— 设默认盘时记下当时那张盘的 chartKey，管「重开直接读」。
+  // 后者不重新用表单算哈希：刷新后「所问之事」「交叉验证」这些框会回到 HTML
+  // 默认值，全参数哈希必然对不上，默认盘会退化成每次重排（1.5 第四条）。
+  const CACHE_KEY = 'mp.chartResult.v1';
+  const DEFAULT_KEY = 'mp.defaultChart.v1';
+  const CACHE_SCHEMA = 1;
+  const CACHE_MAX = 6;        // 每条带一整份盘面，留六张够用
+  const CACHE_ITEM_MAX = 400000;
+
+  function hash36(s) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i += 1) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return (h >>> 0).toString(36);
+  }
+  function chartKeyOf(param) {
+    // 可传「出盘那刻的参数指纹」求键：默认盘设缓存键时要的是上一张盘的键，
+    // 不是此刻表单的键（表单可能已经改了）。
+    return hash36(`${CACHE_SCHEMA}|${param != null ? param : paramKey()}`);
+  }
+  function defaultGet() {
+    const d = storeGet(DEFAULT_KEY);
+    return d && d.profileId ? d : null;
+  }
+  function defaultSet(d) { storeSet(DEFAULT_KEY, d); }
+  /** 表单此刻是不是默认档案这个人：不是就别把别人的盘记到默认盘名下 */
+  function defaultMatchesForm(d) {
+    const p = (window.__PP.profilesLoad() || []).find((x) => x && x.id === d.profileId);
+    if (!p) return false;
+    const g = (id) => { const n = el(id); return n ? String(n.value).trim() : ''; };
+    return g('date') === (p.date || '')
+      && (p.hourUnknown || g('time') === (p.time || ''))
+      && g('gender') === (p.gender || '')
+      && g('addr') === (p.address || '');
+  }
+  function cacheMap() {
+    const m = storeGet(CACHE_KEY);
+    return m && typeof m === 'object' && !Array.isArray(m) ? m : {};
+  }
+  function cacheRead(id) {
+    const hit = cacheMap()[id];
+    return hit && hit.last && hit.last.r ? hit : null;
+  }
+  function cacheWrite(id, entry) {
+    try {
+      if (JSON.stringify(entry).length > CACHE_ITEM_MAX) return;
+      const m = cacheMap();
+      m[id] = entry;
+      const ids = Object.keys(m);
+      if (ids.length > CACHE_MAX) {
+        ids.sort((x, y) => (m[x].createdAt || 0) - (m[y].createdAt || 0));
+        for (let i = 0; i < ids.length - CACHE_MAX; i += 1) delete m[ids[i]];
+      }
+      storeSet(CACHE_KEY, m);
+    } catch (e) { /* 存不下就当没有缓存，不影响这次排盘 */ }
+  }
+
+  /** 顶部「当前盘」条：文字与按钮全走文本节点，不拼 HTML */
+  function paintDefaultBar(p) {
+    const box = el('cur-chart');
+    if (!box) return;
+    box.replaceChildren();
+    if (!p) { box.hidden = true; return; }
+    const labels = entryLabels();
+    const txt = document.createElement('span');
+    txt.className = 'cur-txt';
+    txt.textContent = `当前盘：${p.label || '未命名'} · ${p.date || ''} · ${labels[p.kind] || p.kind || ''}`;
+    box.appendChild(txt);
+    const off = document.createElement('button');
+    off.type = 'button';
+    off.className = 'cur-off';
+    off.textContent = '取消默认';
+    off.addEventListener('click', () => {
+      if (window.__PP && p.pinned) window.__PP.profilesPin(p.id);
+      defaultSet(null);
+      paintDefaultBar(null);
+      renderProfiles();
+    });
+    box.appendChild(off);
+    box.hidden = false;
+  }
+
+  /** 默认盘：启动或切换时走这里。只回填 + 读缓存，绝不 compute（任务书 1.5 第四条） */
+  function restoreDefault(p) {
+    if (!p || !profFill(p)) { paintDefaultBar(null); refreshFlow(); return; }
+    // 回填当成用户填的：否则切走再切回出生类体系时会被自动值顶掉
+    onManualEdit();
+    const d = defaultGet();
+    const hit = d && d.profileId === p.id ? cacheRead(d.cacheKey) : null;
+    paintDefaultBar(hit ? p : null);
+    if (hit) {
+      last = makeLast(hit.last);
+      paint();
+      flowState = FLOW.LOCKED;
+      castKey = paramKey();
+      paintFlowNote({ ok: true, missing: [] });
+    } else {
+      // 缓存里没这张盘：停在待排盘，等用户自己点那一下
+      refreshFlow();
+    }
+  }
+
   /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次 */
   function dayLabel(ts) {
     const d = new Date(ts);
@@ -280,8 +387,9 @@
     box.innerHTML = PP.profilesHTML(list, { editingId: profEditing, armedDel: profArmed, bar });
   }
 
-  /** 回填出生信息：顺序与深链还原一致（先 setTab 再填，setTab 会按体系改可见性）。返回是否真排了盘 */
-  function profApply(p) {
+  /** 回填出生信息：顺序与深链还原一致（先 setTab 再填，setTab 会按体系改可见性）。
+   *  只回填，不排盘——默认盘启动走这里，绝不触发 compute（任务书 1.5 第四条）。 */
+  function profFill(p) {
     // 外部改坏 / 旧版本留下的「有日期没时刻」卡：别拿当前表单里的时刻顶上，那会排成另一个人
     if (!window.__PP.profUsable(p)) {
       profTip = '这张档案没有出生时刻，先补上时刻再存一次。';
@@ -303,6 +411,12 @@
     if (tsBox) tsBox.checked = p.trueSolar !== false;
     const lzBox = el('latezi');
     if (lzBox) lzBox.checked = p.lateZi !== false;
+    return true;
+  }
+
+  /** 档案卡点「用这张」：回填完当次就排（显式点击，不进历史） */
+  function profApply(p) {
+    if (!profFill(p)) return false;
     // 把这次回填当成「用户填的」：否则切走再切回出生类体系时会被上一次的自动值顶掉
     onManualEdit();
     run({ record: false });
@@ -361,7 +475,23 @@
       return;
     }
     if (ev.action === 'cancel') { profEditing = ''; profName = ''; profTip = ''; renderProfiles(); return; }
-    if (ev.action === 'pin') { PP.profilesPin(ev.id); profTip = ''; renderProfiles(); return; }
+    if (ev.action === 'pin') {
+      PP.profilesPin(ev.id);
+      profTip = '';
+      const p2 = of(ev.id);
+      if (p2 && p2.pinned) {
+        // 设默认：记下「上一次排出来那张盘」的键。用 castKey 反推而不是此刻表单——
+        // 表单可能已经改了还没重排，那个键在缓存里根本不存在。
+        const key = last && last.r && castKey ? chartKeyOf(castKey) : '';
+        defaultSet({ profileId: p2.id, system: p2.kind, setAt: Date.now(), cacheKey: key });
+        paintDefaultBar(p2);
+      } else {
+        defaultSet(null);
+        paintDefaultBar(null);
+      }
+      renderProfiles();
+      return;
+    }
     if (ev.action === 'del') {
       // 删除点两次才算：第一次只把按钮变成「确认删除」，误触不会丢档案
       if (profArmed !== ev.id) { profArmed = ev.id; profTip = ''; renderProfiles(); return; }
@@ -1182,6 +1312,20 @@
   async function run(opts) {
     // 切 tab / 恢复档案 / 开页面自动排的那一版不进历史：那不是用户要的那次
     const keepRecent = !(opts && opts.record === false);
+    // 同参数再点一次：连盘面 HTML 一起从本机读出来，不进 CALC、不调 compute。
+    // force 留给「重设」这种显式动作，跳过缓存真算一遍。
+    const ck = chartKeyOf();
+    if (!(opts && opts.force)) {
+      const hit = cacheRead(ck);
+      if (hit) {
+        last = makeLast(hit.last);
+        paint();
+        flowState = FLOW.LOCKED;
+        castKey = paramKey();
+        paintFlowNote({ ok: true, missing: [] });
+        return;
+      }
+    }
     // 进入 CALCULATING：按钮在这期间不可点，避免连点排出两张盘
     flowState = FLOW.CALC;
     const goBtn0 = el('go');
@@ -1459,6 +1603,16 @@
       // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
       const renderMs = mpNow() - paintStart;
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
+      // 排成功就落一份本机缓存：整份 last（含 r / html）都存，下次同参数直出，不重算。
+      // 键复用 run 开头算好的 ck，不在末尾二次哈希。
+      try {
+        const snap = collectArgs();
+        cacheWrite(ck, { chartId: (r && r.chart_id) || ck, system: tab,
+          profileSnapshot: snap, envelope: r, createdAt: Date.now(), last: makeLast(last) });
+        // 设过默认盘但还没记下键：此刻表单正是这个人，把这张盘的键补上
+        const d = defaultGet();
+        if (d && !d.cacheKey && defaultMatchesForm(d)) { d.cacheKey = ck; defaultSet(d); }
+      } catch (e) { /* 缓存写失败不影响这次排盘 */ }
       // 耗时行已经是 composeResult 的一个 parts 键，只有 dev 视图才会被拼进去；
       // 用户视图里连生成都不生成（不再用 insertAdjacentHTML 事后补插——那会把技术行
       // 塞进用户视图，且打印/导出时跟着走）。dev 视图下重绘一次让它出现。
@@ -2289,6 +2443,9 @@
       refreshFlow,
       onParamChange,
       applyDateTime,
+      cacheKey: chartKeyOf,
+      restoreDefault,
+      defaultGet,
     };
     if (window.__MPCompose && window.__MPCompose.bindDevSwitch) {
       window.__MPCompose.bindDevSwitch(document.querySelector('.seal'));
@@ -2301,10 +2458,12 @@
     if (deep) fillDeepForm(deep.form);
     // 开页面不自动排盘（任务书 1.2 第一条）。只有两个显式入口会直接出结果：
     // 深链（URL 里点了具体那一张盘）、以及用户自己设过的默认盘（读缓存，不重算）。
-    const pinned = window.__PP && window.__PP.profilesLoad
-      ? (window.__PP.profilesLoad() || []).find((x) => x && x.pinned) : null;
+    // 默认盘以 defaultChart 为准；老数据只置过顶、没记过 defaultChart 时回退到 pin
+    const d0 = defaultGet();
+    const list0 = window.__PP && window.__PP.profilesLoad ? (window.__PP.profilesLoad() || []) : [];
+    const pinned = d0 ? list0.find((x) => x && x.id === d0.profileId) : list0.find((x) => x && x.pinned);
     if (deep) Promise.resolve(run({ record: false })).then(() => deepNote(deep));
-    else if (pinned) profApply(pinned);
+    else if (pinned) restoreDefault(pinned);
     else refreshFlow();
   });
 })();

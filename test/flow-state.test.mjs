@@ -96,9 +96,9 @@ ok('清空会连记忆一起清', /manual\.birth = null;[\s\S]{0,200}manual\.cas
 // ── 五、入口白名单 ───────────────────────────────────────
 ok('首屏只有两条出口：深链或默认盘',
   /if \(deep\) Promise\.resolve\(run\(\{ record: false \}\)\)/.test(src) &&
-  /else if \(pinned\) profApply\(pinned\);/.test(src));
+  /else if \(pinned\) restoreDefault\(pinned\);/.test(src));
 ok('没有默认盘时不排盘，只刷状态',
-  /else if \(pinned\) profApply\(pinned\);\s*\n\s*else refreshFlow\(\);/.test(src));
+  /else if \(pinned\) restoreDefault\(pinned\);\s*\n\s*else refreshFlow\(\);/.test(src));
 ok('切 tab 清结果并回到 READY',
   /last = null;[\s\S]{0,200}flowState = FLOW\.READY;[\s\S]{0,200}castKey = '';/.test(bodyOf('function setTab(')));
 ok('__MPFlow 只读导出给自检用', /window\.__MPFlow = \{/.test(src));
