@@ -1264,9 +1264,17 @@ function App() {
       if (k === 'xiaoliuren') {
         args.mode = xlrMode;
         if (xlrMode === 'number') {
-          args.num1 = Number(num1) || undefined;
-          args.num2 = Number(num2) || undefined;
-          args.num3 = Number(num3) || undefined;
+          // 三个数都得有：缺一个，引擎抛出来的话是给调用方看的（「缺数请向用户索要」），
+          // 不该出现在用户眼前。空串被 Number('') 变成 0 更糟——会静默按 0 起一课。
+          const nums = [num1, num2, num3].map((x) => String(x == null ? '' : x).trim());
+          if (nums.some((x) => x === '' || !Number.isFinite(Number(x)))) {
+            setError('报数起课要三个数，1 到 99 随口报就行，比如 7、13、29。');
+            setResult(null);
+            return;
+          }
+          args.num1 = Number(nums[0]);
+          args.num2 = Number(nums[1]);
+          args.num3 = Number(nums[2]);
         } else {
           args.date = dt.date;
           const hh = Number(String(dt.time).split(':')[0]);
@@ -1301,6 +1309,13 @@ function App() {
       if (k === 'name') {
         args.action = nnMode;
         args.surname = surname.trim();
+        // 缺姓/名时引擎抛的是「请给 givenName（1–2 个汉字）」这种参数名，用户看不懂；
+        // 而且评估没名可评，硬排出来的分也是拿空串算的。
+        if (!args.surname || (nnMode === 'assess' && !givenName.trim())) {
+          setError(nnMode === 'assess' ? '起名要先填姓和名，一个字也行。' : '起名要先填姓。');
+          setResult(null);
+          return;
+        }
         if (nnMode === 'generate') {
           args.gender = genderV; args.limit = Number(limitN) || 6;
           args.trueSolar = tsV; args.lateZi = lateZiV;
@@ -1315,7 +1330,7 @@ function App() {
         if (convMode === 'lunar2solar') {
           const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(lunarDate).trim());
           if (!m) {
-            setError('农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。');
+            setError('农历日期要按「年-月-日」填，例如 2026-9-17；闰月单独勾选。');
             return;
           }
           args.mode = 'lunar2solar';

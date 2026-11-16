@@ -11,6 +11,7 @@
 //   node tools/preflight.mjs --staged 只查语法，跳过其余（改注释时图快）
 import { spawnSync, execFileSync } from 'node:child_process';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -47,6 +48,32 @@ function stagedJs() {
   }
 }
 
+// src/app.js 这类文件是**模块片段**：build 时整段被包进函数里，所以顶层跑 `return`
+// 是合法的，直接 `node --check` 会报 Illegal return statement。以前 preflight 只跑
+// --check，任何人改 app.js 都会被判「语法错误」——闸自己坏了，比没闸更糟。
+// 判据：有顶层 import/export 的按 ESM 交给 node 查；其余包进函数体再交给 V8 解析。
+function syntaxErrorOf(rel) {
+  const abs = path.join(REPO, rel);
+  let src = '';
+  try {
+    src = readFileSync(abs, 'utf8');
+  } catch (e) {
+    return `读不了：${e.message}`;
+  }
+  if (/^\s*(import|export)\b/m.test(src)) {
+    const r = spawnSync(NODE, ['--check', abs], { cwd: REPO, encoding: 'utf8' });
+    return r.status === 0 ? '' : String(r.stderr || '').trim();
+  }
+  try {
+    // 只解析不执行：Function 构造器会把源码编译一遍，语法错在这里就抛
+    // eslint-disable-next-line no-new-func
+    new Function(src);
+    return '';
+  } catch (e) {
+    return String((e && e.message) || e);
+  }
+}
+
 const steps = [];
 if (full) {
   steps.push(['全闸（构建 + 200 个测试文件）', ['tools/build-all.mjs', '--gate']]);
@@ -72,10 +99,10 @@ if (ok) {
   if (files.length) {
     console.log(`\n暂存 js 语法（${files.length} 个）`);
     for (const f of files) {
-      const r = spawnSync(NODE, ['--check', f], { cwd: REPO, encoding: 'utf8' });
-      if (r.status !== 0) {
+      const err = syntaxErrorOf(f);
+      if (err) {
         console.log(`✗ 语法错误：${f}`);
-        if (r.stderr) console.log(r.stderr.trim());
+        if (err) console.log(err);
         ok = false;
         break;
       }

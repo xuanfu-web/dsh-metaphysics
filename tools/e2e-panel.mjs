@@ -1114,6 +1114,52 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(errors.length === errsBefore, '太乙 tab 全程无新增 JS 报错', errors.slice(errsBefore).join(' | '));
 }
 
+// ── 十二·十、缺项要在界面拦住，别把引擎的参数名甩给用户 ─────────────
+// 单页那边已经修过一轮（起名缺名 / 报数缺数 / 农历格式），面板是一条独立的渲染链，
+// 参数构造写在 app.js 里，同一个洞得单独堵一次。这里按用户的操作顺序点出来看文案。
+{
+  const goBtnSel = '.mp-actions button.mp-btn:not(.ghost)';
+  const clickGo = async () => {
+    const b = page.locator(goBtnSel).last();
+    if (await b.count()) { await b.click(); await page.waitForTimeout(350); }
+  };
+
+  // 报数起课：三个数缺一个
+  await openTool('xiaoliuren');
+  await page.waitForTimeout(250);
+  await unlockParams();
+  const numMode = page.locator('button').filter({ hasText: '报数' });
+  if (await numMode.count()) { await numMode.first().click(); await page.waitForTimeout(200); }
+  await clickGo();
+  const xlrText = await text('#main');
+  ok(/报数起课要三个数/.test(xlrText), '报数缺数时面板自己拦住', xlrText.slice(0, 40));
+  ok(!/num1|向用户索要/.test(xlrText), '面板不把报数缺项的引擎话术给用户看');
+
+  // 起名评估：姓和名都不填
+  await openTool('name');
+  await page.waitForTimeout(250);
+  await unlockParams();
+  await clickGo();
+  const nameText = await text('#main');
+  ok(/起名要先填姓/.test(nameText), '起名缺姓/名时面板自己拦住', nameText.slice(0, 40));
+  ok(!/givenName|surname/.test(nameText), '面板不把起名的参数名给用户看');
+
+  // 农历转公历：日期格式不对
+  await openTool('convert');
+  await page.waitForTimeout(250);
+  await unlockParams();
+  // 两个分段按钮都含「农历」二字：只点「农历 → 公历」那个，别把方向切反
+  const lunarMode = page.locator('button').filter({ hasText: '农历 → 公历' });
+  if (await lunarMode.count()) { await lunarMode.first().click(); await page.waitForTimeout(250); }
+  const lunarBox = page.locator('input[placeholder*="2026-9-17"]');
+  ok((await lunarBox.count()) >= 1, '切到「农历 → 公历」后出现农历日期框');
+  if (await lunarBox.count()) { await lunarBox.first().fill('abc'); await page.waitForTimeout(120); }
+  await clickGo();
+  const convText = await text('#main');
+  ok(/农历日期要按「年-月-日」填/.test(convText), '农历格式不对时面板给可照抄的例子', convText.slice(0, 40));
+  ok(!/农历转公历请按/.test(convText), '面板文案与单页统一（不再是功能名开头那句）');
+}
+
 // ── 十三、未发版改动项数：面板运行时得真的拿得到 ────────────────
 // client.js 里那行注入是构建期写进去的，源码断言看不到压缩后的形态；
 // 错误边界的环境行（版本号 + 未发版改动 N 项）全靠它，所以在真 React 里读一次。
