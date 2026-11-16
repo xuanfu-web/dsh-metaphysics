@@ -202,6 +202,12 @@ body.view-flat .start{display:none}
 .cur-off{border:1px solid var(--line);background:transparent;color:var(--dim);border-radius:999px;padding:3px 10px;font-size:12px;cursor:pointer}
 .cur-off:hover{color:var(--ink);background:var(--panel)}
 .cur-chart[hidden]{display:none}
+.go[hidden]{display:none}
+/* 三个次要按钮排在同一个格子里，别各占一行把右半边空出来 */
+.gobtns{grid-column:2 / 4;display:flex;gap:8px;flex-wrap:wrap;justify-self:end;align-self:end}
+.gobtns .go.ghost{grid-column:auto;margin-right:0}
+/* 出盘后参数区只读：值还在，只是不能随手改，要走「修改参数」那个入口 */
+.bar.is-locked .field input,.bar.is-locked .field select,.bar.is-locked .field textarea{opacity:.62;cursor:default}
 .go.ghost{grid-column:3;background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;margin-right:8px;box-shadow:none;transform:none}
 .go.ghost:hover{background:var(--panel2);color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -362,6 +368,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .go,.go.ghost{grid-column:auto;justify-self:stretch;margin-left:0;margin-right:0;width:100%;padding:13px;font-size:16px;min-height:48px;border-radius:8px}
   .go.ghost{grid-column:1}
   .go{grid-column:2}
+  /* 窄屏三个次要按钮一样宽、竖着堆，主按钮占另一列 */
+  .gobtns{grid-column:1;width:100%;justify-self:stretch;flex-direction:column;gap:8px}
+  .gobtns .go.ghost{grid-column:auto;width:100%}
   /* 性别只有一格，留在半幅会空出右边半格；出生地同理，独占一行好填 */
   #for-gender,#for-bazi .field:not(.check){grid-column:1/-1}
   /* 验前事 / 生时校正：标签独占一行，三档判断按钮等分成 44px 触摸格；
@@ -734,8 +743,11 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
         <label class="field" id="nn-generate" style="display:none">候选个数<input id="nlimit" type="number" min="1" max="20" value="6"></label>
       </div>
     </div>
-    <button id="sample" class="go ghost" title="用固定示例盘看完整报告">看示例</button>
-    <button id="clear" class="go ghost" title="清掉现在填的条件与结果，回到初始状态">清空</button>
+    <span class="gobtns">
+      <button id="sample" class="go ghost" title="用固定示例盘看完整报告">看示例</button>
+      <button id="clear" class="go ghost" title="清掉现在填的条件与结果，回到初始状态">清空</button>
+      <button id="edit" class="go ghost" hidden title="出盘后想改条件，点这里解锁输入区">修改参数</button>
+    </span>
     <button id="go" class="go">排盘</button>
   </div>
 

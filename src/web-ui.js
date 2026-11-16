@@ -691,8 +691,31 @@
 
   const goLabel = () => (el('go') ? el('go').textContent : '排盘');
 
+  /**
+   * 出盘后参数区切只读：值还在，只是不能随手改。
+   * 要改只能点「修改参数」走 EDITING —— 任务书 1.3 不允许别的路。
+   * select / checkbox 没有 readOnly，只能 disabled；但 disabled 不影响 value，
+   * collectArgs() 读到的参数不会失真，paramKey() 也就不会莫名漂移。
+   */
+  function syncInputLock() {
+    const bar = document.querySelector('.bar');
+    if (!bar) return;
+    const locked = flowState === FLOW.LOCKED;
+    bar.classList.toggle('is-locked', locked);
+    bar.querySelectorAll('input, select, textarea').forEach((n) => {
+      const tag = n.tagName;
+      if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
+      else n.readOnly = locked;
+    });
+    const eb = el('edit');
+    if (eb) eb.hidden = !locked;
+  }
+
   /** 缺项与过期的说明写在提示区，不占用结果区（结果区是给盘和解读的） */
   function paintFlowNote(v) {
+    // 输入区跟着状态走：所有状态迁移最后都汇到这里，挂这一处就够，
+    // 不用在每个 setState 的地方各写一遍（漏一处就是锁不住或者解不开）
+    syncInputLock();
     const tip = el('tip');
     if (!tip) return;
     let note = tip.querySelector('.flow-note');
@@ -703,7 +726,12 @@
     }
     let txt = '';
     if (flowState === FLOW.UNFILLED) txt = `还差：${v.missing.join('、')}。填好后点「${goLabel()}」。`;
-    else if (flowState === FLOW.EDITING) txt = `参数已变更，结果待更新——点「${goLabel()}」重排。`;
+    else if (flowState === FLOW.EDITING) {
+      // 刚点完「修改参数」还没动参数，和真改了参数，是两件事，别用同一句话
+      txt = castKey && paramKey() === castKey
+        ? `改完点「${goLabel()}」更新结果，旧盘先留着。`
+        : `参数已变更，结果待更新——点「${goLabel()}」重排。`;
+    }
     note.textContent = txt;
     note.hidden = !txt;
   }
@@ -2238,6 +2266,16 @@
       node.addEventListener('input', onManualEdit);
     });
     el('go').addEventListener('click', goCast);
+    // 修改参数：只解开输入区，不动结果。旧盘继续挂着，等用户真改完再点「排盘」才换。
+    // 这里不排盘、不清值 —— 任务书 1.3 的 RESULT_LOCKED → EDITING 只走这一条路。
+    const editBtn = el('edit');
+    if (editBtn) editBtn.addEventListener('click', () => {
+      if (flowState !== FLOW.LOCKED) return;
+      flowState = FLOW.EDITING;
+      refreshFlow();
+      const d = el('date');
+      if (d && !d.readOnly) d.focus({ preventScroll: true });
+    });
     // 看示例：填固定示例盘并切到八字，走与真实排盘完全相同的渲染路径。
     // 问卷下同一个按钮改叫「填空答案」：第一次进来面对 24 / 45 道题的人，
     // 需要先看一份填好的卷子长什么样，而不是先读一整页题。
@@ -2446,6 +2484,7 @@
       cacheKey: chartKeyOf,
       restoreDefault,
       defaultGet,
+      syncInputLock,
     };
     if (window.__MPCompose && window.__MPCompose.bindDevSwitch) {
       window.__MPCompose.bindDevSwitch(document.querySelector('.seal'));
