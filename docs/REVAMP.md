@@ -763,3 +763,90 @@ node tools/test-all.mjs      # 198/198
 ```
 
 `f5af482` 上跑过：`198/198`，用时 55.6s。同一条命令在 `aaa592c` 上是 193/196。
+
+## 15. A 线：交互状态机、结果缓存、默认盘、只读（2026-11-16）
+
+任务书第一节要的是同一件事：**盘只能由用户主动要，不能自己冒出来**。落地分三刀，`840e9d7`、`cc9ee52`、`f8e5047`。
+
+### 15.1 六态，和为什么只有两处汇合点
+
+`src/web-ui.js` 里 `FLOW` 六态：`IDLE_UNFILLED / IDLE_READY / CALCULATING / RESULT_LOCKED / EDITING / ERROR`。迁移只准由用户动作触发：
+
+- 进 `CALCULATING` 只有 `run()` 里那一处赋值（测试卡死：全文非注释代码里 `flowState = FLOW.CALC` 恰好 1 次）。
+- `RESULT_LOCKED → EDITING` 只有两条路：点了「修改参数」，或者参数真变了（`paramKey() !== castKey`）。
+- `EDITING → RESULT_LOCKED` 必须重新点「排盘」，旧盘在这期间**不清**，只标「参数已变更，结果待更新」。
+
+所有迁移最后都汇到 `paintFlowNote()` 一处（`refreshFlow`、`bail`、`setTab`、清空、`run` 命中与成功、`restoreDefault` 都调它）。这条不是洁癖：状态有七八个入口，各写一遍必然漏一处，漏的那处表现是「锁不住」或者「解不开」，而且只在特定路径上出现。
+
+### 15.2 只读怎么锁
+
+`syncInputLock()` 挂在 `paintFlowNote()` 开头——不是在每个 setState 的地方各调一次。锁的范围只到 `.bar` 里的 `input / select / textarea`：
+
+- `input`（含 date/time/addr）用 `readOnly`；`select` 与 `checkbox / radio` 没有 `readOnly`，只能 `disabled`。
+- **`disabled` 不影响 `.value`**，`collectArgs()` 照读得到，`paramKey()` 不会因为锁定而漂移。这条是选 `disabled` 而不是「换成隐藏输入」的直接原因。
+- 追问框 `#askq` 在 `#out` 里，问卷靠 `button.mb-btn`，两者都不在锁定范围内——问卷答题中途不能把选项锁死。
+- 清空、切体系、缺项都会把状态拉回 `IDLE_*`，于是自动解锁；用户不需要先点「修改参数」再清空。
+
+三个次要按钮（看示例 / 清空 / 修改参数）收进 `.gobtns` 一个 flex 容器占第 2–4 列，`.bar` 高度 391 → 279。不收的话三个 ghost 各自 `grid-column:3`、各占一行，右侧空着三行。
+
+### 15.3 结果缓存：键为什么不重算
+
+`chartKeyOf(param)` = `hash36('1|' + (param ?? paramKey()))`，即**参数 + 体系 + schema 版本**的短哈希（任务书 1.2④）。条目 `{ chartId, system, profileSnapshot, envelope, createdAt, last }`，存 `mp.chartResult.v1`，上限 6 条、单条超 400KB 跳过、按 `createdAt` 淘汰最旧。
+
+两个设计点记录在案：
+
+1. **条目必须存整份 `last`，不能只存 `envelope`。** `paint()` 吃的是 `last.r / last.html / last.perf / last.tab`，还要拿 `last.r` 去 `Engine.interpret()`。只存 `envelope` 的话「读缓存直出」复现不出来，只能重新渲染甚至重算——那就违反任务书 1.5 第四条了。
+2. **默认盘存的是「当时那张盘的 cacheKey」，不是按档案年龄重算的键。** 第一版按档案的出生字段算 `profileKeyOf(p)`，跑实机才发现必错：写缓存时用的键来自完整表单（`question / cross / juMethod / lines / spread / verifyPast` 都在 `collectArgs()` 里），刷新后这些控件回 HTML 默认值，重算出来的哈希和写进去的永远对不上，默认盘会退化成「每次打开都重排」。所以置顶时把 `castKey` 反推成 `chartKeyOf(castKey)` 记进 `defaultChart { profileId, system, setAt, cacheKey }`，重开直接按它读。
+
+`run({ force: true })` 是唯一跳过缓存的口子，留给显式重算。
+
+### 15.4 默认盘：能直出，不能重算
+
+`restoreDefault(p)`：`profFill(p)` 回填表单 → `onManualEdit()` → 按 `defaultChart.cacheKey` 读 → 命中就 `last = makeLast(hit.last); paint();`，未命中**只 `refreshFlow()` 显示待排盘**，绝不 compute。顶部 `#cur-chart` 条写「当前盘：名称 · 日期 · 体系」+「取消默认」（去 pin、清 `defaultChart`、结果保留）。
+
+`profApply` 与 `profFill` 拆开也是为此：档案卡里点「用这张」仍然走显式排盘（`profApply` = 回填 + `run({ record: false })`），启动走 `restoreDefault`（不排盘）。两条路名字分开，才不会哪天被谁合并回去。
+
+### 15.5 A2 为什么没用确认框
+
+任务书 1.2⑥ 要「在任一体系修改出生信息，需提示『将同步到其他体系，是否确认』」。落地成**常驻说明**（`#for-share`：出生日期/时辰/性别/出生地由八字、紫微、合盘、人生 K 线、风水、起名共用，改一处全部跟着变）而不是模态确认。
+
+理由：出生信息是**唯一数据源**，`manual.birth` 就一份，没有「不同步」这个选项存在。弹一个只能点「确定」的框不是确认，是挡路；而它挡的每一次都发生在用户已经在改字段的时候。说明放在表单里、切到命盘类体系才显示，信息量比确认框大，代价是零。
+
+### 15.6 测试为什么必须并发跑
+
+本机 `node -e 1` 冷启动 2–8 秒（安全软件逐个扫新进程），199 个测试文件串行跑 20 分钟以上、pwsh 300s 超时直接丢进程。`tools/run-tests.mjs` 改成并发池（默认 6 路，`TEST_CONCURRENCY` 封顶 32），`test-all.mjs` 与 `check-assertions.mjs` 都走它，**输出格式一个字没改**（CI 与 `verify-tests-can-fail` 依赖那几行）。改完：全闸 27s。
+
+### 15.7 别改回去
+
+- `flowState = FLOW.CALC` 全文只能有 1 处，`bail()` 至少 4 处（run 的每个早退都要经过它）。
+- 不许出现 `addEventListener('change', run)`，也不许 `syncQuick(); run()`——参数变化永远只调 `onParamChange`。
+- `run(` 非注释调用点上限 12（当前 10）。新增一个「顺手也排一下」的入口就会破。
+- `restoreDefault` / 缓存命中分支里不许出现 `run(` 或 `Engine.compute`。
+- `#cur-chart` 用 `createElement + textContent` 拼，别换 `innerHTML`（`check-html-sinks` 会红，且这个位置的内容来自档案名）。
+- 缓存键里的 `CACHE_SCHEMA` 改版本要连同条目结构一起改，否则旧条目被新代码当成本结构读。
+
+### 15.8 可复算验证
+
+```
+node tools/build-html.mjs          # 改过 build-html 必须先跑，否则 standalone 先红
+node tools/check-assertions.mjs --update
+node tools/build-all.mjs --gate    # 201/201、11224 断言、27s
+```
+
+实机（自建静态服读 `命理排盘.html`，`no-store`）：
+
+| 动作 | 期望 | 实测 |
+| --- | --- | --- |
+| 改日期不点排盘 | 状态仍 `IDLE_READY`，结果区不变 | ✓ |
+| 点排盘 | `RESULT_LOCKED`，date/time/addr `readOnly`、gender `disabled`、「修改参数」出现 | ✓ 28550 字 |
+| 同参数再点排盘 | 命中缓存，`Engine.compute` 计数不变 | ✓ computeHits=1→1 |
+| 点修改参数 | `EDITING`，输入解锁、旧盘保留、提示「改完点排盘更新结果」 | ✓ |
+| 改时辰 | 提示变「参数已变更，结果待更新」，旧盘不消失 | ✓ 28550 字 |
+| 再点排盘 | 新盘 `RESULT_LOCKED`，`computeHits` +1 | ✓ 28287 字 |
+| 设默认盘后刷新 | 直出同一张盘，`computeHits` 0，顶部条在 | ✓ |
+| 往缓存 `last.html` 插标记再刷新 | 标记出现 → 证明确实读缓存 | ✓ CACHE_PROOF_9527 |
+| 取消默认后刷新 | `IDLE_READY`，不自动加载 | ✓ |
+| 切体系 / 清空 | 自动回 `IDLE_READY` 并解锁 | ✓ |
+
+**已知遗留**：`onProfClick` 的 `del` 分支没联动 `defaultChart`，删掉默认盘对应的档案后，顶部条按 `profilesLoad()` 为空自然收起，但 `defaultChart` 条目还在（不影响使用，下次置顶会覆盖）。修的时候别把 `profApply` 的显式排盘顺手删了。
+

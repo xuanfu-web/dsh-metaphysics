@@ -1,0 +1,127 @@
+# lessons：踩过的坑
+
+每条要有三样：**错在哪**、**为什么会错**、**下次怎么防**。没有第三样的不算 lesson，只是抱怨。
+
+教训不等于规矩。要变成「必须这么干」的，另立一条进 `rules.md`。
+
+条目格式：
+
+```
+## L-00N 标题
+- type: lesson
+- status: active | superseded
+- at: YYYY-MM-DD
+- 防再犯：固化成哪个脚本 / 哪条测试
+```
+
+---
+
+## L-001 漏最后一步重建，195/196 是行尾不是漏构建
+
+- type: lesson
+- status: active
+- at: 2026-11-15
+- 防再犯：`tools/check-eol.mjs` + `.gitattributes` 兜底（R-001 / R-003）
+
+现象：同一个 commit 在 CI 绿、在本机红、在新 worktree 红得更厉害。当时的判断是「改完 CHANGELOG 忘了重建 client.js」，方向错了。
+
+真因：`docs/verification.html` 盘上 375861 字节、生成器输出 370146 字节、含 5715 个 `\r\n`。`.gitattributes` 只钉了 js/mjs/json/md，漏了 html 与 svg，`core.autocrlf=true` 的机器一 checkout 就把产物转成 CRLF。
+
+为什么会看错：先看到「红」，再找最像的原因（漏构建），没有先量字节与行尾。定性顺序错了。
+
+防法：兜底规则一行 `* text=auto eol=lf`；行尾闸同时查「产物本身」和「规则在不在」——只查产物的话，规则被删时本机仍然绿，换机器才炸。
+
+## L-002 测试绿 ≠ 产品可见
+
+- type: lesson
+- status: active
+- at: 2026-11-15
+- 防再犯：合盘列为 `ENVELOPE_ONLY`，并把 22 体系实机排一遍纳入验收
+
+合盘的 adapter 算出了分数，测试全绿，但 `interpret()` 在更早的地方就 return 了——用户那边什么都不显示。测试断言的是「adapter 有输出」，不是「结果区有内容」。
+
+防法：验收里加一条「实机把 22 个体系各排一次，结果区字数 > 0」。断言要卡在最终渲染，不卡中间产物。
+
+## L-003 断言写反了还是绿的
+
+- type: lesson
+- status: active
+- at: 2026-11-14
+- 防再犯：`ok()` 的第二个参数必须能失败；关键闸补「故意改坏必须变红」的自测
+
+`ok(label, condition)` 的第二参数写成常量或恒真表达式，测试永远 PASS。有几次把条件写成了字符串（非空即真）。
+
+防法：`tools/verify-tests-can-fail.mjs` 那种「先改坏再跑」的自测要覆盖关键闸门。新写测试时先想一句「它在什么情况下会红」，答不上来就是没测到东西。
+
+## L-004 分块架构：模块进块 ≠ 能用
+
+- type: lesson
+- status: active
+- at: 2026-11-14
+- 防再犯：新模块同时登记 `ORDER` 与 `INTERPRET`（R-007）
+
+模块被打包进块了，但它跨模块解构的依赖没在同一个块里，调用时才炸；`catch` 一吞就变成 `null`。症状极具迷惑性：**面板静默缺一块，单页完全正常**。
+
+防法：定位时自建最小宿主仿真（假 React + `__ModuleLoader__` + 真 client.js）在本地复现，比反复让人重启快得多。
+
+## L-005 改宿主 UI 显示，先找渲染它的组件
+
+- type: lesson
+- status: active
+- at: 2026-11-13
+- 防再犯：改任何显示文案前先确认数据源
+
+DSH 插件市场的条目名读 `package.json` 的 `meta.title`，但**侧栏那行不是它**——侧栏是插件自己注册的 `sidebar.panellist` label，在 `src/app.js` 末尾硬编码 `label: () => '命理 v' + window.__MP_VER`。改 `meta.title` 完全没效果。两处来源，两处都要改。
+
+## L-006 断言绑当天日期，隔夜必红
+
+- type: lesson
+- status: active
+- at: 2026-11-16
+- 防再犯：所有取「今天」的用例显式传 `datetime`
+
+`facts-only.test.mjs` 有一条断言写死「癸巳日」，六爻 case 没给 `datetime`，引擎按当天算：11-15 是癸巳全绿，11-16 变甲午就挂。重启后第一条红的就是它。
+
+防法：测试里出现「今天」的地方一律显式传日期；任何依赖系统时钟的断言都算定时炸弹。
+
+## L-007 pwsh 内联替换中文静默失败
+
+- type: lesson
+- status: active
+- at: 2026-11-15
+- 防再犯：改中文用 `edit` 工具或写成 node 脚本
+
+`pwsh -Command` 里 `.Replace('中文','别的')` 会不出声地不生效（编码在命令行边界上就已经错了）。同类的还有 `node -e` 里带中文引号被 PowerShell 吃掉，报 `SyntaxError: Unexpected token '<eof>'`。
+
+防法：改文件内容走 `edit` 工具；批量替换写一个 `.mjs` 临时脚本再删。
+
+## L-008 文档里写自己的提交短哈希，amend 就失效
+
+- type: lesson
+- status: active
+- at: 2026-11-15
+- 防再犯：文档只写「在哪个标签/哪次提交上跑过」，必要时留全哈希
+
+短哈希在 amend 之后指向一个不存在的对象，读者按它复现会失败。要么写全哈希，要么写标签名（`baseline/pre-interact` 这种不会变的）。
+
+## L-009 缓存键不能「按当时的表单重算」
+
+- type: lesson
+- status: active
+- at: 2026-11-16
+- 防再犯：默认盘存「出盘那刻的键」，不重算（F-004）
+
+第一版给默认盘算键时，用档案里的出生字段重新拼参数。跑实机才发现必错：写缓存那次用的键包含完整表单（`question / cross / juMethod / lines / spread / verifyPast` 都在 `collectArgs()` 里），刷新后这些控件回 HTML 默认值，重算出来的哈希与写进去的永远对不上——默认盘于是每次打开都重排，正好踩中任务书 1.5 第四条禁止项。
+
+防法：**键跟着「那次排盘」走，不跟着「现在表单长什么样」走**。置顶时把 `castKey` 反查成键存进 `defaultChart`。
+
+## L-010 长任务别在本会话里等
+
+- type: lesson
+- status: active
+- at: 2026-11-16
+- 防再犯：`Start-Process` 后台 + 轮询日志
+
+pwsh 单次调用 300s 超时，超时会丢进程，前面跑的成果全没（`check-assertions --update` 就这样被打断过一次，基线没更新）。全量测试串行时尤其危险。
+
+防法：长任务用 `Start-Process` 起后台进程、输出重定向到文件，再按需轮询日志。或者先把并发池做出来，让任务本身短到不会超时。
