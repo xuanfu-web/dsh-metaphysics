@@ -55,8 +55,12 @@ ok('同一张盘不重复记（体系 + 盘号 + 输入摘相同即视作同一�
 ok('切 tab 不算用过（不然历史里全是点过没排过的空条目）',
   !/function activate\(next\) \{[\s\S]{0,160}recordRecent/.test(ui));
 ok('排完一次才记，且带盘号', /paint\(\);\s*\/\/ 历史在这里记[\s\S]{0,120}if \(keepRecent\) recordRecent\(startTab, r\)/.test(ui));
-ok('切 tab 顺带自动排的那次不记（那不是用户要的那次）',
-  /else run\(\{ record: false \}\)/.test(ui) && /run\(\{ record: false \}\);\s*return true;/.test(ui));
+ok('切 tab 不再自动排盘（所以也不存在「自动排那次」要不要记的问题）',
+  !/else run\(\{ record: false \}\)/.test(ui));
+ok('只有两条不记历史的出口：深链打开、档案回填',
+  (ui.match(/run\(\{ record: false \}\)/g) || []).length === 2 &&
+  /if \(deep\) Promise\.resolve\(run\(\{ record: false \}\)\)/.test(ui) &&
+  /onManualEdit\(\);\s*\n\s*run\(\{ record: false \}\);\s*\n\s*return true;/.test(ui));
 ok('问卷不进历史（答案只在内存里，恢复不回来）',
   /if \(t === 'mbti' \|\| t === 'constitution'\) return;/.test(ui));
 ok('记录里存这次的表单值', /const args = collectArgs\(\)/.test(ui) && /const item = \{ tab: t, at: Date\.now\(\), args, shortId \}/.test(ui));

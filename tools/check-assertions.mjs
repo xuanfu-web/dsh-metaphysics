@@ -10,25 +10,27 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { listTests, runAll } from './run-tests.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const testDir = path.join(root, 'test');
 const baselinePath = path.join(testDir, 'assertion-baseline.json');
 const update = process.argv.includes('--update');
 
-const files = readdirSync(testDir)
-  .filter((f) => f.endsWith('.test.mjs') && !f.startsWith('_'))
-  .sort();
+const files = listTests(testDir);
 
 const result = {};
 const broken = [];
-for (const f of files) {
-  const r = spawnSync(process.execPath, [path.join(testDir, f)], { encoding: 'utf8' });
-  const out = `${r.stdout || ''}\n${r.stderr || ''}`;
+// 并发跑：串行 spawnSync 在本机要二十多分钟（每次启动 node 都被安全软件扫一遍），
+// 结果按 files 顺序返回，所以下面的统计与基线文件顺序不受完成顺序影响。
+const runs = await runAll(files.map((f) => path.join(testDir, f)), { cwd: root });
+for (const r of runs) {
+  const f = path.basename(r.file);
+  const out = `${r.out || ''}\n${r.err || ''}`;
   const pass = (out.match(/^PASS /gm) || []).length;
   const fail = (out.match(/^FAIL /gm) || []).length;
   result[f] = { pass, fail };
-  if (r.status !== 0 || fail > 0) broken.push(`${f}（退出码 ${r.status}，FAIL ${fail}）`);
+  if (r.code !== 0 || fail > 0) broken.push(`${f}（退出码 ${r.code}，FAIL ${fail}）`);
 }
 
 if (broken.length) {

@@ -255,7 +255,8 @@
     setTab(next);
     if (next === 'mbti') mbEnter();
     else if (next === 'constitution') csEnter();
-    else run({ record: false });
+    // 切体系只换表单，不排盘（任务书 1.2 第一条）。要看得点主按钮。
+    else { flowState = flowState === FLOW.LOCKED ? FLOW.READY : flowState; refreshFlow(); }
   }
 
   // ── 我的命盘（本机档案）────────────────────────────────────────
@@ -424,7 +425,31 @@
   // 用户手动改过的日期/时刻，按语义分类分别记忆；null = 没改过，跟随自动值。
   // 分两类记的原因：出生时间与起卦时刻语义不同，跨类别时上一次的输入已无意义，
   // 所以从「八字」切到「六爻」会自动换成当前时刻，而切回「八字」仍是你填的出生时间。
-  const manual = { birth: null, cast: null };
+  // 落盘：刷新后填的东西还在（任务书验收「未设默认盘也要保留上次输入」）。
+  const INPUT_KEY = 'mp.input.v1';
+  const savedInput = storeGet(INPUT_KEY) || {};
+  const manual = {
+    birth: savedInput.birth || null,
+    cast: savedInput.cast || null,
+  };
+  function saveManual() {
+    try { storeSet(INPUT_KEY, { birth: manual.birth, cast: manual.cast }); } catch (e) { /* 存不了不影响排盘 */ }
+  }
+
+  // ── 交互状态机（任务书 A 线 1.3）─────────────────────────────
+  // 六态：未填完整 / 已填未排 / 排盘中 / 已出盘锁定 / 改参数中 / 出错。
+  // 一条硬规矩：参数怎么改都不进 CALCULATING，只有点主按钮才排。
+  const FLOW = {
+    UNFILLED: 'IDLE_UNFILLED',
+    READY: 'IDLE_READY',
+    CALC: 'CALCULATING',
+    LOCKED: 'RESULT_LOCKED',
+    EDITING: 'EDITING',
+    ERROR: 'ERROR',
+  };
+  let flowState = FLOW.READY;
+  // 出结果时记下当时的参数指纹；与此刻表单不一致 = 参数已变更、结果待更新
+  let castKey = '';
   // 程序最近一次自动填入的值，用来判断用户是否手动动过（程序填值不会触发 change/input）
   let autoDate = '';
   let autoTime = '';
@@ -499,12 +524,102 @@
     autoTime = v.time;
   }
 
-  /** 切 tab 时决定日期/时刻：用户在这类下改过就保留，否则按语义自动填 */
+  /** 切 tab 时决定日期/时刻：用户填过的一律优先，都没有才给语义默认值。
+   *  这里曾经是 fillDateTime(manual[k] || defaultFor(k))——切一次体系就把用户
+   *  刚填的日期冲回示例默认值，任务书 1.1 说的「输入被重置回默认值」就是这一行。 */
   function applyDateTime(k) {
     if (k === 'none') return;
     const cur = { date: el('date').value, time: el('time').value };
-    if (k === ctxKind && (cur.date !== autoDate || cur.time !== autoTime)) manual[k] = cur;
-    fillDateTime(manual[k] || defaultFor(k));
+    const same = k === ctxKind;
+    const typed = same && (cur.date !== autoDate || cur.time !== autoTime) && isoDateOk(cur.date);
+    if (typed) manual[k] = cur;
+    const v = manual[k] || (same && typed ? cur : defaultFor(k));
+    fillDateTime(v);
+    saveManual();
+  }
+
+  /** 必填项校验：缺什么报什么，不给一句笼统的「参数不完整」 */
+  function validateForm() {
+    const miss = [];
+    if (usesTimeInput() && !isoDateOk(el('date').value)) {
+      miss.push(isBirthTab(tab) || tab === 'hepan' ? '出生日期' : '日期');
+    }
+    if (tab === 'hepan') {
+      if (!isoDateOk(el('pdate').value)) miss.push('对方出生日期');
+      if (el('h3on') && el('h3on').checked && !isoDateOk(el('p2date').value)) miss.push('第三方出生日期');
+    }
+    if (needAsk(tab) && !el('question').value.trim()) miss.push('所问之事');
+    return { ok: miss.length === 0, missing: miss };
+  }
+
+  /** 参数指纹：只用于判断「表单与已出的结果是不是同一份参数」，不进 chart_id */
+  function paramKey() {
+    let a = {};
+    try { a = collectArgs() || {}; } catch (e) { a = {}; }
+    return JSON.stringify([tab, a]);
+  }
+
+  const goLabel = () => (el('go') ? el('go').textContent : '排盘');
+
+  /** 缺项与过期的说明写在提示区，不占用结果区（结果区是给盘和解读的） */
+  function paintFlowNote(v) {
+    const tip = el('tip');
+    if (!tip) return;
+    let note = tip.querySelector('.flow-note');
+    if (!note) {
+      note = document.createElement('div');
+      note.className = 'flow-note';
+      tip.appendChild(note);
+    }
+    let txt = '';
+    if (flowState === FLOW.UNFILLED) txt = `还差：${v.missing.join('、')}。填好后点「${goLabel()}」。`;
+    else if (flowState === FLOW.EDITING) txt = `参数已变更，结果待更新——点「${goLabel()}」重排。`;
+    note.textContent = txt;
+    note.hidden = !txt;
+  }
+
+  /** 主按钮可用性 + 缺项提示 + 结果是否过期，一处算清 */
+  function refreshFlow() {
+    const v = validateForm();
+    const go = el('go');
+    // 问卷自带提交按钮，主按钮是隐藏的，别去动它
+    if (go && go.style.display !== 'none') go.disabled = !v.ok;
+    if (flowState === FLOW.CALC) {
+      // 排盘中：只更新按钮与提示，状态由 run 自己收尾，别在这里抢
+      paintFlowNote(v);
+      return;
+    }
+    // 缺项优先于一切——参数都不全，谈不上「结果过期」还是「已出结果」
+    if (!v.ok) {
+      // 参数被删空时把旧盘收起来：标题底下挂着上一张盘，比空白更误导
+      if (flowState !== FLOW.UNFILLED) {
+        last = null;
+        castKey = '';
+        const box = el('out');
+        if (box) box.innerHTML = `<div class="note">参数填完整后点「${goLabel()}」出结果。</div>`; // html-sink:ok goLabel 只返回固定按钮名（排盘/填空答案），不含任何输入
+      }
+      flowState = FLOW.UNFILLED;
+    } else if (flowState === FLOW.UNFILLED || flowState === FLOW.ERROR) flowState = FLOW.READY;
+    else if (flowState === FLOW.LOCKED && castKey && paramKey() !== castKey) flowState = FLOW.EDITING;
+    paintFlowNote(v);
+  }
+
+  /** 参数变了：只更新按钮与过期标记，绝不排盘（任务书 1.5 第二条禁止项） */
+  function onParamChange() {
+    // 排盘中改参数也照样更新按钮与提示——CALCULATING 由 run 自己收尾
+    refreshFlow();
+  }
+
+  /** 排盘前的拦停：参数不合法就停在这里，状态退到「未填完整」而不是卡在排盘中 */
+  function bail(msg) {
+    last = null;
+    flowState = FLOW.UNFILLED;
+    castKey = '';
+    const out = el('out');
+    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里那四句固定文案（日期格式不对 / 合盘缺对方 / 缺名字 / 缺所问之事），不含输入
+    const go = el('go');
+    if (go) go.removeAttribute('aria-busy');
+    refreshFlow();
   }
 
   /** 当前 tab 是否真的用到日期/时刻（塔罗、人格不看时间；梅花「数字起卦」也不用）
@@ -518,7 +633,11 @@
     const k = kindOf(tab);
     if (k === 'none') return;
     manual[k] = { date: el('date').value, time: el('time').value };
+    saveManual();
     renderTip();
+    // 改了日期不是要立刻重排，而是「按钮能不能点」和「旧结果过期了」要跟着变
+    onParamChange();
+    renderProfiles();
   }
 
   /** 结果头部的一行「起卦时刻」，只在真正用到时间的起卦 tab 显示 */
@@ -1063,24 +1182,22 @@
   async function run(opts) {
     // 切 tab / 恢复档案 / 开页面自动排的那一版不进历史：那不是用户要的那次
     const keepRecent = !(opts && opts.record === false);
+    // 进入 CALCULATING：按钮在这期间不可点，避免连点排出两张盘
+    flowState = FLOW.CALC;
+    const goBtn0 = el('go');
+    if (goBtn0) { goBtn0.disabled = true; goBtn0.setAttribute('aria-busy', 'true'); }
     const runStart = mpNow();
     const myRun = ++runSeq;
     const startTab = tab;
     const date = el('date').value;
     if (usesTimeInput() && !isoDateOk(date)) {
-      last = null;
-      el('out').innerHTML = '<div class="err">请填写公历日期，按「年-月-日」输入，例如 1990-05-12。</div>';
-      return;
+      return bail('<div class="err">请填写公历日期，按「年-月-日」输入，例如 1990-05-12。</div>');
     }
     if (tab === 'hepan' && !isoDateOk(el('pdate').value)) {
-      last = null;
-      el('out').innerHTML = '<div class="err">请填写对方的公历出生日期，按「年-月-日」输入，例如 1992-08-15。</div>';
-      return;
+      return bail('<div class="err">请填写对方的公历出生日期，按「年-月-日」输入，例如 1992-08-15。</div>');
     }
     if (tab === 'hepan' && el('h3on') && el('h3on').checked && !isoDateOk(el('p2date').value)) {
-      last = null;
-      el('out').innerHTML = '<div class="err">请填写第三方的公历出生日期，按「年-月-日」输入，例如 1990-01-01。</div>';
-      return;
+      return bail('<div class="err">请填写第三方的公历出生日期，按「年-月-日」输入，例如 1990-01-01。</div>');
     }
     // 勾了「时辰未知」就不读钟点：读出来的只是占位值，用它排出来的时柱是编的
     const hourUnknown = !!(el('hourunknown') && el('hourunknown').checked) && (tab === 'bazi' || tab === 'trend');
@@ -1090,9 +1207,7 @@
     // 所问之事必填：不给一份没有落点的解读
     if (needAsk(tab) && !el('question').value.trim()) {
       markAskInvalid(true);
-      last = null;
-      el('out').innerHTML = '<div class="err">请先填写「所问之事」——一句话即可，例如：今年是否适合换工作？</div>';
-      return;
+      return bail('<div class="err">请先填写「所问之事」——一句话即可，例如：今年是否适合换工作？</div>');
     }
     markAskInvalid(false);
     const args = { system: tab };
@@ -1335,6 +1450,12 @@
       paint();
       // 历史在这里记：这是「排完一次盘」的唯一出口，带上盘号与这次用的表单值
       if (keepRecent) recordRecent(startTab, r);
+      // 出盘了：锁成「已出结果」，记下这次用的参数指纹；之后改参数只标过期、不重排
+      flowState = FLOW.LOCKED;
+      castKey = paramKey();
+      const goBtn = el('go');
+      if (goBtn) { goBtn.disabled = false; goBtn.removeAttribute('aria-busy'); }
+      paintFlowNote({ ok: true, missing: [] });
       // 渲染＝组 HTML + 写入 DOM 的同步时间；浏览器真正绘制在下一帧，这里不假装量到
       const renderMs = mpNow() - paintStart;
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
@@ -1344,6 +1465,11 @@
       if (window.__MPCompose.devOn()) paint();
     } catch (e) {
       last = null;
+      // 出错也是终态：按钮要能再点一次（ERROR → READY 由 refreshFlow 在参数合法时放行）
+      flowState = FLOW.ERROR;
+      castKey = '';
+      const goBtn1 = el('go');
+      if (goBtn1) { goBtn1.disabled = false; goBtn1.removeAttribute('aria-busy'); }
       // 错误文案里会带出用户输入的原文（如非法的 datetime），只能走 textContent，不能拼进 innerHTML
       const out = el('out');
       const box = document.createElement('div');
@@ -1414,6 +1540,9 @@
     // 晚子时换日与八字×紫微交叉验证只对八字有意义，别让选风水、起名的人也看到它们。
     const solar = el('for-solar');
     if (solar) solar.style.display = birth ? '' : 'none';
+    // 出生信息共用这件事要写在看得见的地方：它不只是一个字段，是六个体系读的同一份值
+    const share = el('for-share');
+    if (share) share.style.display = birth ? '' : 'none';
     el('for-bazi').style.display = tab === 'bazi' ? '' : 'none';
     // 高级选项：整块只在「有出生信息或要交叉验证」时露；里面两项各自还按体系分
     const adv = el('for-adv');
@@ -1471,10 +1600,18 @@
     const clearBtn = el('clear');
     if (clearBtn) clearBtn.style.display = '';
     syncMhMode();      // 内含 for-date / for-time 的显隐（塔罗、梅花数字起卦都隐藏）
-    applyDateTime(k);  // 起卦类 → 当前时刻；命盘类 → 示例默认；用户改过则保留
+    applyDateTime(k);  // 用户填过的优先，没填过才给语义默认值
     ctxKind = k;
     renderTip();
     renderProfiles();  // 档案条只在命盘类体系出现，切 tab 要跟着换
+    // 切体系换的是「要排的东西」：上一个体系的结果要收起来，否则新体系的标题底下
+    // 挂着旧盘，比空白更误导。出生信息不动——跨体系共用同一份（任务书 1.2 第六条）。
+    last = null;
+    flowState = FLOW.READY;
+    castKey = '';
+    const outBox = el('out');
+    if (outBox) outBox.innerHTML = `<div class="note">参数填好后点「${goLabel()}」出结果。</div>`; // html-sink:ok goLabel 只返回固定按钮名（排盘/填空答案），不含任何输入
+    refreshFlow();
   }
 
   function syncMhMode() {
@@ -1936,7 +2073,9 @@
       mhMode = b.dataset.mode;
       syncMhMode();
       renderTip();
-      run(); // 切起卦方式后立刻重起一卦，避免结果头部留着上一模式的「起卦时刻」
+      // 切起卦方式是参数变化：只标过期，不自动重起一卦（旧结果头部的「起卦时刻」跟新参数不符，
+    // 过期提示会说明这件事——重起一卦得用户点按钮，否则摇出来的卦又变了）
+    onParamChange();
     }));
     ['date', 'time'].forEach((id) => {
       const node = el(id);
@@ -1991,31 +2130,38 @@
       last = null;
       el('out').replaceChildren();
       el('tip').textContent = '';
+      // 清空是显式动作，连记忆一起清：否则切一次体系又把你刚清掉的日期填回来
+      manual.birth = null;
+      manual.cast = null;
+      saveManual();
+      flowState = FLOW.READY;
+      castKey = '';
       applyDateTime(ctxKind);
+      refreshFlow();
       el('date').focus({ preventScroll: true });
     });
-    el('gender').addEventListener('change', run);
-    // 换牌阵张数要重新抽牌（1/3/5 张是不同牌阵，不是同一组牌换个显示）
+    el('gender').addEventListener('change', onParamChange);
+    // 换牌阵张数是参数，排不排由用户点主按钮决定（任务书 1.2 第一条：不自动排盘）
     const tc = el('tcount');
-    if (tc) tc.addEventListener('change', run);
-    // 合盘：合盘方式切换与对方信息改动都要重算
+    if (tc) tc.addEventListener('change', onParamChange);
+    // 合盘：合盘方式切换与对方信息改动都只更新可用性与过期标记
     document.querySelectorAll('#hpchart button').forEach((b) => b.addEventListener('click', () => {
       document.querySelectorAll('#hpchart button').forEach((x) => x.classList.toggle('on', x === b));
-      run();
+      onParamChange();
     }));
     ['pdate', 'ptime', 'pgender', 'paddr', 'p2date', 'p2time', 'p2gender', 'p2addr'].forEach((id) => {
       const node = el(id);
-      if (node) node.addEventListener('change', run);
+      if (node) node.addEventListener('change', onParamChange);
     });
     // 三方合盘：勾选后才展开第三人的四个字段
     const h3 = el('h3on');
     if (h3) h3.addEventListener('change', () => {
       const box = el('for-hepan3');
       if (box) box.style.display = h3.checked ? '' : 'none';
-      run();
+      onParamChange();
     });
-    // 奇门：换局规则改动重起局；询问方向改动只重出解读（用神跟着方向走）
-    document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', run));
+    // 奇门：换局规则是参数，改了只标过期
+    document.querySelectorAll('input[name="qimen_rule"]').forEach((n) => n.addEventListener('change', onParamChange));
     const qdir = el('qdir');
     if (qdir) qdir.addEventListener('change', () => {
       if (tab !== 'qimen') return;
@@ -2026,26 +2172,28 @@
           if (trace) last.r.trace = trace;
         } catch (e) { /* 保留起局时的推导链 */ }
       }
-      paint();
+      // 只换方向不是重新排盘：卦没变，重出的是解读，所以这里仍可直接刷新
+      if (last) paint();
+      castKey = paramKey();
     });
-    // 速查类：分段按钮与输入改动都直接重算
+    // 速查类：分段按钮只切模式，排不排由主按钮决定
     const seg = (sel, set) => document.querySelectorAll(sel).forEach((b) => b.addEventListener('click', () => {
-      set(b.dataset.mode); syncQuick(); run();
+      set(b.dataset.mode); syncQuick(); onParamChange();
     }));
     seg('#xlrmode button', (v) => { xlrMode = v; });
     seg('#fsmode button', (v) => { fsMode = v; });
     seg('#nnmode button', (v) => { nnMode = v; });
-    seg('#convertmode button', (v) => { convMode = v; syncQuick(); run(); });
+    seg('#convertmode button', (v) => { convMode = v; syncQuick(); onParamChange(); });
     ['ztask', 'zdays', 'zsheng', 'zcand', 'num1', 'num2', 'num3', 'toage', 'sitting', 'facing', 'fsperiod', 'fsoffset', 'fsdate', 'fstime', 'surname', 'givenname', 'nlimit', 'lunardate', 'leapm']
-      .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', run); });
+      .forEach((id) => { const n = el(id); if (n) n.addEventListener('change', onParamChange); });
     // 方法页：按钮开合（静态内容，无网络）
     const mOpen = el('method-open');
     const mClose = el('method-close');
     const mSec = el('method');
     if (mOpen && mSec) mOpen.addEventListener('click', () => { mSec.hidden = false; mSec.scrollIntoView({ behavior: 'smooth' }); });
     if (mClose && mSec) mClose.addEventListener('click', () => { mSec.hidden = true; });
-    // 改问题或方向：只重出解读，不重摇一卦
-    el('question').addEventListener('change', () => { if (needAsk(tab)) paint(); });
+    // 改问题或方向：只重出解读，不重摇一卦（不算重新排盘，卦还是那一卦）
+    el('question').addEventListener('change', () => { if (needAsk(tab) && last) { paint(); castKey = paramKey(); } });
     // 改方向：只重出解读、不重摇一卦；六爻推导链按新方向重算用神相关层
     el('direction').addEventListener('change', () => {
       if (!needAsk(tab)) return;
@@ -2059,7 +2207,8 @@
           if (trace) last.r.trace = trace;
         } catch (e) { /* 保留起卦时的推导链 */ }
       }
-      paint();
+      if (last) paint();
+      castKey = paramKey();
     });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
@@ -2129,6 +2278,18 @@
     // 开发者视图的暗门：页头印章连点五下切换（或 URL 加 ?dev=1，或本机记着 mp.view）。
     // 普通用户撞不到这五下，但要在别人机器上排障时不必先解释「加个参数」。
     window.__MPRepaint = () => { if (last && last.r) paint(); };
+    // 状态机与校验暴露给测试：单页里没有别的办法观测「现在处于哪个态」。
+    // 这不是给用户的功能入口，只读不改盘（改状态仍然只能靠按钮与输入）。
+    window.__MPFlow = {
+      FLOW,
+      state: () => flowState,
+      castKey: () => castKey,
+      validateForm,
+      paramKey,
+      refreshFlow,
+      onParamChange,
+      applyDateTime,
+    };
     if (window.__MPCompose && window.__MPCompose.bindDevSwitch) {
       window.__MPCompose.bindDevSwitch(document.querySelector('.seal'));
     }
@@ -2138,6 +2299,12 @@
   // 勾「时辰未知」当场收起时刻框：不让人以为还要填个点
   if (el('hourunknown')) el('hourunknown').addEventListener('change', syncMhMode);
     if (deep) fillDeepForm(deep.form);
-    Promise.resolve(run({ record: false })).then(() => { if (deep) deepNote(deep); });
+    // 开页面不自动排盘（任务书 1.2 第一条）。只有两个显式入口会直接出结果：
+    // 深链（URL 里点了具体那一张盘）、以及用户自己设过的默认盘（读缓存，不重算）。
+    const pinned = window.__PP && window.__PP.profilesLoad
+      ? (window.__PP.profilesLoad() || []).find((x) => x && x.pinned) : null;
+    if (deep) Promise.resolve(run({ record: false })).then(() => deepNote(deep));
+    else if (pinned) profApply(pinned);
+    else refreshFlow();
   });
 })();

@@ -12,7 +12,7 @@ const CASES = [
   ['bazi', { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', address: '北京' }],
   ['bazi', { system: 'bazi', datetime: '1985-11-03T05:10', gender: 'female' }],
   ['ziwei', { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' }],
-  ['liuyao', { system: 'liuyao', lines: [7, 8, 9, 7, 8, 9], question: '这份工作要不要接' }],
+  ['liuyao', { system: 'liuyao', datetime: '2026-11-15T10:00', lines: [7, 8, 9, 7, 8, 9], question: '这份工作要不要接' }],
   ['qimen', { system: 'qimen', datetime: '2026-11-15T10:00', question: '这笔款能不能收回' }],
   ['tarot', { system: 'tarot', question: '该不该搬走', spread: 'three' }],
   ['daliuren', { system: 'daliuren', datetime: '2026-11-15T10:00', question: '事情几时成' }],
@@ -148,7 +148,7 @@ const lyWithRefs = lySections.filter((s) => s.refs && s.refs.length);
 ok('六爻正文段落覆盖率 ≥ 75%', lyWithRefs.length / Math.max(1, lySections.length) >= 0.75,
   `${lyWithRefs.length}/${lySections.length}`);
 // 换一卦，本卦与动爻都要换
-const ly2 = compute({ system: 'liuyao', lines: [8, 7, 8, 6, 9, 7], question: '这份工作要不要接' });
+const ly2 = compute({ system: 'liuyao', datetime: '2026-11-15T10:00', lines: [8, 7, 8, 6, 9, 7], question: '这份工作要不要接' });
 const l2 = buildFacts(ly2, null);
 ok('换卦，本卦名变了', (factById(l2, 'f-liuyao-hex') || {}).value !== lVal('f-liuyao-hex'),
   `${(factById(l2, 'f-liuyao-hex') || {}).value} vs ${lVal('f-liuyao-hex')}`);

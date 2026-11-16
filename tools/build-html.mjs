@@ -191,6 +191,11 @@ body.view-flat .start{display:none}
   transition:transform .14s ease,filter .14s ease,box-shadow .14s ease}
 .go:hover{filter:brightness(1.06);transform:translateY(-1px);box-shadow:0 14px 26px -14px var(--gold),inset 0 1px 0 rgba(255,255,255,.22)}
 .go:active{transform:translateY(0);filter:brightness(.98)}
+/* 必填项没填齐时主按钮是灰的：不是「点了没反应」，是「知道还差点什么」 */
+.go:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(.45);transform:none;box-shadow:none}
+.flow-note{margin-top:8px;font-size:12.5px;line-height:1.7;color:var(--dim);border-left:2px solid var(--gold);padding-left:8px}
+/* 出生信息共用提示：整行铺开，它不是某个字段的说明而是这一整块的说明 */
+.share-note{grid-column:1/-1;margin:0 0 2px;font-size:12px;line-height:1.7;color:var(--dim)}
 .go.ghost{grid-column:3;background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:500;margin-right:8px;box-shadow:none;transform:none}
 .go.ghost:hover{background:var(--panel2);color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -495,6 +500,9 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
   <div class="bar">
     <!-- 初始值是「命盘类（紫微/八字）」的示例默认：出生时间必然是过去，不取当前时刻。
          切到六爻/梅花/六壬等起卦类 tab 时，web-ui.js 会自动把这两个框换成你的本机当前时刻。 -->
+    <!-- 出生信息是全站唯一的一份：八字、紫微、合盘、人生K线、风水、起名读的是同一组值。
+         写明「会同步」，而不是等用户发现两个体系排出来不是同一个人。 -->
+    <p class="share-note" id="for-share" style="display:none">出生日期、时辰、性别、出生地由八字 / 紫微 / 合盘 / 人生 K 线 / 风水 / 起名共用，改一处全部跟着变。</p>
     <label class="field" id="for-date"><span id="lbl-date">出生日期（公历）</span><input id="date" type="text" inputmode="numeric" autocomplete="off" placeholder="年-月-日，如 1990-05-12" value="1990-05-12"></label>
     <label class="field" id="for-time"><span id="lbl-time">出生时刻</span><input id="time" type="time" value="14:30"></label>
     <!-- 时辰未知：只在八字/人生K线出现。勾上＝不排时柱、起运降到按日，结果首行固定提示。
