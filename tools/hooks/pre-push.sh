@@ -1,14 +1,12 @@
 #!/bin/sh
-# 推送前全闸：build-client → verification → citations → build-html → 拷 docs
-# → check-eol → check-bundle，再跑 200+ 个测试文件。
-# 本机约半分钟；慢机用 TEST_CONCURRENCY 调并发。
+# 推送前全闸。体量压到最小：真正的工作在 tools/preflight.mjs --full。
+# 本机不装钩子（msys sh 起不来，会堵死 push），手动跑：
+#   node tools/preflight.mjs --full
 set -e
 
 NODE="__NODE__"
 if [ ! -x "$NODE" ]; then
-  echo "[hooks] 找不到 node（$NODE）"
-  echo "[hooks] 换机器或升级运行时后要重跑：node tools/hooks-install.mjs"
-  echo "[hooks] 这次跳过检查，没拦你。"
+  echo "[hooks] 找不到 node（$NODE），跳过。换运行时后重跑 node tools/hooks-install.mjs"
   exit 0
 fi
 if [ "$SKIP_HOOKS" = "1" ]; then
@@ -16,9 +14,5 @@ if [ "$SKIP_HOOKS" = "1" ]; then
   exit 0
 fi
 
-ROOT=$(git rev-parse --show-toplevel)
-cd "$ROOT"
-
-echo "[hooks] 推送前全闸，约半分钟"
-"$NODE" tools/build-all.mjs --gate
-echo "[hooks] 全闸通过。"
+cd "$(git rev-parse --show-toplevel)"
+exec "$NODE" tools/preflight.mjs --full

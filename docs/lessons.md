@@ -125,3 +125,18 @@ DSH 插件市场的条目名读 `package.json` 的 `meta.title`，但**侧栏那
 pwsh 单次调用 300s 超时，超时会丢进程，前面跑的成果全没（`check-assertions --update` 就这样被打断过一次，基线没更新）。全量测试串行时尤其危险。
 
 防法：长任务用 `Start-Process` 起后台进程、输出重定向到文件，再按需轮询日志。或者先把并发池做出来，让任务本身短到不会超时。
+
+## L-011 这台机器装 sh 钩子会把提交全堵死
+
+- type: lesson
+- status: active
+- at: 2026-11-16
+- 防再犯：装钩子前先探 sh（`tools/hooks-install.mjs` 已内置），闸门逻辑放 `tools/preflight.mjs`
+
+按常规做法写了 `.git/hooks/pre-commit`（`#!/bin/sh` + 调 node），装完第一次 commit 直接失败：
+
+    fatal error - couldn't create signal pipe, Win32 error 5
+
+sh 根本没起来，脚本一行都没跑到。这不是「检查没生效」，是 **git 认为钩子执行失败 → 拒绝这次提交**。同一台机器上 `sh -c "echo ok"` 也报同样的错，所以在 DSH 沙箱进程上下文里 msys 起不来是环境限制，不是脚本写错。
+
+防法：①安装器先 `sh -c "echo ok"` 探活，不通就拒绝安装；②真正的闸门代码放 node 脚本（`tools/preflight.mjs`），钩子只做 `exec`，这样 sh 正常的环境和这台机器跑的是同一套逻辑；③`SKIP_HOOKS=1` 留作逃生门。

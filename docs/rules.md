@@ -87,3 +87,22 @@
 收尾阶段不再逐个小版本发。攒下的改动一次走完整链路：版本号 → CHANGELOG → 构建 → 全闸 → 提交 → tag → npm → GitHub Release → Pages → 桌面副本。
 
 npm 打完 `+ pkg@ver` 后 registry 404 是队列延迟（实测 8 分钟），别重发、别动 token。判断成功只看三样：`dist-tags` 的 `latest`、`/<pkg>/<ver>` 的 shasum、`tools/release.mjs --verify-only`。查 registry 优先用 `curl.exe`，PS 的 `Invoke-RestMethod` 在这台机器上会假报连接失败。
+
+## R-009 本机不装 git 钩子，闸门走 preflight
+
+- type: rules
+- status: active
+- since: 2026-11-16
+
+这台机器的 DSH 沙箱里，git 自带的 msys sh 起不来：
+
+    fatal error - couldn't create signal pipe, Win32 error 5
+
+git 执行钩子一定经过 sh，所以装 `.git/hooks/pre-commit` 的后果不是「检查不生效」，而是**每一次 commit 都被拒**（已实测踩过一次）。`tools/hooks-install.mjs` 因此先探 sh，探不通就拒绝安装并打印手动入口。
+
+本机的正确用法：
+
+    node tools/preflight.mjs          提交前（文案闸 + 行尾 + 注入面 + 暂存 js 语法，几秒）
+    node tools/preflight.mjs --full   推送前（build-all --gate）
+
+sh 正常的机器照常 `node tools/hooks-install.mjs`，钩子只是 `exec preflight` 的薄壳，闸门逻辑只有一份。

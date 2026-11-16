@@ -1,14 +1,17 @@
 #!/bin/sh
-# 提交前轻量闸：几秒能说完的那几道。全闸留给 pre-push。
-# 由 tools/hooks-install.mjs 安装，__NODE__ 会被替换成本机 node 的绝对路径
-# ——git 的 sh 里 PATH 不含 node，写死 `node` 会直接 command not found。
+# 提交前轻量闸。体量压到最小：真正的检查在 tools/preflight.mjs 里，
+# 这里只负责把它叫起来。
+#
+# 注意：这台机器的 DSH 沙箱里 msys sh 起不来
+#   fatal error - couldn't create signal pipe, Win32 error 5
+# 所以本仓库默认不装钩子（装了会堵死每一次 commit）。日常请直接跑：
+#   node tools/preflight.mjs
+# 钩子留给 sh 正常的机器：node tools/hooks-install.mjs
 set -e
 
 NODE="__NODE__"
 if [ ! -x "$NODE" ]; then
-  echo "[hooks] 找不到 node（$NODE）"
-  echo "[hooks] 换机器或升级运行时后要重跑：node tools/hooks-install.mjs"
-  echo "[hooks] 这次跳过检查，没拦你。"
+  echo "[hooks] 找不到 node（$NODE），跳过。换运行时后重跑 node tools/hooks-install.mjs"
   exit 0
 fi
 if [ "$SKIP_HOOKS" = "1" ]; then
@@ -16,30 +19,5 @@ if [ "$SKIP_HOOKS" = "1" ]; then
   exit 0
 fi
 
-ROOT=$(git rev-parse --show-toplevel)
-cd "$ROOT"
-
-echo "[hooks] 文案闸"
-"$NODE" tools/lint-copy.mjs
-"$NODE" tools/verify-lint-copy.mjs
-
-echo "[hooks] 行尾必须是 LF"
-"$NODE" tools/check-eol.mjs
-
-echo "[hooks] HTML 注入面"
-"$NODE" tools/check-html-sinks.mjs
-
-# 暂存的 js 先过一遍语法：拼错的括号不该等到全闸才发现
-STAGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(m?js)$' || true)
-if [ -n "$STAGED" ]; then
-  echo "[hooks] 暂存 js 语法"
-  for f in $STAGED; do
-    [ -f "$f" ] || continue
-    if ! "$NODE" --check "$f"; then
-      echo "[hooks] 语法错误：$f"
-      exit 1
-    fi
-  done
-fi
-
-echo "[hooks] 提交前检查通过，全闸留给 push 前那一道。"
+cd "$(git rev-parse --show-toplevel)"
+exec "$NODE" tools/preflight.mjs

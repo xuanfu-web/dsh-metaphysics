@@ -9,9 +9,10 @@
 //
 // 用法：node tools/hooks-install.mjs
 // 卸载：node tools/hooks-install.mjs --remove
+// 强制装（明知 sh 有问题仍要装）：--force
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -36,6 +37,43 @@ const custom = (() => {
     return '';
   }
 })();
+
+// 装之前先探一下 git 自带的 sh 能不能起来。
+// 这台机器的 DSH 沙箱里它报
+//   fatal error - couldn't create signal pipe, Win32 error 5
+// 装上去的后果是每一次 commit 都被拒，比没有钩子糟得多。
+function shUsable() {
+  let execPath = '';
+  try {
+    execPath = git(['--exec-path']);
+  } catch (e) {
+    return { ok: false, why: '取不到 git 的 exec-path' };
+  }
+  const sh = path.resolve(execPath, '..', '..', '..', 'bin', 'sh.exe');
+  if (!fs.existsSync(sh)) return { ok: false, why: `没找到 ${sh}` };
+  const r = spawnSync(sh, ['-c', 'echo ok'], { encoding: 'utf8', timeout: 10000 });
+  if (r.status !== 0 || !/ok/.test(r.stdout || '')) {
+    const msg = ((r.stderr || '') + (r.stdout || '')).trim().split('\n')[0] || `退出码 ${r.status}`;
+    return { ok: false, why: `${sh} 跑不起来：${msg}` };
+  }
+  return { ok: true, sh };
+}
+
+if (!remove) {
+  const probe = shUsable();
+  if (!probe.ok && !process.argv.includes('--force')) {
+    console.log('不装钩子。');
+    console.log(`原因：${probe.why}`);
+    console.log('');
+    console.log('git 一定用自带 sh 跑钩子，sh 起不来时装上去会把每一次 commit 都拒掉。');
+    console.log('这台机器上改用同一套闸的手动入口：');
+    console.log('  node tools/preflight.mjs          提交前（几秒）');
+    console.log('  node tools/preflight.mjs --full   推送前（全闸）');
+    console.log('');
+    console.log('sh 正常的机器直接重跑本脚本即可。真要硬装：--force');
+    process.exit(0);
+  }
+}
 
 if (custom) {
   console.log(`注意：本仓库设置了 core.hooksPath=${custom}`);
