@@ -239,6 +239,14 @@ await page.waitForTimeout(600);
 
 const text = async (sel) => (await page.locator(sel).count()) ? (await page.locator(sel).first().innerText()).trim() : '';
 const outLen = () => page.evaluate(() => (document.getElementById('main') || {}).innerHTML?.length || 0);
+// 出盘后参数区是只读的（A4）：要改参数得先点「修改参数」。凡是「已经出过盘、还要继续填」的地方都先叫一次。
+const unlockParams = async () => {
+  const btn = page.locator('button.mp-btn').filter({ hasText: '修改参数' });
+  if (await btn.count()) {
+    await btn.first().click();
+    await page.waitForTimeout(120);
+  }
+};
 
 // 首屏（面板与单页同一套信息架构：四组卡片，每组先露 4 个）
 ok((await page.locator('#side-icon svg').count()) === 1, '侧栏图标画出来了');
@@ -270,8 +278,11 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // 掩码把「1990-05-1」解析成合法日期后，若边敲边 onChange，父组件回写 value 会把
 // 刚敲的 2 冲掉，最终静默变成 1 日。page.fill 一次写整串测不出来，这里用真键盘。
 {
+  // 出盘后参数区是只读的（要点「修改参数」才解锁），这里先解锁再敲
+  await unlockParams();
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
   const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
+  await unlockParams();
   await timeInput.fill('14:30');
   await dateInput.click();
   await page.keyboard.press('Control+A');
@@ -298,11 +309,15 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // 旧 state，就会把上一张盘的性别、出生地记到示例盘名下，点回来排成另一个人。
 {
   // 先把表单改成明显的另一组值，确保示例盘的参数与它不同
+  await unlockParams();
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
   const addrInput = page.locator('#main label.mp-field:has(span.mp-lbl:text-matches("出生地")) input');
   const genderSel = page.locator('#main label.mp-field:has(span:text-is("性别")) select');
+  await unlockParams();
   await dateInput.fill('1977-02-03');
+  await unlockParams();
   await genderSel.selectOption('female');
+  await unlockParams();
   await addrInput.fill('广东广州');
   await page.locator('button.mp-btn').filter({ hasText: '看示例' }).first().click();
   await page.waitForSelector('#main .pp-bz', { timeout: 15000 }).catch(() => {});
@@ -331,13 +346,17 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
       try { return JSON.parse(localStorage.getItem('dsh-metaphysics/history-v1') || '[]')[0] || null; } catch (e) { return null; }
     });
   };
+  await unlockParams();
   await pDateInput.fill('1993-03-08');
+  await unlockParams();
   await pTimeInput.fill('09:15');
   const first = await hpRun();
   ok(first && first.kind === 'hepan' && first.partnerDate === '1993-03-08' && first.partnerTime === '09:15',
     '面板 · 合盘历史记住对方生日与时刻', JSON.stringify(first && { d: first.partnerDate, t: first.partnerTime }));
   // 换成另一个对方再排：两条盘输入不同，不应被去重合并
+  await unlockParams();
   await pDateInput.fill('1988-11-20');
+  await unlockParams();
   await pTimeInput.fill('20:30');
   const second = await hpRun();
   ok(second && second.partnerDate === '1988-11-20', '面板 · 换对方后记下新的那张', JSON.stringify(second && second.partnerDate));
@@ -364,15 +383,20 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // ── 五·八、真太阳时 / 晚子时：开关也是这张盘的输入 ─────────────────
 // 历史若不记这两个开关，重放时就跟着表单此刻的勾选走，同一张盘换个排法。
 {
+  await unlockParams();
   const tsBox = page.locator('#main .mp-checks label').filter({ hasText: '真太阳时' }).locator('input');
   const lateBox = page.locator('#main .mp-checks label').filter({ hasText: '晚子时换日' }).locator('input');
   ok((await tsBox.count()) === 1 && (await lateBox.count()) === 1, '面板 · 有真太阳时与晚子时开关');
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
   const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
+  await unlockParams();
   await dateInput.fill('1991-08-08');
   // 选在时辰边界上：关掉真太阳时是辰时，开着（河北经度偏西约 22 分钟）退回卯时
+  await unlockParams();
   await timeInput.fill('08:10');
+  await unlockParams();
   await tsBox.uncheck();
+  await unlockParams();
   await lateBox.uncheck();
   await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
   await page.waitForTimeout(1300);
@@ -386,7 +410,9 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
     return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
   });
   // 表单拨回默认（两个都开），再点历史：重排必须按条目当时关着的算
+  await unlockParams();
   await tsBox.check();
+  await unlockParams();
   await lateBox.check();
   await page.locator('.mp-hist-item').first().click();
   await page.waitForTimeout(1300);
@@ -396,7 +422,9 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
     return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
   });
   ok(chartOff && chartBack === chartOff, '面板 · 重放回来的是同一张盘', chartBack.slice(0, 32));
+  await unlockParams();
   await tsBox.check();
+  await unlockParams();
   await lateBox.check();
 }
 
@@ -404,23 +432,29 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // K 线页是出生盘，表单给了出生地与真太阳时开关；只对八字传地址会让同一份输入
 // 在两张表里算出不同的时柱。
 {
+  await unlockParams();
   await openTool('trend');
   await page.waitForTimeout(700);
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
   const timeInput = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
   const addrInput = page.locator('#main label.mp-field:has(span.mp-lbl:text-matches("出生地")) input');
+  await unlockParams();
   await dateInput.fill('1991-08-08');
+  await unlockParams();
   await timeInput.fill('08:10');
+  await unlockParams();
   await addrInput.fill('');
   // 人生K线的主按钮写的是「起卦」
   await page.locator('#main .mp-actions button.mp-btn').last().click();
   await page.waitForTimeout(1600);
   const klNo = await text('.mp-kline');
+  await unlockParams();
   await addrInput.fill('河北石家庄');
   await page.locator('#main .mp-actions button.mp-btn').last().click();
   await page.waitForTimeout(1600);
   const klYes = await text('.mp-kline');
   ok(klNo.length > 100 && klYes !== klNo, '面板 · 人生K线也把出生地换算成真太阳时', klYes.slice(0, 40));
+  await unlockParams();
   await addrInput.fill('');
   await openTool('bazi');
   await page.waitForTimeout(500);
@@ -430,6 +464,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // 只看日期会把「开业」和「嫁娶」两种择日当成同一条历史：点旧的回来，
 // 下拉还停在后一次的事项上，排出来的已是另一件事。
 {
+  await unlockParams();
   await openTool('zeri');
   await page.waitForTimeout(600);
   const dateInput = page.locator('#main label.mp-field:has(span:text-is("日期（公历）")) input');
@@ -444,8 +479,11 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
       return t ? t.innerText.replace(/\s+/g, ' ').trim() : '';
     });
   };
+  await unlockParams();
   await dateInput.fill('2026-12-01');
+  await unlockParams();
   await candInput.fill('2026-12-01, 2026-12-08, 2026-12-15');
+  await unlockParams();
   await taskSel.selectOption('开业');
   const kaiye = await zeriRun();
   ok(kaiye.length > 100 && kaiye.includes('开业'), '面板 · 择日按所办事项出结果', kaiye.slice(0, 40));
@@ -454,6 +492,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
   });
   ok(firstZeri && firstZeri.kind === 'zeri' && firstZeri.task === '开业',
     '面板 · 择日历史记住所办事项', JSON.stringify(firstZeri && { k: firstZeri.kind, t: firstZeri.task }));
+  await unlockParams();
   await taskSel.selectOption('嫁娶');
   const jiaqu = await zeriRun();
   ok(jiaqu !== kaiye, '面板 · 换事项后结果不同', jiaqu.slice(0, 40));
@@ -482,6 +521,7 @@ ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近�
 // ── 六、面板独有：时辰未知的勾选联动 ────────────────────────────
 const huLabel = page.locator('label.mp-chk').filter({ hasText: '时辰未知' });
 ok((await huLabel.count()) === 1, '八字面板出现「时辰未知」勾选（单页是另一套控件）');
+await unlockParams();
 await huLabel.locator('input').check();
 await page.waitForTimeout(150);
 const timeDisabled = await page.evaluate(() => {
@@ -508,6 +548,7 @@ await page.waitForTimeout(400);
 const notice = await text('.mp-note, .mp-err');
 ok(notice.includes('所问之事') || notice.includes('必填') || (await page.locator('.mp-textarea.invalid').count()) === 1,
   '空着问题起卦会被拦（不静默出错盘）', notice.slice(0, 40));
+await unlockParams();
 await page.locator('.mp-textarea').fill('下周三之前能不能拿到书面 offer');
 await page.locator('button.mp-btn').filter({ hasText: '起卦' }).first().click();
 await page.waitForTimeout(1500);
@@ -667,12 +708,17 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   // 上一节勾过「时辰未知」，时刻框是禁用的；档案要存真实钟点，先取消
   const huAgain = page.locator('#main label.mp-chk').filter({ hasText: '时辰未知' });
   if ((await huAgain.count()) && (await huAgain.locator('input').isChecked())) {
+    await unlockParams();
     await huAgain.locator('input').uncheck();
     await page.waitForTimeout(200);
   }
+  await unlockParams();
   await page.fill(dateEl, '1988-03-05');
+  await unlockParams();
   await page.fill(timeEl, '08:30');
+  await unlockParams();
   await page.selectOption(genderEl, 'male');
+  await unlockParams();
   await page.fill(addrEl, '河北石家庄');
   await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
   await page.waitForSelector('#main .pp-bz', { timeout: 15000 });
@@ -680,6 +726,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   const saved = await chartText();
   ok(/年柱/.test(saved), '存盘前先排出一张八字盘', saved.slice(0, 36));
 
+  await unlockParams();
   await page.fill('#main .mp-prof-name', '阿测');
   await page.locator('#main button[data-mp-prof="put"]').click();
   await page.waitForTimeout(300);
@@ -694,6 +741,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok((await page.locator('#main .mp-prof-name').inputValue()) === '', '存完清空称呼框，下次直接写新名字');
 
   // 称呼框是裸 DOM：翻一下置顶会让档案区整块重绘，已经敲进去的字不能被重绘抹掉
+  await unlockParams();
   await page.fill('#main .mp-prof-name', '临时称呼');
   await page.locator('#main [data-mp-prof="pin"]').dispatchEvent('click');
   await page.waitForTimeout(250);
@@ -701,6 +749,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok((await page.locator('#main .mp-prof-card.pinned').count()) === 1, '重绘来自置顶（卡片状态确实变了）');
   await page.locator('#main [data-mp-prof="pin"]').dispatchEvent('click');
   await page.waitForTimeout(250);
+  await unlockParams();
   await page.fill('#main .mp-prof-name', '');
 
   // 窄屏不许因为多了一张卡就横向溢出（卡片网格 + 档案条都算进去）
@@ -741,6 +790,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   await page.waitForTimeout(200);
 
   // 换一张盘，再点档案卡：应当一键回到 1988 那张
+  await unlockParams();
   await page.fill(dateEl, '1990-12-01');
   await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
   await page.waitForTimeout(1200);
@@ -817,6 +867,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   // ① 只填「所问之事」、追问框空着：包里的所问必须是用户的主问题
   await openTool('liuyao');
   await page.waitForTimeout(300);
+  await unlockParams();
   await page.locator('.mp-textarea').fill('今年适合换工作吗');
   await page.locator('button.mp-btn').filter({ hasText: '起卦' }).first().click();
   await page.waitForTimeout(1500);
@@ -842,6 +893,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
   await page.waitForSelector('.pp-bz', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(800);
+  await unlockParams();
   await page.locator('#main .mp-askbox input.mp-input').fill('2027 年事业怎么样');
   await page.evaluate(() => navigator.clipboard.writeText('__before__'));
   await page.locator('[data-bridge-copy="full"]').click();
@@ -897,6 +949,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   await page.waitForTimeout(700);
   ok((await page.locator('.mp-textarea').count()) === 1, '点六爻 chip 切到六爻面板');
   // 前面几段填过「所问之事」，状态还在——先清空，才能测到「没填就被拦」
+  await unlockParams();
   await page.locator('.mp-textarea').fill('');
   await page.waitForTimeout(200);
   await page.locator('.mp-castchip[data-cast="liuyao"]').click();
@@ -917,6 +970,7 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   await openTool('tarot');
   await page.waitForTimeout(300);
   // 问事体系问题必填（十二·五 末尾把框清空过），先写一句再起卦
+  await unlockParams();
   await page.locator('.mp-textarea').fill('这周能不能把这件事定下来');
   if (!(await page.locator('.mp-castchip[data-cast="tarot"]').count())) {
     await page.locator('.mp-castrow-h').click();
