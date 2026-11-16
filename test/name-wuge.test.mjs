@@ -188,7 +188,7 @@ const near = (src, marker, pat) => {
 };
 const web = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
-ok('独立页把生辰留给起名评估', near(web, "el('givenname').value.trim()", /if \(!date \|\| !time\) delete args\.datetime/), web.slice(web.indexOf('givenname')).slice(0, 200));
+ok('独立页把生辰留给起名评估', near(web, "args.givenName = el('givenname').value.trim()", /if \(!date \|\| !time\) delete args\.datetime/), web.slice(web.indexOf('args.givenName =')).slice(0, 200));
 ok('面板把生辰留给起名评估', near(app, 'givenName.trim()', /if \(!dt\.date \|\| !dt\.time\) delete args\.datetime/), app.slice(app.indexOf('givenName.trim()')).slice(0, 200));
 
 const hg = PP.nameHTML(G);

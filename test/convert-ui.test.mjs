@@ -60,6 +60,8 @@ ok('不接受非数字的「年」', !re.test('abcd-9-17'));
   ok('方向切换只重算不重排其它盘', /convMode = 'solar2lunar'/.test(UI) && /args\.mode = convMode/.test(UI));
   ok('闰月显式传给引擎', /args\.isLeapMonth = !!\(el\('leapm'\)/.test(UI));
   ok('农历模式不带 datetime（不让公历日期混进来）', /args\.lunarDay = Number\(m\[3\]\);\s*args\.isLeapMonth[\s\S]{0,120}delete args\.datetime;/.test(UI));
-  ok('格式不符时给出可照抄的示例', UI.includes('农历转公历请按「农历年-月-日」填写'));
+  // 文案统一成 bail 那一套：别再写「农历转公历请按…」这种带着功能名的长句
+  ok('格式不符时给出可照抄的示例', UI.includes('农历日期要按「年-月-日」填，例如 2026-9-17'));
+  ok('格式不符时走 bail，不把状态卡在 CALCULATING', /if \(!m\) return bail\('农历日期要按/.test(UI));
   ok('引擎报错走 textContent，不拼 innerHTML', /box\.textContent = String\(\(e && e\.message\) \|\| e\)/.test(UI));
 }

@@ -686,6 +686,27 @@
       if (el('h3on') && el('h3on').checked && !isoDateOk(el('p2date').value)) miss.push('第三方出生日期');
     }
     if (needAsk(tab) && !el('question').value.trim()) miss.push('所问之事');
+    // 起名：评名字要姓 + 名；生成候选只要姓
+    if (tab === 'name') {
+      if (el('surname') && !el('surname').value.trim()) miss.push('姓氏');
+      if (nnMode === 'assess' && el('givenname') && !el('givenname').value.trim()) miss.push('名字');
+    }
+    // 报数起课：三个 1–99 的数，缺一个就起不了课
+    if (tab === 'xiaoliuren' && xlrMode === 'number') {
+      const cn = ['第一个数', '第二个数', '第三个数'];
+      ['num1', 'num2', 'num3'].forEach((id, i) => {
+        if (el(id) && !String(el(id).value).trim()) miss.push(cn[i]);
+      });
+    }
+    // 梅花数字起卦：上卦数 + 下卦数（缺了会按 0 静默出一张盘，比报错更难发现）
+    if (tab === 'meihua' && mhMode === 'number') {
+      if (el('upper') && !String(el('upper').value).trim()) miss.push('上卦数');
+      if (el('lower') && !String(el('lower').value).trim()) miss.push('下卦数');
+    }
+    // 农历转公历：农历日期是唯一输入
+    if (tab === 'convert' && convMode === 'lunar2solar') {
+      if (el('lunardate') && !String(el('lunardate').value).trim()) miss.push('农历日期');
+    }
     return { ok: miss.length === 0, missing: miss };
   }
 
@@ -781,7 +802,7 @@
     flowState = FLOW.UNFILLED;
     castKey = '';
     const out = el('out');
-    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里那四句固定文案（日期格式不对 / 合盘缺对方 / 缺名字 / 缺所问之事），不含输入
+    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里的固定文案（日期格式 / 合盘缺对方 / 缺所问之事 / 数字起卦缺数 / 农历日期 / 飞星日期），不含输入
     const go = el('go');
     if (go) go.removeAttribute('aria-busy');
     refreshFlow();
@@ -1452,8 +1473,7 @@
         const l = el('lower').value.trim();
         // 空输入 Number('') === 0，会余成 8（坤为地）——直接挡掉
         if (!u || !l) {
-          el('out').innerHTML = '<div class="err">数字起卦需要填两个数（第一个数定上卦、第二个数定下卦）。</div>';
-          return;
+          return bail('数字起卦要填两个数：第一个数定上卦，第二个数定下卦。');
         }
         args.upper = Number(u);
         args.lower = Number(l);
@@ -1487,7 +1507,9 @@
       args.mode = convMode;
       if (convMode === 'lunar2solar') {
         const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(el('lunardate').value).trim());
-        if (!m) { el('out').innerHTML = '<div class="err">农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。</div>'; return; }
+        // 走 bail 而不是直接 return：直接 return 会把状态停在 CALCULATING，
+        // 按钮的 disabled / aria-busy 再也没人恢复，用户只能刷新页面。
+        if (!m) return bail('农历日期要按「年-月-日」填，例如 2026-9-17；闰月单独勾选。');
         args.lunarYear = Number(m[1]); args.lunarMonth = Number(m[2]); args.lunarDay = Number(m[3]);
         args.isLeapMonth = !!(el('leapm') && el('leapm').checked);
         delete args.datetime;
@@ -1519,9 +1541,7 @@
           if (off !== '') args.sittingOffset = Number(off);
           const fd = el('fsdate') ? el('fsdate').value.trim() : '';
           if (fd && !isoDateOk(fd)) {
-            last = null;
-            el('out').innerHTML = '<div class="err">飞星日期请按「年-月-日」填写，例如 2026-11-03。</div>';
-            return;
+            return bail('飞星日期要按「年-月-日」填，例如 2026-11-03。');
           }
           if (fd) args.fortuneDate = fd;
           const ft = el('fstime') ? el('fstime').value.trim() : '';

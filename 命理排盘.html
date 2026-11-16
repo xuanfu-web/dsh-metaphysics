@@ -762,7 +762,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：204 个测试文件 / 11361 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：205 个测试文件 / 11391 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -42370,6 +42370,27 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       if (el('h3on') && el('h3on').checked && !isoDateOk(el('p2date').value)) miss.push('第三方出生日期');
     }
     if (needAsk(tab) && !el('question').value.trim()) miss.push('所问之事');
+    // 起名：评名字要姓 + 名；生成候选只要姓
+    if (tab === 'name') {
+      if (el('surname') && !el('surname').value.trim()) miss.push('姓氏');
+      if (nnMode === 'assess' && el('givenname') && !el('givenname').value.trim()) miss.push('名字');
+    }
+    // 报数起课：三个 1–99 的数，缺一个就起不了课
+    if (tab === 'xiaoliuren' && xlrMode === 'number') {
+      const cn = ['第一个数', '第二个数', '第三个数'];
+      ['num1', 'num2', 'num3'].forEach((id, i) => {
+        if (el(id) && !String(el(id).value).trim()) miss.push(cn[i]);
+      });
+    }
+    // 梅花数字起卦：上卦数 + 下卦数（缺了会按 0 静默出一张盘，比报错更难发现）
+    if (tab === 'meihua' && mhMode === 'number') {
+      if (el('upper') && !String(el('upper').value).trim()) miss.push('上卦数');
+      if (el('lower') && !String(el('lower').value).trim()) miss.push('下卦数');
+    }
+    // 农历转公历：农历日期是唯一输入
+    if (tab === 'convert' && convMode === 'lunar2solar') {
+      if (el('lunardate') && !String(el('lunardate').value).trim()) miss.push('农历日期');
+    }
     return { ok: miss.length === 0, missing: miss };
   }
 
@@ -42465,7 +42486,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     flowState = FLOW.UNFILLED;
     castKey = '';
     const out = el('out');
-    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里那四句固定文案（日期格式不对 / 合盘缺对方 / 缺名字 / 缺所问之事），不含输入
+    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里的固定文案（日期格式 / 合盘缺对方 / 缺所问之事 / 数字起卦缺数 / 农历日期 / 飞星日期），不含输入
     const go = el('go');
     if (go) go.removeAttribute('aria-busy');
     refreshFlow();
@@ -43136,8 +43157,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
         const l = el('lower').value.trim();
         // 空输入 Number('') === 0，会余成 8（坤为地）——直接挡掉
         if (!u || !l) {
-          el('out').innerHTML = '<div class="err">数字起卦需要填两个数（第一个数定上卦、第二个数定下卦）。</div>';
-          return;
+          return bail('数字起卦要填两个数：第一个数定上卦，第二个数定下卦。');
         }
         args.upper = Number(u);
         args.lower = Number(l);
@@ -43171,7 +43191,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       args.mode = convMode;
       if (convMode === 'lunar2solar') {
         const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(el('lunardate').value).trim());
-        if (!m) { el('out').innerHTML = '<div class="err">农历转公历请按「农历年-月-日」填写，例如 2026-9-17；闰月单独勾选。</div>'; return; }
+        // 走 bail 而不是直接 return：直接 return 会把状态停在 CALCULATING，
+        // 按钮的 disabled / aria-busy 再也没人恢复，用户只能刷新页面。
+        if (!m) return bail('农历日期要按「年-月-日」填，例如 2026-9-17；闰月单独勾选。');
         args.lunarYear = Number(m[1]); args.lunarMonth = Number(m[2]); args.lunarDay = Number(m[3]);
         args.isLeapMonth = !!(el('leapm') && el('leapm').checked);
         delete args.datetime;
@@ -43203,9 +43225,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
           if (off !== '') args.sittingOffset = Number(off);
           const fd = el('fsdate') ? el('fsdate').value.trim() : '';
           if (fd && !isoDateOk(fd)) {
-            last = null;
-            el('out').innerHTML = '<div class="err">飞星日期请按「年-月-日」填写，例如 2026-11-03。</div>';
-            return;
+            return bail('飞星日期要按「年-月-日」填，例如 2026-11-03。');
           }
           if (fd) args.fortuneDate = fd;
           const ft = el('fstime') ? el('fstime').value.trim() : '';
