@@ -136,10 +136,27 @@ function baziSummary(r) {
 
   // ── 总纲：日主 + 生月 + 冷暖 + 缺什么 ──
   const season = MONTH_SEASON[month.branch] || `${month.branch}月`;
-  const climateWord = cl.label === '寒湿' ? '天寒水旺，木像冬天的藤，不是不强，是冷得伸展不开'
-    : cl.label === '燥热' ? '火土偏燥，像久旱的地，需要水和湿气来松一松'
+  const clNeed = (cl.need && cl.need.element) || '';
+  const needEl = clNeed || favor[0] || '';
+  const clLevel = String(cl.label || cl.kind || '');
+  const climateWord = /^(寒湿|寒)$/.test(clLevel) ? '天寒水旺，木像冬天的藤，不是不强，是冷得伸展不开'
+    : /^(燥热|温热|湿热)$/.test(clLevel) ? '火土偏燥，像久旱的地，需要水和湿气来松一松'
       : '寒暖相对均衡，没有极端的偏枯';
-  const needEl = (cl.need && cl.need.element) || favor[0] || '';
+  // 「最需要的是X」只有 X 真落在喜用里才说得出口。
+  // 原来无条件取调候所需的元素，于是气候偏火、扶抑却忌火的盘，正文写「最需要的是火」，
+  // 下面喜忌行把火列成忌——同一份输出两句话打架，用户只能来问到底补不补。
+  const needSay = (() => {
+    if (!needEl) return '';
+    const why = cl.need && cl.need.why ? `——${cl.need.why}` : '';
+    const top = favor[0] || '';
+    if (clNeed && avoid.includes(clNeed)) {
+      return `气候上偏${clNeed}${why}，但喜忌里${clNeed}是忌：这一盘不当主取，不用照着补${top ? `，省力的方向是${top}` : ''}。`;
+    }
+    if (clNeed && !favor.includes(clNeed)) {
+      return `气候上偏${clNeed}${why}，可以带一点，但不当主取${top ? `——主线还是${top}` : ''}。`;
+    }
+    return `最需要的是${needEl}${why}。`;
+  })();
   // 财库：库在不在、开没开、财是喜是忌——把三件事压成一句人话，接在总纲末尾
   const ck = (r.frame && r.frame.caiKu) || null;
   const caiKuLine = (() => {
@@ -160,7 +177,7 @@ function baziSummary(r) {
       ? '撑得住，关键是别把力气用在错的地方'
       : '力量比较匀，选对圈子比一个人使劲重要';
   const lead = `${dm.stem || ''}${dm.element || ''}日主，生在${season}${month.branch || ''}月：${climateWord}。`
-    + `${needEl ? `最需要的是${needEl}${cl.need && cl.need.why ? `——${cl.need.why}` : ''}。` : ''}`
+    + needSay
     + `整体${lv}，所以${strengthSay}。`
     + caiKuLine;
 
@@ -270,9 +287,13 @@ function baziSummary(r) {
 
   // ── 建议 ──
   const advice = [];
-  if (needEl && ELEMENT_COLOR[needEl]) {
-    const c = ELEMENT_COLOR[needEl];
-    advice.push(`多接触${needEl}：${c.color}这类颜色、${c.where}，日常可以${c.daily}。`);
+  // 补的方向必须与喜忌一致：needEl 是调候所需，可能正好被判成忌；
+  // 那样再劝「多接触火」就跟上面那句「火是忌」对着干。
+  const fillEl = (needEl && !avoid.includes(needEl)) ? needEl
+    : (favor[0] && !avoid.includes(favor[0]) ? favor[0] : '');
+  if (fillEl && ELEMENT_COLOR[fillEl]) {
+    const c = ELEMENT_COLOR[fillEl];
+    advice.push(`多接触${fillEl}：${c.color}这类颜色、${c.where}，日常可以${c.daily}。`);
   }
   if (avoid.length) advice.push(`少把自己放在${avoid.slice(0, 2).join('、')}过重的环境里——不是不能碰，是别长期待在那种氛围中。`);
   if (top2.includes('印')) advice.push('给「想」设个时限：一件事想超过十分钟还没结论，就先做一个最小动作，用行动换信息。');

@@ -23,6 +23,14 @@ const SHE = { system: 'bazi', datetime: '1996-12-14T08:00', gender: 'female', ad
   ok(!!b && !!b.lead, '生成了总结');
   ok(/乙木/.test(b.lead), '总纲点到日主');
   ok(/火/.test(b.lead), '总纲点出最需要的五行（这一盘寒湿需火）');
+  // 气候档名整串匹配：寒 / 温热 / 湿热 不能落回「寒暖相对均衡」
+  const COLD = compute({ system: 'bazi', datetime: '1952-02-07T13:30', gender: 'male', address: '北京' });
+  const HOT = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', address: '成都' });
+  ok(/天寒水旺/.test(COLD.brief.lead), '寒档总纲写天寒水旺，不再写均衡');
+  ok(/火土偏燥/.test(HOT.brief.lead), '燥热档总纲写火土偏燥');
+  // 调候取物落在忌里时，不许再劝「最需要」或「多接触」
+  ok(/喜忌里火是忌/.test(COLD.brief.lead) && !/最需要的是火/.test(COLD.brief.lead), '火是忌时改口，不写最需要火');
+  ok(!COLD.brief.advice.some((a) => /多接触火/.test(a)), '火是忌时建议里不再推多接触火');
   eq(b.sections.length, 4, '四段：底色 / 感情 / 卡点 / 所以呢（落点与时间）');
   ok(b.sections.every((s) => s.h && s.t.length >= 15), '每段都有标题且不是一句话敷衍');
   ok(b.advice.length >= 2, '至少两条可执行建议');

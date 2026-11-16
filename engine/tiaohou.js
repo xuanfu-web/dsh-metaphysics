@@ -10,7 +10,9 @@
 //   3) 生成一段「说人话」的气候叙述，供解释层与面板直接使用。
 //
 // 口径：调候取用以月令寒暖 + 全局水火燥湿为主，属通行做法；
-// 日主 + 月令的更细取用由 engine/qiongtong.js（穷通宝鉴 120 格）叠加，冲突时以调候优先。
+// 日主 + 月令的更细取用由 engine/qiongtong.js（穷通宝鉴 120 格）叠加。
+// 两层不同时不抹平：失衡时调候优先，未失衡时调候只作环境偏好，主取仍按扶抑与月令；
+// 具体对齐话术在 engine/geju.js 的 climateQtAlign()，那里才碰得到 favor/avoid。
 
 const STEM_ELEMENT = {
   甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
@@ -35,6 +37,21 @@ const SEASON_NAME = {
 /** 湿土 / 燥土：丑辰为湿，未戌为燥；亥子水气重，巳午火气重 */
 const WET_BRANCH = { 丑: 1, 辰: 1, 子: 0.6, 亥: 0.5 };
 const DRY_BRANCH = { 未: 1, 戌: 1, 午: 0.4, 巳: 0.4 };
+
+/**
+ * 月令自身的燥湿基准：季节是气候的主气，必须进 damp。
+ * 原来 damp 只数「水几分 + 湿土燥土几处」，月令权重为零，于是生在未月（燥土当令）
+ * 的盘只要水一多就被判成湿滞，取丙火；而《穷通宝鉴》未月壬水取辛甲——两句并排
+ * 在同一份输出里，用户不知道该补火还是补金。未月的燥不是水能抹平的，子未又相害，
+ * 水再多也得先看月令。这里按 0.6 的系数折算，只作基调，不压死其余地支的加减。
+ */
+const SEASON_DAMP = {
+  亥: 0.8, 子: 1, 丑: 0.6,
+  寅: -0.2, 卯: -0.3, 辰: 0.4,
+  巳: -0.7, 午: -1, 未: -1,
+  申: -0.3, 酉: -0.5, 戌: -0.8,
+};
+const SEASON_DAMP_W = 0.6;
 
 /** 各气候的调候所需 */
 const NEED = {
@@ -146,8 +163,9 @@ export function judgeClimate({ monthBranch, dayStem, wuxing = {}, branches = [] 
     if (DRY_BRANCH[b]) { dry += DRY_BRANCH[b]; if (b === '未' || b === '戌') dryCount += 1; }
   }
   const seasonT = SEASON_TEMP[monthBranch] ?? 0;
+  const seasonW = SEASON_DAMP[monthBranch] ?? 0;
   const temp = round2(seasonT + 0.45 * fire - 0.4 * water);
-  const damp = round2(wet - dry + 0.25 * water - 0.25 * fire);
+  const damp = round2(seasonW * SEASON_DAMP_W + wet - dry + 0.25 * water - 0.25 * fire);
 
   const cold = temp <= -0.8;
   const hot = temp >= 0.9;

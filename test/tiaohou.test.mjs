@@ -103,7 +103,10 @@ ok('不热之湿仍判湿滞取丙火', WET_ONLY.kind === '湿滞' && WET_ONLY.n
 for (const [dt, label] of [['1935-06-06T11:00', '1935-06-06 巳月'], ['1995-06-12T23:00', '1995-06-12 午月']]) {
   const hot = compute({ system: 'bazi', datetime: dt, gender: 'male' });
   const ys = hot.frame.yongshen;
-  ok(`${label} 判湿热且调候取水`, hot.climate.kind === '湿热' && hot.climate.need.element === '水', `${hot.climate.kind}/${hot.climate.need.element}`);
+  // 档名不锁死：月令燥湿进了 damp 之后，靠「水多 + 湿土」堆到 0.8 的偏热盘
+  // 会被月令的干燥压回「温热」——湿热与温热同取壬水，实质不变。
+  // 这里锁的是「取用没被翻成火」，不是档名。
+  ok(`${label} 偏热盘调候仍取水（湿热/温热均可）`, /湿热|温热/.test(hot.climate.kind) && hot.climate.need.element === '水', `${hot.climate.kind}/${hot.climate.need.element}`);
   ok(`${label} 喜用仍含水、火没被顶到首位`, ys.favor.includes('水') && ys.favor[0] !== '火', ys.favor.join(''));
   ok(`${label} 水没被删成忌神`, !ys.avoid.includes('水'), ys.avoid.join(''));
 }
@@ -115,6 +118,25 @@ for (const c of [COLD.climate, WET_HOT, WET_ONLY, compute({ system: 'bazi', date
   const got = /要的不是更多的(.)，而是/.exec(c.narration);
   ok(`旁白忌神与 avoidElement 同源（${c.kind}）`, !!got && got[1] === c.avoidElement, `${c.kind}: ${c.narration.slice(-30)}`);
 }
+// ── 月令燥湿必须进 damp：湿土不能靠「水多」堆出来 ─────────────
+// 原来 damp 只数水火分数与湿土燥土处数，月令权重为零，于是未月（燥土当令）的盘
+// 只要水多就判湿滞、取丙火，而《穷通宝鉴》未月壬水取辛甲——同一份输出两句首取，
+// 用户不知道该补火还是补金。季节是气候主气，得先看月令。
+{
+  const wetProfile = { 火: 1.5, 水: 4, 土: 2, 木: 1, 金: 0 };
+  const inWei = judgeClimate({ monthBranch: '未', dayStem: '壬', wuxing: wetProfile, branches: ['子', '未', '子', '卯'] });
+  const inZi = judgeClimate({ monthBranch: '子', dayStem: '壬', wuxing: wetProfile, branches: ['子', '未', '子', '卯'] });
+  ok('未月水多不再判湿滞', inWei.kind !== '湿滞', `${inWei.kind}/damp ${inWei.damp}`);
+  ok('未月不被判成取丙火的湿滞', !(inWei.need && inWei.need.element === '火'), inWei.need ? inWei.need.element : '无');
+  ok('同样的水在子月仍判湿', inZi.damp > inWei.damp + 0.5, `子 ${inZi.damp} vs 未 ${inWei.damp}`);
+  ok('子月湿判仍成立（寒湿或湿滞）', /寒湿|湿滞/.test(inZi.kind), inZi.kind);
+  // 壬水未月那张真实盘：气候不再是主要矛盾，取用回到扶抑 + 穷通宝鉴
+  const ren = compute({ system: 'bazi', datetime: '1996-07-14T06:00', gender: 'male', address: '广州' });
+  const rys = ren.frame.yongshen;
+  ok('壬水未月盘不再按湿滞取丙火', ren.climate.kind !== '湿滞' && rys.favor[0] !== '火', `${ren.climate.kind}/${rys.favor.join('')}`);
+  ok('该盘穷通宝鉴首取金、喜用也有金', rys.qt.primary === '辛' && rys.favor.includes('金'), `${rys.qt.primary}/${rys.favor.join('')}`);
+}
+
 // 档位表不许有缺口：KIND_NAME / NEED / DAY_FEEL 三处同档，且每档写满五种日主
 const blockOf = (name) => {
   const s = TIAOHOU_SRC.indexOf(`const ${name} = {`);

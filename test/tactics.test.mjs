@@ -69,7 +69,15 @@ console.log('\n[真实盘 丙子 乙未 壬子 癸卯]');
 
 console.log('\n[调候口径：同一份输出不许自相矛盾]');
 {
-  const cl = buildBazi(REAL).climate;
+  // 壬水未月那张盘：月令燥湿进 damp 后不再靠「水多」堆出湿滞取丙火，
+  // 与《穷通宝鉴》未月壬水首取辛金才对得上。这一条锁的是本次修复的核心事实。
+  const ren = buildBazi(REAL).climate;
+  ok('壬水未月不再判湿滞取丙火', !/湿滞/.test(ren.kind) && (!ren.need || ren.need.element !== '火'),
+    JSON.stringify({ kind: ren.kind, need: ren.need && ren.need.element }));
+
+  // soft 口径换一张仍有调候取物、但幅度未到失衡的盘来验，别绑在已判平和的盘上。
+  const SOFT = { year: 1952, month: 2, day: 7, hour: 13, minute: 30, gender: 'male', trueSolar: false };
+  const cl = buildBazi(SOFT).climate;
   ok('本盘 priority 判为「扶抑为主」', cl.priority === '扶抑为主', cl.priority);
   ok('narration 不再说「这一局要的不是…而是丙火」', !/这一局要的不是/.test(cl.narration), cl.narration.slice(0, 30));
   ok('narration 明说只作环境偏好', /环境偏好/.test(cl.narration), cl.narration.slice(-30));

@@ -799,6 +799,61 @@ export function combinationOf({ tactics = null, gods = null } = {}) {
 }
 
 
+// ── 调候 × 穷通宝鉴：两套取用标准的对齐 ─────────────────────
+// 两层答的不是同一个问题：调候看「寒暖燥湿」（环境），穷通宝鉴看「这个日主生在这个月
+// 该怎么用」（月令结构）。原来 detail 里「调候：取丙火」与「穷通宝鉴：首取辛」并排
+// 出现，两句都写成结论，用户只能来问「到底补哪个」。这里把两者摆成上下层，
+// 并交代本盘实际按谁走——对齐不等于强行统一，是让分歧有明确的主次。
+export function climateQtAlign({ climate = null, qt = null, favor = [] } = {}) {
+  const needEl = climate && climate.need ? climate.need.element : null;
+  const qtEl = qt && qt.primary ? STEM_ELEMENT[qt.primary] : null;
+  const primary = (favor && favor[0]) || null;
+  if (!needEl || !qtEl) {
+    const only = needEl
+      ? `调候给了${climate.need.stem}${needEl}`
+      : qtEl ? `穷通宝鉴给了${qt.primary}${qtEl}` : '';
+    return {
+      same: false,
+      comparable: false,
+      needEl,
+      qtEl,
+      primary,
+      text: only
+        ? `只有${needEl ? '调候' : '穷通宝鉴'}这一层给出了取用（${only}），另一层这一盘没有可对照的条目，谈不上分歧，取用仍按喜忌表走${primary ? `，首选${primary}` : ''}。`
+        : '调候与穷通宝鉴这一盘都没给出取用，取用全按扶抑走。',
+    };
+  }
+  const qtName = `穷通宝鉴（${qt.month}${qt.stem}日）首取${qt.primary}${qtEl}`;
+  if (needEl === qtEl) {
+    return {
+      same: true,
+      comparable: true,
+      needEl,
+      qtEl,
+      primary,
+      text: `调候要${climate.need.stem}${needEl}，${qtName}——两层指向同一类力量，本盘取${needEl}没有分歧。`,
+    };
+  }
+  if (climate.priority === '调候优先') {
+    return {
+      same: false,
+      comparable: true,
+      needEl,
+      qtEl,
+      primary,
+      text: `两层不同：调候要${climate.need.stem}${needEl}（这一盘寒暖已偏，是当下最急的），${qtName}（月令这一格的常法）。它们答的不是同一个问题——一个管冷暖，一个管月令该怎么用。本盘先按调候取${needEl}，${qt.primary}${qtEl}留作结构性参考：等寒暖不再偏，它才轮得上当主取。`,
+    };
+  }
+  return {
+    same: false,
+    comparable: true,
+    needEl,
+    qtEl,
+    primary,
+    text: `两层不同：调候倾向${climate.need.stem}${needEl}（寒暖幅度没到失衡，只作环境偏好），${qtName}（月令这一格该怎么用）。本盘以扶抑与月令为主，${needEl}可以带一点但不作主取——${primary ? `喜用首选是${primary}` : '按喜忌表走'}。`,
+  };
+}
+
 function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods = null) {
   const roles = elementRoles(dayStem);
   const me = roles.me;
@@ -859,6 +914,8 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
   const tactics = gods ? tacticsOf({ strength, gods }) : null;
   // 组合层：把每一路拆成可化／可制／纯忌，见 combinationOf
   const combination = combinationOf({ tactics, gods });
+  // 调候与穷通宝鉴的层级对齐：两套标准不能并排当两个结论，见 climateQtAlign
+  const alignment = climateQtAlign({ climate, qt, favor });
 
   const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
   const disputedText = disputed
@@ -878,6 +935,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
         : `，倾向${climate.need.stem}${climate.need.element}（幅度未到失衡，不作主取），忌${climate.avoidElement}亦从扶抑`)
       : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
+    alignment.text,
     tongguan
       ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
         ? `${tongguan.bridge} ${tongguan.weight} 分，关可通`
@@ -914,6 +972,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,
+    alignment,
     tongguan,
     tactics,
     combination,

@@ -420,7 +420,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.82.0</span><span class="ver-note" title="本版之后又改了 10 项（版本号未变）：格成不真 ≠ 命不好；取用补上组合层：官杀该制还是该化；临界档位自己说出来；说人话层落到盘面位置；补上「所以呢」那一层；强弱的判档修了；单页问事类永远出不了盘（修）；出盘后问事层被锁死（修，两条链都有）；e2e 深链用例一直是错的（修）；两套渲染链有了检查清单">另含 10 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.82.0</span><span class="ver-note" title="本版之后又改了 13 项（版本号未变）：「最需要火」与「忌土火」不再并排；气候档名漏了两档（顺手修）；调候与《穷通宝鉴》不再各说各的；格成不真 ≠ 命不好；取用补上组合层：官杀该制还是该化；临界档位自己说出来；说人话层落到盘面位置；补上「所以呢」那一层；强弱的判档修了；单页问事类永远出不了盘（修）；出盘后问事层被锁死（修，两条链都有）；e2e 深链用例一直是错的（修）；两套渲染链有了检查清单">另含 13 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -764,7 +764,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>工程验证</h3>
     <ul><li>测试：206 个测试文件 / 11406 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>本版之后又改了什么（版本号未变）</h3>
-    <ul><li>格成不真 ≠ 命不好</li><li>取用补上组合层：官杀该制还是该化</li><li>临界档位自己说出来</li><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
+    <ul><li>「最需要火」与「忌土火」不再并排</li><li>气候档名漏了两档（顺手修）</li><li>调候与《穷通宝鉴》不再各说各的</li><li>格成不真 ≠ 命不好</li><li>取用补上组合层：官杀该制还是该化</li><li>临界档位自己说出来</li><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
     <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -3527,7 +3527,9 @@ __mods.tiaohou = (function () {
 //   3) 生成一段「说人话」的气候叙述，供解释层与面板直接使用。
 //
 // 口径：调候取用以月令寒暖 + 全局水火燥湿为主，属通行做法；
-// 日主 + 月令的更细取用由 engine/qiongtong.js（穷通宝鉴 120 格）叠加，冲突时以调候优先。
+// 日主 + 月令的更细取用由 engine/qiongtong.js（穷通宝鉴 120 格）叠加。
+// 两层不同时不抹平：失衡时调候优先，未失衡时调候只作环境偏好，主取仍按扶抑与月令；
+// 具体对齐话术在 engine/geju.js 的 climateQtAlign()，那里才碰得到 favor/avoid。
 
 const STEM_ELEMENT = {
   甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土',
@@ -3552,6 +3554,21 @@ const SEASON_NAME = {
 /** 湿土 / 燥土：丑辰为湿，未戌为燥；亥子水气重，巳午火气重 */
 const WET_BRANCH = { 丑: 1, 辰: 1, 子: 0.6, 亥: 0.5 };
 const DRY_BRANCH = { 未: 1, 戌: 1, 午: 0.4, 巳: 0.4 };
+
+/**
+ * 月令自身的燥湿基准：季节是气候的主气，必须进 damp。
+ * 原来 damp 只数「水几分 + 湿土燥土几处」，月令权重为零，于是生在未月（燥土当令）
+ * 的盘只要水一多就被判成湿滞，取丙火；而《穷通宝鉴》未月壬水取辛甲——两句并排
+ * 在同一份输出里，用户不知道该补火还是补金。未月的燥不是水能抹平的，子未又相害，
+ * 水再多也得先看月令。这里按 0.6 的系数折算，只作基调，不压死其余地支的加减。
+ */
+const SEASON_DAMP = {
+  亥: 0.8, 子: 1, 丑: 0.6,
+  寅: -0.2, 卯: -0.3, 辰: 0.4,
+  巳: -0.7, 午: -1, 未: -1,
+  申: -0.3, 酉: -0.5, 戌: -0.8,
+};
+const SEASON_DAMP_W = 0.6;
 
 /** 各气候的调候所需 */
 const NEED = {
@@ -3663,8 +3680,9 @@ function judgeClimate({ monthBranch, dayStem, wuxing = {}, branches = [] }) {
     if (DRY_BRANCH[b]) { dry += DRY_BRANCH[b]; if (b === '未' || b === '戌') dryCount += 1; }
   }
   const seasonT = SEASON_TEMP[monthBranch] ?? 0;
+  const seasonW = SEASON_DAMP[monthBranch] ?? 0;
   const temp = round2(seasonT + 0.45 * fire - 0.4 * water);
-  const damp = round2(wet - dry + 0.25 * water - 0.25 * fire);
+  const damp = round2(seasonW * SEASON_DAMP_W + wet - dry + 0.25 * water - 0.25 * fire);
 
   const cold = temp <= -0.8;
   const hot = temp >= 0.9;
@@ -6602,6 +6620,61 @@ function combinationOf({ tactics = null, gods = null } = {}) {
 }
 
 
+// ── 调候 × 穷通宝鉴：两套取用标准的对齐 ─────────────────────
+// 两层答的不是同一个问题：调候看「寒暖燥湿」（环境），穷通宝鉴看「这个日主生在这个月
+// 该怎么用」（月令结构）。原来 detail 里「调候：取丙火」与「穷通宝鉴：首取辛」并排
+// 出现，两句都写成结论，用户只能来问「到底补哪个」。这里把两者摆成上下层，
+// 并交代本盘实际按谁走——对齐不等于强行统一，是让分歧有明确的主次。
+function climateQtAlign({ climate = null, qt = null, favor = [] } = {}) {
+  const needEl = climate && climate.need ? climate.need.element : null;
+  const qtEl = qt && qt.primary ? STEM_ELEMENT[qt.primary] : null;
+  const primary = (favor && favor[0]) || null;
+  if (!needEl || !qtEl) {
+    const only = needEl
+      ? `调候给了${climate.need.stem}${needEl}`
+      : qtEl ? `穷通宝鉴给了${qt.primary}${qtEl}` : '';
+    return {
+      same: false,
+      comparable: false,
+      needEl,
+      qtEl,
+      primary,
+      text: only
+        ? `只有${needEl ? '调候' : '穷通宝鉴'}这一层给出了取用（${only}），另一层这一盘没有可对照的条目，谈不上分歧，取用仍按喜忌表走${primary ? `，首选${primary}` : ''}。`
+        : '调候与穷通宝鉴这一盘都没给出取用，取用全按扶抑走。',
+    };
+  }
+  const qtName = `穷通宝鉴（${qt.month}${qt.stem}日）首取${qt.primary}${qtEl}`;
+  if (needEl === qtEl) {
+    return {
+      same: true,
+      comparable: true,
+      needEl,
+      qtEl,
+      primary,
+      text: `调候要${climate.need.stem}${needEl}，${qtName}——两层指向同一类力量，本盘取${needEl}没有分歧。`,
+    };
+  }
+  if (climate.priority === '调候优先') {
+    return {
+      same: false,
+      comparable: true,
+      needEl,
+      qtEl,
+      primary,
+      text: `两层不同：调候要${climate.need.stem}${needEl}（这一盘寒暖已偏，是当下最急的），${qtName}（月令这一格的常法）。它们答的不是同一个问题——一个管冷暖，一个管月令该怎么用。本盘先按调候取${needEl}，${qt.primary}${qtEl}留作结构性参考：等寒暖不再偏，它才轮得上当主取。`,
+    };
+  }
+  return {
+    same: false,
+    comparable: true,
+    needEl,
+    qtEl,
+    primary,
+    text: `两层不同：调候倾向${climate.need.stem}${needEl}（寒暖幅度没到失衡，只作环境偏好），${qtName}（月令这一格该怎么用）。本盘以扶抑与月令为主，${needEl}可以带一点但不作主取——${primary ? `喜用首选是${primary}` : '按喜忌表走'}。`,
+  };
+}
+
 function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods = null) {
   const roles = elementRoles(dayStem);
   const me = roles.me;
@@ -6662,6 +6735,8 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
   const tactics = gods ? tacticsOf({ strength, gods }) : null;
   // 组合层：把每一路拆成可化／可制／纯忌，见 combinationOf
   const combination = combinationOf({ tactics, gods });
+  // 调候与穷通宝鉴的层级对齐：两套标准不能并排当两个结论，见 climateQtAlign
+  const alignment = climateQtAlign({ climate, qt, favor });
 
   const describe = (el) => `${el}（${roleName(el)}·${ROLE_VERB[roleName(el)]}）`;
   const disputedText = disputed
@@ -6681,6 +6756,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
         : `，倾向${climate.need.stem}${climate.need.element}（幅度未到失衡，不作主取），忌${climate.avoidElement}亦从扶抑`)
       : '，气候平和'}。`,
     qt ? `穷通宝鉴：${qt.month}${dayStem}${me}，用神${qt.yong.join('、')}（首取${qt.primary}）。` : '',
+    alignment.text,
     tongguan
       ? `通关：忌${tongguan.foe}克用${tongguan.use}，五行以${tongguan.bridge}为关；局中${tongguan.level === '可通'
         ? `${tongguan.bridge} ${tongguan.weight} 分，关可通`
@@ -6717,6 +6793,7 @@ function yongshenOf(dayStem, monthBranch, strength, wuxing, branches = [], gods 
     tiaohou: { ...climate, ...arb, element: climate.need ? climate.need.element : null },
     climate,
     qt,
+    alignment,
     tongguan,
     tactics,
     combination,
@@ -7046,7 +7123,7 @@ function analyzeBaziFrame({ pillars, dayStem, monthBranch, strength, wuxing }) {
   };
 }
 
-return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, tacticsOf, combinationOf, scoreLuck, caiKuOf, balanceOf, analyzeBaziFrame };
+return { tenGod, elementRoles, patternScoreOf, tongguanOf, bingyaoOf, xianshenOf, tacticsOf, combinationOf, climateQtAlign, scoreLuck, caiKuOf, balanceOf, analyzeBaziFrame };
 })();
 
 __mods.bazi = (function () {
@@ -33074,10 +33151,27 @@ function baziSummary(r) {
 
   // ── 总纲：日主 + 生月 + 冷暖 + 缺什么 ──
   const season = MONTH_SEASON[month.branch] || `${month.branch}月`;
-  const climateWord = cl.label === '寒湿' ? '天寒水旺，木像冬天的藤，不是不强，是冷得伸展不开'
-    : cl.label === '燥热' ? '火土偏燥，像久旱的地，需要水和湿气来松一松'
+  const clNeed = (cl.need && cl.need.element) || '';
+  const needEl = clNeed || favor[0] || '';
+  const clLevel = String(cl.label || cl.kind || '');
+  const climateWord = /^(寒湿|寒)$/.test(clLevel) ? '天寒水旺，木像冬天的藤，不是不强，是冷得伸展不开'
+    : /^(燥热|温热|湿热)$/.test(clLevel) ? '火土偏燥，像久旱的地，需要水和湿气来松一松'
       : '寒暖相对均衡，没有极端的偏枯';
-  const needEl = (cl.need && cl.need.element) || favor[0] || '';
+  // 「最需要的是X」只有 X 真落在喜用里才说得出口。
+  // 原来无条件取调候所需的元素，于是气候偏火、扶抑却忌火的盘，正文写「最需要的是火」，
+  // 下面喜忌行把火列成忌——同一份输出两句话打架，用户只能来问到底补不补。
+  const needSay = (() => {
+    if (!needEl) return '';
+    const why = cl.need && cl.need.why ? `——${cl.need.why}` : '';
+    const top = favor[0] || '';
+    if (clNeed && avoid.includes(clNeed)) {
+      return `气候上偏${clNeed}${why}，但喜忌里${clNeed}是忌：这一盘不当主取，不用照着补${top ? `，省力的方向是${top}` : ''}。`;
+    }
+    if (clNeed && !favor.includes(clNeed)) {
+      return `气候上偏${clNeed}${why}，可以带一点，但不当主取${top ? `——主线还是${top}` : ''}。`;
+    }
+    return `最需要的是${needEl}${why}。`;
+  })();
   // 财库：库在不在、开没开、财是喜是忌——把三件事压成一句人话，接在总纲末尾
   const ck = (r.frame && r.frame.caiKu) || null;
   const caiKuLine = (() => {
@@ -33098,7 +33192,7 @@ function baziSummary(r) {
       ? '撑得住，关键是别把力气用在错的地方'
       : '力量比较匀，选对圈子比一个人使劲重要';
   const lead = `${dm.stem || ''}${dm.element || ''}日主，生在${season}${month.branch || ''}月：${climateWord}。`
-    + `${needEl ? `最需要的是${needEl}${cl.need && cl.need.why ? `——${cl.need.why}` : ''}。` : ''}`
+    + needSay
     + `整体${lv}，所以${strengthSay}。`
     + caiKuLine;
 
@@ -33208,9 +33302,13 @@ function baziSummary(r) {
 
   // ── 建议 ──
   const advice = [];
-  if (needEl && ELEMENT_COLOR[needEl]) {
-    const c = ELEMENT_COLOR[needEl];
-    advice.push(`多接触${needEl}：${c.color}这类颜色、${c.where}，日常可以${c.daily}。`);
+  // 补的方向必须与喜忌一致：needEl 是调候所需，可能正好被判成忌；
+  // 那样再劝「多接触火」就跟上面那句「火是忌」对着干。
+  const fillEl = (needEl && !avoid.includes(needEl)) ? needEl
+    : (favor[0] && !avoid.includes(favor[0]) ? favor[0] : '');
+  if (fillEl && ELEMENT_COLOR[fillEl]) {
+    const c = ELEMENT_COLOR[fillEl];
+    advice.push(`多接触${fillEl}：${c.color}这类颜色、${c.where}，日常可以${c.daily}。`);
   }
   if (avoid.length) advice.push(`少把自己放在${avoid.slice(0, 2).join('、')}过重的环境里——不是不能碰，是别长期待在那种氛围中。`);
   if (top2.includes('印')) advice.push('给「想」设个时限：一件事想超过十分钟还没结论，就先做一个最小动作，用行动换信息。');
