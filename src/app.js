@@ -1097,14 +1097,15 @@ function App() {
   // 出盘后锁住参数区，想改先点「修改参数」。做法是渲染后扫一遍输入控件加
   // readOnly/disabled（不改 React props，几十个受控控件逐个传 disabled 必漏），
   // 值不受影响，所以缓存键与参数快照都不会因此漂移。
-  // 追问框 .mp-askbox 是看盘时用的，不在参数区，必须放过。
+  // 追问框 .mp-askbox、「所问之事」.mp-askblock、询问方向 .mp-askonly 都是看盘时
+  // 还要用的问事层，不属于排盘参数（改它们只重绘解读，不动盘面），必须放过。
   useEffect(() => {
     const panel = document.querySelector('.mp-panel');
     if (!panel) return;
     const locked = !!result && !editMode;
     panel.classList.toggle('mp-locked', locked);
     panel.querySelectorAll('input, select, textarea').forEach((n) => {
-      if (n.closest('.mp-askbox')) return;
+      if (n.closest('.mp-askbox, .mp-askblock, .mp-askonly')) return;
       const tag = n.tagName;
       if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
       else n.readOnly = locked;
@@ -2567,7 +2568,7 @@ function App() {
             h('summary', null, '三种规则有什么区别？'),
             h('p', null, '决定符头与节气如何对齐、是否插入闰局；同一个时刻在不同规则下可能得到不同局数。默认「拆补」与工具层一致。'))) : null,
         needAsk(tab) || tab === 'qimen' ? field(tab === 'qimen' ? '询问方向（定用神）' : '询问方向', h('select', {
-          className: 'mp-input', value: direction,
+          className: 'mp-input mp-askonly', value: direction,
           onChange: (e) => { setDirection(e.target.value); refreshInterpret(e.target.value); },
         }, (Engine.DIRECTIONS || []).map((d) => h('option', { key: d.key, value: d.key }, d.label)))) : null,
         tab === 'tarot' ? field('牌阵', h('select', {

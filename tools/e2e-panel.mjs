@@ -1170,7 +1170,39 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(typeof env.n === 'number' && Number.isFinite(env.n) && env.n >= 0, '面板运行时取得到未发版改动项数', String(env.n));
 }
 
-// ── 十四、全程无 JS 报错 ───────────────────────────────────────
+// ── 十四、出盘后问事层仍可改：所问之事 / 询问方向不是排盘参数 ─────────
+// 参数区出盘后锁住是任务书 1.3 的要求，但「所问之事」「询问方向」改的是解读，
+// 不动盘面。跟着参数一起锁死，用户出盘后就再也改不了问法、方向选择器也点不动。
+{
+  const goBtnSel = '.mp-actions button.mp-btn:not(.ghost)';
+  const clickGo = async () => {
+    const b = page.locator(goBtnSel).last();
+    if (await b.count()) { await b.click(); await page.waitForTimeout(350); }
+  };
+  await openTool('liuyao');
+  await page.waitForTimeout(250);
+  await unlockParams();
+  const qBox = page.locator('.mp-askblock textarea');
+  ok((await qBox.count()) === 1, '面板 · 有「所问之事」输入框', String(await qBox.count()));
+  if (await qBox.count()) {
+    await qBox.first().fill('面板问事层能不能改');
+    await clickGo();
+    await page.waitForTimeout(900);
+    ok(await qBox.first().isEditable(), '面板 · 出盘后「所问之事」仍可编辑');
+    const dirSel = page.locator('select.mp-askonly');
+    ok((await dirSel.count()) >= 1, '面板 · 有「询问方向」选择器', String(await dirSel.count()));
+    if (await dirSel.count()) {
+      ok(await dirSel.first().isEnabled(), '面板 · 出盘后「询问方向」仍能切换');
+      const beforeDir = await text('#main');
+      await dirSel.first().selectOption({ index: 1 });
+      await page.waitForTimeout(700);
+      const afterDir = await text('#main');
+      ok(beforeDir !== afterDir, '面板 · 切方向后解读跟着变（不重摇卦）');
+    }
+  }
+}
+
+// ── 十五、全程无 JS 报错 ───────────────────────────────────────
 ok(errors.length === 0, '面板全程无 JS 报错', errors.slice(0, 3).join(' | '));
 
 await page.screenshot({ path: path.join(root, '_e2e-panel.png') });

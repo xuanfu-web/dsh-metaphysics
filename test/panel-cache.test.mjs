@@ -59,7 +59,10 @@ ok('趋势盘的 asOf 在求键之前补', runBody.indexOf('args.asOf = Core.tod
 const lockFx = bodyOf('  useEffect(() => {\n    const panel = document.querySelector(\'.mp-panel\');');
 ok('锁定只在出盘且未点修改参数时', /const locked = !!result && !editMode;/.test(lockFx));
 ok('锁定范围限定面板根', /document\.querySelector\('\.mp-panel'\)/.test(lockFx));
-ok('追问框不在参数区、必须放过', /n\.closest\('\.mp-askbox'\)/.test(lockFx));
+ok('追问框不在参数区、必须放过', /n\.closest\('\.mp-askbox, \.mp-askblock, \.mp-askonly'\)/.test(lockFx));
+// 问事层（所问之事 / 询问方向）改的是解读，不动盘面；锁住就等于出盘后永远改不了问法
+ok('所问之事与询问方向也在放过列表里', /\.mp-askblock/.test(lockFx) && /\.mp-askonly/.test(lockFx));
+ok('询问方向带 mp-askonly 标记类', /className: 'mp-input mp-askonly'/.test(app));
 ok('select 与勾选用 disabled', /tag === 'SELECT' \|\| n\.type === 'checkbox' \|\| n\.type === 'radio' \|\| n\.type === 'button'\) n\.disabled = locked;/.test(lockFx));
 ok('文本类用 readOnly（不改 value）', /else n\.readOnly = locked;/.test(lockFx));
 ok('锁定态挂到面板 class 上', /panel\.classList\.toggle\('mp-locked', locked\);/.test(lockFx));
