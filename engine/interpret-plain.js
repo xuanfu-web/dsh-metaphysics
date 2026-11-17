@@ -506,35 +506,47 @@ export function buildPlain(r, ask, ctx = {}) {
     if (!cs.length) return '';
     const say = (c) => (Array.isArray(c.keywords) && c.keywords.length ? c.keywords.slice(0, 2).join('、') : s(c.core, ''));
     const mark = (c) => `「${s(c.name, '—')}」${s(c.orientation, '')}`;
-    const now = cs.find((c) => /现在|当下/.test(String(c.position))) || cs[Math.floor(cs.length / 2)] || cs[0];
+    const now = cs.find((c) => /现在|当下|现况|建议|核心/.test(String(c.position))) || cs[Math.floor(cs.length / 2)] || cs[0];
+    const next = cs[cs.indexOf(now) + 1];
     const head = cs.length === 1
       ? `这张牌是${mark(cs[0])}，说的是${s(say(cs[0]), '一件事的底色')}。`
       : `${cs.length} 张牌不是在给 ${cs.length} 个答案，是同一条线上的几个点：` +
         cs.map((c) => `${s(c.position, '')}${mark(c)}，${s(say(c), '')}`).join('；') + '。';
-    return `${head}最值得先看的是${s(now.position, '当下')}这张——过去改不了，往后还没到，能动的只有眼前这一步。`;
+    // 「所以呢」落在牌位本身：不写死「过去/未来」——五张牌阵没有这两个位子，
+    // 写死会在建议位读不通。下一格顺势带出来，眼前能落手的只有这一张。
+    return `${head}所以呢，先动「${s(now.position, '当下')}·${s(now.name, '这张')}」——${s(say(now), '先看它写了什么')}` +
+      (next ? `；后面「${s(next.position, '往后')}」是顺着它走出来的，眼下能落手的就这一格。` : '；眼下能落手的就这一格。');
   }
   if (r.system === 'daliuren') {
     const sc = r.sanChuan || {};
     if (!sc.chu || !sc.mo) return '';
     const g = r.geJu || {};
     const sayOf = (x) => `${s(x.zhi, '—')}（${s(LIUQIN_SAY[x.liuQin], s(x.liuQin, '—'))}）`;
+    const shortOf = (x) => s(LIUQIN_SHORT[x && x.liuQin], s(x && x.liuQin, '那一处'));
     return `这一课看的是事情怎么走到这一步。三传是三步：起手在${sayOf(sc.chu)}，` +
       (sc.zhong ? `中间经过${sayOf(sc.zhong)}，` : '') +
       `落点在${sayOf(sc.mo)}。` +
       `课体是「${s(g.name, '—')}」${g.detail ? `（${g.detail}）` : ''}，说的是这盘推演的走法，不是吉凶。` +
-      `三步不是三个答案，是一条路：起手这一处动了，落点才会跟着变。`;
+      // 所以呢：三传自带先后顺序，拿它当时间线，不另编盘上没有的应期。
+      `所以呢，先把起手${s(sc.chu.zhi, '—')}那一处${shortOf(sc.chu)}认清楚` +
+      (sc.zhong ? `，走到中传${s(sc.zhong.zhi, '—')}（${shortOf(sc.zhong)}）别把计划定死` : '') +
+      `，要等的是末传${s(sc.mo.zhi, '—')}——${s(LIUQIN_SAY[sc.mo.liuQin], s(sc.mo.liuQin, '那一处回音'))}。`;
   }
   if (r.system === 'meihua') {
     const bu = r.bodyUse || {};
     const body = bu.body || {};
     const use = bu.use || {};
+    // 所以呢：本卦→互卦→变卦本来就是现在→中段→往后，动爻是能自己下的那一步。
+    const soBits = [`所以呢，先在${s(r.movingName, '动的那一爻')}落个最小动作`];
+    if (r.hu && r.hu.name) soBits.push(`中段看互卦「${r.hu.name}」怎么转`);
+    if (r.bian && r.bian.name) soBits.push(`最后对到变卦「${r.bian.name}」`);
     return `本卦「${s(r.ben && r.ben.name, '—')}」说的是现在这个样子` +
       (r.bian && r.bian.name ? `，动在${s(r.movingName, '其中一爻')}，之后会走成「${r.bian.name}」` : '') + '。' +
       (body.element && use.element
         ? `用体用看：体是${s(body.trigram, '—')}（${s(body.element, '—')}），代表你；用是${s(use.trigram, '—')}（${s(use.element, '—')}），代表这件事——${s(bu.relation, '两边关系看体用生克')}。`
         : '') +
       (r.hu && r.hu.name ? `中间的转折看互卦「${r.hu.name}」。` : '') +
-      `梅花给的是方向，不是几号、多少钱；要落地得你自己补一步具体动作。`;
+      `${soBits.join('，')}；方向在这一层，几号、多少钱得你自己补。`;
   }
   if (r.system === 'hepan') {
     const A = r.a || {};
@@ -543,11 +555,19 @@ export function buildPlain(r, ask, ctx = {}) {
     const dims = Array.isArray(r.dimensions) ? r.dimensions : [];
     if (!A.dayMaster || !B.dayMaster) return '';
     const tone = (d) => (Number(d.score) > 0 ? '偏顺' : Number(d.score) < 0 ? '偏紧' : '中性');
+    const tight = dims.find((d) => Number(d.score) < 0);
+    const easy = dims.filter((d) => Number(d.score) > 0).map((d) => s(d.label, '')).filter(Boolean);
+    // 所以呢：合盘没有应期，动作窗口写「下一次一起拿主意」，落到偏紧那一维，
+    // 不编「哪个月会吵」这种盘上没有的东西。
+    const soWhat = tight
+      ? `所以呢，下一次一起拿主意，先碰「${s(tight.label, '偏紧那一处')}」：它标的是偏紧，得多一次解释；` +
+        (easy.length ? `「${easy.join('、')}」偏顺，当底子就好，别反复拿来讲。` : '')
+      : (easy.length ? '所以呢，三处都偏顺，别把分数当凭据；下一次一起拿主意，还是要落到怎么说这句话上。' : '');
     return `你们是${s(A.dayMaster, '一方')}与${s(B.dayMaster, '另一方')}，盘面整体给的是「${s(sc.level, '—')}」` +
       (sc.total != null ? `（${sc.total}/100，这只是相对刻度，不是及格线）` : '') + '。' +
       (dims.length ? `三处分开看：${dims.map((d) => `${s(d.label, '')}${tone(d)}`).join('、')}。` : '') +
-      `某处偏紧不等于不合适，它说的是这里需要多花一次解释；某处偏顺也不用当成凭据。` +
-      `合盘讲的是相处方式与互补点，不判合不合；现实里怎么说话、谁先让一步，分量比这张盘重。`;
+      soWhat +
+      '合盘讲的是相处方式与互补点，不判合不合。';
   }
   return '';
 }

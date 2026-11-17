@@ -84,3 +84,62 @@ for (const [name, args, mustSay] of SAY) {
   ok('合盘没双方日主时返回空串', buildPlain({ system: 'hepan' }, {}, {}) === '');
   ok('塔罗没牌时返回空串', buildPlain({ system: 'tarot', cards: [] }, {}, {}) === '');
 }
+
+// ── 2c 第二刀：这四个体系的「所以呢」判断层 ──
+// 第一刀（e9cf81e）给八字/紫微/六爻/奇门加了「说到具体位置」，这四个还停在
+// 「描述盘面」。所以呢层要盯三件事：落到盘面哪一格、给得出下一步、不下定论。
+// 断言一律拿 r 的字段反查，写死某张牌或某个地支都算没接上盘面。
+{
+  const t3 = compute({ system: 'tarot', spread: 'three', seed: 20261115 });
+  const p3 = buildPlain(t3, {}, {});
+  const pivot3 = t3.cards.find((c) => /现在/.test(c.position));
+  ok('塔罗三张：所以呢点到「现在」这一格', /所以呢.*现在/.test(p3), p3.slice(-90));
+  ok('塔罗三张：所以呢点的是盘上那张牌名', p3.slice(p3.indexOf('所以呢')).includes(pivot3.name), p3.slice(-90));
+
+  const t5 = compute({ system: 'tarot', spread: 'five', seed: 20261115 });
+  const p5 = buildPlain(t5, {}, {});
+  const pivot5 = t5.cards.find((c) => /建议/.test(c.position));
+  ok('塔罗五张：所以呢跟着牌阵改口，落「建议」位', /所以呢.*建议/.test(p5), p5.slice(-100));
+  ok('塔罗五张：所以呢点的仍是盘上那张牌', p5.slice(p5.indexOf('所以呢')).includes(pivot5.name));
+  ok('塔罗五张：不再写死三张牌阵的「过去改不了」', !/过去改不了|往后还没到/.test(p5));
+  const t1 = compute({ system: 'tarot', spread: 'one', count: 1, seed: 7 });
+  ok('塔罗单张：所以呢也不写「过去/未来」', !/过去改不了|往后还没到/.test(buildPlain(t1, {}, {})));
+}
+{
+  const r = compute({ system: 'daliuren', datetime: '2026-11-15T10:00' });
+  const p = buildPlain(r, {}, {});
+  const so = p.slice(p.indexOf('所以呢'));
+  ok('大六壬：所以呢按三传当时间线，起手与末传都点到', /所以呢/.test(p) && so.includes(r.sanChuan.chu.zhi) && so.includes(r.sanChuan.mo.zhi), so);
+  ok('大六壬：中传那一段给的是「别定死」这类动作', so.includes(r.sanChuan.zhong.zhi) && /别把计划定死/.test(so), so);
+  ok('大六壬：所以呢把末传六亲翻成生活话（不抛术语）', /文书|答复|流程/.test(so), so);
+}
+{
+  const r = compute({ system: 'meihua', mode: 'time', datetime: '2026-10-24T11:43' });
+  const p = buildPlain(r, {}, {});
+  const so = p.slice(p.indexOf('所以呢'));
+  ok('梅花：所以呢落在动爻上', /所以呢/.test(p) && so.includes(r.movingName), so);
+  ok('梅花：所以呢把互卦/变卦当过程与落点', so.includes(r.hu.name) && so.includes(r.bian.name), so);
+  ok('梅花：所以呢给的是最小动作，不是应期', /最小动作/.test(so) && !/\d+号|\d+月/.test(so), so);
+}
+{
+  const r = compute({ system: 'hepan', datetime: '1990-05-12T14:30', gender: 'male', partner: { datetime: '1992-08-15T10:00', gender: 'female' } });
+  const p = buildPlain(r, {}, {});
+  const so = p.slice(p.indexOf('所以呢'));
+  const tight = r.dimensions.find((d) => Number(d.score) < 0);
+  ok('合盘：所以呢落到偏紧那一维，不泛泛说「多沟通」', /所以呢/.test(p) && so.includes(tight.label), so);
+  ok('合盘：动作窗口写「下一次一起拿主意」，不编月份', /下一次一起拿主意/.test(so) && !/\d+月|明年|下个月/.test(so), so);
+  ok('合盘：偏顺那几维当底子，不被拿来当凭据', /当底子就好/.test(so), so);
+}
+// 「所以呢」全层不下定论：四个体系共用一条，防以后有人往里塞断语
+{
+  const CASES = [
+    { system: 'tarot', spread: 'three', seed: 20261115 },
+    { system: 'daliuren', datetime: '2026-11-15T10:00' },
+    { system: 'meihua', mode: 'time', datetime: '2026-10-24T11:43' },
+    { system: 'hepan', datetime: '1990-05-12T14:30', gender: 'male', partner: { datetime: '1992-08-15T10:00', gender: 'female' } },
+  ];
+  for (const a of CASES) {
+    const p = buildPlain(compute(a), {}, {});
+    ok(`${a.system}：所以呢不下定论`, !/一定|必然|注定|肯定会|百分之百/.test(p.slice(p.indexOf('所以呢'))));
+  }
+}

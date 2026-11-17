@@ -762,7 +762,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：207 个测试文件 / 11464 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：207 个测试文件 / 11483 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     <h3>本版之后又改了什么（版本号未变）</h3>
     <ul><li>「最需要火」与「忌土火」不再并排</li><li>气候档名漏了两档（顺手修）</li><li>调候与《穷通宝鉴》不再各说各的</li><li>格成不真 ≠ 命不好</li><li>取用补上组合层：官杀该制还是该化</li><li>临界档位自己说出来</li><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
     <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
@@ -23305,35 +23305,47 @@ function buildPlain(r, ask, ctx = {}) {
     if (!cs.length) return '';
     const say = (c) => (Array.isArray(c.keywords) && c.keywords.length ? c.keywords.slice(0, 2).join('、') : s(c.core, ''));
     const mark = (c) => `「${s(c.name, '—')}」${s(c.orientation, '')}`;
-    const now = cs.find((c) => /现在|当下/.test(String(c.position))) || cs[Math.floor(cs.length / 2)] || cs[0];
+    const now = cs.find((c) => /现在|当下|现况|建议|核心/.test(String(c.position))) || cs[Math.floor(cs.length / 2)] || cs[0];
+    const next = cs[cs.indexOf(now) + 1];
     const head = cs.length === 1
       ? `这张牌是${mark(cs[0])}，说的是${s(say(cs[0]), '一件事的底色')}。`
       : `${cs.length} 张牌不是在给 ${cs.length} 个答案，是同一条线上的几个点：` +
         cs.map((c) => `${s(c.position, '')}${mark(c)}，${s(say(c), '')}`).join('；') + '。';
-    return `${head}最值得先看的是${s(now.position, '当下')}这张——过去改不了，往后还没到，能动的只有眼前这一步。`;
+    // 「所以呢」落在牌位本身：不写死「过去/未来」——五张牌阵没有这两个位子，
+    // 写死会在建议位读不通。下一格顺势带出来，眼前能落手的只有这一张。
+    return `${head}所以呢，先动「${s(now.position, '当下')}·${s(now.name, '这张')}」——${s(say(now), '先看它写了什么')}` +
+      (next ? `；后面「${s(next.position, '往后')}」是顺着它走出来的，眼下能落手的就这一格。` : '；眼下能落手的就这一格。');
   }
   if (r.system === 'daliuren') {
     const sc = r.sanChuan || {};
     if (!sc.chu || !sc.mo) return '';
     const g = r.geJu || {};
     const sayOf = (x) => `${s(x.zhi, '—')}（${s(LIUQIN_SAY[x.liuQin], s(x.liuQin, '—'))}）`;
+    const shortOf = (x) => s(LIUQIN_SHORT[x && x.liuQin], s(x && x.liuQin, '那一处'));
     return `这一课看的是事情怎么走到这一步。三传是三步：起手在${sayOf(sc.chu)}，` +
       (sc.zhong ? `中间经过${sayOf(sc.zhong)}，` : '') +
       `落点在${sayOf(sc.mo)}。` +
       `课体是「${s(g.name, '—')}」${g.detail ? `（${g.detail}）` : ''}，说的是这盘推演的走法，不是吉凶。` +
-      `三步不是三个答案，是一条路：起手这一处动了，落点才会跟着变。`;
+      // 所以呢：三传自带先后顺序，拿它当时间线，不另编盘上没有的应期。
+      `所以呢，先把起手${s(sc.chu.zhi, '—')}那一处${shortOf(sc.chu)}认清楚` +
+      (sc.zhong ? `，走到中传${s(sc.zhong.zhi, '—')}（${shortOf(sc.zhong)}）别把计划定死` : '') +
+      `，要等的是末传${s(sc.mo.zhi, '—')}——${s(LIUQIN_SAY[sc.mo.liuQin], s(sc.mo.liuQin, '那一处回音'))}。`;
   }
   if (r.system === 'meihua') {
     const bu = r.bodyUse || {};
     const body = bu.body || {};
     const use = bu.use || {};
+    // 所以呢：本卦→互卦→变卦本来就是现在→中段→往后，动爻是能自己下的那一步。
+    const soBits = [`所以呢，先在${s(r.movingName, '动的那一爻')}落个最小动作`];
+    if (r.hu && r.hu.name) soBits.push(`中段看互卦「${r.hu.name}」怎么转`);
+    if (r.bian && r.bian.name) soBits.push(`最后对到变卦「${r.bian.name}」`);
     return `本卦「${s(r.ben && r.ben.name, '—')}」说的是现在这个样子` +
       (r.bian && r.bian.name ? `，动在${s(r.movingName, '其中一爻')}，之后会走成「${r.bian.name}」` : '') + '。' +
       (body.element && use.element
         ? `用体用看：体是${s(body.trigram, '—')}（${s(body.element, '—')}），代表你；用是${s(use.trigram, '—')}（${s(use.element, '—')}），代表这件事——${s(bu.relation, '两边关系看体用生克')}。`
         : '') +
       (r.hu && r.hu.name ? `中间的转折看互卦「${r.hu.name}」。` : '') +
-      `梅花给的是方向，不是几号、多少钱；要落地得你自己补一步具体动作。`;
+      `${soBits.join('，')}；方向在这一层，几号、多少钱得你自己补。`;
   }
   if (r.system === 'hepan') {
     const A = r.a || {};
@@ -23342,11 +23354,19 @@ function buildPlain(r, ask, ctx = {}) {
     const dims = Array.isArray(r.dimensions) ? r.dimensions : [];
     if (!A.dayMaster || !B.dayMaster) return '';
     const tone = (d) => (Number(d.score) > 0 ? '偏顺' : Number(d.score) < 0 ? '偏紧' : '中性');
+    const tight = dims.find((d) => Number(d.score) < 0);
+    const easy = dims.filter((d) => Number(d.score) > 0).map((d) => s(d.label, '')).filter(Boolean);
+    // 所以呢：合盘没有应期，动作窗口写「下一次一起拿主意」，落到偏紧那一维，
+    // 不编「哪个月会吵」这种盘上没有的东西。
+    const soWhat = tight
+      ? `所以呢，下一次一起拿主意，先碰「${s(tight.label, '偏紧那一处')}」：它标的是偏紧，得多一次解释；` +
+        (easy.length ? `「${easy.join('、')}」偏顺，当底子就好，别反复拿来讲。` : '')
+      : (easy.length ? '所以呢，三处都偏顺，别把分数当凭据；下一次一起拿主意，还是要落到怎么说这句话上。' : '');
     return `你们是${s(A.dayMaster, '一方')}与${s(B.dayMaster, '另一方')}，盘面整体给的是「${s(sc.level, '—')}」` +
       (sc.total != null ? `（${sc.total}/100，这只是相对刻度，不是及格线）` : '') + '。' +
       (dims.length ? `三处分开看：${dims.map((d) => `${s(d.label, '')}${tone(d)}`).join('、')}。` : '') +
-      `某处偏紧不等于不合适，它说的是这里需要多花一次解释；某处偏顺也不用当成凭据。` +
-      `合盘讲的是相处方式与互补点，不判合不合；现实里怎么说话、谁先让一步，分量比这张盘重。`;
+      soWhat +
+      '合盘讲的是相处方式与互补点，不判合不合。';
   }
   return '';
 }
