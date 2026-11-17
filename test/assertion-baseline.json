@@ -1,7 +1,11 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 11616,
+  "total": 11661,
   "files": {
+    "a11y-semantic.test.mjs": {
+      "pass": 20,
+      "fail": 0
+    },
     "adapters-extra.test.mjs": {
       "pass": 87,
       "fail": 0
@@ -19,7 +23,7 @@
       "fail": 0
     },
     "ask-prompt.test.mjs": {
-      "pass": 89,
+      "pass": 97,
       "fail": 0
     },
     "ask.test.mjs": {
@@ -523,7 +527,7 @@
       "fail": 0
     },
     "plain-summary.test.mjs": {
-      "pass": 159,
+      "pass": 163,
       "fail": 0
     },
     "preflight.test.mjs": {
@@ -831,7 +835,7 @@
       "fail": 0
     },
     "ziwei-words.test.mjs": {
-      "pass": 56,
+      "pass": 69,
       "fail": 0
     },
     "ziwei-zuoyao.test.mjs": {

@@ -3493,7 +3493,7 @@ h3.mp-env-adv-h{display:block}
         <div class="mp-cg-verse">${lines || '<span class="mp-cg-miss">该骨重未见通行本歌诀</span>'}</div>
         <div class="mp-cg-plain"><em>释义</em>${esc(song.plain || '')}</div></div>
       ${r.verdict && r.verdict.text ? `<div class="mp-cg-band"><em>分档</em>${esc(r.verdict.text)}</div>` : ''}
-      <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
+      <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；男女同表，本盘只收一套歌诀，旧本另有女命歌诀此处不另出；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
     </section>`;
   };
 
@@ -3667,7 +3667,8 @@ h3.mp-env-adv-h{display:block}
     const ssTag = (x) => `<span class="ss-s ${x.luck || 'neutral'}" title="${esc(`${x.cat} · ${x.via}查${x.target} ｜ ${x.rule}`)}">${x.name}</span>`;
     // data-c：竖屏 2×2 重排时每格左上角标注柱名（桌面端不显示）
     const line = (label, fn) => `<tr><td class="bz-lbl">${label}</td>${cols.map(([k]) => `<td data-c="${SHORT[k]}">${fn(r.pillars[k], k)}</td>`).join('')}</tr>`;
-    const head = `<thead><tr><th></th>${cols.map(([k, n]) => `<th${k === 'day' ? ' class="bz-hdr-day"' : ''}>${n}</th>`).join('')}</tr></thead>`;
+    // 表头每格都要 scope=col：漏了它，读屏会把「年/月/日/时」读成一串无归属的单元格名
+    const head = `<thead><tr><th scope="col" aria-label="项目"></th>${cols.map(([k, n]) => `<th scope="col"${k === 'day' ? ' class="bz-hdr-day"' : ''}>${n}</th>`).join('')}</tr></thead>`;
     // 五行旺相休囚死：以月令当令五行为基准，沿生克关系把其余四行推出来
     const SEASON_EL = { 寅: '木', 卯: '木', 巳: '火', 午: '火', 申: '金', 酉: '金', 亥: '水', 子: '水', 辰: '土', 戌: '土', 丑: '土', 未: '土' };
     const GEN = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };

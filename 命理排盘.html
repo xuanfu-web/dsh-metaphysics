@@ -538,8 +538,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
       <span class="recent-list" id="recent-list"></span>
     </div>
     <div class="groups" id="groups">
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>问一件事</h2><p>心里有一件具体的事，起一卦再决定</p></div>
+      <section class="tgroup" aria-labelledby="tg-h-0">
+        <div class="tgroup-head"><h2 id="tg-h-0">问一件事</h2><p>心里有一件具体的事，起一卦再决定</p></div>
         <div class="ttools">
           <button type="button" class="tool" data-tab="liuyao" title="问一件具体事，最接地气"><b>六爻</b><span>问一件具体事，最接地气</span></button>
           <button type="button" class="tool" data-tab="tarot" title="抽牌看选择"><b>塔罗</b><span>抽牌看选择</span></button>
@@ -548,8 +548,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>看一个人</h2><p>看自己或身边人的性情与格局</p></div>
+      <section class="tgroup" aria-labelledby="tg-h-1">
+        <div class="tgroup-head"><h2 id="tg-h-1">看一个人</h2><p>看自己或身边人的性情与格局</p></div>
         <div class="ttools">
           <button type="button" class="tool" data-tab="bazi" title="看这人一辈子的大盘"><b>八字</b><span>看这人一辈子的大盘</span></button>
           <button type="button" class="tool" data-tab="ziwei" title="分宫细看哪方面顺哪方面堵"><b>紫微</b><span>分宫细看哪方面顺哪方面堵</span></button>
@@ -560,8 +560,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>查日子</h2><p>挑时间、换农历，看一年的气与方位</p></div>
+      <section class="tgroup" aria-labelledby="tg-h-2">
+        <div class="tgroup-head"><h2 id="tg-h-2">查日子</h2><p>挑时间、换农历，看一年的气与方位</p></div>
         <div class="ttools">
           <button type="button" class="tool" data-tab="almanac" title="今日宜忌"><b>黄历</b><span>今日宜忌</span></button>
           <button type="button" class="tool" data-tab="zeri" title="挑好日子"><b>择日</b><span>挑好日子</span></button>
@@ -572,8 +572,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
-      <section class="tgroup">
-        <div class="tgroup-head"><h2>古籍考据</h2><p>古法三式与整年气运：偏研究向，日常咨询少用</p></div>
+      <section class="tgroup" aria-labelledby="tg-h-3">
+        <div class="tgroup-head"><h2 id="tg-h-3">古籍考据</h2><p>古法三式与整年气运：偏研究向，日常咨询少用</p></div>
         <div class="ttools">
           <button type="button" class="tool" data-tab="qimen" title="看方位时机"><b>奇门</b><span>看方位时机</span></button>
           <button type="button" class="tool" data-tab="daliuren" title="占事断来意"><b>六壬</b><span>占事断来意</span></button>
@@ -826,15 +826,15 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 
   <main id="out"></main>
 
-  <section id="method" class="method no-print" hidden>
-    <h2>方法与验证</h2>
+  <section id="method" class="method no-print" hidden aria-labelledby="method-h">
+    <h2 id="method-h">方法与验证</h2>
     <p class="note">这个页面只做一件事：把「结论是怎么来的、验证到什么程度」交代清楚。</p>
     <h3>八套体系，全部本地计算</h3>
     <ul><li>八字（四柱 · 藏干 · 十神 · 神煞 · 大运流年 · 格局用神）</li><li>紫微斗数（安星 · 四化 · 大限 · 流年/流月/流日/流时）</li><li>六爻纳甲（装卦 · 六亲 · 六神 · 世应 · 变卦 · 旬空）</li><li>梅花易数 · 大六壬 · 奇门遁甲 · 合盘 · 塔罗</li></ul>
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：210 个测试文件 / 11616 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：211 个测试文件 / 11661 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -20191,7 +20191,9 @@ function buildChenggu(input) {
       '歌诀：通行本《称骨歌》原文照录（各版本有异文，断句标点已统一）',
       '释义：白话自撰，非歌诀原文，只作字面直解',
     ],
-    disclaimer: '骨重与歌诀均为通行本口径，属民俗娱乐参考；释义为白话解释，不构成命运断言。',
+    // 性别不进计算：骨重表（年/月/日/时四项）通行本不分男女，歌诀也只收一套。
+    // 旧本另有女命歌诀，本盘不收——不写这句，女命用户会以为自己看到的是女命断语。
+    disclaimer: '骨重表与歌诀均为通行本口径，男女同表：本盘只收一套歌诀，旧本另有女命歌诀，此处不另出；属民俗娱乐参考，释义为白话解释，不构成命运断言。',
   };
 }
 
@@ -40461,7 +40463,7 @@ h3.mp-env-adv-h{display:block}
         <div class="mp-cg-verse">${lines || '<span class="mp-cg-miss">该骨重未见通行本歌诀</span>'}</div>
         <div class="mp-cg-plain"><em>释义</em>${esc(song.plain || '')}</div></div>
       ${r.verdict && r.verdict.text ? `<div class="mp-cg-band"><em>分档</em>${esc(r.verdict.text)}</div>` : ''}
-      <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
+      <div class="mp-cg-note">骨重与歌诀为通行本口径（各版本歌诀有异文，断句标点已统一）；男女同表，本盘只收一套歌诀，旧本另有女命歌诀此处不另出；释义为白话自撰，只作字面直解，属民俗娱乐参考，不构成命运断言。</div>
     </section>`;
   };
 
@@ -40635,7 +40637,8 @@ h3.mp-env-adv-h{display:block}
     const ssTag = (x) => `<span class="ss-s ${x.luck || 'neutral'}" title="${esc(`${x.cat} · ${x.via}查${x.target} ｜ ${x.rule}`)}">${x.name}</span>`;
     // data-c：竖屏 2×2 重排时每格左上角标注柱名（桌面端不显示）
     const line = (label, fn) => `<tr><td class="bz-lbl">${label}</td>${cols.map(([k]) => `<td data-c="${SHORT[k]}">${fn(r.pillars[k], k)}</td>`).join('')}</tr>`;
-    const head = `<thead><tr><th></th>${cols.map(([k, n]) => `<th${k === 'day' ? ' class="bz-hdr-day"' : ''}>${n}</th>`).join('')}</tr></thead>`;
+    // 表头每格都要 scope=col：漏了它，读屏会把「年/月/日/时」读成一串无归属的单元格名
+    const head = `<thead><tr><th scope="col" aria-label="项目"></th>${cols.map(([k, n]) => `<th scope="col"${k === 'day' ? ' class="bz-hdr-day"' : ''}>${n}</th>`).join('')}</tr></thead>`;
     // 五行旺相休囚死：以月令当令五行为基准，沿生克关系把其余四行推出来
     const SEASON_EL = { 寅: '木', 卯: '木', 巳: '火', 午: '火', 申: '金', 酉: '金', 亥: '水', 子: '水', 辰: '土', 戌: '土', 丑: '土', 未: '土' };
     const GEN = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' };
@@ -45188,6 +45191,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   setTimeout(drop, 6000);
 })();
 </script>
-<script>if ("serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127.0.0.1|[::1])$/.test(location.hostname))) { addEventListener("load", function () { try { navigator.serviceWorker.register("./sw.js").catch(function () {}); } catch (e) {} }); }</script>
+<!-- Service Worker：只有 https 部署（docs 站）才注册。本地 http 预览时同目录没有 sw.js，
+     带上 localhost 分支等于每次开页面都发一个必然 404 的请求（错误被 catch 吞掉，只剩控制台噪音）。 -->
+<script>if ("serviceWorker" in navigator && location.protocol === "https:") { addEventListener("load", function () { try { navigator.serviceWorker.register("./sw.js").catch(function () {}); } catch (e) {} }); }</script>
 </body>
 </html>

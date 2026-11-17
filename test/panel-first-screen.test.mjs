@@ -40,7 +40,7 @@ ok('面板源码里不再内联分组文案', !app.includes("title: '问一件�
 ok('构建把 GROUPS 注入 client', /window\.__MPGroups = \$\{JSON\.stringify\(GROUPS\)\}/.test(clientBuild));
 ok('构建 client 时引入 groups.mjs', /from '\.\.\/src\/groups\.mjs'/.test(clientBuild));
 ok('页面构建引入 groups.mjs', /from '\.\.\/src\/groups\.mjs'/.test(pageBuild));
-ok('页面分组由 GROUPS 生成', /\$\{GROUPS\.map\(\(g\) => `/.test(pageBuild));
+ok('页面分组由 GROUPS 生成', /\$\{GROUPS\.map\(\(g, gi\) => `/.test(pageBuild));
 
 // ── ④ 页面产物与分组数据逐项一致 ───────────────────────────────
 const pageTools = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="([a-z]+)"(?: title="[^"]*")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)]

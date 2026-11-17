@@ -577,8 +577,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
       <span class="recent-list" id="recent-list"></span>
     </div>
     <div class="groups" id="groups">
-${GROUPS.map((g) => `      <section class="tgroup">
-        <div class="tgroup-head"><h2>${g.title}</h2><p>${g.hint}</p></div>
+${GROUPS.map((g, gi) => `      <section class="tgroup" aria-labelledby="tg-h-${gi}">
+        <div class="tgroup-head"><h2 id="tg-h-${gi}">${g.title}</h2><p>${g.hint}</p></div>
         <div class="ttools">
 ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' wide' : ''}" data-tab="${it.k}" title="${it.tip}"><b>${it.label}</b><span>${it.tip}</span></button>`).join('\n')}
           <button type="button" class="tmore" aria-expanded="false"></button>
@@ -829,8 +829,8 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
 
   <main id="out"></main>
 
-  <section id="method" class="method no-print" hidden>
-    <h2>方法与验证</h2>
+  <section id="method" class="method no-print" hidden aria-labelledby="method-h">
+    <h2 id="method-h">方法与验证</h2>
     <p class="note">这个页面只做一件事：把「结论是怎么来的、验证到什么程度」交代清楚。</p>
     <h3>八套体系，全部本地计算</h3>
     <ul><li>八字（四柱 · 藏干 · 十神 · 神煞 · 大运流年 · 格局用神）</li><li>紫微斗数（安星 · 四化 · 大限 · 流年/流月/流日/流时）</li><li>六爻纳甲（装卦 · 六亲 · 六神 · 世应 · 变卦 · 旬空）</li><li>梅花易数 · 大六壬 · 奇门遁甲 · 合盘 · 塔罗</li></ul>
@@ -876,7 +876,9 @@ ${ui}
   setTimeout(drop, 6000);
 })();
 </script>
-<script>if ("serviceWorker" in navigator && (location.protocol === "https:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname))) { addEventListener("load", function () { try { navigator.serviceWorker.register("./sw.js").catch(function () {}); } catch (e) {} }); }</script>
+<!-- Service Worker：只有 https 部署（docs 站）才注册。本地 http 预览时同目录没有 sw.js，
+     带上 localhost 分支等于每次开页面都发一个必然 404 的请求（错误被 catch 吞掉，只剩控制台噪音）。 -->
+<script>if ("serviceWorker" in navigator && location.protocol === "https:") { addEventListener("load", function () { try { navigator.serviceWorker.register("./sw.js").catch(function () {}); } catch (e) {} }); }</script>
 </body>
 </html>
 `;

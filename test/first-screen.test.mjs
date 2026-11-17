@@ -19,9 +19,10 @@ const toolList = [...html.matchAll(/<button type="button" class="tool(?: wide)?"
 ok('首屏分组区存在', /<section class="start" id="start"/.test(html));
 eq('四个分组', (html.match(/class="tgroup"/g) || []).length, 4);
 {
-  const heads = [...html.matchAll(/<div class="tgroup-head"><h2>([^<]+)<\/h2><p>([^<]+)<\/p><\/div>/g)].map((m) => m[1]);
+  // h2 挂 id="tg-h-N"，供所在 section 的 aria-labelledby 引用（读屏才念得出这是哪个区块）
+  const heads = [...html.matchAll(/<div class="tgroup-head"><h2 id="tg-h-\d+">([^<]+)<\/h2><p>([^<]+)<\/p><\/div>/g)].map((m) => m[1]);
   eq('组名与顺序', heads.join(','), '问一件事,看一个人,查日子,古籍考据');
-  const hints = [...html.matchAll(/<div class="tgroup-head"><h2>[^<]+<\/h2><p>([^<]+)<\/p><\/div>/g)].map((m) => m[1]);
+  const hints = [...html.matchAll(/<div class="tgroup-head"><h2 id="tg-h-\d+">[^<]+<\/h2><p>([^<]+)<\/p><\/div>/g)].map((m) => m[1]);
   eq('每组都有一句白话提示', hints.length, 4);
   ok('提示不是占位文案', hints.every((h) => h.length >= 8), hints.join(' / '));
 }
