@@ -13,7 +13,7 @@ import { shuliOf } from '../engine/name.js';
 import { buildLiuyao, yongshenOf, yongshenStrength, fushenAccess, hexagramStrength, jinTuiPower, yingqiWindow } from '../engine/liuyao.js';
 import { tarotReading } from '../engine/tarot.js';
 import { buildMbti } from '../engine/mbti.js';
-import { ok } from './_harness.mjs';
+import { ok, eq } from './_harness.mjs';
 
 /** 断言"必须抛错"，并核对错误码 */
 function throws(label, fn, expectCode) {
@@ -475,4 +475,32 @@ const dateOnly = (sys, extra = {}) => compute({ system: sys, datetime: '1990-05-
   const noEI = buildMbti({ answers: Array.from({ length: 24 }, (_, i) => (i % 4 === 0 ? null : 4)) });
   ok('MBTI 整维未答时列出维度', Array.isArray(noEI.unanswered) && noEI.unanswered.join(',') === 'EI', JSON.stringify(noEI.unanswered));
   ok('MBTI 未答维度写进说明', /EI.*一题未答/.test(noEI.note), noEI.note);
+}
+
+console.log('\n[模式推断：给了数字就按数字算，不许静默换成时间起卦]');
+{
+  // 起因：mode 缺省时旧代码一律按 time 走。梅花只给 upper/lower 被报成「缺少 datetime」；
+  // 小六壬只给 num1–3 则被工具层补上「此刻」的钟点，三个数静默作废——一个报错、一个不报错，
+  // 都是错盘。两种模式都能起卦，入参本身就说明了是哪一种。
+  const mhNums = compute({ system: 'meihua', upper: 3, lower: 5 });
+  const mhExplicit = compute({ system: 'meihua', mode: 'number', upper: 3, lower: 5 });
+  eq('梅花只给两数 → 判为数字起卦', mhNums.mode, 'number');
+  eq('梅花只给两数 → 与显式 mode:number 同卦', mhNums.ben.name, mhExplicit.ben.name);
+  eq('梅花只给两数 → 动爻也一致', mhNums.moving, mhExplicit.moving);
+  ok('梅花只给两数不再报「缺少 datetime」', !/缺少 datetime/.test(String(mhNums.summary || '')), String(mhNums.summary || '').slice(0, 60));
+
+  const xlNums = compute({ system: 'xiaoliuren', num1: 3, num2: 8, num3: 5 });
+  const xlExplicit = compute({ system: 'xiaoliuren', mode: 'number', num1: 3, num2: 8, num3: 5 });
+  eq('小六壬只给三数 → 判为报数起课', xlNums.meta.mode, '报数起课');
+  eq('小六壬只给三数 → 与显式 mode:number 落同宫', xlNums.result.palace, xlExplicit.result.palace);
+  ok('小六壬只给三数 → 摘要里是「报数」，不是农历时辰', /报数/.test(xlNums.summary) && !/时间起课/.test(xlNums.summary), xlNums.summary.split('\n')[0]);
+
+  // 两组都给却不指明用哪组：谁被丢掉都是静默错盘，宁可要一句能照做的报错
+  throws('小六壬 时间与报数同时给、不写 mode → E_INPUT',
+    () => compute({ system: 'xiaoliuren', num1: 3, num2: 8, num3: 5, date: '2026-11-17', hour: 10 }), 'E_INPUT');
+  throws('梅花 datetime 与两数同时给、不写 mode → E_INPUT',
+    () => compute({ system: 'meihua', datetime: '2026-11-17T10:00', upper: 3, lower: 5 }), 'E_INPUT');
+  // 显式 mode 仍然说了算：给了日期也不会被误判成歧义
+  notThrows('小六壬 显式 mode:number 时同时给 date 不拦', () => compute({ system: 'xiaoliuren', mode: 'number', num1: 3, num2: 8, num3: 5, date: '2026-11-17' }));
+  notThrows('梅花 显式 mode:time 时带两数仍按时间起卦', () => compute({ system: 'meihua', mode: 'time', datetime: '2026-11-17T10:00', upper: 3, lower: 5 }));
 }

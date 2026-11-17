@@ -450,39 +450,11 @@ const { useState, useEffect, useRef } = React;
 // 原生 <input type="date"> 的显示顺序由浏览器区域决定，非中文区域会显示成
 // 月/日/年，用户很容易填反。这里统一成文本输入 + 数字掩码：
 // 只接受数字，自动补成 YYYY-MM-DD；也认 1990/5/12、1990年5月12日 这类写法。
-const pad2 = (n) => String(n).padStart(2, '0');
-function isoDateOk(s) {
-  const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
-  if (!ymd) return false;
-  const y = Number(ymd[1]);
-  const mo = Number(ymd[2]);
-  const d = Number(ymd[3]);
-  if (mo < 1 || mo > 12 || d < 1) return false;
-  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return d <= days[mo - 1];
-}
-function normalizeDateText(raw) {
-  const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
-  if (!ymd) return '';
-  const iso = `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`;
-  return isoDateOk(iso) ? iso : '';
-}
-function maskDateText(raw) {
-  const s = String(raw || '').trim();
-  // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
-  // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
-  // 斜杠/中文/点号视为粘贴，直接归一。
-  if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
-  if (/[年月日/.]/.test(s)) {
-    const full = normalizeDateText(s);
-    if (full) return full;
-  }
-  const digits = s.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 4) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
-}
+// 实现只存一份，在 src/panel-kit.js 的「共用小工具」；这里只转调用——
+// 两条链各写一遍时，改一边忘另一边就会出现「面板认的写法独立页不认」。
+function isoDateOk(s) { return window.__PP.isoDateOk(s); }
+function normalizeDateText(raw) { return window.__PP.normalizeDateText(raw); }
+function maskDateText(raw) { return window.__PP.maskDateText(raw); }
 
 function DateInput(props) {
   const value = props.value || '';
@@ -728,12 +700,9 @@ const RECENT_KEY = 'mp.recent.tabs';
 const VIEW_KEY = 'mp.first.view';
 const RECENT_MAX = 3;
 
-function storeGet(key) {
-  try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
-}
-function storeSet(key, val) {
-  try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
-}
+// 存储读写只在共用层存一份（panel-kit 的「共用小工具」），取不到一律静默降级
+function storeGet(key) { return window.__PP.storeGet(key); }
+function storeSet(key, val) { window.__PP.storeSet(key, val); }
 
 // ── 面板侧的结果缓存（与独立页同一套口径，键的算法不同）────────────
 // 键直接对「喂给引擎的那个 args」求哈希。面板的输入散在十几个 state 里，
@@ -749,14 +718,8 @@ const RESULT_ITEM_MAX = 500000;
 const STATS = { computeHits: 0, cacheHits: 0 };
 if (typeof window !== 'undefined') window.__MPStats = STATS;
 
-function hash36(s) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 0x01000193);
-  }
-  return (h >>> 0).toString(36);
-}
+// 哈希与独立页共用一份：两处各写一个版本，缓存键就会悄悄分叉
+function hash36(s) { return window.__PP.hash36(s); }
 
 function resultCacheMap() {
   const m = storeGet(RESULT_KEY);
@@ -786,20 +749,11 @@ function resultCacheWrite(key, rec) {
   } catch (e) { /* 写不进就不缓存，不影响这次排盘 */ }
 }
 
-function dayLabel(ts) {
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return '';
-  const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((day(new Date()) - day(d)) / 86400000);
-  if (diff <= 0) return '今天';
-  if (diff === 1) return '昨天';
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
+/** 今天 / 昨天 / 月-日：中文日期标签只在共用层算一次 */
+function dayLabel(ts) { return window.__PP.dayLabel(ts); }
 
-function nowParts() {
-  const d = new Date();
-  return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
-}
+/** 本机当前时刻（本地时区）：共用层同一份，面板与独立页不会差一分钟 */
+function nowParts() { return window.__PP.nowParts(); }
 
 // ── 时间语义分类 ────────────────────────────────────────────────
 // birth：八字 / 紫微 —— 要的是「出生时间」，必然是过去，用示例默认，不取当前时刻

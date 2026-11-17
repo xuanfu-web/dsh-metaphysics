@@ -49,7 +49,21 @@ function relation(bodyEl, useEl) {
  */
 export function buildMeihua(input = {}) {
   if (!input || typeof input !== 'object') throw fail('E_INPUT', '梅花起卦参数不能为空：时间起卦要 datetime，数字起卦要 upper / lower');
-  const mode = input.mode === 'number' ? 'number' : 'time';
+  // 模式推断：mode 没给时按入参自己认。以前默认 'time'，只给 upper / lower 会被判成
+  // 「时间起卦缺 datetime」，报错还把人往日期上引——用户给的是两个数，要的也是数字卦。
+  const numsGiven = (input.upper !== undefined && input.upper !== null && input.upper !== '')
+    || (input.lower !== undefined && input.lower !== null && input.lower !== '');
+  const timeGiven = typeof input.datetime === 'string' && input.datetime.trim() !== '';
+  let mode;
+  if (input.mode === 'number' || input.mode === 'time') {
+    mode = input.mode;
+  } else if (numsGiven && timeGiven) {
+    throw fail('E_INPUT', 'datetime 与 upper / lower 同时给了：请用 mode 指明 time（按时间起卦）还是 number（数字起卦），两组不能同时生效');
+  } else if (numsGiven) {
+    mode = 'number';
+  } else {
+    mode = 'time';
+  }
   let upperNum;
   let lowerNum;
   let moving;

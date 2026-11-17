@@ -2,11 +2,16 @@
 //
 // 通过 tools/build-html.mjs 导出的 page() 直接取页面源码，避免依赖磁盘上那份可能过期的产物。
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { page } from '../tools/build-html.mjs';
 import { ok } from './_harness.mjs';
 
 const html = page();
 const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
+const root = fileURLToPath(new URL('..', import.meta.url));
 
 // ── ① 八个 tab ─────────────────────────────────────────────
 const tabs = [...html.matchAll(/<button class="tab" data-tab="([a-z]+)"/g)].map((m) => m[1]);
@@ -67,4 +72,15 @@ ok('core 已内联', (html.match(/__MPCore/g) || []).length >= 3);
   ok('仓库根的离线页与构建结果一致', disk === html, `磁盘 ${disk.length} 字节 / 构建 ${html.length} 字节`);
   const src = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta.url), 'utf8');
   ok('构建默认写进包根（不是仓库外）', /path\.resolve\(root, '命理排盘\.html'\)/.test(src) && !/path\.resolve\(root, '\.\.', '命理排盘\.html'\)/.test(src));
+
+  // 入口守卫：argv[1] 可能是相对路径，插件在宿主里又是符号链接（Node 按真实路径给
+  // import.meta.url）。两边不归一到 realpath，守卫就永远不成立——不写文件、退出码 0，
+  // 页面停在旧版本。这里先钉写法，再真按文档那条命令跑一次。
+  ok('入口守卫两边都取 realpath', /fs\.realpathSync\(path\.resolve\(process\.argv\[1\]\)\)/.test(src) &&
+    /fileURLToPath\(import\.meta\.url\)/.test(src));
+  const tmp = path.join(os.tmpdir(), `mp-build-html-${process.pid}-${Date.now()}.html`);
+  const r = spawnSync(process.execPath, ['tools/build-html.mjs', '--out', tmp], { cwd: root, encoding: 'utf8' });
+  ok('照文档用相对路径执行，真的写出文件', r.status === 0 && fs.existsSync(tmp), (r.stderr || r.stdout || '').slice(0, 200));
+  ok('相对路径写出的内容与 page() 逐字一致', fs.existsSync(tmp) && fs.readFileSync(tmp, 'utf8') === html);
+  try { fs.unlinkSync(tmp); } catch (e) { /* 临时文件删不掉不影响结论 */ }
 }

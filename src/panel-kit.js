@@ -1,20 +1,36 @@
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
+//
+// 这个文件 366KB，但**不拆**：一百多份测试把它当「一段自包含脚本」用
+// `vm.runInNewContext(读到的源码)` 直接跑——拆成多份就得让每一份读取都经过拼接器，
+// 等于把「源码本身就是可执行脚本」这条最有价值的保证，换成「拼接器没写错」这个新假设。
+// 读不动的时候按下面的分区找，别从头翻：
+//
+//   开头     ── CSS ──       报告 / 卡片 / 深色 / 打印 / 窄屏全部样式（构建期剥注释，源码保留）
+//   之后     ── 共用小工具 ──  esc / 日期 / 存储 / 哈希等，两条链只此一份（window.__PP 暴露）
+//   之后     ── 盘面渲染 ──    各体系卡片：八字 / 紫微 / 六爻 / 梅花 / 六壬 / 塔罗 / 黄历 …
+//   末尾     ── 报告编排 ──    结论卡 → 一眼看 → 盘面 → 解析 → 追问，以及 pp.CSS 的挂载
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#696356;--faint:#726b5c;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
+  /* 小字对比度：--label 管 11–12.5px 的段标题、表头、折叠条，--faint 管年岁、单位、注解。
+     原值 #8a8378 / #a9a296 在 --bg 上只有 3.35:1 与 2.26:1——小字本身就小，再压灰就等于没写。
+     现值在 bg / card / band 三种底上都不低于 4.5:1（WCAG AA 的小字线），层级靠字号与字重拉开。 */
   /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
      同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
   /* 水墨风：宣纸白为底、淡墨分层；米黄系整体降饱和，纸感靠 --band 的微暖留一点 */
   --bg:#f4f2ec;--card:#fdfdfb;--band:#f7f5ef;--hover:#eeece5;--hover2:#e6e4dc;
   --tri:#eef0ea;--soul:#f7ece9;--sel:#f5efe9;--link:#f0efe9;
-  --red:#a02c26;--red-rgb:160,44,38;--env-good:var(--env-good);--env-warn:var(--env-warn);--env-alt:var(--env-alt);--lu:#3d5a52;--lu-rgb:61,90,82;
+  --red:#a02c26;--red-rgb:160,44,38;--env-good:#2f6b4f;--env-warn:#7d5410;--env-alt:#3a5570;--lu:#3d5a52;--lu-rgb:61,90,82;
   --quan:#6e5a2e;--quan-rgb:110,90,46;--ke:#3a5568;--ke-rgb:58,85,104;--ji:#a02c26;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:var(--on-accent);--wx-metal:#8a6b1f;
   --tg-bi:#4e5d6b;--tg-shi:#55685c;--tg-cai:#6e5a2e;--tg-guan:#8a4a42;--tg-yin:#5d5570;
   /* 之前 mp-cli / mp-qt / mp-cl / 起名卡里引用了 --ink3、--fx、--sans，却从未定义：
-     var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。 */
-  --ink3:#8a8378;--fx:"Kaiti SC",KaiTi,"STKaiti","Songti SC",serif;--sans:system-ui,-apple-system,"Microsoft YaHei",sans-serif;--kai:"Kaiti SC",KaiTi,"STKaiti",serif;
+     var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。
+     同一类坑还有一处：--env-good / --env-warn / --env-alt 当时写成 var(--自己)，
+     自引用同样让整条声明作废——浅色下「能成 / 要看条件 / 两头都有」三枚标签全靠继承色，
+     看上去一模一样。现在按 --card 上的对比度（5.8–7.6:1）给实值；深色那套本来就对，不动。 */
+  --ink3:#726b5c;--fx:"Kaiti SC",KaiTi,"STKaiti","Songti SC",serif;--sans:system-ui,-apple-system,"Microsoft YaHei",sans-serif;--kai:"Kaiti SC",KaiTi,"STKaiti",serif;
   --shadow:0 1px 2px rgba(35,28,18,.05),0 18px 40px -30px rgba(35,28,18,.42),
     /* 动效与圆角令牌：全站同一节奏（借鉴 wallpaper-engine 的 --we-dur/--we-ease 约定），
        reduced-motion 时整体关停，见文件尾的全局 @media。 */
@@ -40,7 +56,7 @@
     --quan:#c9a96a;--quan-rgb:201,169,106;--ke:#8aadc0;--ke-rgb:138,173,192;--ji:#e08a7a;
     --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
     --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0;
-    --ink3:#8b8478;
+    --ink3:#a9a193;
     --dur:150ms;--dur-fast:100ms;--ease:cubic-bezier(.32,.72,.24,1);
     --r-sm:6px;--r-md:10px;--r-lg:14px;
     --glow:0 0 0 1px rgba(var(--lu-rgb),.3),0 0 14px rgba(var(--lu-rgb),.16);
@@ -1678,7 +1694,7 @@
 .mp-prof-ops button.on{color:var(--quan);border-color:var(--quan)}
 /* 触屏没有 hover：改名/置顶/删除若只靠悬停出现，手机上永远点不到，所以常驻 */
 @media (hover:none){.mp-prof-ops{display:flex}.mp-prof-nm{padding-right:0}}
-.mp-prof-empty{margin:0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;
+.mp-prof-empty{margin:0;padding:10px 12px;border:1px solid var(--hair,var(--line));border-radius:10px;background:var(--panel2);
   font-size:12px;color:var(--muted);background:var(--band)}
 .mp-prof-bar{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
 .mp-prof-bar input{font:inherit;font-size:12.5px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);
@@ -1762,9 +1778,193 @@
 #ppm-d-bad-ink:checked~.pp-body .pp-st.bad{color:var(--ink)}
 #ppm-d-bad-ink:checked~.pp-body .pp-st.bad::before{content:none}
 #ppm-d-bold:checked~.pp-body .pp-st.main,#ppm-d-bold:checked~.pp-body .pp-st.good{font-weight:700}
+/* ── 0.83 视觉重整 · 报告 ──────────────────────────────────────────────
+   报告是「要读十分钟」的东西，工艺重点在节奏，不在装饰：
+     ① 结论卡给足呼吸，判断词之后再落条件句，不再用虚线当分隔；
+     ② 关键几点的行用实线分隔 + 序号外框，眼睛能顺着 1→2→3 走；
+     ③ 表格的表头落一层底色，行线更细，数字等宽，标签列退到 --label；
+     ④ 全站虚线改实线——虚线在这套界面里读起来像「还没做完」。
+   只动外观：类名、文案、层级、断言一律不动。 */
+/* 判断标签的三色必须落在 :root 上：--env-* 原本只定义在 .pp/.mp-it 那套令牌作用域里，
+   而结论卡 .mp-env-head 不在那些选择器上——var() 取不到值，三枚标签就只能继承墨色。
+   浅色下「能成 / 要看条件 / 两头都有」曾经看着一模一样，原因就在这里。 */
+:root{--env-good:#2f6b4f;--env-warn:#7d5410;--env-alt:#3a5570}
+@media screen and (prefers-color-scheme:dark){:root{--env-good:#6dc79a;--env-warn:#e0a860;--env-alt:#9aa2ea}}
+.mp-env-head{margin:0 0 14px;padding:20px 20px 18px;border:1px solid var(--hair,var(--line));border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
+.mp-env-kicker{margin:0;font-size:11px;letter-spacing:.2em;color:var(--label,var(--muted));font-weight:600}
+.mp-env-hl{margin:8px 0 0;font-size:19px;line-height:1.55;letter-spacing:.01em}
+.mp-env-row{margin-top:12px;gap:7px}
+.mp-env-dir{padding:3px 10px;border-radius:999px;background:color-mix(in srgb,currentColor 7%,transparent)}
+.mp-env-conf{font-size:11.5px;letter-spacing:.03em}
+.mp-env-confq>summary::after{content:' ？';font-size:11px}
+.mp-env-cond{margin-top:12px;padding-top:12px;border:0;border-top:1px solid var(--hair,var(--line));font-size:13px;line-height:1.75;color:var(--ink2)}
+.mp-env-sec-h{margin:20px 0 2px;font-size:12px;letter-spacing:.12em;color:var(--label,var(--muted));font-weight:600}
+.mp-env-f-row{align-items:flex-start;gap:12px;padding:14px 2px;border-top:1px solid var(--hair,var(--line))}
+.mp-env-f-no{width:22px;height:22px;margin-top:2px;border:1px solid var(--line);background:transparent;color:var(--label,var(--muted));font-size:11.5px}
+.mp-env-f-top{gap:9px}
+.mp-env-f-top b{font-size:14px;letter-spacing:.01em}
+.mp-env-f-state{font-size:12px;color:var(--label,var(--muted))}
+.mp-env-f-impact{margin-top:5px;font-size:13.5px;line-height:1.8}
+.mp-env-why{margin-top:7px}
+.mp-env-why summary{font-size:12px;letter-spacing:.02em;color:var(--label,var(--muted))}
+.mp-env-why-body{margin-top:8px;padding:10px 12px;border-radius:10px}
+/* 四柱 / 各体系表：表头落底色，行线更细，标签列统一退后一档 */
+.pp{font-size:13px;line-height:1.9;padding:10px 14px 6px}
+.pp-bz th{padding:9px 2px 8px;background:var(--band);border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.08em}
+/* 标签列的表头也要落同一层底色：空着不涂会在左侧留一个 47px 的缺口，表头带断成两截 */
+.pp-bz th:first-child{background:var(--band)}
+.pp-bz td{padding:7px 2px}
+.pp-bz tr+tr td{border-top:1px solid var(--hair)}
+.pp-bz td.bz-lbl{color:var(--label);font-size:11.5px;letter-spacing:.04em}
+.pp-bz .bz-big{font-size:27px;letter-spacing:.02em}
+.pp-sec-h{font-size:12px;letter-spacing:.1em;margin-bottom:4px}
+.pp-detail .dt-dh{border-bottom:1px solid var(--hair)}
+.mp-it-dtext{font-size:13.5px;line-height:1.95;color:var(--ink2)}
+.mp-it-dplain{font-size:13px;line-height:1.85}
+.mp-it-dim{padding:16px 0;border-bottom:1px solid var(--hair)}
+.mp-it-dlabel{font-size:14.5px;letter-spacing:.05em}
+/* 分节 / K 线 / 一眼看的标题改成 h2/h3 后，UA 默认 margin 必须收掉 */
+.mp-it-sh{margin:0 0 6px}
+/* 只拦 h3 那一种用法：同一个类名在「盘面事实」的 summary 里是 span，改成块级会把摘要挤成两行 */
+h3.mp-it-sh{display:block}
+.mp-outline-h{margin:0 0 6px}
+h3.mp-outline-h{display:block}
+.mp-kline-title{margin:0;font-size:12.5px;color:var(--ink);font-weight:600;line-height:inherit}
+.mp-yiyan-h{display:inline;margin:0;font:inherit;font-weight:700;letter-spacing:inherit}
+/* 第二遍：块与块之间给节奏 —— 一块一张卡，卡内只留一条分隔线 */
+.mp-env{margin:0 0 16px;padding:18px 20px 20px;border:1px solid var(--hair,var(--line));border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
+.mp-env-f-row:first-child{border-top:none}
+.mp-env-adv{margin-top:16px;padding-top:14px}
+/* 标题改用 h2/h3 之后，UA 的默认 margin 与粗体由下面两条统一收掉——视觉一个字都不许变 */
+.mp-env-adv b,.mp-env-adv h3{margin:0;font-size:11.5px;letter-spacing:.14em;color:var(--label,var(--muted));font-weight:600}
+/* 页面外壳有一条给正文用的 h3 规则（display:flex;align-items:center;gap:10px）：
+   它也会套到报告里的 h3 上，把分节标题和角标挤成同一行。这两处必须显式回到块级。 */
+h3.mp-env-adv-h{display:block}
+.mp-env-adv ol{margin:8px 0 0;padding-left:21px;font-size:13.5px;line-height:1.95}
+.mp-env-adv li{margin:5px 0}
+.mp-env-adv li::marker{color:var(--red);font-weight:600}
+/* 「留意」是唯一该有颜色的提醒：给一层极淡琥珀底，别做成第二张结论卡 */
+.mp-env-risk{margin-top:14px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--env-warn) 30%,transparent);
+  border-radius:10px;background:color-mix(in srgb,var(--env-warn) 7%,var(--card));font-size:13px;line-height:1.75}
+.mp-env-risk b,.mp-env-risk h3{display:inline;margin:0 8px 0 0;font-size:12px;font-weight:600;color:var(--env-warn);letter-spacing:.06em}
+.mp-env-tl{margin-top:16px;padding-top:14px}
+.mp-env-tl-row{gap:10px;padding:4px 0;font-size:13px}
+.mp-env-tl-w{font-variant-numeric:tabular-nums}
+.mp-env-tl-p{padding:2px 8px;border-radius:999px;background:var(--band);color:var(--ink2);font-size:11.5px;letter-spacing:.04em}
+.mp-env-cf{margin-top:14px;padding-top:12px}
+.mp-env-cf summary{font-size:12px;color:var(--label,var(--muted))}
+/* 红竖线的「一眼看」和四柱表之间要断开，否则竖线直接贴住表头 */
+#out>section:not([class]){margin:16px 0 6px}
+/* 装饰性的虚线一律换实线；虚线只留给「这条还不算定论」这类语义
+   （.pp-chip.neu / .pp-chip.broken 仍保持 dashed，别动） */
+.mp-env-cond,.mp-env-cf-item,.mp-it-ask,.mp-it-lead,.mp-guide-check,.mp-guide-parts,.mp-br-sec,
+.mp-hp-triple th,.mp-hp-triple td,.pp-fx,.pp-hs,.pp-detail .dt-dh,.mp-it-dim{border-style:solid;border-color:var(--hair,var(--line))}
+/* 说人话 / 追问问答这两块是「插话」，用浅底包起来，别和正文一个平面 */
+.mp-it-plain{margin:12px 16px 0;padding:13px 16px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--band)}
+.askbox{margin-top:16px;padding:12px 14px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--panel2)}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
+
+  /* ── 共用小工具：只此一份 ────────────────────────────────────────
+   *
+   * 日期掩码 / 存储读写 / 缓存哈希 / 中文日期标签 / 当前时刻——这八件事原来在
+   * src/app.js（宿主面板）与 src/web-ui.js（独立页）各写一遍，连函数名都一样。
+   * 当时的写法只差 pad 与 pad2、imul 是否逐步 >>>0，实测同输入同输出，所以一直
+   * 没露头；但「同一件事写两处」迟早分叉：改一边忘另一边，面板认的写法独立页不认，
+   * 或者哈希口径悄悄不同、缓存键对不上。这类毛病不报错，只让人觉得「有时准有时
+   * 不准」。收成一份，两条链各留一行委托（见两个 src 里的同名注释）。
+   *
+   * 与 src/groups.mjs 同一套路：共用的事实只存一处，别处只引用。
+   */
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  /** 严格的 YYYY-MM-DD，且日期真实存在（闰日、月界都算） */
+  function isoDateOk(s) {
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    if (!ymd) return false;
+    const y = Number(ymd[1]);
+    const mo = Number(ymd[2]);
+    const d = Number(ymd[3]);
+    if (mo < 1 || mo > 12 || d < 1) return false;
+    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return d <= days[mo - 1];
+  }
+
+  /** 把 1990/5/12、1990年5月12日、1990.5.12 归一成 YYYY-MM-DD；不合法返回空串 */
+  function normalizeDateText(raw) {
+    const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
+    if (!ymd) return '';
+    const iso = `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`;
+    return isoDateOk(iso) ? iso : '';
+  }
+
+  /** 输入过程中的数字掩码：半成品原样保留，粘贴式写法直接归一 */
+  function maskDateText(raw) {
+    const s = String(raw || '').trim();
+    // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
+    // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
+    // 斜杠/中文/点号视为粘贴，直接归一。
+    if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
+    if (/[年月日/.]/.test(s)) {
+      const full = normalizeDateText(s);
+      if (full) return full;
+    }
+    const digits = s.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+  }
+
+  /** 存储读：解析失败 / 隐私模式 / 禁用存储一律返回 null */
+  function storeGet(key) {
+    try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+  }
+
+  /** 存储写：写不进就静默降级，不影响这次排盘 */
+  function storeSet(key, val) {
+    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
+  }
+
+  /** FNV-1a 32 位 → base36：面板的结果缓存与独立页的盘面缓存共用同一算法 */
+  function hash36(s) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i += 1) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return (h >>> 0).toString(36);
+  }
+
+  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次 */
+  function dayLabel(ts) {
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return '';
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(new Date()) - day(d)) / 86400000);
+    if (diff <= 0) return '今天';
+    if (diff === 1) return '昨天';
+    return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+
+  /** 本机当前时刻（本地时区，不需要权限也不需要联网） */
+  function nowParts() {
+    const d = new Date();
+    return {
+      date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+      time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+    };
+  }
+
+  pp.isoDateOk = isoDateOk;
+  pp.normalizeDateText = normalizeDateText;
+  pp.maskDateText = maskDateText;
+  pp.storeGet = storeGet;
+  pp.storeSet = storeSet;
+  pp.hash36 = hash36;
+  pp.dayLabel = dayLabel;
+  pp.nowParts = nowParts;
 
   /* 出盘后参数区切只读：面板与独立页各调一次，名单只在这里维护一份。
    *
@@ -3261,7 +3461,7 @@
     statCells.push(`<span><em>波动幅度</em><b>${span.toFixed(0)}</b></span>`);
     const stats = `<div class="kl-stats">${statCells.join('')}</div>`;
     return (withBrief ? pp.briefHTML(r) : '') + `<section class="mp-kline" aria-label="人生K线结果">
-      <div class="mp-kline-h"><b>人生 K 线</b><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
+      <div class="mp-kline-h"><h2 class="mp-kline-title">人生 K 线</h2><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
       ${chart}
       ${stats}
       ${chips ? `<div class="kl-segs">${chips}</div>` : ''}
@@ -3406,7 +3606,7 @@
     if (mt && mt.label) bits.push(`婚缘${String(mt.label).replace(/型$/, '')}`);
     const fw = mar && mar.windows ? mar.windows.filter((w) => !w.past)[0] : null;
     if (fw) bits.push(`最可能动在 ${fw.year} 年（${fw.age}岁）`);
-    const body = bits.length ? `<b>一眼看</b>　${esc(head)}：${esc(bits.join('；'))}。` : `${esc(head)}。`;
+    const body = bits.length ? `<h2 class="mp-yiyan-h">一眼看</h2>　${esc(head)}：${esc(bits.join('；'))}。` : `${esc(head)}。`;
     return `<section aria-label="一眼看" style="margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--gold)"><p style="margin:0;line-height:1.65">${body}</p></section>`;
   };
 
@@ -3775,7 +3975,7 @@
     const cfN = (env.conflicts || []).length;
     const confWhy = `按 ${evN} 条盘面事实、${fN} 条关键因素推出来的${cfN ? `；其中 ${cfN} 处各家有分歧，已在文末标明` : ''}。把握说的是这套规则推得有多一致，不是这件事实际发生的概率。`;
     return `<div class="mp-env-head">
-      <div class="mp-env-kicker">结论</div>
+      <h2 class="mp-env-kicker">结论</h2>
       <div class="mp-env-hl">${esc(v.headline)}</div>
       <div class="mp-env-row">
         <span class="mp-env-dir t-${dtone}">${esc(dl)}</span>
@@ -3814,17 +4014,17 @@
       : '';
 
     const adv = (env.advice || []).length
-      ? `<div class="mp-env-adv"><b>怎么做</b><ol>${env.advice.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></div>`
+      ? `<div class="mp-env-adv"><h3 class="mp-env-adv-h">怎么做</h3><ol>${env.advice.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></div>`
       : '';
 
-    const risk = env.risk ? `<div class="mp-env-risk"><b>留意</b>${esc(env.risk)}</div>` : '';
+    const risk = env.risk ? `<div class="mp-env-risk"><h3 class="mp-env-risk-h">留意</h3>${esc(env.risk)}</div>` : '';
 
     const cf = (env.conflicts || []).length
       ? `<details class="mp-env-cf"><summary>流派说明（${env.conflicts.length} 条）</summary><div class="mp-env-cf-body">${env.conflicts.map((c) => `<div class="mp-env-cf-item"><b>${esc(c.topic)}</b>${(c.views || []).map((v) => `<div class="mp-env-cf-view"><span>${esc(v.school)}</span>${esc(v.stance)}</div>`).join('')}${c.note ? `<em>${esc(c.note)}</em>` : ''}</div>`).join('')}</div></details>`
       : '';
 
     return `<div class="mp-env">
-      <div class="mp-env-sec-h">关键几点</div>
+      <h2 class="mp-env-sec-h">关键几点</h2>
       <div class="mp-env-f">${factors}</div>
       ${tl}${adv}${risk}${cf}
     </div>`;
@@ -3850,7 +4050,7 @@
     </div>`).join('');
     // 一页读懂：报告顶部五条结论（整体/事业/财富/感情/节奏）
     const outline = (it.outline && it.outline.length)
-      ? `<div class="mp-outline"><div class="mp-outline-h">一页读懂</div>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
+      ? `<div class="mp-outline"><h3 class="mp-outline-h">一页读懂</h3>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
       : '';
     // 目录：点击跳到对应分节（面板内锚点；打印时隐藏）。方法类段落合成一项，别让目录里全是「未纳入」
     const secList = it.sections || [];
@@ -3896,7 +4096,7 @@
         <div class="mp-it-sub">${factList.map((f, i) => `<div class="fact-row"><em class="fact-no">[${i + 1}]</em>${f.group === f.label ? '' : `<em class="fact-g">${esc(f.group)}</em>`}<b>${esc(f.label)}</b><span>${esc(f.value)}</span></div>`).join('')}</div>
       </details>` : '';
     const secOne = (s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
-        <div class="mp-it-sh">${esc(s.label)}${refChip(s)}</div>
+        <h3 class="mp-it-sh">${esc(s.label)}${refChip(s)}</h3>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，

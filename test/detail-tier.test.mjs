@@ -200,6 +200,19 @@ ok('interpretText 只传对象仍是全文档', interpretText(compute({ ...BAZI,
 const TOOL = fs.readFileSync(new URL('../index.js', import.meta.url), 'utf8');
 ok('schema 里有 detail 参数', /detail: \{\s*type: 'string',\s*enum: \['brief', 'lean', 'full'\]/.test(TOOL));
 ok('工具说明提到 brief 缺省与何时改回 full', TOOL.includes('缺省 detail: "brief"') && TOOL.includes('追问「为什么/依据」时改回 full'));
+// 档位说明不能只说「结论 + 所问方向 + 三张表」：实际 brief 还带着说人话、一页读懂、
+// 能力边界与免责声明，lean 另有全表行与名词解释。说明比行为窄，模型就会以为
+// 「省档位 = 丢掉边界交代」，反过来把整段 full 拖进上下文——文档与行为要一起改。
+const DOCS = [
+  ['顶层调用说明', TOOL.slice(0, TOOL.indexOf('const READ_KEYS'))],
+  ['detail 参数说明', (TOOL.match(/detail: \{[\s\S]{0,400}?description: '([^']*)'/) || [])[1] || ''],
+];
+for (const [label, text] of DOCS) {
+  ok(`${label}：说清 brief 保留说人话/一页读懂`, text.includes('说人话') && text.includes('一页读懂'), text.slice(0, 60));
+  ok(`${label}：不再写成「只给结论、所问方向与三张表」`, !/只给结论、所问方向/.test(text));
+}
+ok('档位说明写明能力边界与免责声明三档都带',
+  (DOCS[1][1] || '').includes('能力边界') && (DOCS[1][1] || '').includes('免责'));
 
 // ── ⑦ 工具层缺省 brief：模型不写档位也拿不到全文 ──────────────
 let chart = null;

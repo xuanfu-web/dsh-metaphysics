@@ -8,6 +8,8 @@ import { ok, eq } from './_harness.mjs';
 
 const html = page();
 const ui = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
+// 存储读写只在 panel-kit 里存一份（共用小工具），独立页只留一行委托
+const kit = fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8');
 const narrow = html.slice(html.indexOf('@media (max-width:640px)'), html.indexOf('@media print{'));
 
 const tabList = [...html.matchAll(/<button class="tab" data-tab="([a-z]+)"/g)].map((m) => m[1]);
@@ -81,8 +83,10 @@ ok('隐藏要显式写样式（display:flex 会盖掉 [hidden]）', /\.recent\[h
 ok('存储里的 tab 先过白名单（不直接当选择器）', /labels\[x\.tab\]/.test(ui));
 
 // ── ⑤ 存储不可用要降级，不能把页面搞坏 ─────────────────────────
-ok('读存储失败返回空', /function storeGet\(key\) \{\s*try \{/.test(ui) && /catch \(e\) \{ return null; \}/.test(ui));
-ok('写存储失败静默降级', /function storeSet\(key, val\) \{\s*try \{/.test(ui) && /catch \(e\) \{ \/\* 存不了不影响使用 \*\/ \}/.test(ui));
+ok('读存储失败返回空', /function storeGet\(key\) \{\s*try \{/.test(kit) && /catch \(e\) \{ return null; \}/.test(kit) &&
+  /function storeGet\(key\) \{ return window\.__PP\.storeGet\(key\); \}/.test(ui));
+ok('写存储失败静默降级', /function storeSet\(key, val\) \{\s*try \{/.test(kit) && /catch \(e\) \{ \/\* 存不了不影响使用 \*\/ \}/.test(kit) &&
+  /function storeSet\(key, val\) \{ window\.__PP\.storeSet\(key, val\); \}/.test(ui));
 ok('最近用过的名称走文本节点，不拼 HTML', /nm\.textContent = labels\[x\.tab\]/.test(ui));
 
 // ── ⑥ 每组先露 4 个，其余折起来（宽窄屏同一口径） ───────────────

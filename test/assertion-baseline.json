@@ -1,9 +1,9 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 11486,
+  "total": 11616,
   "files": {
     "adapters-extra.test.mjs": {
-      "pass": 77,
+      "pass": 87,
       "fail": 0
     },
     "almanac-xiu.test.mjs": {
@@ -11,7 +11,7 @@
       "fail": 0
     },
     "args.test.mjs": {
-      "pass": 163,
+      "pass": 174,
       "fail": 0
     },
     "ask-copy.test.mjs": {
@@ -206,6 +206,10 @@
       "pass": 71,
       "fail": 0
     },
+    "css-strip.test.mjs": {
+      "pass": 15,
+      "fail": 0
+    },
     "curve.test.mjs": {
       "pass": 36,
       "fail": 0
@@ -215,7 +219,7 @@
       "fail": 0
     },
     "date-input.test.mjs": {
-      "pass": 60,
+      "pass": 43,
       "fail": 0
     },
     "deep.test.mjs": {
@@ -223,7 +227,7 @@
       "fail": 0
     },
     "detail-tier.test.mjs": {
-      "pass": 110,
+      "pass": 115,
       "fail": 0
     },
     "display-toggles.test.mjs": {
@@ -248,6 +252,10 @@
     },
     "evidence.test.mjs": {
       "pass": 44,
+      "fail": 0
+    },
+    "explain-quality.test.mjs": {
+      "pass": 51,
       "fail": 0
     },
     "facets.test.mjs": {
@@ -311,7 +319,7 @@
       "fail": 0
     },
     "guard-inputs.test.mjs": {
-      "pass": 166,
+      "pass": 180,
       "fail": 0
     },
     "guide.test.mjs": {
@@ -622,6 +630,10 @@
       "pass": 75,
       "fail": 0
     },
+    "shared-helpers.test.mjs": {
+      "pass": 38,
+      "fail": 0
+    },
     "shensha-wenzhen.test.mjs": {
       "pass": 43,
       "fail": 0
@@ -639,7 +651,7 @@
       "fail": 0
     },
     "standalone.test.mjs": {
-      "pass": 40,
+      "pass": 43,
       "fail": 0
     },
     "stress.test.mjs": {

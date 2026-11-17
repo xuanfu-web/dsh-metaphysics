@@ -18,38 +18,11 @@
   // ── 公历日期输入：固定「年-月-日」 ─────────────────────────────
   // 原生 date 控件的顺序跟随浏览器区域，容易出现月/日/年或日/月/年。
   // 改成文本输入 + 数字掩码：显示始终是 YYYY-MM-DD，也认 1990/5/12、1990年5月12日。
-  function isoDateOk(s) {
-    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
-    if (!ymd) return false;
-    const y = Number(ymd[1]);
-    const mo = Number(ymd[2]);
-    const d = Number(ymd[3]);
-    if (mo < 1 || mo > 12 || d < 1) return false;
-    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    return d <= days[mo - 1];
-  }
-  function normalizeDateText(raw) {
-    const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
-    if (!ymd) return '';
-    const iso = `${ymd[1]}-${pad(ymd[2])}-${pad(ymd[3])}`;
-    return isoDateOk(iso) ? iso : '';
-  }
-  function maskDateText(raw) {
-    const s = String(raw || '').trim();
-    // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
-    // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
-    // 斜杠/中文/点号视为粘贴，直接归一。
-    if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
-    if (/[年月日/.]/.test(s)) {
-      const full = normalizeDateText(s);
-      if (full) return full;
-    }
-    const digits = s.replace(/\D/g, '').slice(0, 8);
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
-  }
+  // 实现只存一份（panel-kit 的「共用小工具」），这里只转调用——两条链各写一遍，
+  // 改一边忘另一边就会出现「面板认、独立页不认」的输入。
+  function isoDateOk(s) { return window.__PP.isoDateOk(s); }
+  function normalizeDateText(raw) { return window.__PP.normalizeDateText(raw); }
+  function maskDateText(raw) { return window.__PP.maskDateText(raw); }
   /** 程序填值（示例 / 切 tab）：同步掩码与「最近一次有效值」 */
   function setDateField(id, iso) {
     const input = el(id);
@@ -150,12 +123,9 @@
     return '';
   }
 
-  function storeGet(key) {
-    try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
-  }
-  function storeSet(key, val) {
-    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
-  }
+  // 存储读写只在共用层存一份（panel-kit 的「共用小工具」），取不到一律静默降级
+  function storeGet(key) { return window.__PP.storeGet(key); }
+  function storeSet(key, val) { window.__PP.storeSet(key, val); }
 
   // ── 排盘结果的本机缓存（任务书 A 线 1.2④ / 1.4）─────────────────
   // 两套键各管一件事：
@@ -169,14 +139,8 @@
   const CACHE_MAX = 6;        // 每条带一整份盘面，留六张够用
   const CACHE_ITEM_MAX = 400000;
 
-  function hash36(s) {
-    let h = 0x811c9dc5;
-    for (let i = 0; i < s.length; i += 1) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-    return (h >>> 0).toString(36);
-  }
+  // 哈希与面板共用一份：两处各写一个版本，缓存键就会悄悄分叉
+  function hash36(s) { return window.__PP.hash36(s); }
   function chartKeyOf(param) {
     // 可传「出盘那刻的参数指纹」求键：默认盘设缓存键时要的是上一张盘的键，
     // 不是此刻表单的键（表单可能已经改了）。
@@ -264,16 +228,8 @@
     }
   }
 
-  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次 */
-  function dayLabel(ts) {
-    const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return '';
-    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-    const diff = Math.round((day(new Date()) - day(d)) / 86400000);
-    if (diff <= 0) return '今天';
-    if (diff === 1) return '昨天';
-    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
+  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次（算法在共用层） */
+  function dayLabel(ts) { return window.__PP.dayLabel(ts); }
 
   /** 当前页面上真实存在的入口 → 名称。存储里的 tab 值先过这张表，避免脏数据被当选择器用 */
   function entryLabels() {
@@ -638,14 +594,8 @@
   const isNarrow = () => !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
   const defaultFolded = () => (foldPref === null ? isNarrow() : foldPref);
 
-  /** 本机当前时刻（本地时区，不需要任何权限或联网） */
-  function nowParts() {
-    const d = new Date();
-    return {
-      date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-      time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-    };
-  }
+  /** 本机当前时刻（本地时区，不需要任何权限或联网；与面板同一份实现） */
+  function nowParts() { return window.__PP.nowParts(); }
 
   /** 某类时间的自动默认值：起卦类 = 当前时刻；命盘类 = 示例默认 */
   function defaultFor(k) {

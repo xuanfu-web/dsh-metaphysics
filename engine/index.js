@@ -1050,9 +1050,11 @@ ${r.summary}`;
 }
 
 /** 解析与详解的紧凑文本（给模型看，不塞整块 JSON）
- *  detail：'full'（默认全文）/ 'lean'（只给结论、所问方向与三张表，长论述与规则出处折成指针）/
- *  'brief'（在 lean 上再限表行；工具层在 withInterpret 且未指定档位时用这一档）。
- *  省的是回给模型的文本，不改盘面、不改解析对象本身。
+ *  detail：'full'（默认全文）/ 'lean'（省掉长论述（>300 字的分节）与「规则·出处」原文、折成一行指针；
+ *  表行给全、名词解释照给）/ 'brief'（在 lean 上再把表限到 8 行、不给名词解释；
+ *  工具层在 withInterpret 且未指定档位时用这一档）。
+ *  三档都保留：结论、说人话、一页读懂、（聚焦后的）维度、较短分节、三张表、追问建议、
+ *  能力边界与免责声明——省的是篇幅，不是「回答什么、不回答什么」的交代。
  *  **不设体积上限**：brief 只做「少给哪些维度、表最多几行」这类结构性收敛，
  *  超长就让它超长——按字节截断会把结论、依据、边界一起腰斩，省下的体积不值这个代价。 */
 export function interpretText(i, detail) {
@@ -1243,8 +1245,9 @@ export function normalizeLongitudes(args) {
   return out;
 }
 
-/** 输出档位：缺省 'full'（面板与直接调用保持历史全文）；'lean' 去掉长论述与规则出处，
- *  'brief' 在 lean 上再限表行（不设体积上限）。工具层在 withInterpret 且未指定时传 brief。 */
+/** 输出档位：缺省 'full'（面板与直接调用保持历史全文）；'lean' 去掉长论述与规则出处原文
+ *  （表行给全、名词解释照给）；'brief' 在 lean 上再把表限到 8 行、不给名词解释（不设体积上限）。
+ *  工具层在 withInterpret 且未指定时传 brief。 */
 function detailOf(value) {
   if (value === undefined || value === null || value === '') return 'full';
   if (value === 'full' || value === 'lean' || value === 'brief') return value;
@@ -1474,12 +1477,22 @@ function computeRaw(args = {}) {
   }
   if (system === 'meihua') {
     let result;
+    // 模式推断与 buildMeihua 同口径：先定 mode，再决定要不要过日期尺。
+    // 老写法先 parseDateTime 后分模式，于是「只给 upper / lower」被报成缺 datetime，
+    // 用户给的明明是数字；反过来，两组都给又不说用哪组，则由 buildMeihua 报歧义。
+    const mhNums = (args.upper !== undefined && args.upper !== null && args.upper !== '')
+      || (args.lower !== undefined && args.lower !== null && args.lower !== '');
+    const mhMode = args.mode === 'number' || args.mode === 'time'
+      ? args.mode
+      : mhNums ? 'number' : 'time';
     // 时间起卦必须与其它体系过同一把日期尺：以前把原串直接交给梅花私有解析器，
     // 1990-02-30 / 13 月 / 25:00 都会被接受，再被正规化成另一天起卦。
-    if (args.mode !== 'number') parseDateTime(args.datetime);
+    if (mhMode !== 'number') parseDateTime(args.datetime);
     try {
       result = buildMeihua({
-        mode: args.mode === 'number' ? 'number' : 'time',
+        // 显式 mode 才透传；没给就交给 buildMeihua 按入参认（两组都给时由它报歧义，
+        // 这里提前定成 number 会让 datetime 被静默忽略）
+        mode: args.mode === 'number' || args.mode === 'time' ? args.mode : undefined,
         datetime: args.datetime,
         upper: args.upper,
         lower: args.lower,
@@ -1615,9 +1628,19 @@ function computeRaw(args = {}) {
     return { ...result, summary: convertText(result) };
   }
   if (system === 'xiaoliuren') {
-    const dt = args.datetime ? parseDateTime(args.datetime) : null;
+    // 数字起课不必过日期尺；只给了 datetime 的才解析。给了报数又给了 datetime/date/hour
+    // 且没写 mode 时，radix 判断留给 buildXiaoliuren 报「两组不能同时生效」——否则
+    // 早一步的 parseDateTime 会把歧义说成「缺 datetime」，与事实相反。
+    const castNums = [args.num1, args.num2, args.num3]
+      .filter((v) => v !== undefined && v !== null && v !== '').length;
+    const xlMode = args.mode === 'number' || args.mode === 'time'
+      ? args.mode
+      : castNums ? 'number' : 'time';
+    const dt = xlMode === 'time' && args.datetime ? parseDateTime(args.datetime) : null;
     const result = buildXiaoliuren({
-      mode: args.mode === 'number' ? 'number' : 'time',
+      // 显式 mode 原样透传，没给就不给，让引擎按入参认（数字起课不能被静默换成时间起课）
+      mode: args.mode === 'number' || args.mode === 'time' ? args.mode : undefined,
+      datetime: args.datetime,
       date: typeof args.date === 'string' && args.date.trim() ? args.date : dt ? `${dt.year}-${dt.month}-${dt.day}` : undefined,
       hour: Number.isInteger(args.hour) ? args.hour : dt && /[T\s]\d{1,2}:\d{1,2}/.test(String(args.datetime)) ? dt.hour : undefined,
       num1: args.num1,
@@ -2161,9 +2184,38 @@ function lifeText(result) {
   return out.join(BR + BR);
 }
 
+/**
+ * 摘要先给一句结论，解析段再把它展开；同一句被两处逐字写出来，就等于让读这段的模型
+ * 把同一句话读两遍（八字就踩了 13 句）。这里按整句去重、保留首次出现的那一份：
+ * 只比 ≥18 字的完整句，短标签（「旺相 2 爻」「土克水」这类）照旧保留，
+ * 不然会把表格里的对齐片段当成重复句删掉。
+ */
+function stripEcho(text, prior) {
+  const MIN = 18;
+  const key = (s) => s.replace(/^[\s·•※]+/, '').trim();
+  const seen = new Set();
+  for (const line of String(prior == null ? '' : prior).split('\n')) {
+    for (const seg of line.split('。')) {
+      const k = key(seg);
+      if (k.length >= MIN) seen.add(k);
+    }
+  }
+  const out = [];
+  for (const line of String(text == null ? '' : text).split('\n')) {
+    const keep = [];
+    for (const seg of line.split('。')) {
+      const k = key(seg);
+      if (k.length >= MIN && seen.has(k)) continue; // 前面已经念过这一句
+      if (k.length >= MIN) seen.add(k);             // 同一段内的重复也去
+      keep.push(seg);
+    }
+    out.push(keep.join('。'));
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 export function renderText(result) {
-  const base = result.summary ?? JSON.stringify(result, null, 2);
   // 先给一段人话，再给盘面细节：模型照这段复述，就不至于一开口就是术语表
   const NL = String.fromCharCode(10);
   const brief = result.brief
@@ -2173,6 +2225,9 @@ export function renderText(result) {
       .concat(result.brief.caveat ? ['　※ ' + result.brief.caveat] : [])
       .join(NL) + NL
     : '';
+  // 摘要里同一条说明会随每张牌/每个宫位各写一遍（塔罗三张逆位就念三次），
+  // 先对摘要自身去重，再拿去掉重的那份当解析段的「已念过」清单。
+  const base = stripEcho(result.summary ?? JSON.stringify(result, null, 2), brief);
   const parts = [brief + base];
   // 婚姻与六面排在文本盘面之后、技术信息之前：这一段是给不看网页的人的
   const lifePart = lifeText(result);
@@ -2202,7 +2257,7 @@ export function renderText(result) {
   // 解析段按档位渲染。brief 只做结构性收敛（少给维度、表限行数），不压体积：
   // 盘面、句柄、解析全都不裁，这段有多长就多长。
   if (result.interpret) {
-    const extra = interpretText(result.interpret, result.interpretTier);
+    const extra = stripEcho(interpretText(result.interpret, result.interpretTier), parts.join('\n\n'));
     if (extra) parts.push(extra);
   }
   if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);

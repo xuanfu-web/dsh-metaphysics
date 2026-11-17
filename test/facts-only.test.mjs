@@ -14,7 +14,10 @@ const CASES = [
   ['ziwei', { system: 'ziwei', datetime: '1990-05-12T14:30', gender: 'male' }],
   ['liuyao', { system: 'liuyao', datetime: '2026-11-15T10:00', lines: [7, 8, 9, 7, 8, 9], question: '这份工作要不要接' }],
   ['qimen', { system: 'qimen', datetime: '2026-11-15T10:00', question: '这笔款能不能收回' }],
-  ['tarot', { system: 'tarot', question: '该不该搬走', spread: 'three' }],
+  // 塔罗给固定 seed：不给种子每次抽牌不同，「sections.refs 不指向空气」这条会
+  // 隔几次红一次——牌阵一变，某些牌类事实（f-tarot-suits）就不在这份 facts 里了。
+  // 闸门偶发红比一直红更坏：久了就没人再信它。
+  ['tarot', { system: 'tarot', question: '该不该搬走', spread: 'three', seed: 7 }],
   ['daliuren', { system: 'daliuren', datetime: '2026-11-15T10:00', question: '事情几时成' }],
   ['meihua', { system: 'meihua', datetime: '2026-11-15T10:00', question: '要不要回老家' }],
   ['hepan', { system: 'hepan', datetime: '1990-05-12T14:30', gender: 'male', partner: { datetime: '1992-08-03T09:15', gender: 'female' } }],

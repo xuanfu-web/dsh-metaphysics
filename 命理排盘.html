@@ -413,6 +413,78 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 }
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 </style>
+<style>/* ── 0.83 视觉重整 · 外壳 ──────────────────────────────────────────────
+   只动工艺，不动结构：tab 顺序、表单 id、分组卡片、断言全部照旧。
+   四条原则：
+     ① 层级靠字号 / 字重 / 留白，不靠一层层边框；
+     ② 卡片只有一层：细边 + 极淡投影，嵌套处只留分隔线；
+     ③ 交互件统一高度与圆角（输入 42、按钮 44、圆角 10），focus 只有一处 ring；
+     ④ 磁贴副标题给两行，不再用单行省略号腰斩句子。 */
+:root{
+  --r-sm:8px;--r-md:10px;--r-lg:16px;
+  --hair:color-mix(in srgb,var(--line) 52%,transparent);
+  --sh-1:0 1px 2px rgba(35,28,18,.04),0 18px 40px -30px rgba(35,28,18,.42);
+  --sh-2:0 2px 6px rgba(35,28,18,.05),0 26px 50px -34px rgba(35,28,18,.5);
+}
+.wrap{max-width:1160px;margin:0 auto;padding:22px 24px 64px}
+header{gap:15px;margin-bottom:22px;padding-bottom:16px}
+.brand{font-size:21px;letter-spacing:.12em;gap:11px}
+.brand .seal{width:42px;height:42px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 10px 22px -14px var(--gold)}
+.brand-txt small{font-size:12.5px;line-height:1.55;letter-spacing:.01em;color:var(--dim);margin-top:4px}
+.ver,.ver-note{padding:2px 9px;border-radius:999px;border-color:var(--hair);background:var(--panel2);color:var(--ink2);font-size:11px;line-height:1.6}
+.tab{padding:8px 10px;border:1px solid var(--hair);border-radius:var(--r-md);background:var(--panel2);color:var(--ink2);font-size:13px;font-weight:500}
+.tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink);box-shadow:var(--sh-1)}
+.tab.on{border-color:transparent;color:var(--on-accent);box-shadow:0 10px 20px -14px var(--gold)}
+.start{margin-bottom:22px}
+/* 四张卡底边必须齐（一行四个不等高会读成台阶），但也不能让磁贴少的卡底下空一块：
+   卡片竖向 flex，磁贴区吃掉剩余高度，多出来的空间变成磁贴本身的高度。 */
+.tgroup{display:flex;flex-direction:column}
+.ttools{flex:1;align-content:start}
+.ttools>.tool{height:100%}
+/* 奇数个磁贴的那一组：末项铺满两列，右下角不留空格（3 个磁贴的「古籍考据」）
+   注意每组末尾都挂着一个「还有 N 个」按钮，全部展开时它是 display:none 但仍算兄弟，
+   所以末个可见磁贴既是 nth-child(odd) 也是 nth-last-child(2)——两个条件一起认。 */
+.ttools>.tool:nth-child(odd):is(:nth-last-child(1),:nth-last-child(2)){grid-column:1/-1}
+.tgroup{padding:16px 16px 14px;border:1px solid var(--hair);border-radius:var(--r-lg);background:var(--panel);box-shadow:var(--sh-1)}
+.tgroup-head h2{gap:9px;font-size:15px;letter-spacing:.05em}
+.tgroup-head h2::before{width:3px;height:14px;border-radius:2px}
+.tgroup-head p{margin:6px 0 12px;font-size:12.5px;line-height:1.55;color:var(--dim)}
+.ttools{gap:7px}
+.tool{min-height:58px;justify-content:center;padding:10px 11px;border:1px solid var(--hair);border-radius:var(--r-md);background:var(--panel2)}
+.tool b{font-size:13px;letter-spacing:.01em}
+/* 副标题两行：提示语本身是「这工具干嘛用的」，压成一行就只剩省略号 */
+.tool span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;overflow:hidden;
+  font-size:11.5px;line-height:1.45;color:var(--dim)}
+.tool:hover{background:var(--panel);border-color:var(--gold);box-shadow:var(--sh-1)}
+.tool.on{border-color:transparent;box-shadow:0 10px 22px -14px var(--gold)}
+/* 「还有 N 个」不是一块没做完的虚线占位，是一条可以点的展开行 */
+.tmore{justify-content:center;padding:9px 11px;border:1px solid transparent;border-radius:var(--r-md);
+  background:var(--panel2);color:var(--ink2);font-size:12.5px}
+.tmore:hover{background:var(--panel);border-color:var(--gold);color:var(--gold)}
+.bar{padding:18px 20px;gap:14px 16px;border:1px solid var(--hair);border-radius:var(--r-lg);background:var(--panel);box-shadow:var(--sh-1)}
+.field{font-size:12.5px;font-weight:600;letter-spacing:.02em;color:var(--ink2);gap:7px}
+.field input,.field select{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);
+  font-size:14px;font-weight:400;height:42px;padding:0 12px}
+.field textarea{height:auto;padding:10px 12px;border-radius:var(--r-md);font-size:14px}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:var(--line)}
+.field input:focus,.field select:focus,.field textarea:focus{background:var(--panel);border-color:var(--gold);box-shadow:var(--ring)}
+.chk{font-size:13px;color:var(--ink2)}
+.adv>summary{padding:4px 0;font-size:12.5px;color:var(--dim)}
+.go{height:44px;padding:0 22px;border-radius:var(--r-md);font-size:14px;font-weight:600;letter-spacing:.04em}
+.go.ghost{height:44px;border:1px solid var(--hair);background:transparent;color:var(--ink2);font-weight:500}
+.go.ghost:hover{background:var(--panel2);border-color:var(--gold);color:var(--ink)}
+.tip{font-size:12.5px;line-height:1.7;color:var(--dim);max-width:66ch}
+@media (max-width:640px){
+  .wrap{padding:14px 12px 48px}
+  header{gap:12px;margin-bottom:14px;padding-bottom:12px}
+  .brand{font-size:19px;letter-spacing:.1em}
+  .brand .seal{width:38px;height:38px;border-radius:11px}
+  .tgroup{padding:13px 13px 12px}
+  .tool{min-height:54px;padding:9px 10px}
+  .bar{padding:14px 14px 16px;gap:12px}
+  .go{height:48px;border-radius:var(--r-sm)}
+}
+</style>
 <style>#mp-boot{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0f1115;color:#e8e8ea;font:14px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .28s}#mp-boot.out{opacity:0;pointer-events:none}#mp-boot .seal2{width:42px;height:42px;border-radius:9px;display:grid;place-items:center;background:var(--gold);color:var(--on-accent);font-size:21px;font-weight:700}#mp-boot b{font-size:15px;letter-spacing:.05em}#mp-boot i{font-style:normal;font-size:12px;opacity:.55}@media print{#mp-boot{display:none}}</style>
 </head>
 <body>
@@ -420,7 +492,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.82.0</span><span class="ver-note" title="本版之后又改了 13 项（版本号未变）：「最需要火」与「忌土火」不再并排；气候档名漏了两档（顺手修）；调候与《穷通宝鉴》不再各说各的；格成不真 ≠ 命不好；取用补上组合层：官杀该制还是该化；临界档位自己说出来；说人话层落到盘面位置；补上「所以呢」那一层；强弱的判档修了；单页问事类永远出不了盘（修）；出盘后问事层被锁死（修，两条链都有）；e2e 深链用例一直是错的（修）；两套渲染链有了检查清单">另含 13 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.83.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -762,10 +834,8 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：207 个测试文件 / 11486 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    <h3>本版之后又改了什么（版本号未变）</h3>
-    <ul><li>「最需要火」与「忌土火」不再并排</li><li>气候档名漏了两档（顺手修）</li><li>调候与《穷通宝鉴》不再各说各的</li><li>格成不真 ≠ 命不好</li><li>取用补上组合层：官杀该制还是该化</li><li>临界档位自己说出来</li><li>说人话层落到盘面位置</li><li>补上「所以呢」那一层</li><li>强弱的判档修了</li><li>单页问事类永远出不了盘（修）</li><li>出盘后问事层被锁死（修，两条链都有）</li><li>e2e 深链用例一直是错的（修）</li><li>两套渲染链有了检查清单</li></ul>
-    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
+    <ul><li>测试：210 个测试文件 / 11616 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -13784,7 +13854,21 @@ function relation(bodyEl, useEl) {
  */
 function buildMeihua(input = {}) {
   if (!input || typeof input !== 'object') throw fail('E_INPUT', '梅花起卦参数不能为空：时间起卦要 datetime，数字起卦要 upper / lower');
-  const mode = input.mode === 'number' ? 'number' : 'time';
+  // 模式推断：mode 没给时按入参自己认。以前默认 'time'，只给 upper / lower 会被判成
+  // 「时间起卦缺 datetime」，报错还把人往日期上引——用户给的是两个数，要的也是数字卦。
+  const numsGiven = (input.upper !== undefined && input.upper !== null && input.upper !== '')
+    || (input.lower !== undefined && input.lower !== null && input.lower !== '');
+  const timeGiven = typeof input.datetime === 'string' && input.datetime.trim() !== '';
+  let mode;
+  if (input.mode === 'number' || input.mode === 'time') {
+    mode = input.mode;
+  } else if (numsGiven && timeGiven) {
+    throw fail('E_INPUT', 'datetime 与 upper / lower 同时给了：请用 mode 指明 time（按时间起卦）还是 number（数字起卦），两组不能同时生效');
+  } else if (numsGiven) {
+    mode = 'number';
+  } else {
+    mode = 'time';
+  }
   let upperNum;
   let lowerNum;
   let moving;
@@ -21276,7 +21360,25 @@ function buildXiaoliuren(input) {
   if (!input || typeof input !== 'object') {
     throw fail('E_INPUT', '小六壬起课参数不能为空：时间起课要 date / hour，数字起课要 num1 / num2 / num3');
   }
-  const mode = input.mode === 'number' ? 'number' : 'time';
+  // 模式推断：mode 没给时按入参自己认。以前默认 'time'，于是「只给了三个数」会被当成
+  // 「没给时间」——工具层还会顺手补上此刻的钟点，用户明明报数起课，拿回的却是一张
+  // 按当下时间掐的盘，而且不报错。数字给了就是数字起课，时间给了才是时间起课。
+  const numsGiven = [input.num1, input.num2, input.num3]
+    .filter((v) => v !== undefined && v !== null && v !== '').length;
+  const timeGiven = (typeof input.hour === 'number' && Number.isInteger(input.hour))
+    || (typeof input.date === 'string' && input.date.trim() !== '')
+    || (typeof input.datetime === 'string' && input.datetime.trim() !== '');
+  let mode;
+  if (input.mode === 'number' || input.mode === 'time') {
+    mode = input.mode;
+  } else if (numsGiven && timeGiven) {
+    // 两组都给了却不指明用哪组：谁被丢掉都是静默错盘，宁可要一句能照做的报错
+    throw fail('E_INPUT', '时间与报数同时给了：请用 mode 指明 time（按日期时辰掐指）还是 number（报数起课），两组不能同时生效');
+  } else if (numsGiven) {
+    mode = 'number';
+  } else {
+    mode = 'time';
+  }
   let m;
   let d;
   let h;
@@ -26803,12 +26905,20 @@ function chartIdOf(r, opts = {}) {
   // 只读顶层的话两张不同生日的盘会算出同一个 id，缓存随之串盘——结论卡挂在上一张盘上。
   const civ = (input && input.civil) || {};
   const pick = (k) => (input[k] != null ? input[k] : civ[k]);
+  // 抽牌类体系（塔罗）：同 seed 换牌阵，牌面不同但以前键里只有 seed——两张盘算出同一个
+  // chart_id，信封缓存命中上一张，五张牌阵的盘会挂上「3 张牌里 2 正 1 逆」的结论卡。
+  // 牌阵标签与每张牌的正逆都进键，才算「同盘同 id」。
+  const cards = (r && Array.isArray(r.cards))
+    ? r.cards.map((c) => `${one(c && c.name)}${c && c.upright === false ? '逆' : '正'}`).join(',')
+    : '';
   const key = [
     system,
     pick('year'), pick('month'), pick('day'), pick('hour'), pick('minute'),
     pick('gender'), pick('datetime'), pick('leapMonth'),
     (r && r.seed) != null ? r.seed : '',
     (r && r.cast && Array.isArray(r.cast.lines)) ? r.cast.lines.join('') : '',
+    one((r && r.spread) || ''),
+    cards,
     one(opts.question || (r && r.question) || ''),
     one(opts.mode || 'live'),
   ].join('|');
@@ -30539,14 +30649,24 @@ function enrichPlain(result, r, ask) {
   const disputed = caveats.filter((k) => k.status !== 'todo');
   const touched = disputed.filter((k) => seen.has(k.id));
   const rest = disputed.filter((k) => !seen.has(k.id));
-  const fmtCaveat = (k) => `· ${k.gist}（${STATUS_LABEL[k.status] || k.status}）`;
+  // 每一条都拖一枚「（文本·各家有异说）」时，五行条目就等于把同一句话念了五遍，
+  // 读者反而看不出哪一条才是重点。一组里状态一致的，把这枚限定语提到小标题上，
+  // 条目只说事；只有状态混合的组才逐条标，免得把两种状态糊成一句「各家有异说」。
+  const statusTag = (k) => STATUS_LABEL[k.status] || k.status;
+  const sharedTag = (list) => {
+    const tags = [...new Set(list.map(statusTag))];
+    return tags.length === 1 ? tags[0] : '';
+  };
+  const fmtCaveat = (k, shared) => `· ${k.gist}${shared ? '' : `（${statusTag(k)}）`}`;
+  const touchedTag = sharedTag(touched);
+  const restTag = sharedTag(rest);
   const caveatLine = disputed.length
     ? [
       touched.length
-        ? `本盘涉及 ${touched.length} 处：\n${touched.map(fmtCaveat).join('\n')}`
+        ? `本盘涉及 ${touched.length} 处${touchedTag ? `（均为${touchedTag}）` : ''}：\n${touched.map((k) => fmtCaveat(k, touchedTag)).join('\n')}`
         : '本盘未踩到下面这些分歧，结论是按一派一路算下来的。',
       rest.length
-        ? `本体系另有 ${rest.length} 处通行分歧（本盘未涉及，附原注备查）：\n${rest.map((k) => `${fmtCaveat(k)}${k.note ? `——${k.note}` : ''}`).join('\n')}`
+        ? `本体系另有 ${rest.length} 处通行分歧（本盘未涉及，附原注备查${restTag ? `；均为${restTag}` : ''}）：\n${rest.map((k) => `${fmtCaveat(k, restTag)}${k.note ? `——${k.note}` : ''}`).join('\n')}`
         : '',
     ].filter(Boolean).join('\n\n')
     : '';
@@ -35462,9 +35582,11 @@ ${r.summary}`;
 }
 
 /** 解析与详解的紧凑文本（给模型看，不塞整块 JSON）
- *  detail：'full'（默认全文）/ 'lean'（只给结论、所问方向与三张表，长论述与规则出处折成指针）/
- *  'brief'（在 lean 上再限表行；工具层在 withInterpret 且未指定档位时用这一档）。
- *  省的是回给模型的文本，不改盘面、不改解析对象本身。
+ *  detail：'full'（默认全文）/ 'lean'（省掉长论述（>300 字的分节）与「规则·出处」原文、折成一行指针；
+ *  表行给全、名词解释照给）/ 'brief'（在 lean 上再把表限到 8 行、不给名词解释；
+ *  工具层在 withInterpret 且未指定档位时用这一档）。
+ *  三档都保留：结论、说人话、一页读懂、（聚焦后的）维度、较短分节、三张表、追问建议、
+ *  能力边界与免责声明——省的是篇幅，不是「回答什么、不回答什么」的交代。
  *  **不设体积上限**：brief 只做「少给哪些维度、表最多几行」这类结构性收敛，
  *  超长就让它超长——按字节截断会把结论、依据、边界一起腰斩，省下的体积不值这个代价。 */
 function interpretText(i, detail) {
@@ -35655,8 +35777,9 @@ function normalizeLongitudes(args) {
   return out;
 }
 
-/** 输出档位：缺省 'full'（面板与直接调用保持历史全文）；'lean' 去掉长论述与规则出处，
- *  'brief' 在 lean 上再限表行（不设体积上限）。工具层在 withInterpret 且未指定时传 brief。 */
+/** 输出档位：缺省 'full'（面板与直接调用保持历史全文）；'lean' 去掉长论述与规则出处原文
+ *  （表行给全、名词解释照给）；'brief' 在 lean 上再把表限到 8 行、不给名词解释（不设体积上限）。
+ *  工具层在 withInterpret 且未指定时传 brief。 */
 function detailOf(value) {
   if (value === undefined || value === null || value === '') return 'full';
   if (value === 'full' || value === 'lean' || value === 'brief') return value;
@@ -35886,12 +36009,22 @@ function computeRaw(args = {}) {
   }
   if (system === 'meihua') {
     let result;
+    // 模式推断与 buildMeihua 同口径：先定 mode，再决定要不要过日期尺。
+    // 老写法先 parseDateTime 后分模式，于是「只给 upper / lower」被报成缺 datetime，
+    // 用户给的明明是数字；反过来，两组都给又不说用哪组，则由 buildMeihua 报歧义。
+    const mhNums = (args.upper !== undefined && args.upper !== null && args.upper !== '')
+      || (args.lower !== undefined && args.lower !== null && args.lower !== '');
+    const mhMode = args.mode === 'number' || args.mode === 'time'
+      ? args.mode
+      : mhNums ? 'number' : 'time';
     // 时间起卦必须与其它体系过同一把日期尺：以前把原串直接交给梅花私有解析器，
     // 1990-02-30 / 13 月 / 25:00 都会被接受，再被正规化成另一天起卦。
-    if (args.mode !== 'number') parseDateTime(args.datetime);
+    if (mhMode !== 'number') parseDateTime(args.datetime);
     try {
       result = buildMeihua({
-        mode: args.mode === 'number' ? 'number' : 'time',
+        // 显式 mode 才透传；没给就交给 buildMeihua 按入参认（两组都给时由它报歧义，
+        // 这里提前定成 number 会让 datetime 被静默忽略）
+        mode: args.mode === 'number' || args.mode === 'time' ? args.mode : undefined,
         datetime: args.datetime,
         upper: args.upper,
         lower: args.lower,
@@ -36027,9 +36160,19 @@ function computeRaw(args = {}) {
     return { ...result, summary: convertText(result) };
   }
   if (system === 'xiaoliuren') {
-    const dt = args.datetime ? parseDateTime(args.datetime) : null;
+    // 数字起课不必过日期尺；只给了 datetime 的才解析。给了报数又给了 datetime/date/hour
+    // 且没写 mode 时，radix 判断留给 buildXiaoliuren 报「两组不能同时生效」——否则
+    // 早一步的 parseDateTime 会把歧义说成「缺 datetime」，与事实相反。
+    const castNums = [args.num1, args.num2, args.num3]
+      .filter((v) => v !== undefined && v !== null && v !== '').length;
+    const xlMode = args.mode === 'number' || args.mode === 'time'
+      ? args.mode
+      : castNums ? 'number' : 'time';
+    const dt = xlMode === 'time' && args.datetime ? parseDateTime(args.datetime) : null;
     const result = buildXiaoliuren({
-      mode: args.mode === 'number' ? 'number' : 'time',
+      // 显式 mode 原样透传，没给就不给，让引擎按入参认（数字起课不能被静默换成时间起课）
+      mode: args.mode === 'number' || args.mode === 'time' ? args.mode : undefined,
+      datetime: args.datetime,
       date: typeof args.date === 'string' && args.date.trim() ? args.date : dt ? `${dt.year}-${dt.month}-${dt.day}` : undefined,
       hour: Number.isInteger(args.hour) ? args.hour : dt && /[T\s]\d{1,2}:\d{1,2}/.test(String(args.datetime)) ? dt.hour : undefined,
       num1: args.num1,
@@ -36573,9 +36716,38 @@ function lifeText(result) {
   return out.join(BR + BR);
 }
 
+/**
+ * 摘要先给一句结论，解析段再把它展开；同一句被两处逐字写出来，就等于让读这段的模型
+ * 把同一句话读两遍（八字就踩了 13 句）。这里按整句去重、保留首次出现的那一份：
+ * 只比 ≥18 字的完整句，短标签（「旺相 2 爻」「土克水」这类）照旧保留，
+ * 不然会把表格里的对齐片段当成重复句删掉。
+ */
+function stripEcho(text, prior) {
+  const MIN = 18;
+  const key = (s) => s.replace(/^[\s·•※]+/, '').trim();
+  const seen = new Set();
+  for (const line of String(prior == null ? '' : prior).split('\n')) {
+    for (const seg of line.split('。')) {
+      const k = key(seg);
+      if (k.length >= MIN) seen.add(k);
+    }
+  }
+  const out = [];
+  for (const line of String(text == null ? '' : text).split('\n')) {
+    const keep = [];
+    for (const seg of line.split('。')) {
+      const k = key(seg);
+      if (k.length >= MIN && seen.has(k)) continue; // 前面已经念过这一句
+      if (k.length >= MIN) seen.add(k);             // 同一段内的重复也去
+      keep.push(seg);
+    }
+    out.push(keep.join('。'));
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
 /** 给模型的紧凑文本（去掉大字段，保留摘要；带解析时附上解析） */
 function renderText(result) {
-  const base = result.summary ?? JSON.stringify(result, null, 2);
   // 先给一段人话，再给盘面细节：模型照这段复述，就不至于一开口就是术语表
   const NL = String.fromCharCode(10);
   const brief = result.brief
@@ -36585,6 +36757,9 @@ function renderText(result) {
       .concat(result.brief.caveat ? ['　※ ' + result.brief.caveat] : [])
       .join(NL) + NL
     : '';
+  // 摘要里同一条说明会随每张牌/每个宫位各写一遍（塔罗三张逆位就念三次），
+  // 先对摘要自身去重，再拿去掉重的那份当解析段的「已念过」清单。
+  const base = stripEcho(result.summary ?? JSON.stringify(result, null, 2), brief);
   const parts = [brief + base];
   // 婚姻与六面排在文本盘面之后、技术信息之前：这一段是给不看网页的人的
   const lifePart = lifeText(result);
@@ -36614,7 +36789,7 @@ function renderText(result) {
   // 解析段按档位渲染。brief 只做结构性收敛（少给维度、表限行数），不压体积：
   // 盘面、句柄、解析全都不裁，这段有多长就多长。
   if (result.interpret) {
-    const extra = interpretText(result.interpret, result.interpretTier);
+    const extra = stripEcho(interpretText(result.interpret, result.interpretTier), parts.join('\n\n'));
     if (extra) parts.push(extra);
   }
   if (result.cross) parts.push(`【八字 × 紫微 交叉验证】\n${crossText(result.cross)}`);
@@ -36687,7 +36862,7 @@ return { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION, interpret, D
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.82.0";
+window.__MP_VER = "0.83.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -36797,48 +36972,51 @@ window.__MP_VER = "0.82.0";
 </script>
 <script>
 // 共用渲染层：紫微/八字/六爻/梅花/六壬/塔罗 -> HTML 字符串。面板与独立页面共用同一份。
+//
+// 这个文件 366KB，但**不拆**：一百多份测试把它当「一段自包含脚本」用
+// `vm.runInNewContext(读到的源码)` 直接跑——拆成多份就得让每一份读取都经过拼接器，
+// 等于把「源码本身就是可执行脚本」这条最有价值的保证，换成「拼接器没写错」这个新假设。
+// 读不动的时候按下面的分区找，别从头翻：
+//
+//   开头     ── CSS ──       报告 / 卡片 / 深色 / 打印 / 窄屏全部样式（构建期剥注释，源码保留）
+//   之后     ── 共用小工具 ──  esc / 日期 / 存储 / 哈希等，两条链只此一份（window.__PP 暴露）
+//   之后     ── 盘面渲染 ──    各体系卡片：八字 / 紫微 / 六爻 / 梅花 / 六壬 / 塔罗 / 黄历 …
+//   末尾     ── 报告编排 ──    结论卡 → 一眼看 → 盘面 → 解析 → 追问，以及 pp.CSS 的挂载
 (function () {
   const CSS = `
-.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#8a8378;--faint:#a9a296;
+.pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#1b1b1b;--ink2:#3f3a33;--muted:#6f6a60;--label:#696356;--faint:#726b5c;
   --line:#c8c1b2;--dimline:#b9b2a4;--hair:#e9e2d3;
-  /* 底色略沉作「桌面」，--card 跳到近白：原先 bg 与 card 只差 1/255，卡片感等于零。
-     同一色相里塞 9 个几乎相等的浅色，谁都浮不起来。 */
-  /* 水墨风：宣纸白为底、淡墨分层；米黄系整体降饱和，纸感靠 --band 的微暖留一点 */
+
   --bg:#f4f2ec;--card:#fdfdfb;--band:#f7f5ef;--hover:#eeece5;--hover2:#e6e4dc;
   --tri:#eef0ea;--soul:#f7ece9;--sel:#f5efe9;--link:#f0efe9;
-  --red:#a02c26;--red-rgb:160,44,38;--env-good:var(--env-good);--env-warn:var(--env-warn);--env-alt:var(--env-alt);--lu:#3d5a52;--lu-rgb:61,90,82;
+  --red:#a02c26;--red-rgb:160,44,38;--env-good:#2f6b4f;--env-warn:#7d5410;--env-alt:#3a5570;--lu:#3d5a52;--lu-rgb:61,90,82;
   --quan:#6e5a2e;--quan-rgb:110,90,46;--ke:#3a5568;--ke-rgb:58,85,104;--ji:#a02c26;
   --br-good:#4c7a5c;--br-bad:#9c5b56;--on-accent:var(--on-accent);--wx-metal:#8a6b1f;
   --tg-bi:#4e5d6b;--tg-shi:#55685c;--tg-cai:#6e5a2e;--tg-guan:#8a4a42;--tg-yin:#5d5570;
-  /* 之前 mp-cli / mp-qt / mp-cl / 起名卡里引用了 --ink3、--fx、--sans，却从未定义：
-     var() 取不到值 → 整条声明作废，字色与字形全靠继承，楷体、弱化灰都成了摆设。 */
-  --ink3:#8a8378;--fx:"Kaiti SC",KaiTi,"STKaiti","Songti SC",serif;--sans:system-ui,-apple-system,"Microsoft YaHei",sans-serif;--kai:"Kaiti SC",KaiTi,"STKaiti",serif;
+
+  --ink3:#726b5c;--fx:"Kaiti SC",KaiTi,"STKaiti","Songti SC",serif;--sans:system-ui,-apple-system,"Microsoft YaHei",sans-serif;--kai:"Kaiti SC",KaiTi,"STKaiti",serif;
   --shadow:0 1px 2px rgba(35,28,18,.05),0 18px 40px -30px rgba(35,28,18,.42),
-    /* 动效与圆角令牌：全站同一节奏（借鉴 wallpaper-engine 的 --we-dur/--we-ease 约定），
-       reduced-motion 时整体关停，见文件尾的全局 @media。 */
+
     --dur:150ms;--dur-fast:100ms;--ease:cubic-bezier(.32,.72,.24,1);
     --r-sm:6px;--r-md:10px;--r-lg:14px;
-    /* 称骨分档徽章五档色（0.77.0 嵌入段显眼化）：亮色渐变两端 */
+
     --cg-top-a:#c9a227;--cg-top-b:#e6b84c;--cg-good-a:#2e7d5b;--cg-good-b:#4caf87;--cg-mid-a:#5b6b9d;--cg-mid-b:#7d8fc4;--cg-weak-a:#a1702d;--cg-weak-b:#c9924f;--cg-low-a:#8a4a4a;--cg-low-b:#b06a6a;
     --glow:0 0 0 1px rgba(var(--lu-rgb),.25),0 0 12px rgba(var(--lu-rgb),.12)}
-/* 变量与 .mp-it 共享 —— 「解析与详解」是 .pp 的兄弟节点、不在 .pp 内部，
-   变量只挂在 .pp 上时它拿不到 --card/--muted/--red，头部底色会变透明、边框会退回黑色。 */
+
 .pp{border:1px solid var(--line);background:var(--bg);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:12.5px;line-height:1.55;
   border-radius:12px;overflow:hidden;box-shadow:var(--shadow);container-type:inline-size}
-/* 深色：只换变量，不动任何一条选择器。用 @media screen 限定，
-   打印永远走浅色 —— 深色主题下直接打印会得到一整页耗墨的深底 PDF。 */
+
 @media screen and (prefers-color-scheme:dark){
   .pp,.mp-it,.mp-al,.mp-cg,.mp-cl,.mp-cli,.mp-kline,.mp-mb,.mp-mb-paper,.mp-nm,.mp-quick,.mp-cdiff,.mp-shadow,.mp-trace-card,.mp-trace-layer,.mp-prof{--ink:#eae5d9;--ink2:#d5cfc2;--muted:#aca598;--label:#a49c8e;--faint:#928b7e;
     --line:#514a3e;--dimline:#5f5849;--hair:#2f2b23;
-  /* 与浅色同理：底更沉、卡片更亮，让层级在深底上也能立起来 */
-    /* 暗色水墨：墨底宣纸灰字，降暖提灰 */
+
     --bg:#131311;--card:#1f1f1c;--band:#26261f;--hover:#2c2c26;--hover2:#35352c;
     --tri:#2a2e28;--soul:#332521;--sel:#322d27;--link:#2c2b25;
     --red:#e08a7a;--red-rgb:224,138,122;--env-good:#6dc79a;--env-warn:#e0a860;--env-alt:#9aa2ea;--lu:#8fb8a8;--lu-rgb:143,184,168;
     --quan:#c9a96a;--quan-rgb:201,169,106;--ke:#8aadc0;--ke-rgb:138,173,192;--ji:#e08a7a;
     --br-good:#79c79a;--br-bad:#e09a8c;--on-accent:#14130f;--wx-metal:#dcb273;
     --tg-bi:#93b7cf;--tg-shi:#8fbb9d;--tg-cai:#d3ae62;--tg-guan:#d98d84;--tg-yin:#b4a4d0;
-    --ink3:#8b8478;
+    --ink3:#a9a193;
     --dur:150ms;--dur-fast:100ms;--ease:cubic-bezier(.32,.72,.24,1);
     --r-sm:6px;--r-md:10px;--r-lg:14px;
     --glow:0 0 0 1px rgba(var(--lu-rgb),.3),0 0 14px rgba(var(--lu-rgb),.16);
@@ -36849,10 +37027,10 @@ window.__MP_VER = "0.82.0";
 .pp-cell{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px 8px;display:flex;flex-direction:column;position:relative;min-height:150px;background:var(--bg);
   transition:background var(--dur) var(--ease),box-shadow var(--dur) var(--ease)}
 .pp-cell:hover,.pp-cell:focus-visible{background:var(--card);box-shadow:var(--glow);z-index:1}
-/* 命宫：双环选中态（借鉴 wallpaper-engine 色板的「发丝内环 + accent 外环」，比裸描边读得清） */
+
 .pp-soul{box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.35);background:linear-gradient(180deg,rgba(var(--red-rgb),.05),transparent 60%)}
 .pp-soul:hover,.pp-soul:focus-visible{background:var(--card);box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.4),var(--glow)}
-/* 右边框按「视觉列」去，不能按 nth-child：格子用 grid-column 绝对定位，DOM 顺序不等于列序 */
+
 .pp-cell.pp-lastcol{border-right:none}
 .pp-cell.pp-lastrow{border-bottom:none}
 .pp-center{grid-column:2/4;grid-row:2/4;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;position:relative;
@@ -36863,8 +37041,7 @@ window.__MP_VER = "0.82.0";
 .pp-center .ct-t2{font-size:12.5px;color:var(--ink)}
 .pp-center .ct-t3{font-size:14px;letter-spacing:.35em;margin:6px 0;font-weight:600}
 .pp-center .ct-t4{font-size:12.5px;color:var(--muted)}
-/* 盘面字号四级（P1-15）：主星 > 辅曜 > 杂曜神煞 > 年龄长生，一处改全盘生效。
-   竖屏段另有一套值覆盖，见「竖屏」块的 .pp-grid。 */
+
 .pp-grid{--zw-l1:13px;--zw-l2:11.5px;--zw-l3:10.5px;--zw-l4:9.5px;--zw-l5:12px}
 .pp-stars{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 6px;font-size:var(--zw-l2);line-height:1.6;min-height:36px}
 .pp-st{white-space:nowrap}
@@ -36876,13 +37053,10 @@ window.__MP_VER = "0.82.0";
 .pp-st.minor{color:var(--faint);font-size:var(--zw-l3)}
 .pp-m{display:inline-block;font-style:normal;font-size:12px;line-height:1;padding:0 2px;border-radius:2px;color:var(--on-accent);margin-left:1px;vertical-align:1px}
 .pp-m.lu{background:var(--lu)}.pp-m.quan{background:var(--quan)}.pp-m.ke{background:var(--ke)}.pp-m.ji{background:var(--ji)}
-/* 大限/流年四化：只留色框不填充，与生年四化的实心块区分 */
+
 .pp-m.view{background:transparent;box-shadow:inset 0 0 0 1px currentColor}
 .pp-m.view.lu{color:var(--lu)}.pp-m.view.quan{color:var(--quan)}.pp-m.view.ke{color:var(--ke)}.pp-m.view.ji{color:var(--ji)}
-/* 自化：宫干化回本宫。0.64.0 起不再用徽章，改在星名后画彩色小箭头（见 .pp-zha），
-   与生年实心块、大限/流年空心框分成三层——所以这里不再保留 .pp-m.self 样式 */
-/* 庙旺得利平不陷：星名后的等级小字。刻意压低视觉权重（灰为主、陷才微红），
-   避免与四化的实心彩色方块抢层次 */
+
 .pp-b{font-style:normal;font-size:10px;margin-left:3px;padding:0 3px;border-radius:999px;color:var(--muted);letter-spacing:0;opacity:.92;background:var(--band)}
 .pp-b.good{color:var(--br-good)}
 .pp-b.bad{color:var(--br-bad)}
@@ -36896,13 +37070,9 @@ window.__MP_VER = "0.82.0";
 .pp-foot .ft-r{display:flex;flex-direction:column;align-items:flex-end;gap:0;line-height:1.5}
 .pp-foot .ft-pn{color:var(--red);font-size:14px;font-weight:700}
 .pp-soul{box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.35)}
-/* 注意：身宫格用 .pp-shen，不能叫 .pp-body —— .pp-body 是视图容器的类（display:none），
-   两者同名会让身宫那一格整格消失（0.9.0 之前一直如此，12 宫少 1 宫）。
-   下面这条 .pp-body 的「身」角标是从那次改名里漏下来的残骸：
-   .pp-body 是 static 定位的整块视图容器，::after 却是 absolute，
-   结果每次排盘都会在文档左上角飘出一个孤立的灰色「身」方块。已删除。 */
+
 .pp-shen::after{content:"身";position:absolute;top:4px;left:4px;font-size:12px;color:var(--on-accent);background:var(--muted);padding:0 3px;border-radius:2px;z-index:1}
-/* 来因宫角标：右上角「因」，与身宫左上角对称；开关 ppm-d-laiyin 控显隐（默认勾） */
+
 .pp-laiyin::after{content:"因";position:absolute;top:4px;right:4px;font-size:12px;color:var(--on-accent);background:var(--ji);padding:0 3px;border-radius:2px;z-index:1}
 #ppm-d-laiyin:not(:checked)~.pp-body .pp-laiyin::after{display:none}
 .pp-legend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:6px}
@@ -36913,8 +37083,7 @@ window.__MP_VER = "0.82.0";
 .pp-chip.broken{color:var(--quan);border-color:var(--quan);border-style:dashed}
 .pp-chip.neu{color:var(--muted);border-style:dashed}
 .pp-sec{margin-top:10px}
-/* 流月/流日/流时：一层层往外推的三级时间盘。
-   P1-18：默认整块不出现，勾哪个时间层出哪个——本命盘不需要月日时三行挡在下面。 */
+
 .pp-flow{margin-top:9px;border:1px solid var(--line);background:var(--card);font-family:system-ui,sans-serif;display:none}
 #ppm-t-month:checked~.pp-flow,#ppm-t-day:checked~.pp-flow,#ppm-t-hour:checked~.pp-flow{display:block}
 .pp-flow .flow-row[data-t]{display:none}
@@ -36933,8 +37102,7 @@ window.__MP_VER = "0.82.0";
 .pp-flow .flow-row .flow-p em.flow-same{font-style:normal;color:var(--faint);font-size:11.5px;margin-left:5px}
 .pp-sec-h{font-size:12.5px;letter-spacing:.08em;color:var(--label);font-weight:700;margin-bottom:2px}
 .pp-tl{font-size:12.5px;color:var(--muted);line-height:1.75}
-/* 四柱表：按命书版式排 —— 左侧一列窄行名，年/月/日/时四柱固定并排在右，
-   不打竖线、只用极淡横线分隔。四柱必须始终并排：2×2 折行后就没法一眼横扫四柱对照了。 */
+
 .pp-bz{width:100%;max-width:860px;margin:0 auto;border-collapse:collapse;font-size:13px;font-family:system-ui,sans-serif;table-layout:fixed}
 .pp-bz th,.pp-bz td{padding:5px 2px;text-align:center;vertical-align:middle;border:none}
 .pp-bz th{border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;font-size:12.5px;letter-spacing:.06em}
@@ -36948,7 +37116,7 @@ window.__MP_VER = "0.82.0";
 .pp-bz td.bz-wxs i{display:inline-block;font-style:normal;margin:0 9px;white-space:nowrap}
 .pp-bz td.bz-wxs i b{font-weight:600}
 .pp-bz td.bz-wxs i em{font-style:normal;margin-left:1px;font-size:11px;color:var(--muted)}
-/* 十神按五类分组着色（比劫/食伤/财/官杀/印），低饱和，不抢干支五行的主色 */
+
 .tg-bi{color:var(--tg-bi)}.tg-shi{color:var(--tg-shi)}.tg-cai{color:var(--tg-cai)}.tg-guan{color:var(--tg-guan)}.tg-yin{color:var(--tg-yin)}
 .wx-wood{color:var(--lu)}.wx-fire{color:var(--red)}.wx-earth{color:var(--quan)}.wx-metal{color:var(--wx-metal)}.wx-water{color:var(--ke)}
 .bz-zhuri{color:var(--red);font-weight:700}
@@ -36957,38 +37125,37 @@ window.__MP_VER = "0.82.0";
 .pp-str{margin-top:10px;font-size:13px;line-height:1.8}
 .pp-str b{color:var(--red);font-size:15px;margin:0 4px}
 .pp-drel{font-style:normal;color:var(--red);font-size:12px}
-/* 八大地支结构：与日主强弱并列的第二套口径，用中性色，不与主结论抢色 */
+
 .pp-struct{margin-top:6px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
 .pp-struct .pp-st-code{font-weight:700;letter-spacing:.06em;color:var(--ink);margin-right:6px}
 .pp-struct .pp-st-odd{color:var(--quan)}
 .pp-anhe{margin-top:6px;font-size:12.5px;line-height:1.75;color:var(--ink2)}
 .pp-anhe b{color:var(--muted);font-weight:400;margin-right:8px}
 .pp-dim{color:var(--muted)}
-/* 岁运提示下的原文：比正文再轻一档，只做出处，不抢结论 */
+
 .pp-sy-src{margin-top:6px;font-size:11.5px;line-height:1.55}
 .pp-r{display:none}
 .pp-modes{display:flex;align-items:center;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif}
-/* min-height:44px —— 视图切换是本盘唯一的主要控件，触摸目标必须够。
-   原先 6px 上下内边距只有 31px 高，手机上是实打实的误触来源 */
+
 .pp-modes label{min-height:44px;display:inline-flex;align-items:center;padding:3px 20px;font-size:12.5px;color:var(--muted);cursor:pointer;border-right:1px solid var(--line);user-select:none}
 .pp-modes label:hover{background:var(--hover2)}
-/* 提示条是「宫位可点」的唯一说明，--faint 在浅色下只有 2.3:1，换 --muted 才读得清 */
+
 .pp-soon{margin-left:auto;padding-right:10px;font-size:12px;color:var(--muted)}
 .pp-body{display:none}
-/* 盘口口径条（P1-16）：学派名由 radio 驱动，层与年份在渲染时写死 */
+
 .pp-cal{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);padding:2px 2px 4px;line-height:1.5;flex-wrap:wrap}
 .pp-cal b{font-weight:600;color:var(--ink2)}
 .pp-cal .cal-sep{color:var(--faint)}
 .pp-cal .cal-sc::after{content:"四化派"}
 #ppm-sc-feixing:checked~.pp-body .pp-cal .cal-sc::after{content:"飞星派"}
 #ppm-sc-sanhe:checked~.pp-body .pp-cal .cal-sc::after{content:"三合派"}
-/* 切学派时盘面淡入一次：换了视角要有个着落，不然像点了没反应 */
+
 #ppm-sc-feixing:checked~.pp-body .pp-grid,
 #ppm-sc-sanhe:checked~.pp-body .pp-grid{animation:ppSchoolIn .3s ease-out}
 @keyframes ppSchoolIn{from{opacity:.55}to{opacity:1}}
 #ppm-ben:checked~.pp-body.ben,#ppm-da:checked~.pp-body.da,#ppm-ln:checked~.pp-body.ln{display:block}
 #ppm-ben:checked~.pp-modes label[for="ppm-ben"],#ppm-da:checked~.pp-modes label[for="ppm-da"],#ppm-ln:checked~.pp-modes label[for="ppm-ln"]{background:var(--red);color:var(--on-accent)}
-/* 时间层 chips（P1-18）：勾上才亮，与上面三个互斥视图不是一回事 */
+
 .pp-time{border-top:none}
 .pp-time label{min-height:32px;padding:2px 13px;font-size:12px;color:var(--muted)}
 #ppm-t-month:checked~.pp-time label[for="ppm-t-month"],
@@ -36996,26 +37163,23 @@ window.__MP_VER = "0.82.0";
 #ppm-t-hour:checked~.pp-time label[for="ppm-t-hour"]{background:var(--lu);color:var(--on-accent)}
 .pp-tri{background:var(--tri)}
 .pp-soul{background:var(--soul)}
-/* 三视图切换（三视图：飞星/三合/四化）——真分派，不是同一张盘的显隐开关：
-   四化派（默认）：生年四化实心 + 大限/流年空心 + 自化 + 飞星链 chips；
-   飞星派：每宫格内显示「宫干四化飞出」逐条（禄→某宫…），图例藏大限/流年四化；
-   三合派：只看星曜庙旺与宫位结构，所有四化徽章（含生年）、自化、飞星链全部藏起。 */
+
 .pp-schools{border-top:none}
 .pp-schools label{min-height:38px;padding:2px 16px;font-size:12px}
 #ppm-sc-sihe:checked~.pp-schools label[for="ppm-sc-sihe"],
 #ppm-sc-feixing:checked~.pp-schools label[for="ppm-sc-feixing"],
 #ppm-sc-sanhe:checked~.pp-schools label[for="ppm-sc-sanhe"]{background:var(--lu);color:var(--on-accent)}
-/* 飞星派专属：宫内宫干四化行，只在飞星模式展开 */
+
 .pp-fx{display:none;margin-top:3px;font-size:10.5px;line-height:1.55;color:var(--muted);border-top:1px dashed var(--hair);padding-top:2px}
 .pp-fx i{font-style:normal;white-space:nowrap;margin-right:4px}
 .pp-fx i em{font-style:normal;color:var(--faint)}
 #ppm-sc-feixing:checked~.pp-body .pp-fx{display:block}
-/* 运曜/流曜行：默认隐藏，勾选「显示运曜和流曜」才显示（限流盘显示组，纯增强） */
+
 .pp-hs{display:none;margin-top:3px;font-size:10.5px;line-height:1.55;color:var(--muted);border-top:1px dashed var(--hair);padding-top:2px}
 .pp-hs i{font-style:normal;white-space:nowrap;margin-right:4px}
 .pp-hs i em{font-style:normal;color:var(--faint)}
 #ppm-d-hs:checked~.pp-body .pp-hs{display:block}
-/* 日干四化：宫格下方一行小字（禄权科忌四颗化星落宫），默认隐藏，勾 ppm-d-rigan 才显示 */
+
 .pp-rigan{display:none;margin-top:6px;padding:5px 11px;border:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.7;color:var(--muted)}
 .pp-rigan b{color:var(--ink);font-weight:600;margin-right:8px}
 .pp-rigan i{font-style:normal;margin-right:10px;white-space:nowrap}
@@ -37024,15 +37188,12 @@ window.__MP_VER = "0.82.0";
 #ppm-d-rigan:checked~.pp-rigan{display:block}
 #ppm-sc-feixing:checked~.pp-body .pp-m.view,
 #ppm-sc-feixing:checked~.pp-body .pp-viewhua{display:none}
-/* 三合派：四化信息整体退场（生年/自化/大限流年/图例/飞星链 chips/自化箭头） */
+
 #ppm-sc-sanhe:checked~.pp-body .pp-m,
 #ppm-sc-sanhe:checked~.pp-body .pp-zha,
 #ppm-sc-sanhe:checked~.pp-body .pp-viewhua,
 #ppm-sc-sanhe:checked~.pp-flywrap{display:none}
-/* 自化箭头：自化是「宫干化回本宫」，箭头画在星名左边、箭头尖顶住星名，
-   由左向右弧着落回这颗星——读成「这笔化飞出去又落回自己」。
-   为什么必须放星名左边：放右边箭头就朝外，视觉上成了「从本宫飞出去」，意思正好反了。
-   为什么 inline 在星名旁而不是绝对定位：宫格左侧会被满星曜的宫撞上（实测压住「紫微 庙」）。 */
+
 .pp-zha{display:inline-block;margin-right:3px;vertical-align:-1px;line-height:0;cursor:help}
 .pp-zha .z-a{width:19px;height:8px;display:block;overflow:visible}
 .pp-zha .z-shaft{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
@@ -37041,31 +37202,28 @@ window.__MP_VER = "0.82.0";
 .pp-zha.ke{color:var(--ke)}.pp-zha.ji{color:var(--ji)}
 #ppm-sc-sihe:checked~.pp-flywrap{display:block}
 #ppm-sc-feixing:checked~.pp-flywrap{display:block}
-/* 自化图例行：箭头颜色跟四化色走 */
+
 .pp-zhlegend{display:flex;gap:10px;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-top:4px}
 .pp-zhlegend i{font-style:normal;font-weight:600}
 .pp-zhlegend .z-lu{color:var(--lu)}.pp-zhlegend .z-quan{color:var(--quan)}
 .pp-zhlegend .z-ke{color:var(--ke)}.pp-zhlegend .z-ji{color:var(--ji)}
-/* 纸纹：feTurbulence 纤维噪点叠加在盘面底色上，浅色偏灰纤维、暗色同用（低透明度不抢字） */
+
 .pp-paper{position:relative}
 .pp::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.5;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.29 0 0 0 0 0.24 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23p)'/%3E%3C/svg%3E")}
 .pp>*{position:relative;z-index:1}
 .pp-borrow{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.02em}
 
-/* —— 宫位点击展开详情 + 三方四正联动 ——
-   宫格信息密度太高（尤其竖屏 10px），宫内必然有挤掉的东西。
-   点开后把该宫的完整星曜、四化、十二神、三方四正摊平看。 */
 .pp-cell{cursor:pointer;transition:background .14s ease,box-shadow .14s ease;outline:none}
 .pp-cell:hover{background:var(--hover)}
-/* 键盘可达：宫格是 div+tabindex，焦点必须看得见（原先把 outline 关了却没补替代） */
+
 .pp-cell:focus-visible{box-shadow:inset 0 0 0 2px var(--red)}
 .pp-cell.pp-sel{background:var(--sel);box-shadow:inset 0 0 0 2px rgba(var(--red-rgb),.55)}
-/* 三方四正虚线：ink 色细虚线，端点宫由 pp-sel/pp-link 底色呼应 */
+
 .pp-sf{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .pp-sf line{stroke:var(--ink);stroke-width:1.2px;stroke-dasharray:3 2.4;opacity:.38;vector-effect:non-scaling-stroke}
 .pp-sf circle{fill:var(--ink);opacity:.45}
-/* 选中宫的财帛/官禄/迁移三宫：能一眼看出命宫牵着哪几宫 */
+
 .pp-cell.pp-link{background:var(--link);box-shadow:inset 0 0 0 1.5px rgba(var(--red-rgb),.3)}
 .pp-detail{display:none;border-top:1px solid var(--line);background:var(--card);padding:11px 14px 13px;font-family:system-ui,sans-serif}
 .pp-detail.open{display:block}
@@ -37074,7 +37232,7 @@ window.__MP_VER = "0.82.0";
 .pp-detail .dt-dh span{font-size:12.5px;color:var(--muted)}
 .pp-detail .dt-dh .dt-x{margin-left:auto;font-size:12.5px;color:var(--muted);border:none;background:none;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;min-height:44px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;cursor:pointer;user-select:none}
 .pp-detail .dt-dh .dt-x:hover{color:var(--red)}
-/* 用 grid 而不是 flex：flex 下长值会把整块挤到下一行，标签与内容错行 */
+
 .pp-detail .dt-dr{font-size:13px;line-height:1.85;display:grid;grid-template-columns:62px minmax(0,1fr);align-items:baseline;gap:0 8px}
 .pp-detail .dt-dr .dt-k{color:var(--label);font-size:12px;letter-spacing:.06em}
 .pp-detail .dt-dr .dt-v{min-width:0}
@@ -37101,7 +37259,7 @@ window.__MP_VER = "0.82.0";
 .pp-ss .ss-s.bad{color:var(--ji)}
 .pp-ss .ss-s.neutral{color:var(--quan)}
 .pp-ssx{margin-top:10px;font-family:system-ui,sans-serif}
-/* 杂曜全表：诀文整段默认折起来，点开才摊——一行一条，行高比正文松一点好对着盘看 */
+
 .pp-zy{margin-top:6px;font-family:system-ui,sans-serif}
 .pp-zy summary{font-size:12px;color:var(--label);cursor:pointer;list-style:none}
 .pp-zy summary::-webkit-details-marker{display:none}
@@ -37120,24 +37278,19 @@ window.__MP_VER = "0.82.0";
 .pp-ssi.neutral{color:var(--quan);border-color:rgba(var(--quan-rgb),.3)}
 .pp-ssi em{font-style:normal;font-size:12px;color:var(--muted);margin-left:2px}
 
-/* —— 爻线：真线，阳为整条、阴为断开、动爻描红 —— */
-/* 爻线改用内联 SVG：缩放不糊、阴爻两段的间隙按画布等比给出（原先靠 flex gap 百分比，
-   字宽一变间隙就飘）。preserveAspectRatio:none 让宽高各自受 CSS 控制，
-   圆角在窄屏被横向压扁的幅度只有半像素，肉眼不可见。 */
 .mp-hex{display:block;width:104px;height:12px;flex:0 0 auto;color:var(--ink);overflow:visible}
 .mp-hex.hex-on{color:var(--red)}
 .mp-hex.dim{color:var(--dimline)}
 .mp-hex.sm{width:74px;height:9px}
 .mp-hex.md{width:88px;height:10px}
-/* 动爻标记：老阳 ○ / 老阴 ×，与爻线同格右侧。非动爻留空位，保证六列对齐不抖 */
+
 .mp-hy-ln{display:flex;align-items:center;gap:4px;min-width:0}
 .mp-hy-mv{flex:0 0 10px;font-style:normal;font-size:11px;line-height:1;color:var(--red);text-align:center}
-/* 五行符号：12×12 描边图标，取 currentColor，跟着 --wx-* 自动上色 */
+
 .mp-wxi{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:3px;flex:0 0 auto}
-/* 八卦小象：14×10 三爻，用于上下卦标题 */
+
 .mp-trig{display:inline-block;width:14px;height:10px;vertical-align:-1px;margin-right:4px;color:currentColor}
 
-/* —— 六爻 —— */
 .mp-hy-wrap{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
 .mp-hy-box{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:12px 16px 14px;min-width:250px}
 .mp-hy-h{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;font-family:system-ui,sans-serif}
@@ -37155,7 +37308,6 @@ window.__MP_VER = "0.82.0";
 .mp-hy-row.hy-plain{grid-template-columns:34px 112px;gap:9px;padding:0}
 .mp-mh-mini{display:flex;flex-direction:column;gap:4px}
 
-/* —— 梅花 —— */
 .mp-mh{padding:16px}
 .mp-mh-head{font-size:13px;color:var(--muted);margin-bottom:12px}
 .mp-mh-main{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
@@ -37178,7 +37330,6 @@ window.__MP_VER = "0.82.0";
 .mp-mh-rel .mh-lv.bad{color:var(--ji)}
 .mp-mh-rel .mh-lv.flat{color:var(--quan)}
 
-/* —— 大六壬 —— */
 .mp-dl{padding:16px}
 .mp-dl-head{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.7}
 .mp-dl-sc{display:flex;align-items:stretch;margin:0 0 12px;flex-wrap:wrap}
@@ -37241,7 +37392,7 @@ window.__MP_VER = "0.82.0";
 .mp-hp-inter li b.m-忌{background:var(--ji)}
 .mp-hp-inter li i{font-style:normal;color:var(--red);font-size:10px;margin-left:3px}.mp-hp-notes{margin-top:12px;font-size:11px;color:var(--muted);line-height:1.7}
 .mp-hp-notes p{margin:2px 0}
-/* 三方合盘：三对并列的小表。不合并总分，所以没有「三人合计」那一行 */
+
 .mp-hp-triple{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .mp-hp-triple table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.7;margin-top:6px}
 .mp-hp-triple th,.mp-hp-triple td{text-align:left;padding:4px 6px;border-bottom:1px dashed var(--line);white-space:nowrap}
@@ -37266,17 +37417,12 @@ window.__MP_VER = "0.82.0";
 .mp-dl-c .dl-t3{font-size:12.5px;letter-spacing:.2em;margin-top:3px}
 .mp-dl-legend{display:flex;gap:12px;justify-content:center;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
 
-/* —— 塔罗 —— */
-/* ── 人生运势曲线 ──
-   大运是阶梯（每步十年），流年是折线；两条叠在一张图上，
-   一眼看出「哪段高、哪段低、现在在哪」——这类图是命理产品里最容易被截图传播的一张。
-   纯内联 SVG，零依赖；颜色全部走 CSS 变量，深浅色自动跟随。 */
 .mp-curve{margin-top:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:10px 12px 8px}
 .mp-curve-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--label);font-family:system-ui,sans-serif;margin-bottom:4px}
 .mp-curve-h b{font-size:12.5px;color:var(--ink);font-weight:600}
 .mp-curve-h span{font-size:11.5px;color:var(--muted)}
 .mp-curve svg{display:block;width:100%;height:auto;overflow:visible}
-/* 档位色带：五个档各一条横向参考区，落在带内即该档 */
+
 .mp-curve .cv-band{opacity:.09}
 .mp-curve .cv-band.b-good{fill:var(--lu)}
 .mp-curve .cv-band.b-bad{fill:var(--red)}
@@ -37293,12 +37439,9 @@ window.__MP_VER = "0.82.0";
 .mp-curve .cv-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;font-size:11px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-curve .cv-legend i{display:inline-block;width:14px;height:2px;vertical-align:3px;margin-right:4px}
 .mp-curve .cv-tip{font-size:11px;color:var(--muted);line-height:1.6;margin-top:4px}
-/* 窄屏：轴标签更稀，避免挤成一团 */
+
 @media (max-width:520px){.mp-curve .cv-lbl.age{font-size:9px}}
-/* ── 人生 K 线 ──
-   逐年蜡烛图：实体＝该岁相对上一岁的涨跌，影线＝高低各 4 分的弹性。
-   阳线暖色、阴线冷色；大运交界虚线 + 段名标在顶部；均线只作趋势参考。
-   纯内联 SVG，零依赖，颜色全走变量，深浅色与打印都跟随。 */
+
 .mp-kline{margin-top:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:10px 12px 9px}
 .mp-kline-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--label);font-family:system-ui,sans-serif;margin-bottom:2px}
 .mp-kline-h b{font-size:12.5px;color:var(--ink);font-weight:600}
@@ -37375,8 +37518,6 @@ window.__MP_VER = "0.82.0";
 .mp-tt-ta{width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px;font-size:13px;font-family:inherit;line-height:1.7;resize:vertical;outline:none}
 .mp-tt-ta:focus{border-color:var(--red)}
 
-/* —— 三层披露：结论卡 / 因素卡 —— */
-/* L0 独立在报告之外，所以自带一套卡片外观，不依赖 .mp-it 的边框 */
 .mp-env-head{padding:15px 17px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);color:var(--ink);font-family:"Songti SC","SimSun","Microsoft YaHei",serif}
 .mp-env-kicker{font-size:11px;letter-spacing:.18em;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-env-hl{margin:7px 0 0;font-size:17px;font-weight:700;line-height:1.6}
@@ -37387,7 +37528,7 @@ window.__MP_VER = "0.82.0";
 .mp-env-dir.t-alt{color:var(--env-alt)}
 .mp-env-dir.t-plain{color:var(--muted)}
 .mp-env-conf{color:var(--muted)}
-/* 把握的口径：点开才展开，但一定能问到。手机上 title 不显示，所以用 details 而不是 tooltip */
+
 .mp-env-confq{display:inline-block}
 .mp-env-confq>summary{cursor:pointer;list-style:none}
 .mp-env-confq>summary::-webkit-details-marker{display:none}
@@ -37433,14 +37574,11 @@ window.__MP_VER = "0.82.0";
 .mp-env-cf-view{padding:2px 0;color:var(--muted)}
 .mp-env-cf-view span{display:inline-block;min-width:96px;color:var(--ink)}
 .mp-env-cf-item em{display:block;margin-top:4px;font-style:normal;color:var(--muted);font-size:12px}
-/* —— 解析与详解 —— */
-/* 变量由上面的 .pp,.mp-it 共享块提供。这里原先写过 --ink:var(--ink) 这类自引用声明，
-   自引用会让变量变成 guaranteed-invalid，反而把继承值也挡掉了（--card 因此彻底失效）。 */
-/* container-type：dsh 侧栏是「窗口宽、报告窄」，@media 不触发；下面 ≤640 的表格/目录规则另挂一份 @container */
+
 .mp-it{margin-top:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);container-type:inline-size;
   font-family:"Songti SC","SimSun","Microsoft YaHei",serif;font-size:13px;line-height:1.75}
 .mp-it *{box-sizing:border-box}
-/* 标题栏即折叠开关：整栏可点，箭头旋转表示状态 */
+
 .mp-it-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;width:100%;padding:12px 16px;border:none;border-bottom:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-family:inherit;text-align:left;cursor:pointer;-webkit-appearance:none;appearance:none}
 .mp-it-head:hover{background:var(--band)}
 .mp-it-head:focus-visible{outline:2px solid var(--red);outline-offset:-3px}
@@ -37450,20 +37588,17 @@ window.__MP_VER = "0.82.0";
 .mp-it-hint{margin-left:auto;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-it-title{font-size:15px;font-weight:700;letter-spacing:.08em;color:var(--red)}
 .mp-it-tag{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
-/* 所问之事 + 询问方向的回显，放在引语上方，先让用户确认问的是什么 */
+
 .mp-it-ask{padding:10px 16px;background:var(--band);border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:var(--ink2);font-family:system-ui,sans-serif}
 .mp-it-ask .ask-q{font-weight:600;color:var(--ink)}
-/* 分隔符也用 --muted，别跟 --dimline：深色下 dimline 压在 band 上只有 2.16:1，
-   竖线淡到看不见。dimline 是给坐标轴线/网格/进度条底的，那些本就该淡；
-   这根是夹在两段文字之间的字符，得读得出来。两条渲染链共用这份 CSS，一起生效。 */
+
 .mp-it-ask .ask-sep{color:var(--muted);margin:0 7px}
 .mp-it-ask .ask-d{color:var(--lu)}
-/* 按询问方向提到最前的那一条 */
+
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}
 .mp-it-dim.focus{background:linear-gradient(90deg,rgba(var(--lu-rgb),.06),transparent 60%);border-left:2px solid var(--lu);padding-left:10px}
 .mp-it-lead{padding:11px 16px;font-size:13px;color:var(--ink2);border-bottom:1px dashed var(--line)}
-/* 白话四层：直答 / 说人话 / 每维一句话 / 追问 / 名词解释
-   目的：先给结论再给依据，术语另设解释区，让「想问的人」不必先学会术语才能读懂 */
+
 .mp-it-ans{margin:12px 16px 0;padding:12px 14px;border-left:3px solid var(--red);background:var(--band);font-size:13.5px;line-height:1.9;text-align:justify}
 .mp-it-ans b{display:block;font-size:11px;letter-spacing:.12em;color:var(--red);font-family:system-ui,sans-serif;margin-bottom:5px;font-weight:600}
 .mp-it-plain{margin:10px 16px 0;padding:11px 14px;border:1px dashed var(--line);border-radius:8px;font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
@@ -37475,7 +37610,7 @@ window.__MP_VER = "0.82.0";
 .mp-it-gloss{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted)}
 .mp-it-gloss summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
 .mp-it-gloss span{color:var(--ink2);font-weight:600;margin-right:4px}
-/* 三层导读（数 / 象 / 辞）：默认收起，展开是一篇能独立读懂的小文；深色只换变量，不另写一套 */
+
 .mp-guide{margin:10px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--band);overflow:hidden}
 .mp-guide>summary{cursor:pointer;padding:8px 11px;font-size:12.5px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:8px}
 .mp-guide>summary::-webkit-details-marker{display:none}
@@ -37500,14 +37635,14 @@ window.__MP_VER = "0.82.0";
 .mp-guide-parts li{margin:3px 0}
 .mp-guide-parts li span{display:inline-block;min-width:44px;color:var(--ink);font-weight:600}
 .mp-guide-close{margin:11px 0 0;color:var(--ink2);font-size:12px}
-/* 复制问事提示：只有问事体系渲染；命盘类不显示按钮本身 */
+
 .mp-askcopy-row{display:flex;align-items:center;gap:8px;margin:8px 0 0;padding:0;flex-wrap:wrap}
 .mp-askcopy{border:1px solid var(--red);background:transparent;color:var(--red);font:inherit;font-size:12px;padding:4px 11px;border-radius:999px;cursor:pointer;transition:background .14s,color .14s}
 .mp-askcopy:hover{background:var(--red);color:var(--on-accent)}
 .mp-askcopy-hint{color:var(--muted);font-size:11.5px}
-/* 三柱盘提示：表下一行，别让人以为漏画了一列 */
+
 .pp-warn{margin:8px 0 0;padding:7px 10px;border:1px solid color-mix(in srgb,var(--quan) 34%,var(--line));border-radius:8px;background:color-mix(in srgb,var(--quan) 10%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.55}
-/* 顶部人话总结：第一屏唯一的「先说结论」块，边框与留白都比盘面重一档 */
+
 .mp-wl-h{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:7px}
 .mp-wl-y{font-size:15px;font-weight:700}
 .mp-wl-z{font-weight:600;color:var(--lu)}
@@ -37598,12 +37733,12 @@ window.__MP_VER = "0.82.0";
 .mp-br-adv li{margin:2px 0}
 .mp-br-cav{margin:10px 0 0;padding:7px 9px;border-radius:8px;background:color-mix(in srgb,var(--quan) 12%,transparent);color:var(--ink2);font-size:11.5px;line-height:1.6}
 .mp-br-foot{margin:8px 0 0;color:var(--muted);font-size:11px}
-/* 能力边界：与名词解释同款轻量折叠，但每条要能读到「为什么不答」 */
+
 .mp-it-limits{margin:0 16px 12px;font-size:12px;line-height:1.85;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
 .mp-it-limits summary{cursor:pointer;font-family:system-ui,sans-serif;letter-spacing:.06em;color:var(--label);margin-bottom:6px}
 .mp-it-limits div{margin-bottom:7px}
 .mp-it-limits b{display:block;color:var(--ink2);font-weight:600;margin-bottom:1px}
-/* 解析生成失败：这属于"这段没出来"，不是断语，用警示色单独一行 */
+
 .mp-it-err{margin:12px 16px;padding:9px 12px;border-left:2px solid var(--red);background:var(--soul);font-size:12.5px;line-height:1.8;color:var(--ink2)}
 .mp-it-err b{color:var(--red);margin-right:6px}
 .mp-it-body{padding:2px 16px 12px}
@@ -37613,29 +37748,29 @@ window.__MP_VER = "0.82.0";
 .mp-it-dno{flex:none;width:20px;height:20px;border-radius:50%;background:var(--red);color:var(--on-accent);font-size:12px;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif}
 .mp-it-dlabel{font-size:14.5px;font-weight:700;letter-spacing:.04em}
 .mp-it-dtext{font-size:13px;line-height:1.9;text-align:justify}
-/* 依据：这条结论引用的盘面事实，弱化成灰字，不抢正文 */
+
 .mp-it-dev{margin-top:7px;font-size:12px;line-height:1.75;color:var(--muted)}
 .mp-it-dev b{color:var(--label);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.1em}
 .mp-it-adv{margin-top:8px;padding:9px 12px;background:var(--band);border-left:2px solid var(--red);font-size:13px;line-height:1.85}
-/* 规则知识：讲「为什么这样断」并标可信度，视觉上比依据更轻，避免抢正文 */
+
 .mp-it-know{margin-top:8px;display:flex;flex-direction:column;gap:6px}
 .know-row{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.8;color:var(--ink2)}
 .know-status{flex:none;margin-top:2px;padding:1px 6px;border-radius:4px;font-size:10.5px;letter-spacing:.04em;font-family:system-ui,sans-serif;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-/* 状态只用文字色区分，边框统一走 --line：主题测试禁止硬编码色值 */
+
 .know-status.settled{color:var(--good)}
 .know-status.variant{color:var(--warn)}
 .know-status.todo{color:var(--red)}
 .know-body b{display:block;font-size:12.5px;color:var(--ink);font-weight:600;margin-bottom:2px}
 .know-body i{display:block;font-style:normal;color:var(--muted);font-size:11.5px;margin-top:2px}
 .know-body em{display:block;font-style:normal;color:var(--warn);font-size:11.5px;margin-top:2px}
-/* 效度声明：标签讲的是文本一致度，这句把边界钉在区块末尾（全报告只出现一次） */
+
 .know-disc{margin-top:2px;padding-top:8px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
 .mp-it-adv b{color:var(--red);font-weight:600;margin-right:7px;font-family:system-ui,sans-serif;font-size:12px;letter-spacing:.1em}
 .mp-it-secs{border-top:1px solid var(--line);padding:12px 16px 2px;background:var(--card)}
 .mp-it-sec{margin-bottom:11px}
 .mp-it-sh{font-size:13px;font-weight:700;color:var(--lu);letter-spacing:.06em;margin-bottom:4px}
 .mp-it-stext{font-size:13px;line-height:1.9;color:var(--ink2);text-align:justify}
-/* 分节按「吉 / 留意 / 忌」分层：只改标题色与左侧细线，不换版式 */
+
 .mp-it-sec.tone-good,.mp-it-sec.tone-watch,.mp-it-sec.tone-bad{padding-left:8px}
 .mp-it-sec.tone-good{border-left:2px solid var(--lu)}
 .mp-it-sec.tone-watch{border-left:2px solid var(--quan)}
@@ -37643,12 +37778,12 @@ window.__MP_VER = "0.82.0";
 .mp-it-sec.tone-good .mp-it-sh{color:var(--lu)}
 .mp-it-sec.tone-watch .mp-it-sh{color:var(--quan)}
 .mp-it-sec.tone-bad .mp-it-sh{color:var(--red)}
-/* 长节按行分段：一行一段，行内**加粗**只强化术语，不引入其它标记 */
+
 .mp-it-p{margin:0 0 5px}
 .mp-it-p:last-child{margin-bottom:0}
-/* 方法与出处：方法类段落合成一个折叠区，默认收起。summary 里只报段数与用途，不报字数 */
+
 .mp-it-method{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
-/* 盘面事实：正文角标 [n] 指到这里。清单本身折叠——它是回查用的，不是正文 */
+
 .mp-it-facts{border-top:1px dashed var(--line);padding-top:9px;margin-top:2px}
 .mp-it-facts>summary{cursor:pointer;list-style:none;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
 .mp-it-facts>summary::-webkit-details-marker{display:none}
@@ -37672,22 +37807,22 @@ window.__MP_VER = "0.82.0";
 .mp-it-sub{margin-bottom:9px;padding-left:8px;border-left:2px solid var(--line)}
 .mp-it-sub .mp-it-sh{font-size:12px;color:var(--ink2);font-weight:600}
 .mp-it-sub .mp-it-stext{font-size:12px;line-height:1.85;color:var(--muted)}
-/* 五维正文只留出处入口，卡片本体在文末折叠区 */
+
 .mp-it-knowref{margin-top:7px;font-size:11.5px;font-family:system-ui,sans-serif}
 .mp-it-knowref a{color:var(--muted);text-decoration:none;border-bottom:1px dashed var(--line)}
 .know-flag{margin-left:8px;color:var(--quan);font-size:11px}
 .know-dim{font-style:normal;color:var(--muted);font-size:11px;margin-right:6px;font-family:system-ui,sans-serif}
 .mp-it-p b{color:var(--ink);font-weight:700;letter-spacing:.02em}
-/* 一页读懂：报告顶部五条结论 */
+
 .mp-outline{margin:12px 16px 0;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px}
 .mp-outline-h{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--lu);margin-bottom:6px;font-family:system-ui,sans-serif}
 .mp-outline-row{display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;padding:3px 0;font-size:13px;line-height:1.7;color:var(--ink2)}
 .mp-outline-row b{color:var(--label);font-weight:600;font-family:system-ui,sans-serif}
-/* 目录：锚点跳转；打印时隐藏 */
+
 .mp-toc{display:flex;flex-wrap:wrap;gap:6px 10px;margin:10px 16px 0;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;font-size:12px;font-family:system-ui,sans-serif}
 .mp-toc a{color:var(--lu);text-decoration:none;border-bottom:1px dotted rgba(var(--lu-rgb),.5)}
 .mp-toc a:hover{color:var(--ink)}
-/* 证据卡：依据收进 details，默认收起，避免长报告被事实淹没 */
+
 .mp-it-ev{margin-top:7px;border:1px solid var(--line);border-radius:6px;background:var(--band);font-size:12px;font-family:system-ui,sans-serif}
 .mp-it-ev>summary{cursor:pointer;padding:6px 9px;color:var(--muted);list-style:none}
 .mp-it-ev>summary::-webkit-details-marker{display:none}
@@ -37697,12 +37832,12 @@ window.__MP_VER = "0.82.0";
 .mp-it-ev-item{color:var(--ink2);line-height:1.7;padding-left:12px;position:relative}
 .mp-it-ev-item::before{content:'·';position:absolute;left:2px;color:var(--label)}
 .mp-it-ev-tech{margin-top:4px;color:var(--label);font-size:11px;letter-spacing:.06em}
-/* 置信度标签 */
+
 .mp-it-conf{font-size:11px;font-family:system-ui,sans-serif;border-radius:999px;padding:1px 8px;margin-left:6px;border:1px solid var(--line);color:var(--muted)}
 .mp-it-conf.c-强{color:var(--lu);border-color:rgba(var(--lu-rgb),.4)}
 .mp-it-conf.c-中{color:var(--label);border-color:var(--line)}
 .mp-it-conf.c-弱{color:var(--red);border-color:rgba(var(--red-rgb),.4)}
-/* 交叉验证：一个方面一张对照卡，八字与紫微左右并列，判断做成语气标签 */
+
 .mp-cross{display:flex;flex-direction:column;gap:8px;font-family:system-ui,sans-serif}
 .mp-cross-row{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:9px 11px}
 .mp-cross-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -37715,9 +37850,7 @@ window.__MP_VER = "0.82.0";
 .mp-cross-cell{font-size:12.5px;line-height:1.75;color:var(--ink2)}
 .mp-cross-cell b{display:block;font-size:10.5px;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:1px}
 .mp-cross-note{margin-top:7px;padding-top:6px;border-top:1px dashed var(--line);font-size:12px;line-height:1.7;color:var(--muted)}
-/* 口径对照：结果下方一块可折叠的「换一个开关会变哪几个字」。
-   默认收起，summary 一行给出「几组影响此盘」；展开后先列根因，再列连带分类。
-   与盘面同一套变量，深色下只换变量；summary 保持 44px 触摸目标。 */
+
 .mp-cdiff{margin:12px 0 0;border:1px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;font-family:system-ui,sans-serif}
 .mp-cdiff>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:44px;padding:8px 13px;cursor:pointer;list-style:none;color:var(--ink2);font-size:12.5px;line-height:1.6}
 .mp-cdiff>summary::-webkit-details-marker{display:none}
@@ -37756,7 +37889,7 @@ window.__MP_VER = "0.82.0";
 .mp-cdiff-note{margin-top:8px;padding-top:7px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
 @media (max-width:640px){
   .mp-cdiff>summary{padding:8px 11px}
-  /* 窄屏收起态只留标题与一句话总结；「展开」提示折行会把 summary 撑到 91px */
+
   .mp-cdiff-more{display:none}
   .mp-cdiff-body{padding:0 11px 10px}
   .mp-cdiff-h b{font-size:12px}
@@ -37768,13 +37901,9 @@ window.__MP_VER = "0.82.0";
   .mp-cdiff-more{display:none}
   .mp-cdiff{break-inside:avoid}
 }
-/* 影子盘：ID + 版本 + 与上次同盘（同 baseId）的自动比对。
-   ID 用等宽字体、可一键复制；比对默认只在版本变化或真有字段变化时展开。 */
-/* 盘号：用户视图里唯一保留的复盘凭据。完整的影子盘（baseId / 指纹 / 同盘 diff）只在开发者视图出，
-   这里只要一行小字，不能抢盘面和结论的视线。 */
+
 .mp-shortid{margin:6px 0 0;font-size:11.5px;line-height:1.6;color:var(--faint);letter-spacing:.02em;font-family:system-ui,sans-serif}
-/* 真太阳时修正：勾了开关、填了出生地之后，实际按几点起盘必须能看见——
-   时柱是四柱里最容易「差一小时换一个盘」的一柱，修正不透明就等于不可核对。 */
+
 .mp-solar{margin:6px 0 0;font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-solar b{color:var(--ink2);font-weight:600}
 .mp-solar span{color:var(--faint)}
@@ -37803,7 +37932,7 @@ window.__MP_VER = "0.82.0";
 .mp-shadow-diff .tag{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
 .mp-shadow-diff .same{margin-top:4px;font-size:12px;color:var(--muted)}
 .mp-shadow-diff .note{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);font-size:11.5px;line-height:1.7;color:var(--muted)}
-/* 排盘句柄：追问同一张盘时复制给助手；本体是编码，提示不要公开贴出 */
+
 .mp-handle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 0;padding:8px 13px;border:1px dashed var(--line);border-radius:10px;background:var(--band);font-family:system-ui,sans-serif}
 .mp-handle-title{font-size:12.5px;font-weight:700;letter-spacing:.06em;color:var(--ink2)}
 .mp-handle-code{flex:1 1 220px;min-width:0;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}
@@ -37847,7 +37976,7 @@ window.__MP_VER = "0.82.0";
   .mp-shadow-copy{display:none}
   .mp-shadow{break-inside:avoid}
 }
-/* 推导链：结果顶部的入口，点开是右侧抽屉；每层可单独展开规则 / 输入 / 结果 / 出处。 */
+
 .mp-trace-card{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin:12px 0 0;padding:9px 13px;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--band);color:var(--ink2);font:inherit;font-size:12.5px;line-height:1.6;text-align:left;cursor:pointer}
 .mp-trace-card:hover{border-color:var(--ke)}
 .mp-trace-card:focus-visible{outline:2px solid var(--ke);outline-offset:2px}
@@ -37896,18 +38025,18 @@ window.__MP_VER = "0.82.0";
   .mp-trace-layer{display:none!important}
   .mp-trace-card{break-inside:avoid}
 }
-/* 三张表：横向可滚动，避免窄栏撑破 */
+
 .mp-tables{border-top:1px solid var(--line);padding:12px 16px 4px;background:var(--card)}
 .mp-table-wrap{margin-bottom:12px}
 .mp-table-h{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--lu);margin-bottom:5px;font-family:system-ui,sans-serif}
 .mp-table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
 .mp-table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.6;color:var(--ink2);font-family:system-ui,sans-serif}
 .mp-table th,.mp-table td{padding:5px 9px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);white-space:nowrap}
-/* 表头 11px 小字：用 ink2 而不是 label，浅色下 label 对 band 只有 3.5:1，读不清 */
+
 .mp-table th{background:var(--band);color:var(--ink2);font-weight:600;font-size:11px;letter-spacing:.06em}
 .mp-table tbody tr:last-child td{border-bottom:none}
 .mp-table tbody tr:nth-child(even) td{background:rgba(0,0,0,.02)}
-/* 打印：表格不撕页、目录隐藏、折叠的内容要展开 */
+
 @media print{
   .mp-toc{display:none}
   .mp-it.folded .mp-it-wrap{display:block}
@@ -37916,8 +38045,7 @@ window.__MP_VER = "0.82.0";
   .mp-table-wrap,.mp-it-sec,.mp-it-dim{break-inside:avoid}
   .mp-table-wrap{page-break-inside:avoid}
 }
-/* —— ≤640px：大运表 6 列排到 748px，窄屏只能看到左边一段且没有「还能滑」的提示，
-   这里改成一列一张卡；目录横滑成胶囊、证据摘要与名词解释的点击区抬到 44px —— */
+
 @media (max-width:640px){
   .mp-tables{padding:10px 11px 2px}
   .mp-table-wrap{margin-bottom:14px}
@@ -37932,7 +38060,7 @@ window.__MP_VER = "0.82.0";
   .mp-table td:first-child::before{content:none}
   .mp-table tbody tr:nth-child(even) td{background:none}
   .mp-table tbody tr:last-child{margin-bottom:0}
-  /* 对照卡：两列并排在 342px 里每边只剩 164px，竖排后标签跟正文走 */
+
   .mp-cross-b{grid-template-columns:1fr;gap:6px}
   .mp-cross-cell b{display:inline;margin-right:6px;letter-spacing:.06em}
   .mp-toc{flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:10px 0 0;padding:6px 11px;border:0;border-bottom:1px solid var(--line);border-radius:0;scrollbar-width:none}
@@ -37942,7 +38070,7 @@ window.__MP_VER = "0.82.0";
   .mp-it-ev>summary{display:flex;align-items:center;min-height:44px;padding:0 9px}
   .mp-it-gloss summary{display:flex;align-items:center;min-height:44px;margin-bottom:2px}
 }
-/* 容器查询版（dsh 侧栏 420px、窗口 1400px 时 @media 不会触发）：与上面同规则，不另立一套口径 */
+
 @container (max-width:640px){
   .mp-tables{padding:10px 11px 2px}
   .mp-table-wrap{margin-bottom:14px}
@@ -37966,14 +38094,14 @@ window.__MP_VER = "0.82.0";
   .mp-it-ev>summary{display:flex;align-items:center;min-height:44px;padding:0 9px}
   .mp-it-gloss summary{display:flex;align-items:center;min-height:44px;margin-bottom:2px}
 }
-/* 追问结果 */
+
 .mp-fu{margin:12px 16px;border:1px solid var(--line);border-left:3px solid var(--lu);border-radius:8px;background:var(--card);padding:10px 12px;font-size:13px;line-height:1.8;color:var(--ink2)}
 .mp-fu.miss{border-left-color:var(--red)}
 .mp-fu-h{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--lu);margin-bottom:4px;font-family:system-ui,sans-serif}
 .mp-fu.miss .mp-fu-h{color:var(--red)}
 .mp-fu-ev{margin-top:5px;font-size:12px;color:var(--muted);font-family:system-ui,sans-serif}
 .mp-quick{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px}
-/* 择日候选比较：只在给了候选日时出表；窄屏横向滚动，不把理由挤成竖排 */
+
 .mp-zr{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-zr-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 .mp-zr-h b{font-size:14px;color:var(--red)}
@@ -37997,7 +38125,7 @@ window.__MP_VER = "0.82.0";
 .mp-zr-lists{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:9px;font-size:11.5px;color:var(--ink2)}
 .mp-zr-lists em{font-style:normal;color:var(--muted);margin-right:4px}
 .mp-zr-note{margin:6px 0 0;font-size:11px;color:var(--muted);line-height:1.7}
-/* 首屏耗时：只回显本机实测，低调放在结果底部 */
+
 .mp-perf{margin:10px 0 0;font-size:11px;line-height:1.7;color:var(--muted);font-family:system-ui,sans-serif;font-variant-numeric:tabular-nums}
 @media (max-width:640px){.mp-zr{margin:10px;padding:10px;overflow-x:auto}.mp-zr-t{min-width:560px}}
 .mp-cg{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
@@ -38020,7 +38148,7 @@ window.__MP_VER = "0.82.0";
 .mp-cg-plain{margin-top:7px;font-size:12.5px;line-height:1.85;color:var(--ink2)}
 .mp-cg-plain em,.mp-cg-band em{font-style:normal;font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-right:6px;vertical-align:1px}
 .mp-cg-band{margin-top:8px;font-size:12.5px;line-height:1.8;color:var(--ink2)}
-/* 八字卡内嵌称骨：常开亮色卡，金色系压过周围的灰调盘面 */
+
 .mp-bzcg{margin-top:12px;border:2px solid color-mix(in srgb,var(--gold) 72%,var(--lu));border-radius:10px;padding:12px 14px;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 13%,var(--card)),var(--card) 58%);box-shadow:0 2px 10px color-mix(in srgb,var(--gold) 30%,transparent)}
 .mp-bzcg-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-direction:row}
 .mp-bzcg-h b{font-size:14px;color:var(--gold);font-weight:700;letter-spacing:.04em}
@@ -38041,7 +38169,7 @@ window.__MP_VER = "0.82.0";
 .mp-bzcg-plain em{font-style:normal;font-size:10.5px;color:var(--gold);border:1px solid var(--gold);border-radius:99px;padding:1px 7px;margin-right:6px;opacity:.9}
 .mp-bzcg-band{margin-top:7px;font-size:12.5px;line-height:1.8;color:var(--ink);font-weight:500}
 .mp-bzcg-note{margin-top:7px;font-size:11px;color:var(--muted)}
-/* 婚姻层：与称骨的金色区分开，用暖红；过去年份压暗，避免与「往后看」混在一起 */
+
 .mp-mar{margin-top:12px;border:1px solid color-mix(in srgb,var(--red) 42%,var(--line));border-radius:10px;padding:11px 13px;background:color-mix(in srgb,var(--red) 5%,var(--band))}
 .mp-mar-h{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-direction:row}
 .mp-mar-h b{font-size:14px;color:var(--red);font-weight:700;letter-spacing:.04em}
@@ -38104,7 +38232,7 @@ window.__MP_VER = "0.82.0";
 .mp-cl-p{font-size:12px;line-height:1.9;color:var(--ink2);margin-top:3px}
 @media print{.mp-cl{break-inside:avoid}}
 @media print{.mp-cli{break-inside:avoid}}
-/* —— 起名评估卡片 —— */
+
 .mp-nm{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-nm-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:10px}
 .mp-nm-h b{font-size:17px;color:var(--ink);font-weight:700}
@@ -38155,10 +38283,7 @@ window.__MP_VER = "0.82.0";
 .mp-nm-ph-i:before{content:'·';margin-right:3px;color:var(--faint)}
 @media print{.mp-nm{break-inside:avoid}}
 .mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
-/* —— 风水卡片：八宅八向 / 门主灶 / 玄空九宫 ——
-   此前风水结果只是一段等宽文本，「巽8/6/3」要靠读的人自己脑补方位。
-   现在摆成后天八卦 3×3：玄空每宫依次是运/山/向三星，当运高亮；
-   八宅每宫是星名与吉凶。颜色只取共享变量，深色与打印不另写规则。 */
+
 .mp-fs .mp-quick-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .mp-fs-sub{font-size:11.5px;color:var(--muted);font-family:var(--sans)}
 .mp-fs-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
@@ -38185,10 +38310,7 @@ window.__MP_VER = "0.82.0";
 .mp-fs-note{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:11px;line-height:1.7;color:var(--muted)}
 @media print{.mp-fs{break-inside:avoid}}
 @media (max-width:420px){.mp-fs-cell{padding:6px}.mp-fs-gua{font-size:14px}.mp-fs-nums span{font-size:12px}}
-/* —— 十六型人格卡片 ——
-   旧版是「四行细条 + 段落堆叠」：字小、无层级，看着像一份导出的文档。
-   现在按「类型抬头 → 四维瓦片 → 一句 → 优势/留意 → 功能链 → 场景段」分层，
-   四维用左右双极加取值条，颜色只取共享变量，深色与打印都不用另写规则。 */
+
 .mp-mb{margin:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:var(--shadow);overflow:hidden;font-family:var(--sans)}
 .mp-mb-h{display:flex;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;padding:15px 18px 14px;
   background:linear-gradient(135deg,var(--sel),var(--band) 64%,var(--card));border-bottom:1px solid var(--hair)}
@@ -38232,7 +38354,7 @@ window.__MP_VER = "0.82.0";
 .mp-mb-paper .mp-mb-note{margin:0 18px 14px}
 @media (max-width:640px){.mp-mb-dims,.mp-mb-two,.mp-mb-paper ol{grid-template-columns:1fr}.mp-mb-code{font-size:26px}.mp-mb-body{padding:12px 14px 14px}.mp-mb-h{padding:13px 14px 12px}}
 @media print{.mp-mb{break-inside:avoid}}
-/* —— 黄历卡片 —— */
+
 .mp-al{margin:12px 16px;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:12px 14px;font-family:system-ui,sans-serif}
 .mp-al-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:8px;margin-bottom:9px}
 .mp-al-h b{font-size:18px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
@@ -38267,12 +38389,11 @@ window.__MP_VER = "0.82.0";
 @media (max-width:640px){.mp-al{margin:10px;padding:10px}.mp-al-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mp-al-yiji{grid-template-columns:1fr}}.mp-quick-pre{margin:0;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.9;color:var(--ink2)}
 .mp-it-dis{padding:11px 16px;border-top:1px solid var(--line);background:var(--band);font-size:12px;line-height:1.75;color:var(--muted);font-family:system-ui,sans-serif}
 
-/* —— 竖屏（≤640px）：盘面重排为竖向卡片，页面不横向滚动 —— */
 @media (max-width:640px){
   .pp-modes{flex-wrap:wrap}
   .pp-modes label{padding:6px 16px}
   .pp-soon{margin-left:0;padding:6px 10px;width:100%;border-top:1px solid var(--line)}
-  /* 紫微：竖屏保持 4×4 宫盘（宫位相对位置是三合/对宫的核心，不可丢），宫内改竖向紧凑排版 */
+
   .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0;--zw-l1:11px;--zw-l2:9.5px;--zw-l3:8.5px;--zw-l4:8.5px}
   .pp-cell{min-height:0;padding:3px 2px 4px;border-radius:0}
   .pp-center{grid-column:2/4;grid-row:2/4;order:0;border-radius:0;padding:5px 3px;gap:2px}
@@ -38281,7 +38402,7 @@ window.__MP_VER = "0.82.0";
   .pp-center .ct-t3{font-size:10.5px;letter-spacing:.16em;margin:2px 0}
   .pp-center .ct-t4{font-size:9px;line-height:1.45}
   .pp-center .pp-legend{font-size:8.5px;gap:4px;margin-top:3px;flex-wrap:wrap;line-height:1.4}
-  /* 星曜竖排堆叠：字号走四级变量，竖屏压小一档 */
+
   .pp-stars{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:1px;line-height:1.4;min-height:0}
   .pp-st.main{font-size:var(--zw-l1)}
   .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:var(--zw-l2)}
@@ -38291,7 +38412,7 @@ window.__MP_VER = "0.82.0";
   .pp-ages{font-size:var(--zw-l4);line-height:1.45;margin-top:2px;word-break:break-all}
   .pp-foot{font-size:var(--zw-l4);line-height:1.4;gap:2px}
   .pp-foot .ft-pn{font-size:11px}
-  /* 详情面板：竖屏下要接得住 4×4 网格之外的全部信息 */
+
   .pp-detail{padding:9px 10px 11px}
   .pp-detail .dt-dh b{font-size:14.5px}
   .pp-detail .dt-dh span{font-size:11.5px}
@@ -38299,10 +38420,10 @@ window.__MP_VER = "0.82.0";
   .pp-detail .dt-dr{grid-template-columns:54px minmax(0,1fr)}
   .pp-detail .dt-dr .dt-k{font-size:11.5px}
   .pp-detail .dt-st .dt-br{font-size:11px}
-  /* 流月/流日/流时：窄屏一行放不下「命宫+四化」，四化另起一行 */
+
   .pp-flow .flow-row{grid-template-columns:64px minmax(0,1fr);gap:1px 8px;padding:7px 9px}
   .pp-flow .flow-row .flow-m{grid-column:1/-1}
-  /* 八字：四柱保持四列并排（参考命书版式），只收紧字号与行距，不折行 */
+
   .pp-bz{font-size:11.5px}
   .pp-bz th,.pp-bz td{padding:4px 1px}
   .pp-bz th:first-child,.pp-bz td.bz-lbl{width:38px}
@@ -38314,30 +38435,30 @@ window.__MP_VER = "0.82.0";
   .pp-bz td.bz-wxs i{margin:0 5px}
   .pp-bz td.bz-wxs i em{font-size:10px}
   .pp-bz th{font-size:11.5px}
-  /* 六爻：列宽收紧，爻线自适应拉长 */
+
   .mp-hy-wrap{gap:14px}
   .mp-hy-box{min-width:0;width:100%}
   .mp-hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
   .mp-hy-row.hy-plain{grid-template-columns:32px minmax(72px,1fr)}
-  /* 爻线是 SVG：宽度交给容器（flex:1），高度仍由尺寸类决定 */
+
   .mp-hex{width:100%;max-width:104px;min-width:56px;height:12px;flex:1 1 auto}
   .mp-hex.sm{max-width:74px;min-width:52px;height:10px}
   .mp-hex.md{max-width:88px;min-width:56px;height:11px}
-  /* 梅花 */
+
   .mp-mh{padding:10px}
   .mp-mh-main{gap:12px}
   .mp-hexbox.hb-mini{min-width:100px}
-  /* 大六壬：天地盘改 3 列卡片流，总览置顶 */
+
   .mp-dl{padding:10px}
   .mp-dl-sc-c{min-width:88px;padding:8px 12px}
   .mp-dl-sk-c{min-width:70px;padding:6px 8px 7px}
   .mp-dl-pan2{grid-template-columns:repeat(3,1fr);grid-template-rows:none}
   .mp-dl-pc{grid-row:auto!important;grid-column:auto!important;min-height:76px}
   .mp-dl-c{grid-row:auto!important;grid-column:1/-1!important;order:-1}
-  /* 塔罗 */
+
   .mp-tt{padding:10px}
   .mp-tt-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-  /* 解析与详解：收窄内边距、行距放宽便于竖屏阅读 */
+
   .mp-it-head,.mp-it-lead,.mp-it-body,.mp-it-secs,.mp-it-dis,.mp-it-ask{padding-left:11px;padding-right:11px}
   .mp-it-head{min-height:46px}
   .mp-it-hint{margin-left:0;flex-basis:100%}
@@ -38345,15 +38466,12 @@ window.__MP_VER = "0.82.0";
   .mp-it-dtext,.mp-it-stext,.mp-it-adv{font-size:13.5px;line-height:1.95}
   .mp-it-adv{padding:9px 10px}
 }
-/* —— 以下 @container 版本与上方 @media 同规则 ——
-   媒体查询按「视口宽度」判断，dsh 桌面侧栏是「容器窄但视口宽」（如侧栏 420px、窗口 1400px），
-   @media 不会触发，盘面会用桌面排版挤成一团。.pp 已声明 container-type:inline-size，
-   这里改按容器宽度判断，侧栏、独立页、手机三处排版一致。 */
+
 @container (max-width:640px){
   .pp-modes{flex-wrap:wrap}
   .pp-modes label{padding:6px 16px}
   .pp-soon{margin-left:0;padding:6px 10px;width:100%;border-top:1px solid var(--line)}
-  /* 紫微：保持 4×4 宫盘（宫位相对位置是三合/对宫的核心，不可丢），宫内竖向紧凑排版 */
+
   .pp-grid{grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,minmax(0,auto));gap:0;padding:0}
   .pp-cell{min-height:0;padding:3px 2px 4px;border-radius:0}
   .pp-center{grid-column:2/4;grid-row:2/4;order:0;border-radius:0;padding:5px 3px;gap:2px}
@@ -38394,7 +38512,7 @@ window.__MP_VER = "0.82.0";
   .mp-hy-box{min-width:0;width:100%}
   .mp-hy-row{grid-template-columns:14px 32px minmax(64px,1fr) 46px 42px 32px;gap:6px;font-size:12.5px}
   .mp-hy-row.hy-plain{grid-template-columns:32px minmax(72px,1fr)}
-  /* 爻线是 SVG：宽度交给容器（flex:1），高度仍由尺寸类决定 */
+
   .mp-hex{width:100%;max-width:104px;min-width:56px;height:12px;flex:1 1 auto}
   .mp-hex.sm{max-width:74px;min-width:52px;height:10px}
   .mp-hex.md{max-width:88px;min-width:56px;height:11px}
@@ -38417,7 +38535,7 @@ window.__MP_VER = "0.82.0";
   .mp-it-adv{padding:9px 10px}
 }
 @media (max-width:430px){
-  /* 窄屏手机：紫微仍保持 4×4 宫盘（相对位置不可丢），进一步收紧宫内字号与间距 */
+
   .pp-cell{padding:2px 1px 3px}
   .pp-st.main{font-size:10px}
   .pp-st.good,.pp-st.bad,.pp-st.aux{font-size:9px}
@@ -38425,14 +38543,12 @@ window.__MP_VER = "0.82.0";
   .pp-center .ct-t1{font-size:11px}
   .pp-center .ct-t2,.pp-center .ct-t4{font-size:8.5px}
   .mp-dl-sc-c{min-width:80px}
-  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .mp-hy 内容区只有 232px，
-     会溢出 28px。这里把六列压到 206px、间隙让到 4px（合计 226px），
-     同时把 .mp-hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
+
   .mp-hy-box{padding:10px 10px 12px}
   .mp-hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
   .mp-hy-row.hy-plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
-/* 容器查询版：极窄侧栏 / 小屏手机（与上方 @media 同规则） */
+
 @container (max-width:430px){
   .pp-cell{padding:2px 1px 3px}
   .pp-st.main{font-size:10px}
@@ -38441,16 +38557,12 @@ window.__MP_VER = "0.82.0";
   .pp-center .ct-t1{font-size:11px}
   .pp-center .ct-t2,.pp-center .ct-t4{font-size:8.5px}
   .mp-dl-sc-c{min-width:80px}
-  /* 六爻盘：六列固定宽 + 间隙最窄也要 260px，而 320px 屏下 .mp-hy 内容区只有 232px，
-     会溢出 28px。这里把六列压到 206px、间隙让到 4px（合计 226px），
-     同时把 .mp-hy-box 的左右内边距从 16 收到 10 再腾出 12px。 */
+
   .mp-hy-box{padding:10px 10px 12px}
   .mp-hy-row{grid-template-columns:12px 30px minmax(56px,1fr) 42px 38px 28px;gap:4px;font-size:11.5px}
   .mp-hy-row.hy-plain{grid-template-columns:28px minmax(56px,1fr);gap:6px}
 }
-/* ── 我的命盘（本机档案）──
-   照市面排盘 App 的「命盘列表」做：一张卡一个人，点卡直接出盘，
-   改名/置顶/删除收在卡片右上角，hover 或键盘聚焦才出现——平时不占视觉。 */
+
 .mp-prof{margin:0 0 14px;font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif}
 .mp-prof-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .mp-prof-h b{font-size:13.5px;color:var(--ink);letter-spacing:.02em}
@@ -38474,9 +38586,9 @@ window.__MP_VER = "0.82.0";
   border:1px solid var(--line);background:var(--card);color:var(--muted)}
 .mp-prof-ops button:hover{color:var(--red);border-color:var(--red)}
 .mp-prof-ops button.on{color:var(--quan);border-color:var(--quan)}
-/* 触屏没有 hover：改名/置顶/删除若只靠悬停出现，手机上永远点不到，所以常驻 */
+
 @media (hover:none){.mp-prof-ops{display:flex}.mp-prof-nm{padding-right:0}}
-.mp-prof-empty{margin:0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;
+.mp-prof-empty{margin:0;padding:10px 12px;border:1px solid var(--hair,var(--line));border-radius:10px;background:var(--panel2);
   font-size:12px;color:var(--muted);background:var(--band)}
 .mp-prof-bar{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
 .mp-prof-bar input{font:inherit;font-size:12.5px;padding:6px 9px;border-radius:9px;border:1px solid var(--line);
@@ -38487,27 +38599,22 @@ window.__MP_VER = "0.82.0";
 .mp-prof-bar .mp-prof-tip{font-size:11.5px;color:var(--muted)}
 @media (max-width:360px){.mp-prof-list{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
 
-/* 减少动态效果偏好：本面板所有过渡一律退化为即时（不覆盖用户系统设置） */
 @media (prefers-reduced-motion: reduce){
   .pp *,.mp-it *,.mp-al *,.mp-btn,.mp-chip{transition:none!important;animation:none!important}
 }
-/* 大表行 hover：只提底色不加位移，行高稳定不被打断 */
+
 .pp table tbody tr{transition:background var(--dur-fast) var(--ease)}
 .pp table tbody tr:hover{background:var(--hover)}
-/* 结果卡阴影分层：默认最轻，hover 时浮起一档（只对可交互的卡，避免整页抖动） */
+
 .pp{transition:box-shadow var(--dur) var(--ease)}
 
-/* —— 「显示设置」分组（group_fxp / group_4hb / group_3hp）——
-   纯 CSS 显隐：勾了盘面立刻变，不重排盘、不进引擎、不进工具 schema。
-   复选框必须是 .pp 的直接子元素，才能用 ~ 命中后面的 .pp-body / .pp-zhlegend。
-   组1/组2 默认勾（:not(:checked) 才隐藏），组3 默认不勾（:checked 才增强，默认盘观感不变）。 */
 .pp-disp{font-family:var(--sans);border-bottom:1px solid var(--line);background:var(--band);font-size:12px}
 .pp-disp>summary{cursor:pointer;padding:5px 12px;color:var(--muted);user-select:none;list-style:none;min-height:32px;display:flex;align-items:center}
 .pp-disp>summary::-webkit-details-marker{display:none}
 .pp-disp>summary::before{content:"▸";margin-right:6px;font-size:10px;color:var(--label)}
 .pp-disp[open]>summary::before{content:"▾"}
 .pp-disp-g{display:flex;flex-wrap:wrap;gap:2px 14px;padding:3px 12px 8px;border-top:1px dashed var(--hair)}
-/* 三档预设（P1-19）：预设只是开关集合的宏，不新增任何渲染逻辑 */
+
 .pp-preset{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 12px 1px;font-size:11.5px;color:var(--label)}
 .pp-preset span{letter-spacing:.06em}
 .pp-preset button{font:inherit;font-size:11.5px;padding:2px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink2);cursor:pointer;min-height:26px}
@@ -38517,7 +38624,7 @@ window.__MP_VER = "0.82.0";
 .pp-disp label{display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--ink2);user-select:none;padding:2px 0;min-height:26px}
 .pp-disp-box{width:13px;height:13px;border:1px solid var(--line);border-radius:3px;background:var(--card);display:inline-block;flex:none}
 .pp-disp label:hover .pp-disp-box{border-color:var(--lu)}
-/* 勾选态：17 条 :checked 各自点亮自己 label 的方框（复选框与 .pp-disp 同为 .pp 直接子元素） */
+
 #ppm-d-ss:checked~.pp-disp label[for="ppm-d-ss"] .pp-disp-box,
 #ppm-d-sbg:checked~.pp-disp label[for="ppm-d-sbg"] .pp-disp-box,
 #ppm-d-zha:checked~.pp-disp label[for="ppm-d-zha"] .pp-disp-box,
@@ -38535,34 +38642,207 @@ window.__MP_VER = "0.82.0";
 #ppm-d-rigan:checked~.pp-disp label[for="ppm-d-rigan"] .pp-disp-box,
 #ppm-d-njq:checked~.pp-disp label[for="ppm-d-njq"] .pp-disp-box,
 #ppm-d-tjz:checked~.pp-disp label[for="ppm-d-tjz"] .pp-disp-box{background:var(--lu);border-color:var(--lu);box-shadow:inset 0 0 0 2px var(--card)}
-/* 组1 飞星派显示（默认全勾，取消才隐藏） */
+
 #ppm-d-ss:not(:checked)~.pp-body .pp-ss-txt{display:none}
 #ppm-d-sbg:not(:checked)~.pp-body .pp-st.st-sbg{display:none}
 #ppm-d-zha:not(:checked)~.pp-body .pp-zha{display:none}
 #ppm-d-zha:not(:checked)~.pp-zhlegend{display:none}
 #ppm-d-ages:not(:checked)~.pp-body .pp-ages{display:none}
 #ppm-d-sizhu:not(:checked)~.pp-body .ct-t3{display:none}
-/* 非节气四柱行：默认隐藏，勾 ppm-d-njq 才显示（纯增强，不改默认观感） */
+
 .ct-t3nj{font-size:11.5px;letter-spacing:.2em;font-weight:500;color:var(--muted)}
 .ct-t3nj .nj-tag{font-style:normal;letter-spacing:.08em;font-size:10px;color:var(--lu);border:1px solid currentColor;border-radius:3px;padding:0 3px;margin-left:6px;vertical-align:1px}
 #ppm-d-njq:not(:checked)~.pp-body .ct-t3nj{display:none}
-/* 太极点转换信息：详情面板「太极转换」行，默认隐藏，勾 ppm-d-tjz 才显示 */
+
 #ppm-d-tjz:not(:checked)~.pp-body .pp-detail .dt-taiji{display:none}
-/* 组2 四化派显示（默认全勾，取消才隐藏） */
+
 #ppm-d-small:not(:checked)~.pp-body .pp-st.aux,#ppm-d-small:not(:checked)~.pp-body .pp-st.minor{display:none}
 #ppm-d-shen:not(:checked)~.pp-body .pp-shen::after{display:none}
 #ppm-d-hua:not(:checked)~.pp-body .pp-m{display:none}
 #ppm-d-sf:not(:checked)~.pp-body .pp-cell.pp-tri{background:var(--bg)}
 #ppm-d-sf:not(:checked)~.pp-body .pp-cell.pp-link{background:var(--bg);box-shadow:none}
 #ppm-d-sf:not(:checked)~.pp-body svg.pp-sf{display:none}
-/* 组3 限流盘增强（默认不勾，勾了才生效；不改默认盘观感） */
+
 #ppm-d-zha-bold:checked~.pp-body .pp-zha .z-shaft{stroke-width:2.8}
 #ppm-d-bad-ink:checked~.pp-body .pp-st.bad{color:var(--ink)}
 #ppm-d-bad-ink:checked~.pp-body .pp-st.bad::before{content:none}
 #ppm-d-bold:checked~.pp-body .pp-st.main,#ppm-d-bold:checked~.pp-body .pp-st.good{font-weight:700}
+
+:root{--env-good:#2f6b4f;--env-warn:#7d5410;--env-alt:#3a5570}
+@media screen and (prefers-color-scheme:dark){:root{--env-good:#6dc79a;--env-warn:#e0a860;--env-alt:#9aa2ea}}
+.mp-env-head{margin:0 0 14px;padding:20px 20px 18px;border:1px solid var(--hair,var(--line));border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
+.mp-env-kicker{margin:0;font-size:11px;letter-spacing:.2em;color:var(--label,var(--muted));font-weight:600}
+.mp-env-hl{margin:8px 0 0;font-size:19px;line-height:1.55;letter-spacing:.01em}
+.mp-env-row{margin-top:12px;gap:7px}
+.mp-env-dir{padding:3px 10px;border-radius:999px;background:color-mix(in srgb,currentColor 7%,transparent)}
+.mp-env-conf{font-size:11.5px;letter-spacing:.03em}
+.mp-env-confq>summary::after{content:' ？';font-size:11px}
+.mp-env-cond{margin-top:12px;padding-top:12px;border:0;border-top:1px solid var(--hair,var(--line));font-size:13px;line-height:1.75;color:var(--ink2)}
+.mp-env-sec-h{margin:20px 0 2px;font-size:12px;letter-spacing:.12em;color:var(--label,var(--muted));font-weight:600}
+.mp-env-f-row{align-items:flex-start;gap:12px;padding:14px 2px;border-top:1px solid var(--hair,var(--line))}
+.mp-env-f-no{width:22px;height:22px;margin-top:2px;border:1px solid var(--line);background:transparent;color:var(--label,var(--muted));font-size:11.5px}
+.mp-env-f-top{gap:9px}
+.mp-env-f-top b{font-size:14px;letter-spacing:.01em}
+.mp-env-f-state{font-size:12px;color:var(--label,var(--muted))}
+.mp-env-f-impact{margin-top:5px;font-size:13.5px;line-height:1.8}
+.mp-env-why{margin-top:7px}
+.mp-env-why summary{font-size:12px;letter-spacing:.02em;color:var(--label,var(--muted))}
+.mp-env-why-body{margin-top:8px;padding:10px 12px;border-radius:10px}
+
+.pp{font-size:13px;line-height:1.9;padding:10px 14px 6px}
+.pp-bz th{padding:9px 2px 8px;background:var(--band);border-bottom:1px solid var(--line);font-size:12px;letter-spacing:.08em}
+
+.pp-bz th:first-child{background:var(--band)}
+.pp-bz td{padding:7px 2px}
+.pp-bz tr+tr td{border-top:1px solid var(--hair)}
+.pp-bz td.bz-lbl{color:var(--label);font-size:11.5px;letter-spacing:.04em}
+.pp-bz .bz-big{font-size:27px;letter-spacing:.02em}
+.pp-sec-h{font-size:12px;letter-spacing:.1em;margin-bottom:4px}
+.pp-detail .dt-dh{border-bottom:1px solid var(--hair)}
+.mp-it-dtext{font-size:13.5px;line-height:1.95;color:var(--ink2)}
+.mp-it-dplain{font-size:13px;line-height:1.85}
+.mp-it-dim{padding:16px 0;border-bottom:1px solid var(--hair)}
+.mp-it-dlabel{font-size:14.5px;letter-spacing:.05em}
+
+.mp-it-sh{margin:0 0 6px}
+
+h3.mp-it-sh{display:block}
+.mp-outline-h{margin:0 0 6px}
+h3.mp-outline-h{display:block}
+.mp-kline-title{margin:0;font-size:12.5px;color:var(--ink);font-weight:600;line-height:inherit}
+.mp-yiyan-h{display:inline;margin:0;font:inherit;font-weight:700;letter-spacing:inherit}
+
+.mp-env{margin:0 0 16px;padding:18px 20px 20px;border:1px solid var(--hair,var(--line));border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
+.mp-env-f-row:first-child{border-top:none}
+.mp-env-adv{margin-top:16px;padding-top:14px}
+
+.mp-env-adv b,.mp-env-adv h3{margin:0;font-size:11.5px;letter-spacing:.14em;color:var(--label,var(--muted));font-weight:600}
+
+h3.mp-env-adv-h{display:block}
+.mp-env-adv ol{margin:8px 0 0;padding-left:21px;font-size:13.5px;line-height:1.95}
+.mp-env-adv li{margin:5px 0}
+.mp-env-adv li::marker{color:var(--red);font-weight:600}
+
+.mp-env-risk{margin-top:14px;padding:11px 13px;border:1px solid color-mix(in srgb,var(--env-warn) 30%,transparent);
+  border-radius:10px;background:color-mix(in srgb,var(--env-warn) 7%,var(--card));font-size:13px;line-height:1.75}
+.mp-env-risk b,.mp-env-risk h3{display:inline;margin:0 8px 0 0;font-size:12px;font-weight:600;color:var(--env-warn);letter-spacing:.06em}
+.mp-env-tl{margin-top:16px;padding-top:14px}
+.mp-env-tl-row{gap:10px;padding:4px 0;font-size:13px}
+.mp-env-tl-w{font-variant-numeric:tabular-nums}
+.mp-env-tl-p{padding:2px 8px;border-radius:999px;background:var(--band);color:var(--ink2);font-size:11.5px;letter-spacing:.04em}
+.mp-env-cf{margin-top:14px;padding-top:12px}
+.mp-env-cf summary{font-size:12px;color:var(--label,var(--muted))}
+
+#out>section:not([class]){margin:16px 0 6px}
+
+.mp-env-cond,.mp-env-cf-item,.mp-it-ask,.mp-it-lead,.mp-guide-check,.mp-guide-parts,.mp-br-sec,
+.mp-hp-triple th,.mp-hp-triple td,.pp-fx,.pp-hs,.pp-detail .dt-dh,.mp-it-dim{border-style:solid;border-color:var(--hair,var(--line))}
+
+.mp-it-plain{margin:12px 16px 0;padding:13px 16px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--band)}
+.askbox{margin-top:16px;padding:12px 14px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--panel2)}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
+
+  /* ── 共用小工具：只此一份 ────────────────────────────────────────
+   *
+   * 日期掩码 / 存储读写 / 缓存哈希 / 中文日期标签 / 当前时刻——这八件事原来在
+   * src/app.js（宿主面板）与 src/web-ui.js（独立页）各写一遍，连函数名都一样。
+   * 当时的写法只差 pad 与 pad2、imul 是否逐步 >>>0，实测同输入同输出，所以一直
+   * 没露头；但「同一件事写两处」迟早分叉：改一边忘另一边，面板认的写法独立页不认，
+   * 或者哈希口径悄悄不同、缓存键对不上。这类毛病不报错，只让人觉得「有时准有时
+   * 不准」。收成一份，两条链各留一行委托（见两个 src 里的同名注释）。
+   *
+   * 与 src/groups.mjs 同一套路：共用的事实只存一处，别处只引用。
+   */
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  /** 严格的 YYYY-MM-DD，且日期真实存在（闰日、月界都算） */
+  function isoDateOk(s) {
+    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    if (!ymd) return false;
+    const y = Number(ymd[1]);
+    const mo = Number(ymd[2]);
+    const d = Number(ymd[3]);
+    if (mo < 1 || mo > 12 || d < 1) return false;
+    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return d <= days[mo - 1];
+  }
+
+  /** 把 1990/5/12、1990年5月12日、1990.5.12 归一成 YYYY-MM-DD；不合法返回空串 */
+  function normalizeDateText(raw) {
+    const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
+    if (!ymd) return '';
+    const iso = `${ymd[1]}-${pad2(ymd[2])}-${pad2(ymd[3])}`;
+    return isoDateOk(iso) ? iso : '';
+  }
+
+  /** 输入过程中的数字掩码：半成品原样保留，粘贴式写法直接归一 */
+  function maskDateText(raw) {
+    const s = String(raw || '').trim();
+    // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
+    // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
+    // 斜杠/中文/点号视为粘贴，直接归一。
+    if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
+    if (/[年月日/.]/.test(s)) {
+      const full = normalizeDateText(s);
+      if (full) return full;
+    }
+    const digits = s.replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
+  }
+
+  /** 存储读：解析失败 / 隐私模式 / 禁用存储一律返回 null */
+  function storeGet(key) {
+    try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
+  }
+
+  /** 存储写：写不进就静默降级，不影响这次排盘 */
+  function storeSet(key, val) {
+    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
+  }
+
+  /** FNV-1a 32 位 → base36：面板的结果缓存与独立页的盘面缓存共用同一算法 */
+  function hash36(s) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < s.length; i += 1) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return (h >>> 0).toString(36);
+  }
+
+  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次 */
+  function dayLabel(ts) {
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return '';
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(new Date()) - day(d)) / 86400000);
+    if (diff <= 0) return '今天';
+    if (diff === 1) return '昨天';
+    return `${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+
+  /** 本机当前时刻（本地时区，不需要权限也不需要联网） */
+  function nowParts() {
+    const d = new Date();
+    return {
+      date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
+      time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}`,
+    };
+  }
+
+  pp.isoDateOk = isoDateOk;
+  pp.normalizeDateText = normalizeDateText;
+  pp.maskDateText = maskDateText;
+  pp.storeGet = storeGet;
+  pp.storeSet = storeSet;
+  pp.hash36 = hash36;
+  pp.dayLabel = dayLabel;
+  pp.nowParts = nowParts;
 
   /* 出盘后参数区切只读：面板与独立页各调一次，名单只在这里维护一份。
    *
@@ -40059,7 +40339,7 @@ window.__MP_VER = "0.82.0";
     statCells.push(`<span><em>波动幅度</em><b>${span.toFixed(0)}</b></span>`);
     const stats = `<div class="kl-stats">${statCells.join('')}</div>`;
     return (withBrief ? pp.briefHTML(r) : '') + `<section class="mp-kline" aria-label="人生K线结果">
-      <div class="mp-kline-h"><b>人生 K 线</b><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
+      <div class="mp-kline-h"><h2 class="mp-kline-title">人生 K 线</h2><span>${esc(meta.birth || '')}　日主 ${esc(meta.dayMaster || '')}　${esc(st.level || '')}${st.score ? `（${st.score}）` : ''}</span></div>
       ${chart}
       ${stats}
       ${chips ? `<div class="kl-segs">${chips}</div>` : ''}
@@ -40204,7 +40484,7 @@ window.__MP_VER = "0.82.0";
     if (mt && mt.label) bits.push(`婚缘${String(mt.label).replace(/型$/, '')}`);
     const fw = mar && mar.windows ? mar.windows.filter((w) => !w.past)[0] : null;
     if (fw) bits.push(`最可能动在 ${fw.year} 年（${fw.age}岁）`);
-    const body = bits.length ? `<b>一眼看</b>　${esc(head)}：${esc(bits.join('；'))}。` : `${esc(head)}。`;
+    const body = bits.length ? `<h2 class="mp-yiyan-h">一眼看</h2>　${esc(head)}：${esc(bits.join('；'))}。` : `${esc(head)}。`;
     return `<section aria-label="一眼看" style="margin:10px 0 0;padding:9px 12px;border-left:3px solid var(--gold)"><p style="margin:0;line-height:1.65">${body}</p></section>`;
   };
 
@@ -40573,7 +40853,7 @@ window.__MP_VER = "0.82.0";
     const cfN = (env.conflicts || []).length;
     const confWhy = `按 ${evN} 条盘面事实、${fN} 条关键因素推出来的${cfN ? `；其中 ${cfN} 处各家有分歧，已在文末标明` : ''}。把握说的是这套规则推得有多一致，不是这件事实际发生的概率。`;
     return `<div class="mp-env-head">
-      <div class="mp-env-kicker">结论</div>
+      <h2 class="mp-env-kicker">结论</h2>
       <div class="mp-env-hl">${esc(v.headline)}</div>
       <div class="mp-env-row">
         <span class="mp-env-dir t-${dtone}">${esc(dl)}</span>
@@ -40612,17 +40892,17 @@ window.__MP_VER = "0.82.0";
       : '';
 
     const adv = (env.advice || []).length
-      ? `<div class="mp-env-adv"><b>怎么做</b><ol>${env.advice.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></div>`
+      ? `<div class="mp-env-adv"><h3 class="mp-env-adv-h">怎么做</h3><ol>${env.advice.map((a) => `<li>${esc(a)}</li>`).join('')}</ol></div>`
       : '';
 
-    const risk = env.risk ? `<div class="mp-env-risk"><b>留意</b>${esc(env.risk)}</div>` : '';
+    const risk = env.risk ? `<div class="mp-env-risk"><h3 class="mp-env-risk-h">留意</h3>${esc(env.risk)}</div>` : '';
 
     const cf = (env.conflicts || []).length
       ? `<details class="mp-env-cf"><summary>流派说明（${env.conflicts.length} 条）</summary><div class="mp-env-cf-body">${env.conflicts.map((c) => `<div class="mp-env-cf-item"><b>${esc(c.topic)}</b>${(c.views || []).map((v) => `<div class="mp-env-cf-view"><span>${esc(v.school)}</span>${esc(v.stance)}</div>`).join('')}${c.note ? `<em>${esc(c.note)}</em>` : ''}</div>`).join('')}</div></details>`
       : '';
 
     return `<div class="mp-env">
-      <div class="mp-env-sec-h">关键几点</div>
+      <h2 class="mp-env-sec-h">关键几点</h2>
       <div class="mp-env-f">${factors}</div>
       ${tl}${adv}${risk}${cf}
     </div>`;
@@ -40648,7 +40928,7 @@ window.__MP_VER = "0.82.0";
     </div>`).join('');
     // 一页读懂：报告顶部五条结论（整体/事业/财富/感情/节奏）
     const outline = (it.outline && it.outline.length)
-      ? `<div class="mp-outline"><div class="mp-outline-h">一页读懂</div>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
+      ? `<div class="mp-outline"><h3 class="mp-outline-h">一页读懂</h3>${it.outline.map((o) => `<div class="mp-outline-row"><b>${esc(o.label)}</b><span>${esc(o.text)}</span></div>`).join('')}</div>`
       : '';
     // 目录：点击跳到对应分节（面板内锚点；打印时隐藏）。方法类段落合成一项，别让目录里全是「未纳入」
     const secList = it.sections || [];
@@ -40694,7 +40974,7 @@ window.__MP_VER = "0.82.0";
         <div class="mp-it-sub">${factList.map((f, i) => `<div class="fact-row"><em class="fact-no">[${i + 1}]</em>${f.group === f.label ? '' : `<em class="fact-g">${esc(f.group)}</em>`}<b>${esc(f.label)}</b><span>${esc(f.value)}</span></div>`).join('')}</div>
       </details>` : '';
     const secOne = (s) => `<div class="mp-it-sec${s.tone ? ` tone-${esc(s.tone)}` : ''}" id="mp-sec-${esc(s.key)}">
-        <div class="mp-it-sh">${esc(s.label)}${refChip(s)}</div>
+        <h3 class="mp-it-sh">${esc(s.label)}${refChip(s)}</h3>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
@@ -42319,38 +42599,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   // ── 公历日期输入：固定「年-月-日」 ─────────────────────────────
   // 原生 date 控件的顺序跟随浏览器区域，容易出现月/日/年或日/月/年。
   // 改成文本输入 + 数字掩码：显示始终是 YYYY-MM-DD，也认 1990/5/12、1990年5月12日。
-  function isoDateOk(s) {
-    const ymd = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
-    if (!ymd) return false;
-    const y = Number(ymd[1]);
-    const mo = Number(ymd[2]);
-    const d = Number(ymd[3]);
-    if (mo < 1 || mo > 12 || d < 1) return false;
-    const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-    const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    return d <= days[mo - 1];
-  }
-  function normalizeDateText(raw) {
-    const ymd = /^(\d{4})\s*[年./-]\s*(\d{1,2})\s*[月./-]\s*(\d{1,2})\s*日?$/.exec(String(raw || '').trim());
-    if (!ymd) return '';
-    const iso = `${ymd[1]}-${pad(ymd[2])}-${pad(ymd[3])}`;
-    return isoDateOk(iso) ? iso : '';
-  }
-  function maskDateText(raw) {
-    const s = String(raw || '').trim();
-    // 连字符日期在输入过程中原样保留（含只打出「1990-5-」的中间态）：刚敲下「1」
-    // 就补成「01」，再敲「2」会变成 012 被截掉。等失焦时再统一补零；
-    // 斜杠/中文/点号视为粘贴，直接归一。
-    if (/^\d{0,4}(-\d{0,2}){0,2}$/.test(s)) return s;
-    if (/[年月日/.]/.test(s)) {
-      const full = normalizeDateText(s);
-      if (full) return full;
-    }
-    const digits = s.replace(/\D/g, '').slice(0, 8);
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`;
-  }
+  // 实现只存一份（panel-kit 的「共用小工具」），这里只转调用——两条链各写一遍，
+  // 改一边忘另一边就会出现「面板认、独立页不认」的输入。
+  function isoDateOk(s) { return window.__PP.isoDateOk(s); }
+  function normalizeDateText(raw) { return window.__PP.normalizeDateText(raw); }
+  function maskDateText(raw) { return window.__PP.maskDateText(raw); }
   /** 程序填值（示例 / 切 tab）：同步掩码与「最近一次有效值」 */
   function setDateField(id, iso) {
     const input = el(id);
@@ -42451,12 +42704,9 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     return '';
   }
 
-  function storeGet(key) {
-    try { return JSON.parse(window.localStorage.getItem(key) || 'null'); } catch (e) { return null; }
-  }
-  function storeSet(key, val) {
-    try { window.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* 存不了不影响使用 */ }
-  }
+  // 存储读写只在共用层存一份（panel-kit 的「共用小工具」），取不到一律静默降级
+  function storeGet(key) { return window.__PP.storeGet(key); }
+  function storeSet(key, val) { window.__PP.storeSet(key, val); }
 
   // ── 排盘结果的本机缓存（任务书 A 线 1.2④ / 1.4）─────────────────
   // 两套键各管一件事：
@@ -42470,14 +42720,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   const CACHE_MAX = 6;        // 每条带一整份盘面，留六张够用
   const CACHE_ITEM_MAX = 400000;
 
-  function hash36(s) {
-    let h = 0x811c9dc5;
-    for (let i = 0; i < s.length; i += 1) {
-      h ^= s.charCodeAt(i);
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-    return (h >>> 0).toString(36);
-  }
+  // 哈希与面板共用一份：两处各写一个版本，缓存键就会悄悄分叉
+  function hash36(s) { return window.__PP.hash36(s); }
   function chartKeyOf(param) {
     // 可传「出盘那刻的参数指纹」求键：默认盘设缓存键时要的是上一张盘的键，
     // 不是此刻表单的键（表单可能已经改了）。
@@ -42565,16 +42809,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
   }
 
-  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次 */
-  function dayLabel(ts) {
-    const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return '';
-    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-    const diff = Math.round((day(new Date()) - day(d)) / 86400000);
-    if (diff <= 0) return '今天';
-    if (diff === 1) return '昨天';
-    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  }
+  /** 今天 / 昨天 / 月-日：让「最近用过」能看出是哪次（算法在共用层） */
+  function dayLabel(ts) { return window.__PP.dayLabel(ts); }
 
   /** 当前页面上真实存在的入口 → 名称。存储里的 tab 值先过这张表，避免脏数据被当选择器用 */
   function entryLabels() {
@@ -42939,14 +43175,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   const isNarrow = () => !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
   const defaultFolded = () => (foldPref === null ? isNarrow() : foldPref);
 
-  /** 本机当前时刻（本地时区，不需要任何权限或联网） */
-  function nowParts() {
-    const d = new Date();
-    return {
-      date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-      time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-    };
-  }
+  /** 本机当前时刻（本地时区，不需要任何权限或联网；与面板同一份实现） */
+  function nowParts() { return window.__PP.nowParts(); }
 
   /** 某类时间的自动默认值：起卦类 = 当前时刻；命盘类 = 示例默认 */
   function defaultFor(k) {

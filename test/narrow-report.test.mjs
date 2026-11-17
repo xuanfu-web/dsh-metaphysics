@@ -127,8 +127,9 @@ const PP = sandbox.window.__PP;
       ok(`${name}·${label} 对比度 ${r.toFixed(2)}:1 ≥ 4.5`, r >= 4.5, `${p[fg]} on ${p[bg]} = ${r.toFixed(2)}`);
     }
   }
-  // 旧口径的回归：表头若改回 label，浅色只有 3.51，必须继续亮红灯
-  ok('表头 label 对 band 确实不达标（说明修复有必要）', ratio(palettes.浅色.label, palettes.浅色.band) < 4.5,
+  // 旧口径的回归：0.82.x 起 --label 自己就过了 AA，表头即使改回 label 也不会掉下去；
+  // 这条从「确实不达标」翻成「必须达标」——谁把 label 调回 #8a8378 这类灰，这里就红。
+  ok('表头 label 对 band 达标（回退到旧值会红）', ratio(palettes.浅色.label, palettes.浅色.band) >= 4.5,
     ratio(palettes.浅色.label, palettes.浅色.band).toFixed(2));
 }
 

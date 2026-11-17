@@ -2,10 +2,12 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { buildModule, MODULE_ORDER } from './build-client.mjs';
 // 未发版改动清单：不发版本号时，页面靠它说出「这一版之后又改了什么」
 import { unreleasedFromChangelog, badgeHtml, methodBlockHtml } from './unreleased.mjs';
+// 页面里内联的 panel-kit CSS 与入口包共用同一条剥离路径，别让两边各自处理
+import { stripKitCssSource } from './css-strip.mjs';
 // 询问方向的选项直接取自引擎，避免界面与解析层两处维护
 import { DIRECTIONS, DIRECTION_DEFAULT } from '../engine/interpret.js';
 import { GROUPS } from '../src/groups.mjs';
@@ -428,7 +430,7 @@ function page() {
   const modules = MODULE_ORDER.map(buildModule).join('\n');
   const ui = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
   const core = fs.readFileSync(path.join(root, 'src', 'core.js'), 'utf8');
-  const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
+  const kit = stripKitCssSource(fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8'));
   // 结果拼接的唯一入口：与宿主面板（tools/build-client.mjs 的 assembleEntry）共用同一份
   const compose = fs.readFileSync(path.join(root, 'src', 'compose.js'), 'utf8');
   const html = `<!doctype html>
@@ -449,6 +451,78 @@ function page() {
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon.svg">
 <style>${CSS}.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+</style>
+<style>/* ── 0.83 视觉重整 · 外壳 ──────────────────────────────────────────────
+   只动工艺，不动结构：tab 顺序、表单 id、分组卡片、断言全部照旧。
+   四条原则：
+     ① 层级靠字号 / 字重 / 留白，不靠一层层边框；
+     ② 卡片只有一层：细边 + 极淡投影，嵌套处只留分隔线；
+     ③ 交互件统一高度与圆角（输入 42、按钮 44、圆角 10），focus 只有一处 ring；
+     ④ 磁贴副标题给两行，不再用单行省略号腰斩句子。 */
+:root{
+  --r-sm:8px;--r-md:10px;--r-lg:16px;
+  --hair:color-mix(in srgb,var(--line) 52%,transparent);
+  --sh-1:0 1px 2px rgba(35,28,18,.04),0 18px 40px -30px rgba(35,28,18,.42);
+  --sh-2:0 2px 6px rgba(35,28,18,.05),0 26px 50px -34px rgba(35,28,18,.5);
+}
+.wrap{max-width:1160px;margin:0 auto;padding:22px 24px 64px}
+header{gap:15px;margin-bottom:22px;padding-bottom:16px}
+.brand{font-size:21px;letter-spacing:.12em;gap:11px}
+.brand .seal{width:42px;height:42px;border-radius:12px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 10px 22px -14px var(--gold)}
+.brand-txt small{font-size:12.5px;line-height:1.55;letter-spacing:.01em;color:var(--dim);margin-top:4px}
+.ver,.ver-note{padding:2px 9px;border-radius:999px;border-color:var(--hair);background:var(--panel2);color:var(--ink2);font-size:11px;line-height:1.6}
+.tab{padding:8px 10px;border:1px solid var(--hair);border-radius:var(--r-md);background:var(--panel2);color:var(--ink2);font-size:13px;font-weight:500}
+.tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink);box-shadow:var(--sh-1)}
+.tab.on{border-color:transparent;color:var(--on-accent);box-shadow:0 10px 20px -14px var(--gold)}
+.start{margin-bottom:22px}
+/* 四张卡底边必须齐（一行四个不等高会读成台阶），但也不能让磁贴少的卡底下空一块：
+   卡片竖向 flex，磁贴区吃掉剩余高度，多出来的空间变成磁贴本身的高度。 */
+.tgroup{display:flex;flex-direction:column}
+.ttools{flex:1;align-content:start}
+.ttools>.tool{height:100%}
+/* 奇数个磁贴的那一组：末项铺满两列，右下角不留空格（3 个磁贴的「古籍考据」）
+   注意每组末尾都挂着一个「还有 N 个」按钮，全部展开时它是 display:none 但仍算兄弟，
+   所以末个可见磁贴既是 nth-child(odd) 也是 nth-last-child(2)——两个条件一起认。 */
+.ttools>.tool:nth-child(odd):is(:nth-last-child(1),:nth-last-child(2)){grid-column:1/-1}
+.tgroup{padding:16px 16px 14px;border:1px solid var(--hair);border-radius:var(--r-lg);background:var(--panel);box-shadow:var(--sh-1)}
+.tgroup-head h2{gap:9px;font-size:15px;letter-spacing:.05em}
+.tgroup-head h2::before{width:3px;height:14px;border-radius:2px}
+.tgroup-head p{margin:6px 0 12px;font-size:12.5px;line-height:1.55;color:var(--dim)}
+.ttools{gap:7px}
+.tool{min-height:58px;justify-content:center;padding:10px 11px;border:1px solid var(--hair);border-radius:var(--r-md);background:var(--panel2)}
+.tool b{font-size:13px;letter-spacing:.01em}
+/* 副标题两行：提示语本身是「这工具干嘛用的」，压成一行就只剩省略号 */
+.tool span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;overflow:hidden;
+  font-size:11.5px;line-height:1.45;color:var(--dim)}
+.tool:hover{background:var(--panel);border-color:var(--gold);box-shadow:var(--sh-1)}
+.tool.on{border-color:transparent;box-shadow:0 10px 22px -14px var(--gold)}
+/* 「还有 N 个」不是一块没做完的虚线占位，是一条可以点的展开行 */
+.tmore{justify-content:center;padding:9px 11px;border:1px solid transparent;border-radius:var(--r-md);
+  background:var(--panel2);color:var(--ink2);font-size:12.5px}
+.tmore:hover{background:var(--panel);border-color:var(--gold);color:var(--gold)}
+.bar{padding:18px 20px;gap:14px 16px;border:1px solid var(--hair);border-radius:var(--r-lg);background:var(--panel);box-shadow:var(--sh-1)}
+.field{font-size:12.5px;font-weight:600;letter-spacing:.02em;color:var(--ink2);gap:7px}
+.field input,.field select{border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel2);
+  font-size:14px;font-weight:400;height:42px;padding:0 12px}
+.field textarea{height:auto;padding:10px 12px;border-radius:var(--r-md);font-size:14px}
+.field input:hover,.field select:hover,.field textarea:hover{border-color:var(--line)}
+.field input:focus,.field select:focus,.field textarea:focus{background:var(--panel);border-color:var(--gold);box-shadow:var(--ring)}
+.chk{font-size:13px;color:var(--ink2)}
+.adv>summary{padding:4px 0;font-size:12.5px;color:var(--dim)}
+.go{height:44px;padding:0 22px;border-radius:var(--r-md);font-size:14px;font-weight:600;letter-spacing:.04em}
+.go.ghost{height:44px;border:1px solid var(--hair);background:transparent;color:var(--ink2);font-weight:500}
+.go.ghost:hover{background:var(--panel2);border-color:var(--gold);color:var(--ink)}
+.tip{font-size:12.5px;line-height:1.7;color:var(--dim);max-width:66ch}
+@media (max-width:640px){
+  .wrap{padding:14px 12px 48px}
+  header{gap:12px;margin-bottom:14px;padding-bottom:12px}
+  .brand{font-size:19px;letter-spacing:.1em}
+  .brand .seal{width:38px;height:38px;border-radius:11px}
+  .tgroup{padding:13px 13px 12px}
+  .tool{min-height:54px;padding:9px 10px}
+  .bar{padding:14px 14px 16px;gap:12px}
+  .go{height:48px;border-radius:var(--r-sm)}
+}
 </style>
 <style>#mp-boot{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0f1115;color:#e8e8ea;font:14px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;transition:opacity .28s}#mp-boot.out{opacity:0;pointer-events:none}#mp-boot .seal2{width:42px;height:42px;border-radius:9px;display:grid;place-items:center;background:var(--gold);color:var(--on-accent);font-size:21px;font-weight:700}#mp-boot b{font-size:15px;letter-spacing:.05em}#mp-boot i{font-style:normal;font-size:12px;opacity:.55}@media print{#mp-boot{display:none}}</style>
 </head>
@@ -815,7 +889,19 @@ ${ui}
 export { page };
 
 // 只有直接运行时才写文件；被测试 import 时只取 page()，不产生副作用
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+//
+// 这里踩过两个坑，都是「剧本对了、守卫不成立」：
+//   ① argv[1] 可能是相对路径（`node tools/build-html.mjs` 正是文档里写的那条命令），
+//      pathToFileURL 不会替你补绝对路径；
+//   ② 插件在宿主里是符号链接（.dsh/.../node_modules/dsh-metaphysics → 开发目录），
+//      Node 按真实路径给 import.meta.url，而 argv[1] 是链接路径。
+// 两种情况下 import.meta.url 都比不中 → 一个字节不写、退出码还是 0，
+// 页面停在旧版本，看徽标还以为新。两边都取 realpath 再比。
+{
+  const selfUrl = pathToFileURL(path.resolve(fileURLToPath(import.meta.url))).href;
+  let entry = '';
+  try { entry = pathToFileURL(fs.realpathSync(path.resolve(process.argv[1]))).href; } catch (e) { /* 没有入口文件（被 import） */ }
+  if (entry && entry === selfUrl) {
   const out = page();
   // 默认写进仓库根的 命理排盘.html：这个文件随 npm 包一起发出去（见 package.json 的 files），
   // 订阅者装完包就有离线页，不必自己构建。`--out <file>` 可另存（例如同步到桌面那份拷贝）。
@@ -848,6 +934,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       }
     } catch (e) { /* 没有桌面目录或读不了就跳过，不影响构建 */ }
   }
+}
 }
 
 

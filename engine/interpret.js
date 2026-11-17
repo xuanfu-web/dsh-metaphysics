@@ -1905,14 +1905,24 @@ function enrichPlain(result, r, ask) {
   const disputed = caveats.filter((k) => k.status !== 'todo');
   const touched = disputed.filter((k) => seen.has(k.id));
   const rest = disputed.filter((k) => !seen.has(k.id));
-  const fmtCaveat = (k) => `· ${k.gist}（${STATUS_LABEL[k.status] || k.status}）`;
+  // 每一条都拖一枚「（文本·各家有异说）」时，五行条目就等于把同一句话念了五遍，
+  // 读者反而看不出哪一条才是重点。一组里状态一致的，把这枚限定语提到小标题上，
+  // 条目只说事；只有状态混合的组才逐条标，免得把两种状态糊成一句「各家有异说」。
+  const statusTag = (k) => STATUS_LABEL[k.status] || k.status;
+  const sharedTag = (list) => {
+    const tags = [...new Set(list.map(statusTag))];
+    return tags.length === 1 ? tags[0] : '';
+  };
+  const fmtCaveat = (k, shared) => `· ${k.gist}${shared ? '' : `（${statusTag(k)}）`}`;
+  const touchedTag = sharedTag(touched);
+  const restTag = sharedTag(rest);
   const caveatLine = disputed.length
     ? [
       touched.length
-        ? `本盘涉及 ${touched.length} 处：\n${touched.map(fmtCaveat).join('\n')}`
+        ? `本盘涉及 ${touched.length} 处${touchedTag ? `（均为${touchedTag}）` : ''}：\n${touched.map((k) => fmtCaveat(k, touchedTag)).join('\n')}`
         : '本盘未踩到下面这些分歧，结论是按一派一路算下来的。',
       rest.length
-        ? `本体系另有 ${rest.length} 处通行分歧（本盘未涉及，附原注备查）：\n${rest.map((k) => `${fmtCaveat(k)}${k.note ? `——${k.note}` : ''}`).join('\n')}`
+        ? `本体系另有 ${rest.length} 处通行分歧（本盘未涉及，附原注备查${restTag ? `；均为${restTag}` : ''}）：\n${rest.map((k) => `${fmtCaveat(k, restTag)}${k.note ? `——${k.note}` : ''}`).join('\n')}`
         : '',
     ].filter(Boolean).join('\n\n')
     : '';

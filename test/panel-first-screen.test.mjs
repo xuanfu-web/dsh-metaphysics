@@ -8,6 +8,8 @@ import { page } from '../tools/build-html.mjs';
 import { ok, eq } from './_harness.mjs';
 
 const app = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+// 存储读写只在 panel-kit 里存一份（共用小工具），面板只留一行委托
+const kit = fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8');
 const html = page();
 const clientBuild = fs.readFileSync(new URL('../tools/build-client.mjs', import.meta.url), 'utf8');
 const pageBuild = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta.url), 'utf8');
@@ -72,5 +74,7 @@ ok('展开/收起带 aria-expanded', /'aria-expanded': open \? 'true' : 'false'/
 ok('按实际入口数算折叠数量', /Math\.max\(0, g\.items\.length - 4\)/.test(app));
 
 // ── ⑦ 存储不可用要降级 ─────────────────────────────────────────
-ok('读存储失败返回 null', /function storeGet\(key\) \{\s*try \{/.test(app) && /catch \(e\) \{ return null; \}/.test(app));
-ok('写存储失败静默', /function storeSet\(key, val\) \{\s*try \{/.test(app) && /catch \(e\) \{ \/\* 存不了不影响使用 \*\/ \}/.test(app));
+ok('读存储失败返回 null', /function storeGet\(key\) \{\s*try \{/.test(kit) && /catch \(e\) \{ return null; \}/.test(kit) &&
+  /function storeGet\(key\) \{ return window\.__PP\.storeGet\(key\); \}/.test(app));
+ok('写存储失败静默', /function storeSet\(key, val\) \{\s*try \{/.test(kit) && /catch \(e\) \{ \/\* 存不了不影响使用 \*\/ \}/.test(kit) &&
+  /function storeSet\(key, val\) \{ window\.__PP\.storeSet\(key, val\); \}/.test(app));

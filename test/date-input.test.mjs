@@ -1,26 +1,42 @@
 // 日期输入固定「年-月-日」：原生 date 控件按浏览器区域显示，容易写成月/日/年。
 // 这里钉住两个入口同一套掩码/校验，以及模板里不再出现原生 date 控件。
 import fs from 'node:fs';
+import vm from 'node:vm';
 import { ok, eq } from './_harness.mjs';
 import { page } from '../tools/build-html.mjs';
 
 const read = (p) => fs.readFileSync(new URL('../' + p, import.meta.url), 'utf8');
 const APP = read('src/app.js');
 const UI = read('src/web-ui.js');
+const KIT = read('src/panel-kit.js');
 const HTML = page();
 
-function helpersFrom(src, start, end, prelude) {
-  const a = src.indexOf(start);
-  const b = src.indexOf(end, a);
-  ok('能定位日期辅助函数', a >= 0 && b > a);
-  const block = src.slice(a, b);
-  return new Function(`${prelude || ''}\n${block}\nreturn { isoDateOk, normalizeDateText, maskDateText };`)();
+// 掩码只在 panel-kit 里存一份，两条链委托过去（见两个 src 的同名注释）。
+// 以前面板与独立页各写一遍，靠「两入口结果一致」的断言吊着不散；现在把共用层的
+// 实现真跑起来验，再反查两条链不许再各自实现。
+function loadKit() {
+  const win = { __PP: {} };
+  /* eslint-disable no-undef */
+  vm.runInNewContext(KIT, {
+    window: win,
+    document: { createElement: () => ({ getContext: () => null, style: {} }), addEventListener() {}, querySelectorAll: () => [] },
+    navigator: {},
+    performance: { now: () => 0 },
+    console,
+  }, { timeout: 5000 });
+  return win.__PP;
 }
-const appH = helpersFrom(APP, 'const pad2 =', 'function DateInput');
-const uiH = helpersFrom(UI, '// ── 公历日期输入', 'function bindDateInput',
-  "const pad = (n) => String(n).padStart(2, '0');");
+const PP = loadKit();
+ok('共用层暴露了日期掩码三件套',
+  ['isoDateOk', 'normalizeDateText', 'maskDateText'].every((k) => typeof PP[k] === 'function'));
 
-for (const [name, H] of [['面板', appH], ['独立页', uiH]]) {
+for (const [name, src] of [['面板', APP], ['独立页', UI]]) {
+  const delegates = (fn) => new RegExp(`function ${fn}\\([^)]*\\) \\{[^}]*window\\.__PP\\.${fn}\\(`).test(src);
+  ok(`${name}：三个日期函数都委托到共用层`, delegates('isoDateOk') && delegates('normalizeDateText') && delegates('maskDateText'));
+  ok(`${name}：不再自己实现日期校验`, !/function isoDateOk\(s\) \{\s*const ymd/.test(src));
+}
+
+for (const [name, H] of [['共用层', PP]]) {
   eq(`${name}：8 位数字自动补成 年-月-日`, H.maskDateText('19900512'), '1990-05-12');
   eq(`${name}：斜杠写法归一`, H.maskDateText('1990/5/12'), '1990-05-12');
   eq(`${name}：中文写法归一`, H.maskDateText('1990年5月12日'), '1990-05-12');
@@ -34,14 +50,6 @@ for (const [name, H] of [['面板', appH], ['独立页', uiH]]) {
   eq(`${name}：平年 2-29 拒绝`, H.normalizeDateText('2023-02-29'), '');
   eq(`${name}：13 月拒绝`, H.normalizeDateText('2026-13-01'), '');
   eq(`${name}：空值不算合法`, H.isoDateOk(''), false);
-}
-
-// 面板与独立页必须同一口径，不能一个认斜杠一个不认
-const cases = ['19900512', '1990/5/12', '1990年5月12日', '1990-05-1', '1990-5-12', '2023-02-29', ''];
-for (const c of cases) {
-  eq(`两入口对「${c || '空'}」结果一致`,
-    JSON.stringify([appH.maskDateText(c), appH.normalizeDateText(c)]),
-    JSON.stringify([uiH.maskDateText(c), uiH.normalizeDateText(c)]));
 }
 
 // 模板层：日期框是文本输入，顺序写明；不许再出现原生 date

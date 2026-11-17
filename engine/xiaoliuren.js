@@ -31,7 +31,25 @@ export function buildXiaoliuren(input) {
   if (!input || typeof input !== 'object') {
     throw fail('E_INPUT', '小六壬起课参数不能为空：时间起课要 date / hour，数字起课要 num1 / num2 / num3');
   }
-  const mode = input.mode === 'number' ? 'number' : 'time';
+  // 模式推断：mode 没给时按入参自己认。以前默认 'time'，于是「只给了三个数」会被当成
+  // 「没给时间」——工具层还会顺手补上此刻的钟点，用户明明报数起课，拿回的却是一张
+  // 按当下时间掐的盘，而且不报错。数字给了就是数字起课，时间给了才是时间起课。
+  const numsGiven = [input.num1, input.num2, input.num3]
+    .filter((v) => v !== undefined && v !== null && v !== '').length;
+  const timeGiven = (typeof input.hour === 'number' && Number.isInteger(input.hour))
+    || (typeof input.date === 'string' && input.date.trim() !== '')
+    || (typeof input.datetime === 'string' && input.datetime.trim() !== '');
+  let mode;
+  if (input.mode === 'number' || input.mode === 'time') {
+    mode = input.mode;
+  } else if (numsGiven && timeGiven) {
+    // 两组都给了却不指明用哪组：谁被丢掉都是静默错盘，宁可要一句能照做的报错
+    throw fail('E_INPUT', '时间与报数同时给了：请用 mode 指明 time（按日期时辰掐指）还是 number（报数起课），两组不能同时生效');
+  } else if (numsGiven) {
+    mode = 'number';
+  } else {
+    mode = 'time';
+  }
   let m;
   let d;
   let h;

@@ -190,12 +190,20 @@ export function chartIdOf(r, opts = {}) {
   // 只读顶层的话两张不同生日的盘会算出同一个 id，缓存随之串盘——结论卡挂在上一张盘上。
   const civ = (input && input.civil) || {};
   const pick = (k) => (input[k] != null ? input[k] : civ[k]);
+  // 抽牌类体系（塔罗）：同 seed 换牌阵，牌面不同但以前键里只有 seed——两张盘算出同一个
+  // chart_id，信封缓存命中上一张，五张牌阵的盘会挂上「3 张牌里 2 正 1 逆」的结论卡。
+  // 牌阵标签与每张牌的正逆都进键，才算「同盘同 id」。
+  const cards = (r && Array.isArray(r.cards))
+    ? r.cards.map((c) => `${one(c && c.name)}${c && c.upright === false ? '逆' : '正'}`).join(',')
+    : '';
   const key = [
     system,
     pick('year'), pick('month'), pick('day'), pick('hour'), pick('minute'),
     pick('gender'), pick('datetime'), pick('leapMonth'),
     (r && r.seed) != null ? r.seed : '',
     (r && r.cast && Array.isArray(r.cast.lines)) ? r.cast.lines.join('') : '',
+    one((r && r.spread) || ''),
+    cards,
     one(opts.question || (r && r.question) || ''),
     one(opts.mode || 'live'),
   ].join('|');

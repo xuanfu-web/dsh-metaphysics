@@ -42,19 +42,31 @@
 | 两套渲染链合清单复查：面板侧 9 / 10 / 15 按单页同等强度补齐，修深色 `.ask-sep` 低对比 | `docs/渲染链检查清单.md` 合清单复查节；`tools/e2e-panel.mjs` 六·五 + 八、163→168 通过 0 失败；`src/panel-kit.js:658` `var(--dimline)`→`var(--muted)`（2.16:1，共用层两条链一起生效）；`node tools/e2e-dom.mjs` 161 项通过；`node tools/build-all.mjs --gate` 207/207、11483 断言、gzip 121KB |
 | 渲染链第二轮：面板侧第 16（八字卡四块，含称骨经 ensureEngine('chenggu') 按需拉分块那条路）与第 12（复制提问包内容量 > 2000）补齐；锁定扫描逻辑合并成 panel-kit 的 pp.lockParams + mp-askfree 标记类，两条链不再各写一份白名单 | docs/渲染链检查清单.md 第二轮复查节；tools/e2e-panel.mjs 六·六 + 十二 + 十四、168→176 通过 0 失败；tools/e2e-dom.mjs 161→165 项通过；src/panel-kit.js pp.ASK_FREE / pp.lockParams，src/web-ui.js:728、src/app.js:1100 改调它；tools/build-html.mjs 给 #question / #direction 挂 mp-askfree；test/ask.test.mjs 90→93、test/panel-cache.test.mjs 24→31（改成守契约不守字面串）；全闸 207/207、11486 断言、gzip 124417 |
 | 渲染链第三轮：清单第 4 项（牌阵锁定，它决定抽几张牌，不该跟问事层一起放过）与第 13 项（面板 `undefined`/`NaN` 全体系文本体检）补正面断言 | `docs/渲染链检查清单.md` 第三轮复查节；`tools/e2e-dom.mjs` 塔罗出盘后断言 `#tcount.disabled === true`、161→166 项通过；`tools/e2e-panel.mjs` 十二·六断言「牌阵」select 锁住 + 新增十四·五逐 tab 排盘扫 `.mp-card`（实测扫 16 套，跳过 小六壬/MBTI/起名），168 起 176→181 通过 0 失败；`build-all --gate` 连跑两遍 207/207、11486 断言；9 产物纯 LF |
+| 外部巡检四修：塔罗信封缓存串盘 / 小六壬报数被静默换成时间起课 / 梅花数字起卦报「缺 datetime」/ 五运六气与太乙省略日期不补今天 | `engine/envelope.js` `chartIdOf` 键表加牌阵标签与逐张正逆（同 seed 换牌阵不再撞 id）；`engine/xiaoliuren.js`、`engine/meihua.js` 按入参认模式、两组都给报 E_INPUT；`index.js` `DATE_ONLY` 加 wuyunliuqi / taiyi，小六壬「补此刻」前先看 num1–3；`test/adapters-extra.test.mjs` ⑧ 11 条、`test/args.test.mjs` 模式推断 10 条、`test/guard-inputs.test.mjs` ㉒㉓ 16 条；`docs/lessons.md` L-020；全闸 207/207、11521 断言、client gzip 122KB |
+| 两链工具收敛：8 个同名工具收进 panel-kit（`isoDateOk` / `normalizeDateText` / `maskDateText` / `storeGet` / `storeSet` / `hash36` / `dayLabel` / `nowParts`），两条链只留一行委托 | `src/panel-kit.js` 新增「共用小工具」段并挂到 `window.__PP`；`src/app.js` / `src/web-ui.js` 删掉各自实现（含 app 里的 `pad2`）、改 `window.__PP.x()` 委托；`test/shared-helpers.test.mjs` 新建 38 条（暴露齐全 / 两链不许再实现 / 哈希向量 / 存储降级与往返 / 日期标签 / 当前时刻格式）；`test/date-input.test.mjs` 改成在 vm 里跑共用层 + 反查委托；`cache-default` / `first-screen` / `panel-first-screen` 三处源码正则改为守「共用层有实现 + 链上只委托」；全闸 208/208、11545 断言、`e2e-dom` 166、`e2e-panel` 181/0 |
+| 构建入口守卫静默失效（`tools/build-html.mjs`）：按文档用相对路径 `node tools/build-html.mjs` 跑，`argv[1]` 是相对路径、插件又是符号链接（Node 按真实路径给 `import.meta.url`），守卫永远不成立——不写文件、退出码 0，页面停在旧版本 | 入口比较改成两边取 `realpath`；`test/standalone.test.mjs` 加 3 条：写法钉 realpath、照文档相对路径 spawn 一次必须真写出、写出的内容与 `page()` 逐字一致 |
+| 闸门偶发红（`test/facts-only.test.mjs`）：塔罗用例没给 `seed`，每次抽牌不同，牌阵一变 `f-tarot-suits` 就不在这份 facts 里，「refs 不指向空气」隔几次红一次 | 该用例补 `seed: 7`；连跑 6 次 88 PASS / 0 FAIL 稳定 |
+| 解释层三修：报告里同一句话念两遍（八字摘要↔解析重复 13 句）、分歧清单每条都拖「（文本·各家有异说）」、小字灰度 3.35 / 2.26 低于 AA | `engine/interpret.js` 新增 `statusTag` / `sharedTag` / `fmtCaveat`，限定语提到小标题；`engine/index.js` 新增 `stripEcho`（≥18 字整句、留首次），summary 先去自身重复再跨段去重；`src/panel-kit.js` 令牌 `--label:#696356` / `--faint:#726b5c` / `--ink3:#726b5c`，深色 `--ink3:#a9a193`；`test/explain-quality.test.mjs` 新建 41 条、`test/narrow-report.test.mjs` 反值班断言翻正（52 条）；实测七体系重复长句 0、条目行数不变（八字 14 / 紫微 11 / 六爻 9 / 塔罗 2） |
+| 界面工艺重整（0.83，只动外观）：磁贴副标题单行省略号腰斩、四张分组卡等拉伸留空洞、装饰性虚线遍地、四柱表无表头底色、结论判断词与正文同档 | `tools/build-html.mjs` 第二个 `<style>` 块「0.83 外壳」（根令牌 + 磁贴两行 + 卡片等高 + 末项铺满 + 42/44px 交互件 + ≤640 覆盖）；`src/panel-kit.js` CSS 末尾「0.83 报告」（结论卡 19px、关键几点实线分隔、表头落 `--band`、`.pp` 加内边距、装饰虚线换实线、`.mp-env` 成卡、`.mp-prof-empty` 去虚线）；页面 `命理排盘.html` 1870.9 KB |
+| 判断标签三色从未生效：`--env-*` 自引用（`var(--自己)`）整条声明作废，且令牌作用域在 `.pp/.mp-it`、结论卡 `.mp-env-head` 不在其中 | `src/panel-kit.js` 在 `:root` 给实值 `#2f6b4f` / `#7d5410` / `#3a5570`（`--card` 上 5.8–7.6:1），深色 `@media prefers-color-scheme:dark` 再覆盖一套；实测标签由 `rgb(26,25,22)` 回到 `rgb(58,85,112)`；`test/explain-quality.test.mjs` 钉 4 条（不自引用 / `:root` 有定义 / 深色有覆盖 / 三色通道差 ≥24） |
+
+| 报告区标题全是 `div` / `b`：读屏听不出层次，「跳标题」跳不进报告任何一段 | `src/panel-kit.js` 渲染侧换标签（结论 / 关键几点 / 人生 K 线 / 一眼看 → `h2`；怎么做 / 留意 / 一页读懂 / 解析分节 → `h3`），类名不动；override 收 UA margin 与粗体，`h3.mp-env-adv-h` / `h3.mp-it-sh` / `h3.mp-outline-h` 显式 `display:block` 拦页面外壳的全局 `h3{display:flex}`；浏览器实测 margin 全 0、字号字重与改前一致；`test/explain-quality.test.mjs` 补 10 条（51 条） | 标题语义化 |
+| `detail` 档位说明与实现漂移四处：`index.js` 顶层说明 / schema、`engine/index.js` `interpretText` / `detailOf` 头注，都把 lean 写成「只给结论、所问方向与三张表」 | 四处按行为重写（lean 保留说人话 / 一页读懂 / 维度 / 短节 / 追问 / 边界与免责，表行给全、名词解释照给；brief 再限 8 行且不给名词解释）；`test/detail-tier.test.mjs` ⑥ 段补 5 条文档-行为一致性断言（115 条） | 文档对齐 |
+
+| 入口包余量只剩 3.5KB：CSS 注释占 20.8KB 源文本 / 10.7KB gzip | 新增 `tools/css-strip.mjs`（`stripCssComments` + `stripKitCssSource`），`build-client.mjs` 两处与 `build-html.mjs` 内联共用；源码注释不动，只剥产物；client.js gzip 127525 → 113672（余量 3.5 → 17.4KB），页面 1872.1 → 1863.5 KB；`test/css-strip.test.mjs` 15 条（含余量 ≥10KB 断言） | 体积战 |
+| `src/panel-kit.js` 366KB 单文件是否该拆 | **不拆**：一百多份测试把它当自包含脚本 `vm.runInNewContext(源码)` 直接跑，拆开要把「源码即脚本」换成「拼接器正确」；改为文件头写清四段分区（CSS / 小工具 / 盘面渲染 / 报告编排） | 结论 |
 
 ## 二、待办
 
 | 项 | 状态 | 卡点 / 下一步 |
 | --- | --- | --- |
 | 北派紫微讲义 02 吸收清单 | 已留档，等主人挑优先级 | `docs/参考资料-北派紫微讲义02.md` 第四节：P0-1 论命次第落 `engine/plain-summary.js:332`；P0-2 逢禄看忌 / 逢权看科落 `engine/ziwei-words.js:119-125,201-213`；P1-1 宫职衍义只进 `engine/followup.js:99` 追问侧（client gzip 124100，余量 3900，别塞首屏）；P1-2 收缩护栏核 `engine/interpret-plain.js:168`；P2 知识库。不动 `engine/ziwei.js` 排盘层。 |
-| 0.82.0 之后攒的改动（2c 两刀 + 巡检修 bug + 所以呢判断层） | 未发版，已提交留档 | 提交链 `677f042`→`1933642`→`0.82.0` 之后 `e9cf81e`→`81f9257`→`ea01308`；等主人发话一次走完整发版流程（R-008），别拆小版本。 |
+| 0.82.0 之后攒的 30 项改动（2c 两刀 + 巡检修 bug + 所以呢判断层 + 界面工艺 + 入库包瘦身） | **0.83.0 发版中** | 提交链 `677f042`→`1933642`→`0.82.0` 之后 `e9cf81e`→`81f9257`→`ea01308`，本版一次发完（R-008）：main + tag + npm + Release + Pages。闸：210/210、11616 断言、client.js gzip 113672；e2e-panel 181/0、e2e-dom 166。 |
 | 两套渲染链合清单 | **全部完成**（17 项两条链都有正面断言） | `docs/渲染链检查清单.md` 三轮复查：面板 9/10/12/15/16 补齐、锁定逻辑合并成 `pp.lockParams` + `mp-askfree`、第 4 项牌阵锁定与第 13 项全体系文本体检补正面断言。 |
-| 塔罗 envelope 写死三张牌阵 | 巡检发现，未修 | 五张牌阵下 `interpret()` 的 verdict.headline 仍写「3张牌里2正1逆」、factors 只按前 3 张算；白话侧已在第二刀改口，envelope 侧另立，别混进 2c。 |
 
 ## 三、发版前必查
 
-1. `node tools/build-all.mjs --gate` → 207/207、11486 断言（含 metrics M1–M7）。
+1. `node tools/build-all.mjs --gate` → 210/210、11616 断言（含 metrics M1–M7）；client.js gzip 113672（128KB 上限，余量约 17KB，再加界面东西前先看 `test/css-strip.test.mjs` 的余量断言）。
 2. `node tools/check-eol.mjs` → 9 个产物纯 LF。
 3. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
 4. 实机：设默认盘 → 刷新 → `computeHits=0` 且顶部条在。

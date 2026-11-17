@@ -5,7 +5,7 @@
 // 也就是说，这三张盘在结论卡上什么都没说。这里把各自的判断钉死：
 // 大六壬看三传走势与末传落点，梅花看体用生克与变卦，合盘看三项分与合冲计数。
 import { compute } from '../engine/index.js';
-import { ADAPTERS, FACTOR_WHITELIST, buildEnvelope, lenCn, validateEnvelope } from '../engine/envelope.js';
+import { ADAPTERS, FACTOR_WHITELIST, buildEnvelope, chartIdOf, lenCn, validateEnvelope } from '../engine/envelope.js';
 import { ok, eq } from './_harness.mjs';
 
 const CASES = [
@@ -138,3 +138,30 @@ ok('大六壬盘标签带日柱与时支', labels[0].includes('日') && labels[0
 ok('梅花盘标签带本卦与变卦', labels[2].includes('→'), labels[2]);
 ok('合盘盘标签带双方日主', labels[4].includes('×'), labels[4]);
 ok('三张盘标签互不相同', new Set(labels).size === labels.length, labels.join(' / '));
+
+// ── ⑧ 塔罗：同 seed 换牌阵，结论卡与 chart_id 都要跟着换（缓存不许串盘） ──
+// 起因：chart_id 只盖了 seed，没盖牌阵与牌面。同一进程里先排五张、再排凯尔特十字，
+// 十张牌的盘挂的仍是上一张盘的「5 张牌里 1 正 4 逆」——盘面十张、结论说五张，
+// 而且看起来一切正常。牌阵标签与每张牌的正逆都必须进 chart_id。
+const spreadOf = (spread) => compute({ system: 'tarot', spread, question: '这次换工作', seed: 4242 });
+const threeSpread = spreadOf('three');
+const fiveSpread = spreadOf('five');
+const celticSpread = spreadOf('celtic');
+eq('三张牌阵抽三张', threeSpread.cards.length, 3);
+eq('五张牌阵抽五张', fiveSpread.cards.length, 5);
+eq('凯尔特十字抽十张', celticSpread.cards.length, 10);
+const headOf = (r) => buildEnvelope(r, { system: 'tarot' }).verdict.headline;
+ok('三张牌阵的结论卡说三张', /3张牌/.test(headOf(threeSpread)), headOf(threeSpread));
+ok('五张牌阵的结论卡说五张', /5张牌/.test(headOf(fiveSpread)), headOf(fiveSpread));
+ok('十张牌阵的结论卡说十张（不被上一张盘顶掉）', /10张牌/.test(headOf(celticSpread)), headOf(celticSpread));
+ok('三种牌阵 chart_id 互不相同',
+  new Set([chartIdOf(threeSpread), chartIdOf(fiveSpread), chartIdOf(celticSpread)]).size === 3,
+  [chartIdOf(threeSpread), chartIdOf(fiveSpread), chartIdOf(celticSpread)].join(' / '));
+eq('同一牌阵重算 chart_id 稳定', chartIdOf(spreadOf('celtic')), chartIdOf(celticSpread));
+// 计数比张数更能说明「用的是这一盘」：十张里有几张正位，结论卡必须数得出来
+const tally = (r) => {
+  const up = r.cards.filter((c) => c.upright !== false).length;
+  return `${r.cards.length}张牌里${up}正${r.cards.length - up}逆`;
+};
+ok('十张牌阵的结论卡正逆计数与牌面一致', headOf(celticSpread).includes(tally(celticSpread)), `${headOf(celticSpread)} || ${tally(celticSpread)}`);
+ok('五张牌阵的结论卡正逆计数与牌面一致', headOf(fiveSpread).includes(tally(fiveSpread)), `${headOf(fiveSpread)} || ${tally(fiveSpread)}`);

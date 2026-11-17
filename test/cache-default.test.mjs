@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..');
 const src = fs.readFileSync(path.join(root, 'src', 'web-ui.js'), 'utf8');
+// 日期/存储/哈希等小工具只在 panel-kit 里存一份，两条链委托过去
+const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
 const page = fs.readFileSync(path.join(root, 'tools', 'build-html.mjs'), 'utf8');
 const code = src.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n');
 
@@ -42,7 +44,9 @@ ok('单条过大跳过不存', /CACHE_ITEM_MAX/.test(bodyOf('function cacheWrite
 ok('超过上限按时间淘汰最旧', /CACHE_MAX/.test(bodyOf('function cacheWrite(')) &&
   /sort\(\(x, y\) => \(m\[x\]\.createdAt \|\| 0\) - \(m\[y\]\.createdAt \|\| 0\)\)/.test(src));
 ok('写缓存失败不影响排盘', /try \{[\s\S]{0,900}catch \(e\) \{ \/\* 缓存写失败不影响这次排盘 \*\/ \}/.test(src));
-ok('存储读写都走静默降级', /function storeGet\(key\)/.test(src) && /function storeSet\(key, val\)/.test(src));
+ok('存储读写都走静默降级', /function storeGet\(key\) \{\s*try \{ return JSON\.parse/.test(kit) &&
+  /catch \(e\) \{ return null; \}/.test(kit) &&
+  /function storeGet\(key\) \{ return window\.__PP\.storeGet\(key\); \}/.test(src));
 
 // ── 二、命中即直出，绝不重新计算 ───────────────────────────
 const hitBlock = (src.match(/const ck = chartKeyOf\(\);[\s\S]*?\/\/ 进入 CALCULATING/) || [''])[0];

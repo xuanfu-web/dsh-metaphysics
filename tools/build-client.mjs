@@ -7,6 +7,7 @@ import { GROUPS } from '../src/groups.mjs';
 import { DIRECTIONS } from '../engine/interpret.js';
 // 未发版改动清单（面板报错行要带出去，见 src/app.js 的错误边界）
 import { unreleasedFromChangelog } from './unreleased.mjs';
+import { stripKitCssSource } from './css-strip.mjs';
 
 const unreleasedLine = () =>
   `    window.__MP_UNRELEASED = ${unreleasedFromChangelog(path.join(root, 'CHANGELOG.md')).length};`;
@@ -240,7 +241,7 @@ const readPkg = () => JSON.parse(fs.readFileSync(path.join(root, 'package.json')
 export function assemble(tail) {
   const body = tail ?? readSrc('app.js');
   const core = readSrc('core.js');
-  const kit = readSrc('panel-kit.js');
+  const kit = stripKitCssSource(readSrc('panel-kit.js'));
   // 结果拼接的唯一入口：与正式入口共用同一份
   const compose = readSrc('compose.js');
   const pkg = readPkg();
@@ -274,7 +275,7 @@ ${body}
 export function assembleEntry(tail) {
   const body = tail ?? readSrc('app.js');
   const core = readSrc('core.js');
-  const kit = readSrc('panel-kit.js');
+  const kit = stripKitCssSource(readSrc('panel-kit.js'));
   // 结果拼接的唯一入口：与独立页（tools/build-html.mjs 的 page）共用同一份
   const compose = readSrc('compose.js');
   const lazy = readSrc('engine-lazy.js');

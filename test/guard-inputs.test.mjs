@@ -390,3 +390,31 @@ eq('buildTrend(null) → E_INPUT', codeOf(() => TRD.buildTrend(null)), 'E_INPUT'
 eq('buildMbti(null) → E_INPUT', codeOf(() => MBT.buildMbti(null)), 'E_INPUT');
 eq('buildQimen(null) → E_INPUT', codeOf(() => QMN.buildQimen(null)), 'E_INPUT');
 eq('buildSnapshot(null) → E_INPUT', codeOf(() => QMN.buildSnapshot(null)), 'E_INPUT');
+
+// ㉒ 日期类体系「省略就是今天」：help 里写的就是承诺。
+// 以前 wuyunliuqi / taiyi 不在补日期的名单里，空参直接报「缺少 datetime」——
+// 文档一套、行为一套，而测试只比对了 help 里那行字，所以门禁一直是绿的。
+const todayStr = (() => {
+  const n = new Date();
+  const p = (x) => String(x).padStart(2, '0');
+  return `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}`;
+})();
+for (const sys of ['almanac', 'star', 'numerology', 'wuyunliuqi', 'taiyi']) {
+  let r = null;
+  let msg = '';
+  try { r = await def.execute({ system: sys }); } catch (e) { msg = `[${e.code}] ${e.message}`; }
+  ok(`${sys} 省略日期照常出盘`, !!r && !msg, msg.slice(0, 90) || 'ok');
+  // 各体系报日期的字段名不同（almanac/star/numerology 用 meta.date，五运六气/太乙用 meta.datetime）
+  const shownDate = r ? String((r.meta && (r.meta.datetime || r.meta.date)) || '') : '';
+  ok(`${sys} 补的是今天（${todayStr}）`, shownDate.startsWith(todayStr), shownDate);
+}
+
+// ㉓ 报数 / 数字起卦不许被工具层的「补此刻」顶掉。
+// 以前小六壬只给 num1–3 时，工具层仍补上此刻的钟点，引擎再按 time 起课，
+// 三个数静默作废——返回一张「看起来很正常」的盘。
+const xlTool = await def.execute({ system: 'xiaoliuren', num1: 3, num2: 8, num3: 5 });
+eq('工具层 小六壬只给三数 → 报数起课', xlTool.meta.mode, '报数起课');
+ok('工具层 小六壬报数 → 摘要不出现「时间起课」', !/时间起课/.test(xlTool.summary), xlTool.summary.split('\n')[0]);
+const mhTool = await def.execute({ system: 'meihua', upper: 3, lower: 5 });
+eq('工具层 梅花只给两数 → 数字起卦', mhTool.mode, 'number');
+eq('工具层 梅花两数 → 与显式 mode:number 同卦', mhTool.ben.name, (await def.execute({ system: 'meihua', mode: 'number', upper: 3, lower: 5 })).ben.name);
