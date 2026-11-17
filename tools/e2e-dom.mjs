@@ -100,12 +100,14 @@ ok(true, '页面加载完成');
     const q = document.getElementById('question');
     const d = document.getElementById('direction');
     const dt = document.getElementById('date');
+    const tc = document.getElementById('tcount');
     const PP = window.__PP || {};
     return {
       qRO: q ? q.readOnly : null,
       qDis: q ? q.disabled : null,
       dDis: d ? d.disabled : null,
       dtRO: dt ? dt.readOnly : null,
+      tcDis: tc ? tc.disabled : null,
       hasFn: typeof PP.lockParams === 'function',
       list: String(PP.ASK_FREE || ''),
     };
@@ -113,6 +115,8 @@ ok(true, '页面加载完成');
   ok(lockState.qRO === false && lockState.qDis === false, '单页 · 出盘后「所问之事」仍可改（问事层不跟着锁）',
     `readOnly=${lockState.qRO} disabled=${lockState.qDis}`);
   ok(lockState.dDis === false, '单页 · 出盘后「询问方向」仍能切', `disabled=${lockState.dDis}`);
+  // 牌阵决定抽几张牌，是排盘参数，必须跟参数一起锁——别把它错当成「问事层」放过
+  ok(lockState.tcDis === true, '单页 · 锁定时牌阵（决定抽几张）跟着锁住', `disabled=${lockState.tcDis}`);
   ok(lockState.dtRO === true, '单页 · 出盘后参数输入确实锁住（只读）', `readOnly=${lockState.dtRO}`);
   ok(lockState.hasFn && /mp-askfree/.test(lockState.list),
     '单页 · 锁定名单来自 panel-kit 共用层（mp-askfree 标记类）', lockState.list);

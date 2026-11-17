@@ -1145,6 +1145,20 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(diag.envFirst && diag.ttAt >= 2, '塔罗牌面排在结论卡与关键几点之后（L0→L1→牌面）', JSON.stringify(diag.kids));
   ok(!!diag.first && !/mp-perf|mp-rev|mp-handle|mp-shadow|mp-trace|mp-cast-at|mp-caliber/.test(diag.first),
     '第一块不是技术信息行', JSON.stringify(diag.kids));
+
+  // 牌阵决定抽几张牌，是排盘参数，出盘后必须跟着锁；别把它错当成「问事层」放过。
+  // 它是 tab==='tarot' 才渲染的那个 select，值默认 three。
+  const spreadLock = await page.evaluate(() => {
+    const labels = [...document.querySelectorAll('#main label.mp-field')];
+    const f = labels.find((l) => {
+      const s = l.querySelector('.mp-lbl');
+      return s && s.textContent.trim() === '牌阵';
+    });
+    const sel = f && f.querySelector('select');
+    return sel ? { dis: sel.disabled, v: sel.value } : null;
+  });
+  ok(spreadLock && spreadLock.dis === true, '面板 · 锁定时牌阵（决定抽几张）跟着锁住',
+    JSON.stringify(spreadLock));
 }
 
 // ── 十二·七、体质问卷：第 20 个体系，45 题分 9 页 ──────────────
@@ -1357,6 +1371,67 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(lockP.dateRO === true, '面板 · 出盘后参数输入确实锁住（只读）', `readOnly=${lockP.dateRO}`);
   ok(lockP.hasFn && /mp-askfree/.test(lockP.list),
     '面板 · 锁定名单来自 panel-kit 共用层（mp-askfree 标记类）', lockP.list);
+}
+
+// ── 十四·五、全体系结果区文本体检 ──────────────────────────────
+// 单页有「全 tab 扫一遍 #out.innerHTML 不许出现 undefined / NaN / [object Object]」，
+// 面板一直是跟着各节顺带看，没有独立用例——这一节补上：把面板的每个体系都切一遍、
+// 尽量排出一张盘，扫结果卡文本。排不出来的（起名没填名、报数没填数、问卷没答）计入
+// skipped 并单独断言覆盖面，避免「只扫到两三个也算过」。
+{
+  const errsBefore = errors.length;
+  const tabs = await page.evaluate(() => {
+    const s = new Set();
+    document.querySelectorAll('.mp-tool[data-tab]').forEach((e) => s.add(e.dataset.tab));
+    return [...s];
+  });
+  ok(tabs.length >= 18, '面板侧拿得到全部体系 tab', `${tabs.length} 个`);
+  const dirty = [];
+  const scanned = [];
+  const skipped = [];
+  for (const k of tabs) {
+    await openTool(k);
+    await page.waitForTimeout(110);
+    // 公共字段先填上；填不动说明是锁定态，先解锁
+    await unlockParams();
+    await page.evaluate(() => {
+      const put = (sel, v) => {
+        const n = document.querySelector(sel);
+        if (!n || n.disabled || n.readOnly) return;
+        n.value = v;
+        n.dispatchEvent(new Event('input', { bubbles: true }));
+        n.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      put('#main .mp-input[placeholder^="年-月-日"]', '1990-05-12');
+      put('#main .mp-input[placeholder^="时"]', '14:30');
+    });
+    const ta = page.locator('.mp-askblock textarea');
+    if (await ta.count()) {
+      await unlockParams();
+      await ta.first().fill('这件事能不能成').catch(() => {});
+    }
+    await unlockParams();
+    await page.locator('.mp-actions button.mp-btn:not(.ghost)').last().click().catch(() => {});
+    await page.waitForTimeout(420);
+    const s = await page.evaluate(() => {
+      const m = document.getElementById('main');
+      if (!m) return null;
+      const card = m.querySelector('.mp-card');
+      return { txt: card ? card.innerText : '', err: !!m.querySelector('.mp-err') };
+    });
+    // 结果卡太短 = 没排出盘（必填没填 / 问卷没答），跳过但记下来
+    if (!s || !s.txt || s.txt.length < 60) { skipped.push(k); continue; }
+    scanned.push(k);
+    if (/undefined|NaN|\[object Object\]|\bnull\b/.test(s.txt)) {
+      const hit = (s.txt.match(/.{0,26}(undefined|NaN|\[object Object\]|null).{0,26}/) || [''])[0];
+      dirty.push(`${k}: ${hit.replace(/\s+/g, ' ')}`);
+    }
+  }
+  ok(dirty.length === 0, '面板 · 全体系结果区无 undefined / NaN / [object Object]',
+    dirty.slice(0, 3).join(' | '));
+  ok(scanned.length >= 12, '面板 · 全体系文本体检覆盖面够（不是只扫到两三个）',
+    `扫了 ${scanned.length} 个：${scanned.join(',')}；跳过：${skipped.join(',') || '无'}`);
+  ok(errors.length === errsBefore, '全体系体检过程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
 }
 
 // ── 十五、全程无 JS 报错 ───────────────────────────────────────
