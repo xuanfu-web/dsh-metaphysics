@@ -15,7 +15,7 @@ import {
 import { natalSihuaTableOf } from './ziwei.js';
 // 紫微的词库单列一处：宫位取象、主星细节、双星、煞星辅星、四化措辞、庙旺语气、格局读法
 import {
-  palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine,
+  palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine, HUA_PAIR,
   shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA,
 } from './ziwei-words.js';
 // 八字的画像词库：日主取象、十神画像、命局基调与地支关系说法
@@ -916,6 +916,18 @@ function ziweiInterpret(r) {
 
   // ── 逐宫分析：十二宫各一行清单 + 一句读法 ────────────────────
   const trimDot = (s) => String(s || '').replace(/。$/, '');
+  // 生年四化的落宫表：逢禄看忌、逢权看科要拿它找配对那一支落在哪一格。
+  // 只认星上的 mutagen（生年四化），宫干自化与大限飞化不掺进来——那两层各说各的。
+  const huaLands = {};
+  for (const pp of (r.palaces || [])) {
+    for (const st of (pp.stars || [])) {
+      if (st.mutagen && !huaLands[st.mutagen]) huaLands[st.mutagen] = pp.palace;
+    }
+  }
+  const mateLandOf = (type) => {
+    const p = HUA_PAIR[type];
+    return (p && huaLands[p.mate]) ? huaLands[p.mate] : '';
+  };
   const palaceLines = (r.palaces || []).map((p) => {
     const mains = mainsOf(p);
     const shas = zwSha(p);
@@ -941,7 +953,7 @@ function ziweiInterpret(r) {
     }
     if (fus.length) read.push(fuLineOf(fus));
     if (shas.length) read.push(shaLineOf(shas));
-    for (const x of (p.stars || []).filter((y) => y.mutagen).slice(0, 2)) read.push(huaInLine(x.mutagen, p.palace));
+    for (const x of (p.stars || []).filter((y) => y.mutagen).slice(0, 2)) read.push(huaInLine(x.mutagen, p.palace, { matePalace: mateLandOf(x.mutagen) }));
     const tail = read.filter(Boolean).map(trimDot).join('；');
     return `${head}\n　${tail}。`;
   }).join('\n');

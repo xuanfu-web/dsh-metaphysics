@@ -24,6 +24,31 @@ export const PALACE_FIELD = {
   父母: { field: '长辈、上司与文书', ask: '和长辈上级的关系、文书合约', drift: '长辈缘与合同文书', huaJi: '与长辈上级容易有隔阂，文书合约要逐条看清' },
 };
 
+// 宫职衍义（北派讲义 P1：一宫不止一本义，还兼当别宫的某一位）。
+// 只收讲义明写过、盘上对得上的四条；其余宁缺不编——编出来的衍义没法复算。
+// 每行 [本宫, 衍生宫, 这一面看什么, 是哪一位]
+export const PALACE_DERIVED_CANON = [
+  ['夫妻', '财帛', '两个人过日子的方式', '夫妻的夫妻位（对待位）'],
+  ['官禄', '兄弟', '事业本体与公司内部管理', '官禄的疾厄位'],
+  ['官禄', '疾厄', '工作场所与环境', '官禄的田宅位'],
+  ['官禄', '交友', '直属长官与规矩', '官禄的父母位'],
+];
+
+const derivedKey = (name) => PALACE_ALIAS[String(name || '')] || String(name || '');
+
+/** 本宫视角：这一宫除本义外，还兼当别宫的哪一位；没收录的返回空串 */
+export function palaceDerivedOf(name) {
+  const key = derivedKey(name);
+  const hit = PALACE_DERIVED_CANON.find((r) => r[1] === key);
+  return hit ? `${hit[3]}，看${hit[2]}` : '';
+}
+
+/** 基宫视角：谈这一宫这件事，还得分哪几面看（问事业时把兄弟/疾厄/交友带出来） */
+export function derivedViewsOf(base) {
+  const key = derivedKey(base);
+  return PALACE_DERIVED_CANON.filter((r) => r[0] === key).map((r) => `${r[1]}（${r[2]}）`);
+}
+
 // ── 十四主星：别称、关键词、得地/失地两种语气、长处与要留意的点 ──────
 // bright 用在庙旺得利，dim 用在平不陷；gift 是「可以拿去用」，watch 是「用过头会出事」。
 export const STAR_EXTRA = {
@@ -198,8 +223,16 @@ export function starPairOf(mainStars) {
   return STAR_PAIR[list.join('')] || STAR_PAIR[list.slice().reverse().join('')] || null;
 }
 
-/** 四化落到某一宫的一句话；宫名不认识就返回空串，由调用方退回通用说法 */
-export function huaInLine(type, palace) {
+// 逢禄看忌、逢权看科（北派讲义第九讲第 15 条、第十二讲，两处口径一致）。
+// 收的是「还要看哪一格」这个方向，不收「忌比禄力量大」那类门户判词——所以只说找谁配对，不折吉凶权重。
+export const HUA_PAIR = {
+  禄: { mate: '忌', lead: '逢禄看忌', why: '那边一紧，这边的顺手就撑不实' },
+  权: { mate: '科', lead: '逢权看科', why: '主见要用在收得漂亮的地方，不然只是硬顶' },
+};
+
+/** 四化落到某一宫的一句话；宫名不认识就返回空串，由调用方退回通用说法。
+ *  opts.matePalace 传同一张盘里配对那一支的落宫（禄配忌／权配科）；不传就只说本宫。 */
+export function huaInLine(type, palace, opts) {
   const f = palaceFieldOf(palace);
   const h = HUA_READ[type];
   if (!f || !h) return '';
@@ -209,7 +242,14 @@ export function huaInLine(type, palace) {
     权: `${f.field}上你会想自己拿主意，也容易用力过猛`,
     科: `${f.field}上体面与名声会帮到你`,
   }[type];
-  return tail ? `化${type}入${palace}：${tail}` : '';
+  if (!tail) return '';
+  const pair = HUA_PAIR[type];
+  const mate = (pair && opts && opts.matePalace) ? String(opts.matePalace) : '';
+  if (!pair || !mate) return `化${type}入${palace}：${tail}`;
+  const pairTail = mate === String(palace)
+    ? `；${pair.lead}：${pair.mate}也落${mate}，同一件事上既顺手又放不下，顺的时候别把余地用完`
+    : `；${pair.lead}：${pair.mate}落${mate}，${pair.why}`;
+  return `化${type}入${palace}：${tail}${pairTail}`;
 }
 
 /** 煞星清单 → 一句「这一宫哪里容易卡住」；清单空则返回空串 */

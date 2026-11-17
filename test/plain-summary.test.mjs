@@ -81,13 +81,18 @@ const SHE = { system: 'bazi', datetime: '1996-12-14T08:00', gender: 'female', ad
 {
   const r = compute({ system: 'ziwei', datetime: '1996-12-14T08:00', gender: 'female', address: '安徽池州' });
   const b = r.brief;
-  ok(!!b && b.sections.length === 4, '紫微也出四段（末段是所以呢：大限宫 + 化忌落宫）');
+  ok(!!b && b.sections.length === 5, '紫微五段：来因与生年四化 / 底色 / 感情 / 卡点 / 所以呢');
   ok(b.chips.some((c) => /命宫在/.test(c)), '标签标出命宫位置');
   ok(b.lead.includes(r.soul.branch), '总纲里的命宫支与盘面一致');
-  ok(/夫妻宫/.test(b.sections[1].t), '感情落到夫妻宫');
+  // 论命次第（北派讲义第十讲）：先说来因宫与生年四化，再说命宫与飞化，别一上来甩串连
+  ok(/因/.test(b.sections[0].h), '首段标题就点明「因从哪来」');
+  ok(/来因宫在.{1,4}宫/.test(b.sections[0].t), '首段点出来因宫落在哪一宫');
+  ok(/生年四化是禄落.{1,4}宫/.test(b.sections[0].t), '首段按禄权科忌的次序摊出生年四化落宫');
+  ok(/忌落/.test(b.sections[0].t) && !/化忌最后落在/.test(b.sections[0].t), '首段只报四化落点，不提前甩飞化串连');
+  ok(/夫妻宫/.test(b.sections[2].t), '感情落到夫妻宫');
   // 紫微的落点是宫位：大限宫要说清是哪一宫、多少岁到多少岁
-  ok(/大限走.{1,4}宫/.test(b.sections[3].t) && /\d+–\d+ 岁/.test(b.sections[3].t), '第四段标出当前大限宫与起止岁数');
-  ok(/化忌最后落在.{1,4}宫/.test(b.sections[3].t), '第四段标出化忌的落宫');
+  ok(/大限走.{1,4}宫/.test(b.sections[4].t) && /\d+–\d+ 岁/.test(b.sections[4].t), '末段标出当前大限宫与起止岁数');
+  ok(/化忌最后落在.{1,4}宫/.test(b.sections[4].t), '末段标出化忌的落宫');
   const all = JSON.stringify(b);
   eq((all.match(/一定会|必然|注定|肯定会/g) || []).length, 0, '紫微总结同样不下断语');
 }

@@ -329,6 +329,9 @@ function baziSummary(r) {
   };
 }
 
+// 四化的固定书写次序：念的时候按禄权科忌走，别按盘上扫到的顺序
+const HUA_ORDER = ['禄', '权', '科', '忌'];
+
 function ziweiSummary(r) {
   const pal = (r.palaces || []);
   const ming = pal[0] || {};
@@ -379,6 +382,24 @@ function ziweiSummary(r) {
   if (jiEnd) soBits.push(`化忌最后落在${palName(jiEnd)}——你反复使劲、也最容易觉得不够的地方，就是${PALACE_PLAIN[jiEnd] || jiEnd}。`);
   soBits.push('别处松一点不影响大局；这一处一旦卡住，整张盘都跟着沉。');
 
+  // ── 论命次第：先来因、再生年四化，最后才谈命宫与飞化 ──
+  // 北派的次第是「先看这张盘的因从哪宫来，再看生年四化把力气与遗憾落在哪几格」，
+  // 一上来就甩飞化串连，读的人只会觉得是一堆符号。来因宫与 mutagen 都是盘上现成字段。
+  const huaLands = {};
+  for (const p of pal) {
+    for (const s of (p.stars || [])) {
+      if (s.mutagen && !huaLands[s.mutagen]) huaLands[s.mutagen] = p.palace;
+    }
+  }
+  const huaText = HUA_ORDER.filter((t) => huaLands[t]).map((t) => `${t}落${palName(huaLands[t])}`).join('、');
+  const laiyinPalace = (r.laiyin && r.laiyin.palace) ? r.laiyin.palace : '';
+  const laiyinBit = laiyinPalace
+    ? `来因宫在${palName(laiyinPalace)}${r.laiyin.ganzhi ? `（${r.laiyin.ganzhi}）` : ''}——这张盘的「因」从这一宫起`
+    : '这张盘没定出来因宫';
+  const orderText = `${laiyinBit}。`
+    + (huaText ? `生年四化是${huaText}：这四处就是先天力气和先天放不下的地方，后面每一句都指得回来。` : '')
+    + `读盘的次序是先把这几格记住，再看宫干怎么飞——别一上来就翻串连。`;
+
   return {
     system: 'ziwei',
     title: '先看这一张：这张盘大致在说什么',
@@ -387,6 +408,7 @@ function ziweiSummary(r) {
       + `${mainStars.length ? `底色是${mainStars.map((s) => STAR_PLAIN[s.name] || s.name).join('、')}。` : '命宫无主星，性格更多由对宫与三方决定，可塑性反而大。'}`
       + `${formed.length ? `结构上成的是${formed.slice(0, 3).join('、')}——格局只说明形状，不是吉凶判词。` : '没有完整成套的格局，这一盘更多看单颗星的性质，少看组合。'}`,
     sections: [
+      { h: '这张盘的因从哪来', t: orderText },
       { h: '你的底色', t: `${plainOf(ming.stars || []) || '命宫无主星，靠三方四正补'}。身宫落${body.lands || '—'}，说明你这辈子真正花力气的地方在${body.lands || '那一块'}。` },
       { h: '感情这件事', t: `夫妻宫在${love.branch || '—'}，坐${loveMain.map((s) => `${s.name}${s.brightness ? `（${BRIGHT_PLAIN[s.brightness] || s.brightness}）` : ''}`).join('、') || '空宫（借对宫）'}。`
         + `${loveSha.length ? `同宫还有${loveSha.map((s) => s.name).join('、')}——关系里容易起摩擦，来得快也去得快。` : '没有明显的煞星同宫，关系相对平顺。'}` },

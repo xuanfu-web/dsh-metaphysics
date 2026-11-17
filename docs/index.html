@@ -11235,6 +11235,31 @@ const PALACE_FIELD = {
   父母: { field: '长辈、上司与文书', ask: '和长辈上级的关系、文书合约', drift: '长辈缘与合同文书', huaJi: '与长辈上级容易有隔阂，文书合约要逐条看清' },
 };
 
+// 宫职衍义（北派讲义 P1：一宫不止一本义，还兼当别宫的某一位）。
+// 只收讲义明写过、盘上对得上的四条；其余宁缺不编——编出来的衍义没法复算。
+// 每行 [本宫, 衍生宫, 这一面看什么, 是哪一位]
+const PALACE_DERIVED_CANON = [
+  ['夫妻', '财帛', '两个人过日子的方式', '夫妻的夫妻位（对待位）'],
+  ['官禄', '兄弟', '事业本体与公司内部管理', '官禄的疾厄位'],
+  ['官禄', '疾厄', '工作场所与环境', '官禄的田宅位'],
+  ['官禄', '交友', '直属长官与规矩', '官禄的父母位'],
+];
+
+const derivedKey = (name) => PALACE_ALIAS[String(name || '')] || String(name || '');
+
+/** 本宫视角：这一宫除本义外，还兼当别宫的哪一位；没收录的返回空串 */
+function palaceDerivedOf(name) {
+  const key = derivedKey(name);
+  const hit = PALACE_DERIVED_CANON.find((r) => r[1] === key);
+  return hit ? `${hit[3]}，看${hit[2]}` : '';
+}
+
+/** 基宫视角：谈这一宫这件事，还得分哪几面看（问事业时把兄弟/疾厄/交友带出来） */
+function derivedViewsOf(base) {
+  const key = derivedKey(base);
+  return PALACE_DERIVED_CANON.filter((r) => r[0] === key).map((r) => `${r[1]}（${r[2]}）`);
+}
+
 // ── 十四主星：别称、关键词、得地/失地两种语气、长处与要留意的点 ──────
 // bright 用在庙旺得利，dim 用在平不陷；gift 是「可以拿去用」，watch 是「用过头会出事」。
 const STAR_EXTRA = {
@@ -11409,8 +11434,16 @@ function starPairOf(mainStars) {
   return STAR_PAIR[list.join('')] || STAR_PAIR[list.slice().reverse().join('')] || null;
 }
 
-/** 四化落到某一宫的一句话；宫名不认识就返回空串，由调用方退回通用说法 */
-function huaInLine(type, palace) {
+// 逢禄看忌、逢权看科（北派讲义第九讲第 15 条、第十二讲，两处口径一致）。
+// 收的是「还要看哪一格」这个方向，不收「忌比禄力量大」那类门户判词——所以只说找谁配对，不折吉凶权重。
+const HUA_PAIR = {
+  禄: { mate: '忌', lead: '逢禄看忌', why: '那边一紧，这边的顺手就撑不实' },
+  权: { mate: '科', lead: '逢权看科', why: '主见要用在收得漂亮的地方，不然只是硬顶' },
+};
+
+/** 四化落到某一宫的一句话；宫名不认识就返回空串，由调用方退回通用说法。
+ *  opts.matePalace 传同一张盘里配对那一支的落宫（禄配忌／权配科）；不传就只说本宫。 */
+function huaInLine(type, palace, opts) {
   const f = palaceFieldOf(palace);
   const h = HUA_READ[type];
   if (!f || !h) return '';
@@ -11420,7 +11453,14 @@ function huaInLine(type, palace) {
     权: `${f.field}上你会想自己拿主意，也容易用力过猛`,
     科: `${f.field}上体面与名声会帮到你`,
   }[type];
-  return tail ? `化${type}入${palace}：${tail}` : '';
+  if (!tail) return '';
+  const pair = HUA_PAIR[type];
+  const mate = (pair && opts && opts.matePalace) ? String(opts.matePalace) : '';
+  if (!pair || !mate) return `化${type}入${palace}：${tail}`;
+  const pairTail = mate === String(palace)
+    ? `；${pair.lead}：${pair.mate}也落${mate}，同一件事上既顺手又放不下，顺的时候别把余地用完`
+    : `；${pair.lead}：${pair.mate}落${mate}，${pair.why}`;
+  return `化${type}入${palace}：${tail}${pairTail}`;
 }
 
 /** 煞星清单 → 一句「这一宫哪里容易卡住」；清单空则返回空串 */
@@ -11456,7 +11496,7 @@ function patternReadOf(name, tone) {
   return { gist: '结构中性，成事与否更多看后天怎么用', advice: '当成提醒，不当成结论' };
 }
 
-return { PALACE_FIELD, STAR_EXTRA, STAR_PAIR, SHA_STAR, MAIN_SHA, FU_STAR, HUA_READ, BRIGHT_READ, PATTERN_READ, palaceFieldOf, brightRead, starExtraOf, starPairOf, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf };
+return { PALACE_FIELD, PALACE_DERIVED_CANON, palaceDerivedOf, derivedViewsOf, STAR_EXTRA, STAR_PAIR, SHA_STAR, MAIN_SHA, FU_STAR, HUA_READ, BRIGHT_READ, PATTERN_READ, palaceFieldOf, brightRead, starExtraOf, starPairOf, HUA_PAIR, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf };
 })();
 
 __mods.ziwei = (function () {
@@ -28761,7 +28801,7 @@ const { HEX64, HEX_BY_CORE, TRIGRAM, YAO_POSITION, MOVING_NATURE, ZIWEI_STARS, W
 // 生年四化要按年干反查四颗星，四化表只在紫微引擎里定义了一份，这里直接复用，避免两处维护打架
 const { natalSihuaTableOf } = (__mods.ziwei || {});
 // 紫微的词库单列一处：宫位取象、主星细节、双星、煞星辅星、四化措辞、庙旺语气、格局读法
-const { palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine, shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA } = (__mods['ziwei-words'] || {});
+const { palaceFieldOf, starExtraOf, starPairOf, brightRead, huaInLine, HUA_PAIR, shaLineOf, shaNatureOf, fuLineOf, patternReadOf, MAIN_SHA } = (__mods['ziwei-words'] || {});
 // 八字的画像词库：日主取象、十神画像、命局基调与地支关系说法
 const { stemPortraitOf, godPortraitOf, frameToneOf, relationNotes } = (__mods['bazi-words'] || {});
 // 卦体关系的文案与面板 chip 共用同一份标签，避免两处措辞走散
@@ -29660,6 +29700,18 @@ function ziweiInterpret(r) {
 
   // ── 逐宫分析：十二宫各一行清单 + 一句读法 ────────────────────
   const trimDot = (s) => String(s || '').replace(/。$/, '');
+  // 生年四化的落宫表：逢禄看忌、逢权看科要拿它找配对那一支落在哪一格。
+  // 只认星上的 mutagen（生年四化），宫干自化与大限飞化不掺进来——那两层各说各的。
+  const huaLands = {};
+  for (const pp of (r.palaces || [])) {
+    for (const st of (pp.stars || [])) {
+      if (st.mutagen && !huaLands[st.mutagen]) huaLands[st.mutagen] = pp.palace;
+    }
+  }
+  const mateLandOf = (type) => {
+    const p = HUA_PAIR[type];
+    return (p && huaLands[p.mate]) ? huaLands[p.mate] : '';
+  };
   const palaceLines = (r.palaces || []).map((p) => {
     const mains = mainsOf(p);
     const shas = zwSha(p);
@@ -29685,7 +29737,7 @@ function ziweiInterpret(r) {
     }
     if (fus.length) read.push(fuLineOf(fus));
     if (shas.length) read.push(shaLineOf(shas));
-    for (const x of (p.stars || []).filter((y) => y.mutagen).slice(0, 2)) read.push(huaInLine(x.mutagen, p.palace));
+    for (const x of (p.stars || []).filter((y) => y.mutagen).slice(0, 2)) read.push(huaInLine(x.mutagen, p.palace, { matePalace: mateLandOf(x.mutagen) }));
     const tail = read.filter(Boolean).map(trimDot).join('；');
     return `${head}\n　${tail}。`;
   }).join('\n');
@@ -30868,6 +30920,7 @@ __mods.followup = (function () {
 // 约束：这里不重新排盘、不调用模型、不引入新算法——只从盘面已有字段里取数，
 // 并明确写出「依据的是哪一条」。找不到就直说找不到，并给出可问的范围。
 const { ZIWEI_STARS } = (__mods['interpret-data'] || {});
+const { palaceDerivedOf, derivedViewsOf } = (__mods['ziwei-words'] || {});
 
 const TOPICS = [
   { key: 'career', label: '事业', words: ['事业', '工作', '跳槽', '升职', '创业', '职业', '岗位', '离职', '加薪', '面试', 'offer'] },
@@ -30879,6 +30932,9 @@ const TOPICS = [
 ];
 
 const ZW_PALACE_BY_TOPIC = { career: '官禄', wealth: '财帛', love: '夫妻', health: '疾厄', study: '官禄', travel: '迁移', overall: '命宫' };
+
+// 盘上 shensha 的四组键 → 中文组名（只用于追问时的依据行）
+const SHENSHA_GROUP = { changsheng: '长生', boshi: '博士', jiangqian: '将前', suiqi: '岁前' };
 
 const parseYear = (q, r) => {
   const m = String(q).match(/(20\d{2})\s*年?/);
@@ -30992,10 +31048,22 @@ function ziweiAnswer(r, q) {
     if (p) {
       const stars = (p.stars || []).filter((s) => s.type === '主星').map((s) => s.name);
       const trait = stars.map((s) => ZIWEI_STARS[s]?.trait).filter(Boolean).slice(0, 2).join('；');
+      // 宫职衍义只放在追问侧，不进首屏：用户既然问到这一方面，多给一格换个角度看是加分；
+      // 首屏堆衍义会让人抓不到主线。
+      const deriv = palaceDerivedOf(name);
+      const views = derivedViewsOf(name);
+      // 盘上的 shensha 是四组对象的集合（长生/博士/将前/岁前），不是数组；
+      // 老写法在这里 .slice() 会直接把追问打崩，改成按组取值。
+      const shensha = (p.shensha && typeof p.shensha === 'object' && !Array.isArray(p.shensha))
+        ? Object.entries(p.shensha).map(([k, v]) => { const g = SHENSHA_GROUP[k] || k; return String(g) === String(v) ? String(v) : `${g}${v}`; }).filter((x) => !/undefined|null/.test(x)).slice(0, 3)
+        : (Array.isArray(p.shensha) ? p.shensha.slice(0, 3) : []);
       return {
         ok: true, year: null, topic,
-        answer: `「${topic.label}」看${name}：主星${stars.length ? stars.join('、') : '无正曜（借对宫）'}${trait ? `——${trait}` : ''}。宫支${p.branch}，${p.stems ? '' : ''}生年四化与煞星的影响需结合报告里的对应分节一起看。`,
-        evidence: [`${name} ${p.branch}·${stars.join('、') || '无正曜'}`, ...(p.shensha || []).slice(0, 3)],
+        answer: `「${topic.label}」看${name}：主星${stars.length ? stars.join('、') : '无正曜（借对宫）'}${trait ? `——${trait}` : ''}。宫支${p.branch}。`
+          + (deriv ? `换个角度：${name}还是${deriv}，这一格也要一起看。` : '')
+          + (views.length ? `谈${topic.label}还得分这几面看：${views.join('、')}。` : '')
+          + '生年四化与煞星的影响需结合报告里的对应分节一起看。',
+        evidence: [`${name} ${p.branch}·${stars.join('、') || '无正曜'}`, ...(deriv ? [`衍生宫职：${deriv}`] : []), ...views.map((v) => `衍生面：${v}`), ...shensha],
         confidence: stars.length ? '强' : '弱',
       };
     }
@@ -33656,6 +33724,9 @@ function baziSummary(r) {
   };
 }
 
+// 四化的固定书写次序：念的时候按禄权科忌走，别按盘上扫到的顺序
+const HUA_ORDER = ['禄', '权', '科', '忌'];
+
 function ziweiSummary(r) {
   const pal = (r.palaces || []);
   const ming = pal[0] || {};
@@ -33706,6 +33777,24 @@ function ziweiSummary(r) {
   if (jiEnd) soBits.push(`化忌最后落在${palName(jiEnd)}——你反复使劲、也最容易觉得不够的地方，就是${PALACE_PLAIN[jiEnd] || jiEnd}。`);
   soBits.push('别处松一点不影响大局；这一处一旦卡住，整张盘都跟着沉。');
 
+  // ── 论命次第：先来因、再生年四化，最后才谈命宫与飞化 ──
+  // 北派的次第是「先看这张盘的因从哪宫来，再看生年四化把力气与遗憾落在哪几格」，
+  // 一上来就甩飞化串连，读的人只会觉得是一堆符号。来因宫与 mutagen 都是盘上现成字段。
+  const huaLands = {};
+  for (const p of pal) {
+    for (const s of (p.stars || [])) {
+      if (s.mutagen && !huaLands[s.mutagen]) huaLands[s.mutagen] = p.palace;
+    }
+  }
+  const huaText = HUA_ORDER.filter((t) => huaLands[t]).map((t) => `${t}落${palName(huaLands[t])}`).join('、');
+  const laiyinPalace = (r.laiyin && r.laiyin.palace) ? r.laiyin.palace : '';
+  const laiyinBit = laiyinPalace
+    ? `来因宫在${palName(laiyinPalace)}${r.laiyin.ganzhi ? `（${r.laiyin.ganzhi}）` : ''}——这张盘的「因」从这一宫起`
+    : '这张盘没定出来因宫';
+  const orderText = `${laiyinBit}。`
+    + (huaText ? `生年四化是${huaText}：这四处就是先天力气和先天放不下的地方，后面每一句都指得回来。` : '')
+    + `读盘的次序是先把这几格记住，再看宫干怎么飞——别一上来就翻串连。`;
+
   return {
     system: 'ziwei',
     title: '先看这一张：这张盘大致在说什么',
@@ -33714,6 +33803,7 @@ function ziweiSummary(r) {
       + `${mainStars.length ? `底色是${mainStars.map((s) => STAR_PLAIN[s.name] || s.name).join('、')}。` : '命宫无主星，性格更多由对宫与三方决定，可塑性反而大。'}`
       + `${formed.length ? `结构上成的是${formed.slice(0, 3).join('、')}——格局只说明形状，不是吉凶判词。` : '没有完整成套的格局，这一盘更多看单颗星的性质，少看组合。'}`,
     sections: [
+      { h: '这张盘的因从哪来', t: orderText },
       { h: '你的底色', t: `${plainOf(ming.stars || []) || '命宫无主星，靠三方四正补'}。身宫落${body.lands || '—'}，说明你这辈子真正花力气的地方在${body.lands || '那一块'}。` },
       { h: '感情这件事', t: `夫妻宫在${love.branch || '—'}，坐${loveMain.map((s) => `${s.name}${s.brightness ? `（${BRIGHT_PLAIN[s.brightness] || s.brightness}）` : ''}`).join('、') || '空宫（借对宫）'}。`
         + `${loveSha.length ? `同宫还有${loveSha.map((s) => s.name).join('、')}——关系里容易起摩擦，来得快也去得快。` : '没有明显的煞星同宫，关系相对平顺。'}` },

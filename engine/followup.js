@@ -3,6 +3,7 @@
 // 约束：这里不重新排盘、不调用模型、不引入新算法——只从盘面已有字段里取数，
 // 并明确写出「依据的是哪一条」。找不到就直说找不到，并给出可问的范围。
 import { ZIWEI_STARS } from './interpret-data.js';
+import { palaceDerivedOf, derivedViewsOf } from './ziwei-words.js';
 
 const TOPICS = [
   { key: 'career', label: '事业', words: ['事业', '工作', '跳槽', '升职', '创业', '职业', '岗位', '离职', '加薪', '面试', 'offer'] },
@@ -14,6 +15,9 @@ const TOPICS = [
 ];
 
 const ZW_PALACE_BY_TOPIC = { career: '官禄', wealth: '财帛', love: '夫妻', health: '疾厄', study: '官禄', travel: '迁移', overall: '命宫' };
+
+// 盘上 shensha 的四组键 → 中文组名（只用于追问时的依据行）
+const SHENSHA_GROUP = { changsheng: '长生', boshi: '博士', jiangqian: '将前', suiqi: '岁前' };
 
 const parseYear = (q, r) => {
   const m = String(q).match(/(20\d{2})\s*年?/);
@@ -127,10 +131,22 @@ function ziweiAnswer(r, q) {
     if (p) {
       const stars = (p.stars || []).filter((s) => s.type === '主星').map((s) => s.name);
       const trait = stars.map((s) => ZIWEI_STARS[s]?.trait).filter(Boolean).slice(0, 2).join('；');
+      // 宫职衍义只放在追问侧，不进首屏：用户既然问到这一方面，多给一格换个角度看是加分；
+      // 首屏堆衍义会让人抓不到主线。
+      const deriv = palaceDerivedOf(name);
+      const views = derivedViewsOf(name);
+      // 盘上的 shensha 是四组对象的集合（长生/博士/将前/岁前），不是数组；
+      // 老写法在这里 .slice() 会直接把追问打崩，改成按组取值。
+      const shensha = (p.shensha && typeof p.shensha === 'object' && !Array.isArray(p.shensha))
+        ? Object.entries(p.shensha).map(([k, v]) => { const g = SHENSHA_GROUP[k] || k; return String(g) === String(v) ? String(v) : `${g}${v}`; }).filter((x) => !/undefined|null/.test(x)).slice(0, 3)
+        : (Array.isArray(p.shensha) ? p.shensha.slice(0, 3) : []);
       return {
         ok: true, year: null, topic,
-        answer: `「${topic.label}」看${name}：主星${stars.length ? stars.join('、') : '无正曜（借对宫）'}${trait ? `——${trait}` : ''}。宫支${p.branch}，${p.stems ? '' : ''}生年四化与煞星的影响需结合报告里的对应分节一起看。`,
-        evidence: [`${name} ${p.branch}·${stars.join('、') || '无正曜'}`, ...(p.shensha || []).slice(0, 3)],
+        answer: `「${topic.label}」看${name}：主星${stars.length ? stars.join('、') : '无正曜（借对宫）'}${trait ? `——${trait}` : ''}。宫支${p.branch}。`
+          + (deriv ? `换个角度：${name}还是${deriv}，这一格也要一起看。` : '')
+          + (views.length ? `谈${topic.label}还得分这几面看：${views.join('、')}。` : '')
+          + '生年四化与煞星的影响需结合报告里的对应分节一起看。',
+        evidence: [`${name} ${p.branch}·${stars.join('、') || '无正曜'}`, ...(deriv ? [`衍生宫职：${deriv}`] : []), ...views.map((v) => `衍生面：${v}`), ...shensha],
         confidence: stars.length ? '强' : '弱',
       };
     }

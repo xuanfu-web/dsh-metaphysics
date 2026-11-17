@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-17（2c 第二刀收尾；北派紫微讲义 02 全本学习留档；两套渲染链合清单三轮复查，17 项两条链全部有正面断言）
+最后更新：2026-11-17（北派紫微讲义 02 落地：论命次第 / 四化配对 / 宫职衍义 / 收缩护栏 + 知识库；两套渲染链合清单 17 项全绿）
 
 ---
 
@@ -60,7 +60,7 @@
 
 | 项 | 状态 | 卡点 / 下一步 |
 | --- | --- | --- |
-| 北派紫微讲义 02 吸收清单 | 已留档，等主人挑优先级 | `docs/参考资料-北派紫微讲义02.md` 第四节：P0-1 论命次第落 `engine/plain-summary.js:332`；P0-2 逢禄看忌 / 逢权看科落 `engine/ziwei-words.js:119-125,201-213`；P1-1 宫职衍义只进 `engine/followup.js:99` 追问侧（client gzip 124100，余量 3900，别塞首屏）；P1-2 收缩护栏核 `engine/interpret-plain.js:168`；P2 知识库。不动 `engine/ziwei.js` 排盘层。 |
+| 北派紫微讲义 02 落地（2026-11-17，主人放权自定优先级） | **完成四刀 + 一份知识库** | ①P0-1 论命次第：engine/plain-summary.js ziweiSummary() 前置「这张盘的因从哪来」，先来因宫再按禄权科忌摊生年四化，段数 4→5，	est/plain-summary.test.mjs 改五段断言；②P0-2 逢禄看忌/逢权看科：engine/ziwei-words.js 新增 HUA_PAIR 与 huaInLine(..., { matePalace })，engine/interpret.js 加 huaLands/mateLandOf 接线，不传 opts 时输出与旧版逐字一致；③P1-1 宫职衍义：PALACE_DERIVED_CANON 四条 + palaceDerivedOf/derivedViewsOf，只进 engine/followup.js 追问，顺带修掉 p.shensha.slice 必抛 TypeError 的真 bug（以前任何无年份追问都崩）；④P1-2 收缩护栏：lyCompositePlain 只取会聚最多的那一宫，补三条防回归断言；⑤P2 知识库 docs/知识库-北派紫微.md（四化词义 / 两套三才 / 象的三重定语 / 双象六组骨架 / 阴阳浮动口径 / 收与不收清单）。闸 210/210、11641 PASS（基线 11616）、e2e-panel 181/0、e2e-dom 166、9 产物纯 LF；实机紫微盘首段与追问三面均正常。未发版（攒批）。排盘层 `engine/ziwei.js` 未动。 |
 | 0.82.0 之后攒的 30 项改动（2c 两刀 + 巡检修 bug + 所以呢判断层 + 界面工艺 + 入库包瘦身） | **已发版 0.83.0** | 提交链 `677f042`→`1933642`→`0.82.0` 之后 `e9cf81e`→`81f9257`→`ea01308`，本版一次发完（R-008）。闸：210/210、11616 断言、client.js gzip 113672；e2e-panel 181/0、e2e-dom 166。读回：main `947aad3`（ls-remote 一致）、tag `v0.83.0`→`ff6a755`、npm latest 0.83.0（shasum `f12ec290`、115 文件）、Release draft=false（body 7357 字）、Pages 线上 `__MP_VER=0.83.0`。 |
 | 两套渲染链合清单 | **全部完成**（17 项两条链都有正面断言） | `docs/渲染链检查清单.md` 三轮复查：面板 9/10/12/15/16 补齐、锁定逻辑合并成 `pp.lockParams` + `mp-askfree`、第 4 项牌阵锁定与第 13 项全体系文本体检补正面断言。 |
 

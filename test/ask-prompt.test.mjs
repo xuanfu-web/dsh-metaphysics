@@ -181,6 +181,25 @@ const liuyao = compute({ system: 'liuyao', lines: [7, 8, 9, 6, 7, 8], datetime: 
   const bzOnlyDir = followup(compute({ system: 'bazi', datetime: '1996-01-19T07:31', gender: 'male' }), '事业怎么样');
   ok('八字只给方向时不再回「没识别到」', bzOnlyDir.ok === true && /事业/.test(bzOnlyDir.answer), bzOnlyDir.answer);
 
+  // ⑪ 宫职衍义：一宫兼当别宫某一位（北派讲义 P1），两条视角都要说得出
+  const zw = compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州' });
+  const career = followup(zw, '事业怎么样');
+  ok('问事业带出事业的三面（兄弟/疾厄/交友）', career.ok === true
+    && career.answer.includes('兄弟') && career.answer.includes('疾厄') && career.answer.includes('交友'), career.answer);
+  ok('事业的衍生面写进 evidence', career.evidence.some((e) => e.includes('衍生面：兄弟')));
+  ok('问事业仍先给官禄本宫', /看官禄/.test(career.answer));
+
+  const wealth = followup(zw, '钱怎么留');
+  ok('问财帛带出「夫妻的夫妻位」', /财帛还是夫妻的夫妻位/.test(wealth.answer), wealth.answer);
+  ok('财帛不硬塞反查空表', !/还得分这几面看：s*。/.test(wealth.answer));
+
+  const health = followup(zw, '身体要注意什么');
+  ok('问疾厄带出「官禄的田宅位」', /疾厄还是官禄的田宅位/.test(health.answer), health.answer);
+
+  // ⑫ 煞星取值走对象，不再对数组做 slice（旧代码在这里抛 TypeError）
+  ok('追问不抛异常且带出煞星组', Array.isArray(career.evidence) && career.evidence.some((e) => /长生|博士|将前|岁前/.test(e)), career.evidence.join(' | '));
+  ok('煞星组名与值相同不重复写', career.evidence.every((e) => !/^(博士博士|长生长生|将前将前|岁前岁前)$/.test(e)), career.evidence.join(' | '));
+
   const empty = followup({ system: 'no-such-system' }, '事业');
   ok('既无解析也无摘要时明确说明重排', empty.ok === false && /重新排一次盘/.test(empty.answer));
 }

@@ -7,10 +7,11 @@
 import fs from 'node:fs';
 import { compute } from '../engine/index.js';
 import { interpret } from '../engine/interpret.js';
+import { buildPlain } from '../engine/interpret-plain.js';
 import { PATTERN_TONE } from '../engine/ziwei.js';
 import {
   PALACE_FIELD, STAR_EXTRA, STAR_PAIR, SHA_STAR, MAIN_SHA, FU_STAR,
-  HUA_READ, BRIGHT_READ, PATTERN_READ,
+  HUA_READ, HUA_PAIR, BRIGHT_READ, PATTERN_READ,
   palaceFieldOf, brightRead, starExtraOf, starPairOf, huaInLine,
   shaLineOf, shaNatureOf, fuLineOf, patternReadOf,
 } from '../engine/ziwei-words.js';
@@ -104,6 +105,17 @@ ok('化禄入财帛带出赚钱方式', /化禄入财帛/.test(huaInLine('禄', 
 ok('化忌入某宫用的是该宫的 huaJi', huaInLine('忌', '夫妻').includes(PALACE_FIELD.夫妻.huaJi));
 eq('未知宫名的四化返回空串（由调用方退回通用说法）', huaInLine('禄', '不存在'), '');
 
+// ── 逢禄看忌、逢权看科：只补「还要看哪一格」，不折吉凶 ──────────────
+const pairLu = huaInLine('禄', '官禄', { matePalace: '财帛' });
+ok('逢禄看忌：说禄时带出忌落在哪一宫', pairLu.includes('逢禄看忌') && pairLu.includes('财帛'), pairLu);
+const pairQuan = huaInLine('权', '交友', { matePalace: '命宫' });
+ok('逢权看科：说权时带出科落在哪一宫', pairQuan.includes('逢权看科') && pairQuan.includes('命宫'), pairQuan);
+ok('配对落在同一宫时改说「既顺手又放不下」', huaInLine('禄', '兄弟', { matePalace: '兄弟' }).includes('既顺手又放不下'));
+eq('不传配对宫位就只说本宫（老调用方不受影响）', huaInLine('禄', '官禄'), '化禄入官禄：事业方向与做事方式上来路顺、有人递梯子');
+eq('化忌不做配对（忌本身是被人看的那一支）', huaInLine('忌', '官禄', { matePalace: '财帛' }), `化忌入官禄：${PALACE_FIELD.官禄.huaJi}`);
+eq('配对只收禄忌、权科两组', Object.keys(HUA_PAIR).join(''), '禄权');
+ok('配对读法不写吉凶权重（讲义「忌比禄力量大」是门户判词，不收）', !/力量|更凶|更吉|压制|克/.test(pairLu + pairQuan));
+
 const sha1 = shaLineOf(['擎羊']);
 ok('单煞给出针对性的做法', sha1.includes(SHA_STAR.擎羊.inPalace) && sha1.includes(SHA_STAR.擎羊.remind));
 const sha2 = shaLineOf(['擎羊', '陀罗', '火星', '铃星']);
@@ -127,6 +139,22 @@ ok('有命身底色一节', !!byKey.identity);
 ok('有逐宫分析一节', !!byKey.palaces);
 ok('逐宫覆盖十二宫', (byKey.palaces.text.match(/^【/gm) || []).length === 12, String((byKey.palaces.text.match(/^【/gm) || []).length));
 ok('逐宫每一条都写了宫位取象', r.palaces.every((p) => byKey.palaces.text.includes(p.palace)));
+
+// 逢禄看忌、逢权看科要真的出现在逐宫正文里，不只是函数单独能拼；
+// 且配对指到的宫名必须是十二宫之一（指错格比不指更糟）。
+ok('逐宫正文里带出逢禄看忌', byKey.palaces.text.includes('逢禄看忌'));
+ok('逐宫正文里带出逢权看科', byKey.palaces.text.includes('逢权看科'));
+const pairMates = [...byKey.palaces.text.matchAll(/逢(?:禄看忌|权看科)：[忌科](?:也)?落([^，]+)，/g)].map((m) => m[1]);
+ok('配对指到的宫名都在十二宫内', pairMates.length > 0 && pairMates.every((n) => !!PALACE_FIELD[n]), pairMates.join(','));
+
+// ── 收缩护栏（北派讲义「只知膨胀，不知收缩」）───────────────
+// 三方四正一共 16 条会照，白话层只能归成「几股力压在哪一格」一句，
+// 不许把条目摊成清单——那正是讲义批的那种读法。
+const plainText = buildPlain(r, {});
+const hubLine = (plainText.match(/再深一层，[^。]*。/g) || [])[0] || '';
+ok('复合飞化在正文里收成一句话', !!hubLine && /压/.test(hubLine), plainText.slice(-70));
+ok('这一句不超 40 字（收得住才算说人话）', hubLine.length > 0 && hubLine.length <= 40, `${hubLine.length}字：${hubLine}`);
+ok('这一句最多提一处四化，不倒条目清单', (hubLine.match(/化[禄权科忌]/g) || []).length <= 1, hubLine);
 
 // 一张盘可能只落到某一层（比如全是中性结构），所以只要求「至少出现一层」，
 // 并逐个核对出现的那层 tone 与格局名都对得上词库——宁可少一节，不能错一节。
