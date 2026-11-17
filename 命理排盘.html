@@ -65,6 +65,13 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
+/* 0.84 触控热区：「方法与验证」23 高，桌面上是唯一的细目标，手机上也没跟着抬高。
+   透明 ::after 把可点区域撑到 45 高，按钮外观与占位一律不动。
+   注意「分组 / 平铺」不能这么改：它们外面那层 .seg 带 overflow:hidden 与圆角，
+   伪元素会被裁掉（实测点上方 8px 命中父元素，热区没变大）；何况 ≤640 那条
+   .seg button{min-height:44px} 已经把手机端抬到 44，桌面上是鼠标操作，不必再动。 */
+#method-open{position:relative}
+#method-open::after{content:"";position:absolute;left:-10px;right:-10px;top:-11px;bottom:-11px}
 .start{margin-bottom:20px}
 .recent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 /* .recent 自带 display:flex，会盖掉 [hidden] 的 UA 样式：没有记录时必须显式收起，否则只剩一个空标签 */
@@ -313,7 +320,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   /* 分组卡片：每组先露 4 个，其余折起来；否则三组铺完，表单要滚过一整屏才见到 */
   .view-switch{gap:6px}
   .view-switch .hint{display:none}
-  .view-switch .seg button{min-height:36px;padding:6px 10px}
+  .view-switch .seg button{min-height:44px;padding:6px 10px}
   .groups{grid-template-columns:1fr}
   .tgroup{padding:12px}
   .ttools{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -834,7 +841,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：211 个测试文件 / 11661 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：211 个测试文件 / 11672 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -1521,6 +1528,19 @@ __mods.fingerprint = (function () {
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford base32（去掉 I/L/O/U）
 
+/**
+ * 实测判定「盘面与性别无关」的体系（22 体系逐一分男女比对，内容一字不差的那 15 个）。
+ * 身份（盘号 / 句柄 / 信封缓存键）里就不该带性别——否则同一张盘换个性别就算两张，
+ * 缓存与「同盘同 id」一起分叉。
+ *
+ * 这里列的是「可以去掉」的白名单，而不是「必须保留」的黑名单：未登记的体系一律保守保留，
+ * 免得哪天新增体系真读性别，却被身份层悄悄抹平。zeri / name 不收性别入参，故不在表内。
+ */
+const GENDER_NEUTRAL = new Set([
+  'liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'almanac', 'chenggu', 'xiaoliuren',
+  'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'convert',
+]);
+
 /** 稳定序列化：键排序、NFC、去 undefined、-0 → 0；不依赖 locale。 */
 function canonicalJson(value) {
   return JSON.stringify(sortValue(value));
@@ -1588,7 +1608,7 @@ function fingerprintOf(input = {}) {
   };
 }
 
-return { canonicalJson, shortHash, fingerprintOf };
+return { GENDER_NEUTRAL, canonicalJson, shortHash, fingerprintOf };
 })();
 
 __mods.validate = (function () {
@@ -26767,7 +26787,7 @@ __mods.envelope = (function () {
  * 所以它可以在任何体系上跑；没有专属 adapter 的体系走 _default。
  */
 
-const { shortHash } = (__mods.fingerprint || {});
+const { shortHash, GENDER_NEUTRAL } = (__mods.fingerprint || {});
 const { scanTerms, termPlain, synonymKey, termsByTier, hasDict } = (__mods['term-dict'] || {});
 
 const SCHEMA_VERSION = '1.0.0';
@@ -26956,7 +26976,10 @@ function chartIdOf(r, opts = {}) {
   const key = [
     system,
     pick('year'), pick('month'), pick('day'), pick('hour'), pick('minute'),
-    pick('gender'), pick('datetime'), pick('leapMonth'),
+    // 性别只给与性别有关的体系进键：称骨 / 数字命理这类盘面与性别无关，
+    // 一律进键就会「同盘两个句柄」，缓存也跟着分叉（白名单见 fingerprint.js）。
+    GENDER_NEUTRAL.has(system) ? '' : pick('gender'),
+    pick('datetime'), pick('leapMonth'),
     (r && r.seed) != null ? r.seed : '',
     (r && r.cast && Array.isArray(r.cast.lines)) ? r.cast.lines.join('') : '',
     one((r && r.spread) || ''),
@@ -32378,6 +32401,7 @@ __mods.handle = (function () {
 //   * 带校验位：句柄被截断或改了字符会报 E_HANDLE，而不是静默排成另一张盘；
 //   * 键序固定，参数写法不同（例如先 system 后 datetime）也得到同一个句柄。
 const { fail } = (__mods.fail || {});
+const { GENDER_NEUTRAL } = (__mods.fingerprint || {});
 
 const PREFIX = 'mc1.';
 
@@ -32488,8 +32512,12 @@ function unb64url(s) {
 /** 从参数里挑出要进句柄的那部分 */
 function handlePayload(args = {}) {
   const out = {};
+  const system = args && args.system != null ? String(args.system) : '';
   for (const [k, v] of Object.entries(args || {})) {
     if (SKIP.has(k) || v === undefined) continue;
+    // 性别对「盘面与性别无关」的体系不改变任何内容，带上只会让同一张盘多出第二个句柄
+    // （白名单见 fingerprint.js 的 GENDER_NEUTRAL；未登记的体系保守保留）。
+    if (k === 'gender' && GENDER_NEUTRAL.has(system)) continue;
     out[k] = v;
   }
   return out;
@@ -34657,7 +34685,7 @@ const { buildTaiyi } = (__mods.taiyi || {});
 const { buildConvert } = (__mods.convert || {});
 const { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } = (__mods.classics || {});
 const { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES, viewRows } = (__mods.diff || {});
-const { canonicalJson, fingerprintOf } = (__mods.fingerprint || {});
+const { canonicalJson, fingerprintOf, GENDER_NEUTRAL } = (__mods.fingerprint || {});
 const { buildTrend } = (__mods.trend || {});
 const { buildMarriage } = (__mods.marriage || {});
 const { buildFacets } = (__mods.facets || {});
@@ -35168,6 +35196,8 @@ const SHADOW_IGNORE = new Set([
   'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise', 'geo', 'longitudeFromGeo',
 ]);
 
+// 性别不进「与性别无关」的体系指纹（白名单与实测依据见 fingerprint.js 的 GENDER_NEUTRAL）。
+
 const num6 = (n) => {
   if (n === undefined || n === null || n === '') return null;
   const v = Number(n);
@@ -35253,6 +35283,10 @@ function shadowParams(args, result) {
   });
   for (const [key, value] of Object.entries(args)) {
     if (SHADOW_IGNORE.has(key) || value === undefined) continue;
+    // 性别只给真读它的体系进指纹。实测 22 体系：bazi/ziwei/hepan/trend/fengshui 内容随性别变，
+    // 其余 14 个（六爻、梅花、六壬、塔罗、黄历、称骨、小六壬、星座、数字、人格、体质、五运六气、
+    // 太乙、公农历）内容一模一样——性别进指纹等于「改个性别换盘号」，缓存与「同盘同 id」一起分叉。
+    if (key === 'gender' && GENDER_NEUTRAL.has(system)) continue;
     if (key === 'datetime') put(key, shadowDateTime(value));
     else if (key === 'partner') put(key, shadowPerson(value));
     else if (key === 'gender') put(key, String(value).toLowerCase());

@@ -195,3 +195,37 @@ const owned = resolveHandle({ handle: crossChenggu.handle, system: 'ziwei', hour
 ok('resolveHandle 保留本次显式 hour', owned.hour === 8 && owned.system === 'ziwei', JSON.stringify(owned.hour));
 const unowned = resolveHandle({ handle: crossChenggu.handle, system: 'ziwei' });
 ok('resolveHandle 剔掉句柄带来的 hour', unowned.hour === undefined, JSON.stringify(unowned.hour));
+
+// ── ⑨ 与性别无关的体系：同一张盘只该有一个句柄 ────────────────────
+// 以前句柄把 gender 原样收进去，称骨 / 星座 / 数字命理这类盘面与性别无关的体系
+// 「换个性别就换一个句柄」，回放时还会被当成另一张盘。
+{
+  const neutral = [
+    ['chenggu', { datetime: '1990-05-12T14:30' }],
+    ['star', { datetime: '1990-05-12T14:30' }],
+    ['numerology', { datetime: '1990-05-12' }],
+    ['daliuren', { datetime: '2026-11-15T10:00' }],
+  ];
+  const diff = [];
+  for (const [system, base] of neutral) {
+    const m = encodeHandle({ system, ...base, gender: 'male' });
+    const f = encodeHandle({ system, ...base, gender: 'female' });
+    if (m !== f) diff.push(system);
+    const dec = decodeHandle(m);
+    if (dec.gender !== undefined) diff.push(system + ':还带gender');
+  }
+  ok('性别无关的体系：男女共用一个句柄、句柄里不留 gender', diff.length === 0, diff.join(' '));
+
+  const sens = [
+    ['bazi', { datetime: '1990-05-06T08:30' }],
+    ['ziwei', { datetime: '1990-05-12T14:30' }],
+  ];
+  const same = [];
+  for (const [system, base] of sens) {
+    if (encodeHandle({ system, ...base, gender: 'male' }) === encodeHandle({ system, ...base, gender: 'female' })) same.push(system);
+  }
+  ok('读性别的体系：男女仍是两个句柄', same.length === 0, same.join(' '));
+
+  // 保守面：未登记的体系（这里用一个不存在的名字）不许被抹平
+  ok('未登记体系仍保留 gender', decodeHandle(encodeHandle({ system: 'no-such-system', gender: 'male' })).gender === 'male');
+}

@@ -9,6 +9,19 @@
 
 const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford base32（去掉 I/L/O/U）
 
+/**
+ * 实测判定「盘面与性别无关」的体系（22 体系逐一分男女比对，内容一字不差的那 15 个）。
+ * 身份（盘号 / 句柄 / 信封缓存键）里就不该带性别——否则同一张盘换个性别就算两张，
+ * 缓存与「同盘同 id」一起分叉。
+ *
+ * 这里列的是「可以去掉」的白名单，而不是「必须保留」的黑名单：未登记的体系一律保守保留，
+ * 免得哪天新增体系真读性别，却被身份层悄悄抹平。zeri / name 不收性别入参，故不在表内。
+ */
+export const GENDER_NEUTRAL = new Set([
+  'liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'almanac', 'chenggu', 'xiaoliuren',
+  'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'convert',
+]);
+
 /** 稳定序列化：键排序、NFC、去 undefined、-0 → 0；不依赖 locale。 */
 export function canonicalJson(value) {
   return JSON.stringify(sortValue(value));

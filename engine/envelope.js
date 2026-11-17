@@ -10,7 +10,7 @@
  * 所以它可以在任何体系上跑；没有专属 adapter 的体系走 _default。
  */
 
-import { shortHash } from './fingerprint.js';
+import { shortHash, GENDER_NEUTRAL } from './fingerprint.js';
 import { scanTerms, termPlain, synonymKey, termsByTier, hasDict } from './term-dict.js';
 
 export const SCHEMA_VERSION = '1.0.0';
@@ -199,7 +199,10 @@ export function chartIdOf(r, opts = {}) {
   const key = [
     system,
     pick('year'), pick('month'), pick('day'), pick('hour'), pick('minute'),
-    pick('gender'), pick('datetime'), pick('leapMonth'),
+    // 性别只给与性别有关的体系进键：称骨 / 数字命理这类盘面与性别无关，
+    // 一律进键就会「同盘两个句柄」，缓存也跟着分叉（白名单见 fingerprint.js）。
+    GENDER_NEUTRAL.has(system) ? '' : pick('gender'),
+    pick('datetime'), pick('leapMonth'),
     (r && r.seed) != null ? r.seed : '',
     (r && r.cast && Array.isArray(r.cast.lines)) ? r.cast.lines.join('') : '',
     one((r && r.spread) || ''),

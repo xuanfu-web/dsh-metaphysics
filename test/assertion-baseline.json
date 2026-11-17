@@ -1,9 +1,9 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 11661,
+  "total": 11672,
   "files": {
     "a11y-semantic.test.mjs": {
-      "pass": 20,
+      "pass": 26,
       "fail": 0
     },
     "adapters-extra.test.mjs": {
@@ -331,7 +331,7 @@
       "fail": 0
     },
     "handle.test.mjs": {
-      "pass": 84,
+      "pass": 87,
       "fail": 0
     },
     "headline.test.mjs": {
@@ -631,7 +631,7 @@
       "fail": 0
     },
     "shadow.test.mjs": {
-      "pass": 75,
+      "pass": 77,
       "fail": 0
     },
     "shared-helpers.test.mjs": {

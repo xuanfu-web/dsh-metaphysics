@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-17（0.83.0 发版后巡检：首屏区块与表格头的可读名字、称骨「男女同表」口径、SW 只在 https 注册；新增 `test/a11y-semantic.test.mjs` 20 条，闸 211/11661）
+最后更新：2026-11-17（0.83.0 后第二轮：性别不进「与性别无关」体系的盘号/句柄/缓存键、方法与验证热区 23→45 与手机端分组按钮 36→44、称骨女命歌诀调查结论；闸 211/11672）
 
 ---
 
@@ -63,11 +63,11 @@
 | 北派紫微讲义 02 落地（2026-11-17，主人放权自定优先级） | **完成四刀 + 一份知识库** | ①P0-1 论命次第：engine/plain-summary.js ziweiSummary() 前置「这张盘的因从哪来」，先来因宫再按禄权科忌摊生年四化，段数 4→5，	est/plain-summary.test.mjs 改五段断言；②P0-2 逢禄看忌/逢权看科：engine/ziwei-words.js 新增 HUA_PAIR 与 huaInLine(..., { matePalace })，engine/interpret.js 加 huaLands/mateLandOf 接线，不传 opts 时输出与旧版逐字一致；③P1-1 宫职衍义：PALACE_DERIVED_CANON 四条 + palaceDerivedOf/derivedViewsOf，只进 engine/followup.js 追问，顺带修掉 p.shensha.slice 必抛 TypeError 的真 bug（以前任何无年份追问都崩）；④P1-2 收缩护栏：lyCompositePlain 只取会聚最多的那一宫，补三条防回归断言；⑤P2 知识库 docs/知识库-北派紫微.md（四化词义 / 两套三才 / 象的三重定语 / 双象六组骨架 / 阴阳浮动口径 / 收与不收清单）。闸 210/210、11641 PASS（基线 11616）、e2e-panel 181/0、e2e-dom 166、9 产物纯 LF；实机紫微盘首段与追问三面均正常。未发版（攒批）。排盘层 `engine/ziwei.js` 未动。 |
 | 0.82.0 之后攒的 30 项改动（2c 两刀 + 巡检修 bug + 所以呢判断层 + 界面工艺 + 入库包瘦身） | **已发版 0.83.0** | 提交链 `677f042`→`1933642`→`0.82.0` 之后 `e9cf81e`→`81f9257`→`ea01308`，本版一次发完（R-008）。闸：210/210、11616 断言、client.js gzip 113672；e2e-panel 181/0、e2e-dom 166。读回：main `947aad3`（ls-remote 一致）、tag `v0.83.0`→`ff6a755`、npm latest 0.83.0（shasum `f12ec290`、115 文件）、Release draft=false（body 7357 字）、Pages 线上 `__MP_VER=0.83.0`。 |
 | 两套渲染链合清单 | **全部完成**（17 项两条链都有正面断言） | `docs/渲染链检查清单.md` 三轮复查：面板 9/10/12/15/16 补齐、锁定逻辑合并成 `pp.lockParams` + `mp-askfree`、第 4 项牌阵锁定与第 13 项全体系文本体检补正面断言。 |
-| 0.83.0 发版后巡检（语义 / 称骨口径 / 本地 404） | **已改完，未发版（R-008 攒批）** | ① 首屏 4 个 `section.tgroup` + `section#method` 补 `aria-labelledby`（浏览器实测：出盘后无名 section 5 → **0**）；② 八字盘面表头 5 处补 `scope="col"`、空角格给 `aria-label="项目"`（无 scope 的表头 5 → **0**）；③ 称骨 `gender` 不进计算（男女缺三档 weights/total/verdict/song/summary 逐字相同）→ 引擎 `disclaimer` 与面板 `mp-cg-note` 两处同写明「男女同表、本盘只收一套、旧本另有女命歌诀此处不另出」；④ 页面 SW 注册只在 `https`（根目录无 `sw.js`，localhost 分支等于每次开页 404 一次；实测 404 请求 1 → **0**）；⑤ 新增 `test/a11y-semantic.test.mjs` 20 条；两条旧断言（`first-screen` 组名/提示、`panel-first-screen` GROUPS.map）改成不钉标签属性的写法，教训记 `L-025`。闸 **211/211、11661 断言**（基线 11661）、client.js gzip **113739**（余量 17.3KB）、9 产物纯 LF、`e2e-dom` 166、`e2e-panel` 181/0、`check-perf` 29 项在限内。 |
+| 0.83.0 后第二轮（性别身份 / 触控热区 / 称骨女命歌诀调查） | **已改完，未发版（R-008 攒批）** | ① **性别不再参与「与性别无关」体系的身份**：22 体系逐一分男女比对内容，只有 `bazi`/`ziwei`/`hepan`/`trend`/`fengshui` 真变；其余 15 个内容一字不差、`shortId`/`handle` 却全异。`engine/fingerprint.js` 新增 `GENDER_NEUTRAL` 白名单（未登记体系保守保留），`shadowParams` 跳过、`chartIdOf` 缓存键置空、`handlePayload` 不带 —— 复测 15 个体系男女 `shortId` 与 `handle` 全同，5 个真读的仍分叉；断言 `shadow` +2、`handle` +3。② **触控热区**：`#method-open` 23 → 45 高（透明 `::after`，外观不动，浏览器实测点上方 10px 命中且真展开）；手机端 `.view-switch .seg button` 由 36 → 44（原来更具体的选择器把 `.seg button{min-height:44px}` 顶掉，390px 实测 45×36）。`分组 / 平铺` 不能用同一手法（`.seg` 的 `overflow:hidden` 会裁掉伪元素，实测点上方 8px 命中父元素），撤销无效 CSS 并写成注释 + 断言；`a11y-semantic` +6。③ **称骨女命歌诀**：三套通行本比对 + 卦诗对照，发现讹字改写（「矮巴勾枣」应为「矬巴勾枣」等）且通篇贬抑女性断语，达不到「两源逐字一致才收」标准，本轮不落表（理由写进 CHANGELOG）。闸 **211/211、11672 断言**、client.js gzip **113342**（余量 17.7KB）、页面 2467.4 KB、9 产物纯 LF、`e2e-dom` 166、`e2e-panel` 181/0、`check-perf` 29 项在限内。 |
 
 ## 三、发版前必查
 
-1. `node tools/build-all.mjs --gate` → 211/211、11661 断言（含 metrics M1–M7）；client.js gzip 113739（128KB 上限，余量约 17.3KB，再加界面东西前先看 `test/css-strip.test.mjs` 的余量断言）。
+1. `node tools/build-all.mjs --gate` → 211/211、11672 断言（含 metrics M1–M7）；client.js gzip 113342（128KB 上限，余量约 17.7KB，再加界面东西前先看 `test/css-strip.test.mjs` 的余量断言）。
 2. `node tools/check-eol.mjs` → 9 个产物纯 LF。
 3. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
 4. 实机：设默认盘 → 刷新 → `computeHits=0` 且顶部条在。

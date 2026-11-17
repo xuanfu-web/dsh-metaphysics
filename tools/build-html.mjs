@@ -77,6 +77,13 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
+/* 0.84 触控热区：「方法与验证」23 高，桌面上是唯一的细目标，手机上也没跟着抬高。
+   透明 ::after 把可点区域撑到 45 高，按钮外观与占位一律不动。
+   注意「分组 / 平铺」不能这么改：它们外面那层 .seg 带 overflow:hidden 与圆角，
+   伪元素会被裁掉（实测点上方 8px 命中父元素，热区没变大）；何况 ≤640 那条
+   .seg button{min-height:44px} 已经把手机端抬到 44，桌面上是鼠标操作，不必再动。 */
+#method-open{position:relative}
+#method-open::after{content:"";position:absolute;left:-10px;right:-10px;top:-11px;bottom:-11px}
 .start{margin-bottom:20px}
 .recent{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
 /* .recent 自带 display:flex，会盖掉 [hidden] 的 UA 样式：没有记录时必须显式收起，否则只剩一个空标签 */
@@ -325,7 +332,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   /* 分组卡片：每组先露 4 个，其余折起来；否则三组铺完，表单要滚过一整屏才见到 */
   .view-switch{gap:6px}
   .view-switch .hint{display:none}
-  .view-switch .seg button{min-height:36px;padding:6px 10px}
+  .view-switch .seg button{min-height:44px;padding:6px 10px}
   .groups{grid-template-columns:1fr}
   .tgroup{padding:12px}
   .ttools{grid-template-columns:repeat(2,minmax(0,1fr))}

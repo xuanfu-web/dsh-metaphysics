@@ -15,6 +15,7 @@
 //   * 带校验位：句柄被截断或改了字符会报 E_HANDLE，而不是静默排成另一张盘；
 //   * 键序固定，参数写法不同（例如先 system 后 datetime）也得到同一个句柄。
 import { fail } from './fail.js';
+import { GENDER_NEUTRAL } from './fingerprint.js';
 
 const PREFIX = 'mc1.';
 
@@ -125,8 +126,12 @@ function unb64url(s) {
 /** 从参数里挑出要进句柄的那部分 */
 export function handlePayload(args = {}) {
   const out = {};
+  const system = args && args.system != null ? String(args.system) : '';
   for (const [k, v] of Object.entries(args || {})) {
     if (SKIP.has(k) || v === undefined) continue;
+    // 性别对「盘面与性别无关」的体系不改变任何内容，带上只会让同一张盘多出第二个句柄
+    // （白名单见 fingerprint.js 的 GENDER_NEUTRAL；未登记的体系保守保留）。
+    if (k === 'gender' && GENDER_NEUTRAL.has(system)) continue;
     out[k] = v;
   }
   return out;

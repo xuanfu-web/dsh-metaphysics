@@ -24,7 +24,43 @@ const later = compute({ ...BASE, datetime: '1990-05-06T09:30' });
 ok('改出生时刻 ID 变', later.shadow.id !== a.shadow.id);
 ok('改出生时刻 baseId 变', later.shadow.baseId !== a.shadow.baseId);
 const other = compute({ ...BASE, gender: 'female' });
-ok('改性别 baseId 变', other.shadow.baseId !== a.shadow.baseId);
+ok('改性别 baseId 变（八字真读性别：大运顺逆、十神取法都跟着变）', other.shadow.baseId !== a.shadow.baseId);
+
+// ── ③ 性别只给真读它的体系进指纹 ────────────────────────────────
+// 实测 22 体系逐一分男女：bazi/ziwei/hepan/trend/fengshui 的内容会变，其余 14 个一模一样。
+// 以前「内容不变、盘号变」，同一张盘因为一个没人读的参数算出两个 id，缓存与「同盘同 id」一起分叉。
+{
+  const neutral = [
+    ['chenggu', { datetime: '1990-05-12T14:30' }],
+    ['star', { datetime: '1990-05-12T14:30' }],
+    ['numerology', { datetime: '1990-05-12' }],
+    ['daliuren', { datetime: '2026-11-15T10:00' }],
+    ['liuyao', { datetime: '2026-11-15T10:00', lines: [7, 8, 9, 7, 8, 9] }],
+    ['almanac', { datetime: '2026-11-17' }],
+  ];
+  let bad = [];
+  for (const [system, base] of neutral) {
+    const m = compute({ system, ...base, gender: 'male', shadowVersion: V });
+    const f = compute({ system, ...base, gender: 'female', shadowVersion: V });
+    if (m.shortId !== f.shortId) bad.push(`${system}:${m.shortId}/${f.shortId}`);
+  }
+  ok('不吃性别的体系：男女得到同一个盘号', bad.length === 0, bad.join(' '));
+
+  // 反方向：真读性别的体系不许被这条「去噪」误伤
+  const sensitive = [
+    ['ziwei', { datetime: '1990-05-12T14:30' }],
+    ['trend', { datetime: '1990-05-12T14:30' }],
+    ['fengshui', { datetime: '1990-05-12T14:30', facing: 180 }],
+    ['hepan', { datetime: '1990-05-12T14:30', partner: { datetime: '1992-08-03T09:15', gender: 'female' } }],
+  ];
+  const same = [];
+  for (const [system, base] of sensitive) {
+    const m = compute({ system, ...base, gender: 'male', shadowVersion: V });
+    const f = compute({ system, ...base, gender: 'female', shadowVersion: V });
+    if (m.shortId === f.shortId) same.push(system);
+  }
+  ok('读性别的体系：男女仍是两个盘号', same.length === 0, same.join(' '));
+}
 const ziwei = compute({ ...BASE, system: 'ziwei' });
 ok('换体系 baseId 变', ziwei.shadow.baseId !== a.shadow.baseId);
 const pinned = compute({ ...BASE, asOf: '2026-01-01T00:00' });

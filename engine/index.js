@@ -33,7 +33,7 @@ import { buildTaiyi } from './taiyi.js';
 import { buildConvert } from './convert.js';
 import { classicsFor, classicsText, suiyunClassicOf, classicOf, CLASSIC_BOOKS } from './classics.js';
 import { diffObjects, summarize, sortDiffs, labelOf, rootOf, categoryOf, formatValue, CALIBER_SWITCHES, viewRows } from './diff.js';
-import { canonicalJson, fingerprintOf } from './fingerprint.js';
+import { canonicalJson, fingerprintOf, GENDER_NEUTRAL } from './fingerprint.js';
 import { buildTrend } from './trend.js';
 import { buildMarriage } from './marriage.js';
 import { buildFacets } from './facets.js';
@@ -544,6 +544,8 @@ const SHADOW_IGNORE = new Set([
   'geocode', 'ask', 'followup', 'caliber', 'seed', 'asOf', 'handle', 'revise', 'geo', 'longitudeFromGeo',
 ]);
 
+// 性别不进「与性别无关」的体系指纹（白名单与实测依据见 fingerprint.js 的 GENDER_NEUTRAL）。
+
 const num6 = (n) => {
   if (n === undefined || n === null || n === '') return null;
   const v = Number(n);
@@ -629,6 +631,10 @@ function shadowParams(args, result) {
   });
   for (const [key, value] of Object.entries(args)) {
     if (SHADOW_IGNORE.has(key) || value === undefined) continue;
+    // 性别只给真读它的体系进指纹。实测 22 体系：bazi/ziwei/hepan/trend/fengshui 内容随性别变，
+    // 其余 14 个（六爻、梅花、六壬、塔罗、黄历、称骨、小六壬、星座、数字、人格、体质、五运六气、
+    // 太乙、公农历）内容一模一样——性别进指纹等于「改个性别换盘号」，缓存与「同盘同 id」一起分叉。
+    if (key === 'gender' && GENDER_NEUTRAL.has(system)) continue;
     if (key === 'datetime') put(key, shadowDateTime(value));
     else if (key === 'partner') put(key, shadowPerson(value));
     else if (key === 'gender') put(key, String(value).toLowerCase());

@@ -77,3 +77,24 @@ const R = compute(baziArgs);
   ok('不再带 localhost 分支（本地没有 sw.js，注册必 404）', !/localhost|127\\.0\\.0\\.1/.test(sw), sw.slice(0, 80));
   ok('注册失败仍然静默吞掉（不污染页面报错）', /\.catch\(function \(\) \{\}\)/.test(sw));
 }
+// ── ⑤ 次要工具条的触控热区 ────────────────────────────────────────
+// 「分组 / 平铺」桌面 47×26、手机由 ≤640 那条 min-height:44 抬到 44；真正的细目标是
+// 「方法与验证」77×23，桌面上唯一低于 44 的入口。做法是透明 ::after 往外扩，按钮外观
+// 与占位一律不动——所以钉的是「热区 ≥44」，不是「按钮变高」（真变高会把工具条挤歪）。
+{
+  const hit = (re, baseH) => {
+    const m = BUILD.match(re);
+    if (!m) return -1;
+    return baseH + 2 * Math.abs(Number(m[1]));
+  };
+  const methodH = hit(/#method-open::after\{content:"";position:absolute;left:-\d+px;right:-\d+px;top:-(\d+)px;bottom:-(\d+)px\}/, 23);
+  ok('「方法与验证」热区 ≥44 高', methodH >= 44, String(methodH));
+  ok('热区靠 position:relative 定位', /#method-open\{position:relative\}/.test(BUILD));
+  // 手机端的「分组 / 平铺」由 ≤640 那条撑开：`.view-switch .seg button` 更具体，
+  // 以前写的是 min-height:36px，把下面 .seg button 的 44 顶掉了——手机实测 45×36。
+  ok('手机端「分组 / 平铺」≥44 高', /\.view-switch \.seg button\{min-height:44px;padding:6px 10px\}/.test(BUILD));
+  ok('手机端通用分段按钮 44 高', /\.seg button\{flex:1;padding:12px 8px;min-height:44px\}/.test(BUILD));
+  ok('没有把 .view-switch .seg 按钮压到 44 以下', !/\.view-switch \.seg button\{min-height:(3[0-9]|4[0-3])px/.test(BUILD));
+  // 别再给 .seg 里的按钮写伪元素热区：外层 overflow:hidden 会把它裁掉，写了等于没写
+  ok('没有给 .seg 内按钮写无效的伪元素热区', !/\\.view-switch \\.seg button::after/.test(BUILD));
+}
