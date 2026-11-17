@@ -1766,6 +1766,32 @@
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
 
+  /* 出盘后参数区切只读：面板与独立页各调一次，名单只在这里维护一份。
+   *
+   * 以前两条链各写一遍白名单——单页按 id 认 #question/#direction，面板按 class 认
+   * .mp-askbox/.mp-askblock/.mp-askonly。同一件事写两处，加一个问事控件就得记得改两边，
+   * 漏一处就是「出盘后问法改不动」或者「问事框被一起锁死」。现在统一成 mp-askfree 标记类：
+   * 单页的两个控件已在模板里挂上（tools/build-html.mjs），面板的追问/所问/方向本来就带
+   * 各自的样式类，一并列在名单里。
+   *
+   * select / checkbox 没有 readOnly 只能 disabled；disabled 不改 value，
+   * collectArgs() 读到的参数不会因此失真，缓存键也不会漂。
+   */
+  const ASK_FREE = '.mp-askfree,.mp-askbox,.mp-askblock,.mp-askonly';
+  pp.ASK_FREE = ASK_FREE;
+  pp.lockParams = function (root, locked) {
+    if (!root || !root.querySelectorAll) return 0;
+    let n = 0;
+    root.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (el.closest(ASK_FREE)) { el.disabled = false; el.readOnly = false; return; }
+      const tag = el.tagName;
+      if (tag === 'SELECT' || el.type === 'checkbox' || el.type === 'radio' || el.type === 'button') el.disabled = !!locked;
+      else el.readOnly = !!locked;
+      n++;
+    });
+    return n;
+  };
+
   // P1-15：杂曜与辅曜分开一档——盘面四级字号（主星 > 辅曜 > 杂曜 > 年龄长生），
   // 之前 辅星/杂曜 都是 aux，四级里只有两级，杂曜和辅曜一样黑一样大，满盘糊成一片
   const TYPE_CLASS = { 主星: 'main', 吉星: 'good', 煞星: 'bad', 辅星: 'aux', 杂曜: 'minor' };

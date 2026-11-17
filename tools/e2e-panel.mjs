@@ -589,6 +589,48 @@ ok(!/\bnull\b|undefined|NaN/.test(baziText), '结果里没有 null / undefined /
   await addrEl2.fill('');
 }
 
+// ── 六·六、八字卡四块：称骨 / 婚姻 / 人生六面 / 一眼看 ──────────────
+// 这四块全在共用层（panel-kit 的 baziHTML），但面板侧多一道工序：称骨不在 chart 分块里，
+// 要靠 go() 里的 ensureEngine('chenggu') 按需拉一次，拉不到就被 catch 吞成 null ——
+// 既不报错也不出卡。0.76 就栽在这上面（CHART_STACK 缺 chenggu），而页面全程无报错，
+// 只有查 DOM 里到底有没有才守得住。对应 docs/渲染链检查清单.md 第 16 项。
+{
+  const errsBefore16 = errors.length;
+  await unlockParams();
+  const dateEl16 = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
+  const timeEl16 = page.locator('#main label.mp-field:has(span:text-is("出生时刻")) input');
+  await unlockParams();
+  await dateEl16.fill('1990-05-12');
+  await unlockParams();
+  await timeEl16.fill('14:30');
+  const hu16 = page.locator('label.mp-chk').filter({ hasText: '时辰未知' });
+  if (await hu16.count()) await hu16.locator('input').uncheck();
+  await unlockParams();
+  await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+  await page.waitForSelector('#main .pp-bz', { timeout: 15000 }).catch(() => {});
+  // 称骨是异步拉分块后才补上的，等它出现再判断，别拿「刚排完那一刻」当结论
+  await page.waitForFunction(() => {
+    const h = (document.getElementById('main') || {}).innerHTML || '';
+    return h.includes('mp-bzcg');
+  }, null, { timeout: 12000 }).catch(() => {});
+  const got16 = await page.evaluate(() => {
+    const h = (document.getElementById('main') || {}).innerHTML || '';
+    const one = document.querySelector('#main [aria-label="一眼看"]');
+    return {
+      bzcg: h.includes('mp-bzcg') && h.includes('袁天罡称骨'),
+      mar: h.includes('mp-mar'),
+      life: h.includes('mp-life'),
+      faces: (h.match(/data-face="/g) || []).length,
+      one: one ? one.textContent.trim() : '',
+    };
+  });
+  ok(got16.bzcg, '面板 · 八字卡带称骨（chenggu 分块按需拉到）');
+  ok(got16.mar, '面板 · 八字卡带婚姻');
+  ok(got16.life && got16.faces === 6, '面板 · 八字卡带人生六面（六张）', String(got16.faces));
+  ok(/一眼看/.test(got16.one) && got16.one.length > 12, '面板 · 首屏「一眼看」有字', got16.one.slice(0, 50));
+  ok(errors.length === errsBefore16, '面板 · 四块渲染无新增 JS 报错', errors.slice(errsBefore16, errsBefore16 + 2).join(' | '));
+}
+
 // ── 七、问事体系：问题必填、复制提示按钮 ────────────────────────
 await openTool('liuyao');
 await page.waitForTimeout(250);
@@ -1001,6 +1043,8 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(bzPack.includes('2027 年事业怎么样'), '面板复制提问 · 带上追问框里写的问题');
   ok(bzPack.includes('——盘面摘要——') && bzPack.includes('——回答要求——'), '面板复制提问 · 带盘面摘要与回答骨架');
   ok(bzPack.includes('——开场结论') && bzPack.includes('说人话：'), '面板复制提问 · 带面板已算好的开场结论');
+  // 与单页 e2e-dom 同一把尺：包体要够别的模型直接用，缺摘要或只发骨架都不算
+  ok(bzPack.length > 2000, '面板复制提问 · 内容量够别的模型直接用', `${bzPack.length} 字`);
   ok(errors.length === errsBefore, '复制提问流程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
 }
 
@@ -1299,6 +1343,20 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
       ok(beforeDir !== afterDir, '面板 · 切方向后解读跟着变（不重摇卦）');
     }
   }
+  // 反向守一条：参数输入在同一个出盘态里必须真锁住，否则「问事层可改」只是没锁而已。
+  // 名单与单页共用 panel-kit 的 pp.lockParams（mp-askfree 标记类），这里守住接线。
+  const lockP = await page.evaluate(() => {
+    const date = document.querySelector('#main .mp-input[placeholder^="年-月-日"]');
+    const PP = window.__PP || {};
+    return {
+      dateRO: date ? date.readOnly : null,
+      hasFn: typeof PP.lockParams === 'function',
+      list: String(PP.ASK_FREE || ''),
+    };
+  });
+  ok(lockP.dateRO === true, '面板 · 出盘后参数输入确实锁住（只读）', `readOnly=${lockP.dateRO}`);
+  ok(lockP.hasFn && /mp-askfree/.test(lockP.list),
+    '面板 · 锁定名单来自 panel-kit 共用层（mp-askfree 标记类）', lockP.list);
 }
 
 // ── 十五、全程无 JS 报错 ───────────────────────────────────────

@@ -269,3 +269,32 @@ verdict.headline 在 five 牌阵里仍写「3张牌里2正1逆」、factors 只�
 防法：动这类文案前先跑一次 `node tools/metrics.mjs` 记下 M2 基线；改完比一遍四行字数。
 这次四行变化：梅花 151→172、大六壬 159→182、塔罗 141→146、合盘 191→188，最大仍 271（六爻），
 离 400 上限有余；`client.js` gzip 124100 / 上限 128000，余量 3900 字节，没撞体积线。
+
+## L-018 两条链各写一份白名单，早晚会漂——收成标记类，顺便把测试从「守字面串」改成「守契约」
+
+**症状**：问事层（所问之事 / 询问方向）该不该跟着参数一起锁，单页按 id 认 `#question` /
+`#direction`，面板按 class 认 `.mp-askbox` / `.mp-askblock` / `.mp-askonly`。同一件事写两处，
+0.82.0 巡检里就漂过一次：面板的放过列表只有 `.mp-askbox`，`.mp-askblock` 漏了，
+「所问之事」出盘后变 readOnly，`onBlur → refreshInterpret` 成了永远触发不了的死代码。
+加一个新问事控件，得记得改两处；漏一处是「出盘后改不了问法」或者「问事框被一起锁死」。
+
+**修法**：`src/panel-kit.js` 出 `pp.ASK_FREE` 与 `pp.lockParams(root, locked)`——
+名单一份、readOnly/disabled 的取舍一份、`mp-askfree` 标记类作为契约。两条链各自只负责
+「传哪个根节点」和「切自己那个 locked class」：单页 `syncInputLock()` 传 `.bar`，
+面板 useEffect 传 `.mp-panel`。单页的两个控件在 `tools/build-html.mjs` 模板里挂上标记类，
+面板的 `.mp-askonly` 这类本来就是样式类，一并列进名单。共用层没就绪时单页保守全锁，
+不赌哪几个是问事层。
+
+**顺手学到的更要紧一条**：静态测试守字面串，重构时必然误报。这次 `test/ask.test.mjs` 三条
+正则写死 `<textarea id="question" rows="2"`，加一个 class 就红；`test/panel-cache.test.mjs`
+第三节在面板源码里数 `n.closest('.mp-askbox…')`，逻辑一搬到 panel-kit 全红。功能都没坏，
+红的是测试自己。改法不是放宽正则，是换断言对象：
+- 模板串 → `/<textarea id="question"[^>]*mp-askfree[^>]*rows="2"/`，把「该带的标记」写进断言；
+- 源码逻辑 → 守「面板确实把锁定交给共用层、不再自己 querySelectorAll」+「共用层名单含三类」，
+  两句话各断在真正该守住的那一层。
+
+**判据**：一条静态断言红的时候，先问「是行为坏了还是我把实现搬了家」。搬家就让断言跟着搬，
+并且搬到新层的契约上；行为没坏却去放宽正则，等于把守卫拆了。
+
+防法：以后加问事控件只挂 `mp-askfree`，别碰白名单；加锁定相关测试，断在 `pp.lockParams`
+的行为上（真实 DOM 里 `readOnly` / `disabled` 各是什么），不要断源码里有没有某句字符串。

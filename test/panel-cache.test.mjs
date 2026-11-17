@@ -56,15 +56,21 @@ ok('正常出盘也复位为锁定态', /setResult\(resObj\);\s*setEditMode\(fal
 ok('趋势盘的 asOf 在求键之前补', runBody.indexOf('args.asOf = Core.todayStamp()') < runBody.indexOf('const cacheKey = hash36'));
 
 // ── 三、参数区只读 ────────────────────────────────────────
+// 扫描规则与「哪些控件放过」的名单已收到共用层（panel-kit 的 pp.lockParams），
+// 面板与独立页调同一份。这里守住两件事：面板确实交出去、名单里确实含问事层三类。
 const lockFx = bodyOf('  useEffect(() => {\n    const panel = document.querySelector(\'.mp-panel\');');
+const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
 ok('锁定只在出盘且未点修改参数时', /const locked = !!result && !editMode;/.test(lockFx));
 ok('锁定范围限定面板根', /document\.querySelector\('\.mp-panel'\)/.test(lockFx));
-ok('追问框不在参数区、必须放过', /n\.closest\('\.mp-askbox, \.mp-askblock, \.mp-askonly'\)/.test(lockFx));
+ok('面板把锁定交给共用层，不再自己列白名单', /PP\.lockParams\(panel, locked\)/.test(lockFx));
+ok('面板不再自己扫 input/select/textarea', !/querySelectorAll\('input, select, textarea'\)/.test(lockFx));
 // 问事层（所问之事 / 询问方向）改的是解读，不动盘面；锁住就等于出盘后永远改不了问法
-ok('所问之事与询问方向也在放过列表里', /\.mp-askblock/.test(lockFx) && /\.mp-askonly/.test(lockFx));
+ok('共用层导出锁定名单', /const ASK_FREE = '[^']*\.mp-askfree[^']*'/.test(kit));
+ok('名单含追问框 / 所问之事 / 询问方向', /\.mp-askbox/.test(kit) && /\.mp-askblock/.test(kit) && /\.mp-askonly/.test(kit));
 ok('询问方向带 mp-askonly 标记类', /className: 'mp-input mp-askonly'/.test(app));
-ok('select 与勾选用 disabled', /tag === 'SELECT' \|\| n\.type === 'checkbox' \|\| n\.type === 'radio' \|\| n\.type === 'button'\) n\.disabled = locked;/.test(lockFx));
-ok('文本类用 readOnly（不改 value）', /else n\.readOnly = locked;/.test(lockFx));
+ok('select 与勾选用 disabled', /tag === 'SELECT' \|\| el\.type === 'checkbox' \|\| el\.type === 'radio' \|\| el\.type === 'button'\) el\.disabled = !!locked;/.test(kit));
+ok('文本类用 readOnly（不改 value）', /else el\.readOnly = !!locked;/.test(kit));
+ok('命中的问事层控件被显式解禁', /el\.closest\(ASK_FREE\)\) \{ el\.disabled = false; el\.readOnly = false; return; \}/.test(kit));
 ok('锁定态挂到面板 class 上', /panel\.classList\.toggle\('mp-locked', locked\);/.test(lockFx));
 ok('有只读态的样式', /\.mp-panel\.mp-locked \.mp-input,\.mp-panel\.mp-locked \.mp-textarea\{opacity:\.62;cursor:default\}/.test(app));
 

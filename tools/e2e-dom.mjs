@@ -93,6 +93,30 @@ ok(true, '页面加载完成');
   ok(!/公历日期/.test(tarotOut.err) && tarotOut.len > 50, '单页 · 日期空着也能抽塔罗（不拿隐藏字段拦人）',
     tarotOut.err || `${tarotOut.len} 字`);
 
+  // 出盘后的锁定行为：参数锁住，问事层（所问之事 / 询问方向）不跟着锁。
+  // 这两件事以前分别写在本页和面板里各一份，现在统一由 panel-kit 的
+  // pp.lockParams 决定，名单靠 mp-askfree 标记类认——这里顺带守住那条接线。
+  const lockState = await page.evaluate(() => {
+    const q = document.getElementById('question');
+    const d = document.getElementById('direction');
+    const dt = document.getElementById('date');
+    const PP = window.__PP || {};
+    return {
+      qRO: q ? q.readOnly : null,
+      qDis: q ? q.disabled : null,
+      dDis: d ? d.disabled : null,
+      dtRO: dt ? dt.readOnly : null,
+      hasFn: typeof PP.lockParams === 'function',
+      list: String(PP.ASK_FREE || ''),
+    };
+  });
+  ok(lockState.qRO === false && lockState.qDis === false, '单页 · 出盘后「所问之事」仍可改（问事层不跟着锁）',
+    `readOnly=${lockState.qRO} disabled=${lockState.qDis}`);
+  ok(lockState.dDis === false, '单页 · 出盘后「询问方向」仍能切', `disabled=${lockState.dDis}`);
+  ok(lockState.dtRO === true, '单页 · 出盘后参数输入确实锁住（只读）', `readOnly=${lockState.dtRO}`);
+  ok(lockState.hasFn && /mp-askfree/.test(lockState.list),
+    '单页 · 锁定名单来自 panel-kit 共用层（mp-askfree 标记类）', lockState.list);
+
   // 回到八字把日期补好，后面各 tab 沿用
   await openTab('bazi');
   await page.locator('#date').fill('1990-05-12');

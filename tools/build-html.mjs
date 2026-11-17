@@ -607,10 +607,10 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
          问题必填，会与卦象一起交给下方解读，解读按这个方向展开。-->
     <div class="grp" id="for-ask" style="display:none">
       <label class="field" id="ask-wrap">所问之事（必填）
-        <textarea id="question" rows="2" placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"></textarea>
+        <textarea id="question" class="mp-askfree" rows="2" placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"></textarea>
       </label>
       <label class="field">询问方向
-        <select id="direction">${DIR_OPTIONS}</select>
+        <select id="direction" class="mp-askfree">${DIR_OPTIONS}</select>
       </label>
       <!-- 塔罗牌阵：仅塔罗 tab 显示（张数由牌阵定，命名牌阵见 engine/tarot.js SPREAD_DEFS） -->
       <label class="field" id="for-count" style="display:none">牌阵

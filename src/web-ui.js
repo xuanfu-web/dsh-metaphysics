@@ -722,23 +722,24 @@
   /**
    * 出盘后参数区切只读：值还在，只是不能随手改。
    * 要改只能点「修改参数」走 EDITING —— 任务书 1.3 不允许别的路。
-   * select / checkbox 没有 readOnly，只能 disabled；但 disabled 不影响 value，
-   * collectArgs() 读到的参数不会失真，paramKey() 也就不会莫名漂移。
+   * 哪些控件属于「问事层」、select/checkbox 为什么只能 disabled，规则统一写在
+   * panel-kit 的 pp.lockParams 里，面板与这一页用同一份名单，别在这里再列一遍。
    */
   function syncInputLock() {
     const bar = document.querySelector('.bar');
     if (!bar) return;
     const locked = flowState === FLOW.LOCKED;
     bar.classList.toggle('is-locked', locked);
-    bar.querySelectorAll('input, select, textarea').forEach((n) => {
-      // 问事层里只有「所问之事」和「询问方向」不算排盘参数：改它们只重绘解读，不动盘面。
-      // 跟着参数一起锁死，出盘以后就再也改不了问法、方向选择器也点不动，等于白做。
-      // 牌阵（#tcount）决定抽几张牌，仍然是参数，继续锁。
-      if (n.id === 'question' || n.id === 'direction') { n.disabled = false; n.readOnly = false; return; }
-      const tag = n.tagName;
-      if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
-      else n.readOnly = locked;
-    });
+    const PP = window.__PP;
+    if (PP && PP.lockParams) { PP.lockParams(bar, locked); }
+    else {
+      // 共用层还没加载到（拆分模块之间那一瞬）：保守全锁，不赌哪几个是问事层
+      bar.querySelectorAll('input, select, textarea').forEach((n) => {
+        const tag = n.tagName;
+        if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
+        else n.readOnly = locked;
+      });
+    }
     const eb = el('edit');
     if (eb) eb.hidden = !locked;
   }

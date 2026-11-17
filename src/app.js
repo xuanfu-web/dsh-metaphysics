@@ -1097,19 +1097,14 @@ function App() {
   // 出盘后锁住参数区，想改先点「修改参数」。做法是渲染后扫一遍输入控件加
   // readOnly/disabled（不改 React props，几十个受控控件逐个传 disabled 必漏），
   // 值不受影响，所以缓存键与参数快照都不会因此漂移。
-  // 追问框 .mp-askbox、「所问之事」.mp-askblock、询问方向 .mp-askonly 都是看盘时
-  // 还要用的问事层，不属于排盘参数（改它们只重绘解读，不动盘面），必须放过。
+  // 哪些控件算「问事层」（追问框、「所问之事」、询问方向）不在这里列——名单在
+  // panel-kit 的 pp.lockParams 里，独立页调同一份，加控件只改那一处。
   useEffect(() => {
     const panel = document.querySelector('.mp-panel');
     if (!panel) return;
     const locked = !!result && !editMode;
     panel.classList.toggle('mp-locked', locked);
-    panel.querySelectorAll('input, select, textarea').forEach((n) => {
-      if (n.closest('.mp-askbox, .mp-askblock, .mp-askonly')) return;
-      const tag = n.tagName;
-      if (tag === 'SELECT' || n.type === 'checkbox' || n.type === 'radio' || n.type === 'button') n.disabled = locked;
-      else n.readOnly = locked;
-    });
+    if (PP && PP.lockParams) { PP.lockParams(panel, locked); }
   }, [result, editMode, tab]);
   const [hist, setHist] = useState(() => loadHistory());
   // 首屏视图与「最近用过」：与独立页同一套存储键，分组视图下隐藏平铺 tab 条
