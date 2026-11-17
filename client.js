@@ -653,7 +653,10 @@ window.__ModuleLoader__.load({id:"dsh-metaphysics",version:"0.82.0",factory(xt){
 /* 所问之事 + 询问方向的回显，放在引语上方，先让用户确认问的是什么 */
 .mp-it-ask{padding:10px 16px;background:var(--band);border-bottom:1px dashed var(--line);font-size:13px;line-height:1.8;color:var(--ink2);font-family:system-ui,sans-serif}
 .mp-it-ask .ask-q{font-weight:600;color:var(--ink)}
-.mp-it-ask .ask-sep{color:var(--dimline);margin:0 7px}
+/* 分隔符也用 --muted，别跟 --dimline：深色下 dimline 压在 band 上只有 2.16:1，
+   竖线淡到看不见。dimline 是给坐标轴线/网格/进度条底的，那些本就该淡；
+   这根是夹在两段文字之间的字符，得读得出来。两条渲染链共用这份 CSS，一起生效。 */
+.mp-it-ask .ask-sep{color:var(--muted);margin:0 7px}
 .mp-it-ask .ask-d{color:var(--lu)}
 /* 按询问方向提到最前的那一条 */
 .mp-it-focus{margin-left:6px;font-size:12px;color:var(--lu);border:1px solid rgba(var(--lu-rgb),.35);border-radius:999px;padding:1px 9px;font-family:system-ui,sans-serif}

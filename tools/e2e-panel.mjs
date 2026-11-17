@@ -539,6 +539,56 @@ const colCount = await page.evaluate(() => document.querySelectorAll('#main tabl
 ok(colCount === 3, '盘面只画三列', String(colCount));
 ok(!/\bnull\b|undefined|NaN/.test(baziText), '结果里没有 null / undefined / NaN');
 
+// ── 六·五、生时校正：候选时辰绑定「这张盘」──────────────────────────
+// 单页 e2e-dom 已钉过两条（换盘清空、改地址不重排不串），面板是独立容器层：
+// go() 里 setRectRes(null) 的时机、runRectify 取 result.* 而非表单值，都得单独验。
+// 对应 docs/渲染链检查清单.md 检查表第 9、10 项。
+{
+  await unlockParams();
+  // 上一段勾了「时辰未知」，先取消，排一张正常的八字盘
+  const hu2 = page.locator('label.mp-chk').filter({ hasText: '时辰未知' });
+  if (await hu2.count()) await hu2.locator('input').uncheck();
+  const dateEl2 = page.locator('#main label.mp-field:has(span:text-is("出生日期（公历）")) input');
+  const addrEl2 = page.locator('#main label.mp-field:has(span.mp-lbl:text-matches("出生地")) input');
+  const rectBtn = page.locator('#main button.mp-btn').filter({ hasText: '计算候选时辰' });
+  const rectText = () => page.evaluate(() => {
+    const el = document.querySelector('#main .mp-rect-out');
+    return el ? el.innerText.replace(/\s+/g, ' ').trim() : '';
+  });
+  const reRun = async (date) => {
+    await unlockParams();
+    await dateEl2.fill(date);
+    await page.locator('button.mp-btn').filter({ hasText: '排盘' }).first().click();
+    await page.waitForSelector('#main .pp-bz', { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(500);
+  };
+  await reRun('1990-05-12');
+  ok((await rectBtn.count()) === 1, '面板 · 八字有「计算候选时辰」按钮');
+  await rectBtn.click();
+  await page.waitForTimeout(400);
+  const firstRect = await rectText();
+  ok(firstRect.length > 20, '面板 · 生时校正给出候选时辰', firstRect.slice(0, 40));
+
+  // 9：换一张盘，旧候选不能贴到新盘上（go() 的 setRectRes(null) 要生效）
+  await reRun('1985-06-15');
+  ok((await rectText()) === '', '面板 · 换一张盘后旧的候选时辰不残留', (await rectText()).slice(0, 40));
+
+  // 10：只改出生地、不重排，候选仍按这张盘自己的输入（runRectify 读 result.address）
+  await reRun('1990-05-12');
+  await rectBtn.click();
+  await page.waitForTimeout(400);
+  const beforeAddr = await rectText();
+  await unlockParams();
+  await addrEl2.fill('河北石家庄');
+  await rectBtn.click();
+  await page.waitForTimeout(400);
+  const afterAddr = await rectText();
+  ok(beforeAddr.length > 20 && afterAddr === beforeAddr,
+    '面板 · 改出生地不重排时候选时辰仍按这张盘的输入', afterAddr.slice(0, 40));
+  await unlockParams();
+  await addrEl2.fill('');
+}
+
 // ── 七、问事体系：问题必填、复制提示按钮 ────────────────────────
 await openTool('liuyao');
 await page.waitForTimeout(250);
@@ -596,6 +646,55 @@ const contrast = await page.evaluate(() => {
 });
 ok(!contrast.err && contrast.r >= 4.5, '深色下选中卡片文字对比度 ≥4.5', contrast.err || `${contrast.r.toFixed(2)}:1（字 ${contrast.color} / 底 ${contrast.bg}）`);
 ok(!!contrast.varOnBrand, '--mp-on-brand 由运行时按对比度写入', contrast.varOnBrand);
+
+// 深色全页扫：和单页 e2e-dom 同强度，不只选中卡片那一处。某块卡片忘了接宿主变量，
+// 就会白字压白底；逐个「自己直接含文字」的元素算字色/底色对比度，渐变底取各色均值。
+{
+  const lowContrast = await page.evaluate(() => {
+    const lum = (rgb) => {
+      const m = String(rgb).match(/\d+(\.\d+)?/g);
+      if (!m || m.length < 3) return null;
+      const [r, g, b] = m.slice(0, 3).map(Number);
+      const f = (v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const bgLum = (node) => {
+      const cs2 = getComputedStyle(node);
+      const c = cs2.backgroundColor;
+      const a = String(c).match(/rgba?\([^)]*,\s*([\d.]+)\)/);
+      const alpha = a ? Number(a[1]) : 1;
+      if (alpha > 0.5) return lum(c);
+      const img = cs2.backgroundImage;
+      if (img && img !== 'none') {
+        const cols = img.match(/rgba?\([^)]*\)/g) || [];
+        const vals = cols.map(lum).filter((v) => v != null);
+        if (vals.length) return vals.reduce((x, y) => x + y, 0) / vals.length;
+      }
+      return null;
+    };
+    const bad = [];
+    document.querySelectorAll('#main button, #main a, #main span, #main b, #main li, #main .mp-tool, #main .mp-lbl').forEach((el) => {
+      const hasOwnText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      const txt = (el.textContent || '').trim();
+      if (!hasOwnText || !txt || txt.length > 30) return;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) < 0.2) return;
+      const l1 = lum(cs.color);
+      let node = el; let l2 = null;
+      while (node && node !== document.documentElement) {
+        l2 = bgLum(node);
+        if (l2 != null) break;
+        node = node.parentElement;
+      }
+      if (l1 == null || l2 == null) return;
+      const hi = Math.max(l1, l2); const lo = Math.min(l1, l2);
+      const ratio = (hi + 0.05) / (lo + 0.05);
+      if (ratio < 2.2) bad.push(`${el.tagName}.${String(el.className || '').split(' ')[0]}「${txt.slice(0, 12)}」(${ratio.toFixed(2)})`);
+    });
+    return bad.slice(0, 6);
+  });
+  ok(lowContrast.length === 0, '深色下全页无明显低对比文字（对齐单页强度）', lowContrast.join('、'));
+}
 
 // ── 九、窄屏（宿主侧栏 520px）：不许横向溢出 ────────────────────
 await page.setViewportSize({ width: 520, height: 820 });
