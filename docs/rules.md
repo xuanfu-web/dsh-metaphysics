@@ -86,6 +86,8 @@
 
 收尾阶段不再逐个小版本发。攒下的改动一次走完整链路：版本号 → CHANGELOG → 构建 → 全闸 → 提交 → tag → **推 main** → npm → GitHub Release → Pages → 桌面副本。
 
+这条链路已经固化成一条命令：`npm run ship`（`tools/ship.mjs`，内部依次跑 build:desktop → release → push-branch，最后读回 npm latest / 远端 tag / Release / Pages 四处，缺一处就 red）。dry-run 用 `npm run ship -- --dry-run`。
+
 「推 main」这一步 0.84.0 差点漏掉：tag 与 Release 都成功了，但远端 `main` 还停在发版前的提交，而 Pages 认的是 `main/docs`，于是站点一直显示旧版本（读回页面里只有 0.83.0 / 0.82.0）。分支落后于本地时，tag 推送不会带着它一起走。现在用 `node tools/push-branch.mjs`（HTTPS 被 reset 会自动走 SSH deploy key），推完再看 Pages 的 `builds/latest` 是不是新提交、页面里的版本串是不是新版本，两样都要对。
 
 npm 打完 `+ pkg@ver` 后 registry 404 是队列延迟（实测 8 分钟），别重发、别动 token。判断成功只看三样：`dist-tags` 的 `latest`、`/<pkg>/<ver>` 的 shasum、`tools/release.mjs --verify-only`。查 registry 优先用 `curl.exe`，PS 的 `Invoke-RestMethod` 在这台机器上会假报连接失败。
@@ -146,3 +148,22 @@ A4 之后面板和单页都是「出盘即只读」，改参数得先点「修�
 
 要验证「共享表真的可用」，必须用**一个常驻 vm realm** 先载共享层再载块；
 每次 `runInNewContext` 都会丢掉 `globalThis.__MP_SHARED__`（L-029 记了踩坑过程）。
+
+---
+
+## R-012 `src/panel-kit.js` 不拆：这是决定，不是待办
+
+- type: rules
+- status: active
+- since: 2026-11-18
+
+376KB、5555 行的单文件，一百四十多份测试把它当「一段自包含脚本」直接
+`vm.runInNewContext(源码)` 跑。拆成多份就得让每份读取都经过拼接器，等于把
+「源码本身就是可执行脚本」这条最有价值的保证，换成「拼接器没写错」这个新假设；
+收益只是读代码时少翻几百行（文件头已有分区导航），代价是整套测试形态重写。
+
+所以这项**不再出现在任何「剩余未做」清单里**。要重启它，前置条件是三件一起做：
+①测试统一走一个 `loadPanelKit()` 装载器（改 140 处读取为改 1 处）；
+②拼接产物进 `check-bundle` 同级的「与源一致」闸；
+③按文件头的四个分区切（CSS / 共用小工具 / 盘面渲染 / 报告编排），切完先跑全闸再谈。
+三件没齐就先别动——它是决定，不是欠账。

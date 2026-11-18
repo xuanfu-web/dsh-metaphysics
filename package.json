@@ -95,7 +95,8 @@
     "e2e:panel": "node tools/e2e-panel.mjs",
     "check:verification": "node tools/check-verification.mjs",
     "gh:release": "node tools/gh-release.mjs",
-    "eval:envelope": "node tools/eval-envelope.mjs"
+    "eval:envelope": "node tools/eval-envelope.mjs",
+    "ship": "node tools/ship.mjs"
   },
   "exports": {
     ".": "./index.js",

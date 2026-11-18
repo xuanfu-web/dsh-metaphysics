@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-18（0.84.0：公共模块抽两层共享块、依赖闭包与层序、分块自检改常驻 realm；闸 211/11719）
+最后更新：2026-11-18（0.84.0 已发版（npm/tag/Release/Pages 四处读回）；发版链路收成 `npm run ship`；句柄与 panel-kit 两项从待办转「已决」；闸 211/11719）
 
 ---
 
@@ -12,6 +12,8 @@
 
 | 项 | 依据 |
 | --- | --- |
+| 0.84.0 发版（共享块 + 攒批收口） | 提交 `2ae3028`；npm latest 0.84.0（shasum `0f52bdfe`、117 文件）；tag `v0.84.0`；Pages `builds/latest = 1ab4463 / built`、线上版本串 0.84.0；桌面副本已刷新 |
+| 发版链路固化成一条命令 `npm run ship` | `tools/ship.mjs`：build:desktop → release → push-branch → 读回 npm/tag/Release/Pages 四处；git 与 npm-cli 自动兜底；`--dry-run` 可单验 |
 | 公共模块抽两层共享块（`client.shared.js` / `client.shared-interpret.js`，共享表 `globalThis.__MP_SHARED__`，`index` 仍按块各建） | 提交随 0.84.0；`tools/build-client.mjs` 的 `SHARED_MODULES`/`SHARED_TIERS`/`assembleShared`；产物 20 文件 gzip 2,703,211 → 1,000,474 B（−63%）；`test/chunks.test.mjs` 164 条、`tools/check-bundle.mjs`「与源码一致」 |
 | 共享集合做依赖闭包 + 层序不倒挂（`interpret` 静态依赖 `ziwei`/`liuyao`/`daliuren`/`qimen-interpret`） | `tools/build-client.mjs` 闭包循环与 `tierOf`；断言「核心层不依赖解释层」；分块引擎与源码逐字节 19/19 |
 | 分块自检/测试改常驻 realm（先共享层再块） | `tools/check-bundle.mjs` `bundleRealm`/`registrationInRealm`；`test/chunks.test.mjs` 的 `realm`/`loadBundle`；教训 L-028 |
@@ -70,10 +72,22 @@
 
 ## 三、发版前必查
 
-1. `node tools/build-all.mjs --gate` → 211/211、11672 断言（含 metrics M1–M7）；client.js gzip 113342（128KB 上限，余量约 17.7KB，再加界面东西前先看 `test/css-strip.test.mjs` 的余量断言）。
-2. `node tools/check-eol.mjs` → 9 个产物纯 LF。
-3. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
-4. 实机：设默认盘 → 刷新 → `computeHits=0` 且顶部条在。
-5. 实机：出盘后参数区只读、点「修改参数」解锁、再点排盘重新锁定。
-6. `node tools/e2e-panel.mjs` → 181 通过 0 失败；`node tools/e2e-dom.mjs` → 166 项通过。
-7. `git status` 干净，`docs/index.html` 与 `命理排盘.html` 同源。
+一条命令跑完前 8 项：`npm run ship`（`tools/ship.mjs`：桌面副本 → release（构建/全闸/npm/tag/Release）→ 推 main → 读回四处证据）。dry-run 用 `npm run ship -- --dry-run`。
+
+1. `node tools/build-all.mjs --gate` → 211/211、**11719** 断言（含 metrics M1–M7）；client.js **392963 B / gzip 114045**（128KB 上限，余量约 13.9KB）。
+2. `node tools/check-bundle.mjs` → 引擎分块 **20 个**（gzip 合计 0.95MB、单块硬顶 200KB、共享块 `client.shared*.js` 各只取一次）。
+3. `node tools/check-eol.mjs` → 9 个产物纯 LF。
+4. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
+5. 实机：设默认盘 → 刷新 → `computeHits=0` 且顶部条在。
+6. 实机：出盘后参数区只读、点「修改参数」解锁、再点排盘重新锁定。
+7. `node tools/e2e-panel.mjs` → 181 通过 0 失败；`node tools/e2e-dom.mjs` → 166 项通过；`node tools/check-perf.mjs` → 29 项在限内。
+8. `git status` 干净，`docs/index.html` 与 `命理排盘.html` 同源。
+9. 读回四样：npm `latest`、远端 `refs/tags/v<ver>`、GitHub Release、**Pages 的 `builds/latest` 提交 == HEAD**。最后一项是 0.84.0 差点漏掉的：tag 推上去不等于 `main` 推上去（`tools/push-branch.mjs`）。
+
+## 四、已决（不再作为待办）
+
+| 项 | 决定 | 依据 |
+| --- | --- | --- |
+| `src/panel-kit.js`（376KB / 5555 行）拆文件 | **不拆** | R-012：140+ 份测试把它当自包含脚本跑，拆掉等于替换测试形态；要重启需先做装载器 + 拼接一致性闸 + 按四分区切 |
+| 「同盘同句柄」性别键 | **已做**（0.84.0） | `engine/fingerprint.js` 的 `GENDER_NEUTRAL` + `chartIdOf` 置空 + `handlePayload` 不带；实测 star / numerology / daliuren / chenggu 男女 `shortId` 与 `handle` 完全相同（`test/handle.test.mjs` ⑨ 段） |
+| 称骨女命歌诀落表 | **不落表** | 三套通行本有讹字改写、通篇贬抑女性断语，达不到「两源逐字一致才收」；理由见 CHANGELOG 0.84.0 |
