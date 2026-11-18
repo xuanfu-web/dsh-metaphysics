@@ -15,6 +15,47 @@
   const el = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
 
+  /* 显隐一处写：`el(id)` 取不到就当场 TypeError，而 setTab 里几十行都是 `el(x).style`——
+     一处落空，后面的 el() 与 refreshFlow 全被这次异常截断，界面上就成了「点完这一块白掉了、
+     按钮也点不动」。控件缺失（产物与模板不同步、页面被截断、宿主换了外壳）不该是这个后果：
+     缺了就不处理，剩下的照常走。 */
+  function show(id, on) {
+    const n = el(id);
+    if (n) n.style.display = on ? '' : 'none';
+    return n;
+  }
+
+  /* 兜底：任何没被 catch 的异常都要在页面上留一行字，而不是留给用户一片白。
+     文案只用 textContent（错误信息里可能带用户输入原文），且只报第一条，避免连环异常刷屏。 */
+  let crashShown = false;
+  function installCrashLine() {
+    const onErr = (ev) => {
+      if (crashShown) return;
+      crashShown = true;
+      const msg = String((ev && (ev.message || (ev.reason && ev.reason.message))) || '未知错误');
+      const box = document.createElement('div');
+      box.className = 'mp-crash';
+      box.setAttribute('role', 'alert');
+      box.textContent = '这一步没走完：' + msg + '（点「排盘」可重试；把这句话发我最快）';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = '复制这句';
+      btn.addEventListener('click', () => {
+        try { navigator.clipboard.writeText(box.firstChild ? box.firstChild.textContent : box.textContent); } catch (e) { /* 剪贴板不可用就算了 */ }
+      });
+      box.appendChild(btn);
+      try {
+        const host = document.getElementById('out') || document.body;
+        host.insertBefore(box, host.firstChild || null);
+      } catch (e) { /* 连页面都插不进去就算了，console 里还有 */ }
+      try { console.error('[metaphysics] 未捕获异常', ev); } catch (e) { /* 忽略 */ }
+    };
+    try {
+      window.addEventListener('error', onErr);
+      window.addEventListener('unhandledrejection', onErr);
+    } catch (e) { /* 老宿主没有这两个事件也照常跑 */ }
+  }
+
   // ── 公历日期输入：固定「年-月-日」 ─────────────────────────────
   // 原生 date 控件的顺序跟随浏览器区域，容易出现月/日/年或日/月/年。
   // 改成文本输入 + 数字掩码：显示始终是 YYYY-MM-DD，也认 1990/5/12、1990年5月12日。
@@ -1707,7 +1748,7 @@
     // 出生信息共用这件事要写在看得见的地方：它不只是一个字段，是六个体系读的同一份值
     const share = el('for-share');
     if (share) share.style.display = birth ? '' : 'none';
-    el('for-bazi').style.display = tab === 'bazi' ? '' : 'none';
+    show('for-bazi', tab === 'bazi');
     // 高级选项：整块只在「有出生信息或要交叉验证」时露；里面两项各自还按体系分
     const adv = el('for-adv');
     if (adv) adv.style.display = (birth || tab === 'bazi' || tab === 'ziwei') ? '' : 'none';
@@ -1715,11 +1756,11 @@
     if (advOnline) advOnline.style.display = birth ? '' : 'none';
     const advCross = el('adv-cross');
     if (advCross) advCross.style.display = (tab === 'bazi' || tab === 'ziwei') ? '' : 'none';
-    el('for-gender').style.display = birth ? '' : 'none';
-    el('for-liuyao').style.display = tab === 'liuyao' ? '' : 'none';
-    el('for-meihua').style.display = tab === 'meihua' ? '' : 'none';
-    el('for-hepan').style.display = tab === 'hepan' ? '' : 'none';
-    el('for-qimen').style.display = tab === 'qimen' ? '' : 'none';
+    show('for-gender', birth);
+    show('for-liuyao', tab === 'liuyao');
+    show('for-meihua', tab === 'meihua');
+    show('for-hepan', tab === 'hepan');
+    show('for-qimen', tab === 'qimen');
     const fm = el('for-mbti');
     if (fm) fm.style.display = tab === 'mbti' ? '' : 'none';
     const csForm = el('for-constitution');
@@ -1727,7 +1768,7 @@
     const fq = el('for-quick');
     if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
     // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
-    el('for-ask').style.display = needAsk(tab) ? '' : 'none';
+    show('for-ask', needAsk(tab));
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
     const castLabel = tab === 'qimen';
@@ -1737,12 +1778,12 @@
     el('lbl-time').textContent = birth ? '出生时刻' : (castLabel ? '起局时刻' : '起卦时刻');
     const qk = el('for-quick');
     if (qk) {
-      el('qk-zeri').style.display = tab === 'zeri' ? '' : 'none';
-      el('qk-convert').style.display = tab === 'convert' ? '' : 'none';
-      el('qk-xiaoliuren').style.display = tab === 'xiaoliuren' ? '' : 'none';
-      el('qk-trend').style.display = tab === 'trend' ? '' : 'none';
-      el('qk-fengshui').style.display = tab === 'fengshui' ? '' : 'none';
-      el('qk-name').style.display = tab === 'name' ? '' : 'none';
+      show('qk-zeri', tab === 'zeri');
+      show('qk-convert', tab === 'convert');
+      show('qk-xiaoliuren', tab === 'xiaoliuren');
+      show('qk-trend', tab === 'trend');
+      show('qk-fengshui', tab === 'fengshui');
+      show('qk-name', tab === 'name');
     }
     syncQuick();
     el('go').textContent = tab === 'tarot' ? '抽牌'
@@ -1752,7 +1793,7 @@
             : birth ? '排盘' : '起卦';
     // 人格问卷自带「看结果」和「清空」：底部再放一个主按钮就是两个一样的入口
     const quizOn = tab === 'mbti' || tab === 'constitution';
-    el('go').style.display = quizOn ? 'none' : '';
+    show('go', !(quizOn));
     // 「看示例」在问卷下也留：第一次进来面对 24 / 45 道题，没有样例就不知道
     // 这道题在问什么程度。问卷模式下它填一组示例答案并直接出结果。
     const sampleBtn = el('sample');
@@ -1781,10 +1822,10 @@
   function syncMhMode() {
     document.querySelectorAll('#for-meihua .seg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mhMode));
     const mhNum = tab === 'meihua' && mhMode === 'number';
-    el('mh-num').style.display = mhNum ? '' : 'none';
+    show('mh-num', mhNum);
     // 梅花「数字起卦」不参与时间计算，日期/时刻在此模式下隐藏，避免误导；人格问卷同样与日期无关
     const showDT = usesTimeInput();
-    el('for-date').style.display = showDT ? '' : 'none';
+    show('for-date', showDT);
     // 「时辰未知」只对八字与人生K线开放：紫微/合盘没有时支就没有盘，不提供这个勾选
     const canUnknown = tab === 'bazi' || tab === 'trend';
     const hu = el('hourunknown');
@@ -1794,25 +1835,25 @@
       if (!canUnknown && hu.checked) hu.checked = false;
     }
     const hideTime = showDT && kindOf(tab) !== 'date' && !(canUnknown && hu && hu.checked);
-    el('for-time').style.display = hideTime ? '' : 'none';
+    show('for-time', hideTime);
   }
 
   /** 速查类子表单：择日/小六壬/人生K/风水/起名各自的小块与分段按钮 */
   function syncQuick() {
     if (!el('qk-xiaoliuren')) return;
     document.querySelectorAll('#xlrmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === xlrMode));
-    el('xlr-num').style.display = xlrMode === 'number' ? '' : 'none';
+    show('xlr-num', xlrMode === 'number');
     document.querySelectorAll('#fsmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === fsMode));
-    el('fs-advise').style.display = fsMode !== 'natal' ? '' : 'none';
-    el('fs-advise2').style.display = fsMode !== 'natal' ? '' : 'none';
+    show('fs-advise', fsMode !== 'natal');
+    show('fs-advise2', fsMode !== 'natal');
     for (const id of ['fs-period', 'fs-offset', 'fs-date', 'fs-time']) {
       if (el(id)) el(id).style.display = fsMode === 'xuankong' ? '' : 'none';
     }
     document.querySelectorAll('#nnmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === nnMode));
-    el('nn-assess').style.display = nnMode === 'assess' ? '' : 'none';
-    el('nn-generate').style.display = nnMode === 'generate' ? '' : 'none';
+    show('nn-assess', nnMode === 'assess');
+    show('nn-generate', nnMode === 'generate');
     document.querySelectorAll('#convertmode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === convMode));
-    if (el('qk-convert-lunar')) el('qk-convert-lunar').style.display = convMode === 'lunar2solar' ? '' : 'none';
+    if (el('qk-convert-lunar')) show('qk-convert-lunar', convMode === 'lunar2solar');
   }
 
   // ── 中医体质（P4）：9 种体质各 5 题、一页 5 题的分页问卷 ─────────
@@ -2176,6 +2217,8 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    // 先挂兜底：之后任何一步抛出去，页面上都会留一行字，而不是留下一片白
+    installCrashLine();
     bindDateInputs();
     // 两套入口（平铺 tab 与分组卡片）走同一条激活路径，避免行为分叉
     document.querySelectorAll('.tab, .tool').forEach((b) => b.addEventListener('click', () => activate(b.dataset.tab)));

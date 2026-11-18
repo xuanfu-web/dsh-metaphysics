@@ -52,9 +52,11 @@ ok('不接受非数字的「年」', !re.test('abcd-9-17'));
 {
   const qkIds = [...new Set([...HTML.matchAll(/id="(qk-[a-z0-9-]+)"/g)].map((m) => m[1]))];
   ok('页面里的速查子表单不止一个', qkIds.length >= 6, String(qkIds.length));
-  for (const id of qkIds) ok(`#${id} 有显隐接线`, UI.includes(`el('${id}')`));
+  // 显隐一律走空安全的 show(id, on)（0.85.1）：断言只认「这个 id 被显隐控制过」，
+  // 钉结论不钉写法，别写死成某一种调用形式（L-025）
+  for (const id of qkIds) ok(`#${id} 有显隐接线`, new RegExp(`show\\('${id}',`).test(UI) || UI.includes(`el('${id}')`));
 
-  ok('#qk-convert 随农历 tab 显示', /el\('qk-convert'\)\.style\.display = tab === 'convert'/.test(UI));
+  ok('#qk-convert 随农历 tab 显示', /show\('qk-convert', tab === 'convert'/.test(UI) || /el\('qk-convert'\)\.style\.display = tab === 'convert'/.test(UI));
   ok('农历 tab 里有转换方向分段按钮', /id="convertmode"/.test(HTML) && /data-mode="lunar2solar"/.test(HTML));
   ok('农历 tab 里有农历日期与闰月输入', /id="lunardate"/.test(HTML) && /id="leapm"/.test(HTML));
   ok('方向切换只重算不重排其它盘', /convMode = 'solar2lunar'/.test(UI) && /args\.mode = convMode/.test(UI));

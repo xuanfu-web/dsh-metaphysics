@@ -57,7 +57,7 @@ ok('晚子时换日没有被折进高级选项', !/id="latezi"/.test(advBlock));
 
 // ── 显隐：setTab 里按体系分 ─────────────────────────────────────
 ok('setTab 控制 for-solar 的显隐', /el\('for-solar'\)/.test(UI) && /solar\.style\.display/.test(UI));
-ok('setTab 控制 for-bazi 的显隐', /el\('for-bazi'\)\.style\.display\s*=\s*tab === 'bazi'/.test(UI));
+ok('setTab 控制 for-bazi 的显隐', /show\('for-bazi', tab === 'bazi'/.test(UI) || /el\('for-bazi'\)\.style\.display\s*=\s*tab === 'bazi'/.test(UI));
 ok('setTab 控制 for-adv 的显隐', /el\('for-adv'\)/.test(UI) && /adv\.style\.display/.test(UI));
 ok(
   '高级选项在 birth 类体系或八字/紫微下才露',

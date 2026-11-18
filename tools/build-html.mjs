@@ -41,6 +41,9 @@ export const CSS = `
     --shadow:0 1px 2px rgba(0,0,0,.5),0 18px 40px -30px rgba(0,0,0,.9);--ring:0 0 0 3px rgba(226,117,95,.2)}
 }
 *{box-sizing:border-box}
+/* 兜底条的样式：只在「有异常没被接住」时才出现，颜色全走令牌，不写死。 */
+.mp-crash{margin:14px 0 0;padding:10px 14px;border-radius:var(--radius);border:1px solid var(--line);border-left:3px solid var(--bad);background:var(--panel);color:var(--ink);font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mp-crash button{font:inherit;font-size:12px;padding:3px 10px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;color:var(--ink);font:16px/1.65 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom);
   background:
@@ -70,7 +73,7 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
 .tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));grid-auto-rows:minmax(36px,auto);gap:6px}
 .tab{display:flex;align-items:center;justify-content:center;text-align:center;padding:7px 10px;border-radius:999px;border:1px solid transparent;background:color-mix(in srgb,var(--panel) 62%,transparent);color:var(--dim);cursor:pointer;font-size:13.5px;font-family:inherit;white-space:nowrap;
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
-.tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
+.tab:not(.on):hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
 /* 首屏按「想干什么」分组：22 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
    卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（22 个 tab 原样保留）。 */
@@ -121,7 +124,7 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
 .tool b{font-size:13.5px;font-weight:600;letter-spacing:.02em}
 .tool span{font-size:11.5px;line-height:1.4;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tool:hover{border-color:var(--gold);background:var(--panel)}
+.tool:not(.on):hover{border-color:var(--gold);background:var(--panel)}
 .tool.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 8px 18px -12px var(--gold)}
 .tool.on b{color:var(--on-accent)}
 .tool.on span{color:var(--on-accent-soft)}
@@ -445,6 +448,9 @@ function page() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- 声明本页深浅两套都自己画：不声明时，Chrome/Edge 的「强制深色」与部分国产浏览器的夜间模式
+     会把整页颜色反过来，深色底上的浅色卡片被翻成白块、字也跟着没了——看起来就像"点完变白了一片"。 -->
+<meta name="color-scheme" content="light dark">
 <title>烛微命盘 · 八字 紫微 六爻 奇门 大六壬 | 本地计算，每步有据可查</title>
 <meta name="description" content="八套命理体系装进一个页面：八字、紫微斗数、六爻纳甲、梅花易数、大六壬、奇门遁甲、合盘、塔罗。全部本地计算、不联网；结果可复现，口径差异逐字可查。">
 <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme:light)">
@@ -479,8 +485,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 .brand-txt small{font-size:12.5px;line-height:1.55;letter-spacing:.01em;color:var(--dim);margin-top:4px}
 .ver,.ver-note{padding:2px 9px;border-radius:999px;border-color:var(--hair);background:var(--panel2);color:var(--ink2);font-size:11px;line-height:1.6}
 .tab{padding:8px 10px;border:1px solid var(--hair);border-radius:var(--r-md);background:var(--panel2);color:var(--ink2);font-size:13px;font-weight:500}
-.tab:hover{background:var(--panel);border-color:var(--line);color:var(--ink);box-shadow:var(--sh-1)}
-.tab.on{border-color:transparent;color:var(--on-accent);box-shadow:0 10px 20px -14px var(--gold)}
+.tab:not(.on):hover{background:var(--panel);border-color:var(--line);color:var(--ink);box-shadow:var(--sh-1)}
+.tab.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));color:var(--on-accent);box-shadow:0 10px 20px -14px var(--gold)}
 .start{margin-bottom:22px}
 /* 四张卡底边必须齐（一行四个不等高会读成台阶），但也不能让磁贴少的卡底下空一块：
    卡片竖向 flex，磁贴区吃掉剩余高度，多出来的空间变成磁贴本身的高度。 */
@@ -501,8 +507,10 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 /* 副标题两行：提示语本身是「这工具干嘛用的」，压成一行就只剩省略号 */
 .tool span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;overflow:hidden;
   font-size:11.5px;line-height:1.45;color:var(--dim)}
-.tool:hover{background:var(--panel);border-color:var(--gold);box-shadow:var(--sh-1)}
-.tool.on{border-color:transparent;box-shadow:0 10px 22px -14px var(--gold)}
+/* 触屏上点完仍保留 :hover，白底会盖掉选中态的深红底，白字落在白底上 = 一块空白卡
+   （0.85.1 实测过：手机点八字/紫微后该磁贴整块变白、字全没）。所以 hover 只作用于未选中的。 */
+.tool:not(.on):hover{background:var(--panel);border-color:var(--gold);box-shadow:var(--sh-1)}
+.tool.on{border-color:transparent;background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));box-shadow:0 10px 22px -14px var(--gold)}
 /* 「还有 N 个」不是一块没做完的虚线占位，是一条可以点的展开行 */
 .tmore{justify-content:center;padding:9px 11px;border:1px solid transparent;border-radius:var(--r-md);
   background:var(--panel2);color:var(--ink2);font-size:12.5px}

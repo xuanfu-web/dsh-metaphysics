@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-18（0.85.0：报告末尾加频道落款 + 方法折叠区底部「当前版本 / 检查更新」（点了才请求 registry、失败静默）；闸 212/11791）
+最后更新：2026-11-19（0.85.1：找到「点完变白」真因——`.tool:hover` 的白底盖掉 `.tool.on` 的深红底，触屏 hover 不散 → 白底白字；修成 `:not(.on)` + `.on` 重画背景，附 A/B 实测；顺带 `color-scheme` 声明、显隐改空安全 `show()`、未捕获异常留字；闸 213/11823）
 
 ---
 
@@ -62,6 +62,7 @@
 | 入口包余量只剩 3.5KB：CSS 注释占 20.8KB 源文本 / 10.7KB gzip | 新增 `tools/css-strip.mjs`（`stripCssComments` + `stripKitCssSource`），`build-client.mjs` 两处与 `build-html.mjs` 内联共用；源码注释不动，只剥产物；client.js gzip 127525 → 113672（余量 3.5 → 17.4KB），页面 1872.1 → 1863.5 KB；`test/css-strip.test.mjs` 15 条（含余量 ≥10KB 断言） | 体积战 |
 | `src/panel-kit.js` 366KB 单文件是否该拆 | **不拆**：一百多份测试把它当自包含脚本 `vm.runInNewContext(源码)` 直接跑，拆开要把「源码即脚本」换成「拼接器正确」；改为文件头写清四段分区（CSS / 小工具 / 盘面渲染 / 报告编排） | 结论 |
 | 频道二维码落款 + 「检查更新」（0.85） | 落款只进「方法与验证」折叠区末尾（每份报告一处、短体系兜底成 `.mp-it-secs` 一处），二维码 240×240 灰度二值化后内嵌 base64（4044 字符）；按钮点了才 `fetch` registry（8s 超时、no-store、失败静默恢复），版本号印自 `window.__MP_VER`；`test/signature.test.mjs` 72 条（含「正文区不得出现二维码 / 落款只一处 / 失败后按钮恢复」）；基准线同步到 212/11791 | `src/panel-kit.js`（CSS / `MP_SIG_QR` / `signatureHTML` / `checkUpdate` / `__MP_SIG_BOUND`）、`test/signature.test.mjs`、client.js gzip 119508 |
+| 「网页版点八字/紫微变白」真因（0.85.1） | `.tool:hover{background:var(--panel)}` 排在 `.tool.on` 之后、且 `.on` 只重设边框阴影→同特异性下 hover 白底赢；桌面鼠标一移开就散、Chromium 复现不出，**触屏 hover 常驻** → 选中格变米白、文字仍是 `--on-accent` 纯白 = 一块空白卡。A/B（390×844 触屏真 tap）：旧写法 `background-image:none / rgb(255,253,248)`、标题 `rgb(255,255,255)`；新写法 `linear-gradient(145deg,#a72c23,#7d1f18)`。修法 `.tool:hover`/`.tab:hover` 收成 `:not(.on)`，`.tool.on`/`.tab.on` 显式重画背景；面板 `.mp-tool.on`/`.mp-tab.on` 本来就在 hover 之后且自带背景，已核对未改 | `tools/build-html.mjs` 两处选择器 + 两处 `.on` 背景；`test/render-guard.test.mjs` 新增「选中态不许被 hover 白底盖掉」通用断言（32 条）；页面 2540454 B、闸 213/11823 |
 
 ## 二、待办
 
@@ -76,7 +77,7 @@
 
 一条命令跑完前 8 项：`npm run ship`（`tools/ship.mjs`：桌面副本 → release（构建/全闸/npm/tag/Release）→ 推 main → 读回四处证据）。dry-run 用 `npm run ship -- --dry-run`。
 
-1. `node tools/build-all.mjs --gate` → 212/212、**11791** 断言（含 metrics M1–M7）；client.js **375858 B / gzip 119508**（128KB 上限，余量约 11.6KB）。
+1. `node tools/build-all.mjs --gate` → 213/213、**11823** 断言（含 metrics M1–M7）；client.js **375858 B / gzip 119508**（128KB 上限，余量约 11.6KB）；页面 2540454 B。
 2. `node tools/check-bundle.mjs` → 引擎分块 **20 个**（gzip 合计 0.95MB、单块硬顶 200KB、共享块 `client.shared*.js` 各只取一次）。
 3. `node tools/check-eol.mjs` → 9 个产物纯 LF。
 4. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
