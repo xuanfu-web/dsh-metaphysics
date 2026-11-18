@@ -32,12 +32,28 @@ const makeEnv = () => {
     window: {},
     __MP_DIRECTIONS__: ['事业', '感情'],
     __MP_CHUNKS__: { bazi: 'client.chart.js', ziwei: 'client.chart.js', liuyao: 'client.liuyao.js' },
+    // 0.84 起引擎分块靠两层共享模块：93 入口会把这两张表注入进来，这里按同样的形状补上，
+    // 否则 engine-lazy.js 里的 __MP_CHUNK_TIERS__ 是 ReferenceError
+    __MP_CHUNK_TIERS__: {
+      'client.chart.js': ['core', 'interpret'],
+      'client.liuyao.js': ['core', 'interpret'],
+    },
+    __MP_SHARED_FILES__: { core: 'client.shared.js', interpret: 'client.shared-interpret.js' },
+    // 共享层的「已就位」标记必须是**事先就存在于沙箱里**的对象：
+    // 创建 context 之后再往上挂属性，vm 里读不到（这一步踩过）
+    __MP_SHARED_READY__: {},
     console,
     __mpCalls: 0,
     require: {
       async: async (name) => {
         env.__mpCalls += 1;
         ok('取块路径正确', name.startsWith('./'), name);
+        if (name.startsWith('./client.shared')) {
+          // 共享层在真实宿主里会往 globalThis 写表并置就绪位，这里照做，才能走到取块那一步
+          const tier = name.includes('interpret') ? 'interpret' : 'core';
+          env.__MP_SHARED_READY__[tier] = true;
+          return { shared: tier, modules: 1 };
+        }
         return { Engine: { compute: () => ({ ok: name }) } };
       },
     },
@@ -52,44 +68,70 @@ eq('第一次记录 tab', 'bazi', first.tab);
 eq('第一次记录分块', 'client.chart.js', first.chunk);
 eq('第一次是未命中缓存', false, first.cached);
 ok('第一次耗时为非负数', typeof first.ms === 'number' && first.ms >= 0, String(first.ms));
-ok('引擎可用', typeof env.window.Engine.compute === 'function' && env.__mpCalls === 1);
+// 抽共享块之后，首开一块要取三个文件：核心层、解释层、具体块（三层都算「一次取块」）
+ok('引擎可用', typeof env.window.Engine.compute === 'function' && env.__mpCalls === 3, String(env.__mpCalls));
 await env.window.__mpEnsureEngine('bazi');
 eq('第二次命中缓存', true, env.window.__MP_LAST_LOAD.cached);
-eq('缓存命中不再取块', 1, env.__mpCalls);
+eq('缓存命中不再取块', 3, env.__mpCalls);
 // 八字与紫微同块：换 tab 不再取块（合并前这里会再下载一份完整公共栈）
 await env.window.__mpEnsureEngine('ziwei');
 eq('同块换 tab 仍记同一分块', 'client.chart.js', env.window.__MP_LAST_LOAD.chunk);
 eq('同块换 tab 命中缓存', true, env.window.__MP_LAST_LOAD.cached);
-eq('同块换 tab 不重复取块', 1, env.__mpCalls);
+eq('同块换 tab 不重复取块', 3, env.__mpCalls);
 // 真正的跨块切换（命盘 → 六爻）才取新文件
 await env.window.__mpEnsureEngine('liuyao');
 eq('跨块切换记录新分块', 'client.liuyao.js', env.window.__MP_LAST_LOAD.chunk);
 eq('跨块切换是未命中缓存', false, env.window.__MP_LAST_LOAD.cached);
-eq('跨块切换才取第二块', 2, env.__mpCalls);
+eq('跨块切换才多取一个文件', 4, env.__mpCalls);
 
 // ── 并发取块：同一块的多个调用只下载一次 ──
+// 抽共享块之后首开一块是「核心层 → 解释层 → 具体块」三跳，所以这里不能只放一次闸，
+// 用 pending 队列把每一跳逐个放开，再断言总次数（1 次核心 + 1 次具体块 = 2）。
 const slow = makeEnv();
-let release;
-slow.require.async = () => new Promise((resolve) => {
+const pendingReleases = [];
+slow.require.async = (name) => new Promise((resolve) => {
   slow.__mpCalls += 1;
-  release = () => resolve({ Engine: { compute: () => ({}) } });
+  pendingReleases.push(() => {
+    if (String(name).startsWith('./client.shared')) {
+      // 共享层要照运行时的样子置就位标记，否则等待方一律判「没注册」
+      const tier = String(name).includes('interpret') ? 'interpret' : 'core';
+      slow.__MP_SHARED_READY__[tier] = true;
+      resolve({ shared: tier, modules: 1 });
+      return;
+    }
+    resolve({ Engine: { compute: () => ({}) } });
+  });
 });
 const p1 = slow.window.__mpEnsureEngine('bazi');
 const p2 = slow.window.__mpEnsureEngine('bazi');
 const p3 = slow.window.__mpEnsureEngine('bazi');
 eq('并发期间只取过一次块', slow.__mpCalls, 1);
-release();
+// 把每一跳逐个放行，直到没有待放行的为止
+while (pendingReleases.length) {
+  pendingReleases.shift()();
+  await new Promise((r) => setTimeout(r, 0));
+}
 const trio = await Promise.all([p1, p2, p3]);
 ok('并发调用都拿到引擎', trio.every((e) => typeof e.compute === 'function'));
-eq('解出来后累计仍只有一次取块', slow.__mpCalls, 1);
+eq('解出来后累计只有三段：核心层 + 解释层 + 具体块', slow.__mpCalls, 3);
 await slow.window.__mpEnsureEngine('bazi');
-eq('并发之后仍算命中缓存', slow.__mpCalls, 1);
+eq('并发之后仍算命中缓存', slow.__mpCalls, 3);
 
 // ── 取块失败不留残锁：下一次要真的重试 ──
+// 共享层照常放行，只让**具体块**第一次返回一个没有 Engine 的东西——
+// 这才是「发布产物坏了」的真实形态（共享层失败会在更早的一步就报「未注册」）。
 const flaky = makeEnv();
-flaky.require.async = async () => {
+flaky.require.async = async (name) => {
   flaky.__mpCalls += 1;
-  if (flaky.__mpCalls === 1) return { notEngine: true };
+  if (String(name).startsWith('./client.shared')) {
+    const tier = String(name).includes('interpret') ? 'interpret' : 'core';
+    flaky.__MP_SHARED_READY__[tier] = true;
+    return { shared: tier, modules: 1 };
+  }
+  if (!flaky.__failedOnce) {
+    flaky.__failedOnce = true;
+    return { notEngine: true };
+  }
   return { Engine: { compute: () => ({}) } };
 };
 let threw = '';
@@ -99,7 +141,8 @@ ok('报错后不写就绪标记', !flaky.window.__MP_ENGINE_READY__);
 threw = '';
 try { await flaky.window.__mpEnsureEngine('bazi'); } catch (e) { threw = e.message; }
 ok('重试不再抛旧错误', threw === '', threw);
-eq('失败后重试会再取一次块', flaky.__mpCalls, 2);
+// 共享层已经就位，重试只该重取具体块：累计 3（核心层 1 + 解释层 1 + 块 2 次）
+eq('失败后重试只重取坏掉的那一块', flaky.__mpCalls, 4);
 ok('重试成功后引擎可用', typeof flaky.window.Engine.compute === 'function');
 
 // ── 面板接线 ──

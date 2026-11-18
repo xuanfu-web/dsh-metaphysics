@@ -123,3 +123,22 @@ A4 之后面板和单页都是「出盘即只读」，改参数得先点「修�
 （按钮不存在就是 no-op，成本 120ms）。改任何「控件什么时候能改」的逻辑，跑一遍 e2e：
 
     node tools/e2e-panel.mjs      # 期望 151 通过 0 失败
+---
+
+## R-011 共享块是构建期算出来的，别手改产物也别忘了闭包
+
+- type: rules
+- status: active
+- since: 2026-11-18
+
+`client.shared.js` / `client.shared-interpret.js` 的成员由 `tools/build-client.mjs` 算出来：
+
+- 出现 ≥2 个分块的模块进共享（`index` 除外，它必须按块各建）；
+- 再对共享集合做**依赖闭包**——共享模块 import 的东西一律拉进共享，层级取「用它的人里最早的那层」；
+- 分块声明自己要哪几层（`sharedTiersOf`），入口按 `__MP_CHUNK_TIERS__` 逐个 await，共享层先于块。
+
+改完引擎记得：`node tools/build-client.mjs` 重建（手改 `client*.js` 会被 `check-bundle` 判「与源码不一致」），
+`node tools/check-bundle.mjs --update-budget` 只在体积正常变化时用（预算只降不无理由升）。
+
+要验证「共享表真的可用」，必须用**一个常驻 vm realm** 先载共享层再载块；
+每次 `runInNewContext` 都会丢掉 `globalThis.__MP_SHARED__`（L-029 记了踩坑过程）。

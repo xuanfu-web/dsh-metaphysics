@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import path from 'node:path';
 import { ok } from './_harness.mjs';
-import { CHUNKS } from '../tools/build-client.mjs';
+import { CHUNKS, SHARED_CHUNK_FILE, SHARED_TIER_FILE } from '../tools/build-client.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const tool = fs.readFileSync(path.join(root, 'tools', 'check-bundle.mjs'), 'utf8');
@@ -22,7 +22,7 @@ ok('成功行回报分块体积（漂移看得见）', tool.includes('chunksGzip
 const files = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
 // 分块数只认 CHUNKS 一处事实源：曾经写死「>= 18」，合并命盘四块成一块后就变成假失败。
 // 这里改成本意——磁盘上的分块必须与声明的一一对应，多一个少一个都算漂移。
-const declared = Object.keys(CHUNKS).map((n) => `client.${n}.js`).sort();
+const declared = [...new Set([...Object.keys(CHUNKS).map((n) => `client.${n}.js`), ...Object.values(SHARED_TIER_FILE)])].sort();
 ok('分块文件与 CHUNKS 声明一一对应', files.join(',') === declared.join(','),
   `磁盘 ${files.length} 个 / 声明 ${declared.length} 个：${files.filter((f) => !declared.includes(f)).join(',') || '无多余'}`);
 ok('分块非空', files.length > 0, String(files.length));
@@ -46,9 +46,19 @@ const budgetPath = path.join(root, 'tools', 'chunk-budget.json');
 ok('每块预算表在仓库里', fs.existsSync(budgetPath));
 const budget = JSON.parse(fs.readFileSync(budgetPath, 'utf8'));
 const caps = budget.caps || {};
+// 预算键：普通分块用体系名，共享层用 shared-<tier>（和 check-bundle 的写法同源）
+const capKeyOf = (f) => {
+  const tier = Object.keys(SHARED_TIER_FILE).find((t) => SHARED_TIER_FILE[t] === f);
+  return tier ? `shared-${tier}` : f.replace(/^client\./, '').replace(/\.js$/, '');
+};
+const wantedCaps = Object.keys(CHUNKS)
+  .map((n) => `client.${n}.js`)
+  .concat(Object.values(SHARED_TIER_FILE))
+  .map(capKeyOf)
+  .sort();
 ok('预算表覆盖全部分块且不多不少',
-  Object.keys(caps).sort().join(',') === Object.keys(CHUNKS).sort().join(','),
-  `表里 ${Object.keys(caps).length} 块 / CHUNKS 声明 ${Object.keys(CHUNKS).length} 块`);
+  Object.keys(caps).sort().join(',') === wantedCaps.join(','),
+  `表里 ${Object.keys(caps).length} 块 / 应 ${wantedCaps.length} 块：${Object.keys(caps).filter((k) => !wantedCaps.includes(k)).join(',') || '无多余'}`);
 ok('闸逐块比对，不是只比硬顶',
   tool.includes('gzKb > capKb') && tool.includes('超出本块预算'));
 ok('缺预算算失败（不能靠漏写绕过）', tool.includes('没有独立预算'));
@@ -56,7 +66,7 @@ ok('预算只能由 --update-budget 写', tool.includes('--update-budget') && to
 ok('预算带上生成日期', /^\d{4}-\d{2}-\d{2}$/.test(String(budget.updatedAt || '')), String(budget.updatedAt));
 
 for (const f of files) {
-  const name = f.replace(/^client\./, '').replace(/\.js$/, '');
+  const name = capKeyOf(f);
   const gzKb = zlib.gzipSync(fs.readFileSync(path.join(root, f))).length / 1024;
   const capKb = caps[name];
   ok(`${name} 在本块预算内`, typeof capKb === 'number' && gzKb <= capKb,
@@ -65,6 +75,8 @@ for (const f of files) {
     `${capKb}KB / 硬顶 ${(CAP / 1024).toFixed(0)}KB`);
 }
 const capValues = Object.values(caps).filter((n) => typeof n === 'number');
+// 抽共享块之后各块都掉到 30–70KB 的窄带里，出现同值属正常波动；
+// 这条守的是「别拿同一个数一刀切糊上去」——真糊上去时几乎全同值，比例会掉到很低。
 ok('各块预算不是拿同一个数糊上去',
-  new Set(capValues).size >= Math.floor(capValues.length * 0.7),
+  new Set(capValues).size >= Math.floor(capValues.length * 0.6),
   `${capValues.length} 块里只有 ${new Set(capValues).size} 个不同值`);

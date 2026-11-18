@@ -160,8 +160,20 @@ const chunkFile = path.join(root, 'client.liuyao.js');
 ok('六爻分块已构建（先跑 npm run build）', fs.existsSync(chunkFile));
 if (fs.existsSync(chunkFile)) {
   const code = fs.readFileSync(chunkFile, 'utf8');
-  let reg = null;
-  vm.runInNewContext(code, { window: { __ModuleLoader__: { load: (m) => { reg = m; } } }, console }, { filename: 'client.liuyao.js' });
+  // 分块不再自带公共栈：先把它依赖的共享层在同一个 realm 里载进来（顺序＝宿主的真实顺序），
+  // 否则 __mods 里全是空表，跑出来只有「未定义」而不是真结果
+  const realm = vm.createContext({ window: { __ModuleLoader__: {} }, console });
+  const run = (src, name) => {
+    let reg = null;
+    realm.window.__ModuleLoader__ = { load: (m) => { reg = m; } };
+    vm.runInContext(src, realm, { filename: name });
+    return reg;
+  };
+  for (const f of ['client.shared.js', 'client.shared-interpret.js']) {
+    const sreg = run(fs.readFileSync(path.join(root, f), 'utf8'), f);
+    sreg.factory(() => ({ createElement: () => null }));
+  }
+  const reg = run(code, 'client.liuyao.js');
   ok('分块注册成功', reg && reg.chunk === 'client.liuyao.js', reg && reg.chunk);
   const Engine = reg.factory(() => ({ createElement: () => null })).Engine;
   const ci = Engine.compute({ ...LIU, lines: [7, 8, 9, 6, 7, 8] }).interpret;

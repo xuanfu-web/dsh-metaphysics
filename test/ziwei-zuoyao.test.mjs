@@ -195,8 +195,12 @@ ok('诀文默认折叠（点开才摊）', /<details class="pp-zy">/.test(kit));
 ok('CSS 定义了这三条类（不留未定义的裸类名）', ['.pp-zy{', '.pp-zy-v{', '.pp-zy-s{'].every((c) => kit.includes(c)));
 ok('入庙标进宫位与详情两处', (kit.match(/inTemple/g) || []).length >= 4);
 const client = fs.readFileSync(new URL('../client.chart.js', import.meta.url), 'utf8');
+// 0.84 抽共享块：紫微主体与杂曜库进了 client.shared-interpret.js（chart 块从共享表取），
+// 所以「带没带」要连共享层一起看——只盯 chart 文件会误判成漏了。
+const sharedInterpret = fs.readFileSync(new URL('../client.shared-interpret.js', import.meta.url), 'utf8');
 const entry = fs.readFileSync(new URL('../client.js', import.meta.url), 'utf8');
-ok('命盘分块带了杂曜库（漏了会静默 undefined）', client.includes('ZUOYAO_LIB') && client.includes('placeZuoyao'), String(client.length));
+ok('命盘分块带了杂曜库（漏了会静默 undefined）', (client + sharedInterpret).includes('ZUOYAO_LIB') &&
+  (client + sharedInterpret).includes('placeZuoyao'), String(client.length));
 ok('入口面板 CSS/渲染进了 client.js', entry.includes('pp-zy'));
 const html = fs.readFileSync(new URL('../命理排盘.html', import.meta.url), 'utf8');
 ok('离线页同源带上这块', html.includes('pp-zy') && html.includes('ZUOYAO_LIB'));

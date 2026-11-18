@@ -519,3 +519,32 @@ GROUPS 生成」（正则 `\$\{GROUPS\.map\(\(g\) => `）。它们想问的是�
   静态断言钉「规则在、数值 ≥44、没被更具体的选择器顶掉」，浏览器探针负责「真的能点中」。
 - 更具体的选择器（`.view-switch .seg button`）会静默压掉通用规则（`.seg button{min-height:44px}`），
   同一媒体查询里也是。量下来的真实值（390px 视口 45×36）比读源码可靠。
+## L-028 共享模块的依赖是同步解构的：共享集合必须做依赖闭包，层级不能倒挂
+
+- 分块 factory 是**同步**执行的（宿主 `materialize` 直接调 `factory(...)` 取 exports），
+  `buildModule` 把 import 降级成 `const {x} = (__mods.dep || {})`——依赖在那一刻就定死。
+  所以「共享层加载时依赖还没进表」不是慢一拍，而是该引用永久 `undefined`。
+  症状很误导：面板能开、卡片能渲染，只有用到那个依赖的体系在算的时候抛
+  `Jn is not a function`（压缩后的名字，源码里根本搜不到）。
+- 只按「出现 ≥2 次」挑共享是不够的：`interpret.js` 静态 import 了 `ziwei` / `liuyao` /
+  `daliuren` / `qimen-interpret`，这些模块各自只在一个分块里，却必须一起进共享。
+  做法是构建期算闭包（共享模块的依赖一律拉进共享），层级取「用它的人里最早的那层」，
+  再断言「核心层不许依赖解释层」——这条断言挡住了层序倒挂这种最难查的形态。
+- `index` 不能进共享块：它看到的体系会停在「共享块加载那一刻」，之后各块补进来的体系
+  永久 undefined。所以 `index` 仍按块各建一次，只有公共**叶子**模块共享。
+
+**实测**：单层共享版 gzip 999,761 B，但轻体系首开要多下 259KB → 改两层；
+闭包修正前 `qimen` / `daliuren` / `ziwei` / `liuyao` 四块与源码不一致（150 PASS / 1 FAIL），
+修正后 19/19 逐字节一致。
+
+## L-029 用 vm 测「多块共享一张表」必须共用一个 realm，且别拿 window 当 globalThis
+
+- 每块一次 `vm.runInNewContext` 等于「每块换一个新页面」：`globalThis.__MP_SHARED__`
+  每次都是新的空表，公共模块全丢。正确写法是 `vm.createContext(...)` 建一个常驻 context，
+  共享层与各块都在里面跑——这才是宿主「一个页面加载多块」的真实情形。
+- vm 里 `window` 只是普通对象，`globalThis` 才是真全局。产物代码写的是
+  `globalThis.__MP_SHARED__`（浏览器里两者同体），断言就得读
+  `vm.runInContext('Object.keys(globalThis.__MP_SHARED__||{}).length', realm)`；
+  读 `realm.window.__MP_SHARED__` 会得到 0，看起来像「共享块没登记」。
+- 往已创建的 context 上**事后挂新属性**读不到：就绪标记这类共享状态要作为对象
+  **事先**放进 sandbox，之后只改它的属性。

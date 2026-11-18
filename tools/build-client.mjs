@@ -101,6 +101,75 @@ export const CHUNK_OF_TAB = Object.fromEntries(
   Object.entries(CHUNKS).flatMap(([name, def]) => def.tabs.map((tab) => [tab, `client.${name}.js`])),
 );
 
+/**
+ * 共享分块：在 ≥2 个分块里都出现的模块，只存一份，落到 client.shared.js。
+ *
+ * 为什么现在能这么干（以前注释里写的是「分块之间无法互相引用」）：宿主
+ * `require.async('./client.*.js')` 对文件名不设白名单——dsh-client-modules 里
+ * `CLIENT_CHUNK = /^client\.[A-Za-z0-9][A-Za-z0-9._-]*\.js$/`，chunkUrl 也照这个名字拼，
+ * 所以任意 package-local 分块都能取；而入口里的 `__mpEnsureEngine` 本来就是 async，
+ * 可以先 await 共享块、再 await 具体块。共享块把模块写进 globalThis.__MP_SHARED__，
+ * 具体块从这张表里取，于是公共栈只下载、只存一份。
+ *
+ * 为什么 index **不**进共享块：分块 factory 是同步的（宿主 materialize 直接调
+ * `factory(...)` 取 exports），而 buildModule 把 import 降级成
+ * `const {x} = (__mods.dep || {})`——引用在 factory 执行那一刻就定死了。
+ * index 若定义在共享块里，它看到的体系就只有共享块加载那一刻已有的那几个，
+ * 之后各块补进来的体系会永久 undefined。所以 index 仍按块各建一次，
+ * 它引用的公共模块则全部来自共享表（公共模块在共享块里已就位，顺序天然正确）。
+ */
+const chunkModuleCount = {};
+const chunksHaving = {};
+for (const name of Object.keys(CHUNKS)) {
+  const set = new Set([...CHUNKS[name].modules, 'revise', 'handle', 'index']);
+  chunksHaving[name] = set;
+  for (const mod of set) chunkModuleCount[mod] = (chunkModuleCount[mod] || 0) + 1;
+}
+const seedShared = ORDER.filter((mod) => mod !== 'index' && (chunkModuleCount[mod] || 0) >= 2);
+
+// 模块依赖：共享层的模块在**共享块加载那一刻**就要把依赖解构到手，所以依赖必须同层或更早的层
+// （解构 `const {x} = (__mods.dep || {})` 是同步的，dep 还没进表就等于 x 永久 undefined）。
+// 这里做闭包：共享模块的依赖一律拉进共享，层级取「用它的人里最早的那层」。
+const depsOf = new Map();
+for (const mod of ORDER) {
+  const src = fs.readFileSync(path.join(root, 'engine', `${mod}.js`), 'utf8');
+  depsOf.set(mod, [...src.matchAll(/from\s+'\.\/([^']+)\.js'/g)].map((m) => m[1]).filter((d) => ORDER.includes(d) && d !== 'index'));
+}
+
+// 共享块再分两层：解释栈（interpret / envelope / knowledge …）只有带 interpret 的那几块要，
+// 黄历、星盘、人格这些轻体系不该为了排一张盘去多下 120KB。判定——凡是「包含它的每一块
+// 都带 interpret」的模块，就归第二层；其余归第一层（核心）。
+const interpretSeed = seedShared.filter((mod) =>
+  Object.values(chunksHaving).every((set) => !set.has(mod) || set.has('interpret')),
+);
+const tierOf = {};
+for (const mod of seedShared) tierOf[mod] = interpretSeed.includes(mod) ? 'interpret' : 'core';
+let changed = true;
+while (changed) {
+  changed = false;
+  for (const mod of Object.keys(tierOf)) {
+    for (const dep of depsOf.get(mod) || []) {
+      if (!tierOf[dep]) {
+        tierOf[dep] = tierOf[mod];
+        changed = true;
+      } else if (tierOf[dep] === 'interpret' && tierOf[mod] === 'core') {
+        // 核心层的东西依赖解释层的东西，只能把被依赖的挪到核心层（层序不能倒过来）
+        tierOf[dep] = 'core';
+        changed = true;
+      }
+    }
+  }
+}
+export const SHARED_MODULES = ORDER.filter((mod) => tierOf[mod]);
+export const SHARED_TIERS = {
+  core: ORDER.filter((mod) => tierOf[mod] === 'core'),
+  interpret: ORDER.filter((mod) => tierOf[mod] === 'interpret'),
+};
+export const SHARED_CHUNK_FILE = 'client.shared.js';
+export const SHARED_TIER_FILE = { core: 'client.shared.js', interpret: 'client.shared-interpret.js' };
+
+
+
 /** 模块名可能带连字符，作为对象 key 时要加引号 */
 const modRef = (dep) => (/^[A-Za-z0-9_$]+$/.test(dep) ? `__mods.${dep}` : `__mods['${dep}']`);
 
@@ -291,6 +360,11 @@ window.__ModuleLoader__.load({
     if (!React) return { inject: [], apply() {} };
     const h = React.createElement;
     const __MP_CHUNKS__ = ${JSON.stringify(CHUNK_OF_TAB)};
+    // 每个分块要哪几层共享模块（核心 / 解释栈），入口按这个顺序先取共享再取块
+    const __MP_CHUNK_TIERS__ = ${JSON.stringify(Object.fromEntries(
+      Object.keys(CHUNKS).map((name) => [`client.${name}.js`, sharedTiersOf(name)]),
+    ))};
+    const __MP_SHARED_FILES__ = ${JSON.stringify(SHARED_TIER_FILE)};
     const __MP_DIRECTIONS__ = ${JSON.stringify(DIRECTIONS)};
     window.__MP_VER = '${pkg.version}';
     window.__MPGroups = ${JSON.stringify(GROUPS)};
@@ -305,21 +379,54 @@ ${body}
 `;
 }
 
-/** 单个引擎分块：自包含，只注册 factory，不碰界面 */
+/** 分块需要哪几层共享模块：带 interpret 的那几块要解释栈，其余只要核心 */
+export function sharedTiersOf(name) {
+  const def = CHUNKS[name];
+  if (!def) throw new Error(`未知分块：${name}`);
+  const set = new Set([...def.modules, 'revise', 'handle', 'index']);
+  return SHARED_TIERS.interpret.some((mod) => set.has(mod)) ? ['core', 'interpret'] : ['core'];
+}
+
+/** 共享分块：某一层公共栈只注册一次，模块写进 globalThis.__MP_SHARED__ 供各分块取用 */
+export function assembleShared(tier = 'core') {
+  const pkg = readPkg();
+  const mods = SHARED_TIERS[tier];
+  if (!mods || !mods.length) throw new Error(`未知共享层：${tier}`);
+  const file = SHARED_TIER_FILE[tier];
+  return `// 由 tools/build-client.mjs 生成，请勿手改。
+window.__ModuleLoader__.load({
+  id: '${pkg.name}',
+  chunk: '${file}',
+  factory(require) {
+    // 两层共用一张表：核心层建表，解释层往里补
+    const __mods = (globalThis.__MP_SHARED__ = globalThis.__MP_SHARED__ || {});
+${mods.map(buildModule).join('\n')}
+    // 各分块靠这个标记判断「这一层已经就位」，不靠猜
+    (globalThis.__MP_SHARED_READY__ = globalThis.__MP_SHARED_READY__ || {})['${tier}'] = true;
+    return { shared: '${tier}', modules: ${mods.length} };
+  },
+});
+`;
+}
+
+/** 单个引擎分块：只带自家体系，公共模块从共享表取；仍注册 factory，不碰界面 */
 export function assembleChunk(name) {
   const def = CHUNKS[name];
   if (!def) throw new Error(`未知分块：${name}`);
   const pkg = readPkg();
   // index 依赖 revise（一句话改参）与 handle（并句柄），所以带上 index 的分块必须同时带这两个
   const set = new Set([...def.modules, 'revise', 'handle', 'index']);
-  const order = ORDER.filter((m) => set.has(m));
+  // 共享表里已有的模块不再重复打包（index 除外，它必须按块各建一次，见 SHARED_MODULES 注释）
+  const own = ORDER.filter((m) => set.has(m) && !SHARED_MODULES.includes(m));  if (!own.includes('index')) throw new Error(`分块 ${name} 丢了统一入口 index`);
   return `// 由 tools/build-client.mjs 生成，请勿手改。
 window.__ModuleLoader__.load({
   id: '${pkg.name}',
   chunk: 'client.${name}.js',
   factory(require) {
-    const __mods = {};
-${order.map(buildModule).join('\n')}
+    // 共享表由 client.shared.js 建好（入口的 __mpEnsureEngine 保证先取它）；
+    // 缺失时自己建一个空的，让 index 拿到的是「体系都还没到」而不是 ReferenceError
+    const __mods = (globalThis.__MP_SHARED__ || (globalThis.__MP_SHARED__ = {}));
+${own.map(buildModule).join('\n')}
     return { Engine: __mods.index };
   },
 });
@@ -359,6 +466,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const written = new Set();
   let chunkGzip = 0;
   const lines = [];
+  // 共享块先写：各分块从它的表里取公共模块
+  for (const tier of Object.keys(SHARED_TIER_FILE)) {
+    const file = SHARED_TIER_FILE[tier];
+    const sharedOut = await minifyBundle(assembleShared(tier));
+    fs.writeFileSync(path.join(root, file), sharedOut, 'utf8');
+    written.add(file);
+    const gz = zlib.gzipSync(Buffer.from(sharedOut, 'utf8')).length;
+    chunkGzip += gz;
+    lines.push(`  ${file}: ${bytes(sharedOut)} bytes / gzip ${gz}（${tier} 层 ${SHARED_TIERS[tier].length} 模块）`);
+  }
   for (const name of Object.keys(CHUNKS)) {
     const chunkRaw = assembleChunk(name);
     const chunkOut = await minifyBundle(chunkRaw);

@@ -4,7 +4,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
-import { CHUNKS, CHUNK_OF_TAB } from '../tools/build-client.mjs';
+import { CHUNKS, CHUNK_OF_TAB, sharedTiersOf, SHARED_TIER_FILE, SHARED_TIERS } from '../tools/build-client.mjs';
 import * as srcEngine from '../engine/index.js';
 import { ok, eq } from './_harness.mjs';
 
@@ -39,6 +39,49 @@ if (!capMatch) throw new Error('check-bundle.mjs 里找不到 CHUNK_GZIP_CAP');
 const CHUNK_GZIP_CAP = Function(`return (${capMatch[1]});`)();
 ok('分块预算与 check-bundle 同源', Number.isFinite(CHUNK_GZIP_CAP) && !bundleTool.includes('232 * 1024'));
 
+// 共享层先跑：宿主里也是「先 entry、再共享块、最后具体块」这个顺序。
+// 一个 realm 复用到底：宿主的每个分块都在同一台「页面」里执行，
+// globalThis.__MP_SHARED__ 就是那张共享表。以前这里每块都 runInNewContext，
+// 等于每块换一个新页面——抽共享块之后那样测，公共模块必然全丢、还测不出真问题。
+const realm = vm.createContext({ window: {}, console, setTimeout, clearTimeout, performance });
+/** 在同一个 realm 里执行一个产物文件，返回它注册的 factory */
+function loadBundle(file) {
+  let reg = null;
+  realm.window.__ModuleLoader__ = { load: (m) => { reg = m; } };
+  vm.runInContext(read(file), realm, { filename: file });
+  if (!reg) throw new Error(`${file} 没有注册模块`);
+  return reg;
+}
+
+const sharedFiles = ['client.shared.js', 'client.shared-interpret.js'];
+for (const file of sharedFiles) {
+  // 共享分块是「公共栈只存一份」的实现，必须真存在、真注册、真把模块写进共享表
+  ok(`${file} 已构建`, fs.existsSync(path.join(root, file)));
+  if (!fs.existsSync(path.join(root, file))) continue;
+  const code = read(file);
+  const reg = loadBundle(file);
+  eq(`${file} 注册 id`, reg.id, 'dsh-metaphysics');
+  eq(`${file} 注册 chunk`, reg.chunk, file);
+  const exp = reg.factory(() => reactStub);
+  ok(`${file} 把模块写进共享表`, exp && exp.modules > 0, JSON.stringify(exp));
+}
+// 共享表挂在 globalThis 上（浏览器里就是 window；vm 里 window 只是普通对象，别拿它当 globalThis）
+const sharedCount = vm.runInContext('Object.keys(globalThis.__MP_SHARED__ || {}).length', realm);
+ok('共享表里登记了公共栈', sharedCount >= 30, String(sharedCount));
+ok('共享层覆盖了所有「多块共用」的模块', SHARED_TIERS.core.length + SHARED_TIERS.interpret.length >= 40,
+  `${SHARED_TIERS.core.length}+${SHARED_TIERS.interpret.length}`);
+// 分层不能倒挂：核心层的模块不许依赖解释层的模块，否则轻体系会拿到 undefined
+{
+  const bad = [];
+  for (const mod of SHARED_TIERS.core) {
+    const src = read(`engine/${mod}.js`);
+    for (const m of src.matchAll(/from\s+'\.\/([^']+)\.js'/g)) {
+      if (SHARED_TIERS.interpret.includes(m[1])) bad.push(`${mod}→${m[1]}`);
+    }
+  }
+  ok('核心层不依赖解释层', bad.length === 0, bad.join(','));
+}
+
 // 分块文件：注册名、返回 Engine、体积预算
 for (const name of Object.keys(CHUNKS)) {
   const file = `client.${name}.js`;
@@ -46,13 +89,14 @@ for (const name of Object.keys(CHUNKS)) {
   ok(`${file} 已构建`, fs.existsSync(full));
   if (!fs.existsSync(full)) continue;
   const code = fs.readFileSync(full, 'utf8');
-  let reg = null;
-  vm.runInNewContext(code, { window: { __ModuleLoader__: { load: (m) => { reg = m; } } }, console }, { filename: file });
-  eq(`${file} 注册 id`, reg && reg.id, 'dsh-metaphysics');
-  eq(`${file} 注册 chunk`, reg && reg.chunk, file);
+  const reg = loadBundle(file);
+  eq(`${file} 注册 id`, reg.id, 'dsh-metaphysics');
+  eq(`${file} 注册 chunk`, reg.chunk, file);
   const exp = reg.factory(() => reactStub);
   ok(`${file} 返回 Engine.compute`, exp && exp.Engine && typeof exp.Engine.compute === 'function');
-  ok(`${file} 自包含（不依赖 require.async）`, !code.includes('require.async('));
+  // 分块不再自带公共栈：它从共享表取用（这就是 0.84 省下 1.6MB 与去掉全量 diff 噪音的地方）
+  ok(`${file} 改用共享表（不自建 __MP_SHARED__）`, code.includes('__MP_SHARED__'), file);
+  ok(`${file} 不依赖 require.async`, !code.includes('require.async('));
   const gz = zlib.gzipSync(Buffer.from(code, 'utf8')).length;
   // 旧口径（220 → 228 → 232KB）已废：那三次抬线抬的是 geo 坐标表与入参守卫，
   // 不是引文库。原文外移后分块增长只来自定位字段、卡片文案与 CHANGELOG 条目，
@@ -83,19 +127,23 @@ ok('入口体积接近界面而非整套引擎', entry.length < ENTRY_RAW_CAP, `
 ok('入口暴露 __mpEnsureEngine', entry.includes('__mpEnsureEngine'));
 
 let entryReg = null;
-const sandbox = {
+// 入口测试单独一个 realm（它自己也有一份 window.__MP_SHARED__），
+// 但块与共享块必须在**同一个** realm 里跑，才等于宿主里「一个页面加载多块」的真实情形
+const sandbox = vm.createContext({
   window: { __ModuleLoader__: { load: (m) => { entryReg = m; } }, localStorage: { getItem: () => null, setItem() {} } },
   console, setTimeout,
   document: { createElement: () => ({ style: {}, setAttribute() {}, appendChild() {}, remove() {} }), head: { appendChild() {} } },
-};
-vm.runInNewContext(entry, sandbox, { filename: 'client.js' });
+});
+vm.runInContext(entry, sandbox, { filename: 'client.js' });
 const requested = [];
 const requireStub = (n) => { if (n === 'react') return reactStub; throw new Error(`unexpected require: ${n}`); };
 requireStub.async = async (spec) => {
   requested.push(spec);
   const file = spec.replace('./', '');
   let reg = null;
-  vm.runInNewContext(read(file), { window: { __ModuleLoader__: { load: (m) => { reg = m; } } }, console }, { filename: file });
+  sandbox.window.__ModuleLoader__ = { load: (m) => { reg = m; } };
+  vm.runInContext(read(file), sandbox, { filename: file });
+  if (!reg) throw new Error(`${file} 没有注册模块`);
   return reg.factory(requireStub);
 };
 const surface = entryReg.factory(requireStub);
@@ -142,6 +190,50 @@ await sandbox.window.__mpEnsureEngine('hepan');
 const hpZiwei = { system: 'hepan', chart: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', partner: { datetime: '1992-08-15T10:00', gender: 'female', trueSolar: true } };
 ok('紫微合盘在 hepan 分块内可复算', JSON.stringify(srcEngine.compute(hpZiwei)) === JSON.stringify(sandbox.window.Engine.compute(hpZiwei)));
 ok('按需拉取对应分块', requested.includes('./client.chart.js') && requested.includes('./client.mbti.js'), requested.join(','));
+// 共享块的两个性质是这次改动的命门：先于具体块、且只取一次。
+// 顺序反了，分块 factory 里那些 `const {x} = __mods.dep` 会拿到 undefined，
+// 症状是「面板能开、盘面空白」，而且只在首次冷启时出现——正是最难查的那类。
+ok('共享块先于具体块取', requested.indexOf('./client.shared.js') >= 0 && requested.indexOf('./client.shared.js') < requested.indexOf('./client.chart.js'),
+  requested.join(','));
+ok('共享块只取一次（不是每个分块各下一次）', requested.filter((x) => x === './client.shared.js').length === 1, requested.join(','));
+ok('要解释栈的分块才取解释层', requested.indexOf('./client.shared-interpret.js') >= 0 &&
+  requested.indexOf('./client.shared-interpret.js') < requested.indexOf('./client.chart.js'), requested.join(','));
+
+// 分块只声明自己真要的共享层：黄历、星盘、人格这些轻体系不该为排一张盘多下解释栈。
+// 入口是压缩过的（常量名会被改），所以这里不认源码文本，只看**真实请求了哪几个文件**。
+const tiersOf = (n) => sharedTiersOf(n);
+ok('轻体系只要核心层', tiersOf('mbti').join(',') === 'core' && tiersOf('almanac').join(',') === 'core',
+  `mbti=${tiersOf('mbti')} almanac=${tiersOf('almanac')}`);
+ok('带解析的分块要两层', tiersOf('chart').join(',') === 'core,interpret' && tiersOf('tarot').join(',') === 'core,interpret',
+  `chart=${tiersOf('chart')} tarot=${tiersOf('tarot')}`);
+ok('共享层文件表与产物一致', Object.values(SHARED_TIER_FILE).every((f) => sharedFiles.includes(f)),
+  Object.values(SHARED_TIER_FILE).join(','));
+ok('每个分块都声明了共享层', Object.keys(CHUNKS).every((n) => tiersOf(n).length > 0),
+  Object.keys(CHUNKS).filter((n) => !tiersOf(n).length).join(','));
+// 行为验证：只开「人格」这一个轻体系时，解释栈不该被拉下来
+{
+  let reg2 = null;
+  const solo = vm.createContext({
+    window: { __ModuleLoader__: { load: (m) => { reg2 = m; } }, localStorage: { getItem: () => null, setItem() {} } },
+    console, setTimeout,
+    document: { createElement: () => ({ style: {}, setAttribute() {}, appendChild() {}, remove() {} }), head: { appendChild() {} } },
+  });
+  vm.runInContext(entry, solo, { filename: 'client.js' });
+  const asked = [];
+  const stub2 = (n) => { if (n === 'react') return reactStub; throw new Error(`unexpected require: ${n}`); };
+  stub2.async = async (spec) => {
+    asked.push(spec);
+    const file = spec.replace('./', '');
+    let reg = null;
+    solo.window.__ModuleLoader__ = { load: (m) => { reg = m; } };
+    vm.runInContext(read(file), solo, { filename: file });
+    return reg.factory(stub2);
+  };
+  reg2.factory(stub2);
+  await solo.window.__mpEnsureEngine('mbti');
+  ok('只开轻体系时不下解释栈', !asked.includes('./client.shared-interpret.js'), asked.join(','));
+  ok('只开轻体系时只取两个文件', asked.length === 2 && asked.includes('./client.shared.js'), asked.join(','));
+}
 ok('无 interpret 的分块不会抹掉 DIRECTIONS', Array.isArray(sandbox.window.Engine.DIRECTIONS) && sandbox.window.Engine.DIRECTIONS.length === 7,
   String(sandbox.window.Engine.DIRECTIONS && sandbox.window.Engine.DIRECTIONS.length));
 
@@ -160,3 +252,4 @@ const z = sandbox.window.Engine.compute(cases.ziwei);
 ok('切换分块后仍能排紫微', z && z.system === 'ziwei' && z.palaces && z.palaces.length === 12);
 // 紫微与八字同块：切回来后不应再取块（缓存命中）
 ok('切换 tab 不重复取块', requested.filter((x) => x === './client.chart.js').length === 1, requested.join(','));
+

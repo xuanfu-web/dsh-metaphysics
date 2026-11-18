@@ -17,6 +17,40 @@ function mpChunkOf(tab) {
 
 const mpLazyNow = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
+// ── 共享分块：公共栈（fail / bool / datetime / lunar / interpret / envelope …）只取一次 ──
+// 宿主的 require.async 对文件名不设白名单（CLIENT_CHUNK 正则就是 client.*.js），
+// 所以可以单开共享块；它把模块写进 globalThis.__MP_SHARED__，各分块从这张表取用，
+// 省下每块重复的几十 KB。分两层：核心层人人要，解释栈（interpret / envelope / knowledge）
+// 只有带解析的几块要——黄历、星盘这些轻体系不该为排一张盘多下 160KB。
+const MP_SHARED_TIERS = {};
+const MP_SHARED_FETCH_TIER = Object.create(null);
+
+function __mpEnsureTier(tier) {
+  if (MP_SHARED_TIERS[tier]) return Promise.resolve();
+  if (!MP_SHARED_FETCH_TIER[tier]) {
+    const file = __MP_SHARED_FILES__[tier];
+    MP_SHARED_FETCH_TIER[tier] = require.async(`./${file}`)
+      .then(() => {
+        const ready = globalThis.__MP_SHARED_READY__;
+        if (!ready || ready[tier] !== true) throw new Error(`命理引擎共享分块 ${file} 未注册`);
+        MP_SHARED_TIERS[tier] = true;
+      })
+      // 失败要清掉在途记录：一次网络抖动不该把后续所有 tab 都钉死在失败上
+      .catch((err) => {
+        MP_SHARED_FETCH_TIER[tier] = null;
+        throw err;
+      });
+  }
+  return MP_SHARED_FETCH_TIER[tier];
+}
+
+/** 先核心层、再按需解释层；两层可以并行，但核心必须先落表（分块 factory 同步读它） */
+async function __mpEnsureShared(chunk) {
+  const tiers = (__MP_CHUNK_TIERS__ && __MP_CHUNK_TIERS__[chunk]) || ['core'];
+  await __mpEnsureTier('core');
+  if (tiers.includes('interpret')) await __mpEnsureTier('interpret');
+}
+
 async function __mpEnsureEngine(tab) {
   const chunk = mpChunkOf(tab);
   let engine = MP_ENGINE_CACHE[chunk];
@@ -26,6 +60,8 @@ async function __mpEnsureEngine(tab) {
     if (!require || typeof require.async !== 'function') {
       throw new Error('当前宿主不支持客户端分块加载（require.async 缺失），请升级 DeepSeek Harness');
     }
+    // 公共模块必须先就位：分块的 factory 是同步的，引用在那一刻就定死
+    await __mpEnsureShared(chunk);
     // 失败也要清掉在途记录，否则一次网络抖动会把这块永久钉在「正在加载」上
     let pending = MP_ENGINE_FETCH[chunk];
     if (!pending) {

@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import zlib from 'node:zlib';
-import { assemble, assembleEntry, assembleChunk, minifyBundle, CHUNKS, MODULE_ORDER as ORDER } from './build-client.mjs';
+import { assemble, assembleEntry, assembleChunk, assembleShared, minifyBundle, CHUNKS, SHARED_CHUNK_FILE, SHARED_TIER_FILE, SHARED_TIERS, MODULE_ORDER as ORDER } from './build-client.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -60,6 +60,27 @@ function registrationOf(code, filename) {
   return captured;
 }
 
+// 引擎产物的常驻 realm：宿主的每个分块都跑在同一台「页面」里，共享表 globalThis.__MP_SHARED__
+// 必须在多次执行之间存活。每块各用一个新 context 的话，共享表必然读成 0 个模块——
+// 这正是 0.84 抽共享块时踩过的坑，所以这里直接把运行时语义搬过来。
+const bundleRealm = vm.createContext({ window: { __ModuleLoader__: {} }, console });
+function registrationInRealm(code, filename) {
+  let captured = null;
+  bundleRealm.window.__ModuleLoader__ = { load: (m) => { captured = m; } };
+  try {
+    vm.runInContext(code, bundleRealm, { filename });
+  } catch (e) {
+    problems.push(`${filename} 执行失败：${e.message}`);
+    return null;
+  }
+  if (!captured) {
+    problems.push(`${filename} 未调用 __ModuleLoader__.load`);
+    return null;
+  }
+  return captured;
+}
+const sharedCountIn = () => vm.runInContext('Object.keys(globalThis.__MP_SHARED__ || {}).length', bundleRealm);
+
 // ---- 1. 入口真实文件形态 ----
 const entryFile = path.join(root, 'client.js');
 const raw = fs.readFileSync(entryFile, 'utf8');
@@ -95,7 +116,10 @@ if (entryReg) {
 // 贴线到只剩 10KB，正文改写一动就爆。抬到 360 只是留出正常增长空间，不是解绑：
 // 真正逐块卡体积的是 tools/chunk-budget.json（每块一份独立上限，按现状 +8% 生成），
 // CHUNK_GZIP_CAP 退化成「任何块都不许超过的硬顶」。
-const CHUNK_GZIP_CAP = 360 * 1024;
+// 2026-11-17：360 → 200KB。抽共享块之后，最大的单个文件变成 client.shared-interpret.js
+// （169KB，五块共用），普通分块全在 30–70KB；再留着 360 就是一道没人碰得到的空墙。
+// 200 仍是「最大文件 × 1.18」，bundle-budget.test.mjs 的「不许抬成空闸」照旧盯得住。
+const CHUNK_GZIP_CAP = 200 * 1024;
 const CHUNKS_TOTAL_GZIP_CAP = 3.2 * 1024 * 1024;
 
 // 每块独立预算：分块各自有加载与体积约束，不能只有一道统一墙。
@@ -110,8 +134,50 @@ try {
 const nextCaps = {};
 let chunksGzip = 0;
 const chunkFiles = fs.readdirSync(root).filter((f) => /^client\..+\.js$/.test(f) && f !== 'client.debug.js').sort();
-const expected = Object.keys(CHUNKS).map((n) => `client.${n}.js`).sort();
+const expected = [...Object.keys(CHUNKS).map((n) => `client.${n}.js`), ...Object.values(SHARED_TIER_FILE)].sort();
 for (const f of chunkFiles) if (!expected.includes(f)) problems.push(`存在未声明的分块文件：${f}`);
+
+// 共享块先逐层载一次：各分块的 factory 同步读 globalThis.__MP_SHARED__，这就是运行时的顺序。
+// 顺序也必须照 SHARED_TIER_FILE 来——核心层建表，解释层往里补。
+for (const tier of Object.keys(SHARED_TIER_FILE)) {
+  const file = SHARED_TIER_FILE[tier];
+  const full = path.join(root, file);
+  if (!fs.existsSync(full)) {
+    problems.push(`缺少共享分块 ${file}（请先跑 npm run build）`);
+    continue;
+  }
+  const code = fs.readFileSync(full, 'utf8');
+  checkSyntax(code, file);
+  checkChars(code, file);
+  const gz = zlib.gzipSync(Buffer.from(code, 'utf8')).length;
+  chunksGzip += gz;
+  nextCaps[`shared-${tier}`] = Math.ceil((gz / 1024) * 1.08);
+  const reg = registrationInRealm(code, file);
+  if (!reg) problems.push(`${file} 没有注册 factory`);
+  else {
+    if (reg.id !== pkg.name) problems.push(`${file} 模块 id 异常：${reg.id}`);
+    if (reg.chunk !== file) problems.push(`${file} 注册的 chunk 名异常：${reg.chunk}`);
+    const before = sharedCountIn();
+    try {
+      reg.factory(() => reactStub);
+      const after = sharedCountIn();
+      if (after - before < SHARED_TIERS[tier].length) {
+        problems.push(`${file} 只登记了 ${after - before} 个模块（应 ${SHARED_TIERS[tier].length} 个）`);
+      }
+      const ready = vm.runInContext('globalThis.__MP_SHARED_READY__ || null', bundleRealm);
+      if (!ready || ready[tier] !== true) problems.push(`${file} 没有置 __MP_SHARED_READY__.${tier}`);
+    } catch (e) {
+      problems.push(`${file} factory 执行失败：${e.message}`);
+    }
+  }
+  try {
+    const rebuilt = await minifyBundle(assembleShared(tier));
+    if (rebuilt !== code) problems.push(`${file} 与源码不一致——请先跑 npm run build`);
+  } catch (e) {
+    problems.push(`无法重新构建 ${file}：${e.message}`);
+  }
+}
+
 for (const name of Object.keys(CHUNKS)) {
   const file = `client.${name}.js`;
   const full = path.join(root, file);
@@ -133,7 +199,7 @@ for (const name of Object.keys(CHUNKS)) {
   }
   checkSyntax(code, file);
   checkChars(code, file);
-  const reg = registrationOf(code, file);
+  const reg = registrationInRealm(code, file);
   if (reg) {
     if (reg.id !== pkg.name) problems.push(`${file} 模块 id 异常：${reg.id}`);
     if (reg.chunk !== file) problems.push(`${file} 注册的 chunk 名异常：${reg.chunk}`);

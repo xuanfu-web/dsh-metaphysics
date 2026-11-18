@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-17（0.83.0 后第二轮：性别不进「与性别无关」体系的盘号/句柄/缓存键、方法与验证热区 23→45 与手机端分组按钮 36→44、称骨女命歌诀调查结论；闸 211/11672）
+最后更新：2026-11-18（0.84.0：公共模块抽两层共享块、依赖闭包与层序、分块自检改常驻 realm；闸 211/11719）
 
 ---
 
@@ -12,6 +12,9 @@
 
 | 项 | 依据 |
 | --- | --- |
+| 公共模块抽两层共享块（`client.shared.js` / `client.shared-interpret.js`，共享表 `globalThis.__MP_SHARED__`，`index` 仍按块各建） | 提交随 0.84.0；`tools/build-client.mjs` 的 `SHARED_MODULES`/`SHARED_TIERS`/`assembleShared`；产物 20 文件 gzip 2,703,211 → 1,000,474 B（−63%）；`test/chunks.test.mjs` 164 条、`tools/check-bundle.mjs`「与源码一致」 |
+| 共享集合做依赖闭包 + 层序不倒挂（`interpret` 静态依赖 `ziwei`/`liuyao`/`daliuren`/`qimen-interpret`） | `tools/build-client.mjs` 闭包循环与 `tierOf`；断言「核心层不依赖解释层」；分块引擎与源码逐字节 19/19 |
+| 分块自检/测试改常驻 realm（先共享层再块） | `tools/check-bundle.mjs` `bundleRealm`/`registrationInRealm`；`test/chunks.test.mjs` 的 `realm`/`loadBundle`；教训 L-028 |
 | 视图分层（策略层 `src/compose.js`，五档 `TIER`，`composeResult()` 唯一拼接点，dev 三通道） | 提交 `7edcf41` / `fd3a59a` / `d98be6a` / `f33220a`；`test/compose*.test.mjs` |
 | 2a 三个 adapter（大六壬 / 梅花 / 合盘） | `engine/envelope.js` 的 `validateEnvelope` 硬约束；`test/envelope-*.test.mjs` |
 | 2b 十体系 `factHead` 头卡 | `engine/headline.js`；`test/headline.test.mjs` |
