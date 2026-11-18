@@ -96,7 +96,8 @@
     "check:verification": "node tools/check-verification.mjs",
     "gh:release": "node tools/gh-release.mjs",
     "eval:envelope": "node tools/eval-envelope.mjs",
-    "ship": "node tools/ship.mjs"
+    "ship": "node tools/ship.mjs",
+    "check:backlog": "node tools/check-backlog.mjs"
   },
   "exports": {
     ".": "./index.js",

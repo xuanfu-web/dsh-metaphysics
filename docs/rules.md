@@ -86,7 +86,9 @@
 
 收尾阶段不再逐个小版本发。攒下的改动一次走完整链路：版本号 → CHANGELOG → 构建 → 全闸 → 提交 → tag → **推 main** → npm → GitHub Release → Pages → 桌面副本。
 
-这条链路已经固化成一条命令：`npm run ship`（`tools/ship.mjs`，内部依次跑 build:desktop → release → push-branch，最后读回 npm latest / 远端 tag / Release / Pages 四处，缺一处就 red）。dry-run 用 `npm run ship -- --dry-run`。
+这条链路已经固化成一条命令：`npm run ship`（`tools/ship.mjs`，内部依次跑 check-backlog → build:desktop → release → push-branch，最后读回 npm latest / 远端 tag / Release / Pages 四处，缺一处就 red）。dry-run 用 `npm run ship -- --dry-run`。
+
+**发版前台账必须清账**：`tools/check-backlog.mjs` 扫 `docs/ledger.md` 的「二、待办」，状态里出现「未发版 / 未完成 / 待定 / 攒批」就 red（`preflight` 与 `ship` 都会跑）。做完的事写「已完成 / 已发版 <ver>」；不做的事写进「四、已决」并注明「这是决定，不是待办」——这两类必须长得不一样，否则清单永远不会变短（L-030）。
 
 「推 main」这一步 0.84.0 差点漏掉：tag 与 Release 都成功了，但远端 `main` 还停在发版前的提交，而 Pages 认的是 `main/docs`，于是站点一直显示旧版本（读回页面里只有 0.83.0 / 0.82.0）。分支落后于本地时，tag 推送不会带着它一起走。现在用 `node tools/push-branch.mjs`（HTTPS 被 reset 会自动走 SSH deploy key），推完再看 Pages 的 `builds/latest` 是不是新提交、页面里的版本串是不是新版本，两样都要对。
 

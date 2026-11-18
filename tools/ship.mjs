@@ -132,6 +132,9 @@ async function main() {
   console.log(`\n═══ ship ${PKG.name}@${version}${dryRun ? '（dry-run）' : ''} ═══`);
   ensureEnv();
 
+  // 先清账再动手：台账里还有「未发版 / 待定」的行，就不许发版。
+  run('tools/check-backlog.mjs', [], '台账清账（没结案的行不许发版）');
+
   if (!noDesktop) run('tools/build-html.mjs', ['--desktop'], '刷新桌面副本');
 
   const relArgs = [...passthrough, ...(dryRun ? ['--dry-run'] : [])];

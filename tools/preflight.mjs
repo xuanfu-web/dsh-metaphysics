@@ -79,6 +79,7 @@ if (full) {
   steps.push(['全闸（构建 + 200 个测试文件）', ['tools/build-all.mjs', '--gate']]);
 } else if (!syntaxOnly) {
   steps.push(
+    ['台账清账（待办里不许留「未发版 / 待定」）', ['tools/check-backlog.mjs']],
     ['文案闸', ['tools/lint-copy.mjs']],
     ['文案闸自检（故意写错的文案必须变红）', ['tools/verify-lint-copy.mjs']],
     ['行尾必须是 LF', ['tools/check-eol.mjs']],
