@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 // 一条命令走完发版：测试 → 构建 → 校验产物 → 发 npm。
 //
-//   NPM_TOKEN=npm_xxx npm run release              # 正式发布
+//   NPM_TOKEN=npm_xxx npm run release              # 正式发布（不设就用 ~/.dsh/metaphysics-autopublish.json 的 npmToken）
 //   NPM_TOKEN=npm_xxx npm run release -- --dry-run # 只跑到校验，不发布
 //   npm run release -- --verify-only               # 只核对 registry 上当前版本的附件
 //   npm run release -- --skip-tests                # 紧急情况下跳过测试（不建议）
 //
 // 说明：
-//  - token 只从环境变量 NPM_TOKEN 读，脚本会把它写进临时 .npmrc（0600），退出时删掉；
+//  - token 按「环境变量 NPM_TOKEN → 本机凭据文件的 npmToken」取，脚本写进临时 .npmrc（0600），退出时删掉；
+//    临时 .npmrc 里同时钉住 registry=https://registry.npmjs.org/，避免全局镜像默认值让 npm 找错 auth 域；
 //  - 发布前会确认 git 工作区干净、client.js 已随源码重建、registry 上没有同版本；
 //  - 发布后必须核对「tarball 能下载、shasum 与 registry 记录一致、文件数对得上」，
 //    因为 npm 会先让版本条目可见、附件晚几分钟落盘（0.34.0 就撞上过这种半失败状态）；
 //  - 本机没装 npm CLI 时，可用 NPM_CLI=/path/to/npm-cli.js 指向它。
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { verifyPublish } from './verify-publish.mjs';
@@ -148,9 +149,20 @@ if (skipTests) {
 }
 
 // ── 3. 发布前检查 ──────────────────────────────────────────
-const token = process.env.NPM_TOKEN || '';
+// token 来源两处，环境变量优先：NPM_TOKEN → ~/.dsh/metaphysics-autopublish.json 的 npmToken。
+// 后者是本机已有的凭据文件（与 push-tag / gh-release 共用同一份），日常发版不必每次 export。
+function tokenFromConfig() {
+  const file = process.env.NPM_TOKEN_CONFIG || path.join(os.homedir(), '.dsh', 'metaphysics-autopublish.json');
+  try {
+    if (!existsSync(file)) return '';
+    const cfg = JSON.parse(readFileSync(file, 'utf8'));
+    return typeof cfg.npmToken === 'string' ? cfg.npmToken.trim() : '';
+  } catch (e) { return ''; }
+}
+
+const token = process.env.NPM_TOKEN || tokenFromConfig();
 if (!dryRun && !token) {
-  fail('缺少 NPM_TOKEN：在 npm 生成 Granular Token（勾 Bypass 2FA、Read and write）后，\n  NPM_TOKEN=npm_xxx npm run release');
+  fail('缺少 npm token：在 npm 生成 Granular Token（勾 Bypass 2FA、Read and write）后，\n  写进 ~/.dsh/metaphysics-autopublish.json 的 npmToken，或 NPM_TOKEN=npm_xxx npm run release');
 }
 
 const tmpDir = mkdtempSync(path.join(os.tmpdir(), 'dsh-rel-'));
@@ -159,7 +171,10 @@ const cleanup = () => rmSync(tmpDir, { recursive: true, force: true });
 process.on('exit', cleanup);
 
 if (token) {
-  writeFileSync(npmrc, `//registry.npmjs.org/:_authToken=${token}\n`, { mode: 0o600 });
+  /* registry 必须显式写进临时 npmrc：这台机器的全局 registry 被设成了 npmmirror，
+     只写 `//registry.npmjs.org/:_authToken=` 时 npm 会拿 npmjs 的 token 去查镜像域，
+     报 ENEEDAUTH（0.84.0 发版时踩到过）。 */
+  writeFileSync(npmrc, `registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=${token}\n`, { mode: 0o600 });
   const who = npm(['whoami', '--userconfig', npmrc], '校验 npm 身份', { capture: true }).trim();
   step(`npm 身份：${who}`);
 }

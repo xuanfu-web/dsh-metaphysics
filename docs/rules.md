@@ -90,6 +90,8 @@
 
 npm 打完 `+ pkg@ver` 后 registry 404 是队列延迟（实测 8 分钟），别重发、别动 token。判断成功只看三样：`dist-tags` 的 `latest`、`/<pkg>/<ver>` 的 shasum、`tools/release.mjs --verify-only`。查 registry 优先用 `curl.exe`，PS 的 `Invoke-RestMethod` 在这台机器上会假报连接失败。
 
+token 不必每次 export：`release.mjs` 按「`NPM_TOKEN` 环境变量 → `~/.dsh/metaphysics-autopublish.json` 的 `npmToken`」取（与 push-tag / gh-release 共用这份凭据）。它的临时 npmrc 同时钉住 `registry=https://registry.npmjs.org/`——这台机器的全局 registry 是 npmmirror，漏掉这行会让 npm 拿 npmjs 的 token 去查镜像域，报 `ENEEDAUTH`（0.84.0 发版时踩到过一次）。
+
 ## R-009 本机不装 git 钩子，闸门走 preflight
 
 - type: rules
