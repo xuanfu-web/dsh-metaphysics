@@ -1217,7 +1217,7 @@
       <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
-      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a></span>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a>　·　<a href="https://pd.qq.com/s/Nb18ikqqfl" target="_blank" rel="noopener noreferrer" title="腾讯频道「烛微命盘」：排盘求助、命例交流、功能与bug、术语与依据">交流频道</a></span>
     </div>${nudgeHTML()}`;
   }
 

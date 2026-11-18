@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-18（0.84.0 已发版（npm/tag/Release/Pages 四处读回）；发版链路收成 `npm run ship`；句柄与 panel-kit 两项从待办转「已决」；闸 211/11719）
+最后更新：2026-11-18（0.85.0：报告末尾加频道落款 + 方法折叠区底部「当前版本 / 检查更新」（点了才请求 registry、失败静默）；闸 212/11791）
 
 ---
 
@@ -12,6 +12,7 @@
 
 | 项 | 依据 |
 | --- | --- |
+| 对外联系入口加腾讯频道（面板底部 + 单页导出条 + 反馈报告「联系渠道」+ README） | `src/app.js` 两处（底部 `mp-fb-b` 与 `feedbackReport()`）、`src/web-ui.js` 一处（`exportBar` 的 hint）、`README.md`；频道 <https://pd.qq.com/s/Nb18ikqqfl>；产物核对 `client.js` 2 处 / `命理排盘.html` 1 处；全闸 211/11719 |
 | 0.84.0 发版（共享块 + 攒批收口） | 提交 `2ae3028`；npm latest 0.84.0（shasum `0f52bdfe`、117 文件）；tag `v0.84.0`；Pages `builds/latest = 1ab4463 / built`、线上版本串 0.84.0；桌面副本已刷新 |
 | 发版链路固化成一条命令 `npm run ship` | `tools/ship.mjs`：build:desktop → release → push-branch → 读回 npm/tag/Release/Pages 四处；git 与 npm-cli 自动兜底；`--dry-run` 可单验 |
 | 公共模块抽两层共享块（`client.shared.js` / `client.shared-interpret.js`，共享表 `globalThis.__MP_SHARED__`，`index` 仍按块各建） | 提交随 0.84.0；`tools/build-client.mjs` 的 `SHARED_MODULES`/`SHARED_TIERS`/`assembleShared`；产物 20 文件 gzip 2,703,211 → 1,000,474 B（−63%）；`test/chunks.test.mjs` 164 条、`tools/check-bundle.mjs`「与源码一致」 |
@@ -60,6 +61,7 @@
 
 | 入口包余量只剩 3.5KB：CSS 注释占 20.8KB 源文本 / 10.7KB gzip | 新增 `tools/css-strip.mjs`（`stripCssComments` + `stripKitCssSource`），`build-client.mjs` 两处与 `build-html.mjs` 内联共用；源码注释不动，只剥产物；client.js gzip 127525 → 113672（余量 3.5 → 17.4KB），页面 1872.1 → 1863.5 KB；`test/css-strip.test.mjs` 15 条（含余量 ≥10KB 断言） | 体积战 |
 | `src/panel-kit.js` 366KB 单文件是否该拆 | **不拆**：一百多份测试把它当自包含脚本 `vm.runInNewContext(源码)` 直接跑，拆开要把「源码即脚本」换成「拼接器正确」；改为文件头写清四段分区（CSS / 小工具 / 盘面渲染 / 报告编排） | 结论 |
+| 频道二维码落款 + 「检查更新」（0.85） | 落款只进「方法与验证」折叠区末尾（每份报告一处、短体系兜底成 `.mp-it-secs` 一处），二维码 240×240 灰度二值化后内嵌 base64（4044 字符）；按钮点了才 `fetch` registry（8s 超时、no-store、失败静默恢复），版本号印自 `window.__MP_VER`；`test/signature.test.mjs` 72 条（含「正文区不得出现二维码 / 落款只一处 / 失败后按钮恢复」）；基准线同步到 212/11791 | `src/panel-kit.js`（CSS / `MP_SIG_QR` / `signatureHTML` / `checkUpdate` / `__MP_SIG_BOUND`）、`test/signature.test.mjs`、client.js gzip 119508 |
 
 ## 二、待办
 
@@ -74,7 +76,7 @@
 
 一条命令跑完前 8 项：`npm run ship`（`tools/ship.mjs`：桌面副本 → release（构建/全闸/npm/tag/Release）→ 推 main → 读回四处证据）。dry-run 用 `npm run ship -- --dry-run`。
 
-1. `node tools/build-all.mjs --gate` → 211/211、**11719** 断言（含 metrics M1–M7）；client.js **392963 B / gzip 114045**（128KB 上限，余量约 13.9KB）。
+1. `node tools/build-all.mjs --gate` → 212/212、**11791** 断言（含 metrics M1–M7）；client.js **375858 B / gzip 119508**（128KB 上限，余量约 11.6KB）。
 2. `node tools/check-bundle.mjs` → 引擎分块 **20 个**（gzip 合计 0.95MB、单块硬顶 200KB、共享块 `client.shared*.js` 各只取一次）。
 3. `node tools/check-eol.mjs` → 9 个产物纯 LF。
 4. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
@@ -91,3 +93,4 @@
 | `src/panel-kit.js`（376KB / 5555 行）拆文件 | **不拆** | R-012：140+ 份测试把它当自包含脚本跑，拆掉等于替换测试形态；要重启需先做装载器 + 拼接一致性闸 + 按四分区切 |
 | 「同盘同句柄」性别键 | **已做**（0.84.0） | `engine/fingerprint.js` 的 `GENDER_NEUTRAL` + `chartIdOf` 置空 + `handlePayload` 不带；实测 star / numerology / daliuren / chenggu 男女 `shortId` 与 `handle` 完全相同（`test/handle.test.mjs` ⑨ 段） |
 | 称骨女命歌诀落表 | **不落表** | 三套通行本有讹字改写、通篇贬抑女性断语，达不到「两源逐字一致才收」；理由见 CHANGELOG 0.84.0 |
+| 自动更新弹窗 / 首屏引流卡片 / 「还没有历史盘」扫码卡 | **不做** | 主人否决：更新提示只在「方法与验证」折叠区底部手动点，「检查更新」失败或没点都不联网、不打扰；首屏不出任何引导卡 |

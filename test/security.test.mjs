@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { assemble } from '../tools/build-client.mjs';
-import { ok } from './_harness.mjs';
+import { ok, withoutSignature } from './_harness.mjs';
 
 const reactStub = { createElement: () => null, useState: () => [null, () => {}] };
 
@@ -40,7 +40,7 @@ const bazi = E.compute({
   withInterpret: true, question: PAYLOAD,
 });
 const iHtml = PP.interpretHTML(bazi.interpret);
-ok('解析面板不再出现原始 <img>', !/<img/i.test(iHtml));
+ok('解析面板不再出现原始 <img>', !/<img/i.test(withoutSignature(iHtml)));
 ok('解析面板保留转义后的文本', iHtml.includes('&lt;img'));
 
 // ③ web-ui 的错误路径：源码层面确认已改成 textContent（这里没有 DOM，只能查实现）

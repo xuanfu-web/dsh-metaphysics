@@ -1942,6 +1942,8 @@ function App() {
     L.push('');
     L.push('- GitHub issue：https://github.com/xuanfu-web/dsh-metaphysics/issues');
     L.push('- 邮件：1129440028@qq.com');
+    L.push('- 腾讯频道：https://pd.qq.com/s/Nb18ikqqfl');
+    L.push('  （排盘求助 / 命例交流 / 功能与bug / 术语与依据，贴图贴盘都比邮件方便）');
     L.push('- 微信群：dsh-metaphysics');
     return L.join('\n');
   };
@@ -2898,7 +2900,17 @@ function App() {
           style: { color: 'inherit' },
           title: '点开直接写邮件，不用复制任何东西',
         }, '1129440028@qq.com'),
-        '　·　GitHub issues　·　微信群 dsh-metaphysics',
+        '　·　GitHub issues　·　',
+        // 腾讯频道：排盘求助 / 命例交流 / 功能与bug / 术语与依据 四个版块都在那儿，
+        // 比在邮件里来回问更快，也比 issue 更适合贴盘面截图。
+        h('a', {
+          href: 'https://pd.qq.com/s/Nb18ikqqfl',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          style: { color: 'inherit' },
+          title: '腾讯频道「烛微命盘」：排盘求助、命例交流、功能与bug、术语与依据',
+        }, '交流频道'),
+        '　·　微信群 dsh-metaphysics',
         fbNote ? h('span', { className: 'mp-fb-note' }, '　' + fbNote) : null)),
     // 卦例抽屉：不占 tab——tab 是「排盘体系」，卦例是查看类入口，混进 TABS 会被当成要出生时辰的体系
     casesOpen ? h('div', {

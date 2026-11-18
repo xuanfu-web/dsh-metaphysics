@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import { compute, crossSection } from '../engine/index.js';
-import { ok, eq } from './_harness.mjs';
+import { ok, eq, withoutSignature } from './_harness.mjs';
 
 const KIT = fs.readFileSync(new URL('../src/panel-kit.js', import.meta.url), 'utf8');
 const UI = fs.readFileSync(new URL('../src/web-ui.js', import.meta.url), 'utf8');
@@ -45,7 +45,7 @@ const PP = sandbox.window.__PP;
     s.items[0].label = '<img src=x onerror=alert(1)>';
     s.items[0].bazi = '<script>alert(1)</script>';
     const h = PP.interpretHTML(evil, { folded: false });
-    return !/<img|<script/i.test(h) && h.includes('&lt;img') && h.includes('&lt;script');
+    return !/<img|<script/i.test(withoutSignature(h)) && h.includes('&lt;img') && h.includes('&lt;script');
   })());
 }
 
@@ -61,7 +61,7 @@ const PP = sandbox.window.__PP;
     const evil = JSON.parse(JSON.stringify(it));
     evil.tables[0].columns[0] = '"><img src=x>';
     const h = PP.interpretHTML(evil);
-    return !/<img/i.test(h) && h.includes('&quot;&gt;&lt;img');
+    return !/<img/i.test(withoutSignature(h)) && h.includes('&quot;&gt;&lt;img');
   })());
 
   const narrowStart = KIT.indexOf('/* —— ≤640px：大运表');

@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { compute, interpretText } from '../engine/index.js';
 import { page } from '../tools/build-html.mjs';
-import { ok } from './_harness.mjs';
+import { ok, withoutSignature } from './_harness.mjs';
 
 const BZ = compute({ system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', address: '河北石家庄', withInterpret: true });
 const ZW = compute({ system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', address: '安徽池州', withInterpret: true });
@@ -66,7 +66,7 @@ for (const [label, r] of [['八字', BZ], ['紫微', ZW]]) {
   const evil = JSON.parse(JSON.stringify(BZ.interpret));
   evil.tables[0].rows[0][0] = '<img src=x onerror=alert(1)>';
   const evilHtml = PP.interpretHTML(evil);
-  ok('表格内容被转义', !/<img/i.test(evilHtml) && evilHtml.includes('&lt;img'));
+  ok('表格内容被转义', !/<img/i.test(withoutSignature(evilHtml)) && evilHtml.includes('&lt;img'));
   ok('面板 CSS 含打印规则', /@media print\{/.test(PP.CSS) && /break-inside:avoid/.test(PP.CSS));
 }
 

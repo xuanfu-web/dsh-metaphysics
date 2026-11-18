@@ -44,6 +44,13 @@ export function counts() {
   return { pass, fail };
 }
 
+// 报告末尾的落款里有一张内嵌二维码（data URI 的 <img>）。转义类断言判的是
+// 「引擎文本里不许冒出 <img>」，得先把落款切掉，否则会被自己的二维码误伤；
+// 落款固定挂在整份报告末尾，按它自己的容器名切一刀最稳。
+export function withoutSignature(html) {
+  return String(html).split('<div class="mp-sig">')[0];
+}
+
 process.on('exit', () => {
   if (!pass && !fail) return;
   console.log(`\n${pass} PASS / ${fail} FAIL`);

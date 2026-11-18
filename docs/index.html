@@ -499,7 +499,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.84.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.85.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -841,7 +841,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：211 个测试文件 / 11719 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：212 个测试文件 / 11791 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -36988,7 +36988,7 @@ return { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION, interpret, D
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.84.0";
+window.__MP_VER = "0.85.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -37934,6 +37934,20 @@ window.__MP_VER = "0.84.0";
 .mp-it-sub .mp-it-sh{font-size:12px;color:var(--ink2);font-weight:600}
 .mp-it-sub .mp-it-stext{font-size:12px;line-height:1.85;color:var(--muted)}
 
+.mp-sig{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:11.5px;line-height:1.7;color:var(--muted);font-family:system-ui,sans-serif}
+.mp-sig-brand{color:var(--ink2);font-weight:600;letter-spacing:.04em}
+.mp-sig-brand i{font-style:normal;color:var(--faint);font-weight:400;margin-left:5px}
+.mp-sig-btn{border:0;background:transparent;padding:2px 0;margin:0;font:inherit;color:var(--lu);cursor:pointer;border-bottom:1px dotted rgba(var(--lu-rgb),.5)}
+.mp-sig-btn:hover{color:var(--ink)}
+.mp-sig-btn[disabled]{color:var(--faint);cursor:default;border-bottom-color:transparent}
+.mp-sig-msg{color:var(--muted);min-height:0}
+.mp-sig-qr{display:none;flex:0 0 100%;align-items:center;gap:10px;margin-top:2px}
+.mp-sig-qr.on{display:flex}
+.mp-sig-qr img{width:132px;height:132px;display:block;border:1px solid var(--line);border-radius:4px;flex:none}
+.mp-sig-qr span{color:var(--muted);max-width:210px}
+
+@media print{.mp-sig-qr{display:none!important}}
+
 .mp-it-knowref{margin-top:7px;font-size:11.5px;font-family:system-ui,sans-serif}
 .mp-it-knowref a{color:var(--muted);text-decoration:none;border-bottom:1px dashed var(--line)}
 .know-flag{margin-left:8px;color:var(--quan);font-size:11px}
@@ -38869,6 +38883,11 @@ h3.mp-env-adv-h{display:block}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
+
+  /* 落款二维码：腾讯频道「烛微命盘」pd48189034。
+   * 从频道海报里裁二维码本体、补白边、二值化后缩到 320×320（4.4KB），内嵌成 data URI：
+   * 面板与独立页都不联网取图，打到纸上也不出（@media print 已隐藏）。占位串由构建时替换。 */
+  const MP_SIG_QR = 'data:image/png;base64,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';
 
   /* ── 共用小工具：只此一份 ────────────────────────────────────────
    *
@@ -41104,15 +41123,21 @@ h3.mp-env-adv-h{display:block}
         <h3 class="mp-it-sh">${esc(s.label)}${refChip(s)}</h3>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
+    // 落款：品牌 + 频道 + 版本。放报告最末（有「方法与出处」就收进那个折叠区的底部），
+    // 不占首屏、不打断阅读。二维码用内嵌 data URI，点了才展开——本地工具不从任何服务器取图。
+    const sigStrip = pp.signatureHTML();
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
-    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。
-    const secs = secList.length || knowAll.length || factList.length
-      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${factsBlock}${(methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
+    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。落款收在它最底下。
+    const methodZone = (methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
         <summary><span class="mp-it-sh">方法与出处</span><span class="mp-it-mnum">${methodSecs.length ? `${methodSecs.length} 段` : ''}${methodSecs.length && knowAll.length ? ' · ' : ''}${knowAll.length ? `依据 ${knowAll.length} 条` : ''} · 怎么算的、哪里没算、口径分歧</span></summary>
         ${knowAll.length ? `<div class="mp-it-sub" id="mp-sec-know"><div class="mp-it-sh">依据与出处</div>${knowAll.map((k) => `<div class="know-row"><span class="know-status ${esc(k.status)}">${esc(k.statusLabel)}</span><span class="know-body"><em class="know-dim">${esc(k.dimLabel)}</em><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
         ${methodSecs.map((s) => `<div class="mp-it-sub"><div class="mp-it-sh">${esc(s.label)}</div><div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div></div>`).join('')}
-      </details>` : ''}</div>`
-      : '';
+        ${sigStrip}
+      </details>` : sigStrip;
+    const secs = secList.length || knowAll.length || factList.length
+      ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${factsBlock}${methodZone}</div>`
+      // 短体系（称骨、小六壬）既没有分段落也没有出处：报告末尾照样落款，但不能空着返回
+      : `<div class="mp-it-secs">${sigStrip}</div>`;
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
     // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
     const ask = it.ask;
@@ -41246,7 +41271,10 @@ h3.mp-env-adv-h{display:block}
 
   pp.resultWithInterpret = function (html, it, opt) {
     const head = opt && opt.noHead ? '' : pp.envHeadHTML(it, opt);
-    return head + (html || '') + pp.interpretHTML(it, opt);
+    const body = pp.interpretHTML(it, opt);
+    // 短报告（称骨、小六壬）没有解读段，interpretHTML 返回空：落款直接接在结果卡后面，
+    // 否则这些体系整份报告里一处品牌都没有。
+    return head + (html || '') + (body || pp.signatureHTML());
   };
 
   /**
@@ -42550,6 +42578,85 @@ h3.mp-env-adv-h{display:block}
       return '';
     }
   };
+
+  /* ── 落款的两件事：二维码显隐、手动检查更新 ───────────────────────
+   *
+   * 全插件只有这里会往外发一次请求，而且必须由用户点了才发：这是本地离线工具，
+   * 定时轮询会让「一个不联网的东西」莫名其妙往外连，失败还得有人收拾。
+   * 失败一律静默（清空提示），不弹窗、不留红字，也不写任何错误号。
+   */
+  const SIG_REG = 'https://registry.npmjs.org/dsh-metaphysics/latest';
+  /* 落款 HTML 单独取一份：有「方法与出处」的报告收在折叠区底部，
+   * 称骨/小六壬这类没有解读段的短报告（interpretHTML 返回空）由 resultWithInterpret 兜底补上，
+   * 保证「每份报告都有一处落款、且只有一处」。 */
+  pp.signatureHTML = function () {
+    const ver = (window && window.__MP_VER) ? String(window.__MP_VER).trim() : '';
+    return `<div class="mp-sig">
+        <span class="mp-sig-brand">烛微命盘${ver ? `<i>v${esc(ver)}</i>` : ''}</span>
+        <button type="button" class="mp-sig-btn" data-mp-qr aria-expanded="false">腾讯频道 pd48189034 · 看二维码</button>
+        <button type="button" class="mp-sig-btn" data-mp-chk>检查更新</button>
+        <span class="mp-sig-msg" role="status" aria-live="polite"></span>
+        <div class="mp-sig-qr"><img src="${MP_SIG_QR}" alt="腾讯频道「烛微命盘」二维码，频道号 pd48189034" width="132" height="132" loading="lazy"><span>微信或 QQ 扫一扫，加入频道；也可以在腾讯频道里直接搜 pd48189034。</span></div>
+      </div>`;
+  };
+  const verCmp = (a, b) => {
+    const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0);
+    const pb = String(b).split('.').map((n) => parseInt(n, 10) || 0);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+      const d = (pa[i] || 0) - (pb[i] || 0);
+      if (d) return d > 0 ? 1 : -1;
+    }
+    return 0;
+  };
+  pp.checkUpdate = function (msgEl, btn) {
+    const ver = (window && window.__MP_VER) ? String(window.__MP_VER).trim() : '';
+    const say = (t) => { if (msgEl) msgEl.textContent = t || ''; };
+    const f = (window && typeof window.fetch === 'function') ? window.fetch
+      : (typeof fetch === 'function' ? fetch : null);
+    if (!f) return say('');
+    if (btn) btn.disabled = true;
+    say('正在查…');
+    let ctrl = null;
+    try { ctrl = new AbortController(); } catch (e) { ctrl = null; }
+    const timer = setTimeout(() => { try { if (ctrl) ctrl.abort(); } catch (e) {} }, 8000);
+    const done = (t) => { clearTimeout(timer); if (btn) btn.disabled = false; say(t); };
+    let p;
+    try {
+      p = f(SIG_REG, ctrl ? { cache: 'no-store', signal: ctrl.signal } : { cache: 'no-store' });
+    } catch (e) { return done(''); }
+    p.then((r) => (r && r.ok ? r.json() : null))
+      .then((j) => {
+        const latest = j && j.version ? String(j.version) : '';
+        if (!latest) return done('');
+        if (!ver) return done(`最新 v${latest}`);
+        // 只有「远端比本地新」才提示升级；同版本、或本地比远端新（测试版）都按已最新处理
+        if (verCmp(latest, ver) > 0) return done(`v${latest} 可用，重装插件后生效`);
+        return done(`已是最新（v${ver}）`);
+      })
+      .catch(() => done(''));
+  };
+  // 宿主与测试里的 document 可能是残缺替身：没有 addEventListener 就什么都不绑，
+  // 判定「这个环境能不能托管事件」而不是「有没有 document 这个名字」
+  if (typeof document !== 'undefined' && document && typeof document.addEventListener === 'function' && !window.__MP_SIG_BOUND) {
+    window.__MP_SIG_BOUND = true;
+    document.addEventListener('click', (e) => {
+      const q = e.target && e.target.closest ? e.target.closest('[data-mp-qr]') : null;
+      if (q) {
+        const row = q.parentElement && q.parentElement.querySelector('.mp-sig-qr');
+        if (row) {
+          const on = !row.classList.contains('on');
+          if (typeof row.classList.toggle === 'function') row.classList.toggle('on', on);
+          q.setAttribute('aria-expanded', on ? 'true' : 'false');
+        }
+        return;
+      }
+      const k = e.target && e.target.closest ? e.target.closest('[data-mp-chk]') : null;
+      if (k) {
+        const msg = k.parentElement && k.parentElement.querySelector('.mp-sig-msg');
+        pp.checkUpdate(msg, k);
+      }
+    });
+  }
 })();
 
 
@@ -43925,7 +44032,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
       <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
       <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
-      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a></span>
+      <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a>　·　<a href="https://pd.qq.com/s/Nb18ikqqfl" target="_blank" rel="noopener noreferrer" title="腾讯频道「烛微命盘」：排盘求助、命例交流、功能与bug、术语与依据">交流频道</a></span>
     </div>${nudgeHTML()}`;
   }
 

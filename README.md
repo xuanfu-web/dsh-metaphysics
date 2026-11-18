@@ -448,6 +448,8 @@ NPM_TOKEN=... node tools/release-rollback.mjs --version 0.57.1 --previous 0.57.0
 - **盘排错了、页面出 bug**：请把输入（时间、地点、性别、体系、所问之事）和当时的输出一起带上，我照着复现；能修就修，修不了会写进「已知边界」。
 - 邮件联系：1129440028@qq.com（我的 QQ 邮箱）。谢谢！
 
+**腾讯频道：[烛微命盘](https://pd.qq.com/s/Nb18ikqqfl)** —— 2026-11-18 建的，四个版块分开摆：排盘求助、命例交流、功能与bug、术语与依据。贴图、贴盘面、贴一段读不懂的解析，都比邮件里来回问快。加频道要过一道审核，防机器人灌水，看到就放。
+
 微信群：**dsh-metaphysics**
 
 <img src="https://github.com/xuanfu-web/dsh-metaphysics/releases/download/v0.76.0/dsh-metaphysics-group-2026-11-14.png" alt="dsh-metaphysics 讨论群二维码" width="480">
