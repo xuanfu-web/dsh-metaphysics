@@ -507,7 +507,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -853,7 +853,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：217 个测试文件 / 12123 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：217 个测试文件 / 12137 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -38038,7 +38038,7 @@ return { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION, interpret, D
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.86.0";
+window.__MP_VER = "0.86.1";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -38995,6 +38995,9 @@ window.__MP_VER = "0.86.0";
 .mp-sig-qr.on{display:flex}
 .mp-sig-qr img{width:132px;height:132px;display:block;border:1px solid var(--line);border-radius:4px;flex:none}
 .mp-sig-qr span{color:var(--muted);max-width:210px}
+
+.mp-sig-qr[data-qr-for="wx"] img{width:240px;height:240px}
+.mp-sig-note{color:var(--faint)}
 
 @media print{.mp-sig-qr{display:none!important}}
 
@@ -40036,9 +40039,15 @@ h3.mp-env-adv-h{display:block}
   pp.CSS = CSS;
 
   /* 落款二维码：腾讯频道「烛微命盘」pd48189034。
-   * 从频道海报里裁二维码本体、补白边、二值化后缩到 320×320（4.4KB），内嵌成 data URI：
+   * 从频道海报里裁二维码本体、补白边、二值化后缩到 144×144（1.6KB），内嵌成 data URI：
    * 面板与独立页都不联网取图，打到纸上也不出（@media print 已隐藏）。占位串由构建时替换。 */
-  const MP_SIG_QR = 'data:image/png;base64,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';
+  const MP_SIG_QR = 'data:image/png;base64,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';
+
+  /* 微信群「dsh-metaphysics」的群二维码：7 天一变（此张 2026-11-27 前有效）。
+   * 到点后落款只留一句过期说明，不摆一张扫不进群的码；换码时改这两个常量随版本发出。
+   * 240×240 一位图（1.5KB）：模块约 3.3px，按原尺寸显示即可扫；缩到 176px 仍可被 zxing-cpp 解码。 */
+  const MP_SIG_WX_QR = 'data:image/png;base64,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';
+  const MP_SIG_WX_UNTIL = '2026-11-27';
 
   /* ── 共用小工具：只此一份 ────────────────────────────────────────
    *
@@ -43854,15 +43863,31 @@ h3.mp-env-adv-h{display:block}
   /* 落款 HTML 单独取一份：有「方法与出处」的报告收在折叠区底部，
    * 称骨/小六壬这类没有解读段的短报告（interpretHTML 返回空）由 resultWithInterpret 兜底补上，
    * 保证「每份报告都有一处落款、且只有一处」。 */
-  pp.signatureHTML = function () {
+  pp.signatureHTML = function (now) {
     const ver = (window && window.__MP_VER) ? String(window.__MP_VER).trim() : '';
+    const wx = pp.wxQrLive(now);
     return `<div class="mp-sig">
         <span class="mp-sig-brand">烛微命盘${ver ? `<i>v${esc(ver)}</i>` : ''}</span>
-        <button type="button" class="mp-sig-btn" data-mp-qr aria-expanded="false">腾讯频道 pd48189034 · 看二维码</button>
+        <button type="button" class="mp-sig-btn" data-mp-qr="qq" aria-expanded="false">腾讯频道 pd48189034 · 看二维码</button>
+        ${wx
+          ? '<button type="button" class="mp-sig-btn" data-mp-qr="wx" aria-expanded="false">微信群 · 看二维码</button>'
+          : `<span class="mp-sig-note">微信群二维码已过期（${MP_SIG_WX_UNTIL} 前有效），更新插件换新码</span>`}
         <button type="button" class="mp-sig-btn" data-mp-chk>检查更新</button>
         <span class="mp-sig-msg" role="status" aria-live="polite"></span>
-        <div class="mp-sig-qr"><img src="${MP_SIG_QR}" alt="腾讯频道「烛微命盘」二维码，频道号 pd48189034" width="132" height="132" loading="lazy"><span>微信或 QQ 扫一扫，加入频道；也可以在腾讯频道里直接搜 pd48189034。</span></div>
+        <div class="mp-sig-qr" data-qr-for="qq"><img src="${MP_SIG_QR}" alt="腾讯频道「烛微命盘」二维码，频道号 pd48189034" width="132" height="132" loading="lazy"><span>微信或 QQ 扫一扫，加入频道；也可以在腾讯频道里直接搜 pd48189034。</span></div>
+        ${wx ? `<div class="mp-sig-qr" data-qr-for="wx"><img src="${MP_SIG_WX_QR}" alt="微信群「dsh-metaphysics」群二维码，${MP_SIG_WX_UNTIL} 前有效" width="240" height="240" loading="lazy"><span>微信扫一扫进群；群码 7 天有效，过期后更新插件换新码，长期入口仍是腾讯频道。</span></div>` : ''}
       </div>`;
+  };
+  /* 群码按本地日期判活：传日期字符串可复现任意一天，测试与排错都靠它。 */
+  pp.wxQrLive = function (now) {
+    let day;
+    if (typeof now === 'string' && /^\d{4}-\d{2}-\d{2}/.test(now)) day = now.slice(0, 10);
+    else {
+      const d = now instanceof Date ? now : new Date(now === undefined ? Date.now() : now);
+      if (isNaN(d.getTime())) return true;
+      day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    return day <= MP_SIG_WX_UNTIL;
   };
   const verCmp = (a, b) => {
     const pa = String(a).split('.').map((n) => parseInt(n, 10) || 0);
@@ -43907,7 +43932,7 @@ h3.mp-env-adv-h{display:block}
     document.addEventListener('click', (e) => {
       const q = e.target && e.target.closest ? e.target.closest('[data-mp-qr]') : null;
       if (q) {
-        const row = q.parentElement && q.parentElement.querySelector('.mp-sig-qr');
+        const row = q.parentElement && q.parentElement.querySelector(`.mp-sig-qr[data-qr-for="${q.getAttribute('data-mp-qr')}"]`);
         if (row) {
           const on = !row.classList.contains('on');
           if (typeof row.classList.toggle === 'function') row.classList.toggle('on', on);

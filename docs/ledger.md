@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-20（0.86.0：观音灵签 + 每日福签两个新体系；顺带修八字交节轴、奇门农历年、称骨夏令时、紫微魁钺/年解同表；闸 217/12123）
+最后更新：2026-11-20（未发版：落款加微信群二维码，7 天有效、到期撤图；顺带把频道码缩到 144；闸 217/12137）
 
 ---
 
@@ -12,6 +12,7 @@
 
 | 项 | 依据 |
 | --- | --- |
+| 微信群二维码进落款（7 天有效） | `src/panel-kit.js`：`MP_SIG_WX_QR`（240×240 / 1559 B，zxing-cpp 解出 `https://weixin.qq.com/g/AwYA…`）、`MP_SIG_WX_UNTIL='2026-11-27'`、`pp.wxQrLive(now)`、第二按钮 + `data-qr-for="wx"` 配对行；过期只留说明不渲染图；频道码同步 3032 → 1626 B（144×144）；`test/signature.test.mjs` 72 → 86 条；真 Chrome 实测两按钮各开各行、独立收起、打印两张不出、无 JS 报错；gzip 123960 → 124600（余量 10.3KB） |
 | 0.86.0 发版（观音灵签 + 每日福签） | 提交 `f04a6cd`；npm latest **0.86.0**（shasum `855e1a88`、122 文件，tarball 可下载）；tag `v0.86.0` → `f04a6cd`（annotated `e9c696a`，API 复核；本机 ls-remote 走 HTTPS 被重置，以 API 为准）；Release <https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.86.0>；远端 main = `f04a6cd`；Pages `builds/latest = f04a6cd / built`，线上 `0.86.0` 命中 2 处；桌面副本本次未刷新（`--no-desktop`，需要时 `npm run build:desktop`）；npm CLI 用 `~/tools/node-v22.20.0-win-x64/node_modules/npm/bin/npm-cli.js`（PATH 无 npm） |
 | 观音灵签（第 23 个 tab，一事一签可重摇） | `engine/guanyin-data.js`（百支：上 23 / 中 59 / 下 18，签题无重复、四句七言全量校验 0 问题）+ `engine/guanyin.js`（指定签号 / seed 复现 / except 防连抽，100×6 组穷举撞签 0；question ≤80 字）；`src/panel-kit.js` `pp.guanyinHTML`/`guanyinOracleHTML`（签筒卡 + 再摇一签）；`src/app.js` / `src/web-ui.js` 摇签入口、深链 draw、导出条六项、禁止入历史 / 卦例 / 应验；`test/guanyin.test.mjs` 130 条；`e2e-panel` 灵签段实测 26→15 换签、无新增 JS 报错 |
 | 每日福签（一天一签，不重摇） | `engine/qian.js`（36 支原创签、四档、按日期确定性抽取）+ `test/qian.test.mjs` 92 条；首屏迷你签筒 1.05s 摇签动画、近七日回看；`src/groups.mjs` 问一件事新增福签 / 灵签；README 体系与分组说明同步 |
@@ -81,7 +82,7 @@
 
 一条命令跑完前 8 项：`npm run ship`（`tools/ship.mjs`：桌面副本 → release（构建/全闸/npm/tag/Release）→ 推 main → 读回四处证据）。dry-run 用 `npm run ship -- --dry-run`。
 
-1. `node tools/build-all.mjs --gate` → 217/217、**12123** 断言（含 metrics M1–M7）；client.js **418300 B / gzip 123960**（132KB 上限，余量约 11KB）；页面 2638349 B。
+1. `node tools/build-all.mjs --gate` → 217/217、**12137** 断言（含 metrics M1–M7）；client.js **419597 B / gzip 124600**（132KB 上限，余量 10.3KB）；页面 2640371 B。
 2. `node tools/check-bundle.mjs` → 引擎分块 **22 个**（gzip 合计 1.05MB、单块硬顶 200KB、共享块 `client.shared*.js` 各只取一次）。
 3. `node tools/check-eol.mjs` → 9 个产物纯 LF。
 4. 实机：起静态服读 `命理排盘.html`，23 体系各排一次，结果区字数 > 0。

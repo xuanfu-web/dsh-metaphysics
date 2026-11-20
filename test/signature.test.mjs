@@ -77,24 +77,44 @@ const { PP, win, items } = renderAll('0.85.0');
   }
 }
 
-// ── ② 二维码内嵌、默认收起 ─────────────────────────────────────────
+// ── ② 二维码内嵌、默认收起（日期固定在有效期内，免得测试随日历翻红）──
 {
-  const html = items[0].html;
-  eq('落款里只有一个二维码', (html.match(/data:image\/png;base64,/g) || []).length, 1);
+  const html = PP.signatureHTML('2026-11-20');
+  eq('落款里有两个二维码（频道 + 微信群）', (html.match(/data:image\/png;base64,/g) || []).length, 2);
   ok('二维码是内嵌 data URI（不指向任何服务器）', /<img src="data:image\/png;base64,/.test(html));
   eq('报告里没有外链图片', (html.match(/<img[^>]+src="(?:https?:)?\/\//g) || []).length, 0);
-  ok('二维码图片带可读名（含频道号）', /<img[^>]+alt="[^"]*pd48189034/.test(html));
-  eq('二维码图片带固定尺寸（避免塌成 0 高）', (html.match(/<img[^>]+width="132"[^>]+height="132"/g) || []).length, 1);
+  ok('频道码带可读名（含频道号）', /<img[^>]+alt="[^"]*pd48189034/.test(html));
+  ok('微信群码带可读名（含群名与有效期）', /<img[^>]+alt="[^"]*微信群[^"]*2026-11-27/.test(html));
+  eq('频道码固定 132 尺寸', (html.match(/<img[^>]+width="132" height="132"/g) || []).length, 1);
+  eq('微信群码按原尺寸 240 显示（模块密，不缩采样）', (html.match(/<img[^>]+width="240" height="240"/g) || []).length, 1);
   // 默认收起靠 CSS 与 class，不靠 hidden 属性 —— details 收起时 CSS 也要压住
   ok('二维码容器默认不带 on 类', !/class="mp-sig-qr on"/.test(html));
-  ok('展开按钮初始 aria-expanded=false', /data-mp-qr aria-expanded="false"/.test(html));
+  ok('两个展开按钮初始 aria-expanded=false', (html.match(/data-mp-qr="(?:qq|wx)" aria-expanded="false"/g) || []).length, 2);
   const css = String(PP.CSS);
   ok('CSS 里 .mp-sig-qr 默认隐藏', /\.mp-sig-qr\{display:none/.test(css));
   ok('CSS 里 .mp-sig-qr.on 才显示', /\.mp-sig-qr\.on\{display:flex\}/.test(css));
+  ok('群码显示尺寸单独放大', /\.mp-sig-qr\[data-qr-for="wx"\] img\{width:240px/.test(css));
   ok('打印媒体不出二维码', /@media print\{\.mp-sig-qr\{display:none!important\}\}/.test(css));
-  // 体积：二维码不该把主包撑爆（0.84 起 gzip 上限 132KB，余量约 13KB）
-  const b64Len = (html.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/) || ['', ''])[1].length;
-  ok('二维码体积在预算内（base64 < 8KB）', b64Len > 1000 && b64Len < 8192, `${b64Len} 字符`);
+  // 体积：两张码合起来也不能把主包撑爆（0.84 起 gzip 上限 132KB）
+  const b64s = [...html.matchAll(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g)].map((m) => m[1].length);
+  ok('两张二维码各自在预算内（base64 < 8KB）', b64s.length === 2 && b64s.every((n) => n > 1000 && n < 8192), b64s.join('+'));
+  ok('两张二维码合计 base64 < 12KB', b64s.reduce((a, b) => a + b, 0) < 12288, String(b64s.reduce((a, b) => a + b, 0)));
+}
+
+// ── ②b 群码有期限：过期就撤图，只留一行说明 ─────────────────────────
+{
+  ok('有效期最后一天仍算有效', PP.wxQrLive('2026-11-27') === true);
+  ok('过了有效期就失效', PP.wxQrLive('2026-11-28') === false);
+  ok('带时间的日期串按日期比较', PP.wxQrLive('2026-11-20T23:59:00') === true);
+  const dead = PP.signatureHTML('2026-11-28');
+  eq('过期后只剩频道码一张', (dead.match(/data:image\/png;base64,/g) || []).length, 1);
+  ok('过期后没有微信按钮与微信行', !dead.includes('data-mp-qr="wx"') && !dead.includes('data-qr-for="wx"'));
+  ok('过期后写明原因与解决办法', /已过期（2026-11-27 前有效）/.test(dead));
+  ok('过期后频道入口与检查更新仍在', dead.includes('pd48189034') && dead.includes('data-mp-chk'));
+  // 两个按钮各开各的行：键必须配对，否则微信按钮会去开频道那张
+  const live = PP.signatureHTML('2026-11-20');
+  for (const k of ['qq', 'wx']) ok(`按钮 ${k} 有配对的行`, live.includes(`data-mp-qr="${k}"`) && live.includes(`data-qr-for="${k}"`));
+  ok('点击处理按按钮键找行', /querySelector\(`\.mp-sig-qr\[data-qr-for="\$\{q\.getAttribute\('data-mp-qr'\)\}"\]`\)/.test(KIT_SRC));
 }
 
 // ── ③ 渲染期零请求，点了才 fetch ───────────────────────────────────
