@@ -443,6 +443,11 @@ function page() {
   const kit = stripKitCssSource(fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8'));
   // 结果拼接的唯一入口：与宿主面板（tools/build-client.mjs 的 assembleEntry）共用同一份
   const compose = fs.readFileSync(path.join(root, 'src', 'compose.js'), 'utf8');
+  // 图标内联成 data URI：单文件页经常被单独拷到桌面/微信里打开，旁边没有 icon.svg 时
+  // Chrome 会对 favicon 发一次请求并报 ERR_FILE_NOT_FOUND——功能无恙，但控制台永远一条红。
+  // 894 B 的 SVG 转 base64 约 1.2 KB，换掉一条噪音和一个额外请求，值。
+  const iconSvg = fs.readFileSync(path.join(root, 'icon.svg'), 'utf8');
+  const iconUri = 'data:image/svg+xml;base64,' + Buffer.from(iconSvg, 'utf8').toString('base64');
   const html = `<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -461,8 +466,8 @@ function page() {
 <meta property="og:description" content="八字 / 紫微 / 六爻 / 梅花 / 六壬 / 奇门 / 合盘 / 塔罗。本地计算，不采集数据；口径怎么取、差异在哪里，都能逐字对照。">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="icon" href="${iconUri}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${iconUri}">
 <style>${CSS}.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
 </style>
 <style>/* ── 0.83 视觉重整 · 外壳 ──────────────────────────────────────────────

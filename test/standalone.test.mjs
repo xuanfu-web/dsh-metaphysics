@@ -52,6 +52,17 @@ ok('合盘渲染两套模板', /ziweiHepanHTML\(r\)/.test(ui) && /hepanHTML\(r\)
 // ── ⑤ 产物自全：不引外部脚本、core 已内联 ──────────────────
 ok('没有外部脚本引用', !/<script[^>]+src=/.test(html));
 ok('core 已内联', (html.match(/__MPCore/g) || []).length >= 3);
+// 单文件页被单独拷走时旁边没有 icon.svg，favicon 会 404（Chrome 控制台一条红）。
+// 图标必须内联成 data URI，且不能残留指向 ./icon.svg 的链接。
+ok('favicon 内联为 data URI', /<link rel="icon" href="data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+"/.test(html));
+ok('apple-touch-icon 同样内联', /<link rel="apple-touch-icon" href="data:image\/svg\+xml;base64,[A-Za-z0-9+/=]+"/.test(html));
+ok('不再引用本地 icon.svg', !/<link[^>]+href="\.\/icon\.svg"/.test(html));
+ok('内联图标可解回原 SVG', (() => {
+  const m = /<link rel="icon" href="data:image\/svg\+xml;base64,([A-Za-z0-9+/=]+)"/.exec(html);
+  if (!m) return false;
+  const svg = Buffer.from(m[1], 'base64').toString('utf8');
+  return svg.startsWith('<svg') && svg.includes('viewBox="0 0 64 64"');
+})());
 
 // ── ⑥ 接线完整性：脚本里 el('…') 引用的 id 必须真的存在 ─────
 {

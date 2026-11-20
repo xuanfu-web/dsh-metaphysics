@@ -1,3 +1,9 @@
+## 0.86.4（2026-11-20）
+
+- **favicon 内联进单文件页**：`命理排盘.html` 单独拷到桌面、微信或别人机器上打开时，旁边没有 `icon.svg`，Chrome 会为 favicon 发一次请求并报 `ERR_FILE_NOT_FOUND`——页面功能无恙，控制台永远一条红。改成在构建时把 `icon.svg` 读进来转 base64，直接写 `<link rel="icon" href="data:image/svg+xml;base64,…">` 与 `apple-touch-icon`（894 B → 约 1.2 KB，页面 1,990,533 → 1,992,949 B）；仓库根与 `docs/` 的 `icon.svg` 保留，`manifest.webmanifest` 里的引用照旧给托管版用。
+- **实测**：把产物单独复制到一个空临时目录，用真 Chrome 以 `file://` 打开——`requestfailed` 0 条、console error 0 条（改前这里是 favicon 的 `ERR_FILE_NOT_FOUND`），图标解码回 64×64 原 SVG；整页版本串与功能不受影响。
+- **测试**：`test/standalone.test.mjs` 43 → 47 条，新增「favicon / apple-touch-icon 都是 data URI」「不再引用本地 `./icon.svg`」「base64 能解回原 SVG」三条正面断言，钉在 `page()` 的构建产物上，不依赖磁盘那份文件。
+
 ## 0.86.3（2026-11-20）
 
 - **福签 / 灵签：同一份结果里签意不再念两遍**：起因是实测一页里同一句签意出现 **2 次**、建议（灵签「可为」/福签「今日可为」）也出现 2 次——盘面顶部的「先说结论」摘要框（`pp.briefHTML` → `pp.summaryHTML`）把签意、建议又列了一遍，而签卡本身已经把它们摊开了。按「摘要只补签卡上没有的字段」改：`engine/plain-summary.js` 的 `qianSummary` 只留一段「签的来处」（共 36 支、原创签文、按日期确定性抽取），`guanyinSummary` 只留一段「签的用法」（一百支里的第几支、重摇避开上一支、seed 可复现）；两家的 `sections` 不再出现「签意」「卦象」，`advice` 清空，摘要的 `lead` 也不再复述诗文（灵签原文把四句签诗整段抄了一遍，与签卡完全重合）。
