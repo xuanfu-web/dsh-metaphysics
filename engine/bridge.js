@@ -24,7 +24,7 @@ const BRIEF_MAX_QUESTION = 60;
 const SYSTEM_LABEL = {
   bazi: '八字', ziwei: '紫微', liuyao: '六爻', meihua: '梅花', daliuren: '大六壬',
   qimen: '奇门', hepan: '合盘', tarot: '塔罗', almanac: '黄历', zeri: '择日',
-  chenggu: '称骨', xiaoliuren: '小六壬', star: '星座', numerology: '生命数字',
+  chenggu: '称骨', xiaoliuren: '小六壬', qian: '福签', guanyin: '灵签', star: '星座', numerology: '生命数字',
   mbti: '人格', trend: '人生K线', fengshui: '风水', name: '起名', convert: '农历',
   constitution: '体质',
   wuyunliuqi: '运气',

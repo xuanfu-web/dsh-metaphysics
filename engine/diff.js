@@ -336,7 +336,8 @@ export const CALIBER_SWITCHES = {
       'yin-yang-shun-ni': '阴阳顺逆', 'shui-tu': '水二', 'huo-tu': '火土（土五局起寅）',
     }),
     ziweiSchoolSwitch('lateZishi', '晚子时：归当日 / 归次日', '晚子时', 'current-day', 'next-day', {
-      'current-day': '归当日', 'next-day': '归次日', 'all-current': '全归当日', 'day-cur-time-next': '日归当日·时归次日',
+      'current-day': '归当日', 'next-day': '归次日',
+      'all-current': '全归当日（兼容别名）', 'day-cur-time-next': '日归当日·时归次日（兼容别名）',
     }),
     ziweiSchoolSwitch('shenzhuSchool', '身主：子午皆火星 / 子铃午火', '身主', 'common', 'verse', {
       common: '子午皆火星', verse: '子铃午火（安身主诀逐字）',

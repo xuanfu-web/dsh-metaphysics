@@ -264,7 +264,9 @@ try {
 // 体积战（CHANGELOG 加三条中文标题就把它顶破了），成本远大于收益。这是本地宿主读的文件、
 // 不经网络，多 16KB gzip 约合 50KB 源码，解析差 1～2ms，用户感知不到。
 // 放宽的是界面预算不是架构：入口仍只装界面，引擎全部走分块，这条由 client-bundle.test.mjs 守着。
-const ENTRY_GZIP_CAP = 128 * 1024;
+// 2026-11-20：128 → 132KB。福签是第 23 个体系，独占卡片样式与签筒 SVG，入口涨约 2.4KB gzip，
+// 128KB 下只剩 8.9KB 余量（css-strip 要求 ≥10KB）。这次只补界面预算，引擎仍全在分块。
+const ENTRY_GZIP_CAP = 132 * 1024;
 const entryGzip = zlib.gzipSync(Buffer.from(raw, 'utf8')).length;
 if (entryGzip >= ENTRY_GZIP_CAP) problems.push(`client.js gzip ${Math.round(entryGzip / 1024)}KB 超出 ${Math.round(ENTRY_GZIP_CAP / 1024)}KB 预算`);
 if (entryGzip < ENTRY_GZIP_CAP) {

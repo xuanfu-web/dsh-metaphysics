@@ -34,6 +34,29 @@ const RANDOM_ALLOW = new Set(['engine/random.js', 'engine/tarot.js', 'engine/liu
 // 参数对象的常见名字；只拦这些，避免误伤 `r.hourUnknown === true` 这类对计算结果的比较
 const ARG_TRUE = /\b(args|input|opts|params)\.[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*===\s*true\b/;
 
+// 选中态元素的 :hover 必须带 :not(.on)。
+// 触屏点完按钮浏览器会保留 :hover，一条裸 `.tool:hover{background:浅底}` 能把选中态的实心品牌底
+// 换回浅底，而选中态文字是白的 —— 结果就是一块「有框没字」的空白卡（0.84.0 上被用户抓到过）。
+const HOVER_GUARDED = /(^|[\s,>~+])\.(tool|tab|mp-tool|mp-tab|mp-castchip|mb-o)\b/;
+const checkHoverGuard = (rel, lines) => {
+  lines.forEach((line, i) => {
+    if (!line.includes(':hover')) return;
+    let idx = line.indexOf(':hover');
+    while (idx !== -1) {
+      const start = Math.max(line.lastIndexOf('}', idx), line.lastIndexOf('{', idx), line.lastIndexOf(';', idx), -1);
+      const sel = line.slice(start + 1, idx);
+      // 只有改背景的 hover 才会把实心选中底换成浅底；只改边框的不算
+      const end = line.indexOf('}', idx);
+      const decl = end === -1 ? line.slice(idx) + ' ' + (lines[i + 1] || '') : line.slice(idx, end);
+      if (HOVER_GUARDED.test(sel) && /background/.test(decl) && !sel.includes(':not(.on)') && !/\.on\b/.test(sel)) {
+        add(rel, i + 1, '选中态元素的 :hover 要写 :not(.on)，否则触屏 hover 残留会白字压白底');
+        break;
+      }
+      idx = line.indexOf(':hover', idx + 1);
+    }
+  });
+};
+
 for (const f of filesIn('engine')) {
   const rel = `engine/${f}`;
   const lines = read(rel).split(/\r?\n/);
@@ -59,13 +82,18 @@ for (const f of filesIn('engine')) {
 
 for (const f of filesIn('src')) {
   const rel = `src/${f}`;
-  read(rel).split(/\r?\n/).forEach((line, i) => {
+  const lines = read(rel).split(/\r?\n/);
+  lines.forEach((line, i) => {
     const n = i + 1;
     if (/console\.log/.test(line)) add(rel, n, 'src 不得留 console.log（console.error 可以）');
     if (/\bdebugger\b/.test(line)) add(rel, n, '不得留下 debugger');
     if (/^\s*var\s/.test(line)) add(rel, n, '用 const/let，不用 var');
   });
+  checkHoverGuard(rel, lines);
 }
+
+// 网页那份 CSS 内联在 tools/build-html.mjs 的模板字符串里，同一条规矩也要管到
+checkHoverGuard('tools/build-html.mjs', read('tools/build-html.mjs').split(/\r?\n/));
 
 // 凭据扫描已拆到 tools/check-secrets.mjs（那边按「除已知二进制外全扫」，覆盖 .env / 无后缀文件）。
 // 这里只负责把结果并进同一次退出码，规则本身不在两处各写一遍。

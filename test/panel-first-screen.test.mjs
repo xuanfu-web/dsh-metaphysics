@@ -17,20 +17,20 @@ const pageBuild = fs.readFileSync(new URL('../tools/build-html.mjs', import.meta
 const flat = GROUPS.flatMap((g) => g.items);
 const keys = flat.map((it) => it.k);
 
-// ── ① 分组数据：四组、20 项、顺序与文案 ─────────────────────────
+// ── ① 分组数据：四组、21 项、顺序与文案 ─────────────────────────
 eq('分组数', GROUPS.length, 4);
 eq('组名与顺序', GROUPS.map((g) => g.title).join(','), '问一件事,看一个人,查日子,古籍考据');
 ok('每组一句白话提示', GROUPS.every((g) => g.hint && g.hint.length >= 8), GROUPS.map((g) => g.hint).join(' / '));
-eq('入口共 19 项（0.77.0 称骨并入八字卡）', flat.length, 19);
-eq('入口不重复', new Set(keys).size, 19);
+eq('入口共 21 项（0.77.0 称骨并入八字卡；0.86 福签、0.87 灵签进组）', flat.length, 21);
+eq('入口不重复', new Set(keys).size, 21);
 ok('每项都有名称与白话说明', flat.every((it) => it.label && it.tip && it.tip.length >= 4));
 ok('窄屏奇数项的「人生K」铺满整行', GROUPS[1].items.some((it) => it.k === 'trend' && it.wide === true));
 ok('主力体系排在各组最前（推荐序）', GROUPS[0].items[0].k === 'liuyao' && GROUPS[1].items[0].k === 'bazi' && GROUPS[1].items[1].k === 'ziwei');
 ok('考据向三式收进最后一组', GROUPS[3].items.map((i) => i.k).join(','), 'qimen,daliuren,taiyi');
 
-// ── ② 与平铺的 21 个 tab 一一对应（0.77.0 称骨撤独立入口）──────
+// ── ② 与平铺的 23 个 tab 一一对应（0.77.0 称骨撤独立入口；0.86 福签；0.87 灵签）──────
 const tabKeys = [...app.matchAll(/\{ k: '([a-z]+)', label: '/g)].map((m) => m[1]);
-eq('面板平铺 tab 也是 21 个', tabKeys.length, 21);
+eq('面板平铺 tab 也是 23 个', tabKeys.length, 23);
 ok('分组入口是平铺的子集', keys.every((k) => tabKeys.includes(k)), keys.filter((k) => !tabKeys.includes(k)).join(','));
 eq('分组不收录称骨与星座数字（称骨并入八字卡）', tabKeys.filter((k) => !keys.includes(k)).sort().join(','), 'numerology,star');
 
@@ -45,7 +45,7 @@ ok('页面分组由 GROUPS 生成', /\$\{GROUPS\.map\(\(g, gi\) => `/.test(pageB
 // ── ④ 页面产物与分组数据逐项一致 ───────────────────────────────
 const pageTools = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="([a-z]+)"(?: title="[^"]*")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)]
   .map((m) => ({ k: m[1], label: m[2], tip: m[3] }));
-eq('页面生成 19 个入口', pageTools.length, 19);
+eq('页面生成 21 个入口', pageTools.length, 21);
 eq('页面入口顺序与数据一致', pageTools.map((t) => t.k).join(','), keys.join(','));
 eq('页面名称与数据一致', pageTools.map((t) => t.label).join(','), flat.map((it) => it.label).join(','));
 eq('页面白话与数据一致', pageTools.map((t) => t.tip).join(','), flat.map((it) => it.tip).join(','));

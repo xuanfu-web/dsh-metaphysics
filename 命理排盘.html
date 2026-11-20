@@ -66,8 +66,8 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:not(.on):hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
-/* 首屏按「想干什么」分组：22 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
-   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（22 个 tab 原样保留）。 */
+/* 首屏按「想干什么」分组：23 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
+   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（23 个 tab 原样保留）。 */
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
@@ -337,7 +337,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .rc{min-height:36px}
   .rc-main{min-height:40px}
   .rc-del{width:34px}
-  /* 22 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
+  /* 23 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
     margin:0 -12px;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -507,7 +507,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.85.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.0</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -525,6 +525,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
       <button class="tab" data-tab="qimen">奇门</button>
       <button class="tab" data-tab="hepan">合盘</button>
       <button class="tab" data-tab="tarot">塔罗</button>
+      <button class="tab" data-tab="qian">福签</button>
+      <button class="tab" data-tab="guanyin">灵签</button>
       <button class="tab" data-tab="almanac">黄历</button>
       <button class="tab" data-tab="convert">农历</button>
       <button class="tab" data-tab="zeri">择日</button>
@@ -560,6 +562,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
           <button type="button" class="tool" data-tab="tarot" title="抽牌看选择"><b>塔罗</b><span>抽牌看选择</span></button>
           <button type="button" class="tool" data-tab="meihua" title="见闻起卦"><b>梅花</b><span>见闻起卦</span></button>
           <button type="button" class="tool" data-tab="xiaoliuren" title="掐指一算"><b>小六壬</b><span>掐指一算</span></button>
+          <button type="button" class="tool" data-tab="qian" title="今天抽一支"><b>福签</b><span>今天抽一支</span></button>
+          <button type="button" class="tool" data-tab="guanyin" title="一事一签，可重摇"><b>灵签</b><span>一事一签，可重摇</span></button>
           <button type="button" class="tmore" aria-expanded="false"></button>
         </div>
       </section>
@@ -692,10 +696,10 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <!-- 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系共用。
          问题必填，会与卦象一起交给下方解读，解读按这个方向展开。-->
     <div class="grp" id="for-ask" style="display:none">
-      <label class="field" id="ask-wrap">所问之事（必填）
+      <label class="field" id="ask-wrap"><span id="ask-label">所问之事（必填）</span>
         <textarea id="question" class="mp-askfree" rows="2" placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"></textarea>
       </label>
-      <label class="field">询问方向
+      <label class="field" id="for-direction">询问方向
         <select id="direction" class="mp-askfree"><option value="general" selected>综合</option><option value="wealth">财运</option><option value="career">事业</option><option value="love">感情</option><option value="health">健康</option><option value="study">学业</option><option value="travel">出行</option></select>
       </label>
       <!-- 塔罗牌阵：仅塔罗 tab 显示（张数由牌阵定，命名牌阵见 engine/tarot.js SPREAD_DEFS） -->
@@ -849,7 +853,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：213 个测试文件 / 11823 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：217 个测试文件 / 12123 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -993,7 +997,7 @@ const NUMERIC_KEYS = [
   'num1', 'num2', 'num3', 'upper', 'lower', 'changing',
   'count', 'toAge', 'fortuneYear', 'period', 'limit',
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
-  'year', 'month', 'day',
+  'year', 'month', 'day', 'no', 'except',
 ];
 
 /** 数值数组：逐项转，任一项不是数字就整组不动，交给原有校验报错 */
@@ -1418,7 +1422,8 @@ const CALIBER_SWITCHES = {
       'yin-yang-shun-ni': '阴阳顺逆', 'shui-tu': '水二', 'huo-tu': '火土（土五局起寅）',
     }),
     ziweiSchoolSwitch('lateZishi', '晚子时：归当日 / 归次日', '晚子时', 'current-day', 'next-day', {
-      'current-day': '归当日', 'next-day': '归次日', 'all-current': '全归当日', 'day-cur-time-next': '日归当日·时归次日',
+      'current-day': '归当日', 'next-day': '归次日',
+      'all-current': '全归当日（兼容别名）', 'day-cur-time-next': '日归当日·时归次日（兼容别名）',
     }),
     ziweiSchoolSwitch('shenzhuSchool', '身主：子午皆火星 / 子铃午火', '身主', 'common', 'verse', {
       common: '子午皆火星', verse: '子铃午火（安身主诀逐字）',
@@ -1545,7 +1550,7 @@ const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford base32（去�
  * 免得哪天新增体系真读性别，却被身份层悄悄抹平。zeri / name 不收性别入参，故不在表内。
  */
 const GENDER_NEUTRAL = new Set([
-  'liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'almanac', 'chenggu', 'xiaoliuren',
+  'liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'qian', 'guanyin', 'almanac', 'chenggu', 'xiaoliuren',
   'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'convert',
 ]);
 
@@ -1926,7 +1931,7 @@ __mods['vsop-earth'] = (function () {
 // 地球日心黄经 L 的 VSOP87B 截断级数（MIT，系数取自 astronomia 的 vsop87Bearth 数据表）。
 // 只保留对 1900–2100 贡献 ≥ 阈值（L0/L1 2e-7、L2 5e-8、L3/L4 1e-8 rad）的项，
 // 共 105 项，被舍弃项振幅合计 2.74 角秒（约 0.11 分钟），足以把节气误差压到 1 分钟内。
-// 用法：earthL(T) 返回弧度，T 为儒略世纪（自 J2000 起）。
+// 用法：earthL(T) 返回弧度，T 为儒略千年（自 J2000 起；(JD-2451545)/365250）。
 const L0 = [
   [1.75347045673,0,0],[0.03341656453,4.66925680415,6283.0758499914],[0.00034894275,4.62610242189,12566.1516999828],[0.00003417572,2.82886579754,3.523118349],
   [0.00003497056,2.74411783405,5753.3848848968],[0.00003135899,3.62767041756,77713.7714681205],[0.00002676218,4.41808345438,7860.4193924392],[0.00002342691,6.13516214446,3930.2096962196],
@@ -7685,14 +7690,20 @@ function buildBazi(input) {
   const solar = useTrueSolar ? applyTrueSolar(civilJd, longitude) : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
   const jd = solar.jd;
 
+  // 交节用标准时轴：节气时刻按东八区（经 DST 校正后）给出，出生时刻只有放在同一根轴上才能比先后。
+  // 拿真太阳时去比会在交节前后一个经度修正带的宽度内把月柱/年柱判到节令另一侧
+  // （东经 120° 以西真太阳时更早，立春 16:27 后、真太阳时 16:27 前的出生会被错排成上一年柱）。
+  // 时柱、日界仍用真太阳时 jd，那才是「当地太阳在天上的位置」该管的事。
+  const termJd = civilJd;
+
   // 八字只用「节」定月柱与起运（气不参与），传 jieOnly 省掉一半节气求值
   const terms = termWindow(year, { jieOnly: true });
-  const prevJieTerm = previousJie(terms, jd);
-  const nextJieTerm = nextJie(terms, jd);
+  const prevJieTerm = previousJie(terms, termJd);
+  const nextJieTerm = nextJie(terms, termJd);
 
   // 年柱：以立春为界
   const lichun = terms.find((t) => t.index === 2 && t.year === year);
-  const solarYear = lichun && jd < lichun.jd ? year - 1 : year;
+  const solarYear = lichun && termJd < lichun.jd ? year - 1 : year;
   const yearIdx = (((solarYear - 4) % 60) + 60) % 60;
   const yearStem = STEMS[yearIdx % 10];
 
@@ -7728,7 +7739,8 @@ function buildBazi(input) {
   // 大运
   const isYangYear = STEMS.indexOf(yearStem) % 2 === 0;
   const forward = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
-  const spanDays = forward ? nextJieTerm.jd - jd : jd - prevJieTerm.jd;
+  // 间隔同样取标准时轴（两端的真实时长与轴无关，但两端必须同轴）
+  const spanDays = forward ? nextJieTerm.jd - termJd : termJd - prevJieTerm.jd;
   const totalMonths = spanDays * 4; // 3 天 = 1 年 = 12 个月
   let startAgeYears = Math.floor(totalMonths / 12);
   let startAgeMonths = Math.round(totalMonths % 12);
@@ -8113,7 +8125,7 @@ function buildBazi(input) {
       next: { name: nextJieTerm.name, time: formatJd(nextJieTerm.jd) },
       // 距「节」的分钟数（取两侧较小值）。是否提示复核由摘要层决定，阈值 20 分钟：
       // 与 NAOJ 历要项对拍实测节气最多偏 13.5 分钟，20 分钟留出余量。
-      nearBoundaryMinutes: Math.round(Math.min(jd - prevJieTerm.jd, nextJieTerm.jd - jd) * 1440),
+      nearBoundaryMinutes: Math.round(Math.min(termJd - prevJieTerm.jd, nextJieTerm.jd - termJd) * 1440),
     },
     renyuan,
     pillars,
@@ -10970,6 +10982,9 @@ const TABLE_FEILIAN = { 子: 8, 丑: 9, 寅: 10, 卯: 5, 辰: 6, 巳: 7, 午: 2,
 const TIANDE_START = 9;   // 酉起子，顺行
 const NIANJIE_START = 10; // 戌起子，逆行
 
+/** 年解落宫（地支序）：流年加星与杂曜全表共用这一式，避免两处各写一张查表。 */
+const nianjieOf = (yearBranch) => fix(NIANJIE_START - BRANCHES.indexOf(yearBranch));
+
 // ── 库（顺序即面板与全文的展示顺序） ──────────────────────────
 
 const ZUOYAO_LIB = [
@@ -11233,7 +11248,7 @@ function zuoyaoVerseBlock(list) {
   }).join('\n');
 }
 
-return { TABLE_JIESHEN, TABLE_TIANWU, TABLE_TIANUE, TABLE_YINSHA, TABLE_TIANGUAN, TABLE_TIANFU, TABLE_TIANCHU, TABLE_FEILIAN, TIANDE_START, NIANJIE_START, ZUOYAO_LIB, ZUOYAO_SKIPPED, ZUOYAO_NAMES, ZUOYAO_STATS, zuoyaoBranch, placeZuoyao, zuoyaoBriefText, zuoyaoVerseBlock };
+return { TABLE_JIESHEN, TABLE_TIANWU, TABLE_TIANUE, TABLE_YINSHA, TABLE_TIANGUAN, TABLE_TIANFU, TABLE_TIANCHU, TABLE_FEILIAN, TIANDE_START, NIANJIE_START, nianjieOf, ZUOYAO_LIB, ZUOYAO_SKIPPED, ZUOYAO_NAMES, ZUOYAO_STATS, zuoyaoBranch, placeZuoyao, zuoyaoBriefText, zuoyaoVerseBlock };
 })();
 
 __mods['ziwei-words'] = (function () {
@@ -11536,7 +11551,7 @@ const { applyDst } = (__mods.dst || {});
 const { assertCivil, assertShifted } = (__mods.validate || {});
 const { nayinOf } = (__mods.nayin || {});
 const { resolveAddress } = (__mods.geo || {});
-const { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } = (__mods['ziwei-zuoyao'] || {});
+const { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED, nianjieOf } = (__mods['ziwei-zuoyao'] || {});
 const { SHA_STAR } = (__mods['ziwei-words'] || {});
 const { bool } = (__mods.bool || {});
 
@@ -11868,6 +11883,9 @@ const KUI_YUE = {
 };
 KUI_YUE_SCHOOLS.qs1 = KUI_YUE;
 
+/** 按流派取魁钺表：本命、大限运曜、流年流曜必须走同一张表，否则同一张盘会出现「本命庚年魁在丑、大限庚运魁在午」。 */
+const kuiyueTableOf = (schools) => (schools && KUI_YUE_SCHOOLS[schools.kuiyueSchool]) || KUI_YUE;
+
 /** 命主：按地支查表。两派共用这张表，分歧在拿哪个地支 —— 见 mingzhuSchool。 */
 const MING_ZHU = {
   子: '贪狼', 丑: '巨门', 寅: '禄存', 卯: '文曲', 辰: '廉贞', 巳: '武曲',
@@ -12052,7 +12070,7 @@ function buildZiwei(input) {
   // 大限顺逆：阳男阴女顺行、阴男阳女逆行（天伤天使的中州派互换也要用它）
   const yearYang = STEMS.indexOf(yearStem) % 2 === 0;
   const forward = (yearYang && gender === 'male') || (!yearYang && gender === 'female');
-  const kuiyueTable = KUI_YUE_SCHOOLS[schools.kuiyueSchool] || KUI_YUE;
+  const kuiyueTable = kuiyueTableOf(schools);
 
   // 命宫 / 身宫
   const soulIndex = fix(2 + (lunarMonth - 1) - hb);
@@ -12331,7 +12349,7 @@ function buildZiwei(input) {
       liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
       // 流曜补全（流昌曲按流年干、流马按流年支三合、流鸾流喜按流年支、年解按流年支）
       ...(() => {
-        const s = horoscopeStarsByBranch(gz, true);
+        const s = horoscopeStarsByBranch(gz, true, kuiyueTable);
         const out = {};
         for (const [name, br] of Object.entries(s)) {
           if (name === '流禄' || name === '流羊' || name === '流陀' || name === '流魁' || name === '流钺') continue;
@@ -12817,7 +12835,7 @@ function daxianList(chart) {
       sanfang: p.sanfang,
       mainStars: mainOf(p.sanfang),
       // 运曜：按大限宫干支安 10 颗（魁钺昌曲禄羊陀马鸾喜），映射 星名→地支
-      yunStars: horoscopeStarsByBranch(p.ganzhi, false),
+      yunStars: horoscopeStarsByBranch(p.ganzhi, false, kuiyueTableOf(chart.schools)),
       // 限流十二神：随大限宫支重安的岁前/将前两组（长生、博士不随限流变）
       yunSuiqi: suiqiByBranch(p.branch, chart.schools.suipoSchool),
       yunJiangqian: jiangqianByBranch(p.branch),
@@ -13015,19 +13033,18 @@ const LIU_CHANGQU = {
   庚: [11, 3], 辛: [0, 2], 壬: [2, 4], 癸: [3, 5],
 };
 
-const NIANJIE_OF = { 子: 10, 丑: 9, 寅: 8, 卯: 7, 辰: 6, 巳: 5, 午: 4, 未: 3, 申: 2, 酉: 1, 戌: 0, 亥: 11 };
-
 /** 前缀：大限叫运X、流年叫流X（iztro 同款命名） */
 const HS_PREFIX = (yearly) => (yearly ? '流' : '运');
 
-/** 按一组干支安限流星曜，返回 12 宫（按地支序）各宫的星名数组。yearly=true 时前缀用「流」并加年解。 */
-function horoscopeStarsOf(gz, yearly = false) {
+/** 按一组干支安限流星曜，返回 12 宫（按地支序）各宫的星名数组。yearly=true 时前缀用「流」并加年解。
+ *  kuiyue 必须跟着盘的魁钺流派走：本命庚年魁在丑、运限却按默认表安到午，等于一张盘用了两派。 */
+function horoscopeStarsOf(gz, yearly = false, kuiyue = KUI_YUE) {
   const stem = gz.stem ?? String(gz).replace(/[子丑寅卯辰巳午未申酉戌亥]$/, '');
   const branch = gz.branch ?? String(gz).slice(-1);
   const sb = BRANCHES.indexOf(branch);
   const pre = HS_PREFIX(yearly);
   const lu = LUCUN[stem];
-  const [kui, yue] = KUI_YUE[stem];
+  const [kui, yue] = kuiyue[stem];
   const [chang, qu] = LIU_CHANGQU[stem];
   const ma = TIANMA[triadOf(sb)];
   const luang = fix(3 - sb);
@@ -13043,13 +13060,13 @@ function horoscopeStarsOf(gz, yearly = false) {
   add(ma, `${pre}马`);
   add(luang, `${pre}鸾`);
   add(luang + 6, `${pre}喜`);
-  if (yearly) add(NIANJIE_OF[branch], '年解');
+  if (yearly) add(nianjieOf(branch), '年解');
   return byBranch;
 }
 
 /** 把 12 宫的星名数组转成 {星名: 地支}（供 daxianList/liunian 挂字段） */
-function horoscopeStarsByBranch(gz, yearly = false) {
-  const byBranch = horoscopeStarsOf(gz, yearly);
+function horoscopeStarsByBranch(gz, yearly = false, kuiyue = KUI_YUE) {
+  const byBranch = horoscopeStarsOf(gz, yearly, kuiyue);
   const out = {};
   byBranch.forEach((stars, i) => {
     for (const name of stars) out[name] = BRANCHES[i];
@@ -13109,13 +13126,17 @@ function flowOf(chart, asOf) {
 
   const lr = solarToLunar(Y, M, D);
   const natalMonth = chart.lunar.month; // 已在起盘时按闰月口径换算过，这里不再二次换月
+  // 流月同理：与本命同一套闰月口径，否则闰月会按两个不同序号各算一遍。
+  const flowPolicy = LEAP_POLICIES.includes(chart.lunar && chart.lunar.leapPolicy)
+    ? chart.lunar.leapPolicy : 'split';
+  const flowMonth = effectiveLunarMonth(lr, flowPolicy);
   const natalHB = BRANCHES.indexOf(chart.hourBranch);
   const hbNow = hourBranchIndex(H, MI);
 
   const gz = ganzhiName((((lr.lunarYear - 4) % 60) + 60) % 60);
   const yB = BRANCHES.indexOf(gz.branch);
   const doujun = fix(yB - (natalMonth - 1) + natalHB);
-  const mIdx = fix(doujun + (lr.month - 1));
+  const mIdx = fix(doujun + (flowMonth - 1));
   const dIdx = fix(mIdx + (lr.day - 1));
   const hIdx = fix(dIdx + hbNow);
 
@@ -13160,14 +13181,14 @@ function flowOf(chart, asOf) {
       hourBranch: BRANCHES[hbNow],
     },
     year: { ...point(yB), doujun: BRANCHES[doujun] },
-    month: { index: lr.month, ...point(mIdx) },
+    month: { index: flowMonth, monthRaw: lr.month, isLeap: lr.isLeap, ...point(mIdx) },
     day: { index: lr.day, ...point(dIdx) },
     hour: { hourIndex: hbNow, ...point(hIdx) },
     rules: '流月命宫自流年斗君（该年支起正月逆数至生月，再起子时顺数至生时）起正月，顺行至该农历月；流日自流月命宫起初一，顺行至该农历日；流时自流日命宫起子时，顺行至该时辰；四化取落点宫的原局宫干',
   };
 }
 
-return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, SIHUA_VARIANTS, sihuaTableOf, natalSihuaTableOf, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_BREAK_RULES, PATTERN_TONE, suiqiByBranch, jiangqianByBranch, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, horoscopeStarsOf, horoscopeStarsByBranch, enrichLiunian, asOfParts, flowOf };
+return { PALACE_NAMES, BRIGHTNESS, MUTAGEN, ZIWEI_SCHOOL_DEFAULTS, ZIWEI_SCHOOL_OPTIONS, ziweiSchoolsOf, BRIGHTNESS_SCHOOLS, schoolBrightness, SIHUA_VARIANTS, sihuaTableOf, natalSihuaTableOf, KUI_YUE_SCHOOLS, LUCUN, KUI_YUE, kuiyueTableOf, MING_ZHU, SHEN_ZHU, triadOf, HUO_START, LING_START, TIANMA, XIANCHI, HUAGAI, JIANGXING, GUCHEN, GUASU, posuIndex, XIAOXIAN_START, CHANGSHENG_NAMES, BOSHI_NAMES, JIANGQIAN_NAMES, SUIQI_NAMES, CHANGSHENG_START, hourBranchIndex, ziweiTianfuIndex, xiaoxianAge, LEAP_POLICIES, leapPolicyOf, effectiveLunarMonth, buildZiwei, detectPatterns, PATTERN_BREAK_RULES, PATTERN_TONE, suiqiByBranch, jiangqianByBranch, daxianList, FLY_TYPES, flyStarOf, flyStars, flyChain, flyChains, flyComposite, horoscopeStarsOf, horoscopeStarsByBranch, enrichLiunian, asOfParts, flowOf };
 })();
 
 __mods['tarot-cards'] = (function () {
@@ -17336,7 +17357,6 @@ __mods['ziwei-hepan'] = (function () {
 const { buildZiwei } = (__mods.ziwei || {});
 const { assertCivil } = (__mods.validate || {});
 
-const NAMES = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '官禄', '田宅', '福德', '父母'];
 const MUT_MEAN = {
   禄: '会把资源、机会与松弛感带过去',
   权: '会不自觉地主导或施压',
@@ -17436,7 +17456,6 @@ function buildZiweiHepan(input) {
     soulStars: mainStars(z.palaces.find((p) => p.palace === '命宫') || {}),
     spouseStars: mainStars(z.palaces.find((p) => p.palace === '夫妻') || {}),
     natalSihua: (z.palaces || []).flatMap((p) => (p.stars || []).filter((s) => s.mutagen).map((s) => `${s.name}化${s.mutagen}(${p.palace})`)),
-    summary: z.summary,
   });
 
   return {
@@ -17738,7 +17757,9 @@ function buildSnapshot(input) {
     winterSolsticeJulianDay: wsJd,
     summerSolsticeJulianDay: ssJd,
     solarDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-    lunarDate: `${lunar.year}年${lunar.isLeap ? '闰' : ''}${lunar.month}月${lunar.day}日`,
+    // 农历年要用 lunarYear（以正月初一为界），不是公历年：2025-06 属乙巳年，
+    // 公历年写法会把春节前出生的人报成下一年，闰月前后的显示也跟着错。
+    lunarDate: `${lunar.lunarYear}年${lunar.isLeap ? '闰' : ''}${lunar.month}月${lunar.day}日`,
     solarTermTime: formatJd(cur.jd),
   };
 }
@@ -19097,6 +19118,901 @@ function hourComposite(stemIdx, branchIdx) {
 return { ZHIXING, ZHIXING_YI, ZHIXING_JI, SHENGXIAO, hourToBranch, zhixingOf, lunarMonthText, TIAN_SHEN, TIAN_SHEN_TYPE, tianShenOf, MANSIONS, xiuOf, dailyHexagram, buildAlmanac };
 })();
 
+__mods.qian = (function () {
+// 每日福签：按公历日期确定性抽取，一天一签，不设重摇。
+// 签文与释义为本插件原创（不照录任何宫观签谱），四档：上上 / 上 / 中 / 平。
+const { MIN_YEAR, MAX_YEAR, daysInMonth } = (__mods.validate || {});
+const { fail } = (__mods.fail || {});
+const { solarToLunar } = (__mods.lunar || {});
+const { fromJDN, ganzhiName, dayGanzhiIndex, toJDN } = (__mods.calendar || {});
+
+/**
+ * 36 支签。level 只做四档，不设「下」：福签是给一天一个好开头，
+ * 不是给判决书。每支签：签题、两句七言签文、签意、可执行的建议、两枚标签。
+ *
+ * 签文走七言对句：上句取景，下句见意；签意仍旧说人话，不堆典故，
+ * 也不替人下断言——只把今天适合看的方向轻轻摆出来。
+ */
+const SLIPS = [
+  // ── 上上（4）──
+  {
+    no: 1, level: '上上', title: '云开月明',
+    verse: ['云散长空月自明', '好风送过小窗棂'],
+    meaning: '压在心头的事有了松动，像云散之后月色自己漫进来。今天适合把迟迟未说的话说出口，也适合等一封在路上的回音。',
+    advice: '开窗，给好消息留个进来的口。',
+    chips: ['宜开口', '宜候音'],
+  },
+  {
+    no: 2, level: '上上', title: '顺水行舟',
+    verse: ['一篙点破碧琉璃', '两岸青山次第低'],
+    meaning: '手上的事正顺着势头走，不必与它较劲。把力气用在掌舵，比一味划桨更省力，也更早见岸。',
+    advice: '为正在推进的事写下下一步。',
+    chips: ['顺势', '轻桨'],
+  },
+  {
+    no: 3, level: '上上', title: '春信入怀',
+    verse: ['梅梢才透一分暖', '远信已随春水来'],
+    meaning: '你等的回应正在路上，未必照你设想的样子来，方向却是朝你。今天适合留意消息，也适合先回别人的话。',
+    advice: '回一条搁置已久的消息。',
+    chips: ['有信', '宜往来'],
+  },
+  {
+    no: 4, level: '上上', title: '灯火可亲',
+    verse: ['灯火初上人初归', '一室清欢话到迟'],
+    meaning: '人和事都顺的一天。比起独行，今天更容易在熟人间得到照应；留一点时间给身边的人，所得的会比预想的多。',
+    advice: '约久未相见的人吃一顿便饭。',
+    chips: ['人和', '宜小聚'],
+  },
+
+  // ── 上（10）──
+  {
+    no: 5, level: '上', title: '登高望远',
+    verse: ['欲穷千里先移步', '千阶原自足下来'],
+    meaning: '目标看着远，缺的往往只是第一步。今天先把最小的那一步做了，视野会跟着变；不必一次看清全程。',
+    advice: '把大目标拆成今天能做完的一件小事。',
+    chips: ['起步', '一览'],
+  },
+  {
+    no: 6, level: '上', title: '一叶知秋',
+    verse: ['一叶初黄知岁晚', '微风过处见端倪'],
+    meaning: '小事里已经有了信号。今天适合留意细节：一句改口、一次迟疑，都可能藏着事情的走向。看得早，调整便从容。',
+    advice: '把注意到的细节记下，过几日回看。',
+    chips: ['观微', '早备'],
+  },
+  {
+    no: 7, level: '上', title: '旧友重逢',
+    verse: ['故人忽自门前过', '笑问别来可无恙'],
+    meaning: '旧关系有回暖的迹象。一次偶遇、一条消息，可能把断了的线重新接上。不必刻意经营，自然相处就好。',
+    advice: '翻出旧联系人，问一句近况。',
+    chips: ['故人', '叙旧'],
+  },
+  {
+    no: 8, level: '上', title: '小满未满',
+    verse: ['麦穗初齐方小满', '留些余地待风来'],
+    meaning: '进展不错，却还没到收的时候。今天适合收着点劲，把余地留给变化：话说八分，事做九分，反而更稳。',
+    advice: '给计划留一个可以调整的口子。',
+    chips: ['留余', '未满'],
+  },
+  {
+    no: 9, level: '上', title: '磨刀不误',
+    verse: ['磨刀不误山中事', '慢里藏锋一寸功'],
+    meaning: '看似耽误的准备，其实在省后面的力气。今天适合补工具、补功课、补流程；底子顺了，再动手就快。',
+    advice: '花半小时整理手边的工具或资料。',
+    chips: ['先备', '藏锋'],
+  },
+  {
+    no: 10, level: '上', title: '借风使船',
+    verse: ['好风借我一帆力', '不费撑篙也向前'],
+    meaning: '身边有可借的力：一个人、一条路子、一个现成的办法。今天不必事事自己扛，开口求助反而是聪明的做法。',
+    advice: '把卡住的一步说给懂行的人听。',
+    chips: ['借力', '问路'],
+  },
+  {
+    no: 11, level: '上', title: '一步一景',
+    verse: ['一步行来一步景', '山回水转又逢村'],
+    meaning: '不必等万事俱备才出发。边走边看，路上自会有新的消息；今天适合边做边调，别把计划钉得太死。',
+    advice: '先做十分钟，再决定要不要继续。',
+    chips: ['行看', '试步'],
+  },
+  {
+    no: 12, level: '上', title: '心手相应',
+    verse: ['心到之处手亦到', '落笔浑如顺水舟'],
+    meaning: '想与做对上了的一天，动手便顺。今天适合处理需要熟练度的事，也适合把想法落成第一个版本。',
+    advice: '把脑子里的方案写成一页纸。',
+    chips: ['应手', '落笔'],
+  },
+  {
+    no: 13, level: '上', title: '守得云开',
+    verse: ['云低未必无晴日', '守到云开月自明'],
+    meaning: '眼下没有明显进展，却也还没到该放手的时候。今天适合稳住节奏，把该做的做完；转机往往在耐心之后。',
+    advice: '按原计划做完今天这一格，不加戏。',
+    chips: ['宜守', '待明'],
+  },
+  {
+    no: 14, level: '上', title: '花开两朵',
+    verse: ['一树花开分两朵', '各含春色各倾城'],
+    meaning: '摆在面前的两个选择各有各的好。今天不必急着二选一，先看清自己更在意什么，答案会慢慢浮出来。',
+    advice: '把两个选项的好处各写三条。',
+    chips: ['两可', '细看'],
+  },
+
+  // ── 中（14）──
+  {
+    no: 15, level: '中', title: '平流缓进',
+    verse: ['水不争先流自稳', '缓舟也能到远滩'],
+    meaning: '节奏偏慢，却没有后退。今天适合按部就班，把手上的事做扎实；急着提速，反而容易在浅处搁住。',
+    advice: '把今天的待办减到三件。',
+    chips: ['稳行', '循序'],
+  },
+  {
+    no: 16, level: '中', title: '半山听雨',
+    verse: ['行到半山逢细雨', '且向檐下听片时'],
+    meaning: '走到半途遇上天气变化，停下不是认输。今天适合把节奏放慢，等雨小些再走，反倒省鞋省力。',
+    advice: '给自己留一段什么都不做的空白。',
+    chips: ['暂歇', '听雨'],
+  },
+  {
+    no: 17, level: '中', title: '细水长流',
+    verse: ['细水长流不争先', '日日一滴也成泉'],
+    meaning: '这件事靠的是持续，不是一时的爆发。今天做一点就好，要紧的是别断；积到某日，自会显出分量。',
+    advice: '把目标改成每天十分钟。',
+    chips: ['日进', '不断'],
+  },
+  {
+    no: 18, level: '中', title: '各安其位',
+    verse: ['各人自有各人位', '先安己心再顾人'],
+    meaning: '今天容易被他人的情绪或期待带走。先把边界放好：能帮的帮，帮不了的说清楚。顾好自己，才有余力顾别人。',
+    advice: '试着说一次「这次我帮不上」。',
+    chips: ['守界', '顾己'],
+  },
+  {
+    no: 19, level: '中', title: '留白三分',
+    verse: ['话到嘴边留三分', '纸上留白方成画'],
+    meaning: '说得太满容易收不回来。今天适合少说多听，把要紧的话留到合适的场合；留白不是退让，是给彼此转身的余地。',
+    advice: '重要的话先想三秒再发。',
+    chips: ['慎言', '留白'],
+  },
+  {
+    no: 20, level: '中', title: '轻装上路',
+    verse: ['行囊减半路自宽', '放下三分便轻快'],
+    meaning: '身上挂着太多不必带的东西：旧任务、旧情绪、旧承诺。今天适合清一清，卸下一点，路会好走许多。',
+    advice: '删掉一个早已不想做的待办。',
+    chips: ['减负', '清爽'],
+  },
+  {
+    no: 21, level: '中', title: '观棋不语',
+    verse: ['局外观棋心自明', '少言一句是非轻'],
+    meaning: '今天的信息还不齐，急着表态容易站错。适合多看、多问、少下判断；等局面清楚，再决定站哪边。',
+    advice: '遇到争论，先问一句「还有别的说法吗」。',
+    chips: ['旁观', '缓判'],
+  },
+  {
+    no: 22, level: '中', title: '绕道而行',
+    verse: ['直路难通须转折', '山不转处水回环'],
+    meaning: '正面推不动的事，换个走法或另有去处。今天适合改路径，而不是加力气：换个说法、换个时间、换个入口。',
+    advice: '为卡住的事想一个替代方案。',
+    chips: ['换径', '勿硬'],
+  },
+  {
+    no: 23, level: '中', title: '灯下读书',
+    verse: ['灯下翻书声细细', '旧题重看又一层'],
+    meaning: '缺的往往不是机会，是准备。今天适合补一补功课：把不懂的弄懂，把模糊的弄清楚。准备够了，机会来了才接得住。',
+    advice: '挑一个一直没弄懂的问题查清楚。',
+    chips: ['补课', '温故'],
+  },
+  {
+    no: 24, level: '中', title: '以退为进',
+    verse: ['退一步时天地阔', '让三分处路还长'],
+    meaning: '争一时高低，未必划算。今天适合在非原则的事上让一步，把力气留给真正要紧的地方。退不是输，是换个战场。',
+    advice: '列出今天可以不争的一件事。',
+    chips: ['知退', '换局'],
+  },
+  {
+    no: 25, level: '中', title: '慢火煨汤',
+    verse: ['慢火煨汤味方厚', '急火烧水只见烟'],
+    meaning: '火候未到，掀锅只会跑了气。今天适合等该等的：等回复、等结果、等情绪过去，把等待用在手边的小事上。',
+    advice: '设一个提醒，到点再看结果。',
+    chips: ['候火', '莫催'],
+  },
+  {
+    no: 26, level: '中', title: '井井有条',
+    verse: ['先理丝线后穿针', '案头清了心也清'],
+    meaning: '许多乱，来自没有收好。今天适合先整理再出发：桌面、文件夹、待办清单，理一遍，思路也就顺了。',
+    advice: '花十五分钟收拾一个角落。',
+    chips: ['先理', '有序'],
+  },
+  {
+    no: 27, level: '中', title: '隔岸观火',
+    verse: ['隔岸看火心不慌', '且看风色辨西东'],
+    meaning: '别人的热闹先别急着卷进去。今天适合隔开一点距离，看清利害与立场，再决定要不要参与。',
+    advice: '对群里的争论先只读不回。',
+    chips: ['观火', '缓入'],
+  },
+  {
+    no: 28, level: '中', title: '守口如瓶',
+    verse: ['瓶口收紧香不散', '话少之处是非稀'],
+    meaning: '今天的话容易传得快。适合把私事、计划与不满收一收，只在该说的地方说。沉默有时比解释更有力。',
+    advice: '把想发的长消息先存成草稿。',
+    chips: ['守密', '少言'],
+  },
+
+  // ── 平（8）──
+  {
+    no: 29, level: '平', title: '风停雨住',
+    verse: ['风停雨住云未散', '且收船桨待天青'],
+    meaning: '外部条件暂时不帮忙，硬推只会费劲。今天适合守成：把手上的事收好尾，不新开摊子，等天气转好再动。',
+    advice: '今天只做已经答应过的事。',
+    chips: ['守成', '待晴'],
+  },
+  {
+    no: 30, level: '平', title: '雾里看花',
+    verse: ['雾里看花花未真', '且待雾散再端详'],
+    meaning: '眼下看到的多半是轮廓，不是全貌。今天容易把猜测当事实，适合先不下结论，多留一日观察。',
+    advice: '把判断写成「目前观察到……」，而不是定论。',
+    chips: ['慢看', '勿断'],
+  },
+  {
+    no: 31, level: '平', title: '逆水行舟',
+    verse: ['逆水行舟篙要稳', '篙稳何愁到岸迟'],
+    meaning: '阻力是真实的，却不是走不动。今天适合放低对速度的期待，一寸一寸往前挪，别指望一步跨过。',
+    advice: '把进度目标砍半，完成就算赢。',
+    chips: ['稳篙', '寸进'],
+  },
+  {
+    no: 32, level: '平', title: '独木小桥',
+    verse: ['独木桥横秋水阔', '且收心绪缓缓行'],
+    meaning: '路窄，容不得并行。今天适合一次只理一件事，把注意力收拢，反而不容易掉下去。',
+    advice: '关掉一个会打断你的通知。',
+    chips: ['专一', '缓行'],
+  },
+  {
+    no: 33, level: '平', title: '空杯以待',
+    verse: ['杯中有旧难盛新', '倒空之后水自来'],
+    meaning: '旧的东西占着位置，新的便进不来。今天适合放下一点成见或旧安排，给自己留出接纳的余地。',
+    advice: '删掉一个「以后再说」的囤积。',
+    chips: ['清杯', '纳新'],
+  },
+  {
+    no: 34, level: '平', title: '夜路提灯',
+    verse: ['夜路虽长灯在手', '照得脚前一段明'],
+    meaning: '看不清远处，但脚边这一圈是亮的。今天不必规划全程，照好眼前三步，路会一段段显出来。',
+    advice: '只决定接下来一小时做什么。',
+    chips: ['照步', '徐行'],
+  },
+  {
+    no: 35, level: '平', title: '静水深流',
+    verse: ['静水无波流自深', '不必声张也向前'],
+    meaning: '今天的进展多半在看不见的地方。适合低调做事，少解释、少炫耀；积累无声，却一直在。',
+    advice: '把成果先存好，不必急着展示。',
+    chips: ['低调', '沉淀'],
+  },
+  {
+    no: 36, level: '平', title: '归巢歇脚',
+    verse: ['倦鸟归巢天已暮', '养得羽丰再出林'],
+    meaning: '状态比进度更要紧。今天适合把休息当成正事：睡足、吃好、少耗神。恢复过来，明日才有力气。',
+    advice: '今晚提前半小时放下手机。',
+    chips: ['歇羽', '养神'],
+  },
+];
+
+const QIAN_LEVELS = ['上上', '上', '中', '平'];
+const QIAN_RULES = '每日一签：以公历日期为种，同一天只此一签；次日自换，不设重摇。';
+const QIAN_SCOPE = '福签取民俗自省之意，不预示结果；要紧事仍以现实信息为准。';
+
+/** 各档旁白分开写：签筒怎么响、签怎么出来，语气随签走，而不是每天同一句。 */
+const ASIDES = {
+  上上: '（签筒摇得哗啦作响，一支签跃出筒口）叮——是上上签，接住啦。',
+  上: '（拨开签堆，拈出一支，签身还带着木香）这支好，收着。',
+  中: '（把签筒转了两圈，才慢慢抽出一支）中签，不急不躁，正稳当。',
+  平: '（轻轻摇出一支，吹去签上的浮灰）平签，今日宜缓，先歇口气。',
+};
+
+const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六'];
+const MONTH_CN = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+const DAY_CN = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+function dayCn(n) {
+  if (n <= 10) return n === 10 ? '初十' : `初${DAY_CN[n]}`;
+  if (n < 20) return `十${DAY_CN[n - 10]}`;
+  if (n === 20) return '二十';
+  if (n < 30) return `廿${DAY_CN[n - 20]}`;
+  return '三十';
+}
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+/** 日期哈希：同一天同结果；Math.imul 保证 32 位乘法不丢精度。 */
+function daySeed(y, m, d) {
+  let x = ((y * 73856093) ^ (m * 19349663) ^ (d * 83492791) ^ Math.imul(0x51ed, 2654435761)) >>> 0;
+  x = Math.imul(x ^ (x >>> 13), 0x5bd1e995);
+  return (x ^ (x >>> 15)) >>> 0;
+}
+
+function slipOf(y, m, d) {
+  return SLIPS[daySeed(y, m, d) % SLIPS.length];
+}
+
+function metaOf(y, m, d) {
+  const jdn = toJDN(y, m, d);
+  const lunar = solarToLunar(y, m, d);
+  const yearGz = ganzhiName(lunar.lunarYear - 4).name;
+  const dayGz = ganzhiName(dayGanzhiIndex(jdn)).name;
+  return {
+    date: `${y}-${pad2(m)}-${pad2(d)}`,
+    weekday: `周${WEEKDAY[(jdn + 1) % 7]}`,
+    lunar: `${lunar.isLeap ? '闰' : ''}${MONTH_CN[lunar.month - 1]}月${dayCn(lunar.day)}`,
+    ganzhi: `${yearGz}年 · ${dayGz}日`,
+  };
+}
+
+function historyOf(y, m, d) {
+  const today = toJDN(y, m, d);
+  const out = [];
+  for (let i = 0; i < 7; i += 1) {
+    const jdn = today - i;
+    const p = fromJDN(jdn);
+    const s = slipOf(p.year, p.month, p.day);
+    out.push({
+      date: `${p.year}-${pad2(p.month)}-${pad2(p.day)}`,
+      weekday: `周${WEEKDAY[(jdn + 1) % 7]}`,
+      no: s.no,
+      level: s.level,
+      title: s.title,
+    });
+  }
+  return out;
+}
+
+/**
+ * 每日福签。传公历年月日；同一天永远同一支，次日自动换签。
+ * @param {{year:number, month:number, day:number}} input
+ */
+function buildQian(input) {
+  const { year, month, day } = input || {};
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)
+    || year < MIN_YEAR || year > MAX_YEAR || month < 1 || month > 12
+    || day < 1 || day > daysInMonth(year, month)) {
+    throw fail('E_INPUT', `福签需要真实存在的公历日期（year ${MIN_YEAR}–${MAX_YEAR}、month、day）——请向用户询问或使用今天`);
+  }
+  const slip = slipOf(year, month, day);
+  const meta = metaOf(year, month, day);
+  return {
+    system: 'qian',
+    meta,
+    slip: { ...slip, total: SLIPS.length },
+    aside: ASIDES[slip.level],
+    history: historyOf(year, month, day),
+    rules: QIAN_RULES,
+    sources: [
+      '签文与释义为本插件原创，不照录任何宫观签谱',
+      '抽取：公历日期哈希确定性生成（同日同签，次日自动更换）',
+    ],
+    disclaimer: QIAN_SCOPE,
+  };
+}
+
+return { SLIPS, QIAN_LEVELS, QIAN_RULES, QIAN_SCOPE, buildQian };
+})();
+
+__mods['guanyin-data'] = (function () {
+// 观音灵签百签的签诗、宫位、签题与卦象（民间通行本）。
+// 这一份是引用文本：诗、签题、卦象按通行本录入，不在这里改写；
+// 白话签意与建议在 guanyin.js，属于本插件自撰。
+const GUANYIN_LOTS = [
+  { no: 1, level: '上', palace: '子宫', title: '钟离成道',
+    poem: ['开天辟地作良缘', '吉日良时万物全', '若得此签非小可', '人行忠正帝王宣'],
+    omen: '盘古初开天地之象，诸事皆吉也。' },
+  { no: 2, level: '下', palace: '子宫', title: '苏秦不第',
+    poem: ['鲸鱼未变守江河', '不可升腾更望高', '异日峥嵘身变化', '许君一跃跳龙门'],
+    omen: '鲸鱼未变之象，凡事忍耐待时也。' },
+  { no: 3, level: '下', palace: '丑宫', title: '董永遇仙',
+    poem: ['临风冒雨去还乡', '正是其身似燕儿', '衔得泥来欲作垒', '到头垒坏复还泥'],
+    omen: '燕子衔泥之象，凡事劳心费力也。' },
+  { no: 4, level: '上', palace: '丑宫', title: '玉莲会十朋',
+    poem: ['千年古镜复重圆', '女再求夫男再婚', '自此门庭重改换', '更添福禄在儿孙'],
+    omen: '古镜重圆之象，凡事劳心有贵也。' },
+  { no: 5, level: '中', palace: '寅宫', title: '刘晨遇仙',
+    poem: ['一锥卓地要求泉', '努力求之得最难', '无意俄然遇知己', '相逢携手上青天'],
+    omen: '锥地求泉之象，凡事先难后易也。' },
+  { no: 6, level: '中', palace: '寅宫', title: '仁贵遇主',
+    poem: ['投身岩下铜鸟居', '须是还他大丈夫', '取得营谋谁可知', '通行天地此人无'],
+    omen: '投岩铜鸟之象，凡事宜顺吉之兆。' },
+  { no: 7, level: '下', palace: '寅宫', title: '苏娘走难',
+    poem: ['奔波阻隔重重险', '带水拖泥去度山', '更望他乡求用事', '千乡万里未回还'],
+    omen: '拖泥带水之象，凡事守旧则吉也。' },
+  { no: 8, level: '上', palace: '卯宫', title: '裴度还带',
+    poem: ['茂林松柏正兴旺', '雨雪风霜总莫为', '异日忽然鸿鹄飞', '功名成就栋梁材'],
+    omen: '松柏茂林之象，凡事有贵气也。' },
+  { no: 9, level: '上', palace: '卯宫', title: '孔明点将',
+    poem: ['烦君勿作私心事', '此意偏宜说问公', '一片明心光皎洁', '宛如皎月正天中'],
+    omen: '皎月当空之象，凡事光明通达也。' },
+  { no: 10, level: '中', palace: '卯宫', title: '庞涓观阵',
+    poem: ['石藏无价玉和珍', '只管他乡外界寻', '宛如持灯更觅火', '不如收拾枉劳心'],
+    omen: '持灯觅火之象，凡事待时成就也。' },
+  { no: 11, level: '上', palace: '寅宫', title: '书荐姜维',
+    poem: ['欲求胜事可非常', '争奈亲姻日暂忙', '到头必竟成鹿箭', '贵人指引贵人乡'],
+    omen: '因祸得福之象，凡事营谋吉利也。' },
+  { no: 12, level: '上', palace: '寅宫', title: '武吉遇师',
+    poem: ['否去泰来咫尺间', '暂交君子出于山', '若逢虎兔佳音信', '立志忙中事即闲'],
+    omen: '祸中有福之象，凡事先凶后吉也。' },
+  { no: 13, level: '中', palace: '寅宫', title: '罗通拜帅',
+    poem: ['自小生在富贵家', '眼前万物总奢华', '蒙君赐紫金鱼带', '四海声名定可夸'],
+    omen: '龙门得遇之象，凡事有变大吉也。' },
+  { no: 14, level: '中', palace: '卯宫', title: '子牙弃官',
+    poem: ['宛如仙鹤出樊笼', '脱得樊笼路路通', '南北东西无阻隔', '任君直上九霄宫'],
+    omen: '仙鹤离笼之象，凡事先凶后吉也。' },
+  { no: 15, level: '中', palace: '卯宫', title: '苏秦得志',
+    poem: ['行人怨日气难吞', '忽有灾事勿近前', '鸟破林巢无所宿', '可寻深处稳安身'],
+    omen: '鸟鹊巢林之象，凡事到底应心也。' },
+  { no: 16, level: '中', palace: '辰宫', title: '叶梦熊朝帝',
+    poem: ['愁眉思虑暂时开', '启出云霄喜日来', '宛如粪土中藏玉', '良工一举出尘埃'],
+    omen: '阴阳和合之象，凡事所谋皆吉也。' },
+  { no: 17, level: '中', palace: '辰宫', title: '曹操话梅止渴',
+    poem: ['莫听闲言说是非', '晨昏只好念弥陀', '若将狂语为真实', '画饼如何止得饥'],
+    omen: '画饼充饥之象，凡事多虚少实也。' },
+  { no: 18, level: '上', palace: '辰宫', title: '曹国舅为仙',
+    poem: ['金乌西坠兔东升', '日夜循环至古今', '僧道得知无不利', '士农工商各从心'],
+    omen: '阴阳消长之象，凡事遂意之兆也。' },
+  { no: 19, level: '中', palace: '巳宫', title: '子仪封王',
+    poem: ['急水滩头放船归', '风波作浪欲何为', '若要安然求稳静', '等待浪静过此危'],
+    omen: '船行急滩之象，凡事守旧待时也。' },
+  { no: 20, level: '中', palace: '巳宫', title: '姜太公遇文王',
+    poem: ['当春久雨喜开晴', '玉兔金乌渐渐明', '旧事消散新事遂', '看看一跳过龙门'],
+    omen: '久雨初晴之象，凡事遂意也。' },
+  { no: 21, level: '上', palace: '巳宫', title: '李旦龙凤配合',
+    poem: ['阴阳道合总由天', '女嫁男婚喜偎然', '但见龙蛇相会合', '熊罴入梦乐团圆'],
+    omen: '阴阳道合之象，凡事和合大吉也。' },
+  { no: 22, level: '中', palace: '巳宫', title: '六郎逢救',
+    poem: ['旱时田里皆枯槁', '谢天甘雨落淋淋', '花果草木皆润泽', '始知一雨值千金'],
+    omen: '旱逢甘雨之象，凡事难中有救也。' },
+  { no: 23, level: '中', palace: '午宫', title: '怀德招亲',
+    poem: ['忽遇一般音信好', '人人欢笑喜庆来', '欲扳仙桂入蟾宫', '岂虑天门不任开'],
+    omen: '手扳仙桂之象，凡事必有贵人也。' },
+  { no: 24, level: '下', palace: '午宫', title: '殷郊遇师',
+    poem: ['不成理论不成家', '水性痴人似落花', '若问君恩须得力', '到头方见事如麻'],
+    omen: '痴人道塞之象，凡事守旧待时也。' },
+  { no: 25, level: '中', palace: '午宫', title: '李广机智',
+    poem: ['过了忧危事几重', '从今再立永无空', '宽心自有宽心计', '得过高人立大功'],
+    omen: '古井逢泉之象，凡事贵人成就也。' },
+  { no: 26, level: '中', palace: '午宫', title: '钟馗得道',
+    poem: ['上下传来事转虚', '天边接得一封书', '书中许我功名遂', '直到终时亦是虚'],
+    omen: '' },
+  { no: 27, level: '中', palace: '午宫', title: '刘基谏主',
+    poem: ['一谋一用一番书', '虑后思前不敢为', '时到贵人相助力', '如山壁立可安居'],
+    omen: '屋好墙壁之象，凡事稳当无险也。' },
+  { no: 28, level: '中', palace: '未宫', title: '李后寻包公',
+    poem: ['东边月兔正婵娟', '顷刻云遮亦暗存', '或有圆时还有缺', '更言非者亦闲言'],
+    omen: '月被云遮之象，凡事昏迷未定也。' },
+  { no: 29, level: '中', palace: '未宫', title: '赵子龙救阿斗',
+    poem: ['宝剑出匣耀光明', '在匣全然不惹尘', '今得贵人携出现', '有威有势众人钦'],
+    omen: '宝剑出匣之象，凡事有威有势也。' },
+  { no: 30, level: '中', palace: '未宫', title: '棋盘大会',
+    poem: ['劝君切莫向他求', '似鹤飞来暗箭投', '若去采薪蛇在草', '恐遭毒口也忧愁'],
+    omen: '安份守己之象，凡事小心谨防也。' },
+  { no: 31, level: '中', palace: '未宫', title: '佛印会东坡',
+    poem: ['清闲无忧静处坐', '饱后喝茶时坐卧', '放下身心不用忙', '必定不招冤与祸'],
+    omen: '守旧安然之象，凡事待时则吉也。' },
+  { no: 32, level: '中', palace: '未宫', title: '刘备求贤',
+    poem: ['前程杳杳定无疑', '石中藏玉有谁知', '一朝良匠分明剖', '始觉安然碧玉期'],
+    omen: '剖石见玉之象，凡事着力成功也。' },
+  { no: 33, level: '中', palace: '申宫', title: '咬金聘仁贵',
+    poem: ['内藏无价宝和珍', '得玉何须外界寻', '不如等待高人识', '宽心犹且更宽心'],
+    omen: '藏玉外觅之象，凡事待时可也。' },
+  { no: 34, level: '中', palace: '申宫', title: '桃园结义',
+    poem: ['行藏出入礼义恭', '矢必忠良志必同', '心事了然且静澈', '光明红日正当空'],
+    omen: '红日当空正照之象，凡事遂意也。' },
+  { no: 35, level: '中', palace: '申宫', title: '唐僧取经',
+    poem: ['衣冠重整旧家风', '道是无穷却有功', '扫却当途荆棘刺', '三人约议再和同'],
+    omen: '衣冠重整之象，凡事先难后易也。' },
+  { no: 36, level: '中', palace: '申宫', title: '湘子遇宾',
+    poem: ['眼前病讼不须忧', '实地资财尽可求', '恰似猿猴金锁脱', '自归山洞去来游'],
+    omen: '猿猴脱锁之象，凡事先难后易也。' },
+  { no: 37, level: '中', palace: '酉宫', title: '李靖归山',
+    poem: ['欲待身安运泰时', '风中灯烛不相宜', '不如收拾深堂坐', '庶免光摇静处明'],
+    omen: '风摇灯烛之象，动惹非福，守旧无疑，凡事守常则吉也。' },
+  { no: 38, level: '下', palace: '酉宫', title: '何文秀遇难',
+    poem: ['月照天书静处期', '忽遭云雾又昏迷', '宽心守待云霞散', '此时更改好施为'],
+    omen: '云雾遮月之象，凡事未遂守旧也。' },
+  { no: 39, level: '下', palace: '酉宫', title: '姜女寻夫',
+    poem: ['天边消息实难思', '切莫多心望强求', '若把石头磨作镜', '枉费工夫叹不休'],
+    omen: '守常安静之象，凡事守己则吉也。' },
+  { no: 40, level: '中', palace: '酉宫', title: '武则天登位',
+    poem: ['红轮西坠兔东升', '阴长阳消百事亨', '若是女人宜望用', '增添财禄福其心'],
+    omen: '阴长阳消之象，凡事先难后易也。' },
+  { no: 41, level: '中', palace: '酉宫', title: '董卓收吕布',
+    poem: ['无限好言君记取', '却为认贼将作子', '莫贪眼下有些甜', '更虑他年前样施'],
+    omen: '认贼作子之象，凡事认假作真也。' },
+  { no: 42, level: '上', palace: '酉宫', title: '目莲救母',
+    poem: ['君皇圣后总为恩', '复待祈禳求福增', '一切有情皆受用', '人间天上得期亨'],
+    omen: '天垂恩泽之象，凡事成就大吉也。' },
+  { no: 43, level: '上', palace: '戌宫', title: '行者得道',
+    poem: ['天地变通万物全', '自荣自养自安然', '生罗万象皆精彩', '事事如心谢圣贤'],
+    omen: '天地交泰之象，凡事大吉无危也。' },
+  { no: 44, level: '中', palace: '戌宫', title: '姜维邓艾斗阵',
+    poem: ['棋逢敌手着相宜', '黑白盘中未决时', '皆因一着知胜负', '须教自有好推移'],
+    omen: '棋逢敌手之象，凡事用机关则吉也。' },
+  { no: 45, level: '上', palace: '戌宫', title: '仁宗认母',
+    poem: ['温柔自古胜刚强', '积善之门大吉昌', '若是有人占此卦', '宛如止渴遇琼浆'],
+    omen: '积善温柔之象，凡事贵人和合也。' },
+  { no: 46, level: '中', palace: '戌宫', title: '渭水钓鱼',
+    poem: ['劝君耐守旧生涯', '把定心肠勿起歹', '直待有人轻着力', '枯枝老树花再开'],
+    omen: '枯木生花之象，凡事自有成就也。' },
+  { no: 47, level: '上', palace: '戌宫', title: '梁灏登科',
+    poem: ['锦上添花色愈鲜', '运来禄马喜双全', '时人莫恨功名晚', '一举登科四海传'],
+    omen: '' },
+  { no: 48, level: '中', palace: '亥宫', title: '韩信挂帅',
+    poem: ['鹍鸟秋来化作鹏', '优游快乐喜飞腾', '翱翔万里云霄去', '余外诸禽总不能'],
+    omen: '' },
+  { no: 49, level: '中', palace: '亥宫', title: '王祥求鲤',
+    poem: ['天寒地冻水成冰', '何须贪吝取功名', '只好守己静处坐', '待时兴变自然明'],
+    omen: '水结成冰，凡事不用强求也。' },
+  { no: 50, level: '中', palace: '亥宫', title: '陶朱归五湖',
+    poem: ['五湖四海任君行', '高挂帆篷自在撑', '若得顺风随即至', '满船宝贝喜层层'],
+    omen: '顺风撑船之象，凡事皆须大吉也。' },
+  { no: 51, level: '上', palace: '亥宫', title: '孔明入川',
+    poem: ['夏日炎炎日最长', '人人愁热闷非常', '天地也解和人意', '薰风拂拂自然凉'],
+    omen: '人人愁热之象，凡事随心从意也。' },
+  { no: 52, level: '中', palace: '子宫', title: '李太白醉捞明月',
+    poem: ['水中捉月费功夫', '费尽功夫却又无', '莫说闲言并乱语', '枉劳心力身难苦'],
+    omen: '贪求费力之象，凡事劳心费力也。' },
+  { no: 53, level: '中', palace: '子宫', title: '刘备招亲',
+    poem: ['失意番成得意时', '龙吟虎啸两相宜', '青天自有通霄路', '许我功名再有期'],
+    omen: '龙吟虎啸之象，凡事须意有望也。' },
+  { no: 54, level: '下', palace: '丑宫', title: '马超追曹',
+    poem: ['得宝醒来在梦中', '自是南柯一场空', '若问婚姻并问病', '别寻条路为相通'],
+    omen: '梦中得宝之象，凡事枉费心力也。' },
+  { no: 55, level: '中', palace: '丑宫', title: '周武王登位',
+    poem: ['父贤传子子传孙', '衣食丰隆只靠天', '堂上椿萱人快乐', '饥餐渴饮困时眠'],
+    omen: '接竹引泉之象，凡事谋望大吉也。' },
+  { no: 56, level: '中', palace: '丑宫', title: '禄山谋反',
+    poem: ['滩小石溪流水响', '清风明月贵人忙', '路须借问何方去', '休取林中花草香'],
+    omen: '船行小滩之象，凡事艰难无望也。' },
+  { no: 57, level: '中', palace: '丑宫', title: '董仲寻亲',
+    poem: ['说是说非风过耳', '好衣好禄自然丰', '君莫记取当年事', '汝意还如我意同'],
+    omen: '孩儿见母之象，凡事贵人大吉也。' },
+  { no: 58, level: '中', palace: '丑宫', title: '文王问卜',
+    poem: ['直言说话君须记', '莫在他乡求别业', '切须守己旧生涯', '除此其余都不利'],
+    omen: '守常待时之象，凡事守旧则吉也。' },
+  { no: 59, level: '中', palace: '丑宫', title: '张良隐山',
+    poem: ['直上重楼去藏身', '四围荆棘远为林', '天高君命长和短', '得一番成失二人'],
+    omen: '守旧安分之象，凡事待时则吉也。' },
+  { no: 60, level: '下', palace: '丑宫', title: '赤壁鏖兵',
+    poem: ['抱薪救火大皆燃', '烧遍三千亦复然', '若问荣华并出入', '不如收拾枉劳心'],
+    omen: '抱薪救火之象，凡事亦自谨防也。' },
+  { no: 61, level: '中', palace: '丑宫', title: '苏小妹难夫',
+    poem: ['日里吟诗月下歌', '逢场作戏笑呵呵', '相逢会遇难藏避', '喝彩齐唱莲花落'],
+    omen: '守旧安分之象，凡事待时吉利也。' },
+  { no: 62, level: '中', palace: '丑宫', title: '唐僧得道',
+    poem: ['晨昏全赖佛扶持', '须是逢危却不危', '若得贵人相引时', '声名财帛亦相随'],
+    omen: '神佛暗佑之象，凡事忍耐大吉也。' },
+  { no: 63, level: '中', palace: '丑宫', title: '女娲氏炼石',
+    poem: ['昔日行船失了针', '今朝依旧海中寻', '若然寻得原针在', '也费工夫也费心'],
+    omen: '海中寻针之象，凡事劳神费力也。' },
+  { no: 64, level: '下', palace: '卯宫', title: '马前覆水',
+    poem: ['游鱼却在碧波池', '撞遭罗网四边围', '思量无计番身出', '事到头来惹是非'],
+    omen: '鱼遭罗网之象，凡事亦宜提防也。' },
+  { no: 65, level: '下', palace: '卯宫', title: '孙膑困庞涓',
+    poem: ['眼前欢喜未为欢', '若不危时亦不安', '割肉补疮为甚事', '不如守旧待时光'],
+    omen: '割肉成疮之象，凡事只宜守旧待时也。' },
+  { no: 66, level: '下', palace: '卯宫', title: '霸王被困',
+    poem: ['路险马乏人行急', '失群军卒困相当', '滩高风浪船棹破', '日暮花残天降霜'],
+    omen: '船破下滩之象，凡事险阻提防也。' },
+  { no: 67, level: '上', palace: '卯宫', title: '金星试窦儿',
+    poem: ['一条金线秤君心', '无减无增无重轻', '为人平生心正直', '文章全具炽光明'],
+    omen: '心平正直之象，凡事安稳无凶也。' },
+  { no: 68, level: '中', palace: '卯宫', title: '郭汾阳祝寿',
+    poem: ['门庭吉庆喜非常', '积善之门大吉昌', '婚姻田蚕诸事遂', '病逢妙药即安康'],
+    omen: '春梦百花之象，凡事贵人大吉也。' },
+  { no: 69, level: '中', palace: '卯宫', title: '梅开二度',
+    poem: ['冬来岭上一枝梅', '叶落枝枯总不催', '但得阳春消息至', '依然还我作花魁'],
+    omen: '梅花占魁之象，凡事宜迟则吉也。' },
+  { no: 70, level: '下', palace: '辰宫', title: '李密反唐',
+    poem: ['朝朝恰似采花蜂', '飞出西南又走东', '春尽花残无觅处', '此心不变旧行踪'],
+    omen: '蜜蜂采花之象，凡事劳心费力也。' },
+  { no: 71, level: '中', palace: '辰宫', title: '文君访相如',
+    poem: ['谁知苍龙下九衢', '女子当年嫁二夫', '自是一弓架两箭', '却恐龙马不安居'],
+    omen: '一弓架两箭之象，凡事再合则吉也。' },
+  { no: 72, level: '中', palace: '辰宫', title: '王莽求贤',
+    poem: ['养蜂须用求他蜜', '只怕遭触尾上针', '须是眼前有异路', '暗里深如荆棘林'],
+    omen: '结蜂采蜜之象，凡事劳心费力也。' },
+  { no: 73, level: '上', palace: '辰宫', title: '陈桥兵变',
+    poem: ['春来雷震百虫鸣', '翻身一转离泥中', '始知出入还来往', '一朝变化便成龙'],
+    omen: '雷发百虫之象，凡事遇贵人吉兆也。' },
+  { no: 74, level: '下', palace: '辰宫', title: '秦败擒三帅',
+    poem: ['似鹄飞来自入笼', '欲得翻身却不通', '南北东西都难出', '此卦诚恐恨无穷'],
+    omen: '似鹄投水之象，凡事多虚少实也。' },
+  { no: 75, level: '中', palace: '辰宫', title: '伍员夜出昭关',
+    poem: ['恰如抱虎过高山', '战战兢兢胆碎寒', '不觉忽然从好事', '切须保守一身安'],
+    omen: '抱虎过山之象，凡事凶险惊恐也。' },
+  { no: 76, level: '中', palace: '辰宫', title: '洪武看牛',
+    poem: ['鱼龙混杂意相同', '耐守深潭待运通', '不觉一朝头耸出', '禹门一跳过龙宫'],
+    omen: '鱼龙未变之象，凡事待时至可也。' },
+  { no: 77, level: '中', palace: '未宫', title: '捧璧归赵',
+    poem: ['梦中说得是多财', '声名云外总虚来', '水远山遥难信实', '贵人指点笑颜开'],
+    omen: '梦中得宝之象，凡事虚多实少也。' },
+  { no: 78, level: '上', palace: '未宫', title: '临潼救驾',
+    poem: ['冷水未烧白沸汤', '不寒不热有温凉', '要行天下无难事', '唯有身中百艺强'],
+    omen: '兼善用事之象，凡事平稳大吉也。' },
+  { no: 79, level: '中', palace: '未宫', title: '暗扶倒铜旗',
+    poem: ['虚空结愿保平安', '保得身安愿不还', '切记圣贤真实语', '神恩显赫莫轻慢'],
+    omen: '信实莫信虚之象，凡事守旧之兆也。' },
+  { no: 80, level: '上', palace: '未宫', title: '智远投军',
+    poem: ['直上仙岩要学仙', '岂知一旦帝王宣', '青天白日常明照', '赫赫声名四海传'],
+    omen: '贵人接引之象，凡事和合大吉也。' },
+  { no: 81, level: '上', palace: '未宫', title: '风送滕王阁',
+    poem: ['梧桐叶落秋将暮', '行客归程去似云', '谢得天公高着力', '顺风航船载宝珍'],
+    omen: '梧桐落叶之象，凡事先凶后吉也。' },
+  { no: 82, level: '中', palace: '未宫', title: '火烧葫芦谷',
+    poem: ['炎炎烈火焰连天', '焰里还生一朵莲', '到底得成终不害', '依然生叶长枝根'],
+    omen: '火里生莲之象，凡事似险非险也。' },
+  { no: 83, level: '中', palace: '未宫', title: '李渊登位',
+    poem: ['譬如初三四五缺', '半无半有未圆全', '等待十五良宵夜', '到处光明到处圆'],
+    omen: '月缺未圆之象，凡事候时则吉也。' },
+  { no: 84, level: '下', palace: '未宫', title: '庄子试妻',
+    poem: ['因名丧德如何事', '却恐吉中变化凶', '酒醉不知何处去', '青松影里梦朦胧'],
+    omen: '寒鱼离水之象，凡事不可移动也。' },
+  { no: 85, level: '中', palace: '申宫', title: '韩文公遇雪',
+    poem: ['云深雾罩山前路', '春残花尽又再开', '若得诗书沉梦醒', '贵人指引步天台'],
+    omen: '春尽花开之象，凡事主后改变也。' },
+  { no: 86, level: '上', palace: '酉宫', title: '商辂中三元',
+    poem: ['春来花发映阳台', '万里车来进宝财', '若得禹门三级浪', '恰如平地一声雷'],
+    omen: '上朝见帝之象，凡事大吉大利也。' },
+  { no: 87, level: '中', palace: '酉宫', title: '咬金探地穴',
+    poem: ['人行半岭日衔山', '峻岭崖岩未可安', '仰望上天为护佑', '此身犹在太平间'],
+    omen: '淘沙见金之象，凡事有贵人兆也。' },
+  { no: 88, level: '中', palace: '酉宫', title: '庞洪畏包公',
+    poem: ['木为一虎在当门', '须是有威不害人', '分明说是无防事', '却生迟疑恐惧心'],
+    omen: '木虎有威之象，凡事虚惊少实也。' },
+  { no: 89, level: '上', palace: '酉宫', title: '智服姜维',
+    poem: ['出入营谋大吉昌', '似玉无瑕石里藏', '若得贵人来指引', '斯时得宝喜风光'],
+    omen: '石藏珍宝之象，凡事称心大吉也。' },
+  { no: 90, level: '上', palace: '酉宫', title: '韦丹遇仙',
+    poem: ['忽然一信向天飞', '泰山宝贝满船归', '若问中途成好事', '前头仍有贵人推'],
+    omen: '功名成就之象，凡事宜进大吉也。' },
+  { no: 91, level: '中', palace: '戌宫', title: '三战吕布',
+    poem: ['好展愁眉出众人', '前途改变喜多财', '一条大路如天阔', '凡有施为尽称怀'],
+    omen: '前途显达之象，凡事通泰大吉也。' },
+  { no: 92, level: '上', palace: '戌宫', title: '蔡卿报恩',
+    poem: ['自幼为商任设谋', '财禄盈丰不用求', '若是进身谋望事', '秀才出去状元回'],
+    omen: '自小为商之象，凡事勤俭无忧也。' },
+  { no: 93, level: '中', palace: '戌宫', title: '高君保招亲',
+    poem: ['鸾凤翔毛雨淋漓', '当时却被雀儿欺', '终教一日云消散', '依旧还君整羽衣'],
+    omen: '鸾凤被雨之象，凡事待时大利也。' },
+  { no: 94, level: '下', palace: '戌宫', title: '伯牙访友',
+    poem: ['君子莫听小人为', '事若差池多是非', '琴鸣须用知音听', '守常安静得依归'],
+    omen: '要逢知己之象，凡事守常则吉也。' },
+  { no: 95, level: '中', palace: '戌宫', title: '曹丕称帝',
+    poem: ['志气功业在朝朝', '天宝物华不胜饶', '若见金鸡报君语', '钱财福禄与君招'],
+    omen: '志气功名之象，凡事守常大吉也。' },
+  { no: 96, level: '上', palace: '戌宫', title: '窦燕山积善',
+    poem: ['巍巍宝塔不寻常', '八面玲珑尽放光', '劝君立志勤顶礼', '作善苍天降福祥'],
+    omen: '福德现身之象，凡事大吉大利也。' },
+  { no: 97, level: '中', palace: '亥宫', title: '六出祁山',
+    poem: ['当风点烛空疏影', '恍惚铺成镜里花', '累累河山待收拾', '怎知只是幻浮槎'],
+    omen: '当风点烛之象，凡事虚名少利也。' },
+  { no: 98, level: '下', palace: '亥宫', title: '吉平遇难',
+    poem: ['如鸟飞入罗网里', '相逢能有几多时', '出入求谋事迟疑', '只恐闲愁惹是非'],
+    omen: '守旧随缘之象，凡事不如意凶也。' },
+  { no: 99, level: '下', palace: '亥宫', title: '陶三春挂帅',
+    poem: ['策马持鞭直过来', '半有忧危半有灾', '恰似遭火焚烧屋', '天降时雨荡成灰'],
+    omen: '半忧半喜之象，凡事只宜行善也。' },
+  { no: 100, level: '下', palace: '亥宫', title: '三教谈道',
+    poem: ['佛神尽报与君知', '痴人说梦转昏迷', '老人求得灵签去', '不如守旧待时来'],
+    omen: '守常勿动之象，凡事宜待时吉也。' },
+];
+
+return { GUANYIN_LOTS };
+})();
+
+__mods.guanyin = (function () {
+// 观音灵签：一百支，一事一签，可重摇。
+//
+// 与「每日福签」分开：福签按日期锁死、不重摇；灵签是问事签，同一件事可以再摇，
+// 签意只给方向，不下判决。签诗、签题、宫位、卦象在 guanyin-data.js 按通行本录入，
+// 这一份只放本插件自撰的白话签意、建议与抽取规则。
+const { fail } = (__mods.fail || {});
+const { isSeed, randomOf } = (__mods.random || {});
+const { GUANYIN_LOTS } = (__mods['guanyin-data'] || {});
+
+const GUANYIN_TOTAL = 100;
+
+const GUANYIN_RULES = '一事一签：先把所问之事在心里说明白，再摇；同一件事反复摇，以第一次最静心时为准。';
+
+const GUANYIN_SCOPE = '签诗、签题、宫位与卦象为民间通行本，各宫观与各版本字句略有出入；白话签意、建议与标签为本插件自撰。内容属传统文化与娱乐参考，不作确定性预言，也不替代医疗、法律、投资等专业意见。';
+
+const GUANYIN_SOURCES = [
+  '签诗、签题、宫位与卦象：观音灵签百签民间通行本（各版本有异文）',
+  '白话签意、建议与标签：本插件自撰',
+  '抽取：可传 no 指定第几签，或传 seed 复现；不传则随机摇一支',
+];
+
+const GUANYIN_ASIDES = {
+  上: '上签不是许你万事如意，是提醒你趁势把该做的做了。',
+  中: '中签多半是「将成未成」，守一守，比急着定输赢有用。',
+  下: '下签不是判你不好，是劝你此刻别硬来；退一步，路才看得见。',
+};
+
+/**
+ * 每支签的白话签意、可做的事与两枚标签。
+ * 写法与每日福签一致：先说签里的景，再说人该怎么用；不替人下判决。
+ */
+const COPY = {
+  1: { meaning: '局面像刚开天辟地，旧的框子正在松动，正适合把一件正经事摆到明处。心里端正、话说明白，比找捷径更有用。', advice: '把要做的事写成一句清楚的话。', chips: ['开新局', '守正道'] },
+  2: { meaning: '眼下像鲸鱼困在江河，不是没有本事，是水位还没到。硬要升腾容易受挫，先把根扎稳，等风向变。', advice: '暂缓扩张，补一项真本事。', chips: ['养力', '待时'] },
+  3: { meaning: '来回奔忙却总差一步，像燕子衔泥筑巢又被雨水冲散。先别再起新垒，看看旧处能不能补。', advice: '停一件反复返工的事。', chips: ['止损', '补旧'] },
+  4: { meaning: '破过的关系有重新合拢的契机，旧物旧人未必只能留在过去。若心里还有未了的话，可以挑个平静的时候说开。', advice: '给旧关系一次好好说话的机会。', chips: ['重圆', '叙旧'] },
+  5: { meaning: '刻意去凿未必出水，转机常在松下来的时候出现。该做的功课照做，但别把每一分钟都拧得太紧。', advice: '留半天空白，见一见朋友。', chips: ['松弦', '遇人'] },
+  6: { meaning: '眼下位置看着低，甚至有点委屈，却可能是磨本事的阶段。把手上这摊事做透，识货的人自会看见。', advice: '把一件小事做到无可挑剔。', chips: ['沉住', '显才'] },
+  7: { meaning: '越往外奔越觉处处受阻，像雨天赶路，鞋上的泥越走越重。此时远行、换地方都难顺，先把身边收拾干净。', advice: '暂缓远行与换岗。', chips: ['守近', '清障'] },
+  8: { meaning: '你正像经霜的松柏，眼前的冷不是衰败，是在长年轮。守住品行与手艺，后面的位置会比现在高。', advice: '继续打磨那件长期手艺。', chips: ['经霜', '成材'] },
+  9: { meaning: '这一签贵在「明」：心里不藏私，话摆在桌面上，反而容易得人信服。该点的将、该分的工，可以定了。', advice: '把规则与分工讲清楚。', chips: ['明心', '定局'] },
+  10: { meaning: '好东西可能就在自己手里，却总往远处找。停下比较，先盘点已有的资源，答案常比想象中近。', advice: '列一张「我已有的」清单。', chips: ['内求', '盘点'] },
+  11: { meaning: '看似绕远的路，反倒把你带到合适的人面前。别急着拒绝一次引荐或一次变动，先听听对方怎么说。', advice: '认真回应一次引荐。', chips: ['因祸', '贵人'] },
+  12: { meaning: '坏消息后面跟着转机，像躲雨时恰好遇见师父。眼下的麻烦先别慌，处理它的过程里藏着下一步的门。', advice: '把麻烦拆成三件可做的事。', chips: ['转机', '拆解'] },
+  13: { meaning: '底子不差，也有现成的助力，容易在顺境里松劲。名与位来得快时，更要补上配得上的本事。', advice: '给顺境补一门硬功。', chips: ['借势', '补功'] },
+  14: { meaning: '离开一个困住你的位置，短期会空，长期却松快。若正犹豫要不要退一步，先想清楚笼子外要往哪飞。', advice: '写下离开后的第一步。', chips: ['出笼', '定向'] },
+  15: { meaning: '原本的依靠有了裂缝，未必是坏事，是提醒你别把巢只筑在一棵树上。先找一处安稳的深处，再图后动。', advice: '给自己留一个备用落脚点。', chips: ['易巢', '留后手'] },
+  16: { meaning: '你身上有被尘土盖住的价值，需要一次被看见的机会。别只等别人来挖，先把最能说明本事的东西摆出来。', advice: '整理一份能拿得出手的作品。', chips: ['藏玉', '出尘'] },
+  17: { meaning: '眼前的消息听着解渴，细究却未必顶饱。别把传闻当实情，能核对的数字与承诺先核对。', advice: '核实一条关键消息的来源。', chips: ['辨虚', '核实'] },
+  18: { meaning: '日夜自有次序，各人也有各人的路。你手里的节奏正在回到正轨，按自己的本分走，不必与人比快。', advice: '把作息调回稳定。', chips: ['归序', '各安'] },
+  19: { meaning: '船在急滩上，最忌再添一把桨。眼下的险处，稳住方向比抢速度更要紧，等水面缓一缓再走。', advice: '今天不做冒险的决定。', chips: ['稳舵', '候潮'] },
+  20: { meaning: '压了很久的阴云开始散，旧事有机会翻篇。趁着天刚放晴，把该结的尾轻轻结掉，别把湿气带进新局。', advice: '了结一件拖了很久的小事。', chips: ['放晴', '翻篇'] },
+  21: { meaning: '这一签偏向「合」：人与人的配合、家里的喜事，都有望顺起来。若有该定下来的关系或该坐下来的谈话，可以推进。', advice: '安排一次坦诚的家庭谈话。', chips: ['和合', '定亲'] },
+  22: { meaning: '事情卡在旱处，但救应的雨已经在路上。别在焦躁时把关系或局面弄僵，留出让人伸手的余地。', advice: '主动向可靠的人开口求助。', chips: ['求援', '解旱'] },
+  23: { meaning: '好消息与喜事有靠近的迹象，但还得有人替你搭桥。把姿态放柔和些，多走动，贵人多在热闹处出现。', advice: '参加一次久未露面的聚会。', chips: ['搭桥', '走动'] },
+  24: { meaning: '思路有些乱，越急着解释越像一团麻。此时少说少动，先把事实理清，别在情绪里做决定。', advice: '把事实与情绪分开写。', chips: ['止语', '理麻'] },
+  25: { meaning: '最险的几道坎已经过去，接下来靠的是心宽与巧劲。别把旧惊带进新事，换个角度就有路。', advice: '用一张纸画出现有选择。', chips: ['过险', '换法'] },
+  26: { meaning: '消息听着热闹，落到实处却轻。别人许你的、纸上写的，都要留一分清醒，先看兑现。', advice: '等一件承诺落地再投入。', chips: ['辨空', '待实'] },
+  27: { meaning: '你的筹划不差，差的是临门那一下的胆气。想清楚后就把话递出去，别在反复推演里耗掉时机。', advice: '今天把方案发出去。', chips: ['定谋', '进言'] },
+  28: { meaning: '事情一时看不清，闲话又容易添乱。先别急着判谁对谁错，等云开一点，证据会自己说话。', advice: '等两天再回应争议。', chips: ['候明', '少辩'] },
+  29: { meaning: '你有锋芒，只是还没到出鞘的时候。若有人愿意给你舞台，别过度推辞；该显本事时大方显。', advice: '接下一次当众展示的机会。', chips: ['出匣', '显锋'] },
+  30: { meaning: '局面像一盘棋，旁观者多、暗手也多。此时守好自己的位子，不传闲话、不贪小利，就是最好的应手。', advice: '今天少参与是非讨论。', chips: ['守位', '防口'] },
+  31: { meaning: '清闲不是退步，是让你把心放平的一段空档。该来的消息会在你不再催的时候到，先享受这杯茶。', advice: '给自己一段不被打扰的静处。', chips: ['清闲', '静候'] },
+  32: { meaning: '才能还包在石头里，需要一位识货的人或一次机缘来剖开。先把自己磨到能被一眼认出，再谈遇合。', advice: '找一个懂行的人给一次真反馈。', chips: ['藏玉', '求鉴'] },
+  33: { meaning: '你要找的东西可能就在身边，只是还没被认出来。别急着向外求，先把眼前的人和资源重新看一遍。', advice: '重新评估一个被忽略的人。', chips: ['内看', '候识'] },
+  34: { meaning: '这一签贵在「同心」。找对伙伴、把丑话说在前面，合作反而能久；只讲情面不讲规矩，后面容易生隙。', advice: '合作前把分工与分成写明。', chips: ['结义', '立约'] },
+  35: { meaning: '旧的摊子需要重整，路上的刺也得一根根扫。别一个人硬扛，找两三个可靠的人重新议一议。', advice: '召集一次小范围复盘。', chips: ['重整', '同行'] },
+  36: { meaning: '困住你的锁正在松，身上的小病小纠纷也会慢慢过去。趁松动时把该放的放下，别回头再把自己系上。', advice: '删除一个长期消耗你的承诺。', chips: ['脱锁', '减负'] },
+  37: { meaning: '风口上的灯火，最怕来回折腾。此时守住原有的位置与节奏，比换一盏新灯更稳。', advice: '暂不换方向，先护住火。', chips: ['护灯', '守常'] },
+  38: { meaning: '月色被云遮住，事情一时难见分晓。先别急着改弦更张，守住底线，等云散再动。', advice: '把重要决定推迟几天。', chips: ['守底', '候散'] },
+  39: { meaning: '有些事不是用力就能成，像把石头磨成镜子，工夫下得越深越心疼。先确认方向对不对，再决定要不要继续。', advice: '停下来问一句「值得吗」。', chips: ['止耗', '问值'] },
+  40: { meaning: '局面正在换气，柔韧的一方反而占先。别用硬碰硬的方式争，借势、借人、借时间更有效。', advice: '用商量代替对抗。', chips: ['借势', '柔进'] },
+  41: { meaning: '眼前有甜头，也可能藏着后患。对突然靠近的人与过分好的条件，多问一句「他图什么」。', advice: '查清一次合作背后的动机。', chips: ['辨人', '防甜'] },
+  42: { meaning: '这一签带着「受恩」的意思：有人愿意帮你，或家里的旧结有松动。记得把感谢说出口，也把善意还回去。', advice: '做一件具体的报恩小事。', chips: ['受恩', '回报'] },
+  43: { meaning: '气机通畅的一段，想做的事容易找到入口。别把好运用在虚张声势上，挑一件真正想成的去推进。', advice: '选一件正事全力推进。', chips: ['通泰', '成事'] },
+  44: { meaning: '你遇到的是个懂行的对手，胜负不在蛮力，在一着巧思。先看清对方的习惯，再落子。', advice: '研究对手最近的三步。', chips: ['对弈', '巧着'] },
+  45: { meaning: '这一签偏向以柔化刚：硬争不如好好说，旧怨也有望被温情化开。家里或团队里那个难开口的人，可以先递一步。', advice: '先说一句软话。', chips: ['柔化', '认亲'] },
+  46: { meaning: '眼下的日子像枯水垂钓，急不得。守住旧业、把心定住，等那一阵风来，老树也会开花。', advice: '把日常功课做满三十天。', chips: ['耐守', '待花'] },
+  47: { meaning: '这是晚成的一签：之前的慢不算白慢，火候到了，名与实会一起到。别因年纪或进度自责。', advice: '继续准备那场迟来的考试或评审。', chips: ['晚成', '添花'] },
+  48: { meaning: '你正处在「要飞未飞」的阶段，翅膀已经长好，还差一个起风的时机。先把该练的练到位，别急着证明。', advice: '把简历或作品再打磨一遍。', chips: ['蓄翅', '候风'] },
+  49: { meaning: '天寒水冻，求鱼要靠耐心与诚意，不是砸冰。对人对事都别硬逼，守着自己的本分等冰化。', advice: '用诚意代替催促。', chips: ['守诚', '候暖'] },
+  50: { meaning: '这一签讲「顺势」：风来了就张帆，不必逆着水使劲。把手上能顺水推的事挑出来，先做那几件。', advice: '找出三件可以借力的事。', chips: ['顺风', '张帆'] },
+  51: { meaning: '暑热里自有凉风，事情会在你觉得最难熬的时候松一口气。别在烦躁中乱走，静下来等那阵风。', advice: '今天给自己留一段午休。', chips: ['消暑', '静候'] },
+  52: { meaning: '有些目标像水里的月亮，看着近，捞起来空。先分清哪些是真心想要，哪些只是被光影吸引。', advice: '划掉一个不切实际的执念。', chips: ['辨影', '收心'] },
+  53: { meaning: '眼下的失意可能在悄悄转向，原来的错位会变成合适。别急着给自己下结论，再看一程。', advice: '给一件「失败」的事写复盘。', chips: ['转意', '再看'] },
+  54: { meaning: '眼前的好处有点像梦里的宝，醒来未必还在。婚姻、病痛、钱财上的大事，都要多核实一层。', advice: '把重要承诺落到纸面。', chips: ['辨梦', '落实'] },
+  55: { meaning: '这一签偏「承继」：家里的底子、前人的经验，都是你可以用的。把旧资源接稳，比另起炉灶省力。', advice: '向长辈请教一次经验。', chips: ['承继', '安家'] },
+  56: { meaning: '船进了小滩，水浅石多，越急越容易搁浅。先减载、看水路，别被岸边的花草引偏。', advice: '砍掉一个非核心项目。', chips: ['减载', '看路'] },
+  57: { meaning: '闲话像风，不必句句接住。把日子过稳、把本事养好，该有的衣食与位置会跟上来。', advice: '今天不回应一条闲话。', chips: ['滤言', '养实'] },
+  58: { meaning: '这一签明说「守旧」：旧行业、旧地方、旧关系里还有可挖的东西。此时贸然远求，反而容易两头落空。', advice: '在现有领域找一个新做法。', chips: ['守业', '深耕'] },
+  59: { meaning: '适合收一收锋芒，把自己藏在安静处做功课。不是退场，是避开无谓的消耗，等更好的时辰。', advice: '减少社交，留时间读书。', chips: ['藏锋', '静修'] },
+  60: { meaning: '用错方法，越努力火越大。先停手，看看自己是不是正抱着柴去救火。', advice: '暂停一个越做越糟的方案。', chips: ['止火', '换法'] },
+  61: { meaning: '才情与机锋都能派上用场，但别把聪明全用在嘴上。该认真的时候认真，玩笑才不伤人。', advice: '把一句玩笑换成真话。', chips: ['藏锋', '认真'] },
+  62: { meaning: '路上有惊无险，关键处总有人拉一把。别把「有人帮」当成理所当然，记得道谢，也记得自己走路。', advice: '向帮过你的人回一声谢。', chips: ['有护', '谢恩'] },
+  63: { meaning: '丢了的针要在海里找，不是不能找，是代价太大。先算一算时间与心力，再决定捡不捡。', advice: '给这件事设一个止损线。', chips: ['算账', '止损'] },
+  64: { meaning: '像鱼撞进网里，越挣扎缠得越紧。此时少解释、少掺和，先把自己从是非中心挪开。', advice: '退出一个正在吵的局。', chips: ['脱网', '避非'] },
+  65: { meaning: '为了眼前的一点好处伤自己的根本，不划算。先护住身体、名声与老本，再谈别的。', advice: '拒绝一件伤根本的交换。', chips: ['护本', '待时'] },
+  66: { meaning: '人困马乏，硬闯只会更险。先找地方歇脚、修船，别在日暮天霜时逞强。', advice: '今天早点收工休息。', chips: ['歇脚', '修船'] },
+  67: { meaning: '这一签考的是「心正」：不偏不贪，反而经得起称量。遇到诱惑时守住分寸，路会越走越亮。', advice: '做一件不图回报的正事。', chips: ['秤心', '守正'] },
+  68: { meaning: '家里有喜气的苗头，病与烦心事也有转好的机会。把人聚一聚，喜气会冲淡不少阴霾。', advice: '安排一次家人团聚。', chips: ['聚喜', '问安'] },
+  69: { meaning: '眼下像冬日的枯枝，不是死了，是在等春。旧事有再开一次的可能，但得先把根养好。', advice: '给搁置的旧计划一次复盘。', chips: ['待春', '再开'] },
+  70: { meaning: '东奔西走采蜜，花季一过就空。先看清时节，别把忙碌当成收获。', advice: '停下来盘点今年的实际进账。', chips: ['辨时', '收心'] },
+  71: { meaning: '有些缘分或合作会绕一圈再回来，第二次未必是坏事。只是再合之前，把上次没解决的问题说清。', advice: '复合或重启前先定新规矩。', chips: ['再合', '立规'] },
+  72: { meaning: '想得蜜，得懂蜂性；想用人，得懂人心。眼前有甜头也有刺，先把边界与退路想好。', advice: '合作前写好退出条款。', chips: ['防刺', '立界'] },
+  73: { meaning: '一声春雷，蛰伏的东西都要动。你等的那个「变」，可能就在一次看似突然的机会里。', advice: '为一次突然的机会做好准备。', chips: ['惊蛰', '化龙'] },
+  74: { meaning: '像鸟飞进笼子，四面都难出。此时别再加码，先保住现有的自由与资源，等一个缺口。', advice: '收缩战线，保住现金流。', chips: ['收线', '待口'] },
+  75: { meaning: '正抱着一件凶险的事过山，怕是对的，怕才会小心。稳住每一步，别因一时顺利就松手。', advice: '给风险预案再检查一遍。', chips: ['慎行', '过关'] },
+  76: { meaning: '眼下鱼龙混杂，看不出谁是谁。先沉在深潭里养力，等那一跳的时机。', advice: '少表态，多观察。', chips: ['潜养', '观人'] },
+  77: { meaning: '听来的好处多，落到手里的少。远方的消息、别人的许诺，都要等一等再信。', advice: '核实一笔「看起来很好」的收益。', chips: ['辨虚', '缓信'] },
+  78: { meaning: '这一签靠的是真本事：手艺在身，走到哪里都不慌。把一门技艺练到能拿得出手，就是最好的护身符。', advice: '今天练一小时基本功。', chips: ['练艺', '立身'] },
+  79: { meaning: '冥冥中有护持，但别把希望全押在许愿上。该做的实事要做，答应过的愿也要还。', advice: '把一件拖延的实事先做完。', chips: ['务实', '还愿'] },
+  80: { meaning: '原本只想安静做自己的事，机会却从更高的地方来。别因「没准备」就退，先把能接的接住。', advice: '更新一次自己的资料或履历。', chips: ['被举', '登高'] },
+  81: { meaning: '这一签有「顺风」的意思：外力正在帮你，赶路、出行、送作品都容易成。挑要紧的事先办。', advice: '把拖延的提交或出行定下来。', chips: ['顺风', '启程'] },
+  82: { meaning: '看着凶险的局面里，反而生出一朵莲。别被表面的火吓退，先看有没有一条窄路可走。', advice: '在风险里找一个可控的小口。', chips: ['火中莲', '寻口'] },
+  83: { meaning: '事情还差最后一程，像初七初八的月亮。别急着宣布圆满，把缺的那一角补上。', advice: '列出还差的三件事。', chips: ['补圆', '候时'] },
+  84: { meaning: '为了一个「名」或一口气，容易把好局面弄坏。酒、色、气上尤其要收着点。', advice: '今天少喝一杯，少争一句。', chips: ['守德', '收口'] },
+  85: { meaning: '前路被雪雾罩住，不是没有路，是还看不清。先读书、养心，等雾散再走。', advice: '把一件想不通的事放一放。', chips: ['破雾', '再开'] },
+  86: { meaning: '这是连中三元的签，考试、评审、晋升都有向好的势头。别轻敌，把最后一遍检查做完。', advice: '考前或提交前再查一遍。', chips: ['登科', '连捷'] },
+  87: { meaning: '走在半山腰，上不去也下不来，最是心悬。别在半岭上做最后决定，先找个平地站稳。', advice: '把大决定拆成可退的小步。', chips: ['半岭', '站稳'] },
+  88: { meaning: '对面看着吓人，多半是虚张声势。别被对方的气势吓乱，按规矩把事说清。', advice: '用书面方式确认对方要求。', chips: ['辨威', '按规'] },
+  89: { meaning: '你的价值像石中玉，识货的人会来引路。遇到愿意教你的人，放下一点傲气，跟他走一段。', advice: '向一位前辈认真请教。', chips: ['藏珍', '从师'] },
+  90: { meaning: '好消息会从远处来，财与机会像满船而归。中途仍有人推你一把，别把功劳都算在自己头上。', advice: '主动跟进一条远方消息。', chips: ['远信', '满载'] },
+  91: { meaning: '眉头可以松一松，路正在变宽。之前的僵持会出现转机，但还得你自己先迈步。', advice: '主动发起一次和解或洽谈。', chips: ['展眉', '开路'] },
+  92: { meaning: '这一签利「经营与进学」：本业能生财，深造也有回报。把赚到的钱分一点去长本事，路更长。', advice: '报一门能加分的课。', chips: ['丰财', '进学'] },
+  93: { meaning: '凤凰淋了雨，一时被雀儿欺，羽毛干了还是凤凰。别在低谷时轻看自己，等云散。', advice: '不因一次被轻视就改方向。', chips: ['护羽', '待晴'] },
+  94: { meaning: '知音难遇，闲事莫理。与其四处找懂你的人，不如先把自己的琴弹好。', advice: '专注一件能代表你的事。', chips: ['守琴', '待知音'] },
+  95: { meaning: '志向与勤勉都在，差的是一个明确的信号。把该做的准备做足，消息来时才能接住。', advice: '设一个明确的阶段目标。', chips: ['立志', '候报'] },
+  96: { meaning: '这一签讲积善：你做过的好事正在变成家里的底气。继续做，不必张扬，福气会从意想不到的地方回来。', advice: '匿名做一件小小的善事。', chips: ['积善', '余庆'] },
+  97: { meaning: '屡次出兵却难见实利，像风里点烛、镜里看花。先评估一下：这件事是不是只赚了名声？', advice: '给一个「只赚吆喝」的项目减预算。', chips: ['辨名', '收虚'] },
+  98: { meaning: '像鸟撞进网里，越急越难出。此时少管闲事、少传话，先把自己摘干净。', advice: '今天不接任何是非话题。', chips: ['脱网', '慎口'] },
+  99: { meaning: '看着像出征，半路却有火光与雨。别被「挂帅」的名头冲昏，先查粮草与退路。', advice: '接下任务前先问清资源。', chips: ['查粮', '留退'] },
+  100: { meaning: '众说纷纭，越听越迷。这是百签之末，最宜收心守旧，不再开新局。把手里的事守到云开。', advice: '暂缓新计划，守住旧摊子。', chips: ['守旧', '收心'] },
+};
+
+/** 摇一支：不给 seed 走加密随机；给了 seed 用同一串数复现；except 是上一支，避开连抽同一支。 */
+function drawNo(seed, except) {
+  const rand = randomOf(seed);
+  let no = 1 + Math.floor(rand() * GUANYIN_TOTAL);
+  const prev = Number(except);
+  if (Number.isInteger(prev) && prev >= 1 && prev <= GUANYIN_TOTAL && no === prev) {
+    no = (no % GUANYIN_TOTAL) + 1;
+  }
+  return no;
+}
+
+/**
+ * 观音灵签：一事一签，可重摇。
+ * @param {{no?:number, seed?:number|string, except?:number, question?:string}} input
+ *   no 指定 1–100；seed 用于复现同一支；except 传上一支的签号，避免重摇又摇回同一支；
+ *   question 可留空——传统用法是心中默念，写下来只是便于回看。
+ */
+function buildGuanyin(input = {}) {
+  if (GUANYIN_LOTS.length !== GUANYIN_TOTAL) {
+    throw fail('E_DATA', `观音灵签数据应为 ${GUANYIN_TOTAL} 支，实际 ${GUANYIN_LOTS.length} 支`);
+  }
+  const asked = input.no;
+  if (!isSeed(input.seed)) {
+    throw fail('E_INPUT', `观音灵签的 seed 要留空或给十进制数字（整数、小数、数字串都可），收到「${String(input.seed).slice(0, 24)}」`);
+  }
+  let no;
+  if (asked !== undefined && asked !== null && asked !== '') {
+    const n = Number(asked);
+    if (!Number.isInteger(n) || n < 1 || n > GUANYIN_TOTAL) {
+      throw fail('E_INPUT', `观音灵签的 no 要是 1–${GUANYIN_TOTAL} 的整数，收到「${String(asked).slice(0, 24)}」`);
+    }
+    no = n;
+  } else {
+    no = drawNo(input.seed, input.except);
+  }
+  const lot = GUANYIN_LOTS[no - 1];
+  const copy = COPY[no];
+  if (!lot || !copy) throw fail('E_DATA', `观音灵签第 ${no} 支缺少数据`);
+  const question = typeof input.question === 'string'
+    ? input.question.replace(/\s+/g, ' ').trim().slice(0, 80)
+    : '';
+  return {
+    system: 'guanyin',
+    meta: {
+      no,
+      total: GUANYIN_TOTAL,
+      level: lot.level,
+      palace: lot.palace,
+      title: lot.title,
+      question: question || null,
+      method: asked !== undefined && asked !== null && asked !== '' ? '指定签号' : '摇签',
+    },
+    slip: {
+      no,
+      total: GUANYIN_TOTAL,
+      level: lot.level,
+      palace: lot.palace,
+      title: lot.title,
+      poem: lot.poem.slice(),
+      omen: lot.omen || '',
+      meaning: copy.meaning,
+      advice: copy.advice,
+      chips: copy.chips.slice(),
+    },
+    aside: GUANYIN_ASIDES[lot.level] || '',
+    rules: GUANYIN_RULES,
+    sources: GUANYIN_SOURCES.slice(),
+    disclaimer: GUANYIN_SCOPE,
+  };
+}
+
+return { GUANYIN_TOTAL, GUANYIN_RULES, GUANYIN_SCOPE, GUANYIN_SOURCES, GUANYIN_ASIDES, buildGuanyin };
+})();
+
 __mods.star = (function () {
 // 星座档案 + 当日娱乐向基调：纯本地确定性（同一天同一星座结果永远一致）。
 // 星座按太阳过宫的通行日期区间（公历）；当日基调由日期哈希生成，不是随机数。
@@ -20017,6 +20933,7 @@ const { solarToLunar } = (__mods.lunar || {});
 const { ganzhiName, toJDN, fromJDN, dayGanzhiIndex } = (__mods.calendar || {});
 const { assertCivil, assertShifted } = (__mods.validate || {});
 const { hourToBranch } = (__mods.almanac || {});
+const { applyDst } = (__mods.dst || {});
 const { fail } = (__mods.fail || {});
 const { bool } = (__mods.bool || {});
 
@@ -20154,8 +21071,15 @@ function bandVerdict(qian) {
  */
 function buildChenggu(input) {
   assertCivil(input, '称骨');
-  const { year, month, day, hour } = input;
-  const minute = input.minute || 0;
+  // 1986–1991 中国夏令时：钟面时间比标准时快一小时，不校正会让时辰（乃至跨 23:00 的日柱）整档偏。
+  // 与八字/紫微同一口径，显式传 dst:false 可关闭。
+  let { year, month, day } = input;
+  let hour = input.hour;
+  let minute = input.minute || 0;
+  const dst = bool(input.dst, true) && Number.isInteger(input.hour)
+    ? applyDst({ year, month, day, hour, minute })
+    : { applied: false, note: null };
+  if (dst.applied) { year = dst.year; month = dst.month; day = dst.day; hour = dst.hour; minute = dst.minute; }
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
     throw fail('E_INPUT', '称骨必须给时辰：hour 为 0–23 的整数（缺时辰四柱不齐，骨重无法求和）');
   }
@@ -20193,7 +21117,7 @@ function buildChenggu(input) {
 
   return {
     system: 'chenggu',
-    input: { solar: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, hour, minute, lateZi, lunarDateShifted: shifted },
+    input: { solar: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, hour, minute, lateZi, lunarDateShifted: shifted, dst: { applied: !!dst.applied, note: dst.note || null } },
     lunar: {
       text: `农历${yearGz.name}年${lunarMonthText(lunarMonth, lunar.isLeap)}${lunarDayText(lunarDay)} ${hourBranch}时`,
       year: lunarYear,
@@ -32238,6 +33162,8 @@ const SYSTEMS = [
   { key: 'qimen', label: '奇门', re: /奇门/ },
   { key: 'daliuren', label: '大六壬', re: /大六壬|六壬/ },
   { key: 'tarot', label: '塔罗', re: /塔罗|抽牌/ },
+  { key: 'guanyin', label: '灵签', re: /观音灵签|观音签|灵签/ },
+  { key: 'qian', label: '福签', re: /福签|求签|抽签|抽个签/ },
   { key: 'meihua', label: '梅花', re: /梅花/ },
   { key: 'hepan', label: '合盘', re: /合盘|合婚/ },
   { key: 'almanac', label: '黄历', re: /黄历|老黄历/ },
@@ -32676,7 +33602,7 @@ const BRIEF_MAX_QUESTION = 60;
 const SYSTEM_LABEL = {
   bazi: '八字', ziwei: '紫微', liuyao: '六爻', meihua: '梅花', daliuren: '大六壬',
   qimen: '奇门', hepan: '合盘', tarot: '塔罗', almanac: '黄历', zeri: '择日',
-  chenggu: '称骨', xiaoliuren: '小六壬', star: '星座', numerology: '生命数字',
+  chenggu: '称骨', xiaoliuren: '小六壬', qian: '福签', guanyin: '灵签', star: '星座', numerology: '生命数字',
   mbti: '人格', trend: '人生K线', fengshui: '风水', name: '起名', convert: '农历',
   constitution: '体质',
   wuyunliuqi: '运气',
@@ -34357,7 +35283,44 @@ function plainSummary(r) {
   if (r.system === 'constitution') return constitutionSummary(r);
   if (r.system === 'wuyunliuqi') return wuyunliuqiSummary(r);
   if (r.system === 'taiyi') return taiyiSummary(r);
+  if (r.system === 'qian') return qianSummary(r);
+  if (r.system === 'guanyin') return guanyinSummary(r);
   return null;
+}
+
+function qianSummary(r) {
+  const s = r.slip;
+  return {
+    title: '今日福签',
+    chips: [`${s.level}签`, `第 ${s.no} 签`, s.title],
+    lead: `今日得「${s.title}」一签（${s.level}）：${s.verse[0]}，${s.verse[1]}。`,
+    sections: [
+      { h: '签意', t: s.meaning },
+      { h: '签的来处', t: `第 ${s.no} 签，共 ${s.total} 支。${r.rules}` },
+    ],
+    advice: [s.advice],
+    caveat: r.disclaimer,
+    footer: `${r.meta.date} ${r.meta.weekday} · ${r.meta.lunar} · ${r.meta.ganzhi}`,
+  };
+}
+
+function guanyinSummary(r) {
+  const s = r.slip;
+  const q = String((r.meta && r.meta.question) || r.question || '').trim();
+  return {
+    system: 'guanyin',
+    title: `观音灵签 · ${s.level}`,
+    chips: uniq([`第 ${s.no} 签`, s.level, s.title, s.palace]),
+    lead: `${q ? `你问的是「${q}」。` : ''}得第 ${s.no} 签「${s.title}」（${s.level}·${s.palace}）：${s.poem.join('，')}。`,
+    sections: [
+      { h: '签意', t: s.meaning },
+      ...(s.omen ? [{ h: '卦象', t: s.omen }] : []),
+      { h: '签的用法', t: `一百支里的第 ${s.no} 支；${r.rules}` },
+    ],
+    advice: [s.advice],
+    caveat: r.disclaimer,
+    footer: (s.chips || []).join(' · '),
+  };
 }
 
 return { plainSummary };
@@ -34684,6 +35647,8 @@ const { buildAlmanac } = (__mods.almanac || {});
 const { buildZeri } = (__mods.zeri || {});
 const { buildChenggu } = (__mods.chenggu || {});
 const { buildXiaoliuren } = (__mods.xiaoliuren || {});
+const { buildQian } = (__mods.qian || {});
+const { buildGuanyin } = (__mods.guanyin || {});
 const { buildStar } = (__mods.star || {});
 const { buildNumerology } = (__mods.numerology || {});
 const { buildMbti, mbtiPaper } = (__mods.mbti || {});
@@ -34703,6 +35668,7 @@ const { buildTrace, traceMarkdown, SYSTEM_LABEL } = (__mods.trace || {});
 const { fail } = (__mods.fail || {});
 const { assertCivil, MIN_YEAR, MAX_YEAR } = (__mods.validate || {});
 const { parseDateTime, daysInMonth } = (__mods.datetime || {});
+const { applyDst } = (__mods.dst || {});
 
 
 const { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION } = (__mods.envelope || {});
@@ -35509,7 +36475,7 @@ function compute(input = {}) {
   // 「所问之事」以前只有六爻和塔罗会落到结果里，梅花/六壬/奇门/小六壬都丢掉了：
   // 于是第一屏想说「你问的是……」却拿不到那句话。这里统一补齐，已有的值不动。
   if (r && !r.question && typeof args.question === 'string' && args.question.trim()
-    && ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren'].includes(r.system)) {
+    && ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren', 'guanyin'].includes(r.system)) {
     r.question = args.question.trim();
   }
   // 顶部那段「人话总结」：命盘两类 + 问事五类 + 合盘 + 走势，都由 plainSummary 决定给不给。
@@ -35545,6 +36511,11 @@ function compute(input = {}) {
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
+  }
+  // 夏令时校正同样要顶到摘要里：静默减一小时会换时辰甚至换日柱，盘面本身看不出任何异常。
+  // bazi / ziwei 的 note 已挂在 input.dst 上，这里只接统一校正的那些体系（r.dst）。
+  if (r && r.dst && r.dst.applied && r.summary) {
+    r.summary = `⚠ ${r.dst.note}\n${r.summary}`;
   }
   // 没有经度就没有真太阳时：时柱可能整柱偏（海外出生尤其常见），必须显式告警而不是藏在括号里
   if (r && (r.system === 'bazi' || r.system === 'ziwei') && r.input && r.input.longitude == null && r.summary) {
@@ -35981,6 +36952,27 @@ function computeRaw(args = {}) {
     }
     args = { ...args, fortuneYear: n };
   }
+  // 1986–1991 中国夏令时：出生／起课钟面时间比标准时快一小时。
+  // 会按时辰落盘的体系在这里统一减一小时；bazi / ziwei / trend / fengshui / name / hepan
+  // 与 chenggu 都在各自构建器里已经调过 applyDst，这里再减会连减两次。
+  // 只处理带显式时分的 datetime：只给日期时 00:00 减一小时会退到前一天，改变取日结果。
+  const DST_CENTRAL = new Set(['qimen', 'daliuren', 'meihua', 'liuyao', 'xiaoliuren', 'wuyunliuqi', 'taiyi']);
+  let dstInfo = null;
+  {
+    const xlrNums = [args.num1, args.num2, args.num3].filter((v) => v !== undefined && v !== null && v !== '').length;
+    const ignoredClock = (system === 'meihua' && args.mode === 'number')
+      || (system === 'xiaoliuren' && (args.mode === 'number' || (args.mode !== 'time' && xlrNums > 0)));
+    if (DST_CENTRAL.has(system) && !ignoredClock && bool(args.dst, true)
+      && typeof args.datetime === 'string' && /[T\s]\d{1,2}:\d{1,2}/.test(args.datetime)) {
+      const civil = parseDateTime(args.datetime);
+      const adj = applyDst(civil);
+      if (adj.applied) {
+        const stamp = `${adj.year}-${pad(adj.month)}-${pad(adj.day)}T${pad(adj.hour)}:${pad(adj.minute)}`;
+        dstInfo = { applied: true, from: args.datetime, to: stamp, note: adj.note };
+        args = { ...args, datetime: stamp };
+      }
+    }
+  }
   if (system === 'bazi') {
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
@@ -36055,7 +37047,7 @@ function computeRaw(args = {}) {
     const lateZi = bool(args.lateZi, true);
     const result = buildDaliuren({ ...dt, lateZi });
     result.lateZi = lateZi;
-    return { ...result, precision: dt.precision, summary: daliurenText(result) };
+    return { ...result, precision: dt.precision, ...(dstInfo ? { dst: dstInfo } : {}), summary: daliurenText(result) };
   }
   if (system === 'qimen') {
     const dt = parseDateTime(args.datetime);
@@ -36073,7 +37065,7 @@ function computeRaw(args = {}) {
     const lateZiHourMode = mode === 'next-day' ? 'next-day' : 'same-day';
     const result = buildQimen({ ...dt, lateZiHourMode, juMethod: args.juMethod });
     result.lateZiHourMode = lateZiHourMode;
-    return { ...result, summary: qimenText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: qimenText(result) };
   }
   if (system === 'hepan') {
     // 双方（以及可选的第三方）夫妻宫、大运都依赖时支：任一方时辰未知就不出盘，
@@ -36114,6 +37106,10 @@ function computeRaw(args = {}) {
           : bool(src.lateZi, true) ? 'next-day' : 'current-day';
       return {
         ...dt,
+        // 紫微流派开关（庚干四化、天马、魁钺、晚子时等）是「读盘时才算」的参数，
+        // 漏传会让合盘按默认口径重排，与单盘同参数的结果对不上。晚子时随后再按八字
+        // 的布尔开关转写，覆盖这里的原值。
+        ...ziweiSchoolArgs(src),
         gender: requireGender(src.gender, who),
         trueSolar: src.trueSolar,
         lateZi: src.lateZi,
@@ -36171,7 +37167,7 @@ function computeRaw(args = {}) {
       const message = (e && e.message) || String(e);
       throw fail((e && e.code) || 'E_INPUT', (e && e.code) ? message : `梅花起卦参数不完整：${message}`);
     }
-    return { ...result, summary: meihuaText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: meihuaText(result) };
   }
   if (system === 'liuyao') {
     if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
@@ -36235,7 +37231,7 @@ function computeRaw(args = {}) {
       if (yq) result.yingqi = yq;
     }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
-    return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), ...(dstInfo ? { dst: dstInfo } : {}), summary: liuyaoText(result) };
   }
   if (system === 'almanac') {
     const dt = parseDateTime(args.datetime);
@@ -36270,8 +37266,9 @@ function computeRaw(args = {}) {
     if (hour === null || hour < 0 || hour > 23) {
       throw fail('E_INPUT', '称骨必须给时辰：datetime 带时分（如 1990-08-15T10:00），或额外给 hour（0–23）——缺时辰四柱不齐');
     }
-    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0, lateZi: args.lateZi });
-    return { ...result, summary: chengguText(result) };
+    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0, lateZi: args.lateZi, dst: bool(args.dst, true) });
+    const cgDst = result.input && result.input.dst;
+    return { ...result, ...(cgDst && cgDst.applied ? { dst: cgDst } : {}), summary: chengguText(result) };
   }
   if (system === 'convert') {
     const mode = args.mode === 'lunar2solar' ? 'lunar2solar' : 'solar2lunar';
@@ -36315,7 +37312,22 @@ function computeRaw(args = {}) {
       question: args.question,
       lateZi: args.lateZi,
     });
-    return { ...result, summary: xiaoliurenText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: xiaoliurenText(result) };
+  }
+  if (system === 'qian') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildQian({ year: dt.year, month: dt.month, day: dt.day });
+    return { ...result, summary: qianText(result) };
+  }
+  if (system === 'guanyin') {
+    // 灵签不取日期：一事一签，同一件事可重摇；no 指定第几签，seed 复现，except 避开连抽同一支
+    const result = buildGuanyin({
+      no: args.no,
+      seed: args.seed,
+      except: args.except,
+      question: args.question,
+    });
+    return { ...result, summary: guanyinText(result) };
   }
   if (system === 'star') {
     const dt = parseDateTime(args.datetime);
@@ -36336,12 +37348,12 @@ function computeRaw(args = {}) {
       hour: dt.hour,
       minute: dt.minute,
     });
-    return { ...result, summary: wuyunliuqiText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: wuyunliuqiText(result) };
   }
   if (system === 'taiyi') {
     const dt = parseDateTime(args.datetime);
     const result = buildTaiyi({ year: dt.year, month: dt.month, day: dt.day, hour: dt.hour });
-    return { ...result, summary: taiyiText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: taiyiText(result) };
   }
   if (system === 'constitution') {
     // 与 mbti 同一套路：没给答案先发卷，别让模型替人打分（体质题答歪了，判定会整体偏掉）
@@ -36466,9 +37478,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、qian（每日福签）、guanyin（观音灵签）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、qian（每日福签）、guanyin（观音灵签）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。`);
 }
 
 /** 黄历文本 */
@@ -36560,6 +37572,36 @@ function xiaoliurenText(r) {
     `落宫：${r.steps.join(' → ')}`,
     `断语：${r.result.palace}（${r.result.luck}）　${r.result.text}`,
   ].join('\n');
+}
+
+/** 福签文本 */
+function qianText(r) {
+  const s = r.slip;
+  return [
+    `【今日福签·${s.level}】${r.meta.date} ${r.meta.weekday}　${r.meta.lunar}　${r.meta.ganzhi}`,
+    `第 ${s.no} 签 · ${s.title}`,
+    `签文：${s.verse[0]}，${s.verse[1]}`,
+    `签意：${s.meaning}`,
+    `今日可为：${s.advice}`,
+    `小灵旁白：${r.aside}`,
+    `口径：${r.rules}`,
+  ].join('\n');
+}
+
+/** 观音灵签文本 */
+function guanyinText(r) {
+  const s = r.slip;
+  const m = r.meta;
+  return [
+    `【观音灵签·${s.level}】第 ${s.no} / ${s.total} 签　${s.palace}　${s.title}`,
+    m.question ? `所问：${m.question}` : '',
+    `签诗：${s.poem.join('，')}`,
+    ...(s.omen ? [`卦象：${s.omen}`] : []),
+    `签意：${s.meaning}`,
+    `可为：${s.advice}`,
+    `用法：${r.rules}`,
+    `口径：${r.disclaimer}`,
+  ].filter(Boolean).join('\n');
 }
 
 /** 星座文本 */
@@ -36992,11 +38034,11 @@ const { factHeadline } = (__mods.headline || {});
 
 
 
-return { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION, interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDateTime, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildMarriage, buildFacets, buildConstitution, buildWuyunliuqi, buildTaiyi, buildTrace, traceMarkdown, encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys, askLink, parseAskLink, formOf, restNote, askPackages, buildEventPrompt, ASK_KINDS, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, normalizeLongitudes, renderText };
+return { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION, interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf, parseDateTime, geocodeAddress, resolveAddress, buildBazi, buildLiuyao, tossLines, followup, askPrompt, pastSignals, verifyFit, rectifyBirth, crossCheck, crossText, crossSection, buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildQian, buildGuanyin, buildStar, buildNumerology, buildConvert, buildTrend, buildFengshui, buildName, buildMarriage, buildFacets, buildConstitution, buildWuyunliuqi, buildTaiyi, buildTrace, traceMarkdown, encodeHandle, decodeHandle, resolveHandle, pruneForeignKeys, ownedKeys, askLink, parseAskLink, formOf, restNote, askPackages, buildEventPrompt, ASK_KINDS, chartFingerprint, shadowSnapshot, shadowDiff, compute, interpretText, caliberCompare, normalizeLongitudes, renderText };
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.85.1";
+window.__MP_VER = "0.86.0";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。
@@ -38888,6 +39930,107 @@ h3.mp-env-adv-h{display:block}
 
 .mp-it-plain{margin:12px 16px 0;padding:13px 16px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--band)}
 .askbox{margin-top:16px;padding:12px 14px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--panel2)}
+
+.mp-qn-oracle{display:flex;align-items:center;gap:10px;margin:2px auto 12px;padding:8px 18px 8px 8px;
+  border:1px dashed color-mix(in srgb,var(--red) 30%,var(--line));border-radius:999px;
+  background:color-mix(in srgb,var(--card) 80%,transparent);color:inherit;font:inherit;cursor:pointer;
+  transition:transform .18s,box-shadow .18s,border-color .18s}
+.mp-qn-oracle:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--red) 55%,var(--line));box-shadow:var(--shadow)}
+.mp-qn-oracle:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+.mp-qn-o-cup{flex:0 0 auto;display:block;width:42px;height:54px}
+.mp-qn-o-cup svg{width:100%;height:100%;overflow:visible;transform-origin:50% 92%}
+.mp-qn-oracle.shaking .mp-qn-o-cup svg{animation:mp-qn-shake 1s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes mp-qn-shake{0%,100%{transform:rotate(0)}12%{transform:rotate(-7deg)}24%{transform:rotate(6deg)}
+  36%{transform:rotate(-5deg)}48%{transform:rotate(4deg)}60%{transform:rotate(-3deg)}72%{transform:rotate(2deg)}84%{transform:rotate(-1deg)}}
+.mp-qn-o-tx{display:flex;flex-direction:column;gap:2px;text-align:left;line-height:1.3}
+.mp-qn-o-tx b{font-family:var(--kai);font-size:15px;font-weight:400;letter-spacing:.08em}
+.mp-qn-o-tx i{font-style:normal;font-family:var(--sans);font-size:11px;color:var(--label);letter-spacing:.05em}
+.mp-qn{position:relative;margin:14px 16px 10px;padding:16px 16px 12px;border-radius:16px;overflow:hidden;
+  border:1px solid var(--line);
+  background:
+    radial-gradient(120% 80% at 88% 0%,color-mix(in srgb,var(--red) 5%,transparent),transparent 58%),
+    repeating-linear-gradient(90deg,transparent 0 31px,color-mix(in srgb,var(--line) 26%,transparent) 31px 32px),
+    linear-gradient(180deg,var(--card),color-mix(in srgb,var(--band) 72%,var(--card)));
+  box-shadow:var(--shadow)}
+.mp-qn::before{content:'';position:absolute;inset:0 0 auto;height:3px;
+  background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:.55}
+.mp-qn-stage{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:start}
+.mp-qn-cup{width:96px;height:124px}
+.mp-qn-cup svg{width:100%;height:100%;overflow:visible;transform-origin:50% 92%;animation:mp-qn-sway 4.2s ease-in-out infinite}
+@keyframes mp-qn-sway{0%,100%{transform:rotate(-2.4deg)}50%{transform:rotate(2.4deg)}}
+.qn-shadow{fill:color-mix(in srgb,var(--ink) 16%,transparent)}
+.qn-body{fill:color-mix(in srgb,var(--band) 70%,var(--card));stroke:var(--line);stroke-width:1.4}
+.qn-rim{fill:var(--card);stroke:var(--line);stroke-width:1.4}
+.qn-stick{fill:var(--card);stroke:var(--line);stroke-width:1.1}
+.qn-stick.hot{fill:color-mix(in srgb,var(--red) 16%,var(--card));stroke:color-mix(in srgb,var(--red) 46%,var(--line))}
+.qn-zi{fill:var(--red);font-family:var(--kai);font-size:17px;letter-spacing:.08em}
+.mp-qn-card{position:relative;min-width:0;padding:14px 16px 13px;border-radius:12px;border:1px solid color-mix(in srgb,var(--line) 76%,transparent);
+  background:var(--card);
+  animation:mp-qn-rise .55s var(--ease) both}
+@keyframes mp-qn-rise{from{opacity:0;transform:translateY(16px) rotate(-1.2deg)}to{opacity:1;transform:none}}
+.mp-qn-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mp-qn-kicker{font-family:var(--sans);font-size:11px;letter-spacing:.14em;color:var(--label);line-height:1.5}
+.mp-qn-seal{flex:0 0 auto;width:38px;height:46px;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;font-family:var(--kai);font-size:15px;letter-spacing:.08em;line-height:1;
+  color:var(--red);border:1.5px solid var(--red);border-radius:4px;padding:5px 2px;
+  background:color-mix(in srgb,var(--red) 7%,transparent);opacity:.92}
+.mp-qn-title{margin:2px 0 6px;font-family:var(--kai);font-size:25px;line-height:1.3;letter-spacing:.1em;font-weight:400}
+.mp-qn-verse{margin:0 0 12px;font-family:var(--kai);font-size:14.5px;line-height:1.95;letter-spacing:.1em;color:var(--ink2)}
+.mp-qn-verse span{display:block}
+.mp-qn-verse span::before{content:'「';color:var(--faint)}
+.mp-qn-verse span:last-child::after{content:'」';color:var(--faint)}
+.mp-qn-blk{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;padding:10px 0;
+  border-top:1px solid color-mix(in srgb,var(--line) 52%,transparent)}
+.mp-qn-blk b{font-family:var(--sans);font-size:11.5px;letter-spacing:.12em;color:var(--label);font-weight:600;padding-top:2px}
+.mp-qn-blk p{margin:0;font-size:13.5px;line-height:1.85;color:var(--ink2)}
+.mp-qn-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.mp-qn-chips span{font-family:var(--sans);font-size:11px;letter-spacing:.06em;padding:3px 9px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--red) 32%,transparent);color:var(--red);background:color-mix(in srgb,var(--red) 5%,transparent)}
+.mp-qn-aside{margin:14px 0 0;padding-left:110px;font-family:var(--kai);font-size:13px;line-height:1.8;color:var(--label)}
+.mp-qn-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding-top:10px;
+  border-top:1px solid color-mix(in srgb,var(--line) 52%,transparent);font-family:var(--sans);font-size:11.5px;color:var(--label);letter-spacing:.03em}
+.mp-qn-hist{margin-top:12px;padding:11px 13px;border-radius:10px;background:color-mix(in srgb,var(--band) 62%,transparent);
+  border:1px solid color-mix(in srgb,var(--line) 46%,transparent)}
+.mp-qn-histh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-family:var(--sans);font-size:11.5px;color:var(--label)}
+.mp-qn-histh b{font-size:12px;color:var(--ink2);letter-spacing:.08em}
+.mp-qn-hist ol{list-style:none;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:9px 0 0;padding:0}
+.mp-qn-h-row{display:flex;flex-direction:column;gap:3px;padding:6px 5px;border-radius:8px;
+  border:1px solid transparent;background:color-mix(in srgb,var(--card) 62%,transparent);min-width:0}
+.mp-qn-h-row.on{border-color:color-mix(in srgb,var(--red) 42%,transparent);background:color-mix(in srgb,var(--red) 5%,var(--card))}
+.mp-qn-h-d{display:flex;align-items:center;gap:4px;font-family:var(--sans);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mp-qn-h-t{font-family:var(--kai);font-size:11.5px;line-height:1.35;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-qn-h-l{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.mp-qn-lv-ss .mp-qn-h-l,.mp-qn-h-row.lv-ss .mp-qn-h-l{background:var(--red)}
+.mp-qn-lv-s .mp-qn-h-l,.mp-qn-h-row.lv-s .mp-qn-h-l{background:var(--br-good)}
+.mp-qn-lv-z .mp-qn-h-l,.mp-qn-h-row.lv-z .mp-qn-h-l{background:var(--ke)}
+.mp-qn-lv-p .mp-qn-h-l,.mp-qn-h-row.lv-p .mp-qn-h-l{background:var(--faint)}
+.mp-qn-tip{margin:10px 0 0;font-family:var(--sans);font-size:11px;line-height:1.7;color:var(--faint)}
+
+.mp-lq .mp-qn-stage{grid-template-columns:88px minmax(0,1fr)}
+.mp-lq .mp-qn-cup{width:88px;height:114px}
+.mp-lq-verse{margin:0 0 10px;font-size:15px;line-height:2.05;letter-spacing:.14em}
+.mp-lq-verse span::before,.mp-lq-verse span::after{content:none}
+.mp-lq-omen{margin:0 0 4px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--band) 54%,transparent);
+  font-family:var(--kai);font-size:12.5px;line-height:1.8;letter-spacing:.05em;color:var(--label)}
+.mp-lq-ask{margin:0 0 4px;padding:8px 10px;border-left:2px solid color-mix(in srgb,var(--red) 42%,transparent);
+  font-family:var(--sans);font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.mp-lq-ask b{font-weight:600;color:var(--label);letter-spacing:.08em;margin-right:6px}
+.mp-lq-lv-s .mp-qn-seal{border-color:var(--br-good);color:var(--br-good);background:color-mix(in srgb,var(--br-good) 7%,transparent)}
+.mp-lq-lv-z .mp-qn-seal{border-color:var(--ke);color:var(--ke);background:color-mix(in srgb,var(--ke) 7%,transparent)}
+.mp-lq-lv-x .mp-qn-seal{border-color:var(--label);color:var(--label);background:color-mix(in srgb,var(--label) 6%,transparent)}
+.mp-qn-again{margin-top:12px;padding:7px 16px;border-radius:999px;border:1px solid color-mix(in srgb,var(--red) 42%,var(--line));
+  background:color-mix(in srgb,var(--red) 6%,var(--card));color:var(--red);font-family:var(--kai);
+  font-size:13px;letter-spacing:.1em;cursor:pointer}
+.mp-qn-again:hover{background:color-mix(in srgb,var(--red) 11%,var(--card))}
+.mp-qn-again:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+@container (max-width:430px){
+  .mp-qn{margin:10px 10px 8px;padding:12px}
+  .mp-qn-stage{grid-template-columns:64px minmax(0,1fr);gap:10px}
+  .mp-qn-cup{width:64px;height:88px}
+  .mp-qn-title{font-size:21px}
+  .mp-qn-aside{padding-left:0}
+  .mp-qn-hist ol{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
@@ -40015,6 +41158,107 @@ h3.mp-env-adv-h{display:block}
       </div>
       ${r.systemNote ? `<div class="mp-tt-tip">${r.systemNote}</div>` : ''}
       <div class="mp-tt-tip">塔罗用于自我觉察与娱乐，不作确定性预言。</div>
+    </div>`;
+  };
+
+  /** 同一只签筒，结果卡与空状态的迷你入口共用一份 SVG，免得两处画风走散。 */
+  pp.QIAN_CUP_SVG = '<svg viewBox="0 0 96 124" role="presentation" focusable="false">'
+    + '<ellipse class="qn-shadow" cx="48" cy="118" rx="29" ry="5"/>'
+    + '<rect class="qn-stick" x="33" y="8" width="7" height="50" rx="3" transform="rotate(-8 36 33)"/>'
+    + '<rect class="qn-stick hot" x="43" y="2" width="7" height="58" rx="3" transform="rotate(2 46 31)"/>'
+    + '<rect class="qn-stick" x="55" y="10" width="7" height="48" rx="3" transform="rotate(11 58 34)"/>'
+    + '<path class="qn-body" d="M20 42h56l-5 64a4 4 0 0 1-4 4H29a4 4 0 0 1-4-4Z"/>'
+    + '<ellipse class="qn-rim" cx="48" cy="42" rx="28" ry="8"/>'
+    + '<text class="qn-zi" x="48" y="84" text-anchor="middle">签</text>'
+    + '</svg>';
+
+  /** 空状态里的迷你签筒内容；外层按钮由 app.js / web-ui.js 各自包，点击行为不写在字符串里。 */
+  pp.qianOracleHTML = function () {
+    return `<span class="mp-qn-o-cup" aria-hidden="true">${pp.QIAN_CUP_SVG}</span>`
+      + '<span class="mp-qn-o-tx"><b>轻点一下</b><i>摇一摇 · 抽今日福签</i></span>';
+  };
+
+  pp.qianHTML = function (r) {
+    if (!r || r.system !== 'qian' || !r.slip) return pp.quickHTML(r);
+    const s = r.slip;
+    const lv = { 上上: 'ss', 上: 's', 中: 'z', 平: 'p' }[s.level] || 'p';
+    const no = String(s.no).padStart(2, '0');
+    const hist = (r.history || []).map((x, i) => {
+      const k = { 上上: 'ss', 上: 's', 中: 'z', 平: 'p' }[x.level] || 'p';
+      return `<li class="mp-qn-h-row lv-${k}${i === 0 ? ' on' : ''}" title="${esc(x.date)} ${esc(x.weekday)} · ${esc(x.level)} · ${esc(x.title)}">
+        <span class="mp-qn-h-d"><i class="mp-qn-h-l" aria-hidden="true"></i>${esc(x.date.slice(5))}</span>
+        <span class="mp-qn-h-t">${esc(x.title)}</span>
+      </li>`;
+    }).join('');
+    return pp.briefHTML(r) + `<div class="pp mp-qn mp-qn-lv-${lv}" aria-label="今日福签">
+      <div class="mp-qn-stage">
+        <div class="mp-qn-cup" aria-hidden="true">
+          ${pp.QIAN_CUP_SVG}
+        </div>
+        <div class="mp-qn-card">
+          <div class="mp-qn-top">
+            <span class="mp-qn-kicker">第 ${no} 签 · 共 ${esc(s.total)} 支 · ${esc(s.level)}</span>
+            <span class="mp-qn-seal" aria-hidden="true">${esc(s.level)}</span>
+          </div>
+          <h2 class="mp-qn-title">${esc(s.title)}</h2>
+          <p class="mp-qn-verse"><span>${esc(s.verse[0])}</span><span>${esc(s.verse[1])}</span></p>
+          <div class="mp-qn-blk"><b>签意</b><p>${esc(s.meaning)}</p></div>
+          <div class="mp-qn-blk"><b>今日可为</b><p>${esc(s.advice)}</p></div>
+          <div class="mp-qn-chips">${(s.chips || []).map((c) => `<span>${esc(c)}</span>`).join('')}</div>
+        </div>
+      </div>
+      <p class="mp-qn-aside">${esc(r.aside)}</p>
+      <div class="mp-qn-meta">
+        <span>${esc(r.meta.date)}</span><span>${esc(r.meta.weekday)}</span>
+        <span>${esc(r.meta.lunar)}</span><span>${esc(r.meta.ganzhi)}</span>
+      </div>
+      <div class="mp-qn-hist">
+        <div class="mp-qn-histh"><b>近七日</b><span>一日一签 · 不重摇</span></div>
+        <ol>${hist}</ol>
+      </div>
+      <p class="mp-qn-tip">${esc(r.rules)}　${esc(r.disclaimer)}</p>
+    </div>`;
+  };
+
+  /** 灵签的迷你入口：与福签同一只签筒，文案说清「一事一签、可重摇」。 */
+  pp.guanyinOracleHTML = function () {
+    return `<span class="mp-qn-o-cup" aria-hidden="true">${pp.QIAN_CUP_SVG}</span>`
+      + '<span class="mp-qn-o-tx"><b>轻点一下</b><i>摇一摇 · 抽一支灵签</i></span>';
+  };
+
+  pp.guanyinHTML = function (r) {
+    if (!r || r.system !== 'guanyin' || !r.slip) return pp.quickHTML(r);
+    const s = r.slip;
+    const lv = { 上: 's', 中: 'z', 下: 'x' }[s.level] || 'z';
+    const no = String(s.no).padStart(2, '0');
+    const q = String((r.meta && r.meta.question) || '').trim();
+    const poem = (s.poem || []).map((line) => `<span>${esc(line)}</span>`).join('');
+    return pp.briefHTML(r) + `<div class="pp mp-qn mp-lq mp-lq-lv-${lv}" aria-label="观音灵签">
+      <div class="mp-qn-stage">
+        <div class="mp-qn-cup" aria-hidden="true">
+          ${pp.QIAN_CUP_SVG}
+        </div>
+        <div class="mp-qn-card">
+          <div class="mp-qn-top">
+            <span class="mp-qn-kicker">第 ${no} 签 · 共 ${esc(s.total)} 支 · ${esc(s.level)}签 · ${esc(s.palace)}</span>
+            <span class="mp-qn-seal" aria-hidden="true">${esc(s.level)}</span>
+          </div>
+          <h2 class="mp-qn-title">${esc(s.title)}</h2>
+          <p class="mp-qn-verse mp-lq-verse">${poem}</p>
+          ${s.omen ? `<p class="mp-lq-omen">${esc(s.omen)}</p>` : ''}
+          <div class="mp-qn-blk"><b>签意</b><p>${esc(s.meaning)}</p></div>
+          <div class="mp-qn-blk"><b>可为</b><p>${esc(s.advice)}</p></div>
+          <div class="mp-qn-chips">${(s.chips || []).map((c) => `<span>${esc(c)}</span>`).join('')}</div>
+        </div>
+      </div>
+      ${r.aside ? `<p class="mp-qn-aside">${esc(r.aside)}</p>` : ''}
+      ${q ? `<p class="mp-lq-ask"><b>所问</b>${esc(q)}</p>` : ''}
+      <div class="mp-qn-meta">
+        <span>${esc(s.level)}签</span><span>${esc(s.palace)}</span>
+        <span>第 ${s.no} / ${esc(s.total)} 签</span><span>${esc((r.meta && r.meta.method) || '摇签')}</span>
+      </div>
+      <button type="button" class="mp-qn-again" data-lq-again>再摇一签</button>
+      <p class="mp-qn-tip">${esc(r.rules)}　${esc(r.disclaimer)}</p>
     </div>`;
   };
 
@@ -42021,7 +43265,8 @@ h3.mp-env-adv-h{display:block}
     day: '先看今天值什么，再看宜忌那几栏。',
   };
   pp.plainHTML = function (r) {
-    if (!r || r.system === 'taiyi') return '';
+    // 太乙自带白话层；福签卡本身就把寓意与建议摊开了，再插一句「先看哪里」是重复
+    if (!r || r.system === 'taiyi' || r.system === 'qian' || r.system === 'guanyin') return '';
     const lead = (r.brief && r.brief.lead) || '';
     if (!lead) return '';
     const s = ' ' + String(r.system || '') + ' ';
@@ -42452,9 +43697,21 @@ h3.mp-env-adv-h{display:block}
   pp.summaryCardPNG = function (r, it) {
     try {
       if (typeof document === 'undefined' || !document.createElement) return '';
-      const outline = (it && it.outline) || [];
-      const tables = ((it && it.tables) || []).filter((t) => Array.isArray(t.rows) && t.rows.length);
-      const systemLabel = (it && it.systemLabel) || (r && r.system) || '命理报告';
+      // 灵签没有解读信封（interpret 返回 null）：不补一份，摘要卡就只剩一个标题。
+      // 只补这一种情况，其余体系仍按原来的 it 画，福签等结果不受影响。
+      let cardIt = it;
+      if ((!cardIt || !cardIt.outline) && r && r.system === 'guanyin' && r.brief) {
+        const b = r.brief;
+        const s = r.slip || {};
+        cardIt = {
+          systemLabel: '观音灵签',
+          outline: (b.sections || []).map((x) => ({ label: x.h, text: x.t })),
+          envelope: { verdict: { headline: s.no ? `第 ${s.no} 签「${s.title}」` : String(b.title || '') } },
+        };
+      }
+      const outline = (cardIt && cardIt.outline) || [];
+      const tables = ((cardIt && cardIt.tables) || []).filter((t) => Array.isArray(t.rows) && t.rows.length);
+      const systemLabel = (cardIt && cardIt.systemLabel) || (r && r.system) || '命理报告';
       const W = 900;
       const PAD = 44;
       const line = 26;
@@ -42475,7 +43732,7 @@ h3.mp-env-adv-h{display:block}
       // 量高度：标题区 + 五条摘要（每条最多两行）+ 表（6 行）+ 页脚
       // 结论块：这张卡会被单独转发出去，对方第一眼看到的必须是一句人话，
       // 而不是「命宫身宫」这种技术要点。三个来源依次兜底：信封结论 → brief → 事实型头卡。
-      const env = (it && it.envelope) || null;
+      const env = (cardIt && cardIt.envelope) || null;
       const v = (env && env.verdict) || null;
       const headText = String((v && v.headline) || (r && r.brief && r.brief.headline) || (r && r.factHead && r.factHead.headline) || '').trim();
       const subText = String((r && r.brief && r.brief.lead) || (v && v.condition) || (r && r.factHead && r.factHead.note) || '').trim();
@@ -42695,7 +43952,7 @@ h3.mp-env-adv-h{display:block}
   // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 真太阳时修正 → 解读 → 追问 → 附加
   const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'solar', 'interpret', 'followup', 'extra'];
 
-  /* 22 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
+  /* 24 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
    *
    * 分档的唯一依据：这份结果能不能被追问。
    *   盘类 / 问事类 / 判定类——有流年、宫位、三传、局数可追，出追问条。
@@ -42710,7 +43967,7 @@ h3.mp-env-adv-h{display:block}
     ask: ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren'],
     judge: ['wuyunliuqi', 'taiyi', 'zeri'],
     quiz: ['mbti', 'constitution'],
-    lookup: ['almanac', 'chenggu', 'star', 'numerology', 'convert'],
+    lookup: ['almanac', 'chenggu', 'qian', 'guanyin', 'star', 'numerology', 'convert'],
   };
 
   /* 档位不出的段。目前只有「追问」这一条。
@@ -43002,6 +44259,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   const CACHE_SCHEMA = 1;
   const CACHE_MAX = 6;        // 每条带一整份盘面，留六张够用
   const CACHE_ITEM_MAX = 400000;
+  // 单条 400k × 6 条已接近常见 5MB 配额；总预算再压一道，从旧到新退场。
+  const CACHE_TOTAL_MAX = 1400000;
 
   // 哈希与面板共用一份：两处各写一个版本，缓存键就会悄悄分叉
   function hash36(s) { return window.__PP.hash36(s); }
@@ -43038,10 +44297,13 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       if (JSON.stringify(entry).length > CACHE_ITEM_MAX) return;
       const m = cacheMap();
       m[id] = entry;
-      const ids = Object.keys(m);
-      if (ids.length > CACHE_MAX) {
-        ids.sort((x, y) => (m[x].createdAt || 0) - (m[y].createdAt || 0));
-        for (let i = 0; i < ids.length - CACHE_MAX; i += 1) delete m[ids[i]];
+      const sizeOf = (v) => { try { return JSON.stringify(v).length; } catch (e) { return CACHE_ITEM_MAX; } };
+      const ids = Object.keys(m).sort((x, y) => (m[x].createdAt || 0) - (m[y].createdAt || 0));
+      let total = ids.reduce((n, k) => n + sizeOf(m[k]), 0);
+      while (ids.length && (ids.length > CACHE_MAX || total > CACHE_TOTAL_MAX)) {
+        const k = ids.shift();
+        total -= sizeOf(m[k]);
+        delete m[k];
       }
       storeSet(CACHE_KEY, m);
     } catch (e) { /* 存不下就当没有缓存，不影响这次排盘 */ }
@@ -43160,10 +44422,11 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   /**
    * 排完一次盘才记一条——切 tab 不算用过（那样历史里全是点过没排过的空条目）。
    * 问卷（人格/体质）不进历史：答案只在内存里，恢复不回来；存半份答案比不存更误导。
+   * 灵签也不进：每次摇都是新签，存下来的签号回放不出「当时那一支」。
    */
   function recordRecent(t, r) {
     if (!entryLabels()[t]) return;
-    if (t === 'mbti' || t === 'constitution') return;
+    if (t === 'mbti' || t === 'constitution' || t === 'guanyin') return;
     const args = collectArgs();
     // 盘号剥掉 LY- 前缀再存：和结果页上的显示一致，用户嘴里的盘号就是那六位
     const shortId = String((r && r.shortId) || '').replace(/^LY-/, '');
@@ -43370,6 +44633,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
     trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
+    qian: 'date',
+    guanyin: 'none',
     mbti: 'none',
   constitution: 'none',
     wuyunliuqi: 'date',
@@ -43423,6 +44688,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     qimen: '奇门时家转盘：用起局时刻定节气、三元与局数；「换局规则」决定符头与节气如何对齐。',
     hepan: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。',
     tarot: '塔罗不看时间，只记录抽牌时刻与你的提问。',
+    qian: '每日福签按公历日期抽一支，同一天结果一致、不设重摇；签文为插件原创。',
+    guanyin: '观音灵签一百支，一事一签、可重摇；签诗按民间通行本录入，白话签意与建议为插件自撰。',
     almanac: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。',
     zeri: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。',
     xiaoliuren: '小六壬用农历月/日/时掐指，也可用三个随机数起课。',    star: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。',
@@ -43443,6 +44710,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   /** 本次要交给解读的「问题 + 方向」；命盘类不传。奇门不问事，但方向决定取哪门作用神 */
   function askArgs() {
     if (tab === 'qimen') return { question: '', direction: el('qdir').value };
+    if (tab === 'guanyin') return { question: el('question').value.trim(), direction: 'general' };
     if (!needAsk(tab)) return undefined;
     return { question: el('question').value.trim(), direction: el('direction').value };
   }
@@ -43542,7 +44810,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   function syncInputLock() {
     const bar = document.querySelector('.bar');
     if (!bar) return;
-    const locked = flowState === FLOW.LOCKED;
+    const locked = flowState === FLOW.LOCKED && tab !== 'guanyin';
     bar.classList.toggle('is-locked', locked);
     const PP = window.__PP;
     if (PP && PP.lockParams) { PP.lockParams(bar, locked); }
@@ -43601,7 +44869,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
         last = null;
         castKey = '';
         const box = el('out');
-        if (box) box.innerHTML = `<div class="note">参数填完整后点「${goLabel()}」出结果。</div>`; // html-sink:ok goLabel 只返回固定按钮名（排盘/填空答案），不含任何输入
+        if (box) box.innerHTML = emptyNoteHTML(`参数填完整后点「${goLabel()}」出结果。`);
       }
       flowState = FLOW.UNFILLED;
     } else if (flowState === FLOW.UNFILLED || flowState === FLOW.ERROR) flowState = FLOW.READY;
@@ -43621,7 +44889,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     flowState = FLOW.UNFILLED;
     castKey = '';
     const out = el('out');
-    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里的固定文案（日期格式 / 合盘缺对方 / 缺所问之事 / 数字起卦缺数 / 农历日期 / 飞星日期），不含输入
+    if (out) out.innerHTML = emptyNoteHTML(msg);
     const go = el('go');
     if (go) go.removeAttribute('aria-busy');
     refreshFlow();
@@ -43630,7 +44898,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   /** 当前 tab 是否真的用到日期/时刻（塔罗、人格不看时间；梅花「数字起卦」也不用）
    *  与 syncMhMode 里的显隐共用这一处判断：字段既然藏起来了，run() 就不能拿它拦人。 */
   function usesTimeInput() {
-    return tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && !(tab === 'meihua' && mhMode === 'number');
+    return tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && tab !== 'guanyin' && !(tab === 'meihua' && mhMode === 'number');
   }
 
   /** 用户手动改了日期或时刻 */
@@ -43749,7 +45017,17 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       const form = window.Engine.formOf ? window.Engine.formOf(deep) : null;
       if (!form || !form.tab) return null;
       if (!document.querySelector('.tab[data-tab="' + form.tab + '"], .tool[data-tab="' + form.tab + '"]')) return null;
-      return { tab: form.tab, form, label: deep.label, question: deep.question };
+      // 灵签的摇签参数不在表单里，但必须跟着链接还原：从 rest 里摘出来单独带走，
+      // 剩下的才是真的没还原的参数（否则提示里会误报 seed / except 没填回去）
+      let draw = null;
+      if (form.tab === 'guanyin') {
+        draw = {};
+        for (const k of ['no', 'seed', 'except']) {
+          if (form.rest && form.rest[k] !== undefined) { draw[k] = form.rest[k]; delete form.rest[k]; }
+        }
+        if (!Object.keys(draw).length) draw = null;
+      }
+      return { tab: form.tab, form, draw, label: deep.label, question: deep.question };
     } catch (e) { return null; }
   }
   /** 把链接里的参数填进表单（在 setTab 之后调用：setTab 会按体系改字段可见性） */
@@ -43773,7 +45051,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     const out = el('out');
     if (!out || !deep) return;
     const rest = window.Engine && window.Engine.restNote ? window.Engine.restNote(deep.form) : '';
-    const line = '已按链接还原：' + deep.label + (deep.question ? '｜' + deep.question : '') + (rest ? '　' + rest : '');
+    // 灵签还原的是哪一支，直接写在提示里：光说「已还原」看不出是不是同一签
+    const slip = deep.tab === 'guanyin' && last && last.r && last.r.slip ? last.r.slip : null;
+    const got = slip ? `（第 ${slip.no} 签「${slip.title}」）` : '';
+    const line = '已按链接还原：' + deep.label + got + (deep.question ? '｜' + deep.question : '') + (rest ? '　' + rest : '');
     // 用文本节点而不是拼 HTML：链接里的问题原样显示，也不会被当成标签解析
     const note = document.createElement('div');
     note.className = 'note';
@@ -44028,11 +45309,14 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   function feedbackMail() {
     const v = typeof window.__MP_VER === 'string' ? window.__MP_VER : '';
     const shortId = String((last && last.r && last.r.shortId) || '').replace(/^LY-/, '');
-    const input = [
-      (last && last.date) || '',
-      (last && last.time) || '',
-      (last && last.gender) || '',
-    ].filter(Boolean).join(' ');
+    // 灵签没有出生信息：拿表单的日期当「输入」会报出一行与这张签无关的内容
+    const gy = !!(last && last.tab === 'guanyin' && last.r && last.r.slip);
+    const slip = gy ? last.r.slip : null;
+    const gyMeta = (gy && last.r.meta) || {};
+    const input = gy
+      ? `第 ${slip.no} 签（${gyMeta.method || '摇签'}）「${slip.title}」`
+      : [(last && last.date) || '', (last && last.time) || '', (last && last.gender) || '']
+        .filter(Boolean).join(' ');
     const ts = el('ts');
     const lz = el('latezi');
     const hu = el('hourunknown');
@@ -44041,10 +45325,14 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       '体系：' + ((last && (entryLabels()[last.tab] || last.tab)) || '无'),
       '盘号：' + (shortId || '无'),
       '输入：' + (input || '无'),
-      '出生地：' + ((last && last.address) || '未填')
-        + (ts ? '（真太阳时 ' + (ts.checked ? '开' : '关') + '）' : ''),
-      '开关：晚子时换日 ' + (lz ? (lz.checked ? '开' : '关') : '—')
-        + '／时辰未知 ' + (hu && hu.checked ? '是' : '否'),
+      ...(gy ? [
+        '所问：' + (gyMeta.question || '未填'),
+      ] : [
+        '出生地：' + ((last && last.address) || '未填')
+          + (ts ? '（真太阳时 ' + (ts.checked ? '开' : '关') + '）' : ''),
+        '开关：晚子时换日 ' + (lz ? (lz.checked ? '开' : '关') : '—')
+          + '／时辰未知 ' + (hu && hu.checked ? '是' : '否'),
+      ]),
       '',
       '分类（留一个，其余删掉）：' + FB_KINDS.join(' / '),
       '',
@@ -44062,6 +45350,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
    * 存的是「别再提」这件事本身，也只在本地。
    */
   function nudgeHTML() {
+    // 灵签的入口不是出生盘，也没有「重放这张盘」这回事：卦例库与应验提醒都不该出现
+    if (last && last.tab === 'guanyin') return '';
     let off = false;
     try { off = window.localStorage.getItem('dsh-metaphysics/nudge-off') === '1'; } catch (e) { off = false; }
     if (off) return '';
@@ -44071,16 +45361,19 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
   function exportBar() {
     // 按钮统一「动词 + 对象」、四字以内：手机上这一排会折成两行，
     // 「存长图」三个字，一行能并两个；原来六字写法把后面的按钮挤出屏幕。
+    // 灵签是随机一支、没有可回放参数，「存卦例 / 记准 / 记不准」对它没有意义
+    const gy = !!(last && last.tab === 'guanyin');
+    const cases = gy ? '' : `
+      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
+      <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
+      <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>`;
     return `<div class="exp no-print">
       <button type="button" data-act="reform" title="回到上面的条件，改完再排一次">改条件</button>
       <button type="button" data-act="pdf">存 PDF</button>
       <button type="button" data-act="print">打印</button>
       <button type="button" data-act="md">存 .md</button>
       <button type="button" data-act="png">存长图</button>
-      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制链接</button>
-      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
-      <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
-      <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
+      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制链接</button>${cases}
       <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a>　·　<a href="https://pd.qq.com/s/Nb18ikqqfl" target="_blank" rel="noopener noreferrer" title="腾讯频道「烛微命盘」：排盘求助、命例交流、功能与bug、术语与依据">交流频道</a></span>
     </div>${nudgeHTML()}`;
   }
@@ -44157,6 +45450,12 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     window.print();
   }
 
+  /** 文件名里的一行标识：灵签用签号，其余用日期——签与表单日期无关 */
+  function fileStamp() {
+    if (last && last.tab === 'guanyin' && last.r && last.r.slip) return `第${last.r.slip.no}签`;
+    return (last && last.date) || '';
+  }
+
   /** 存长图：Canvas 直出 PNG，零依赖；不支持时提示 */
   function downloadCard() {
     if (!last || !last.r) return;
@@ -44164,7 +45463,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存 PDF」'); return; }
     const a = document.createElement('a');
     a.href = url;
-    a.download = `烛微命盘摘要-${last.r.system}-${last.date || ''}.png`;
+    a.download = `烛微命盘摘要-${last.r.system}-${fileStamp()}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -44177,7 +45476,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `烛微命盘报告-${last.r.system}-${last.date || ''}.md`;
+    a.download = `烛微命盘报告-${last.r.system}-${fileStamp()}.md`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -44191,7 +45490,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     // force 留给「重设」这种显式动作，跳过缓存真算一遍。
     const ck = chartKeyOf();
     if (!(opts && opts.force)) {
-      const hit = cacheRead(ck);
+      // 灵签每次都是新的一摇：跳过「同参数直出」，否则第二次点「摇签」会读回上一支
+      const hit = tab === 'guanyin' ? null : cacheRead(ck);
       if (hit) {
         last = makeLast(hit.last);
         paint();
@@ -44231,10 +45531,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     markAskInvalid(false);
     const args = { system: tab };
     // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
-    args.shadow = tab !== 'mbti' && tab !== 'constitution';
+    args.shadow = tab !== 'mbti' && tab !== 'constitution' && tab !== 'guanyin';
     // 推导链只覆盖六爻 / 八字 / 紫微
     args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
-    if (tab !== 'tarot') args.datetime = `${date}T${time}`;
+    if (tab !== 'tarot' && tab !== 'guanyin') args.datetime = `${date}T${time}`;
     // 人生K线也是出生盘：出生地决定真太阳时，落进时柱后会改变整条运程
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan' || tab === 'trend') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
@@ -44300,6 +45600,21 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       }
     }
     if (tab === 'tarot') args.spread = (el('tcount') && el('tcount').value) || 'three';
+    if (tab === 'guanyin') {
+      // 深链带着当初那一摇的参数：照参数复现同一支，不再换 seed
+      const draw = opts && opts.draw;
+      if (draw) {
+        if (draw.seed !== undefined) args.seed = draw.seed;
+        if (draw.except !== undefined) args.except = draw.except;
+        if (draw.no !== undefined) args.no = draw.no;
+      } else {
+        // 每次点「摇签」换一个 seed；except 带上上一支，避免重摇又摇回同一支
+        args.seed = Date.now() + Math.random();
+        if (last && last.r && last.r.system === 'guanyin' && last.r.slip) args.except = last.r.slip.no;
+      }
+      const q = el('question').value.trim();
+      if (q) args.question = q;
+    }
     // 速查类：各体系自己的最小输入
     if (tab === 'zeri') {
       args.startDate = date;
@@ -44437,6 +45752,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
                 : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
+                    : tab === 'qian' ? window.__PP.qianHTML(r)
+                    : tab === 'guanyin' ? window.__PP.guanyinHTML(r)
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
                       : tab === 'almanac' ? window.__PP.almanacHTML(r)
                       : tab === 'zeri' ? window.__PP.zeriHTML(r)
@@ -44479,7 +45796,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
       // 排成功就落一份本机缓存：整份 last（含 r / html）都存，下次同参数直出，不重算。
       // 键复用 run 开头算好的 ck，不在末尾二次哈希。
-      try {
+      // 灵签不入结果缓存：随机一支，存下来也复现不了；下次点「摇签」就该是新的一支
+      if (tab !== 'guanyin') try {
         const snap = collectArgs();
         cacheWrite(ck, { chartId: (r && r.chart_id) || ck, system: tab,
           profileSnapshot: snap, envelope: r, createdAt: Date.now(), last: makeLast(last) });
@@ -44524,6 +45842,16 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     run();
   }
 
+  /** 空结果提示；福签与灵签各放一只迷你签筒，点击行为统一交给 document 上的委托。 */
+  function emptyNoteHTML(text) {
+    const oracle = tab === 'qian' && window.__PP && window.__PP.qianOracleHTML
+      ? `<button type="button" class="mp-qn-oracle" title="点一下，摇一支今日福签">${window.__PP.qianOracleHTML()}</button>`
+      : tab === 'guanyin' && window.__PP && window.__PP.guanyinOracleHTML
+        ? `<button type="button" class="mp-qn-oracle mp-lq-oracle" title="点一下，摇一支观音灵签">${window.__PP.guanyinOracleHTML()}</button>`
+        : '';
+    return `<div class="note">${text}</div>${oracle}`; // html-sink:ok text 只来自本文件固定文案；oracle 由 PP 生成
+  }
+
   function renderTip() {
     const tip = el('tip');
     if (!tip) return;
@@ -44542,7 +45870,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
   }
 
-  const QUICK = ['almanac', 'convert', 'zeri', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'xiaoliuren', 'qian', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
 
   // 窄屏下 tab 栏是单行横滑：切到靠后的 tab 时把它滚到可视区中间，
   // 否则点了「人格」页面变了、高亮却停在屏幕外，看着像没响应
@@ -44590,8 +45918,14 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     if (csForm) csForm.style.display = tab === 'constitution' ? '' : 'none';
     const fq = el('for-quick');
     if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
-    // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
-    show('for-ask', needAsk(tab));
+    // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示；
+    // 灵签同样问事，但传统用法允许心中默念，所以只显示问题框、不要求必填，也不需要方向。
+    show('for-ask', needAsk(tab) || tab === 'guanyin');
+    const askLbl = el('ask-label');
+    if (askLbl) askLbl.textContent = tab === 'guanyin' ? '所问之事（可留空）' : '所问之事（必填）';
+    const qBox = el('question');
+    if (qBox) qBox.placeholder = tab === 'guanyin' ? '心里那件事，一句话即可；不写也行。' : ASK_PLACEHOLDER;
+    show('for-direction', needAsk(tab));
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
     const castLabel = tab === 'qimen';
@@ -44610,6 +45944,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     }
     syncQuick();
     el('go').textContent = tab === 'tarot' ? '抽牌'
+      : tab === 'qian' || tab === 'guanyin' ? '摇签'
       : tab === 'hepan' ? '合盘'
         : tab === 'qimen' ? '起局'
           : QUICK.indexOf(tab) >= 0 ? '看结果'
@@ -44638,7 +45973,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     flowState = FLOW.READY;
     castKey = '';
     const outBox = el('out');
-    if (outBox) outBox.innerHTML = `<div class="note">参数填好后点「${goLabel()}」出结果。</div>`; // html-sink:ok goLabel 只返回固定按钮名（排盘/填空答案），不含任何输入
+    if (outBox) outBox.innerHTML = emptyNoteHTML(`参数填好后点「${goLabel()}」出结果。`);
     refreshFlow();
   }
 
@@ -45114,6 +46449,18 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       node.addEventListener('input', onManualEdit);
     });
     el('go').addEventListener('click', goCast);
+    // 迷你签筒：点一下先摇，动画走完再走与「摇签」按钮同一条 goCast 路径
+    document.addEventListener('click', (e) => {
+      const o = e.target && e.target.closest ? e.target.closest('.mp-qn-oracle') : null;
+      if (!o || o.classList.contains('shaking')) return;
+      const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+      if (reduce) { el('go').click(); return; }
+      o.classList.add('shaking');
+      window.setTimeout(() => {
+        o.classList.remove('shaking');
+        if (tab === 'qian' || tab === 'guanyin') el('go').click();
+      }, 1050);
+    });
     // 修改参数：只解开输入区，不动结果。旧盘继续挂着，等用户真改完再点「排盘」才换。
     // 这里不排盘、不清值 —— 任务书 1.3 的 RESULT_LOCKED → EDITING 只走这一条路。
     const editBtn = el('edit');
@@ -45267,6 +46614,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      const lqAgain = e.target && e.target.closest ? e.target.closest('[data-lq-again]') : null;
+      if (lqAgain) { goCast(); return; }
       const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
       if (copyBtn) { copyShadow(copyBtn); return; }
       const handleCopy = e.target && e.target.closest ? e.target.closest('[data-handle-copy]') : null;
@@ -45364,7 +46713,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
     const d0 = defaultGet();
     const list0 = window.__PP && window.__PP.profilesLoad ? (window.__PP.profilesLoad() || []) : [];
     const pinned = d0 ? list0.find((x) => x && x.id === d0.profileId) : list0.find((x) => x && x.pinned);
-    if (deep) Promise.resolve(run({ record: false })).then(() => deepNote(deep));
+    if (deep) Promise.resolve(run({ record: false, draw: deep.draw })).then(() => deepNote(deep));
     else if (pinned) restoreDefault(pinned);
     else refreshFlow();
   });

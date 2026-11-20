@@ -51,7 +51,8 @@ ok('无 readOnly 的给 disabled', /n\.disabled = locked;/.test(lock));
 ok('select 走 disabled', /tag === 'SELECT'/.test(lock));
 ok('checkbox / radio 走 disabled', /n\.type === 'checkbox'/.test(lock) && /n\.type === 'radio'/.test(lock));
 ok('只读态给容器打标记', /bar\.classList\.toggle\('is-locked', locked\)/.test(lock));
-ok('只有 RESULT_LOCKED 才锁', /const locked = flowState === FLOW\.LOCKED;/.test(lock));
+ok('只有 RESULT_LOCKED 才锁（灵签出签后仍可改所问、再摇）',
+  /const locked = flowState === FLOW\.LOCKED && tab !== 'guanyin';/.test(lock));
 ok('按钮跟着状态显隐', /eb\.hidden = !locked/.test(lock));
 ok('不碰结果区里的追问框', !/askq/.test(lock) && !/#out|el\('out'\)/.test(lock));
 ok('不拼 HTML', !/innerHTML/.test(lock));

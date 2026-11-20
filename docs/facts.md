@@ -33,7 +33,7 @@
 - verified: 2026-11-16
 - 依据：`src/compose.js` 的 `TIER` 五档
 
-22 个体系按「出结果的方式」分五档，`composeResult()` 是唯一的拼接点，`TIER_SKIP` 决定哪档不出 `followup`（`quiz`、`lookup` 两块）。新的体系必须落进某档，落不进去说明它其实属于已有一档。
+24 个体系按「出结果的方式」分五档，`composeResult()` 是唯一的拼接点，`TIER_SKIP` 决定哪档不出 `followup`（`quiz`、`lookup` 两块）。新的体系必须落进某档，落不进去说明它其实属于已有一档。
 
 ## F-003 交互状态机
 

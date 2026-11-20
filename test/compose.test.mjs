@@ -44,14 +44,14 @@ eq('没东西可出就是空串', C.composeResult({}, { mode: 'user' }), '');
 const TIERS = ['chart', 'ask', 'judge', 'quiz', 'lookup'];
 eq('五档齐全', Object.keys(C.TIER).join(','), TIERS.join(','));
 const all = TIERS.reduce((acc, k) => acc.concat(C.TIER[k]), []);
-eq('22 个体系一个不漏、一个不重', all.length, 22);
-eq('去重后还是 22', new Set(all).size, 22);
+eq('24 个体系一个不漏、一个不重', all.length, 24);
+eq('去重后还是 24', new Set(all).size, 24);
 
 for (const s of ['bazi', 'ziwei', 'hepan', 'trend', 'fengshui', 'name']) eq('盘类 ' + s, C.tierOf(s), 'chart');
 for (const s of ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren']) eq('问事类 ' + s, C.tierOf(s), 'ask');
 for (const s of ['wuyunliuqi', 'taiyi', 'zeri']) eq('判定类 ' + s, C.tierOf(s), 'judge');
 for (const s of ['mbti', 'constitution']) eq('问卷类 ' + s, C.tierOf(s), 'quiz');
-for (const s of ['almanac', 'chenggu', 'star', 'numerology', 'convert']) eq('速查类 ' + s, C.tierOf(s), 'lookup');
+for (const s of ['almanac', 'chenggu', 'qian', 'guanyin', 'star', 'numerology', 'convert']) eq('速查类 ' + s, C.tierOf(s), 'lookup');
 eq('没登记过的体系按盘类兜底（不静默丢段）', C.tierOf('something-new'), 'chart');
 eq('空 system 也兜底', C.tierOf(''), 'chart');
 

@@ -462,14 +462,20 @@ export function buildBazi(input) {
   const solar = useTrueSolar ? applyTrueSolar(civilJd, longitude) : { offsetMinutes: 0, jd: civilJd, note: '未启用真太阳时' };
   const jd = solar.jd;
 
+  // 交节用标准时轴：节气时刻按东八区（经 DST 校正后）给出，出生时刻只有放在同一根轴上才能比先后。
+  // 拿真太阳时去比会在交节前后一个经度修正带的宽度内把月柱/年柱判到节令另一侧
+  // （东经 120° 以西真太阳时更早，立春 16:27 后、真太阳时 16:27 前的出生会被错排成上一年柱）。
+  // 时柱、日界仍用真太阳时 jd，那才是「当地太阳在天上的位置」该管的事。
+  const termJd = civilJd;
+
   // 八字只用「节」定月柱与起运（气不参与），传 jieOnly 省掉一半节气求值
   const terms = termWindow(year, { jieOnly: true });
-  const prevJieTerm = previousJie(terms, jd);
-  const nextJieTerm = nextJie(terms, jd);
+  const prevJieTerm = previousJie(terms, termJd);
+  const nextJieTerm = nextJie(terms, termJd);
 
   // 年柱：以立春为界
   const lichun = terms.find((t) => t.index === 2 && t.year === year);
-  const solarYear = lichun && jd < lichun.jd ? year - 1 : year;
+  const solarYear = lichun && termJd < lichun.jd ? year - 1 : year;
   const yearIdx = (((solarYear - 4) % 60) + 60) % 60;
   const yearStem = STEMS[yearIdx % 10];
 
@@ -505,7 +511,8 @@ export function buildBazi(input) {
   // 大运
   const isYangYear = STEMS.indexOf(yearStem) % 2 === 0;
   const forward = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
-  const spanDays = forward ? nextJieTerm.jd - jd : jd - prevJieTerm.jd;
+  // 间隔同样取标准时轴（两端的真实时长与轴无关，但两端必须同轴）
+  const spanDays = forward ? nextJieTerm.jd - termJd : termJd - prevJieTerm.jd;
   const totalMonths = spanDays * 4; // 3 天 = 1 年 = 12 个月
   let startAgeYears = Math.floor(totalMonths / 12);
   let startAgeMonths = Math.round(totalMonths % 12);
@@ -890,7 +897,7 @@ export function buildBazi(input) {
       next: { name: nextJieTerm.name, time: formatJd(nextJieTerm.jd) },
       // 距「节」的分钟数（取两侧较小值）。是否提示复核由摘要层决定，阈值 20 分钟：
       // 与 NAOJ 历要项对拍实测节气最多偏 13.5 分钟，20 分钟留出余量。
-      nearBoundaryMinutes: Math.round(Math.min(jd - prevJieTerm.jd, nextJieTerm.jd - jd) * 1440),
+      nearBoundaryMinutes: Math.round(Math.min(termJd - prevJieTerm.jd, nextJieTerm.jd - termJd) * 1440),
     },
     renyuan,
     pillars,

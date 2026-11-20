@@ -227,16 +227,17 @@ eq('梅花 25:00 报 E_INPUT', codeOf(() => E.compute({ system: 'meihua', mode: 
 eq('梅花 1600 年前报 E_RANGE', codeOf(() => E.compute({ system: 'meihua', mode: 'time', datetime: '0001-01-01T10:00' })), 'E_RANGE');
 
 // ── ⑬ 晚子时口径统一：称骨/小六壬/梅花也随 lateZi 换日 ────────
-const lateA = E.compute({ system: 'chenggu', datetime: '1990-05-06T23:30', lateZi: true });
-const lateB = E.compute({ system: 'chenggu', datetime: '1990-05-06T23:30', lateZi: false });
+// 1990-05-06 在中国夏令时区间内，关掉 dst 才是在测晚子时本身（否则时钟先被拨回 22:30）。
+const lateA = E.compute({ system: 'chenggu', datetime: '1990-05-06T23:30', lateZi: true, dst: false });
+const lateB = E.compute({ system: 'chenggu', datetime: '1990-05-06T23:30', lateZi: false, dst: false });
 ok('称骨 23:30 换日与不换日差一天', lateA.lunar.day !== lateB.lunar.day, `${lateA.lunar.day} / ${lateB.lunar.day}`);
 ok('称骨两口径骨重不同', lateA.total.qian !== lateB.total.qian, `${lateA.total.qian} / ${lateB.total.qian}`);
-const xA = E.compute({ system: 'xiaoliuren', datetime: '1990-05-06T23:30', lateZi: true });
-const xB = E.compute({ system: 'xiaoliuren', datetime: '1990-05-06T23:30', lateZi: false });
+const xA = E.compute({ system: 'xiaoliuren', datetime: '1990-05-06T23:30', lateZi: true, dst: false });
+const xB = E.compute({ system: 'xiaoliuren', datetime: '1990-05-06T23:30', lateZi: false, dst: false });
 ok('小六壬 23:30 换日与不换日落宫不同', xA.steps.join('') !== xB.steps.join(''), `${xA.steps.join('')} / ${xB.steps.join('')}`);
 ok('小六壬摘要写明晚子时口径', /晚子时按次日/.test(xA.meta.originText) && !/晚子时按次日/.test(xB.meta.originText));
-const mA = E.compute({ system: 'meihua', mode: 'time', datetime: '1990-05-06T23:30', lateZi: true });
-const mB = E.compute({ system: 'meihua', mode: 'time', datetime: '1990-05-06T23:30', lateZi: false });
+const mA = E.compute({ system: 'meihua', mode: 'time', datetime: '1990-05-06T23:30', lateZi: true, dst: false });
+const mB = E.compute({ system: 'meihua', mode: 'time', datetime: '1990-05-06T23:30', lateZi: false, dst: false });
 ok('梅花 23:30 换日与不换日农历日不同', /13日/.test(mA.source) && /12日/.test(mB.source), `${mA.source} / ${mB.source}`);
 ok('梅花两口径本卦不同', mA.ben.name !== mB.ben.name, `${mA.ben.name} / ${mB.ben.name}`);
 

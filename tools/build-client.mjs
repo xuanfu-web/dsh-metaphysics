@@ -14,7 +14,7 @@ const unreleasedLine = () =>
 
 const root = path.resolve(import.meta.dirname, '..');
 const ORDER = ['fail', 'bool', 'diff', 'fingerprint', 'validate', 'datetime', 'lru', 'nayin', 'sanhe', 'vsop-earth', 'calendar', 'lunar', 'geo', 'random', 'dst', 'shensha', 'tiaohou', 'qiongtong',
-  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'facts', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'headline', 'index'];
+  'classics', 'structure', 'hehua', 'geju', 'bazi', 'marriage', 'facets', 'yijing-text', 'liuyao', 'ziwei-zuoyao', 'ziwei-words', 'ziwei', 'tarot-cards', 'tarot', 'meihua', 'daliuren', 'hepan', 'trend', 'fengshui', 'name-extra', 'surname-data', 'name-data', 'name', 'ziwei-hepan', 'qimen-ganying', 'qimen', 'qimen-interpret', 'interpret-data', 'almanac', 'qian', 'guanyin-data', 'guanyin', 'star', 'numerology', 'mbti', 'constitution', 'chenggu', 'wuyunliuqi', 'taiyi', 'xiaoliuren', 'zeri-shensha', 'zeri', 'convert', 'interpret-plain', 'interpret-knowledge', 'limits', 'guide', 'citations', 'bazi-words', 'term-dict', 'envelope', 'facts', 'interpret', 'followup', 'crosscheck', 'verify', 'rectify', 'trace', 'revise', 'handle', 'bridge', 'qimen-prompt', 'event-prompt', 'plain-summary', 'headline', 'index'];
 
 export const MODULE_ORDER = ORDER;
 
@@ -88,6 +88,8 @@ export const CHUNKS = {
   zeri: { tabs: ['zeri'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'zeri-shensha', 'zeri', ...BRIEF, ...ASK] },
   chenggu: { tabs: ['chenggu'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'chenggu', ...BRIEF, ...ASK] },
   xiaoliuren: { tabs: ['xiaoliuren'], modules: [...COMMON, 'interpret-data', 'classics', 'almanac', 'xiaoliuren', ...ASK, ...BRIEF, ...EVENT_PROMPT] },
+  qian: { tabs: ['qian'], modules: [...COMMON, 'classics', 'qian', ...BRIEF, ...ASK] },
+  guanyin: { tabs: ['guanyin'], modules: [...COMMON, 'classics', 'guanyin-data', 'guanyin', ...BRIEF, ...ASK] },
   star: { tabs: ['star'], modules: [...COMMON, 'classics', 'star', ...BRIEF, ...ASK] },
   numerology: { tabs: ['numerology'], modules: [...COMMON, 'classics', 'numerology', ...BRIEF, ...ASK] },
   mbti: { tabs: ['mbti'], modules: [...COMMON, 'classics', 'mbti', ...BRIEF, ...ASK] },
@@ -96,7 +98,7 @@ export const CHUNKS = {
   taiyi: { tabs: ['taiyi'], modules: [...COMMON, 'classics', 'taiyi', ...BRIEF, ...ASK] },
 };
 
-/** tab → 分块文件名；未列出的 tab 回落到 bazi（21 个 tab 全覆盖由测试兜底） */
+/** tab → 分块文件名；未列出的 tab 回落到 bazi（23 个 tab 全覆盖由测试兜底） */
 export const CHUNK_OF_TAB = Object.fromEntries(
   Object.entries(CHUNKS).flatMap(([name, def]) => def.tabs.map((tab) => [tab, `client.${name}.js`])),
 );

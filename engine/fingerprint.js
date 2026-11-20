@@ -18,7 +18,7 @@ const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // Crockford base32（去�
  * 免得哪天新增体系真读性别，却被身份层悄悄抹平。zeri / name 不收性别入参，故不在表内。
  */
 export const GENDER_NEUTRAL = new Set([
-  'liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'almanac', 'chenggu', 'xiaoliuren',
+  'liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'qian', 'guanyin', 'almanac', 'chenggu', 'xiaoliuren',
   'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'convert',
 ]);
 

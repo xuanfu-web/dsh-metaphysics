@@ -24,6 +24,8 @@ import { buildAlmanac } from './almanac.js';
 import { buildZeri } from './zeri.js';
 import { buildChenggu } from './chenggu.js';
 import { buildXiaoliuren } from './xiaoliuren.js';
+import { buildQian } from './qian.js';
+import { buildGuanyin } from './guanyin.js';
 import { buildStar } from './star.js';
 import { buildNumerology } from './numerology.js';
 import { buildMbti, mbtiPaper } from './mbti.js';
@@ -43,6 +45,7 @@ import { buildTrace, traceMarkdown, SYSTEM_LABEL } from './trace.js';
 import { fail } from './fail.js';
 import { assertCivil, MIN_YEAR, MAX_YEAR } from './validate.js';
 import { parseDateTime, daysInMonth } from './datetime.js';
+import { applyDst } from './dst.js';
 
 export { interpret, DIRECTIONS, DIRECTION_DEFAULT, BRIGHTNESS, flowOf };
 export { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION } from './envelope.js';
@@ -849,7 +852,7 @@ export function compute(input = {}) {
   // 「所问之事」以前只有六爻和塔罗会落到结果里，梅花/六壬/奇门/小六壬都丢掉了：
   // 于是第一屏想说「你问的是……」却拿不到那句话。这里统一补齐，已有的值不动。
   if (r && !r.question && typeof args.question === 'string' && args.question.trim()
-    && ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren'].includes(r.system)) {
+    && ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren', 'guanyin'].includes(r.system)) {
     r.question = args.question.trim();
   }
   // 顶部那段「人话总结」：命盘两类 + 问事五类 + 合盘 + 走势，都由 plainSummary 决定给不给。
@@ -885,6 +888,11 @@ export function compute(input = {}) {
   // 超出 ΔT 覆盖范围时把精度提示顶到摘要最前，别让远期盘悄悄出错
   if (r && r.precision && r.precision.level === 'approx' && r.summary) {
     r.summary = `⚠ ${r.precision.note}\n${r.summary}`;
+  }
+  // 夏令时校正同样要顶到摘要里：静默减一小时会换时辰甚至换日柱，盘面本身看不出任何异常。
+  // bazi / ziwei 的 note 已挂在 input.dst 上，这里只接统一校正的那些体系（r.dst）。
+  if (r && r.dst && r.dst.applied && r.summary) {
+    r.summary = `⚠ ${r.dst.note}\n${r.summary}`;
   }
   // 没有经度就没有真太阳时：时柱可能整柱偏（海外出生尤其常见），必须显式告警而不是藏在括号里
   if (r && (r.system === 'bazi' || r.system === 'ziwei') && r.input && r.input.longitude == null && r.summary) {
@@ -1321,6 +1329,27 @@ function computeRaw(args = {}) {
     }
     args = { ...args, fortuneYear: n };
   }
+  // 1986–1991 中国夏令时：出生／起课钟面时间比标准时快一小时。
+  // 会按时辰落盘的体系在这里统一减一小时；bazi / ziwei / trend / fengshui / name / hepan
+  // 与 chenggu 都在各自构建器里已经调过 applyDst，这里再减会连减两次。
+  // 只处理带显式时分的 datetime：只给日期时 00:00 减一小时会退到前一天，改变取日结果。
+  const DST_CENTRAL = new Set(['qimen', 'daliuren', 'meihua', 'liuyao', 'xiaoliuren', 'wuyunliuqi', 'taiyi']);
+  let dstInfo = null;
+  {
+    const xlrNums = [args.num1, args.num2, args.num3].filter((v) => v !== undefined && v !== null && v !== '').length;
+    const ignoredClock = (system === 'meihua' && args.mode === 'number')
+      || (system === 'xiaoliuren' && (args.mode === 'number' || (args.mode !== 'time' && xlrNums > 0)));
+    if (DST_CENTRAL.has(system) && !ignoredClock && bool(args.dst, true)
+      && typeof args.datetime === 'string' && /[T\s]\d{1,2}:\d{1,2}/.test(args.datetime)) {
+      const civil = parseDateTime(args.datetime);
+      const adj = applyDst(civil);
+      if (adj.applied) {
+        const stamp = `${adj.year}-${pad(adj.month)}-${pad(adj.day)}T${pad(adj.hour)}:${pad(adj.minute)}`;
+        dstInfo = { applied: true, from: args.datetime, to: stamp, note: adj.note };
+        args = { ...args, datetime: stamp };
+      }
+    }
+  }
   if (system === 'bazi') {
     const dt = parseDateTime(args.datetime);
     const asOf = checkAsOf(args.asOf);
@@ -1395,7 +1424,7 @@ function computeRaw(args = {}) {
     const lateZi = bool(args.lateZi, true);
     const result = buildDaliuren({ ...dt, lateZi });
     result.lateZi = lateZi;
-    return { ...result, precision: dt.precision, summary: daliurenText(result) };
+    return { ...result, precision: dt.precision, ...(dstInfo ? { dst: dstInfo } : {}), summary: daliurenText(result) };
   }
   if (system === 'qimen') {
     const dt = parseDateTime(args.datetime);
@@ -1413,7 +1442,7 @@ function computeRaw(args = {}) {
     const lateZiHourMode = mode === 'next-day' ? 'next-day' : 'same-day';
     const result = buildQimen({ ...dt, lateZiHourMode, juMethod: args.juMethod });
     result.lateZiHourMode = lateZiHourMode;
-    return { ...result, summary: qimenText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: qimenText(result) };
   }
   if (system === 'hepan') {
     // 双方（以及可选的第三方）夫妻宫、大运都依赖时支：任一方时辰未知就不出盘，
@@ -1454,6 +1483,10 @@ function computeRaw(args = {}) {
           : bool(src.lateZi, true) ? 'next-day' : 'current-day';
       return {
         ...dt,
+        // 紫微流派开关（庚干四化、天马、魁钺、晚子时等）是「读盘时才算」的参数，
+        // 漏传会让合盘按默认口径重排，与单盘同参数的结果对不上。晚子时随后再按八字
+        // 的布尔开关转写，覆盖这里的原值。
+        ...ziweiSchoolArgs(src),
         gender: requireGender(src.gender, who),
         trueSolar: src.trueSolar,
         lateZi: src.lateZi,
@@ -1511,7 +1544,7 @@ function computeRaw(args = {}) {
       const message = (e && e.message) || String(e);
       throw fail((e && e.code) || 'E_INPUT', (e && e.code) ? message : `梅花起卦参数不完整：${message}`);
     }
-    return { ...result, summary: meihuaText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: meihuaText(result) };
   }
   if (system === 'liuyao') {
     if (!isSeed(args.seed)) throw fail('E_INPUT', `seed 必须是数字，收到「${args.seed}」`);
@@ -1575,7 +1608,7 @@ function computeRaw(args = {}) {
       if (yq) result.yingqi = yq;
     }
     if (args.seed !== undefined && args.seed !== null && args.seed !== '') result.seed = Number(args.seed);
-    return { ...result, ...(asOf ? { asOf } : {}), summary: liuyaoText(result) };
+    return { ...result, ...(asOf ? { asOf } : {}), ...(dstInfo ? { dst: dstInfo } : {}), summary: liuyaoText(result) };
   }
   if (system === 'almanac') {
     const dt = parseDateTime(args.datetime);
@@ -1610,8 +1643,9 @@ function computeRaw(args = {}) {
     if (hour === null || hour < 0 || hour > 23) {
       throw fail('E_INPUT', '称骨必须给时辰：datetime 带时分（如 1990-08-15T10:00），或额外给 hour（0–23）——缺时辰四柱不齐');
     }
-    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0, lateZi: args.lateZi });
-    return { ...result, summary: chengguText(result) };
+    const result = buildChenggu({ year: dt.year, month: dt.month, day: dt.day, hour, minute: hasTime ? dt.minute : 0, lateZi: args.lateZi, dst: bool(args.dst, true) });
+    const cgDst = result.input && result.input.dst;
+    return { ...result, ...(cgDst && cgDst.applied ? { dst: cgDst } : {}), summary: chengguText(result) };
   }
   if (system === 'convert') {
     const mode = args.mode === 'lunar2solar' ? 'lunar2solar' : 'solar2lunar';
@@ -1655,7 +1689,22 @@ function computeRaw(args = {}) {
       question: args.question,
       lateZi: args.lateZi,
     });
-    return { ...result, summary: xiaoliurenText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: xiaoliurenText(result) };
+  }
+  if (system === 'qian') {
+    const dt = parseDateTime(args.datetime);
+    const result = buildQian({ year: dt.year, month: dt.month, day: dt.day });
+    return { ...result, summary: qianText(result) };
+  }
+  if (system === 'guanyin') {
+    // 灵签不取日期：一事一签，同一件事可重摇；no 指定第几签，seed 复现，except 避开连抽同一支
+    const result = buildGuanyin({
+      no: args.no,
+      seed: args.seed,
+      except: args.except,
+      question: args.question,
+    });
+    return { ...result, summary: guanyinText(result) };
   }
   if (system === 'star') {
     const dt = parseDateTime(args.datetime);
@@ -1676,12 +1725,12 @@ function computeRaw(args = {}) {
       hour: dt.hour,
       minute: dt.minute,
     });
-    return { ...result, summary: wuyunliuqiText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: wuyunliuqiText(result) };
   }
   if (system === 'taiyi') {
     const dt = parseDateTime(args.datetime);
     const result = buildTaiyi({ year: dt.year, month: dt.month, day: dt.day, hour: dt.hour });
-    return { ...result, summary: taiyiText(result) };
+    return { ...result, ...(dstInfo ? { dst: dstInfo } : {}), summary: taiyiText(result) };
   }
   if (system === 'constitution') {
     // 与 mbti 同一套路：没给答案先发卷，别让模型替人打分（体质题答歪了，判定会整体偏掉）
@@ -1806,9 +1855,9 @@ function computeRaw(args = {}) {
     return { ...result, summary: nameText(result) };
   }
   if (!system) {
-    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。');
+    throw fail('E_INPUT', '缺少 system，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、qian（每日福签）、guanyin（观音灵签）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。');
   }
-  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。`);
+  throw fail('E_SYSTEM', `未知体系「${system}」，可选：bazi（四柱八字）、ziwei（紫微斗数）、liuyao（六爻）、meihua（梅花易数）、daliuren（大六壬）、qimen（奇门遁甲）、hepan（合盘）、tarot（塔罗）、almanac（黄历）、zeri（择日）、chenggu（称骨）、xiaoliuren（小六壬）、qian（每日福签）、guanyin（观音灵签）、star（星座）、numerology（生命数字）、mbti（十六型人格问卷）、trend（人生 K 线）、fengshui（风水）、name（起名）、constitution（中医体质）、wuyunliuqi（五运六气）、taiyi（太乙神数）、convert（公农历互转）。`);
 }
 
 /** 黄历文本 */
@@ -1900,6 +1949,36 @@ function xiaoliurenText(r) {
     `落宫：${r.steps.join(' → ')}`,
     `断语：${r.result.palace}（${r.result.luck}）　${r.result.text}`,
   ].join('\n');
+}
+
+/** 福签文本 */
+function qianText(r) {
+  const s = r.slip;
+  return [
+    `【今日福签·${s.level}】${r.meta.date} ${r.meta.weekday}　${r.meta.lunar}　${r.meta.ganzhi}`,
+    `第 ${s.no} 签 · ${s.title}`,
+    `签文：${s.verse[0]}，${s.verse[1]}`,
+    `签意：${s.meaning}`,
+    `今日可为：${s.advice}`,
+    `小灵旁白：${r.aside}`,
+    `口径：${r.rules}`,
+  ].join('\n');
+}
+
+/** 观音灵签文本 */
+function guanyinText(r) {
+  const s = r.slip;
+  const m = r.meta;
+  return [
+    `【观音灵签·${s.level}】第 ${s.no} / ${s.total} 签　${s.palace}　${s.title}`,
+    m.question ? `所问：${m.question}` : '',
+    `签诗：${s.poem.join('，')}`,
+    ...(s.omen ? [`卦象：${s.omen}`] : []),
+    `签意：${s.meaning}`,
+    `可为：${s.advice}`,
+    `用法：${r.rules}`,
+    `口径：${r.disclaimer}`,
+  ].filter(Boolean).join('\n');
 }
 
 /** 星座文本 */
@@ -2307,7 +2386,7 @@ export { buildBazi, buildLiuyao, tossLines };
 export { followup, askPrompt };
 export { pastSignals, verifyFit, rectifyBirth };
 export { crossCheck, crossText, crossSection };
-export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildStar, buildNumerology, buildConvert };
+export { buildAlmanac, buildZeri, buildChenggu, buildXiaoliuren, buildQian, buildGuanyin, buildStar, buildNumerology, buildConvert };
 export { buildTrend, buildFengshui, buildName, buildMarriage, buildFacets };
 export { buildConstitution };
 export { buildWuyunliuqi };

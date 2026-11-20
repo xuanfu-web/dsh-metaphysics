@@ -94,7 +94,7 @@ ok('每个体系都在 system 说明里', undocumented.length === 0, undocumente
 // help 必须真的覆盖到所有体系与所有参数，否则「搬进 help」等于删掉说明
 const helpIndex = await helpDef.execute({});
 const sysMissing = sysProp.enum.filter((s) => !helpIndex.text.includes(s));
-ok('help 索引列出全部 19 个体系', sysMissing.length === 0, sysMissing.join('/'));
+ok('help 索引列出全部 24 个体系', sysMissing.length === 0, sysMissing.join('/'));
 const keyMissing = [...allKeys].filter((k) => !helpIndex.text.includes(k));
 ok('help 索引覆盖全部参数键', keyMissing.length === 0, keyMissing.join(','));
 const sysDocs = await Promise.all(sysProp.enum.map((s) => helpDef.execute({ system: s })));
@@ -123,4 +123,9 @@ ok('help 不把原型链键当参数', protoKeyDoc.text.includes('没有参数')
 const protoSysDoc = await helpDef.execute({ system: 'constructor' });
 ok('help 不把原型链键当体系', protoSysDoc.text.includes('未知体系'), protoSysDoc.text.slice(0, 40));
 
-eq('顶层参数数量与参数表一致', coreKeys.length + optionKeys.length, OLD_KEYS.length);
+// 0.87 观音灵签新增 no（指定签号）与 except（重摇排除上一签）
+const NEW_KEYS = ['no', 'except'];
+ok('新增参数都在 options 里且带说明', NEW_KEYS.every((k) => optionKeys.includes(k)
+  && typeof props.options.properties[k].description === 'string'
+  && props.options.properties[k].description.length >= 12), NEW_KEYS.join(','));
+eq('顶层参数数量与参数表一致', coreKeys.length + optionKeys.length, OLD_KEYS.length + NEW_KEYS.length);

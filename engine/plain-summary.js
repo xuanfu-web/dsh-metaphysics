@@ -924,5 +924,42 @@ export function plainSummary(r) {
   if (r.system === 'constitution') return constitutionSummary(r);
   if (r.system === 'wuyunliuqi') return wuyunliuqiSummary(r);
   if (r.system === 'taiyi') return taiyiSummary(r);
+  if (r.system === 'qian') return qianSummary(r);
+  if (r.system === 'guanyin') return guanyinSummary(r);
   return null;
+}
+
+function qianSummary(r) {
+  const s = r.slip;
+  return {
+    title: '今日福签',
+    chips: [`${s.level}签`, `第 ${s.no} 签`, s.title],
+    lead: `今日得「${s.title}」一签（${s.level}）：${s.verse[0]}，${s.verse[1]}。`,
+    sections: [
+      { h: '签意', t: s.meaning },
+      { h: '签的来处', t: `第 ${s.no} 签，共 ${s.total} 支。${r.rules}` },
+    ],
+    advice: [s.advice],
+    caveat: r.disclaimer,
+    footer: `${r.meta.date} ${r.meta.weekday} · ${r.meta.lunar} · ${r.meta.ganzhi}`,
+  };
+}
+
+function guanyinSummary(r) {
+  const s = r.slip;
+  const q = String((r.meta && r.meta.question) || r.question || '').trim();
+  return {
+    system: 'guanyin',
+    title: `观音灵签 · ${s.level}`,
+    chips: uniq([`第 ${s.no} 签`, s.level, s.title, s.palace]),
+    lead: `${q ? `你问的是「${q}」。` : ''}得第 ${s.no} 签「${s.title}」（${s.level}·${s.palace}）：${s.poem.join('，')}。`,
+    sections: [
+      { h: '签意', t: s.meaning },
+      ...(s.omen ? [{ h: '卦象', t: s.omen }] : []),
+      { h: '签的用法', t: `一百支里的第 ${s.no} 支；${r.rules}` },
+    ],
+    advice: [s.advice],
+    caveat: r.disclaimer,
+    footer: (s.chips || []).join(' · '),
+  };
 }

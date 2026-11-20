@@ -19,7 +19,7 @@ const reactStub = {
 
 const appSrc = read('src/app.js');
 const tabs = [...appSrc.matchAll(/\{ k: '([a-z]+)'/g)].map((m) => m[1]);
-ok('面板 tab 共 21 个（0.77.0 称骨撤独立入口并入八字）', tabs.length === 21, String(tabs.length));
+ok('面板 tab 共 23 个（0.77.0 称骨撤独立入口并入八字；0.86 新增福签；0.87 新增灵签）', tabs.length === 23, String(tabs.length));
 ok('每个 tab 都映射到分块', tabs.every((t) => CHUNK_OF_TAB[t]), tabs.filter((t) => !CHUNK_OF_TAB[t]).join(','));
 ok('分块文件名都是 client.<name>.js', Object.values(CHUNK_OF_TAB).every((f) => /^client\.[a-z]+\.js$/.test(f)));
 
@@ -161,6 +161,7 @@ const cases = {
   qimen: { system: 'qimen', datetime: '2026-10-31T12:00', question: 'x', trace: true, direction: 'career', withInterpret: true },
   daliuren: { system: 'daliuren', datetime: '2026-10-31T12:00', question: 'x', trace: true, withInterpret: true },
   tarot: { system: 'tarot', count: 3, question: 'x', withInterpret: true, seed: 42 },
+  guanyin: { system: 'guanyin', seed: 42, question: 'x' },
   almanac: { system: 'almanac', datetime: '2026-10-31T12:00' },
   convert: { system: 'convert', mode: 'solar2lunar', datetime: '2026-10-31T12:00' },
   zeri: { system: 'zeri', startDate: '2026-10-31', task: '开业', days: 5 },
@@ -184,7 +185,7 @@ for (const [tab, args] of Object.entries(cases)) {
     diffs.push(`${tab}:${e.message}`);
   }
 }
-ok('19 个体系的分块引擎与源码逐字节一致', same === 19, `一致 ${same}/19${diffs.length ? '，差异 ' + diffs.join('；') : ''}`);
+ok('20 个体系的分块引擎与源码逐字节一致', same === 20, `一致 ${same}/20${diffs.length ? '，差异 ' + diffs.join('；') : ''}`);
 // 合盘有八字/紫微两条路径，紫微合盘也要在 hepan 分块里复算一致
 await sandbox.window.__mpEnsureEngine('hepan');
 const hpZiwei = { system: 'hepan', chart: 'ziwei', datetime: '1990-05-12T14:30', gender: 'female', partner: { datetime: '1992-08-15T10:00', gender: 'female', trueSolar: true } };

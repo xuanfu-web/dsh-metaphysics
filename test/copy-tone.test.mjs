@@ -57,8 +57,10 @@ ok('反推时辰的标题改成问句', /不确定几点出生/.test(uiSrc) && /
 ok('不再有「只读，不改盘」这种旁注', !/只读，不改盘/.test(uiSrc) && !/只读，不改盘/.test(appSrc));
 
 // ── 4. 导出条按钮：动词 + 对象，汉字 ≤4 ────────────────────
+// 灵签会撤掉「存卦例 / 记准 / 记不准」，所以这排按钮分在主模板与 cases 两处
 const expBar = (uiSrc.match(/<div class="exp no-print">([\s\S]*?)<span class="hint">/) || ['', ''])[1];
-const expLabels = Array.from(expBar.matchAll(/<button type="button" data-act="([a-z]+)"[^>]*>([^<]+)<\/button>/g))
+const caseBlock = (uiSrc.match(/const cases = gy \? '' : `([\s\S]*?)`;/m) || ['', ''])[1];
+const expLabels = Array.from((expBar + caseBlock).matchAll(/<button type="button" data-act="([a-z]+)"[^>]*>([^<]+)<\/button>/g))
   .map((m) => [m[1], m[2].trim()]);
 ok('导出条按钮数量没变', expLabels.length === 9, '实际 ' + expLabels.length + ' 个');
 ok('导出条第一项是改条件', expLabels.length > 0 && expLabels[0][0] === 'reform');

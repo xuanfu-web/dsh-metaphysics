@@ -1434,6 +1434,30 @@ ok(btnBox && btnBox.width > 80 && btnBox.height >= 40, '窄屏主按钮仍可点
   ok(errors.length === errsBefore, '全体系体检过程无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
 }
 
+// ── 十四·六、灵签：一次性动作不出现，可重摇 ───────────────────
+{
+  const errsBefore = errors.length;
+  await openTool('guanyin');
+  await page.waitForTimeout(120);
+  await unlockParams();
+  const go = page.locator('#main .mp-actions button.mp-btn:not(.ghost)').last();
+  await go.click();
+  await page.waitForTimeout(420);
+  const main = await page.locator('#main').innerText();
+  const no1 = (main.match(/第\s*(\d+)\s*签/) || [])[1];
+  ok(!!no1, '面板 · 灵签出签', no1 ? `第 ${no1} 签` : main.slice(0, 60));
+  const barBtns = await page.locator('#main .mp-bar button').allInnerTexts();
+  ok(!barBtns.some((x) => x.includes('存入卦例库')), '面板 · 灵签不出「存入卦例库」', barBtns.join('/'));
+  ok((await page.locator('#main .mp-nudge').count()) === 0, '面板 · 灵签不出应验提示');
+  ok(barBtns.includes('复制文字结果'), '面板 · 灵签仍可复制结果');
+  await go.click();
+  await page.waitForTimeout(420);
+  const main2 = await page.locator('#main').innerText();
+  const no2 = (main2.match(/第\s*(\d+)\s*签/) || [])[1];
+  ok(!!no2 && no2 !== no1, '面板 · 灵签可重摇且换一支', `${no1} → ${no2}`);
+  ok(errors.length === errsBefore, '面板 · 灵签环节无新增 JS 报错', errors.slice(errsBefore, errsBefore + 2).join(' | '));
+}
+
 // ── 十五、全程无 JS 报错 ───────────────────────────────────────
 ok(errors.length === 0, '面板全程无 JS 报错', errors.slice(0, 3).join(' | '));
 

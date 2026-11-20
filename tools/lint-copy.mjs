@@ -58,6 +58,7 @@ const QUOTE_FILES = [
   'engine/qiongtong.js', // 《穷通宝鉴》原文
   'engine/chenggu.js',   // 袁天罡称骨歌（通行本）
   'engine/yingqi.js',    // 应期口诀沿用古法原句（「世衰元靜，必然是…」）
+  'engine/guanyin-data.js', // 观音灵签签诗、签题、卦象按民间通行本录入
   'tools/data-'          // 古籍题目与卦例数据
 ];
 

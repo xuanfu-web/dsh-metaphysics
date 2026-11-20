@@ -111,7 +111,7 @@ export const NUMERIC_KEYS = [
   'num1', 'num2', 'num3', 'upper', 'lower', 'changing',
   'count', 'toAge', 'fortuneYear', 'period', 'limit',
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
-  'year', 'month', 'day',
+  'year', 'month', 'day', 'no', 'except',
 ];
 
 /** 数值数组：逐项转，任一项不是数字就整组不动，交给原有校验报错 */

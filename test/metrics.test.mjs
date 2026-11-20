@@ -32,7 +32,7 @@ ok('M7 追问一致率 100%', limits.M7 === 1);
 
 // 样本不许绑当天：曾经 facts-only 就因为写死日柱隔夜变红（L-006）
 ok('样本日期全部写死', !/todayStamp|new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/.test(src));
-ok('22 个体系都在样本里', (() => {
+ok('23 个体系都在样本里', (() => {
   const tabs = new Set();
   for (const name of Object.keys(CHUNKS)) for (const t of CHUNKS[name].tabs || []) tabs.add(t);
   const missing = [...tabs].filter((t) => !src.includes(`system: '${t}'`));

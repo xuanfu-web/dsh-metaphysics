@@ -20,7 +20,7 @@
   // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 真太阳时修正 → 解读 → 追问 → 附加
   const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'solar', 'interpret', 'followup', 'extra'];
 
-  /* 22 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
+  /* 24 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
    *
    * 分档的唯一依据：这份结果能不能被追问。
    *   盘类 / 问事类 / 判定类——有流年、宫位、三传、局数可追，出追问条。
@@ -35,7 +35,7 @@
     ask: ['liuyao', 'meihua', 'daliuren', 'qimen', 'tarot', 'xiaoliuren'],
     judge: ['wuyunliuqi', 'taiyi', 'zeri'],
     quiz: ['mbti', 'constitution'],
-    lookup: ['almanac', 'chenggu', 'star', 'numerology', 'convert'],
+    lookup: ['almanac', 'chenggu', 'qian', 'guanyin', 'star', 'numerology', 'convert'],
   };
 
   /* 档位不出的段。目前只有「追问」这一条。

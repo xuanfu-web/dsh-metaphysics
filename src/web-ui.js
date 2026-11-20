@@ -179,6 +179,8 @@
   const CACHE_SCHEMA = 1;
   const CACHE_MAX = 6;        // 每条带一整份盘面，留六张够用
   const CACHE_ITEM_MAX = 400000;
+  // 单条 400k × 6 条已接近常见 5MB 配额；总预算再压一道，从旧到新退场。
+  const CACHE_TOTAL_MAX = 1400000;
 
   // 哈希与面板共用一份：两处各写一个版本，缓存键就会悄悄分叉
   function hash36(s) { return window.__PP.hash36(s); }
@@ -215,10 +217,13 @@
       if (JSON.stringify(entry).length > CACHE_ITEM_MAX) return;
       const m = cacheMap();
       m[id] = entry;
-      const ids = Object.keys(m);
-      if (ids.length > CACHE_MAX) {
-        ids.sort((x, y) => (m[x].createdAt || 0) - (m[y].createdAt || 0));
-        for (let i = 0; i < ids.length - CACHE_MAX; i += 1) delete m[ids[i]];
+      const sizeOf = (v) => { try { return JSON.stringify(v).length; } catch (e) { return CACHE_ITEM_MAX; } };
+      const ids = Object.keys(m).sort((x, y) => (m[x].createdAt || 0) - (m[y].createdAt || 0));
+      let total = ids.reduce((n, k) => n + sizeOf(m[k]), 0);
+      while (ids.length && (ids.length > CACHE_MAX || total > CACHE_TOTAL_MAX)) {
+        const k = ids.shift();
+        total -= sizeOf(m[k]);
+        delete m[k];
       }
       storeSet(CACHE_KEY, m);
     } catch (e) { /* 存不下就当没有缓存，不影响这次排盘 */ }
@@ -337,10 +342,11 @@
   /**
    * 排完一次盘才记一条——切 tab 不算用过（那样历史里全是点过没排过的空条目）。
    * 问卷（人格/体质）不进历史：答案只在内存里，恢复不回来；存半份答案比不存更误导。
+   * 灵签也不进：每次摇都是新签，存下来的签号回放不出「当时那一支」。
    */
   function recordRecent(t, r) {
     if (!entryLabels()[t]) return;
-    if (t === 'mbti' || t === 'constitution') return;
+    if (t === 'mbti' || t === 'constitution' || t === 'guanyin') return;
     const args = collectArgs();
     // 盘号剥掉 LY- 前缀再存：和结果页上的显示一致，用户嘴里的盘号就是那六位
     const shortId = String((r && r.shortId) || '').replace(/^LY-/, '');
@@ -547,6 +553,8 @@
     almanac: 'date', zeri: 'date', star: 'date', numerology: 'date', convert: 'date',
     trend: 'birth', fengshui: 'birth', name: 'birth',
     xiaoliuren: 'cast',
+    qian: 'date',
+    guanyin: 'none',
     mbti: 'none',
   constitution: 'none',
     wuyunliuqi: 'date',
@@ -600,6 +608,8 @@
     qimen: '奇门时家转盘：用起局时刻定节气、三元与局数；「换局规则」决定符头与节气如何对齐。',
     hepan: '合盘按「日主 + 夫妻宫 + 五行互补」看两个人的相处与互补，需要双方出生信息。',
     tarot: '塔罗不看时间，只记录抽牌时刻与你的提问。',
+    qian: '每日福签按公历日期抽一支，同一天结果一致、不设重摇；签文为插件原创。',
+    guanyin: '观音灵签一百支，一事一签、可重摇；签诗按民间通行本录入，白话签意与建议为插件自撰。',
     almanac: '黄历按公历日期查农历、干支、建除、宜忌与冲煞；只做本地计算。',
     zeri: '择日把区间内每天的建除宜忌与事项适配打分排序，并按属相排除冲煞日。',
     xiaoliuren: '小六壬用农历月/日/时掐指，也可用三个随机数起课。',    star: '星座按公历日期给出太阳星座与当日基调；同日同星座结果固定。',
@@ -620,6 +630,7 @@
   /** 本次要交给解读的「问题 + 方向」；命盘类不传。奇门不问事，但方向决定取哪门作用神 */
   function askArgs() {
     if (tab === 'qimen') return { question: '', direction: el('qdir').value };
+    if (tab === 'guanyin') return { question: el('question').value.trim(), direction: 'general' };
     if (!needAsk(tab)) return undefined;
     return { question: el('question').value.trim(), direction: el('direction').value };
   }
@@ -719,7 +730,7 @@
   function syncInputLock() {
     const bar = document.querySelector('.bar');
     if (!bar) return;
-    const locked = flowState === FLOW.LOCKED;
+    const locked = flowState === FLOW.LOCKED && tab !== 'guanyin';
     bar.classList.toggle('is-locked', locked);
     const PP = window.__PP;
     if (PP && PP.lockParams) { PP.lockParams(bar, locked); }
@@ -778,7 +789,7 @@
         last = null;
         castKey = '';
         const box = el('out');
-        if (box) box.innerHTML = `<div class="note">参数填完整后点「${goLabel()}」出结果。</div>`; // html-sink:ok goLabel 只返回固定按钮名（排盘/填空答案），不含任何输入
+        if (box) box.innerHTML = emptyNoteHTML(`参数填完整后点「${goLabel()}」出结果。`);
       }
       flowState = FLOW.UNFILLED;
     } else if (flowState === FLOW.UNFILLED || flowState === FLOW.ERROR) flowState = FLOW.READY;
@@ -798,7 +809,7 @@
     flowState = FLOW.UNFILLED;
     castKey = '';
     const out = el('out');
-    if (out) out.innerHTML = `<div class="note">${msg}</div>`; // html-sink:ok msg 只有本文件里的固定文案（日期格式 / 合盘缺对方 / 缺所问之事 / 数字起卦缺数 / 农历日期 / 飞星日期），不含输入
+    if (out) out.innerHTML = emptyNoteHTML(msg);
     const go = el('go');
     if (go) go.removeAttribute('aria-busy');
     refreshFlow();
@@ -807,7 +818,7 @@
   /** 当前 tab 是否真的用到日期/时刻（塔罗、人格不看时间；梅花「数字起卦」也不用）
    *  与 syncMhMode 里的显隐共用这一处判断：字段既然藏起来了，run() 就不能拿它拦人。 */
   function usesTimeInput() {
-    return tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && !(tab === 'meihua' && mhMode === 'number');
+    return tab !== 'tarot' && tab !== 'mbti' && tab !== 'constitution' && tab !== 'guanyin' && !(tab === 'meihua' && mhMode === 'number');
   }
 
   /** 用户手动改了日期或时刻 */
@@ -926,7 +937,17 @@
       const form = window.Engine.formOf ? window.Engine.formOf(deep) : null;
       if (!form || !form.tab) return null;
       if (!document.querySelector('.tab[data-tab="' + form.tab + '"], .tool[data-tab="' + form.tab + '"]')) return null;
-      return { tab: form.tab, form, label: deep.label, question: deep.question };
+      // 灵签的摇签参数不在表单里，但必须跟着链接还原：从 rest 里摘出来单独带走，
+      // 剩下的才是真的没还原的参数（否则提示里会误报 seed / except 没填回去）
+      let draw = null;
+      if (form.tab === 'guanyin') {
+        draw = {};
+        for (const k of ['no', 'seed', 'except']) {
+          if (form.rest && form.rest[k] !== undefined) { draw[k] = form.rest[k]; delete form.rest[k]; }
+        }
+        if (!Object.keys(draw).length) draw = null;
+      }
+      return { tab: form.tab, form, draw, label: deep.label, question: deep.question };
     } catch (e) { return null; }
   }
   /** 把链接里的参数填进表单（在 setTab 之后调用：setTab 会按体系改字段可见性） */
@@ -950,7 +971,10 @@
     const out = el('out');
     if (!out || !deep) return;
     const rest = window.Engine && window.Engine.restNote ? window.Engine.restNote(deep.form) : '';
-    const line = '已按链接还原：' + deep.label + (deep.question ? '｜' + deep.question : '') + (rest ? '　' + rest : '');
+    // 灵签还原的是哪一支，直接写在提示里：光说「已还原」看不出是不是同一签
+    const slip = deep.tab === 'guanyin' && last && last.r && last.r.slip ? last.r.slip : null;
+    const got = slip ? `（第 ${slip.no} 签「${slip.title}」）` : '';
+    const line = '已按链接还原：' + deep.label + got + (deep.question ? '｜' + deep.question : '') + (rest ? '　' + rest : '');
     // 用文本节点而不是拼 HTML：链接里的问题原样显示，也不会被当成标签解析
     const note = document.createElement('div');
     note.className = 'note';
@@ -1205,11 +1229,14 @@
   function feedbackMail() {
     const v = typeof window.__MP_VER === 'string' ? window.__MP_VER : '';
     const shortId = String((last && last.r && last.r.shortId) || '').replace(/^LY-/, '');
-    const input = [
-      (last && last.date) || '',
-      (last && last.time) || '',
-      (last && last.gender) || '',
-    ].filter(Boolean).join(' ');
+    // 灵签没有出生信息：拿表单的日期当「输入」会报出一行与这张签无关的内容
+    const gy = !!(last && last.tab === 'guanyin' && last.r && last.r.slip);
+    const slip = gy ? last.r.slip : null;
+    const gyMeta = (gy && last.r.meta) || {};
+    const input = gy
+      ? `第 ${slip.no} 签（${gyMeta.method || '摇签'}）「${slip.title}」`
+      : [(last && last.date) || '', (last && last.time) || '', (last && last.gender) || '']
+        .filter(Boolean).join(' ');
     const ts = el('ts');
     const lz = el('latezi');
     const hu = el('hourunknown');
@@ -1218,10 +1245,14 @@
       '体系：' + ((last && (entryLabels()[last.tab] || last.tab)) || '无'),
       '盘号：' + (shortId || '无'),
       '输入：' + (input || '无'),
-      '出生地：' + ((last && last.address) || '未填')
-        + (ts ? '（真太阳时 ' + (ts.checked ? '开' : '关') + '）' : ''),
-      '开关：晚子时换日 ' + (lz ? (lz.checked ? '开' : '关') : '—')
-        + '／时辰未知 ' + (hu && hu.checked ? '是' : '否'),
+      ...(gy ? [
+        '所问：' + (gyMeta.question || '未填'),
+      ] : [
+        '出生地：' + ((last && last.address) || '未填')
+          + (ts ? '（真太阳时 ' + (ts.checked ? '开' : '关') + '）' : ''),
+        '开关：晚子时换日 ' + (lz ? (lz.checked ? '开' : '关') : '—')
+          + '／时辰未知 ' + (hu && hu.checked ? '是' : '否'),
+      ]),
       '',
       '分类（留一个，其余删掉）：' + FB_KINDS.join(' / '),
       '',
@@ -1239,6 +1270,8 @@
    * 存的是「别再提」这件事本身，也只在本地。
    */
   function nudgeHTML() {
+    // 灵签的入口不是出生盘，也没有「重放这张盘」这回事：卦例库与应验提醒都不该出现
+    if (last && last.tab === 'guanyin') return '';
     let off = false;
     try { off = window.localStorage.getItem('dsh-metaphysics/nudge-off') === '1'; } catch (e) { off = false; }
     if (off) return '';
@@ -1248,16 +1281,19 @@
   function exportBar() {
     // 按钮统一「动词 + 对象」、四字以内：手机上这一排会折成两行，
     // 「存长图」三个字，一行能并两个；原来六字写法把后面的按钮挤出屏幕。
+    // 灵签是随机一支、没有可回放参数，「存卦例 / 记准 / 记不准」对它没有意义
+    const gy = !!(last && last.tab === 'guanyin');
+    const cases = gy ? '' : `
+      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
+      <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
+      <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>`;
     return `<div class="exp no-print">
       <button type="button" data-act="reform" title="回到上面的条件，改完再排一次">改条件</button>
       <button type="button" data-act="pdf">存 PDF</button>
       <button type="button" data-act="print">打印</button>
       <button type="button" data-act="md">存 .md</button>
       <button type="button" data-act="png">存长图</button>
-      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制链接</button>
-      <button type="button" data-act="case" title="把这张盘存进本机卦例库，日后可回看">存卦例</button>
-      <button type="button" data-act="hit" title="觉得这张盘说得准：记一条「应验」进卦例库">记准</button>
-      <button type="button" data-act="miss" title="觉得这张盘不准：记一条「未应」进卦例库">记不准</button>
+      <button type="button" data-act="link" title="把这张盘的参数编进链接：打开就还原同一张盘，也能直接发给别人">复制链接</button>${cases}
       <span class="hint">长图是 PNG 摘要卡（一页读懂 + 首张表）；.md 存档；深链还原同一张盘（编码不是加密，别公开贴）<br>有疑问？<a href="${feedbackMail()}" title="邮件里已经带好版本、盘号、输入与开关，直接写哪里不对就行">1129440028@qq.com</a>　·　<a href="https://pd.qq.com/s/Nb18ikqqfl" target="_blank" rel="noopener noreferrer" title="腾讯频道「烛微命盘」：排盘求助、命例交流、功能与bug、术语与依据">交流频道</a></span>
     </div>${nudgeHTML()}`;
   }
@@ -1334,6 +1370,12 @@
     window.print();
   }
 
+  /** 文件名里的一行标识：灵签用签号，其余用日期——签与表单日期无关 */
+  function fileStamp() {
+    if (last && last.tab === 'guanyin' && last.r && last.r.slip) return `第${last.r.slip.no}签`;
+    return (last && last.date) || '';
+  }
+
   /** 存长图：Canvas 直出 PNG，零依赖；不支持时提示 */
   function downloadCard() {
     if (!last || !last.r) return;
@@ -1341,7 +1383,7 @@
     if (!url) { alert('当前浏览器不支持 Canvas 导出，请改用「存 PDF」'); return; }
     const a = document.createElement('a');
     a.href = url;
-    a.download = `烛微命盘摘要-${last.r.system}-${last.date || ''}.png`;
+    a.download = `烛微命盘摘要-${last.r.system}-${fileStamp()}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1354,7 +1396,7 @@
     const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `烛微命盘报告-${last.r.system}-${last.date || ''}.md`;
+    a.download = `烛微命盘报告-${last.r.system}-${fileStamp()}.md`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1368,7 +1410,8 @@
     // force 留给「重设」这种显式动作，跳过缓存真算一遍。
     const ck = chartKeyOf();
     if (!(opts && opts.force)) {
-      const hit = cacheRead(ck);
+      // 灵签每次都是新的一摇：跳过「同参数直出」，否则第二次点「摇签」会读回上一支
+      const hit = tab === 'guanyin' ? null : cacheRead(ck);
       if (hit) {
         last = makeLast(hit.last);
         paint();
@@ -1408,10 +1451,10 @@
     markAskInvalid(false);
     const args = { system: tab };
     // 人格问卷不是盘：不挂影子盘 ID，避免把「第几次答到第几题」当成一张盘存档
-    args.shadow = tab !== 'mbti' && tab !== 'constitution';
+    args.shadow = tab !== 'mbti' && tab !== 'constitution' && tab !== 'guanyin';
     // 推导链只覆盖六爻 / 八字 / 紫微
     args.trace = tab === 'liuyao' || tab === 'bazi' || tab === 'ziwei' || tab === 'qimen' || tab === 'daliuren';
-    if (tab !== 'tarot') args.datetime = `${date}T${time}`;
+    if (tab !== 'tarot' && tab !== 'guanyin') args.datetime = `${date}T${time}`;
     // 人生K线也是出生盘：出生地决定真太阳时，落进时柱后会改变整条运程
     if (tab === 'bazi' || tab === 'ziwei' || tab === 'hepan' || tab === 'trend') {
       // 合盘主方同样要性别与出生地：引擎里合盘的性别是必填，地址决定真太阳时
@@ -1477,6 +1520,21 @@
       }
     }
     if (tab === 'tarot') args.spread = (el('tcount') && el('tcount').value) || 'three';
+    if (tab === 'guanyin') {
+      // 深链带着当初那一摇的参数：照参数复现同一支，不再换 seed
+      const draw = opts && opts.draw;
+      if (draw) {
+        if (draw.seed !== undefined) args.seed = draw.seed;
+        if (draw.except !== undefined) args.except = draw.except;
+        if (draw.no !== undefined) args.no = draw.no;
+      } else {
+        // 每次点「摇签」换一个 seed；except 带上上一支，避免重摇又摇回同一支
+        args.seed = Date.now() + Math.random();
+        if (last && last.r && last.r.system === 'guanyin' && last.r.slip) args.except = last.r.slip.no;
+      }
+      const q = el('question').value.trim();
+      if (q) args.question = q;
+    }
     // 速查类：各体系自己的最小输入
     if (tab === 'zeri') {
       args.startDate = date;
@@ -1614,6 +1672,8 @@
               : tab === 'meihua' ? window.__PP.meihuaHTML(r)
                 : tab === 'daliuren' ? window.__PP.daliurenHTML(r)
                   : tab === 'tarot' ? window.__PP.tarotHTML(r)
+                    : tab === 'qian' ? window.__PP.qianHTML(r)
+                    : tab === 'guanyin' ? window.__PP.guanyinHTML(r)
                     : tab === 'liuyao' ? window.__PP.liuyaoHTML(r)
                       : tab === 'almanac' ? window.__PP.almanacHTML(r)
                       : tab === 'zeri' ? window.__PP.zeriHTML(r)
@@ -1656,7 +1716,8 @@
       last.perf = { computeMs, renderMs, totalMs: mpNow() - runStart };
       // 排成功就落一份本机缓存：整份 last（含 r / html）都存，下次同参数直出，不重算。
       // 键复用 run 开头算好的 ck，不在末尾二次哈希。
-      try {
+      // 灵签不入结果缓存：随机一支，存下来也复现不了；下次点「摇签」就该是新的一支
+      if (tab !== 'guanyin') try {
         const snap = collectArgs();
         cacheWrite(ck, { chartId: (r && r.chart_id) || ck, system: tab,
           profileSnapshot: snap, envelope: r, createdAt: Date.now(), last: makeLast(last) });
@@ -1701,6 +1762,16 @@
     run();
   }
 
+  /** 空结果提示；福签与灵签各放一只迷你签筒，点击行为统一交给 document 上的委托。 */
+  function emptyNoteHTML(text) {
+    const oracle = tab === 'qian' && window.__PP && window.__PP.qianOracleHTML
+      ? `<button type="button" class="mp-qn-oracle" title="点一下，摇一支今日福签">${window.__PP.qianOracleHTML()}</button>`
+      : tab === 'guanyin' && window.__PP && window.__PP.guanyinOracleHTML
+        ? `<button type="button" class="mp-qn-oracle mp-lq-oracle" title="点一下，摇一支观音灵签">${window.__PP.guanyinOracleHTML()}</button>`
+        : '';
+    return `<div class="note">${text}</div>${oracle}`; // html-sink:ok text 只来自本文件固定文案；oracle 由 PP 生成
+  }
+
   function renderTip() {
     const tip = el('tip');
     if (!tip) return;
@@ -1719,7 +1790,7 @@
     }
   }
 
-  const QUICK = ['almanac', 'convert', 'zeri', 'xiaoliuren', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
+  const QUICK = ['almanac', 'convert', 'zeri', 'xiaoliuren', 'qian', 'star', 'numerology', 'trend', 'fengshui', 'name', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi'];
 
   // 窄屏下 tab 栏是单行横滑：切到靠后的 tab 时把它滚到可视区中间，
   // 否则点了「人格」页面变了、高亮却停在屏幕外，看着像没响应
@@ -1767,8 +1838,14 @@
     if (csForm) csForm.style.display = tab === 'constitution' ? '' : 'none';
     const fq = el('for-quick');
     if (fq) fq.style.display = QUICK.indexOf(tab) >= 0 ? '' : 'none';
-    // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示
-    show('for-ask', needAsk(tab));
+    // 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系才显示；
+    // 灵签同样问事，但传统用法允许心中默念，所以只显示问题框、不要求必填，也不需要方向。
+    show('for-ask', needAsk(tab) || tab === 'guanyin');
+    const askLbl = el('ask-label');
+    if (askLbl) askLbl.textContent = tab === 'guanyin' ? '所问之事（可留空）' : '所问之事（必填）';
+    const qBox = el('question');
+    if (qBox) qBox.placeholder = tab === 'guanyin' ? '心里那件事，一句话即可；不写也行。' : ASK_PLACEHOLDER;
+    show('for-direction', needAsk(tab));
     const fc = el('for-count');
     if (fc) fc.style.display = tab === 'tarot' ? '' : 'none';
     const castLabel = tab === 'qimen';
@@ -1787,6 +1864,7 @@
     }
     syncQuick();
     el('go').textContent = tab === 'tarot' ? '抽牌'
+      : tab === 'qian' || tab === 'guanyin' ? '摇签'
       : tab === 'hepan' ? '合盘'
         : tab === 'qimen' ? '起局'
           : QUICK.indexOf(tab) >= 0 ? '看结果'
@@ -1815,7 +1893,7 @@
     flowState = FLOW.READY;
     castKey = '';
     const outBox = el('out');
-    if (outBox) outBox.innerHTML = `<div class="note">参数填好后点「${goLabel()}」出结果。</div>`; // html-sink:ok goLabel 只返回固定按钮名（排盘/填空答案），不含任何输入
+    if (outBox) outBox.innerHTML = emptyNoteHTML(`参数填好后点「${goLabel()}」出结果。`);
     refreshFlow();
   }
 
@@ -2291,6 +2369,18 @@
       node.addEventListener('input', onManualEdit);
     });
     el('go').addEventListener('click', goCast);
+    // 迷你签筒：点一下先摇，动画走完再走与「摇签」按钮同一条 goCast 路径
+    document.addEventListener('click', (e) => {
+      const o = e.target && e.target.closest ? e.target.closest('.mp-qn-oracle') : null;
+      if (!o || o.classList.contains('shaking')) return;
+      const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+      if (reduce) { el('go').click(); return; }
+      o.classList.add('shaking');
+      window.setTimeout(() => {
+        o.classList.remove('shaking');
+        if (tab === 'qian' || tab === 'guanyin') el('go').click();
+      }, 1050);
+    });
     // 修改参数：只解开输入区，不动结果。旧盘继续挂着，等用户真改完再点「排盘」才换。
     // 这里不排盘、不清值 —— 任务书 1.3 的 RESULT_LOCKED → EDITING 只走这一条路。
     const editBtn = el('edit');
@@ -2444,6 +2534,8 @@
     });
     // 解析模块折叠：标题栏整栏可点，容器内委托一次即可
     el('out').addEventListener('click', (e) => {
+      const lqAgain = e.target && e.target.closest ? e.target.closest('[data-lq-again]') : null;
+      if (lqAgain) { goCast(); return; }
       const copyBtn = e.target && e.target.closest ? e.target.closest('[data-shadow-copy]') : null;
       if (copyBtn) { copyShadow(copyBtn); return; }
       const handleCopy = e.target && e.target.closest ? e.target.closest('[data-handle-copy]') : null;
@@ -2541,7 +2633,7 @@
     const d0 = defaultGet();
     const list0 = window.__PP && window.__PP.profilesLoad ? (window.__PP.profilesLoad() || []) : [];
     const pinned = d0 ? list0.find((x) => x && x.id === d0.profileId) : list0.find((x) => x && x.pinned);
-    if (deep) Promise.resolve(run({ record: false })).then(() => deepNote(deep));
+    if (deep) Promise.resolve(run({ record: false, draw: deep.draw })).then(() => deepNote(deep));
     else if (pinned) restoreDefault(pinned);
     else refreshFlow();
   });

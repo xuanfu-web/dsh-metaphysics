@@ -39,7 +39,7 @@ ok('存的是整份 result 而不是输入', /resultCacheWrite\(cacheKey, \{ res
 
 // ── 二、命中就直出，不重算 ──────────────────────────────────
 const runBody = bodyOf('const run = async (kind, override, modeOverride, over) =>');
-ok('run 里先查缓存再计算', /const hit = resultCacheRead\(cacheKey\);/.test(runBody)
+ok('run 里先查缓存再计算', /const hit = k === 'guanyin' \? null : resultCacheRead\(cacheKey\);/.test(runBody)
   && /const r = Engine\.compute\(args\);/.test(runBody)
   && runBody.indexOf('resultCacheRead') < runBody.indexOf('Engine.compute(args)'));
 ok('命中分支不调 Engine.compute', (() => {
@@ -60,7 +60,8 @@ ok('趋势盘的 asOf 在求键之前补', runBody.indexOf('args.asOf = Core.tod
 // 面板与独立页调同一份。这里守住两件事：面板确实交出去、名单里确实含问事层三类。
 const lockFx = bodyOf('  useEffect(() => {\n    const panel = document.querySelector(\'.mp-panel\');');
 const kit = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
-ok('锁定只在出盘且未点修改参数时', /const locked = !!result && !editMode;/.test(lockFx));
+ok('锁定只在出盘且未点修改参数时（灵签除外）',
+  /const locked = !!result && !editMode && tab !== 'guanyin';/.test(lockFx));
 ok('锁定范围限定面板根', /document\.querySelector\('\.mp-panel'\)/.test(lockFx));
 ok('面板把锁定交给共用层，不再自己列白名单', /PP\.lockParams\(panel, locked\)/.test(lockFx));
 ok('面板不再自己扫 input/select/textarea', !/querySelectorAll\('input, select, textarea'\)/.test(lockFx));

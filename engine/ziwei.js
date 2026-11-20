@@ -6,7 +6,7 @@ import { applyDst } from './dst.js';
 import { assertCivil, assertShifted } from './validate.js';
 import { nayinOf } from './nayin.js';
 import { resolveAddress } from './geo.js';
-import { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED } from './ziwei-zuoyao.js';
+import { placeZuoyao, zuoyaoVerseBlock, ZUOYAO_SKIPPED, nianjieOf } from './ziwei-zuoyao.js';
 import { SHA_STAR } from './ziwei-words.js';
 import { bool } from './bool.js';
 
@@ -338,6 +338,9 @@ export const KUI_YUE = {
 };
 KUI_YUE_SCHOOLS.qs1 = KUI_YUE;
 
+/** 按流派取魁钺表：本命、大限运曜、流年流曜必须走同一张表，否则同一张盘会出现「本命庚年魁在丑、大限庚运魁在午」。 */
+export const kuiyueTableOf = (schools) => (schools && KUI_YUE_SCHOOLS[schools.kuiyueSchool]) || KUI_YUE;
+
 /** 命主：按地支查表。两派共用这张表，分歧在拿哪个地支 —— 见 mingzhuSchool。 */
 export const MING_ZHU = {
   子: '贪狼', 丑: '巨门', 寅: '禄存', 卯: '文曲', 辰: '廉贞', 巳: '武曲',
@@ -522,7 +525,7 @@ export function buildZiwei(input) {
   // 大限顺逆：阳男阴女顺行、阴男阳女逆行（天伤天使的中州派互换也要用它）
   const yearYang = STEMS.indexOf(yearStem) % 2 === 0;
   const forward = (yearYang && gender === 'male') || (!yearYang && gender === 'female');
-  const kuiyueTable = KUI_YUE_SCHOOLS[schools.kuiyueSchool] || KUI_YUE;
+  const kuiyueTable = kuiyueTableOf(schools);
 
   // 命宫 / 身宫
   const soulIndex = fix(2 + (lunarMonth - 1) - hb);
@@ -801,7 +804,7 @@ export function buildZiwei(input) {
       liuyue: BRANCHES[kuiyueTable[gz.stem][1]],
       // 流曜补全（流昌曲按流年干、流马按流年支三合、流鸾流喜按流年支、年解按流年支）
       ...(() => {
-        const s = horoscopeStarsByBranch(gz, true);
+        const s = horoscopeStarsByBranch(gz, true, kuiyueTable);
         const out = {};
         for (const [name, br] of Object.entries(s)) {
           if (name === '流禄' || name === '流羊' || name === '流陀' || name === '流魁' || name === '流钺') continue;
@@ -1287,7 +1290,7 @@ export function daxianList(chart) {
       sanfang: p.sanfang,
       mainStars: mainOf(p.sanfang),
       // 运曜：按大限宫干支安 10 颗（魁钺昌曲禄羊陀马鸾喜），映射 星名→地支
-      yunStars: horoscopeStarsByBranch(p.ganzhi, false),
+      yunStars: horoscopeStarsByBranch(p.ganzhi, false, kuiyueTableOf(chart.schools)),
       // 限流十二神：随大限宫支重安的岁前/将前两组（长生、博士不随限流变）
       yunSuiqi: suiqiByBranch(p.branch, chart.schools.suipoSchool),
       yunJiangqian: jiangqianByBranch(p.branch),
@@ -1485,19 +1488,18 @@ const LIU_CHANGQU = {
   庚: [11, 3], 辛: [0, 2], 壬: [2, 4], 癸: [3, 5],
 };
 
-const NIANJIE_OF = { 子: 10, 丑: 9, 寅: 8, 卯: 7, 辰: 6, 巳: 5, 午: 4, 未: 3, 申: 2, 酉: 1, 戌: 0, 亥: 11 };
-
 /** 前缀：大限叫运X、流年叫流X（iztro 同款命名） */
 const HS_PREFIX = (yearly) => (yearly ? '流' : '运');
 
-/** 按一组干支安限流星曜，返回 12 宫（按地支序）各宫的星名数组。yearly=true 时前缀用「流」并加年解。 */
-export function horoscopeStarsOf(gz, yearly = false) {
+/** 按一组干支安限流星曜，返回 12 宫（按地支序）各宫的星名数组。yearly=true 时前缀用「流」并加年解。
+ *  kuiyue 必须跟着盘的魁钺流派走：本命庚年魁在丑、运限却按默认表安到午，等于一张盘用了两派。 */
+export function horoscopeStarsOf(gz, yearly = false, kuiyue = KUI_YUE) {
   const stem = gz.stem ?? String(gz).replace(/[子丑寅卯辰巳午未申酉戌亥]$/, '');
   const branch = gz.branch ?? String(gz).slice(-1);
   const sb = BRANCHES.indexOf(branch);
   const pre = HS_PREFIX(yearly);
   const lu = LUCUN[stem];
-  const [kui, yue] = KUI_YUE[stem];
+  const [kui, yue] = kuiyue[stem];
   const [chang, qu] = LIU_CHANGQU[stem];
   const ma = TIANMA[triadOf(sb)];
   const luang = fix(3 - sb);
@@ -1513,13 +1515,13 @@ export function horoscopeStarsOf(gz, yearly = false) {
   add(ma, `${pre}马`);
   add(luang, `${pre}鸾`);
   add(luang + 6, `${pre}喜`);
-  if (yearly) add(NIANJIE_OF[branch], '年解');
+  if (yearly) add(nianjieOf(branch), '年解');
   return byBranch;
 }
 
 /** 把 12 宫的星名数组转成 {星名: 地支}（供 daxianList/liunian 挂字段） */
-export function horoscopeStarsByBranch(gz, yearly = false) {
-  const byBranch = horoscopeStarsOf(gz, yearly);
+export function horoscopeStarsByBranch(gz, yearly = false, kuiyue = KUI_YUE) {
+  const byBranch = horoscopeStarsOf(gz, yearly, kuiyue);
   const out = {};
   byBranch.forEach((stars, i) => {
     for (const name of stars) out[name] = BRANCHES[i];
@@ -1579,13 +1581,17 @@ export function flowOf(chart, asOf) {
 
   const lr = solarToLunar(Y, M, D);
   const natalMonth = chart.lunar.month; // 已在起盘时按闰月口径换算过，这里不再二次换月
+  // 流月同理：与本命同一套闰月口径，否则闰月会按两个不同序号各算一遍。
+  const flowPolicy = LEAP_POLICIES.includes(chart.lunar && chart.lunar.leapPolicy)
+    ? chart.lunar.leapPolicy : 'split';
+  const flowMonth = effectiveLunarMonth(lr, flowPolicy);
   const natalHB = BRANCHES.indexOf(chart.hourBranch);
   const hbNow = hourBranchIndex(H, MI);
 
   const gz = ganzhiName((((lr.lunarYear - 4) % 60) + 60) % 60);
   const yB = BRANCHES.indexOf(gz.branch);
   const doujun = fix(yB - (natalMonth - 1) + natalHB);
-  const mIdx = fix(doujun + (lr.month - 1));
+  const mIdx = fix(doujun + (flowMonth - 1));
   const dIdx = fix(mIdx + (lr.day - 1));
   const hIdx = fix(dIdx + hbNow);
 
@@ -1630,7 +1636,7 @@ export function flowOf(chart, asOf) {
       hourBranch: BRANCHES[hbNow],
     },
     year: { ...point(yB), doujun: BRANCHES[doujun] },
-    month: { index: lr.month, ...point(mIdx) },
+    month: { index: flowMonth, monthRaw: lr.month, isLeap: lr.isLeap, ...point(mIdx) },
     day: { index: lr.day, ...point(dIdx) },
     hour: { hourIndex: hbNow, ...point(hIdx) },
     rules: '流月命宫自流年斗君（该年支起正月逆数至生月，再起子时顺数至生时）起正月，顺行至该农历月；流日自流月命宫起初一，顺行至该农历日；流时自流日命宫起子时，顺行至该时辰；四化取落点宫的原局宫干',

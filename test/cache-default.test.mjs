@@ -50,7 +50,8 @@ ok('存储读写都走静默降级', /function storeGet\(key\) \{\s*try \{ retur
 
 // ── 二、命中即直出，绝不重新计算 ───────────────────────────
 const hitBlock = (src.match(/const ck = chartKeyOf\(\);[\s\S]*?\/\/ 进入 CALCULATING/) || [''])[0];
-ok('run 开头有缓存命中分支', !!hitBlock && /if \(!\(opts && opts\.force\)\)/.test(hitBlock));
+ok('run 开头有缓存命中分支', !!hitBlock && /if \(!\(opts && opts\.force\)\)/.test(hitBlock)
+  && /tab === 'guanyin' \? null : cacheRead\(ck\)/.test(hitBlock));
 ok('force 是显式重算的唯一口子', /if \(!\(opts && opts\.force\)\)/.test(src) &&
   (src.match(/opts\.force/g) || []).length >= 1);
 ok('命中分支读盘面再直出', /last = makeLast\(hit\.last\);\s*paint\(\);/.test(hitBlock));
@@ -93,7 +94,7 @@ ok('默认盘与表单不一致时不补键', /if \(d && !d\.cacheKey && default
 ok('启动以 defaultChart 为准、老置顶回退',
   /const d0 = defaultGet\(\)/.test(src) && /d0 \? list0\.find\(\(x\) => x && x\.id === d0\.profileId\) : list0\.find\(\(x\) => x && x\.pinned\)/.test(src));
 ok('启动走 restoreDefault', /else if \(pinned\) restoreDefault\(pinned\);/.test(code));
-ok('深链优先于默认盘', /if \(deep\) Promise\.resolve\(run\(\{ record: false \}\)\)[\s\S]{0,120}else if \(pinned\)/.test(src));
+ok('深链优先于默认盘', /if \(deep\) Promise\.resolve\(run\(\{ record: false, draw: deep\.draw \}\)\)[\s\S]{0,120}else if \(pinned\)/.test(src));
 
 // ── 六、顶部「当前盘」条 ────────────────────────────────────
 const bar = bodyOf('function paintDefaultBar(');

@@ -11,6 +11,8 @@ const SYSTEMS = [
   { key: 'qimen', label: '奇门', re: /奇门/ },
   { key: 'daliuren', label: '大六壬', re: /大六壬|六壬/ },
   { key: 'tarot', label: '塔罗', re: /塔罗|抽牌/ },
+  { key: 'guanyin', label: '灵签', re: /观音灵签|观音签|灵签/ },
+  { key: 'qian', label: '福签', re: /福签|求签|抽签|抽个签/ },
   { key: 'meihua', label: '梅花', re: /梅花/ },
   { key: 'hepan', label: '合盘', re: /合盘|合婚/ },
   { key: 'almanac', label: '黄历', re: /黄历|老黄历/ },

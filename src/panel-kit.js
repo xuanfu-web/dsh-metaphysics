@@ -1877,6 +1877,112 @@ h3.mp-env-adv-h{display:block}
 /* 说人话 / 追问问答这两块是「插话」，用浅底包起来，别和正文一个平面 */
 .mp-it-plain{margin:12px 16px 0;padding:13px 16px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--band)}
 .askbox{margin-top:16px;padding:12px 14px;border:1px solid var(--hair,var(--line));border-radius:12px;background:var(--panel2)}
+/* ── 每日福签：宣纸、签筒、朱印、近七日 ────────────────────────────
+   一张签要能被「看见」：纸面留竖纹、签条从筒里升起、朱印压角。
+   动效只有两处（签筒轻晃、签条升起），reduced-motion 由文件尾的全局规则统一关停。 */
+/* 点一下的迷你签筒：空状态里的小仪式，不占结果卡的地盘 */
+.mp-qn-oracle{display:flex;align-items:center;gap:10px;margin:2px auto 12px;padding:8px 18px 8px 8px;
+  border:1px dashed color-mix(in srgb,var(--red) 30%,var(--line));border-radius:999px;
+  background:color-mix(in srgb,var(--card) 80%,transparent);color:inherit;font:inherit;cursor:pointer;
+  transition:transform .18s,box-shadow .18s,border-color .18s}
+.mp-qn-oracle:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--red) 55%,var(--line));box-shadow:var(--shadow)}
+.mp-qn-oracle:focus-visible{outline:2px solid var(--red);outline-offset:3px}
+.mp-qn-o-cup{flex:0 0 auto;display:block;width:42px;height:54px}
+.mp-qn-o-cup svg{width:100%;height:100%;overflow:visible;transform-origin:50% 92%}
+.mp-qn-oracle.shaking .mp-qn-o-cup svg{animation:mp-qn-shake 1s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes mp-qn-shake{0%,100%{transform:rotate(0)}12%{transform:rotate(-7deg)}24%{transform:rotate(6deg)}
+  36%{transform:rotate(-5deg)}48%{transform:rotate(4deg)}60%{transform:rotate(-3deg)}72%{transform:rotate(2deg)}84%{transform:rotate(-1deg)}}
+.mp-qn-o-tx{display:flex;flex-direction:column;gap:2px;text-align:left;line-height:1.3}
+.mp-qn-o-tx b{font-family:var(--kai);font-size:15px;font-weight:400;letter-spacing:.08em}
+.mp-qn-o-tx i{font-style:normal;font-family:var(--sans);font-size:11px;color:var(--label);letter-spacing:.05em}
+.mp-qn{position:relative;margin:14px 16px 10px;padding:16px 16px 12px;border-radius:16px;overflow:hidden;
+  border:1px solid var(--line);
+  background:
+    radial-gradient(120% 80% at 88% 0%,color-mix(in srgb,var(--red) 5%,transparent),transparent 58%),
+    repeating-linear-gradient(90deg,transparent 0 31px,color-mix(in srgb,var(--line) 26%,transparent) 31px 32px),
+    linear-gradient(180deg,var(--card),color-mix(in srgb,var(--band) 72%,var(--card)));
+  box-shadow:var(--shadow)}
+.mp-qn::before{content:'';position:absolute;inset:0 0 auto;height:3px;
+  background:linear-gradient(90deg,transparent,var(--red),transparent);opacity:.55}
+.mp-qn-stage{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:start}
+.mp-qn-cup{width:96px;height:124px}
+.mp-qn-cup svg{width:100%;height:100%;overflow:visible;transform-origin:50% 92%;animation:mp-qn-sway 4.2s ease-in-out infinite}
+@keyframes mp-qn-sway{0%,100%{transform:rotate(-2.4deg)}50%{transform:rotate(2.4deg)}}
+.qn-shadow{fill:color-mix(in srgb,var(--ink) 16%,transparent)}
+.qn-body{fill:color-mix(in srgb,var(--band) 70%,var(--card));stroke:var(--line);stroke-width:1.4}
+.qn-rim{fill:var(--card);stroke:var(--line);stroke-width:1.4}
+.qn-stick{fill:var(--card);stroke:var(--line);stroke-width:1.1}
+.qn-stick.hot{fill:color-mix(in srgb,var(--red) 16%,var(--card));stroke:color-mix(in srgb,var(--red) 46%,var(--line))}
+.qn-zi{fill:var(--red);font-family:var(--kai);font-size:17px;letter-spacing:.08em}
+.mp-qn-card{position:relative;min-width:0;padding:14px 16px 13px;border-radius:12px;border:1px solid color-mix(in srgb,var(--line) 76%,transparent);
+  background:var(--card);
+  animation:mp-qn-rise .55s var(--ease) both}
+@keyframes mp-qn-rise{from{opacity:0;transform:translateY(16px) rotate(-1.2deg)}to{opacity:1;transform:none}}
+.mp-qn-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mp-qn-kicker{font-family:var(--sans);font-size:11px;letter-spacing:.14em;color:var(--label);line-height:1.5}
+.mp-qn-seal{flex:0 0 auto;width:38px;height:46px;display:flex;align-items:center;justify-content:center;
+  writing-mode:vertical-rl;font-family:var(--kai);font-size:15px;letter-spacing:.08em;line-height:1;
+  color:var(--red);border:1.5px solid var(--red);border-radius:4px;padding:5px 2px;
+  background:color-mix(in srgb,var(--red) 7%,transparent);opacity:.92}
+.mp-qn-title{margin:2px 0 6px;font-family:var(--kai);font-size:25px;line-height:1.3;letter-spacing:.1em;font-weight:400}
+.mp-qn-verse{margin:0 0 12px;font-family:var(--kai);font-size:14.5px;line-height:1.95;letter-spacing:.1em;color:var(--ink2)}
+.mp-qn-verse span{display:block}
+.mp-qn-verse span::before{content:'「';color:var(--faint)}
+.mp-qn-verse span:last-child::after{content:'」';color:var(--faint)}
+.mp-qn-blk{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;padding:10px 0;
+  border-top:1px solid color-mix(in srgb,var(--line) 52%,transparent)}
+.mp-qn-blk b{font-family:var(--sans);font-size:11.5px;letter-spacing:.12em;color:var(--label);font-weight:600;padding-top:2px}
+.mp-qn-blk p{margin:0;font-size:13.5px;line-height:1.85;color:var(--ink2)}
+.mp-qn-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.mp-qn-chips span{font-family:var(--sans);font-size:11px;letter-spacing:.06em;padding:3px 9px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--red) 32%,transparent);color:var(--red);background:color-mix(in srgb,var(--red) 5%,transparent)}
+.mp-qn-aside{margin:14px 0 0;padding-left:110px;font-family:var(--kai);font-size:13px;line-height:1.8;color:var(--label)}
+.mp-qn-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding-top:10px;
+  border-top:1px solid color-mix(in srgb,var(--line) 52%,transparent);font-family:var(--sans);font-size:11.5px;color:var(--label);letter-spacing:.03em}
+.mp-qn-hist{margin-top:12px;padding:11px 13px;border-radius:10px;background:color-mix(in srgb,var(--band) 62%,transparent);
+  border:1px solid color-mix(in srgb,var(--line) 46%,transparent)}
+.mp-qn-histh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-family:var(--sans);font-size:11.5px;color:var(--label)}
+.mp-qn-histh b{font-size:12px;color:var(--ink2);letter-spacing:.08em}
+.mp-qn-hist ol{list-style:none;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:9px 0 0;padding:0}
+.mp-qn-h-row{display:flex;flex-direction:column;gap:3px;padding:6px 5px;border-radius:8px;
+  border:1px solid transparent;background:color-mix(in srgb,var(--card) 62%,transparent);min-width:0}
+.mp-qn-h-row.on{border-color:color-mix(in srgb,var(--red) 42%,transparent);background:color-mix(in srgb,var(--red) 5%,var(--card))}
+.mp-qn-h-d{display:flex;align-items:center;gap:4px;font-family:var(--sans);font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mp-qn-h-t{font-family:var(--kai);font-size:11.5px;line-height:1.35;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-qn-h-l{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.mp-qn-lv-ss .mp-qn-h-l,.mp-qn-h-row.lv-ss .mp-qn-h-l{background:var(--red)}
+.mp-qn-lv-s .mp-qn-h-l,.mp-qn-h-row.lv-s .mp-qn-h-l{background:var(--br-good)}
+.mp-qn-lv-z .mp-qn-h-l,.mp-qn-h-row.lv-z .mp-qn-h-l{background:var(--ke)}
+.mp-qn-lv-p .mp-qn-h-l,.mp-qn-h-row.lv-p .mp-qn-h-l{background:var(--faint)}
+.mp-qn-tip{margin:10px 0 0;font-family:var(--sans);font-size:11px;line-height:1.7;color:var(--faint)}
+/* ── 观音灵签：同一套签纸，换四百句签诗 ───────────────────────────
+   一百支签的诗是四句七言，沿用福签的纸面与朱印，但签意、宫位与「再摇一签」
+   是灵签自己的部分：一问一签，可以重摇。 */
+.mp-lq .mp-qn-stage{grid-template-columns:88px minmax(0,1fr)}
+.mp-lq .mp-qn-cup{width:88px;height:114px}
+.mp-lq-verse{margin:0 0 10px;font-size:15px;line-height:2.05;letter-spacing:.14em}
+.mp-lq-verse span::before,.mp-lq-verse span::after{content:none}
+.mp-lq-omen{margin:0 0 4px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--band) 54%,transparent);
+  font-family:var(--kai);font-size:12.5px;line-height:1.8;letter-spacing:.05em;color:var(--label)}
+.mp-lq-ask{margin:0 0 4px;padding:8px 10px;border-left:2px solid color-mix(in srgb,var(--red) 42%,transparent);
+  font-family:var(--sans);font-size:12.5px;line-height:1.75;color:var(--ink2)}
+.mp-lq-ask b{font-weight:600;color:var(--label);letter-spacing:.08em;margin-right:6px}
+.mp-lq-lv-s .mp-qn-seal{border-color:var(--br-good);color:var(--br-good);background:color-mix(in srgb,var(--br-good) 7%,transparent)}
+.mp-lq-lv-z .mp-qn-seal{border-color:var(--ke);color:var(--ke);background:color-mix(in srgb,var(--ke) 7%,transparent)}
+.mp-lq-lv-x .mp-qn-seal{border-color:var(--label);color:var(--label);background:color-mix(in srgb,var(--label) 6%,transparent)}
+.mp-qn-again{margin-top:12px;padding:7px 16px;border-radius:999px;border:1px solid color-mix(in srgb,var(--red) 42%,var(--line));
+  background:color-mix(in srgb,var(--red) 6%,var(--card));color:var(--red);font-family:var(--kai);
+  font-size:13px;letter-spacing:.1em;cursor:pointer}
+.mp-qn-again:hover{background:color-mix(in srgb,var(--red) 11%,var(--card))}
+.mp-qn-again:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+@container (max-width:430px){
+  .mp-qn{margin:10px 10px 8px;padding:12px}
+  .mp-qn-stage{grid-template-columns:64px minmax(0,1fr);gap:10px}
+  .mp-qn-cup{width:64px;height:88px}
+  .mp-qn-title{font-size:21px}
+  .mp-qn-aside{padding-left:0}
+  .mp-qn-hist ol{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
 `;
   const pp = (window.__PP = window.__PP || {});
   pp.CSS = CSS;
@@ -3004,6 +3110,107 @@ h3.mp-env-adv-h{display:block}
       </div>
       ${r.systemNote ? `<div class="mp-tt-tip">${r.systemNote}</div>` : ''}
       <div class="mp-tt-tip">塔罗用于自我觉察与娱乐，不作确定性预言。</div>
+    </div>`;
+  };
+
+  /** 同一只签筒，结果卡与空状态的迷你入口共用一份 SVG，免得两处画风走散。 */
+  pp.QIAN_CUP_SVG = '<svg viewBox="0 0 96 124" role="presentation" focusable="false">'
+    + '<ellipse class="qn-shadow" cx="48" cy="118" rx="29" ry="5"/>'
+    + '<rect class="qn-stick" x="33" y="8" width="7" height="50" rx="3" transform="rotate(-8 36 33)"/>'
+    + '<rect class="qn-stick hot" x="43" y="2" width="7" height="58" rx="3" transform="rotate(2 46 31)"/>'
+    + '<rect class="qn-stick" x="55" y="10" width="7" height="48" rx="3" transform="rotate(11 58 34)"/>'
+    + '<path class="qn-body" d="M20 42h56l-5 64a4 4 0 0 1-4 4H29a4 4 0 0 1-4-4Z"/>'
+    + '<ellipse class="qn-rim" cx="48" cy="42" rx="28" ry="8"/>'
+    + '<text class="qn-zi" x="48" y="84" text-anchor="middle">签</text>'
+    + '</svg>';
+
+  /** 空状态里的迷你签筒内容；外层按钮由 app.js / web-ui.js 各自包，点击行为不写在字符串里。 */
+  pp.qianOracleHTML = function () {
+    return `<span class="mp-qn-o-cup" aria-hidden="true">${pp.QIAN_CUP_SVG}</span>`
+      + '<span class="mp-qn-o-tx"><b>轻点一下</b><i>摇一摇 · 抽今日福签</i></span>';
+  };
+
+  pp.qianHTML = function (r) {
+    if (!r || r.system !== 'qian' || !r.slip) return pp.quickHTML(r);
+    const s = r.slip;
+    const lv = { 上上: 'ss', 上: 's', 中: 'z', 平: 'p' }[s.level] || 'p';
+    const no = String(s.no).padStart(2, '0');
+    const hist = (r.history || []).map((x, i) => {
+      const k = { 上上: 'ss', 上: 's', 中: 'z', 平: 'p' }[x.level] || 'p';
+      return `<li class="mp-qn-h-row lv-${k}${i === 0 ? ' on' : ''}" title="${esc(x.date)} ${esc(x.weekday)} · ${esc(x.level)} · ${esc(x.title)}">
+        <span class="mp-qn-h-d"><i class="mp-qn-h-l" aria-hidden="true"></i>${esc(x.date.slice(5))}</span>
+        <span class="mp-qn-h-t">${esc(x.title)}</span>
+      </li>`;
+    }).join('');
+    return pp.briefHTML(r) + `<div class="pp mp-qn mp-qn-lv-${lv}" aria-label="今日福签">
+      <div class="mp-qn-stage">
+        <div class="mp-qn-cup" aria-hidden="true">
+          ${pp.QIAN_CUP_SVG}
+        </div>
+        <div class="mp-qn-card">
+          <div class="mp-qn-top">
+            <span class="mp-qn-kicker">第 ${no} 签 · 共 ${esc(s.total)} 支 · ${esc(s.level)}</span>
+            <span class="mp-qn-seal" aria-hidden="true">${esc(s.level)}</span>
+          </div>
+          <h2 class="mp-qn-title">${esc(s.title)}</h2>
+          <p class="mp-qn-verse"><span>${esc(s.verse[0])}</span><span>${esc(s.verse[1])}</span></p>
+          <div class="mp-qn-blk"><b>签意</b><p>${esc(s.meaning)}</p></div>
+          <div class="mp-qn-blk"><b>今日可为</b><p>${esc(s.advice)}</p></div>
+          <div class="mp-qn-chips">${(s.chips || []).map((c) => `<span>${esc(c)}</span>`).join('')}</div>
+        </div>
+      </div>
+      <p class="mp-qn-aside">${esc(r.aside)}</p>
+      <div class="mp-qn-meta">
+        <span>${esc(r.meta.date)}</span><span>${esc(r.meta.weekday)}</span>
+        <span>${esc(r.meta.lunar)}</span><span>${esc(r.meta.ganzhi)}</span>
+      </div>
+      <div class="mp-qn-hist">
+        <div class="mp-qn-histh"><b>近七日</b><span>一日一签 · 不重摇</span></div>
+        <ol>${hist}</ol>
+      </div>
+      <p class="mp-qn-tip">${esc(r.rules)}　${esc(r.disclaimer)}</p>
+    </div>`;
+  };
+
+  /** 灵签的迷你入口：与福签同一只签筒，文案说清「一事一签、可重摇」。 */
+  pp.guanyinOracleHTML = function () {
+    return `<span class="mp-qn-o-cup" aria-hidden="true">${pp.QIAN_CUP_SVG}</span>`
+      + '<span class="mp-qn-o-tx"><b>轻点一下</b><i>摇一摇 · 抽一支灵签</i></span>';
+  };
+
+  pp.guanyinHTML = function (r) {
+    if (!r || r.system !== 'guanyin' || !r.slip) return pp.quickHTML(r);
+    const s = r.slip;
+    const lv = { 上: 's', 中: 'z', 下: 'x' }[s.level] || 'z';
+    const no = String(s.no).padStart(2, '0');
+    const q = String((r.meta && r.meta.question) || '').trim();
+    const poem = (s.poem || []).map((line) => `<span>${esc(line)}</span>`).join('');
+    return pp.briefHTML(r) + `<div class="pp mp-qn mp-lq mp-lq-lv-${lv}" aria-label="观音灵签">
+      <div class="mp-qn-stage">
+        <div class="mp-qn-cup" aria-hidden="true">
+          ${pp.QIAN_CUP_SVG}
+        </div>
+        <div class="mp-qn-card">
+          <div class="mp-qn-top">
+            <span class="mp-qn-kicker">第 ${no} 签 · 共 ${esc(s.total)} 支 · ${esc(s.level)}签 · ${esc(s.palace)}</span>
+            <span class="mp-qn-seal" aria-hidden="true">${esc(s.level)}</span>
+          </div>
+          <h2 class="mp-qn-title">${esc(s.title)}</h2>
+          <p class="mp-qn-verse mp-lq-verse">${poem}</p>
+          ${s.omen ? `<p class="mp-lq-omen">${esc(s.omen)}</p>` : ''}
+          <div class="mp-qn-blk"><b>签意</b><p>${esc(s.meaning)}</p></div>
+          <div class="mp-qn-blk"><b>可为</b><p>${esc(s.advice)}</p></div>
+          <div class="mp-qn-chips">${(s.chips || []).map((c) => `<span>${esc(c)}</span>`).join('')}</div>
+        </div>
+      </div>
+      ${r.aside ? `<p class="mp-qn-aside">${esc(r.aside)}</p>` : ''}
+      ${q ? `<p class="mp-lq-ask"><b>所问</b>${esc(q)}</p>` : ''}
+      <div class="mp-qn-meta">
+        <span>${esc(s.level)}签</span><span>${esc(s.palace)}</span>
+        <span>第 ${s.no} / ${esc(s.total)} 签</span><span>${esc((r.meta && r.meta.method) || '摇签')}</span>
+      </div>
+      <button type="button" class="mp-qn-again" data-lq-again>再摇一签</button>
+      <p class="mp-qn-tip">${esc(r.rules)}　${esc(r.disclaimer)}</p>
     </div>`;
   };
 
@@ -5010,7 +5217,8 @@ h3.mp-env-adv-h{display:block}
     day: '先看今天值什么，再看宜忌那几栏。',
   };
   pp.plainHTML = function (r) {
-    if (!r || r.system === 'taiyi') return '';
+    // 太乙自带白话层；福签卡本身就把寓意与建议摊开了，再插一句「先看哪里」是重复
+    if (!r || r.system === 'taiyi' || r.system === 'qian' || r.system === 'guanyin') return '';
     const lead = (r.brief && r.brief.lead) || '';
     if (!lead) return '';
     const s = ' ' + String(r.system || '') + ' ';
@@ -5441,9 +5649,21 @@ h3.mp-env-adv-h{display:block}
   pp.summaryCardPNG = function (r, it) {
     try {
       if (typeof document === 'undefined' || !document.createElement) return '';
-      const outline = (it && it.outline) || [];
-      const tables = ((it && it.tables) || []).filter((t) => Array.isArray(t.rows) && t.rows.length);
-      const systemLabel = (it && it.systemLabel) || (r && r.system) || '命理报告';
+      // 灵签没有解读信封（interpret 返回 null）：不补一份，摘要卡就只剩一个标题。
+      // 只补这一种情况，其余体系仍按原来的 it 画，福签等结果不受影响。
+      let cardIt = it;
+      if ((!cardIt || !cardIt.outline) && r && r.system === 'guanyin' && r.brief) {
+        const b = r.brief;
+        const s = r.slip || {};
+        cardIt = {
+          systemLabel: '观音灵签',
+          outline: (b.sections || []).map((x) => ({ label: x.h, text: x.t })),
+          envelope: { verdict: { headline: s.no ? `第 ${s.no} 签「${s.title}」` : String(b.title || '') } },
+        };
+      }
+      const outline = (cardIt && cardIt.outline) || [];
+      const tables = ((cardIt && cardIt.tables) || []).filter((t) => Array.isArray(t.rows) && t.rows.length);
+      const systemLabel = (cardIt && cardIt.systemLabel) || (r && r.system) || '命理报告';
       const W = 900;
       const PAD = 44;
       const line = 26;
@@ -5464,7 +5684,7 @@ h3.mp-env-adv-h{display:block}
       // 量高度：标题区 + 五条摘要（每条最多两行）+ 表（6 行）+ 页脚
       // 结论块：这张卡会被单独转发出去，对方第一眼看到的必须是一句人话，
       // 而不是「命宫身宫」这种技术要点。三个来源依次兜底：信封结论 → brief → 事实型头卡。
-      const env = (it && it.envelope) || null;
+      const env = (cardIt && cardIt.envelope) || null;
       const v = (env && env.verdict) || null;
       const headText = String((v && v.headline) || (r && r.brief && r.brief.headline) || (r && r.factHead && r.factHead.headline) || '').trim();
       const subText = String((r && r.brief && r.brief.lead) || (v && v.condition) || (r && r.factHead && r.factHead.note) || '').trim();

@@ -1,6 +1,6 @@
 // 0.39.0：首屏按「想干什么」分组（问一件事 / 看一个人 / 查日子）+ 最近用过 + 分组↔平铺。
 //
-// 约束：分组卡片只是另一套入口——21 个 tab 原样保留（0.77.0 称骨撤独立入口），两套入口走同一条 setTab/activate 路径；
+// 约束：分组卡片只是另一套入口——23 个 tab 原样保留（0.77.0 称骨撤独立入口），两套入口走同一条 setTab/activate 路径；
 // 页面断网、localStorage 不可用时，分组与平铺都必须照常能用，只是不记「最近用过」。
 import fs from 'node:fs';
 import { page } from '../tools/build-html.mjs';
@@ -27,20 +27,20 @@ eq('四个分组', (html.match(/class="tgroup"/g) || []).length, 4);
   ok('提示不是占位文案', hints.every((h) => h.length >= 8), hints.join(' / '));
 }
 
-// ── ② 分组是精选入口：19 个，缺的留在平铺（0.77.0 称骨并入八字）──
-eq('分组里 19 个入口', toolList.length, 19);
-eq('入口不重复', new Set(toolList).size, 19);
+// ── ② 分组是精选入口：21 个，缺的留在平铺（0.77.0 称骨并入八字；0.86 福签、0.87 灵签进组）──
+eq('分组里 21 个入口', toolList.length, 21);
+eq('入口不重复', new Set(toolList).size, 21);
 ok('分组是平铺的子集', toolList.every((k) => tabList.includes(k)), toolList.filter((k) => !tabList.includes(k)).join(','));
 eq('分组不收录称骨与星座数字（称骨并入八字卡）', tabList.filter((k) => !toolList.includes(k)).sort().join(','), 'numerology,star');
 {
   const entries = [...html.matchAll(/<button type="button" class="tool(?: wide)?" data-tab="[a-z]+"(?: title="[^"]*")?><b>([^<]+)<\/b><span>([^<]+)<\/span><\/button>/g)];
-  eq('19 项都带名称与白话说明', entries.length, 19);
+  eq('21 项都带名称与白话说明', entries.length, 21);
   ok('白话说明不是空串', entries.every((m) => m[2].trim().length >= 4));
   ok('六爻的白话说明在页面上', html.includes('<b>六爻</b><span>问一件具体事，最接地气</span>'));
 }
 
-// ── ③ 平铺回退：21 个 tab 原样保留，可一键切回 ──────────────────
-eq('平铺的 21 个 tab 仍在', tabList.length, 21);
+// ── ③ 平铺回退：23 个 tab 原样保留，可一键切回 ──────────────────
+eq('平铺的 23 个 tab 仍在', tabList.length, 23);
 ok('视图开关默认选中分组', /<button type="button" data-view="group" class="on">分组<\/button>/.test(html));
 ok('可切回平铺', /<button type="button" data-view="flat">平铺<\/button>/.test(html));
 ok('分组视图收起平铺 tab 条', /body\.view-group \.tabs\{display:none\}/.test(html));
@@ -61,11 +61,11 @@ ok('排完一次才记，且带盘号', /paint\(\);\s*\/\/ 历史在这里记[\s
 ok('切 tab 不再自动排盘（所以也不存在「自动排那次」要不要记的问题）',
   !/else run\(\{ record: false \}\)/.test(ui));
 ok('只有两条不记历史的出口：深链打开、档案回填',
-  (ui.match(/run\(\{ record: false \}\)/g) || []).length === 2 &&
-  /if \(deep\) Promise\.resolve\(run\(\{ record: false \}\)\)/.test(ui) &&
+  (ui.match(/run\(\{ record: false(?:, draw: deep\.draw)? \}\)/g) || []).length === 2 &&
+  /if \(deep\) Promise\.resolve\(run\(\{ record: false, draw: deep\.draw \}\)\)/.test(ui) &&
   /onManualEdit\(\);\s*\n\s*run\(\{ record: false \}\);\s*\n\s*return true;/.test(ui));
-ok('问卷不进历史（答案只在内存里，恢复不回来）',
-  /if \(t === 'mbti' \|\| t === 'constitution'\) return;/.test(ui));
+ok('问卷与灵签不进历史（答案只在内存、签每次重摇，恢复不回来）',
+  /if \(t === 'mbti' \|\| t === 'constitution' \|\| t === 'guanyin'\) return;/.test(ui));
 ok('记录里存这次的表单值', /const args = collectArgs\(\)/.test(ui) && /const item = \{ tab: t, at: Date\.now\(\), args, shortId \}/.test(ui));
 ok('盘号剥掉 LY- 前缀（与结果页显示一致）', /replace\(\/\^LY-\/, ''\)/.test(ui));
 // 只收当前体系看得见的控件：否则切到黄历后，历史条目里还带着上一次排八字的性别与出生地
@@ -77,7 +77,7 @@ ok('点回来是按那次的条件再排一遍，不是只切 tab',
 ok('单条可删', /className = 'rc-del'/.test(ui) && /y\.tab === x\.tab && y\.at === x\.at/.test(ui));
 // C3 深链：启动改成「先读链接、没有再排默认盘」；仍然不能在初始化时写最近记录
 ok('启动时先看深链再排盘', /const deep = readDeepLink\(\);\s*setTab\(deep \? deep\.tab : 'ziwei'\)/.test(ui));
-const bootBlock = (ui.match(/const deep = readDeepLink\(\);[\s\S]*?Promise\.resolve\(run\(\{ record: false \}\)\)/) || [''])[0];
+const bootBlock = (ui.match(/const deep = readDeepLink\(\);[\s\S]*?Promise\.resolve\(run\(\{ record: false, draw: deep\.draw \}\)\)/) || [''])[0];
 ok('首屏初始化不写最近记录', !!bootBlock && !/recordRecent/.test(bootBlock), bootBlock.length ? bootBlock.slice(0, 60) : '没找到启动块');
 ok('没有记录时整行隐藏', /row\.hidden = list\.length === 0/.test(ui));
 ok('隐藏要显式写样式（display:flex 会盖掉 [hidden]）', /\.recent\[hidden\]\{display:none\}/.test(html));

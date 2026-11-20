@@ -4,6 +4,7 @@ import { solarToLunar } from './lunar.js';
 import { ganzhiName, toJDN, fromJDN, dayGanzhiIndex } from './calendar.js';
 import { assertCivil, assertShifted } from './validate.js';
 import { hourToBranch } from './almanac.js';
+import { applyDst } from './dst.js';
 import { fail } from './fail.js';
 import { bool } from './bool.js';
 
@@ -141,8 +142,15 @@ function bandVerdict(qian) {
  */
 export function buildChenggu(input) {
   assertCivil(input, '称骨');
-  const { year, month, day, hour } = input;
-  const minute = input.minute || 0;
+  // 1986–1991 中国夏令时：钟面时间比标准时快一小时，不校正会让时辰（乃至跨 23:00 的日柱）整档偏。
+  // 与八字/紫微同一口径，显式传 dst:false 可关闭。
+  let { year, month, day } = input;
+  let hour = input.hour;
+  let minute = input.minute || 0;
+  const dst = bool(input.dst, true) && Number.isInteger(input.hour)
+    ? applyDst({ year, month, day, hour, minute })
+    : { applied: false, note: null };
+  if (dst.applied) { year = dst.year; month = dst.month; day = dst.day; hour = dst.hour; minute = dst.minute; }
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
     throw fail('E_INPUT', '称骨必须给时辰：hour 为 0–23 的整数（缺时辰四柱不齐，骨重无法求和）');
   }
@@ -180,7 +188,7 @@ export function buildChenggu(input) {
 
   return {
     system: 'chenggu',
-    input: { solar: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, hour, minute, lateZi, lunarDateShifted: shifted },
+    input: { solar: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`, hour, minute, lateZi, lunarDateShifted: shifted, dst: { applied: !!dst.applied, note: dst.note || null } },
     lunar: {
       text: `农历${yearGz.name}年${lunarMonthText(lunarMonth, lunar.isLeap)}${lunarDayText(lunarDay)} ${hourBranch}时`,
       year: lunarYear,

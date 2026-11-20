@@ -127,5 +127,20 @@ ok('八字合盘与紫微合盘可区分', bz.chart !== 'ziwei' && r.chart === '
     asNext.a.soul.branch === next.a.soul.branch, `${asNext.a.soul.branch} / ${next.a.soul.branch}`);
 }
 
+// 流派开关随合盘透传：庚干四化与魁钺曾漏传，合盘会按默认口径重排，与同参数单盘对不上
+{
+  const strip = (arr) => arr.map((s) => s.replace(/\([^)]*\)$/, '')).sort().join(',');
+  const sihuaOf = (z) => (z.palaces || []).flatMap((p) => (p.stars || []).filter((s) => s.mutagen).map((s) => `${s.name}化${s.mutagen}`));
+  const G = '1990-06-15T10:30'; // 庚午年，庚干四化两派不同
+  const opts = { trueSolar: false, dst: false, gengYearSihua: 'GYWTY', schools: { kuiyueSchool: 'qs2' } };
+  const single = compute({ system: 'ziwei', datetime: G, gender: 'male', ...opts });
+  const pair = compute({ system: 'hepan', chart: 'ziwei', datetime: G, gender: 'male', partner: B, ...opts });
+  const singleDefault = compute({ system: 'ziwei', datetime: G, gender: 'male', trueSolar: false, dst: false });
+  ok('合盘主方生年四化与同参数单盘一致', strip(pair.a.natalSihua) === strip(sihuaOf(single)),
+    `${strip(pair.a.natalSihua)} vs ${strip(sihuaOf(single))}`);
+  ok('前提：GYWTY 确实改了单盘四化（这条断言不是空转）', strip(sihuaOf(single)) !== strip(sihuaOf(singleDefault)),
+    `${strip(sihuaOf(single))} / ${strip(sihuaOf(singleDefault))}`);
+}
+
 if (fail > 0) { console.log(`FAIL ${fail} 项`); process.exit(1); }
 console.log(`\n紫微合盘 ${pass} 项全部通过`);

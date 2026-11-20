@@ -163,7 +163,7 @@ ok('错误清单里有太乙', ENGINE.includes('taiyi（太乙神数）'));
 eq('bridge 标签', /taiyi: '太乙',/.test(BRIDGE), true);
 ok('plain-summary 分派', SUMMARY.includes("if (r.system === 'taiyi') return taiyiSummary(r);"));
 ok('schema 枚举有 taiyi', ROOTJS.includes("'wuyunliuqi', 'taiyi', 'trend'"));
-ok('schema 参数表有 taiyi', ROOTJS.includes("taiyi: ['datetime', 'shadow'],"));
+ok('schema 参数表有 taiyi', ROOTJS.includes("taiyi: ['datetime', 'dst', 'shadow'],"));
 ok('schema 必填说明有 taiyi', ROOTJS.includes('taiyi:'));
 
 // ── 九、面板 ─────────────────────────────────────────────────

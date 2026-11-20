@@ -120,6 +120,22 @@ const base = { system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', ad
   ok(!/一定|必然|注定|绝对/.test(f.text), '流月段落无绝对化表述');
 }
 
+// ── 八、流月闰月与本命同一套口径 ────────────────────────────────
+// 旧实现直接拿 lr.month 下推，闰六月整月都按六月算；本命起盘已按日切分到七月，
+// 同一张盘两处序号对不上。2025-08-20 = 闰六月廿七，默认（split）应归七月。
+{
+  const B = { ...base, asOf: '2025-08-20T12:00' };
+  const split = compute(B);
+  eq(split.flow.month.index, 7, '闰月后半按日切分归次月');
+  eq(split.flow.month.monthRaw, 6, '仍回显原始农历月');
+  eq(split.flow.month.isLeap, true, '回显闰月标记');
+  const prev = compute({ ...B, leapMonth: 'prev' });
+  eq(prev.flow.month.index, 6, '整月归本月口径下流月仍按六月');
+  ok(split.flow.month.branch !== prev.flow.month.branch, '两种口径流月落宫不同');
+  const early = compute({ ...base, asOf: '2025-08-01T12:00' }); // 闰六月初八
+  eq(early.flow.month.index, 6, '闰月前半按日切分仍归本月');
+}
+
 if (fails.length) {
   console.log(`FAIL ${fails.length} 项：`);
   for (const f of fails.slice(0, 15)) console.log('  -', f);

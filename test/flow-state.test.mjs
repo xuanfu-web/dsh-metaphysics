@@ -95,7 +95,7 @@ ok('清空会连记忆一起清', /manual\.birth = null;[\s\S]{0,200}manual\.cas
 
 // ── 五、入口白名单 ───────────────────────────────────────
 ok('首屏只有两条出口：深链或默认盘',
-  /if \(deep\) Promise\.resolve\(run\(\{ record: false \}\)\)/.test(src) &&
+  /if \(deep\) Promise\.resolve\(run\(\{ record: false, draw: deep\.draw \}\)\)/.test(src) &&
   /else if \(pinned\) restoreDefault\(pinned\);/.test(src));
 ok('没有默认盘时不排盘，只刷状态',
   /else if \(pinned\) restoreDefault\(pinned\);\s*\n\s*else refreshFlow\(\);/.test(src));

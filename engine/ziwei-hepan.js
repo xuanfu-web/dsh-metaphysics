@@ -5,7 +5,6 @@
 import { buildZiwei } from './ziwei.js';
 import { assertCivil } from './validate.js';
 
-const NAMES = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '交友', '官禄', '田宅', '福德', '父母'];
 const MUT_MEAN = {
   禄: '会把资源、机会与松弛感带过去',
   权: '会不自觉地主导或施压',
@@ -105,7 +104,6 @@ export function buildZiweiHepan(input) {
     soulStars: mainStars(z.palaces.find((p) => p.palace === '命宫') || {}),
     spouseStars: mainStars(z.palaces.find((p) => p.palace === '夫妻') || {}),
     natalSihua: (z.palaces || []).flatMap((p) => (p.stars || []).filter((s) => s.mutagen).map((s) => `${s.name}化${s.mutagen}(${p.palace})`)),
-    summary: z.summary,
   });
 
   return {

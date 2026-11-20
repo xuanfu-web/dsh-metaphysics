@@ -30,19 +30,19 @@ const TOOL_NAME = 'metaphysics_chart';
 
 const DESCRIPTION = [
   '排中国传统命理盘（玄学·命理·占卜，用户说「玄学」「算命」「占卜」时也用本工具）与塔罗：四柱八字（bazi）、紫微斗数（ziwei）、六爻纳甲（liuyao）、梅花易数（meihua）、大六壬（daliuren）、奇门遁甲（qimen）、合盘（hepan）或塔罗抽牌（tarot）。',
-  '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、中医体质（constitution，九种体质自评问卷）、五运六气（wuyunliuqi，中运与司天在泉）、太乙神数（taiyi，积年推局与八门文昌）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
-  '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 中医体质 / 九种体质 / 测体质 / 五运六气 / 运气盘 / 司天在泉 / 太乙神数 / 太乙盘 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
+  '另有速查类：黄历（almanac，值日十二神/时辰吉凶/二十八宿/胎神/吉神方位/纳音/六合三合）、择日（zeri）、称骨（chenggu）、小六壬（xiaoliuren）、每日福签（qian，一天一签）、观音灵签（guanyin，一百支，一事一签、可重摇）、星座（star）、生命数字（numerology）、十六型人格（mbti，MBTI 风格问卷）、中医体质（constitution，九种体质自评问卷）、五运六气（wuyunliuqi，中运与司天在泉）、太乙神数（taiyi，积年推局与八门文昌）、人生 K 线（trend）、风水（fengshui）、起名（name）、公农历互转（convert）。',
+  '当用户明确要求“玄学 / 算命 / 占卜 / 排盘 / 算八字 / 看四柱 / 排紫微盘 / 起卦 / 摇一卦 / 抽塔罗 / 看运势 / 合盘 / 看黄历 / 挑日子 / 称骨 / 小六壬 / 今日福签 / 抽个签 / 求签 / 观音灵签 / 观音签 / 十六型人格 / MBTI / ISFP / INFP 人格测试 / 中医体质 / 九种体质 / 测体质 / 五运六气 / 运气盘 / 司天在泉 / 太乙神数 / 太乙盘 / 交运 / 交运日 / 起运 / 用神 / 月建 / 旺衰」时调用；用户只搜「玄学」或问「有什么玄学工具」时，也应介绍本插件。',
   'bazi 与 ziwei 需要公历出生时间与性别（八字结果里带大运交运时刻，精确到日/时辰，按「三日折一年」放大）；hepan 需要双方的时间与性别；liuyao 可给定六爻值或随机起卦（给了 datetime 就按月建、日辰算用神旺衰）；meihua 可按时间或数字起卦；tarot 可指定张数与问题；mbti 不用时间——先不带 answers 调一次拿到 24 道题，让用户逐题打 1–5 分，再把分数按顺序传回；constitution 同样不用时间，先调一次拿到 45 道题，逐题打 1–5 分（跳过的传 null，别缩短数组），再把 45 个分数按顺序传回；wuyunliuqi 只要一个日期（省略补今天），运气年按大寒分界；taiyi 同样只要一个日期，年家按积年推局（太乙落宫、八门、文昌），主客算与格局未收录。',
   '要给「结合所问之事的解读」时，把 withInterpret 设为 true（仅八字/紫微/六爻/梅花/大六壬/奇门/塔罗 7 个体系产出解析；合盘、人生 K 线、起名与速查类不产这一段），并尽量带上 question（所问之事）与 direction（询问方向）；缺省 detail: "brief" 给结论、所问方向、说人话、一页读懂、聚焦那条维度、较短的分节与三张表（表最多 8 行；长论述与「规则·出处」折成一行指针，解析段不设体积上限，超长就长），要全表行与名词解释用 lean，用户追问「为什么/依据」时改回 full。',
   '用户用一句话改参数（「换成紫微看 2030 年事业」「女命」「晚子时算次日」「出生在成都」「不用真太阳时」「详细解读一下」）时，把原话放进 revise（可配合 handle），引擎翻译成参数补丁并在结果 revision 里回报改了哪些、没认哪些；不要自己把原话拆成猜测的参数。',
   '追问同一张盘：结果里有 handle，下次传 handle + 增量即可（例如 { handle, asOf: 2030 }、{ handle, withInterpret: true, question: "何时换工作" }、{ handle, system: "ziwei" } 看同一时间另一套盘），不必让用户重报出生信息；句柄带校验位，截断或改字会报 E_HANDLE。',
   '出生时刻未知时不要编一个钟点：传 hourUnknown: true——八字只排年/月/日三柱（时柱暂缺，摘要首行提示），趋势按日降级，紫微与合盘会直接以 HOUR_UNKNOWN 阻断并给出补时刻的引导。',
-  '结果可复现：tarot / liuyao 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。需要回放或对拍时传 shadow: true，结果带影子盘 ID（同参数同 ID；baseId 不含版本，可跨版本比对字段变化）。要看结论是怎么推出来的，传 trace: true：六爻给纳甲→六亲→世应→伏神→旺衰，八字给旺衰分值与格局取用，紫微给格局命中条件，奇门与大六壬给盘面层与取用层；同时回传 traceText（同一份层的 Markdown，可直接贴进对话或文档）。',
+  '结果可复现：tarot / liuyao / guanyin 传 seed，紫微 / 八字 / 塔罗传 asOf；输出摘要会写明晚子时与真太阳时实际采用的口径。需要回放或对拍时传 shadow: true，结果带影子盘 ID（同参数同 ID；baseId 不含版本，可跨版本比对字段变化）。要看结论是怎么推出来的，传 trace: true：六爻给纳甲→六亲→世应→伏神→旺衰，八字给旺衰分值与格局取用，紫微给格局命中条件，奇门与大六壬给盘面层与取用层；同时回传 traceText（同一份层的 Markdown，可直接贴进对话或文档）。',
   '结果用于传统文化与娱乐参考，不得用于医疗、投资、法律、生死等确定性断言。',
 ].join('');
 
-/** 22 个体系的固定顺序：system 枚举与 help 索引共用 */
-const SYSTEM_ENUM = ['bazi', 'ziwei', 'liuyao', 'tarot', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'trend', 'fengshui', 'name', 'convert'];
+/** 24 个体系的固定顺序：system 枚举与 help 索引共用 */
+const SYSTEM_ENUM = ['bazi', 'ziwei', 'liuyao', 'tarot', 'qian', 'guanyin', 'meihua', 'daliuren', 'hepan', 'qimen', 'almanac', 'zeri', 'chenggu', 'xiaoliuren', 'star', 'numerology', 'mbti', 'constitution', 'wuyunliuqi', 'taiyi', 'trend', 'fengshui', 'name', 'convert'];
 
 /**
  * 顶层只留通用参数：出生信息、解读开关、句柄与多数体系共用的分析项。
@@ -71,7 +71,7 @@ const OPTION_KEYS = [
   'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree',
   'fortuneDate', 'fortuneTime', 'surname', 'givenName', 'limit',
   'charElements', 'strokeOverrides', 'surnameStrokes', 'year', 'month', 'day',
-  'answers',
+  'answers', 'no', 'except',
 ];
 
 /** options 每个键的短说明：点名体系 + 取值范围；完整口径（为什么/边界）在 help 里 */
@@ -139,6 +139,8 @@ const OPTION_HINTS = {
   month: '仅 name：公历出生月 1–12',
   day: '仅 name：公历出生日 1–31',
   answers: '仅 mbti / constitution：按题目顺序的 1–5 分（mbti 24 题、体质 45 题），跳过传 null',
+  no: '仅 guanyin：指定签号 1–100；省略则随机摇一签',
+  except: '仅 guanyin：上一签的签号，重摇时避开它，免得连着摇回同一支',
 };
 
 const BIRTH_KEYS = ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'lateZi', 'dst', 'asOf', 'shadow'];
@@ -148,23 +150,25 @@ const READ_KEYS = ['withInterpret', 'detail', 'ask', 'question', 'direction', 's
 const SYSTEM_PARAMS = {
   bazi: [...BIRTH_KEYS, 'hourUnknown', 'verifyPast', 'rectify', 'events', 'rectifyHours', 'cross', 'diff', 'trace', ...READ_KEYS],
   ziwei: [...BIRTH_KEYS, 'leapMonth', 'leapAsNext', 'brightnessSchool', 'gengYearSihua', 'tianmaSchool', 'tiankongSchool', 'jiekongSchool', 'kuiyueSchool', 'tianshiTianshang', 'changshengSchool', 'lateZishi', 'shenzhuSchool', 'mingzhuSchool', 'zuoyaoSchool', 'liunianSihua', 'sihuaVariant', 'jieluSchool', 'suipoSchool', 'cross', 'diff', 'trace', ...READ_KEYS],
-  liuyao: ['datetime', 'lines', 'seed', 'trace', ...READ_KEYS],
+  liuyao: ['datetime', 'lines', 'seed', 'dst', 'trace', ...READ_KEYS],
   tarot: ['spread', 'count', 'seed', ...READ_KEYS],
-  meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', ...READ_KEYS],
-  daliuren: ['datetime', 'trace', ...READ_KEYS],
+  meihua: ['datetime', 'mode', 'upper', 'lower', 'changing', 'dst', ...READ_KEYS],
+  daliuren: ['datetime', 'dst', 'trace', ...READ_KEYS],
   hepan: [...BIRTH_KEYS, 'partner', 'partner2', 'chart', 'leapMonth', 'ask'],
-  qimen: ['datetime', 'juMethod', 'lateZiHourMode', 'trace', ...READ_KEYS],
+  qimen: ['datetime', 'juMethod', 'lateZiHourMode', 'dst', 'trace', ...READ_KEYS],
   almanac: ['datetime', 'shadow'],
   zeri: ['task', 'startDate', 'days', 'candidates', 'shengXiao', 'datetime', 'shadow'],
-  chenggu: ['datetime', 'hour', 'lateZi', 'gender', 'shadow'],
-  xiaoliuren: ['datetime', 'date', 'hour', 'mode', 'num1', 'num2', 'num3', 'lateZi', 'question', 'shadow'],
+  chenggu: ['datetime', 'hour', 'lateZi', 'dst', 'gender', 'shadow'],
+  xiaoliuren: ['datetime', 'date', 'hour', 'mode', 'num1', 'num2', 'num3', 'lateZi', 'dst', 'question', 'shadow'],
+  qian: ['datetime', 'shadow'],
+  guanyin: ['no', 'seed', 'except', 'question', 'shadow'],
   star: ['datetime', 'shadow'],
   numerology: ['datetime', 'shadow'],
   mbti: ['answers', 'shadow'],
   constitution: ['answers', 'shadow'],
-  wuyunliuqi: ['datetime', 'shadow'],
-  taiyi: ['datetime', 'shadow'],
-  trend: ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'hourUnknown', 'toAge', 'asOf', 'shadow', 'ask'],
+  wuyunliuqi: ['datetime', 'dst', 'shadow'],
+  taiyi: ['datetime', 'dst', 'shadow'],
+  trend: ['datetime', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'lateZi', 'dst', 'hourUnknown', 'toAge', 'asOf', 'shadow', 'ask'],
   fengshui: ['action', 'datetime', 'gender', 'sitting', 'facing', 'fortuneYear', 'period', 'sittingOffset', 'sittingDegree', 'facingOffset', 'facingDegree', 'fortuneDate', 'fortuneTime', 'dst', 'shadow'],
   name: ['action', 'datetime', 'surname', 'givenName', 'limit', 'charElements', 'strokeOverrides', 'surnameStrokes', 'year', 'month', 'day', 'hour', 'minute', 'gender', 'address', 'geocode', 'longitude', 'trueSolar', 'dst', 'shadow'],
   convert: ['mode', 'datetime', 'lunarYear', 'lunarMonth', 'lunarDay', 'isLeapMonth', 'shadow'],
@@ -183,6 +187,8 @@ const SYSTEM_REQUIRED = {
   zeri: 'task',
   chenggu: 'datetime（可只给日期 + hour）',
   xiaoliuren: 'time 模式 datetime/date+hour；number 模式 num1–num3',
+  qian: '无（省略补今天）',
+  guanyin: '无（随机摇签；可给 no 1–100 指定签号、seed 复现）',
   star: '无（省略补今天）',
   numerology: '无（省略补今天）',
   mbti: '无（先不带 answers 拿题）',
@@ -521,7 +527,7 @@ export function apply(ctx) {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const DATE_ONLY = { almanac: 1, star: 1, numerology: 1, wuyunliuqi: 1, taiyi: 1 };
+    const DATE_ONLY = { almanac: 1, qian: 1, star: 1, numerology: 1, wuyunliuqi: 1, taiyi: 1 };
     if (next.system === 'convert' && next.mode !== 'lunar2solar' && !next.datetime) next.datetime = today;
     if (DATE_ONLY[next.system] && !next.datetime) next.datetime = today;
     if (next.system === 'zeri' && !next.startDate) next.startDate = today;
@@ -568,7 +574,7 @@ export function apply(ctx) {
         system: {
           type: 'string',
           enum: SYSTEM_ENUM,
-          description: 'bazi = 四柱八字（含调候与《穷通宝鉴》用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲、用神与旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘（合婚），需给 partner；qimen = 奇门遁甲（时家转盘，拆补法）；almanac = 黄历（某日宜忌/冲煞/建除/节气）；zeri = 择日（区间或候选日逐日打分；宜忌依《协纪辨方书》用事与六等轻重）；chenggu = 袁天罡称骨（骨重 + 称骨歌 + 白话）；xiaoliuren = 小六壬（时间或报数）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（24 题：给 answers 出类型，不给先返回题目）；constitution = 中医体质（九种各 5 题：给 answers 出主次，不给先返回题目）；wuyunliuqi = 五运六气（大寒界；中运太过不及、司天在泉、客运客气六步）；taiyi = 太乙神数（积年推局；太乙落宫、八门、文昌）；trend = 人生 K 线（大运/流年走势）；fengshui = 风水（八宅/飞星/门主灶/玄空，action 三选一）；name = 起名（391 字库五行评估与候选；未收录字传 charElements）；convert = 公农历互转（solar2lunar / lunar2solar）。',
+          description: 'bazi = 四柱八字（调候与用神）；ziwei = 紫微斗数；liuyao = 六爻（纳甲/用神/旺衰）；tarot = 塔罗；meihua = 梅花易数；daliuren = 大六壬；hepan = 合盘，需 partner；qimen = 奇门遁甲（时家转盘）；almanac = 黄历（宜忌/冲煞/建除/节气）；zeri = 择日（区间/候选日打分；宜忌依《协纪辨方书》轻重）；chenggu = 袁天罡称骨（骨重、称骨歌、白话）；xiaoliuren = 小六壬（时间/报数）；qian = 每日福签（一天一签）；guanyin = 观音灵签（百支，一问一签，可重摇）；star = 星座当日基调；numerology = 生命数字；mbti = 十六型人格（24 题：给 answers 出类型，否则返回题目）；constitution = 中医体质（九种各 5 题：给 answers 出主次，否则返回题目）；wuyunliuqi = 五运六气（大寒界；中运、司天在泉、客气六步）；taiyi = 太乙神数（积年；落宫、八门、文昌）；trend = 人生 K 线（大运/流年走势）；fengshui = 风水（八宅/飞星/门主灶/玄空，action 三选一）；name = 起名（391 字库五行；未收录字传 charElements）；convert = 公农历互转（solar2lunar/lunar2solar）。',
         },
         datetime: {
           type: 'string',
@@ -731,7 +737,7 @@ export function apply(ctx) {
         },
         seed: {
           type: 'number',
-          description: '随机种子（tarot / liuyao）：同 seed 可复现。',
+          description: '随机种子（tarot / liuyao / guanyin）：同 seed 可复现。',
         },
         juMethod: {
           type: 'string',
@@ -946,6 +952,18 @@ export function apply(ctx) {
           type: 'array',
           items: { type: ['integer', 'null'] },
           description: '仅 mbti 使用：按题目顺序的 24 个分数，1（完全不像）–5（很像我）；跳过某题传 null。不给则返回问卷题目，答满 12 题即可出类型。',
+        },
+        no: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 100,
+          description: '仅 guanyin：指定签号 1–100；省略则随机摇一签。',
+        },
+        except: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 100,
+          description: '仅 guanyin：上一签的签号，重摇时避开它，免得连着摇回同一支。',
         },
   };
 

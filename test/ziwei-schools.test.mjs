@@ -108,6 +108,23 @@ eq('qs2 庚年在午寅', KY('qs2'), ['午', '寅']);
 eq('中一鸣在寅午', KY('zhong-yiming'), ['寅', '午']);
 ok('网络派不再单列（与 qs1 完全同表）', !ZIWEI_SCHOOL_OPTIONS.kuiyueSchool.includes('network'));
 
+// 运曜/流曜必须跟本命同一张魁钺表：horoscopeStarsOf 曾写死默认 KUI_YUE，
+// qs2 盘本命庚年魁在午，庚限却把运魁安回丑，一张盘用了两派。
+const DX_KY = (school) => {
+  const r = buildZiwei({ ...BASE, kuiyueSchool: school });
+  const dx = r.daxianList.find((d) => d.ganzhi[0] === '庚');
+  return dx ? [dx.yunStars['运魁'], dx.yunStars['运钺']] : null;
+};
+eq('qs2 庚限运魁钺同在午寅', DX_KY('qs2'), ['午', '寅']);
+eq('qs1 庚限运魁钺仍在丑未', DX_KY('qs1'), ['丑', '未']);
+const LN_KY = (school) => {
+  const r = buildZiwei({ ...BASE, kuiyueSchool: school });
+  const ln = r.liunian.find((x) => x.ganzhi[0] === '庚');
+  return ln ? [ln.liukui, ln.liuyue] : null;
+};
+eq('qs2 庚流年流魁钺同在午寅', LN_KY('qs2'), ['午', '寅']);
+eq('qs1 庚流年流魁钺仍在丑未', LN_KY('qs1'), ['丑', '未']);
+
 // ── 八、天伤天使 ───────────────────────────────────────────
 const YIN_M = { ...BASE, year: 1991, month: 5, day: 12, gender: 'male' };
 const YIN_F = { ...YIN_M, gender: 'female' };

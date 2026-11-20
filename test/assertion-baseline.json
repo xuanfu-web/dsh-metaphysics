@@ -1,6 +1,6 @@
 {
   "note": "各测试文件的 PASS 条数基线；少于基线即失败。更新请跑 node tools/check-assertions.mjs --update 并在提交信息里说明理由。",
-  "total": 11823,
+  "total": 12123,
   "files": {
     "a11y-semantic.test.mjs": {
       "pass": 26,
@@ -90,6 +90,10 @@
       "pass": 81,
       "fail": 0
     },
+    "bazi-term-axis.test.mjs": {
+      "pass": 16,
+      "fail": 0
+    },
     "bazi-weight-pct.test.mjs": {
       "pass": 37,
       "fail": 0
@@ -115,7 +119,7 @@
       "fail": 0
     },
     "bundle-budget.test.mjs": {
-      "pass": 74,
+      "pass": 80,
       "fail": 0
     },
     "bzform.test.mjs": {
@@ -155,7 +159,7 @@
       "fail": 0
     },
     "chunks.test.mjs": {
-      "pass": 164,
+      "pass": 178,
       "fail": 0
     },
     "citations.test.mjs": {
@@ -179,7 +183,7 @@
       "fail": 0
     },
     "compose.test.mjs": {
-      "pass": 63,
+      "pass": 65,
       "fail": 0
     },
     "constitution.test.mjs": {
@@ -239,7 +243,7 @@
       "fail": 0
     },
     "dst.test.mjs": {
-      "pass": 23,
+      "pass": 38,
       "fail": 0
     },
     "e2e.test.mjs": {
@@ -275,7 +279,7 @@
       "fail": 0
     },
     "feedback-report.test.mjs": {
-      "pass": 30,
+      "pass": 34,
       "fail": 0
     },
     "fengshui-tigua-zibai.test.mjs": {
@@ -320,6 +324,10 @@
     },
     "golden.test.mjs": {
       "pass": 4,
+      "fail": 0
+    },
+    "guanyin.test.mjs": {
+      "pass": 130,
       "fail": 0
     },
     "guard-inputs.test.mjs": {
@@ -514,6 +522,10 @@
       "pass": 12,
       "fail": 0
     },
+    "panel-output-guards.test.mjs": {
+      "pass": 14,
+      "fail": 0
+    },
     "perf-instrumentation.test.mjs": {
       "pass": 57,
       "fail": 0
@@ -540,6 +552,10 @@
     },
     "push-tag.test.mjs": {
       "pass": 43,
+      "fail": 0
+    },
+    "qian.test.mjs": {
+      "pass": 92,
       "fail": 0
     },
     "qimen-gan.test.mjs": {
@@ -619,7 +635,7 @@
       "fail": 0
     },
     "schema-budget.test.mjs": {
-      "pass": 29,
+      "pass": 30,
       "fail": 0
     },
     "school-rulings.test.mjs": {
@@ -819,7 +835,7 @@
       "fail": 0
     },
     "ziwei-hepan.test.mjs": {
-      "pass": 17,
+      "pass": 19,
       "fail": 0
     },
     "ziwei-leap.test.mjs": {
@@ -835,7 +851,7 @@
       "fail": 0
     },
     "ziwei-schools.test.mjs": {
-      "pass": 180,
+      "pass": 184,
       "fail": 0
     },
     "ziwei-shenzhu.test.mjs": {

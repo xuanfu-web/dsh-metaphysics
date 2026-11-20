@@ -144,7 +144,7 @@ ok('bridge 有短标签', /wuyunliuqi: '运气',/.test(BRIDGE));
 ok('plain-summary 有分派', /if \(r\.system === 'wuyunliuqi'\) return wuyunliuqiSummary\(r\);/.test(SUMMARY));
 ok('plain-summary 有实现', /function wuyunliuqiSummary\(r\)/.test(SUMMARY));
 ok('schema 枚举含它', /'constitution', 'wuyunliuqi', 'taiyi'/.test(ROOTJS));
-ok('schema 参数含 datetime/shadow', /wuyunliuqi: \['datetime', 'shadow'\],/.test(ROOTJS));
+ok('schema 参数含 datetime/shadow', /wuyunliuqi: \['datetime', 'dst', 'shadow'\],/.test(ROOTJS));
 ok('schema 必填说明', /wuyunliuqi: '无（省略则用今天/.test(ROOTJS));
 ok('工具描述列了五运六气', /五运六气（wuyunliuqi/.test(ROOTJS));
 ok('触发词含运气盘', /五运六气 \/ 运气盘/.test(ROOTJS));

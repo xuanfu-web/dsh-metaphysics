@@ -92,7 +92,7 @@ const { PP, win, items } = renderAll('0.85.0');
   ok('CSS 里 .mp-sig-qr 默认隐藏', /\.mp-sig-qr\{display:none/.test(css));
   ok('CSS 里 .mp-sig-qr.on 才显示', /\.mp-sig-qr\.on\{display:flex\}/.test(css));
   ok('打印媒体不出二维码', /@media print\{\.mp-sig-qr\{display:none!important\}\}/.test(css));
-  // 体积：二维码不该把主包撑爆（0.84 起 gzip 上限 128KB，余量约 16KB）
+  // 体积：二维码不该把主包撑爆（0.84 起 gzip 上限 132KB，余量约 13KB）
   const b64Len = (html.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/) || ['', ''])[1].length;
   ok('二维码体积在预算内（base64 < 8KB）', b64Len > 1000 && b64Len < 8192, `${b64Len} 字符`);
 }

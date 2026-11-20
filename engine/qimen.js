@@ -138,7 +138,9 @@ export function buildSnapshot(input) {
     winterSolsticeJulianDay: wsJd,
     summerSolsticeJulianDay: ssJd,
     solarDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-    lunarDate: `${lunar.year}年${lunar.isLeap ? '闰' : ''}${lunar.month}月${lunar.day}日`,
+    // 农历年要用 lunarYear（以正月初一为界），不是公历年：2025-06 属乙巳年，
+    // 公历年写法会把春节前出生的人报成下一年，闰月前后的显示也跟着错。
+    lunarDate: `${lunar.lunarYear}年${lunar.isLeap ? '闰' : ''}${lunar.month}月${lunar.day}日`,
     solarTermTime: formatJd(cur.jd),
   };
 }

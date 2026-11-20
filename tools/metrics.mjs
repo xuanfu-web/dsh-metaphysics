@@ -43,7 +43,7 @@ const LIMITS = {
 //    那是 PRD 要求的 condition 写法，所以先按句式剥离再判。
 const FUZZY = ['可能', '也许', '或许', '大概', '大约', '似乎', '好像', '应该是', '说不定', '八成', '大致上', '差不多', '看情况', '因人而异', '有可能会'];
 
-// ── 样本：22 个体系各一张固定盘。日期全部写死，不取 today（L-006）──
+// ── 样本：24 个体系各一张固定盘。日期全部写死，不取 today（L-006）──
 const SUITE = [
   { system: 'bazi', label: '八字', args: { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male', address: '成都' } },
   { system: 'ziwei', label: '紫微', args: { system: 'ziwei', datetime: '1996-01-19T07:31', gender: 'male', address: '石家庄' } },
@@ -57,6 +57,8 @@ const SUITE = [
   { system: 'zeri', label: '择日', args: { system: 'zeri', startDate: '2026-12-01', task: '开业' } },
   { system: 'chenggu', label: '称骨', args: { system: 'chenggu', datetime: '1990-05-12T14:30', gender: 'male' } },
   { system: 'xiaoliuren', label: '小六壬', args: { system: 'xiaoliuren', mode: 'time', date: '2026-11-15', hour: 10 } },
+  { system: 'qian', label: '福签', args: { system: 'qian', datetime: '2026-11-15T10:00' } },
+  { system: 'guanyin', label: '灵签', args: { system: 'guanyin', seed: 20261115 } },
   { system: 'star', label: '星座', args: { system: 'star', datetime: '1990-05-12T14:30' } },
   { system: 'numerology', label: '生命数字', args: { system: 'numerology', datetime: '1990-05-12T14:30' } },
   { system: 'trend', label: '人生K线', args: { system: 'trend', datetime: '1990-05-12T14:30', gender: 'male' } },

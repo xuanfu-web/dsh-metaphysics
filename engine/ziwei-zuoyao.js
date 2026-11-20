@@ -49,6 +49,9 @@ export const TABLE_FEILIAN = { 子: 8, 丑: 9, 寅: 10, 卯: 5, 辰: 6, 巳: 7, 
 export const TIANDE_START = 9;   // 酉起子，顺行
 export const NIANJIE_START = 10; // 戌起子，逆行
 
+/** 年解落宫（地支序）：流年加星与杂曜全表共用这一式，避免两处各写一张查表。 */
+export const nianjieOf = (yearBranch) => fix(NIANJIE_START - BRANCHES.indexOf(yearBranch));
+
 // ── 库（顺序即面板与全文的展示顺序） ──────────────────────────
 
 export const ZUOYAO_LIB = [

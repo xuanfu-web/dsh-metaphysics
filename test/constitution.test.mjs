@@ -108,9 +108,9 @@ ok('量表文案不另抄一份', /const say = \(n\) => \{/.test(APP) && /paper\
 ok('答案按题位存 45 个', /new Array\(CS_TOTAL\)\.fill\(null\)/.test(APP));
 ok('体质答案整份传引擎（不剪尾）', /args\.answers = csAns\.slice\(\);/.test(APP));
 ok('体质答案注入在 mbti 之后', APP.indexOf('args.answers = csAns.slice();') > APP.indexOf('if (nums.length) args.answers = nums;'));
-ok('体质不进历史记录', /k !== 'tarot' && k !== 'mbti' && k !== 'constitution'/.test(APP));
-ok('体质不挂影子盘', /args\.shadow = k !== 'mbti' && k !== 'constitution';/.test(APP));
-ok('体质不显示日期/时刻', /tab !== 'constitution' && usesTimeInput/.test(APP));
+ok('体质不进历史记录', /k !== 'tarot' && k !== 'guanyin' && k !== 'mbti' && k !== 'constitution'/.test(APP));
+ok('体质不挂影子盘', /args\.shadow = k !== 'mbti' && k !== 'constitution' && k !== 'guanyin';/.test(APP));
+ok('体质不显示日期/时刻', /tab !== 'constitution' && tab !== 'guanyin' && usesTimeInput/.test(APP));
 ok('切 tab 先加载引擎再取卷子', /if \(next === 'constitution'\)/.test(APP) && /Engine\.compute\(\{ system: 'constitution' \}\)/.test(APP));
 ok('主按钮校验答够 27 题', /if \(tab === 'constitution'\) \{\n      const n = csAns\.filter/.test(APP));
 ok('底部主按钮对问卷隐藏', /tab === 'mbti' \|\| tab === 'constitution' \? null :/.test(APP));
@@ -121,8 +121,8 @@ ok('面板有 mp-cs 样式', /\.mp-cs-h\{/.test(APP) && /\.mp-cs-track i\.on\{/.
 // ── 五、独立页（web-ui + 页面骨架）──────────────────────────
 ok('独立页 TIME_KIND 认体质', /constitution: 'none',/.test(UI));
 ok('独立页有体质提示', /constitution: '中医体质是九种体质各 5 题的自评问卷/.test(UI));
-ok('独立页不显示日期', /tab !== 'constitution' && !\(tab === 'meihua'/.test(UI));
-ok('独立页不挂影子盘', /args\.shadow = tab !== 'mbti' && tab !== 'constitution';/.test(UI));
+ok('独立页不显示日期', /tab !== 'constitution' && tab !== 'guanyin' && !\(tab === 'meihua'/.test(UI));
+ok('独立页不挂影子盘', /args\.shadow = tab !== 'mbti' && tab !== 'constitution' && tab !== 'guanyin';/.test(UI));
 ok('独立页整份传 45 个答案', /args\.answers = csAns\.slice\(\);/.test(UI));
 ok('独立页结果分派体质', /tab === 'constitution' \? window\.__PP\.constitutionHTML\(r\)/.test(UI));
 ok('独立页主按钮走 csSubmit', /if \(tab === 'constitution'\) \{ csSubmit\(\); return; \}/.test(UI));

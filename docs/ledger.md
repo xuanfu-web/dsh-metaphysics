@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-19（0.85.1：找到「点完变白」真因——`.tool:hover` 的白底盖掉 `.tool.on` 的深红底，触屏 hover 不散 → 白底白字；修成 `:not(.on)` + `.on` 重画背景，附 A/B 实测；顺带 `color-scheme` 声明、显隐改空安全 `show()`、未捕获异常留字；闸 213/11823）
+最后更新：2026-11-20（0.86.0：观音灵签 + 每日福签两个新体系；顺带修八字交节轴、奇门农历年、称骨夏令时、紫微魁钺/年解同表；闸 217/12123）
 
 ---
 
@@ -12,6 +12,9 @@
 
 | 项 | 依据 |
 | --- | --- |
+| 观音灵签（第 23 个 tab，一事一签可重摇） | `engine/guanyin-data.js`（百支：上 23 / 中 59 / 下 18，签题无重复、四句七言全量校验 0 问题）+ `engine/guanyin.js`（指定签号 / seed 复现 / except 防连抽，100×6 组穷举撞签 0；question ≤80 字）；`src/panel-kit.js` `pp.guanyinHTML`/`guanyinOracleHTML`（签筒卡 + 再摇一签）；`src/app.js` / `src/web-ui.js` 摇签入口、深链 draw、导出条六项、禁止入历史 / 卦例 / 应验；`test/guanyin.test.mjs` 130 条；`e2e-panel` 灵签段实测 26→15 换签、无新增 JS 报错 |
+| 每日福签（一天一签，不重摇） | `engine/qian.js`（36 支原创签、四档、按日期确定性抽取）+ `test/qian.test.mjs` 92 条；首屏迷你签筒 1.05s 摇签动画、近七日回看；`src/groups.mjs` 问一件事新增福签 / 灵签；README 体系与分组说明同步 |
+| 0.86.0 顺带修复：八字交节轴 / 奇门农历年 / 称骨夏令时 / 紫微同表 | `engine/bazi.js` 年柱月柱与起运改用标准时轴比较（`test/bazi-term-axis.test.mjs` 16 条）；`engine/qimen.js` `lunarDate` 用 `lunarYear`；`engine/chenggu.js` 接 `applyDst`（1986–1991）；`engine/ziwei.js` `kuiyueTableOf` 统一本命 / 大限 / 流年魁钺，`nianjieOf` 单式共用，`engine/ziwei-hepan.js` 去掉重复 `summary`；`test/panel-output-guards.test.mjs` 14 条；全闸 217/12123、`e2e-dom` 166、`e2e-panel` 187/0、`smoke-all` 306、分块 22 |
 | 对外联系入口加腾讯频道（面板底部 + 单页导出条 + 反馈报告「联系渠道」+ README） | `src/app.js` 两处（底部 `mp-fb-b` 与 `feedbackReport()`）、`src/web-ui.js` 一处（`exportBar` 的 hint）、`README.md`；频道 <https://pd.qq.com/s/Nb18ikqqfl>；产物核对 `client.js` 2 处 / `命理排盘.html` 1 处；全闸 211/11719 |
 | 0.84.0 发版（共享块 + 攒批收口） | 提交 `2ae3028`；npm latest 0.84.0（shasum `0f52bdfe`、117 文件）；tag `v0.84.0`；Pages `builds/latest = 1ab4463 / built`、线上版本串 0.84.0；桌面副本已刷新 |
 | 发版链路固化成一条命令 `npm run ship` | `tools/ship.mjs`：build:desktop → release → push-branch → 读回 npm/tag/Release/Pages 四处；git 与 npm-cli 自动兜底；`--dry-run` 可单验 |
@@ -77,13 +80,13 @@
 
 一条命令跑完前 8 项：`npm run ship`（`tools/ship.mjs`：桌面副本 → release（构建/全闸/npm/tag/Release）→ 推 main → 读回四处证据）。dry-run 用 `npm run ship -- --dry-run`。
 
-1. `node tools/build-all.mjs --gate` → 213/213、**11823** 断言（含 metrics M1–M7）；client.js **375858 B / gzip 119508**（128KB 上限，余量约 11.6KB）；页面 2540454 B。
-2. `node tools/check-bundle.mjs` → 引擎分块 **20 个**（gzip 合计 0.95MB、单块硬顶 200KB、共享块 `client.shared*.js` 各只取一次）。
+1. `node tools/build-all.mjs --gate` → 217/217、**12123** 断言（含 metrics M1–M7）；client.js **418300 B / gzip 123960**（132KB 上限，余量约 11KB）；页面 2638349 B。
+2. `node tools/check-bundle.mjs` → 引擎分块 **22 个**（gzip 合计 1.05MB、单块硬顶 200KB、共享块 `client.shared*.js` 各只取一次）。
 3. `node tools/check-eol.mjs` → 9 个产物纯 LF。
-4. 实机：起静态服读 `命理排盘.html`，22 体系各排一次，结果区字数 > 0。
+4. 实机：起静态服读 `命理排盘.html`，23 体系各排一次，结果区字数 > 0。
 5. 实机：设默认盘 → 刷新 → `computeHits=0` 且顶部条在。
 6. 实机：出盘后参数区只读、点「修改参数」解锁、再点排盘重新锁定。
-7. `node tools/e2e-panel.mjs` → 181 通过 0 失败；`node tools/e2e-dom.mjs` → 166 项通过；`node tools/check-perf.mjs` → 29 项在限内。
+7. `node tools/e2e-panel.mjs` → 187 通过 0 失败；`node tools/e2e-dom.mjs` → 166 项通过；`node tools/check-perf.mjs` → 29 项在限内。
 8. `git status` 干净，`docs/index.html` 与 `命理排盘.html` 同源。
 9. 读回四样：npm `latest`、远端 `refs/tags/v<ver>`、GitHub Release、**Pages 的 `builds/latest` 提交 == HEAD**。最后一项是 0.84.0 差点漏掉的：tag 推上去不等于 `main` 推上去（`tools/push-branch.mjs`）。
 

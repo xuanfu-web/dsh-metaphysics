@@ -75,8 +75,8 @@ header{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bo
   transition:background .16s ease,color .16s ease,border-color .16s ease,box-shadow .16s ease}
 .tab:not(.on):hover{background:var(--panel);border-color:var(--line);color:var(--ink)}
 .tab.on{background:linear-gradient(145deg,var(--accent-bg),var(--accent-bg2));border-color:transparent;color:var(--on-accent);font-weight:600;box-shadow:0 8px 18px -12px var(--gold)}
-/* 首屏按「想干什么」分组：22 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
-   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（22 个 tab 原样保留）。 */
+/* 首屏按「想干什么」分组：23 个 tab 平铺时，第一次来的人得先猜「梅花」「称骨」是什么。
+   卡片只是另一套入口，点击仍走同一个 setTab；熟练用户可一键回到平铺（23 个 tab 原样保留）。 */
 .view-switch{display:flex;align-items:center;gap:8px}
 .view-switch .hint{font-size:12px;color:var(--dim)}
 .view-switch .seg button{padding:5px 11px;font-size:12.5px}
@@ -346,7 +346,7 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
   .rc{min-height:36px}
   .rc-main{min-height:40px}
   .rc-del{width:34px}
-  /* 22 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
+  /* 23 个 tab 铺网格要占掉大半个首屏，改成单行横滑：44px 触摸目标、滚动条藏起来、
      左右各留 12px 呼吸位（padding 与 .wrap 等宽，首尾 tab 不会被切口）*/
   .tabs{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;
     margin:0 -12px;padding:2px 12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -564,6 +564,8 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
       <button class="tab" data-tab="qimen">奇门</button>
       <button class="tab" data-tab="hepan">合盘</button>
       <button class="tab" data-tab="tarot">塔罗</button>
+      <button class="tab" data-tab="qian">福签</button>
+      <button class="tab" data-tab="guanyin">灵签</button>
       <button class="tab" data-tab="almanac">黄历</button>
       <button class="tab" data-tab="convert">农历</button>
       <button class="tab" data-tab="zeri">择日</button>
@@ -695,10 +697,10 @@ ${g.items.map((it) => `          <button type="button" class="tool${it.wide ? ' 
     <!-- 所问之事 + 询问方向：六爻 / 梅花 / 六壬 / 塔罗这些问事的体系共用。
          问题必填，会与卦象一起交给下方解读，解读按这个方向展开。-->
     <div class="grp" id="for-ask" style="display:none">
-      <label class="field" id="ask-wrap">所问之事（必填）
+      <label class="field" id="ask-wrap"><span id="ask-label">所问之事（必填）</span>
         <textarea id="question" class="mp-askfree" rows="2" placeholder="用一句话描述所问之事，例如：今年是否适合换工作？"></textarea>
       </label>
-      <label class="field">询问方向
+      <label class="field" id="for-direction">询问方向
         <select id="direction" class="mp-askfree">${DIR_OPTIONS}</select>
       </label>
       <!-- 塔罗牌阵：仅塔罗 tab 显示（张数由牌阵定，命名牌阵见 engine/tarot.js SPREAD_DEFS） -->

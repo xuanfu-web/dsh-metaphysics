@@ -25,6 +25,12 @@ ok('报告包含所问之事与询问方向', body.includes('所问之事') && b
 ok('报告包含出生日期/时刻/性别', body.includes('日期：') && body.includes('时刻：') && body.includes('性别：'));
 ok('报告包含真太阳时与晚子时开关', body.includes('真太阳时：') && body.includes('晚子时换日：'));
 ok('报告包含结果摘要', body.includes('结果摘要'));
+// 输入段曾按 kindOf(tab) === 'time' 分支——而 TIME_KIND 只有 birth/cast/none/date，
+// 这一档永远不成立，所有盘面都漏掉了日期与时刻。这里把判定钉在真实枚举上。
+ok('输入段不假定存在 time 档', !/kindOf\([^)]*\)\s*===\s*'time'/.test(body));
+ok('输入段按 birth 档写性别/出生地/开关', body.includes("tk === 'birth'") && body.includes('性别：') && body.includes('出生地：') && body.includes('真太阳时：'));
+ok('输入段按「非 date 档」写时刻', body.includes("tk !== 'date'") && body.includes('时刻：'));
+ok('无日期字段的体系（塔罗/问卷）不打印日期', body.includes("tab !== 'tarot'") && body.includes("tab !== 'mbti'") && body.includes("tab !== 'constitution'"));
 ok('报告包含排盘句柄（可精确复现同一张盘）', body.includes('handle'));
 ok('报告包含报错原文一节', body.includes('报错原文'));
 ok('报告包含三条联系渠道', body.includes('issues') && body.includes('1129440028@qq.com') && body.includes('dsh-metaphysics'));
