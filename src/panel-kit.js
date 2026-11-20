@@ -4336,21 +4336,20 @@ h3.mp-env-adv-h{display:block}
         <h3 class="mp-it-sh">${esc(s.label)}${refChip(s)}</h3>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
-    // 落款：品牌 + 频道 + 版本。放报告最末（有「方法与出处」就收进那个折叠区的底部），
-    // 不占首屏、不打断阅读。二维码用内嵌 data URI，点了才展开——本地工具不从任何服务器取图。
-    const sigStrip = pp.signatureHTML();
+    // 落款不在这里出：它由 __MPCompose 的 sign 段拼在报告最末。放在本函数的
+    // .mp-it-wrap 里会被默认折叠一起藏掉（八字、紫微就看不到落款）；放在
+    // 「方法与出处」折叠区里更要展开两层才见得到。
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
-    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。落款收在它最底下。
+    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。
     const methodZone = (methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
         <summary><span class="mp-it-sh">方法与出处</span><span class="mp-it-mnum">${methodSecs.length ? `${methodSecs.length} 段` : ''}${methodSecs.length && knowAll.length ? ' · ' : ''}${knowAll.length ? `依据 ${knowAll.length} 条` : ''} · 怎么算的、哪里没算、口径分歧</span></summary>
         ${knowAll.length ? `<div class="mp-it-sub" id="mp-sec-know"><div class="mp-it-sh">依据与出处</div>${knowAll.map((k) => `<div class="know-row"><span class="know-status ${esc(k.status)}">${esc(k.statusLabel)}</span><span class="know-body"><em class="know-dim">${esc(k.dimLabel)}</em><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
         ${methodSecs.map((s) => `<div class="mp-it-sub"><div class="mp-it-sh">${esc(s.label)}</div><div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div></div>`).join('')}
-        ${sigStrip}
-      </details>` : sigStrip;
+      </details>` : '';
     const secs = secList.length || knowAll.length || factList.length
       ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${factsBlock}${methodZone}</div>`
-      // 短体系（称骨、小六壬）既没有分段落也没有出处：报告末尾照样落款，但不能空着返回
-      : `<div class="mp-it-secs">${sigStrip}</div>`;
+      // 短体系（称骨、小六壬）没有段落也没有出处：这里就是空的，落款由 compose 的 sign 段补
+      : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
     // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
     const ask = it.ask;
@@ -4485,9 +4484,9 @@ h3.mp-env-adv-h{display:block}
   pp.resultWithInterpret = function (html, it, opt) {
     const head = opt && opt.noHead ? '' : pp.envHeadHTML(it, opt);
     const body = pp.interpretHTML(it, opt);
-    // 短报告（称骨、小六壬）没有解读段，interpretHTML 返回空：落款直接接在结果卡后面，
-    // 否则这些体系整份报告里一处品牌都没有。
-    return head + (html || '') + (body || pp.signatureHTML());
+    // 落款不在这里补：它是 __MPCompose 的 sign 段，短报告（称骨、小六壬）也走同一条路，
+    // 这样「每份报告恰好一处落款」只由拼接层保证，不靠两个入口各自兜底。
+    return head + (html || '') + body;
   };
 
   /**
@@ -5812,9 +5811,8 @@ h3.mp-env-adv-h{display:block}
    * 失败一律静默（清空提示），不弹窗、不留红字，也不写任何错误号。
    */
   const SIG_REG = 'https://registry.npmjs.org/dsh-metaphysics/latest';
-  /* 落款 HTML 单独取一份：有「方法与出处」的报告收在折叠区底部，
-   * 称骨/小六壬这类没有解读段的短报告（interpretHTML 返回空）由 resultWithInterpret 兜底补上，
-   * 保证「每份报告都有一处落款、且只有一处」。 */
+  /* 落款 HTML 单独取一份：由 __MPCompose 的 sign 段拼在报告最末（折叠区之外），
+   * 保证「每份报告都有一处落款、且只有一处、默认就看得见」。 */
   pp.signatureHTML = function (now) {
     const ver = (window && window.__MP_VER) ? String(window.__MP_VER).trim() : '';
     const wx = pp.wxQrLive(now);

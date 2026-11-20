@@ -1,3 +1,7 @@
+## 未发布
+
+- **落款从「解析与详解」折叠区里提出来，改成报告最末的独立一段**：起因是有反馈「八字、紫微等结果下面看不到落款」。根因是 `pp.interpretHTML` 把落款塞在 `.mp-it-wrap` 里，而该容器在窄屏默认 `folded` 收起（`.mp-it.folded .mp-it-wrap{display:none}`），有解读的体系整份报告就一处落款也看不到，只有称骨、小六壬这类空解读的短体系靠 `resultWithInterpret` 兜底才露出来。现在 `__MPCompose` 的 `USER_SEGS` 增加 `sign` 段（排在验前事/生时校正之后、导出条之前），`src/app.js` 与 `src/web-ui.js` 各传 `sign: PP.signatureHTML()`，`interpretHTML` 与 `resultWithInterpret` 不再生成落款——「每份报告恰好一处落款」只由拼接层保证。验证：`test/compose.test.mjs` 83 条（段序、五档体系都保留落款、两个 UI 都传段）、`test/signature.test.mjs` 104 条（解读 folded 为真时落款仍在 `.mp-it-wrap` 之外、每份报告一处）；真 Chrome 在 1280px 与 420px（窄屏才默认收起）下测八字与紫微：各一处落款、默认可见、微信群码点开为 240×240、无 JS 报错；全闸 217 文件 / 12173 断言，`e2e-dom` 166、`e2e-panel` 187/0、`smoke-all` 306，css-strip gzip 124593（余量 10575 B）。
+
 ## 0.86.1（2026-11-20）
 
 - **落款加微信群二维码（7 天有效，到期自动撤下）**：起因是腾讯频道之外还需要一个微信群入口，而群码由微信生成、7 天换一次（此张 **2026-11-27** 前有效）。落款新增「微信群 · 看二维码」按钮，规则与腾讯频道码一致：默认收起、点了才展开、打印不出；两个按钮各开各的行（`data-mp-qr` ↔ `data-qr-for` 配对）。群码取自群海报截图，裁二维码本体、补白边、二值化缩到 **240×240（1559 B）**；`pp.wxQrLive(now)` 按本地日期比对 `MP_SIG_WX_UNTIL`，最后一天之后不再渲染图片和按钮，只留一行「已过期（2026-11-27 前有效），更新插件换新码」——不摆一张扫不进群的码。腾讯频道码同时由 240 缩到 **144×144（1626 B）**，两张合计 3.2KB；`client.js` **419597 B / gzip 124600**（132KB 上限，余量 10.3KB，仍守 ≥10KB 红线）。验证：两图用 zxing-cpp 解码，分别得到 `https://pd.qq.com/s/N9qlblyc5d?b=5` 与 `https://weixin.qq.com/g/AwYA…`（群码缩到 176px 显示仍可解）；`test/signature.test.mjs` 86 条（新增有效期边界、两码配对、过期撤图）；真 Chrome 点击实测两个按钮各开各行、可独立收起、打印两张都不出、无 JS 报错；全闸 217 文件 / 12137 断言。

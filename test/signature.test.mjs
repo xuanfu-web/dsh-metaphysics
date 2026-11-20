@@ -1,5 +1,5 @@
 // 落款（腾讯频道二维码）与手动检查更新：四条硬性约束，改回去就红
-//   ① 落款只在报告最末出现一次，且收在「方法与出处」折叠区里 —— 不占首屏、不打断阅读；
+//   ① 落款只在报告最末出现一次，且在折叠区之外 —— 解读默认收起也要看得见；
 //   ② 二维码是内嵌 data URI，面板与独立页都不联网取图；默认收起，点了才展开；
 //   ③ 「检查更新」是手动按钮：渲染阶段一次请求都不许发，只有 points 点下去才 fetch；
 //   ④ 联网失败一律静默（清空提示），不许弹窗、不许留错误号。
@@ -14,6 +14,7 @@ import { ok, eq } from './_harness.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const KIT_SRC = fs.readFileSync(path.join(root, 'src', 'panel-kit.js'), 'utf8');
+const COMPOSE_SRC = fs.readFileSync(path.join(root, 'src', 'compose.js'), 'utf8');
 
 const CASES = [
   ['bazi', { system: 'bazi', datetime: '1990-05-12T14:30', gender: 'male' }],
@@ -25,20 +26,25 @@ const CASES = [
   ['xiaoliuren', { system: 'xiaoliuren', datetime: '2026-11-15T09:00', question: '出行顺利吗' }]
 ];
 
-// 渲染基座：window 只要一个 __MP_VER，其余全靠源码自身
-const makeWindow = (ver) => ({ __MP_VER: ver });
+// 渲染基座：window 只要 __MP_VER 与 location，其余全靠源码自身
+const makeWindow = (ver) => ({ __MP_VER: ver, location: { search: '', hash: '' } });
 const renderAll = (ver) => {
   const win = makeWindow(ver);
   new Function('window', KIT_SRC)(win);
+  new Function('window', COMPOSE_SRC)(win);
   const PP = win.__PP;
+  const C = win.__MPCompose;
   return {
     PP,
     win,
     items: CASES.map(([tag, args]) => {
       const it = interpret(compute(args), args.question || '');
-      // 走真实拼装口（应用与页面都是这样拼的）：短体系 interpretHTML 返回空，
-      // 落款要靠 resultWithInterpret 兜底，只测 interpretHTML 会漏掉一半体系
-      const html = PP.resultWithInterpret('', it, { folded: false });
+      // 走真实拼装口（应用与页面都是这样拼的）：interpret 一段 + sign 一段交给 composeResult。
+      // folded 用 true —— 解读默认就是收起的，落款必须在这一状态下仍看得见。
+      const html = C.composeResult({
+        interpret: PP.resultWithInterpret('', it, { folded: true }),
+        sign: PP.signatureHTML('2026-11-20'),
+      }, { system: args.system });
       return { tag, html };
     })
   };
@@ -46,32 +52,27 @@ const renderAll = (ver) => {
 
 const { PP, win, items } = renderAll('0.85.0');
 
-// ── ① 一处落款，且在方法折叠区最末 ────────────────────────────────
+// ── ① 一处落款，在折叠区之外，每份报告都看得见 ────────────────────
 {
   for (const it of items) {
     const strips = (it.html.match(/class="mp-sig"/g) || []).length;
     eq(`${it.tag}：落款只在报告里出现一次`, strips, 1);
     eq(`${it.tag}：落款带频道号`, (it.html.match(/pd48189034/g) || []).length >= 1, true);
-  }
-  // 落款必须挂在「方法与出处」details 之内、且在 </details> 之前：漏了就等于跑到正文里
-  const withMethod = items.filter((it) => it.html.includes('class="mp-it-sec mp-it-method"'));
-  ok('主力体系都有方法与出处折叠区', withMethod.length >= 5, `${withMethod.length}/${items.length}`);
-  for (const it of withMethod) {
-    const zone = it.html.slice(it.html.indexOf('class="mp-it-sec mp-it-method"'));
-    const end = zone.indexOf('</details>');
-    const sig = zone.indexOf('class="mp-sig"');
-    ok(`${it.tag}：落款在折叠区内部且靠末尾`, sig > 0 && sig < end, `sig=${sig} end=${end}`);
-  }
-  // 称骨/小六壬这类短报告没有分段落，也得在末尾落款——不能因为没段落就整块不渲染
-  for (const it of items.filter((x) => !x.html.includes('class="mp-it-sec mp-it-method"'))) {
-    ok(`${it.tag}：短报告末尾仍有落款`, it.html.includes('class="mp-sig"'));
-    // 落款之后不能再接正文块（说明它没被当尾巴，而是掉进中间了）
+    // 解读默认 folded 收起；落款若还在 .mp-it-wrap 里，有解读的体系（八字、紫微）就看不见它
+    const sig = it.html.indexOf('class="mp-sig"');
+    if (it.html.includes('mp-it-wrap')) {
+      ok(`${it.tag}：解读是默认收起的（前提成立）`, it.html.includes('mp-it folded'));
+      ok(`${it.tag}：落款不藏在解析折叠容器里`,
+        sig > it.html.indexOf('mp-it-wrap') && it.html.slice(sig).indexOf('mp-it-wrap') < 0, `sig=${sig}`);
+    } else {
+      ok(`${it.tag}：短报告没有解读折叠，落款照样出`, sig >= 0);
+    }
+    ok(`${it.tag}：落款之后不再接任何解读容器（它就在报告最末）`,
+      it.html.slice(sig).indexOf('class="mp-it') < 0, `sig=${sig}`);
     const after = it.html.slice(it.html.lastIndexOf('class="mp-sig"'));
     ok(`${it.tag}：落款后只有收尾标签`, !/<h3|\/\/mp-it-|class="mp-.+-row"/.test(after) && after.trimEnd().endsWith('</div>'));
-  }
-  // 首屏/正文区不能出现二维码或频道号：那是引流位，用户已明确否掉
-  for (const it of items) {
-    const head = it.html.includes('class="mp-it-secs"') ? it.html.split('class="mp-it-secs"')[0] : it.html.slice(0, it.html.lastIndexOf('class="mp-sig"'));
+    // 首屏/正文区不能出现二维码或频道号：那是引流位，用户已明确否掉
+    const head = it.html.slice(0, sig);
     ok(`${it.tag}：正文区没有二维码`, !head.includes('data:image/png;base64'));
     ok(`${it.tag}：正文区没有频道号`, !head.includes('pd48189034'));
   }
@@ -196,4 +197,9 @@ const { PP, win, items } = renderAll('0.85.0');
   eq('落款代码在共用模块里（panel-kit）', KIT_SRC.includes('class="mp-sig"') && KIT_SRC.includes('pp.checkUpdate'), true);
   ok('构建脚本不会把落款剥掉', !/mp-sig/.test(fs.readFileSync(path.join(root, 'tools', 'build-html.mjs'), 'utf8')));
   ok('落款的点击绑定幂等（重复注入不叠监听）', KIT_SRC.includes('window.__MP_SIG_BOUND'));
+  // interpretHTML 的容器默认 folded 收起；落款一旦回到它里面，就等于回到「看不见」
+  const iStart = KIT_SRC.indexOf('pp.interpretHTML = function');
+  const iEnd = KIT_SRC.indexOf('pp.followupHTML = function');
+  ok('interpretHTML 不再生成落款', iStart > 0 && iEnd > iStart && !KIT_SRC.slice(iStart, iEnd).includes('signatureHTML'));
+  ok('拼接层把落款列成独立段', /USER_SEGS = \[[^\]]*'sign'\]/.test(COMPOSE_SRC));
 }

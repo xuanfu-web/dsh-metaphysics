@@ -18,25 +18,31 @@ function load() {
 const C = load();
 
 // ── ① 段序 ────────────────────────────────────────────────────
-eq('用户段序：结论→盘面→盘号→时刻→真太阳时→解读→追问→附加',
-  C.USER_SEGS.join(','), 'head,body,chart,shortId,castAt,solar,interpret,followup,extra');
+eq('用户段序：结论→盘面→盘号→时刻→真太阳时→解读→追问→附加→落款',
+  C.USER_SEGS.join(','), 'head,body,chart,shortId,castAt,solar,interpret,followup,extra,sign');
+// 落款必须在导出条之前、且是最后一个正文段：它曾经藏在「解析与详解」折叠里，
+// 一折叠整份报告就没有品牌
+eq('落款是用户视图最后一个正文段', C.USER_SEGS[C.USER_SEGS.length - 1], 'sign');
+ok('落款不是 dev 专属段', !C.DEV_SECTIONS.includes('sign'));
 eq('dev 段序：耗时在前、口径在最后',
   C.DEV_SECTIONS.join(','), 'perf,revision,handle,shadow,trace,caliber');
 ok('追问条不进 dev 段（它本来就给用户）', !C.DEV_SECTIONS.includes('followup'));
 
 const parts = {
   head: '[H]', body: '[B]', chart: '[C]', shortId: '[S]', castAt: '[T]',
-  interpret: '[I]', followup: '[F]', extra: '[E]', exportBar: '[X]',
+  interpret: '[I]', followup: '[F]', extra: '[E]', sign: '[G]', exportBar: '[X]',
   perf: '[P]', revision: '[R]', handle: '[D]', shadow: '[W]', trace: '[Z]', caliber: '[L]',
 };
 
 eq('用户视图只出用户段', C.composeResult(parts, { mode: 'user', system: 'ziwei' }),
-  '[H][B][C][S][T][I][F][E][X]');
+  '[H][B][C][S][T][I][F][E][G][X]');
 ok('用户视图里一个技术段都没有',
-  !/[PRDWLZ]/.test(C.composeResult(parts, { mode: 'user', system: 'ziwei' }).replace(/\[[HBCSTIFEX]\]/g, '')));
-eq('dev 视图在附加之后补技术段，导出条仍在最末',
+  !/[PRDWLZ]/.test(C.composeResult(parts, { mode: 'user', system: 'ziwei' }).replace(/\[[HBCSTIFEGX]\]/g, '')));
+eq('dev 视图在附加之后补技术段，落款与导出条仍在最末',
   C.composeResult(parts, { mode: 'dev', system: 'ziwei' }),
-  '[H][B][C][S][T][I][F][E][P][R][D][W][Z][L][X]');
+  '[H][B][C][S][T][I][F][E][G][P][R][D][W][Z][L][X]');
+eq('落款段缺失时不补假落款（由两个 UI 显式传）',
+  C.composeResult({ head: '[H]' }, { mode: 'user' }), '[H]');
 eq('空段不占位', C.composeResult({ head: '[H]', followup: '', chart: null }, { mode: 'user' }), '[H]');
 eq('没东西可出就是空串', C.composeResult({}, { mode: 'user' }), '');
 
@@ -57,15 +63,19 @@ eq('空 system 也兜底', C.tierOf(''), 'chart');
 
 // ── ③ 档位差异：问卷与速查不出追问条 ──────────────────────────
 eq('问卷类不出追问（没有哪一年可问）',
-  C.composeResult(parts, { mode: 'user', system: 'mbti' }), '[H][B][C][S][T][I][E][X]');
+  C.composeResult(parts, { mode: 'user', system: 'mbti' }), '[H][B][C][S][T][I][E][G][X]');
 eq('速查类不出追问（追问只能回找不到）',
-  C.composeResult(parts, { mode: 'user', system: 'almanac' }), '[H][B][C][S][T][I][E][X]');
-eq('盘类保留追问', C.composeResult(parts, { mode: 'user', system: 'bazi' }), '[H][B][C][S][T][I][F][E][X]');
-eq('问事类保留追问', C.composeResult(parts, { mode: 'user', system: 'liuyao' }), '[H][B][C][S][T][I][F][E][X]');
+  C.composeResult(parts, { mode: 'user', system: 'almanac' }), '[H][B][C][S][T][I][E][G][X]');
+eq('盘类保留追问', C.composeResult(parts, { mode: 'user', system: 'bazi' }), '[H][B][C][S][T][I][F][E][G][X]');
+eq('问事类保留追问', C.composeResult(parts, { mode: 'user', system: 'liuyao' }), '[H][B][C][S][T][I][F][E][G][X]');
 eq('判定类保留追问（可追到具体年）',
-  C.composeResult(parts, { mode: 'user', system: 'wuyunliuqi' }), '[H][B][C][S][T][I][F][E][X]');
+  C.composeResult(parts, { mode: 'user', system: 'wuyunliuqi' }), '[H][B][C][S][T][I][F][E][G][X]');
 eq('dev 视图下问卷也不补追问', C.composeResult({ ...parts, followup: '[F]' }, { mode: 'dev', system: 'constitution' }),
-  '[H][B][C][S][T][I][E][P][R][D][W][Z][L][X]');
+  '[H][B][C][S][T][I][E][G][P][R][D][W][Z][L][X]');
+// 落款与档位无关：问卷、速查也得有品牌，只靠追问条的档位差异不会把它带走
+for (const s of ['bazi', 'ziwei', 'liuyao', 'tarot', 'mbti', 'constitution', 'almanac', 'chenggu', 'qian', 'guanyin', 'star', 'numerology', 'convert']) {
+  ok(`落款不随档位消失：${s}`, C.composeResult(parts, { mode: 'user', system: s }).includes('[G]'));
+}
 
 // ── ④ dev 开关：?dev=1 优先于本机记忆 ──────────────────────────
 const withUrl = (search, hash) => {
@@ -118,6 +128,9 @@ const APP = fs.readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 ok('独立页走 composeResult', UI.includes('__MPCompose.composeResult('));
 ok('独立页把 system 传进去（档位要靠它判断）', /composeResult\(\{[\s\S]{0,2000}?\}, \{ system: last\.r && last\.r\.system \}\)/.test(UI));
 ok('面板走 composeOut', APP.includes('composeOut({'));
+// 落款段由两个 UI 显式传给拼接层：漏传一个，那条路径的整份报告就没有品牌
+ok('独立页传落款段', /sign:\s*window\.__PP\.signatureHTML\(\)/.test(UI));
+ok('面板传落款段', /sign:\s*PP\.signatureHTML\(\)/.test(APP));
 ok('面板把 system 传进去', /composeOut\(\{[\s\S]{0,2000}?\}, result\.r && result\.r\.system\)/.test(APP));
 ok('面板保留兜底拼接（旧 client 缓存时不白屏）', APP.includes("Object.keys(parts).map((k) => parts[k])"));
 ok('两边都不再自己拼技术段', !/PP\.perfHTML\(perf\) \+/.test(APP) && !/\+ perfHtml/.test(UI));

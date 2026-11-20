@@ -2867,6 +2867,7 @@ function App() {
           castAt: castAtHTML(result),
           solar: PP.solarLineHTML(result.r),
           interpret: PP.resultWithInterpret('', result.it, { folded: defaultFolded(), noHead: true, noBody: true }),
+          sign: PP.signatureHTML(),
           revision: PP.revisionHTML(result.r.revision),
           handle: PP.handleHTML(result.r.handle),
           shadow: PP.shadowHTML(result.r.shadow, result.shadowDiff),

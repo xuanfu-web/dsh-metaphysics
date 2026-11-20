@@ -1121,6 +1121,7 @@
       castAt: castAtHTML(last.tab, last.timed, last.date, last.time),
       solar: window.__PP.solarLineHTML(last.r),
       interpret: window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true }),
+      sign: window.__PP.signatureHTML(),
       followup: followupBar(),
       extra: last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '',
       revision: window.__PP.revisionHTML(last.r.revision),

@@ -507,7 +507,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.1</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.1</span><span class="ver-note" title="本版之后又改了 1 项（版本号未变）：落款从「解析与详解」折叠区里提出来，改成报告最末的独立一段">另含 1 项未发版改动</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -853,8 +853,10 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：217 个测试文件 / 12137 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
-    
+    <ul><li>测试：217 个测试文件 / 12173 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <h3>本版之后又改了什么（版本号未变）</h3>
+    <ul><li>落款从「解析与详解」折叠区里提出来，改成报告最末的独立一段</li></ul>
+    <p class="note">以上改动记在 CHANGELOG 的「未发布」段里，每条都写明起因、改法与验证；正式发版后并入版本号。</p>
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
     <p class="note">内容用于传统文化学习与自我探索，不构成医疗、投资、法律或人事决策依据。</p>
@@ -42384,21 +42386,20 @@ h3.mp-env-adv-h{display:block}
         <h3 class="mp-it-sh">${esc(s.label)}${refChip(s)}</h3>
         <div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div>
       </div>`;
-    // 落款：品牌 + 频道 + 版本。放报告最末（有「方法与出处」就收进那个折叠区的底部），
-    // 不占首屏、不打断阅读。二维码用内嵌 data URI，点了才展开——本地工具不从任何服务器取图。
-    const sigStrip = pp.signatureHTML();
+    // 落款不在这里出：它由 __MPCompose 的 sign 段拼在报告最末。放在本函数的
+    // .mp-it-wrap 里会被默认折叠一起藏掉（八字、紫微就看不到落款）；放在
+    // 「方法与出处」折叠区里更要展开两层才见得到。
     // 方法类段落（口径分歧、未纳入、量化依据、出处）收进一个折叠区：内容一字不删，
-    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。落款收在它最底下。
+    // 只是不再和「你该怎么办」抢同一屏。默认收起，想核随时点开。
     const methodZone = (methodSecs.length || knowAll.length) ? `<details class="mp-it-sec mp-it-method" id="mp-sec-method">
         <summary><span class="mp-it-sh">方法与出处</span><span class="mp-it-mnum">${methodSecs.length ? `${methodSecs.length} 段` : ''}${methodSecs.length && knowAll.length ? ' · ' : ''}${knowAll.length ? `依据 ${knowAll.length} 条` : ''} · 怎么算的、哪里没算、口径分歧</span></summary>
         ${knowAll.length ? `<div class="mp-it-sub" id="mp-sec-know"><div class="mp-it-sh">依据与出处</div>${knowAll.map((k) => `<div class="know-row"><span class="know-status ${esc(k.status)}">${esc(k.statusLabel)}</span><span class="know-body"><em class="know-dim">${esc(k.dimLabel)}</em><b>${esc(k.gist)}</b>${esc(k.detail)}${k.source ? `<i>出处：${esc(k.source)}</i>` : ''}${k.note ? `<em>注：${esc(k.note)}</em>` : ''}</span></div>`).join('')}${it.knowledgeNote ? `<div class="know-disc">${esc(it.knowledgeNote)}</div>` : ''}</div>` : ''}
         ${methodSecs.map((s) => `<div class="mp-it-sub"><div class="mp-it-sh">${esc(s.label)}</div><div class="mp-it-stext">${(Array.isArray(s.items) && s.items.length) ? crossHTML(s.items) : richText(s.text)}</div></div>`).join('')}
-        ${sigStrip}
-      </details>` : sigStrip;
+      </details>` : '';
     const secs = secList.length || knowAll.length || factList.length
       ? `<div class="mp-it-secs">${bodySecs.map(secOne).join('')}${factsBlock}${methodZone}</div>`
-      // 短体系（称骨、小六壬）既没有分段落也没有出处：报告末尾照样落款，但不能空着返回
-      : `<div class="mp-it-secs">${sigStrip}</div>`;
+      // 短体系（称骨、小六壬）没有段落也没有出处：这里就是空的，落款由 compose 的 sign 段补
+      : '';
     const tags = [it.systemLabel, MT_LABEL[it.moduleType] || it.moduleType].filter(Boolean);
     // 回显所问之事与询问方向：先让用户确认解读是围绕什么展开的
     const ask = it.ask;
@@ -42533,9 +42534,9 @@ h3.mp-env-adv-h{display:block}
   pp.resultWithInterpret = function (html, it, opt) {
     const head = opt && opt.noHead ? '' : pp.envHeadHTML(it, opt);
     const body = pp.interpretHTML(it, opt);
-    // 短报告（称骨、小六壬）没有解读段，interpretHTML 返回空：落款直接接在结果卡后面，
-    // 否则这些体系整份报告里一处品牌都没有。
-    return head + (html || '') + (body || pp.signatureHTML());
+    // 落款不在这里补：它是 __MPCompose 的 sign 段，短报告（称骨、小六壬）也走同一条路，
+    // 这样「每份报告恰好一处落款」只由拼接层保证，不靠两个入口各自兜底。
+    return head + (html || '') + body;
   };
 
   /**
@@ -43860,9 +43861,8 @@ h3.mp-env-adv-h{display:block}
    * 失败一律静默（清空提示），不弹窗、不留红字，也不写任何错误号。
    */
   const SIG_REG = 'https://registry.npmjs.org/dsh-metaphysics/latest';
-  /* 落款 HTML 单独取一份：有「方法与出处」的报告收在折叠区底部，
-   * 称骨/小六壬这类没有解读段的短报告（interpretHTML 返回空）由 resultWithInterpret 兜底补上，
-   * 保证「每份报告都有一处落款、且只有一处」。 */
+  /* 落款 HTML 单独取一份：由 __MPCompose 的 sign 段拼在报告最末（折叠区之外），
+   * 保证「每份报告都有一处落款、且只有一处、默认就看得见」。 */
   pp.signatureHTML = function (now) {
     const ver = (window && window.__MP_VER) ? String(window.__MP_VER).trim() : '';
     const wx = pp.wxQrLive(now);
@@ -43961,7 +43961,7 @@ h3.mp-env-adv-h{display:block}
  * 验前事、生时校正、导出条，面板把它们拆成独立组件）。每加一块卡就要改两处，
  * 漏一处就是「面板有、单页没有」，0.76 的称骨卡、0.68 的婚姻卡都栽在这上面。
  *
- * 用户视图只出：结论卡 → 盘面 → 盘号 → 起盘时刻 → 解读 → 追问 → 验前事/生时校正 → 导出
+ * 用户视图只出：结论卡 → 盘面 → 盘号 → 起盘时刻 → 解读 → 追问 → 验前事/生时校正 → 落款 → 导出
  * dev 视图再追加：性能 / 修订回显 / 句柄 / 影子盘 / 推导链 / 口径对照
  *
  * 白名单之外的东西**不生成**，而不是用 CSS 藏起来。收起只是视觉上的，
@@ -43974,8 +43974,12 @@ h3.mp-env-adv-h{display:block}
   // dev 专属段落，命名与 composeResult 的 parts 键一致
   const DEV_SECTIONS = ['perf', 'revision', 'handle', 'shadow', 'trace', 'caliber'];
 
-  // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 真太阳时修正 → 解读 → 追问 → 附加
-  const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'solar', 'interpret', 'followup', 'extra'];
+  // 用户视图的段序：结论 → 盘面 → 盘号 → 时刻 → 真太阳时修正 → 解读 → 追问 → 附加 → 落款
+  //
+  // 落款（品牌 / 频道码 / 微信群码）必须是独立一段：以前它由 interpretHTML 塞在
+  // 「解析与详解」的 .mp-it-wrap 里，而那个容器默认 folded 收起——有解读的体系
+  // （八字、紫微…）整份报告就一处落款也看不到，只有空解读的短体系才露出来。
+  const USER_SEGS = ['head', 'body', 'chart', 'shortId', 'castAt', 'solar', 'interpret', 'followup', 'extra', 'sign'];
 
   /* 24 个体系分五档。档位决定「结果页取哪些段」，不让每个体系各自判断。
    *
@@ -45226,6 +45230,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
       castAt: castAtHTML(last.tab, last.timed, last.date, last.time),
       solar: window.__PP.solarLineHTML(last.r),
       interpret: window.__PP.resultWithInterpret('', it, { folded: defaultFolded(), noHead: true, noBody: true }),
+      sign: window.__PP.signatureHTML(),
       followup: followupBar(),
       extra: last.tab === 'bazi' ? `<div id="vbox">${verifyHTML()}</div><div id="rectbox">${rectifyHTML()}</div>` : '',
       revision: window.__PP.revisionHTML(last.r.revision),
