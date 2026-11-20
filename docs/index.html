@@ -507,7 +507,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
 <div class="wrap">
   <header>
     <div class="brand-row">
-      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.2</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
+      <div class="brand"><span class="seal" aria-hidden="true">微</span><span class="brand-txt">烛微命盘<span class="ver">v0.86.3</span><small>八字 · 紫微 · 六爻 · 梅花 · 六壬 · 奇门 · 合盘 · 塔罗　全部在本机计算</small></span></div>
       <div class="view-switch">
         <span class="hint">熟练了可以换回平铺</span>
         <span class="seg" role="group" aria-label="首屏样式">
@@ -853,7 +853,7 @@ header{gap:15px;margin-bottom:22px;padding-bottom:16px}
     <h3>对拍：把典籍当期望值</h3>
     <ul><li>六爻：京房八宫卦序与世应，64 卦全表；旬空六旬表</li><li>六壬：日干寄宫、中气换将；紫微：纳音定五行局、紫微天府相照</li><li>卦例：《增删卜易》9 条 +《卜筮正宗》128 条（93 成对 + 35 静卦），核本变卦 / 动爻数 / 卦宫 / 缺爻 / 旬空</li><li>奇门：20 个时辰 × 9 宫，核四柱 / 局数 / 值符 / 值使 / 星门神 / 天盘干</li></ul>
     <h3>工程验证</h3>
-    <ul><li>测试：217 个测试文件 / 12173 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
+    <ul><li>测试：217 个测试文件 / 12185 条断言；七道闸（回归 · 断言基线 · 测试可失败自检 · HTML 注入面 · 工程约定 · 产物宿主形态 · 随机扫射）</li><li>可复现：seed / asOf 显式；同一输入同一输出</li><li>口径：晚子时、真太阳时、奇门三流派、闰月归月都可切换，并有字段级差异对照</li></ul>
     
     <h3>已知边界（不猜）</h3>
     <ul><li>六爻应期（具体哪天应验）不做；卦例只录动爻个数，不录爻位</li><li>财富/健康只给结构判断与档位，不给金额区间、不作诊断</li><li>紫微飞星已做「单一支化逐宫追到成环」与「三方四正 16 条按落宫归堆」，但都未叠大限流年四化、不折吉凶；八字交运日已能算到日/时，但未与第三方排盘案例批量对拍</li></ul>
@@ -35289,35 +35289,36 @@ function plainSummary(r) {
 }
 
 function qianSummary(r) {
+  // 福签卡（pp.qianHTML）本身就把签题、诗文、签意、可为摊开了，所以这里只补卡上没有的
+  // 「签的来处」：签意、可为、诗句一律不再重复（0.86.3 前同一句签意在一页里出现两次）。
   const s = r.slip;
   return {
     title: '今日福签',
     chips: [`${s.level}签`, `第 ${s.no} 签`, s.title],
-    lead: `今日得「${s.title}」一签（${s.level}）：${s.verse[0]}，${s.verse[1]}。`,
+    lead: `今日得第 ${s.no} 签「${s.title}」（${s.level}）。`,
     sections: [
-      { h: '签意', t: s.meaning },
-      { h: '签的来处', t: `第 ${s.no} 签，共 ${s.total} 支。${r.rules}` },
+      { h: '签的来处', t: `共 ${s.total} 支，签文为本插件原创；按公历日期确定性抽取，同一天不换签。` },
     ],
-    advice: [s.advice],
+    advice: [],
     caveat: r.disclaimer,
     footer: `${r.meta.date} ${r.meta.weekday} · ${r.meta.lunar} · ${r.meta.ganzhi}`,
   };
 }
 
 function guanyinSummary(r) {
+  // 灵签卡（pp.guanyinHTML）里已有签题、签诗、卦象、签意与可为；这里只补卡上没有的
+  // 「签的用法」，签意/卦象/建议不再重复（见 0.86.3 的去重说明）。
   const s = r.slip;
   const q = String((r.meta && r.meta.question) || r.question || '').trim();
   return {
     system: 'guanyin',
     title: `观音灵签 · ${s.level}`,
     chips: uniq([`第 ${s.no} 签`, s.level, s.title, s.palace]),
-    lead: `${q ? `你问的是「${q}」。` : ''}得第 ${s.no} 签「${s.title}」（${s.level}·${s.palace}）：${s.poem.join('，')}。`,
+    lead: `${q ? `你问的是「${q}」。` : ''}得第 ${s.no} 签「${s.title}」（${s.level}·${s.palace}），一事一签，可再摇。`,
     sections: [
-      { h: '签意', t: s.meaning },
-      ...(s.omen ? [{ h: '卦象', t: s.omen }] : []),
-      { h: '签的用法', t: `一百支里的第 ${s.no} 支；${r.rules}` },
+      { h: '签的用法', t: `一百支里的第 ${s.no} 支；重摇会避开这一支，链接里的 seed 能复现同一支。` },
     ],
-    advice: [s.advice],
+    advice: [],
     caveat: r.disclaimer,
     footer: (s.chips || []).join(' · '),
   };
@@ -38038,7 +38039,7 @@ return { pickVariant, validateEnvelope, renderL0L1, SCHEMA_VERSION, interpret, D
 })();
 
 window.Engine = __mods.index;
-window.__MP_VER = "0.86.2";
+window.__MP_VER = "0.86.3";
 </script>
 <script>
 // 两个 UI 共用的表单规则：宿主面板（src/app.js）与独立页（src/web-ui.js）。

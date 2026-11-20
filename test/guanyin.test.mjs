@@ -121,9 +121,15 @@ ok('摘要回显所问', compute({ system: 'guanyin', no: 7, question: '这份�
 const brief = plainSummary(r);
 ok('brief 认得出灵签', brief && brief.title.startsWith('观音灵签'));
 eq('brief 四枚 chips', brief.chips.length, 4);
-eq('有卦象的三段（签意/卦象/用法）', brief.sections.length, 3);
-eq('无卦象的两段', plainSummary(buildGuanyin({ no: 26 })).sections.length, 2);
-eq('brief 一条建议', brief.advice.length, 1);
+eq('brief 只补一段（签的用法）', brief.sections.length, 1);
+eq('brief 段名是签的用法', brief.sections[0].h, '签的用法');
+eq('有无卦象都是这一段', plainSummary(buildGuanyin({ no: 26 })).sections.length, 1);
+eq('brief 不再给建议（签卡已有「可为」）', brief.advice.length, 0);
+ok('brief 不再重复签意与卦象',
+  !brief.sections.some((s) => s.h === '签意' || s.h === '卦象')
+  && !JSON.stringify(brief.sections).includes(r.slip.meaning)
+  && !JSON.stringify(brief.sections).includes(r.slip.omen));
+ok('brief 不再重复签诗', !brief.lead.includes(r.slip.poem[0]));
 ok('brief 注意项写明不作确定性预言', /不作确定性预言/.test(brief.caveat));
 ok('上中下各有一句旁白', Object.keys(GUANYIN_ASIDES).sort().join(',') === '上,下,中' && r.aside.length > 0);
 ok('句柄能编码 no 与 seed', encodeHandle({ system: 'guanyin', no: 7, seed: 20261115 }).startsWith('mc1.'));
@@ -147,6 +153,10 @@ ok('带再摇按钮', html.includes('data-lq-again') && html.includes('再摇一
 ok('用法与口径在卡底', html.includes(GUANYIN_RULES) && html.includes(GUANYIN_SCOPE));
 ok('朱印按三档换色类', /mp-lq-lv-s/.test(PP.guanyinHTML(buildGuanyin({ no: 1 }))) || /mp-lq-lv-[szx]/.test(html));
 ok('输出里没有 undefined', !/undefined|NaN/.test(html));
+const cnt = (s, sub) => (s.split(sub).length - 1);
+eq('签意一页只出现一次（签卡一次，摘要不再重复）', cnt(html, r.slip.meaning), 1);
+eq('建议一页只出现一次（签卡「可为」）', cnt(html, r.slip.advice), 1);
+eq('卦象一页只出现一次（签卡，摘要不再重复）', cnt(html, r.slip.omen), 1);
 ok('缺字段时退回通用卡', PP.guanyinHTML({ system: 'guanyin' }).includes('mp-quick'));
 ok('迷你签筒复用福签的 SVG 与提示', PP.guanyinOracleHTML().includes('mp-qn-o-cup')
   && PP.guanyinOracleHTML().includes('轻点一下') && PP.guanyinOracleHTML().includes(PP.QIAN_CUP_SVG));

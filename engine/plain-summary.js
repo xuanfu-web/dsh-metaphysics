@@ -930,35 +930,36 @@ export function plainSummary(r) {
 }
 
 function qianSummary(r) {
+  // 福签卡（pp.qianHTML）本身就把签题、诗文、签意、可为摊开了，所以这里只补卡上没有的
+  // 「签的来处」：签意、可为、诗句一律不再重复（0.86.3 前同一句签意在一页里出现两次）。
   const s = r.slip;
   return {
     title: '今日福签',
     chips: [`${s.level}签`, `第 ${s.no} 签`, s.title],
-    lead: `今日得「${s.title}」一签（${s.level}）：${s.verse[0]}，${s.verse[1]}。`,
+    lead: `今日得第 ${s.no} 签「${s.title}」（${s.level}）。`,
     sections: [
-      { h: '签意', t: s.meaning },
-      { h: '签的来处', t: `第 ${s.no} 签，共 ${s.total} 支。${r.rules}` },
+      { h: '签的来处', t: `共 ${s.total} 支，签文为本插件原创；按公历日期确定性抽取，同一天不换签。` },
     ],
-    advice: [s.advice],
+    advice: [],
     caveat: r.disclaimer,
     footer: `${r.meta.date} ${r.meta.weekday} · ${r.meta.lunar} · ${r.meta.ganzhi}`,
   };
 }
 
 function guanyinSummary(r) {
+  // 灵签卡（pp.guanyinHTML）里已有签题、签诗、卦象、签意与可为；这里只补卡上没有的
+  // 「签的用法」，签意/卦象/建议不再重复（见 0.86.3 的去重说明）。
   const s = r.slip;
   const q = String((r.meta && r.meta.question) || r.question || '').trim();
   return {
     system: 'guanyin',
     title: `观音灵签 · ${s.level}`,
     chips: uniq([`第 ${s.no} 签`, s.level, s.title, s.palace]),
-    lead: `${q ? `你问的是「${q}」。` : ''}得第 ${s.no} 签「${s.title}」（${s.level}·${s.palace}）：${s.poem.join('，')}。`,
+    lead: `${q ? `你问的是「${q}」。` : ''}得第 ${s.no} 签「${s.title}」（${s.level}·${s.palace}），一事一签，可再摇。`,
     sections: [
-      { h: '签意', t: s.meaning },
-      ...(s.omen ? [{ h: '卦象', t: s.omen }] : []),
-      { h: '签的用法', t: `一百支里的第 ${s.no} 支；${r.rules}` },
+      { h: '签的用法', t: `一百支里的第 ${s.no} 支；重摇会避开这一支，链接里的 seed 能复现同一支。` },
     ],
-    advice: [s.advice],
+    advice: [],
     caveat: r.disclaimer,
     footer: (s.chips || []).join(' · '),
   };
