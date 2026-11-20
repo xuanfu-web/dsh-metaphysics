@@ -12,6 +12,7 @@
 
 | 项 | 依据 |
 | --- | --- |
+| 0.86.0 发版（观音灵签 + 每日福签） | 提交 `f04a6cd`；npm latest **0.86.0**（shasum `855e1a88`、122 文件，tarball 可下载）；tag `v0.86.0` → `f04a6cd`（annotated `e9c696a`，API 复核；本机 ls-remote 走 HTTPS 被重置，以 API 为准）；Release <https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.86.0>；远端 main = `f04a6cd`；Pages `builds/latest = f04a6cd / built`，线上 `0.86.0` 命中 2 处；桌面副本本次未刷新（`--no-desktop`，需要时 `npm run build:desktop`）；npm CLI 用 `~/tools/node-v22.20.0-win-x64/node_modules/npm/bin/npm-cli.js`（PATH 无 npm） |
 | 观音灵签（第 23 个 tab，一事一签可重摇） | `engine/guanyin-data.js`（百支：上 23 / 中 59 / 下 18，签题无重复、四句七言全量校验 0 问题）+ `engine/guanyin.js`（指定签号 / seed 复现 / except 防连抽，100×6 组穷举撞签 0；question ≤80 字）；`src/panel-kit.js` `pp.guanyinHTML`/`guanyinOracleHTML`（签筒卡 + 再摇一签）；`src/app.js` / `src/web-ui.js` 摇签入口、深链 draw、导出条六项、禁止入历史 / 卦例 / 应验；`test/guanyin.test.mjs` 130 条；`e2e-panel` 灵签段实测 26→15 换签、无新增 JS 报错 |
 | 每日福签（一天一签，不重摇） | `engine/qian.js`（36 支原创签、四档、按日期确定性抽取）+ `test/qian.test.mjs` 92 条；首屏迷你签筒 1.05s 摇签动画、近七日回看；`src/groups.mjs` 问一件事新增福签 / 灵签；README 体系与分组说明同步 |
 | 0.86.0 顺带修复：八字交节轴 / 奇门农历年 / 称骨夏令时 / 紫微同表 | `engine/bazi.js` 年柱月柱与起运改用标准时轴比较（`test/bazi-term-axis.test.mjs` 16 条）；`engine/qimen.js` `lunarDate` 用 `lunarYear`；`engine/chenggu.js` 接 `applyDst`（1986–1991）；`engine/ziwei.js` `kuiyueTableOf` 统一本命 / 大限 / 流年魁钺，`nianjieOf` 单式共用，`engine/ziwei-hepan.js` 去掉重复 `summary`；`test/panel-output-guards.test.mjs` 14 条；全闸 217/12123、`e2e-dom` 166、`e2e-panel` 187/0、`smoke-all` 306、分块 22 |
