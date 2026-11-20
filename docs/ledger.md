@@ -4,7 +4,7 @@
 
 结论性的一行写「做完了什么」，依据写「提交号 / 闸门数字 / 命令输出」。待办写「还剩什么 + 卡在哪」。
 
-最后更新：2026-11-20（落款提成独立段已提交并推 main：`1642f7e`，Pages 已按该提交构建；npm / tag / Release 未动；闸 217/12173）
+最后更新：2026-11-20（0.86.2 发版准备：落款提成独立段；全闸 217/12173、e2e-dom 200、e2e-panel 189/0、smoke 306）
 
 ---
 
@@ -12,7 +12,7 @@
 
 | 项 | 依据 |
 | --- | --- |
-| 落款提成独立段（修复八字 / 紫微等折叠后看不到落款） | 已提交并推 main：`1642f7e`；远端 main 读回同 SHA，Pages `builds/latest = 1642f7e / built`，线上 `docs/index.html` 2641115 B、含「另含 1 项未发版改动」小牌与落款段；npm 仍 0.86.1（未含本修复）、tag / Release 未推送。根因：`pp.interpretHTML` 把落款塞进 `.mp-it-wrap`，而 `.mp-it.folded .mp-it-wrap{display:none}` 默认收起，只有解读为空的短体系（称骨、小六壬）经 `resultWithInterpret` 兜底才露出来。修法：`src/compose.js` `USER_SEGS` 加 `sign`（排在 `extra` 之后、`exportBar` 之前），`src/app.js` / `src/web-ui.js` 各传 `sign: PP.signatureHTML()`，`interpretHTML` 与 `resultWithInterpret` 不再生成落款；`test/compose.test.mjs` 83 条、`test/signature.test.mjs` 104 条（折叠为真时落款仍在 `.mp-it-wrap` 之外）；真 Chrome 实测 1280 与 420 两种宽度下八字 / 紫微各恰好一处落款、默认可见、微信群码点开为 240×240、无 JS 报错；全闸 217/12173、`e2e-dom` 166、`e2e-panel` 187/0、`smoke-all` 306；css-strip gzip 124593（余量 10575 B） |
+| 落款提成独立段（修复八字 / 紫微等折叠后看不到落款） | 0.86.2 发布内容。已提交并推 main：`1642f7e`；远端 main 读回同 SHA，Pages `builds/latest = 1642f7e / built`；发版前读回时 npm 仍 0.86.1、tag / Release 未推送。根因：`pp.interpretHTML` 把落款塞进 `.mp-it-wrap`，而 `.mp-it.folded .mp-it-wrap{display:none}` 默认收起，只有解读为空的短体系（称骨、小六壬）经 `resultWithInterpret` 兜底才露出来。修法：`src/compose.js` `USER_SEGS` 加 `sign`（排在 `extra` 之后、`exportBar` 之前），`src/app.js` / `src/web-ui.js` 各传 `sign: PP.signatureHTML()`，`interpretHTML` 与 `resultWithInterpret` 不再生成落款；`test/compose.test.mjs` 83 条、`test/signature.test.mjs` 104 条（折叠为真时落款仍在 `.mp-it-wrap` 之外）；真 Chrome 实测 1280 与 420 两种宽度下八字 / 紫微各恰好一处落款、默认可见、微信群码点开为 240×240、无 JS 报错；全闸 217/12173、`e2e-dom` 166、`e2e-panel` 187/0、`smoke-all` 306；css-strip gzip 124593（余量 10575 B） |
 | 微信群二维码进落款（7 天有效） | `src/panel-kit.js`：`MP_SIG_WX_QR`（240×240 / 1559 B，zxing-cpp 解出 `https://weixin.qq.com/g/AwYA…`）、`MP_SIG_WX_UNTIL='2026-11-27'`、`pp.wxQrLive(now)`、第二按钮 + `data-qr-for="wx"` 配对行；过期只留说明不渲染图；频道码同步 3032 → 1626 B（144×144）；`test/signature.test.mjs` 72 → 86 条；真 Chrome 实测两按钮各开各行、独立收起、打印两张不出、无 JS 报错；gzip 123960 → 124600（余量 10.3KB） |
 | 0.86.0 发版（观音灵签 + 每日福签） | 提交 `f04a6cd`；npm latest **0.86.0**（shasum `855e1a88`、122 文件，tarball 可下载）；tag `v0.86.0` → `f04a6cd`（annotated `e9c696a`，API 复核；本机 ls-remote 走 HTTPS 被重置，以 API 为准）；Release <https://github.com/xuanfu-web/dsh-metaphysics/releases/tag/v0.86.0>；远端 main = `f04a6cd`；Pages `builds/latest = f04a6cd / built`，线上 `0.86.0` 命中 2 处；桌面副本本次未刷新（`--no-desktop`，需要时 `npm run build:desktop`）；npm CLI 用 `~/tools/node-v22.20.0-win-x64/node_modules/npm/bin/npm-cli.js`（PATH 无 npm） |
 | 观音灵签（第 23 个 tab，一事一签可重摇） | `engine/guanyin-data.js`（百支：上 23 / 中 59 / 下 18，签题无重复、四句七言全量校验 0 问题）+ `engine/guanyin.js`（指定签号 / seed 复现 / except 防连抽，100×6 组穷举撞签 0；question ≤80 字）；`src/panel-kit.js` `pp.guanyinHTML`/`guanyinOracleHTML`（签筒卡 + 再摇一签）；`src/app.js` / `src/web-ui.js` 摇签入口、深链 draw、导出条六项、禁止入历史 / 卦例 / 应验；`test/guanyin.test.mjs` 130 条；`e2e-panel` 灵签段实测 26→15 换签、无新增 JS 报错 |

@@ -1,6 +1,6 @@
-## 未发布
+## 0.86.2（2026-11-20）
 
-- **落款从「解析与详解」折叠区里提出来，改成报告最末的独立一段**：起因是有反馈「八字、紫微等结果下面看不到落款」。根因是 `pp.interpretHTML` 把落款塞在 `.mp-it-wrap` 里，而该容器在窄屏默认 `folded` 收起（`.mp-it.folded .mp-it-wrap{display:none}`），有解读的体系整份报告就一处落款也看不到，只有称骨、小六壬这类空解读的短体系靠 `resultWithInterpret` 兜底才露出来。现在 `__MPCompose` 的 `USER_SEGS` 增加 `sign` 段（排在验前事/生时校正之后、导出条之前），`src/app.js` 与 `src/web-ui.js` 各传 `sign: PP.signatureHTML()`，`interpretHTML` 与 `resultWithInterpret` 不再生成落款——「每份报告恰好一处落款」只由拼接层保证。验证：`test/compose.test.mjs` 83 条（段序、五档体系都保留落款、两个 UI 都传段）、`test/signature.test.mjs` 104 条（解读 folded 为真时落款仍在 `.mp-it-wrap` 之外、每份报告一处）；真 Chrome 在 1280px 与 420px（窄屏才默认收起）下测八字与紫微：各一处落款、默认可见、微信群码点开为 240×240、无 JS 报错；全闸 217 文件 / 12173 断言，`e2e-dom` 166、`e2e-panel` 187/0、`smoke-all` 306，css-strip gzip 124593（余量 10575 B）。
+- **落款从「解析与详解」折叠区里提出来，改成报告最末的独立一段**：起因是有反馈「八字、紫微等结果下面看不到落款」。根因是 `pp.interpretHTML` 把落款塞在 `.mp-it-wrap` 里，而该容器在窄屏默认 `folded` 收起（`.mp-it.folded .mp-it-wrap{display:none}`），有解读的体系整份报告就一处落款也看不到，只有称骨、小六壬这类空解读的短体系靠 `resultWithInterpret` 兜底才露出来。现在 `__MPCompose` 的 `USER_SEGS` 增加 `sign` 段（排在验前事/生时校正之后、导出条之前），`src/app.js` 与 `src/web-ui.js` 各传 `sign: PP.signatureHTML()`，`interpretHTML` 与 `resultWithInterpret` 不再生成落款——「每份报告恰好一处落款」只由拼接层保证。验证：`test/compose.test.mjs` 83 条（段序、五档体系都保留落款、两个 UI 都传段）、`test/signature.test.mjs` 104 条（解读 folded 为真时落款仍在 `.mp-it-wrap` 之外、每份报告一处）；真 Chrome 在 1280px 与 420px（窄屏才默认收起）下测八字与紫微：各一处落款、默认可见、微信群码点开为 240×240、无 JS 报错；全闸 217 文件 / 12173 断言，`e2e-dom` 200（18 个 tab 每个都钉了「落款恰好一处、默认可见、不在折叠容器里」）、`e2e-panel` 189/0（把解读手动折起来后落款仍在）、`smoke-all` 306，css-strip gzip 124593（余量 10575 B）。
 
 ## 0.86.1（2026-11-20）
 

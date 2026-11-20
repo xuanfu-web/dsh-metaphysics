@@ -244,6 +244,26 @@ for (const t of TABS) {
   }
   ok(settled === true, `${t.name} · 出结果`, settled === true ? '' : String(settled || '超时'));
 
+  // 落款：每份报告恰好一处，且不随「解析与详解」的折叠消失。
+  // 它以前塞在 .mp-it-wrap 里，宽屏展开时看得见、窄屏默认收起时整块被藏掉——
+  // 八字、紫微这类有解读的体系就一处品牌都没有。这里按结构钉死。
+  const sigState = await page.evaluate(() => {
+    const out = document.getElementById('out');
+    if (!out) return null;
+    const all = [...out.querySelectorAll('.mp-sig')];
+    const el = all[0];
+    const r = el ? el.getBoundingClientRect() : null;
+    return {
+      n: all.length,
+      inWrap: !!(el && el.closest('.mp-it-wrap')),
+      visible: !!(el && el.offsetParent !== null && r.width > 0 && r.height > 0),
+      wx: !!(el && el.querySelector('[data-mp-qr="wx"]')),
+    };
+  });
+  ok(sigState && sigState.n === 1, `${t.name} · 报告只有一处落款`, JSON.stringify(sigState));
+  ok(sigState && !sigState.inWrap && sigState.visible && sigState.wx,
+    `${t.name} · 落款默认可见（不在折叠容器里，带微信群按钮）`, JSON.stringify(sigState));
+
   const dirty = await page.evaluate(() => {
     const out = document.getElementById('out');
     const html = out ? out.innerHTML : '';

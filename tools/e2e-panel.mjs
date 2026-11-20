@@ -274,6 +274,37 @@ const hist = await page.evaluate(() => {
 ok(Array.isArray(hist) && hist.length >= 1, '排过的盘进了本地历史', JSON.stringify(hist && hist.slice(0, 1)).slice(0, 80));
 ok(await page.locator('.mp-recent-list .mp-rc').count() >= 1, '首屏「最近用过」出现该条目');
 
+// ── 五·一、落款：解读收起时也得看得见，且每份报告只有一处 ───────────
+// 落款以前塞在 .mp-it-wrap 里，窄屏默认 folded 时整块隐藏（八字、紫微就看不到品牌）。
+// 现在它是 compose 的 sign 段；这里手动把解读折起来，证明它不跟着消失。
+{
+  const readSig = () => page.evaluate(() => {
+    const card = document.querySelector('#main .mp-card');
+    if (!card) return null;
+    const all = [...card.querySelectorAll('.mp-sig')];
+    const el = all[0];
+    const r = el ? el.getBoundingClientRect() : null;
+    const it = card.querySelector('.mp-it');
+    return {
+      n: all.length,
+      inWrap: !!(el && el.closest('.mp-it-wrap')),
+      visible: !!(el && el.offsetParent !== null && r.width > 0 && r.height > 0),
+      wx: !!(el && el.querySelector('[data-mp-qr="wx"]')),
+      folded: !!(it && it.classList.contains('folded')),
+    };
+  });
+  ok((await readSig()) && (await readSig()).n === 1, '面板 · 八字报告只有一处落款', JSON.stringify(await readSig()));
+  const itBox = page.locator('#main .mp-card .mp-it').first();
+  if (await itBox.count() && !(await readSig()).folded) await page.locator('#main .mp-card .mp-it-head').first().click();
+  await page.waitForTimeout(120);
+  const foldedSig = await readSig();
+  ok(foldedSig && foldedSig.folded && !foldedSig.inWrap && foldedSig.visible && foldedSig.wx,
+    '面板 · 解读收起后落款仍可见（含微信群按钮）', JSON.stringify(foldedSig));
+  // 折回去，后面的用例按原状态继续
+  if (foldedSig && foldedSig.folded) await page.locator('#main .mp-card .mp-it-head').first().click();
+  await page.waitForTimeout(80);
+}
+
 // ── 五·五、日期框逐字输入：中间态不能被父组件回写截断 ──────────────
 // 掩码把「1990-05-1」解析成合法日期后，若边敲边 onChange，父组件回写 value 会把
 // 刚敲的 2 冲掉，最终静默变成 1 日。page.fill 一次写整串测不出来，这里用真键盘。
